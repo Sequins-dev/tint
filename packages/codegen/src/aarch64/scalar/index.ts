@@ -244,6 +244,7 @@ import {
   relativeAddress,
   farRelativeAddress,
   float64Immediate,
+  logicalImmediate32,
   encode,
   type EncodingResult,
   type Instruction,
@@ -3788,6 +3789,8 @@ function emitModuleForms(
               stringLiterals.set(op.id, op.value);
         }
         const foldedConstants = new Uint8Array(resultBound),
+          // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
+          zeroConstants = new Uint8Array(resultBound),
           undefinedValues = new Uint8Array(resultBound),
           // reference-none and string-none: one zero word. Used only as an
           // equality operand, they fold into a test of the other side.
@@ -3837,6 +3840,7 @@ function emitModuleForms(
                 if (typeof constant === "number") {
                   numericConstants[valueIds.intern(op.id)] = 1;
                   if (constant >>> 0 === constant) wordImmediates.add(op.id);
+                  if (constant === 0) zeroConstants[valueIds.intern(op.id)] = 1;
                 }
               }
               if (op.kind === "host-call" && rawWordOperation(op.operation))
@@ -3862,6 +3866,18 @@ function emitModuleForms(
                 const index = valueIds.intern(op.right);
                 if (numericConstants[index] === 1)
                   folded[index] = (folded[index] ?? 0) + 1;
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === "|" || op.operator === "^")
+              ) {
+                // One zero operand folds into a plain ToInt32 of the other.
+                const right = valueIds.intern(op.right),
+                  left = valueIds.intern(op.left);
+                if (zeroConstants[right] === 1)
+                  folded[right] = (folded[right] ?? 0) + 1;
+                else if (zeroConstants[left] === 1)
+                  folded[left] = (folded[left] ?? 0) + 1;
               }
               // A short literal compared inline is read as an immediate
               // (see the string equality case: the right literal if any).
@@ -4265,10 +4281,24 @@ function emitModuleForms(
           if (offset === undefined) throw "slot layout invariant";
           return offset;
         }
+        /** Exact integer constants not yet in their homes, by value ID. A
+         * use that takes one as an immediate reads it from here; any other
+         * use materializes it first (materializeInteger), and value()
+         * rejects a home access before that. Values are block-local, so
+         * each block starts with none. */
+        const deferredIntegers = new Map<number, number>();
         function value(id: number): Value {
+          if (deferredIntegers.size !== 0 && deferredIntegers.has(id))
+            throw "deferred constant read invariant";
           const v = values[valueIds.intern(id)];
           if (v === undefined) throw "verified value invariant";
           return v;
+        }
+        /** The representation of value `id`, which may still be deferred. */
+        function typeOf(id: number): ScalarType {
+          const v = values[valueIds.intern(id)];
+          if (v === undefined) throw "verified value invariant";
+          return v.type;
         }
         const valuesOffset = cursor;
         if (homes !== undefined) {
@@ -6228,6 +6258,132 @@ function emitModuleForms(
           rawStore(rt, value(id).offset);
           if (tracker !== undefined) tracker.saved(id, instructions.length * 4);
         }
+        /** Writes exact integer `constant` as an int64 to the frame word at
+         * `offset`, building it directly in a GP home. */
+        function writeInteger(constant: number, offset: number): void {
+          // Two's complement int64 halves of a safe integer.
+          const lo = ((constant % 4294967296) + 4294967296) % 4294967296,
+            hi = (Math.floor(constant / 4294967296) + 4294967296) % 4294967296;
+          if (lo === 0 && hi === 0) {
+            rawStore("zr", offset);
+            return;
+          }
+          const register = scalarRegisters?.[offset / 8] ?? 0,
+            target = register >= 32 ? register - 32 : 9;
+          imm64(target, lo, hi);
+          rawStore(target, offset);
+        }
+        /** Writes deferred integer constant `id` (if still deferred) to its
+         * home. */
+        function materializeInteger(id: number): void {
+          const constant = deferredIntegers.get(id);
+          if (constant === undefined) return;
+          deferredIntegers.delete(id);
+          writeInteger(constant, value(id).offset);
+          if (tracker !== undefined) tracker.saved(id, instructions.length * 4);
+        }
+        /** Int64 arithmetic: exact bounded integers (kind 6) whose -0
+         * results are unobserved (see findIntegerUses). */
+        function integerArithmetic(op: IRInstruction): boolean {
+          return (
+            op.kind === "binary" &&
+            (op.operator === "+" ||
+              op.operator === "-" ||
+              op.operator === "*") &&
+            wantsInteger(op.id) &&
+            zeroSignResults[valueIds.intern(op.id)] !== 1 &&
+            wordKinds[valueIds.intern(op.id)] === 6 &&
+            exactInteger(op.left) &&
+            exactInteger(op.right)
+          );
+        }
+        /** k when `n` is 2^k (0 <= k <= 32), else -1. */
+        function exactLog2(n: number): number {
+          let k = 0,
+            power = 1;
+          while (power < n && k < 32) {
+            power *= 2;
+            k++;
+          }
+          return power === n ? k : -1;
+        }
+        /** k when `constant` is 2^k or 2^k + 1 (1 <= k <= 32): a multiplier
+         * a shift or a shifted add replaces. */
+        function multiplierShift(constant: number): number | undefined {
+          const plain = exactLog2(constant);
+          if (plain >= 1) return plain;
+          const above = exactLog2(constant - 1);
+          return above >= 1 ? above : undefined;
+        }
+        /** For a 32-bit multiplier (Math.imul) whose word is 2^k (k <= 31),
+         * 2^k + 1 (k <= 30) or 2^k - 1 (2 <= k <= 31): k, k + 32 or k + 64
+         * respectively (k >= 1); 0 for any other. */
+        function wordMultiplierShift(constant: number): number {
+          const word = constant >>> 0,
+            plain = exactLog2(word);
+          if (plain >= 1 && plain <= 31) return plain;
+          const above = exactLog2(word - 1);
+          if (above >= 1 && above <= 30) return above + 32;
+          const below = exactLog2(word + 1);
+          if (below >= 2 && below <= 31) return below + 64;
+          return 0;
+        }
+        /** Whether `x op constant` is ToInt32(x): `| 0`, `^ 0` or `& -1`. */
+        function wordIdentity(operator: string, constant: number): boolean {
+          const word = constant >>> 0;
+          return operator === "&" ? word === 4294967295 : word === 0;
+        }
+        /** An add/sub immediate magnitude: 12 bits, optionally shifted by 12. */
+        function addImmediate(magnitude: number): boolean {
+          return (
+            magnitude <= 4095 ||
+            (magnitude % 4096 === 0 && magnitude <= 16773120)
+          );
+        }
+        /** The deferred operand binary `op` takes as an immediate, if any
+         * (the other operand is a different value): int64 addition or
+         * subtraction of an add immediate (a constant on the right of `-`),
+         * int64 multiplication by 2^k or 2^k + 1, a 32-bit `&`, `|` or `^`
+         * with a logical immediate, and an int64 comparison against an add
+         * immediate on the right. The binary case consumes it on exactly
+         * these paths. */
+        function binaryImmediate(op: IRInstruction): number | undefined {
+          if (op.kind !== "binary" || op.left === op.right) return undefined;
+          const left = deferredIntegers.get(op.left),
+            right = deferredIntegers.get(op.right);
+          if (left === undefined && right === undefined) return undefined;
+          const operand = right !== undefined ? op.right : op.left,
+            constant = right ?? left ?? 0;
+          if (integerArithmetic(op)) {
+            if (op.operator === "*")
+              return multiplierShift(constant) !== undefined
+                ? operand
+                : undefined;
+            if (op.operator === "-" && right === undefined) return undefined;
+            return addImmediate(Math.abs(constant)) ? operand : undefined;
+          }
+          if (op.operator === "imul")
+            return wordMultiplierShift(constant) !== 0 ? operand : undefined;
+          if (op.operator === "&" || op.operator === "|" || op.operator === "^")
+            return rotatedShifts[valueIds.intern(op.id)] !== 1 &&
+              (rotateAmounts[valueIds.intern(op.id)] ?? 0) === 0 &&
+              (logicalImmediate32(constant >>> 0) !== undefined ||
+                wordIdentity(op.operator, constant))
+              ? operand
+              : undefined;
+          if (
+            right !== undefined &&
+            ["===", "!==", "==", "!=", "<", ">", "<=", ">="].includes(
+              op.operator,
+            ) &&
+            undefinedValues[valueIds.intern(op.left)] !== 1 &&
+            typeOf(op.left) === "number" &&
+            exactInteger(op.left) &&
+            addImmediate(Math.abs(right))
+          )
+            return op.right;
+          return undefined;
+        }
         // C value helpers shared by c-call and c-memory lowering
         // (docs/native-ffi.md). KNOWN DEFECT (typed-pipeline gap,
         // docs/native-ffi.md#known-defects): the integerToFloat/floatToInteger/narrowLoad/narrowStore
@@ -7973,6 +8129,8 @@ function emitModuleForms(
           openIndex = 0,
           openOffset = 0;
         function operandCode(id: number): string {
+          // A constant still deferred was only ever read as an immediate.
+          if (deferredIntegers.has(id)) return "imm";
           const v = value(id),
             register = scalarRegisters?.[v.offset / 8] ?? 0,
             home = register === 0 ? "@m" : "@r";
@@ -8133,6 +8291,7 @@ function emitModuleForms(
           const b = fn.blocks[blockIndex],
             nextBlock = fn.blocks[blockIndex + 1]?.id;
           if (b === undefined) throw "block invariant";
+          deferredIntegers.clear();
           // Fused dispatch continuations are unreachable; their head tests
           // every candidate layout.
           if (dispatch?.fused[b.id] === 1) {
@@ -8505,6 +8664,13 @@ function emitModuleForms(
                 wordMagnitudes[index] = Math.max(1, bound);
               }
             }
+            // Binary operations keep an immediate operand deferred, and
+            // integer slot stores write a deferred constant directly.
+            if (
+              op.kind !== "binary" &&
+              !(op.kind === "store" && integerSlots[op.slot] === 1)
+            )
+              visitInstructionOperands(op, materializeInteger);
             switch (op.kind) {
               case "function-address":
                 if (
@@ -10091,18 +10257,9 @@ function emitModuleForms(
                   Number.isSafeInteger(constant) &&
                   !(constant === 0 && 1 / constant < 0)
                 ) {
-                  // Two's complement int64 halves of a safe integer.
-                  const lo =
-                      ((constant % 4294967296) + 4294967296) % 4294967296,
-                    hi =
-                      (Math.floor(constant / 4294967296) + 4294967296) %
-                      4294967296;
-                  if (lo === 0 && hi === 0) rawStore("zr", home);
-                  else {
-                    imm64(9, lo, hi);
-                    saveRaw(9, op.id);
-                  }
+                  // Written to its home only once a use needs it there.
                   markInteger(op.id);
+                  deferredIntegers.set(op.id, constant);
                   break;
                 }
                 const bits = encodeFloat64(constant);
@@ -14219,7 +14376,10 @@ function emitModuleForms(
                 break;
               case "store":
                 if (integerSlots[op.slot] === 1) {
-                  if (storedAsInteger(op.value))
+                  const constant = deferredIntegers.get(op.value);
+                  if (constant !== undefined)
+                    writeInteger(constant, slotOffset(op.slot));
+                  else if (storedAsInteger(op.value))
                     copyRawWord(value(op.value).offset, slotOffset(op.slot));
                   else {
                     intOperand(op.value, 9);
@@ -14360,6 +14520,14 @@ function emitModuleForms(
                 break;
               }
               case "binary": {
+                const immediate = binaryImmediate(op);
+                visitInstructionOperands(op, (id) => {
+                  if (id !== immediate) materializeInteger(id);
+                });
+                if ((rotateAmounts[valueIds.intern(op.id)] ?? 0) !== 0)
+                  materializeInteger(
+                    rotateSources[valueIds.intern(op.id)] ?? 0,
+                  );
                 const leftNone =
                     noneValues[valueIds.intern(op.left)] === 1 &&
                     foldedConstants[valueIds.intern(op.left)] === 1,
@@ -14394,7 +14562,7 @@ function emitModuleForms(
                   rightLiteral = stringLiterals.get(op.right),
                   literal = rightLiteral ?? leftLiteral;
                 if (
-                  value(op.left).type === "string" &&
+                  typeOf(op.left) === "string" &&
                   literal !== undefined &&
                   literal.length <= 8
                 ) {
@@ -14479,8 +14647,8 @@ function emitModuleForms(
                   break;
                 }
                 if (
-                  value(op.left).type === "string" &&
-                  value(op.right).type === "string" &&
+                  typeOf(op.left) === "string" &&
+                  typeOf(op.right) === "string" &&
                   literal !== undefined &&
                   literal.length <= 32
                 ) {
@@ -14561,12 +14729,12 @@ function emitModuleForms(
                   break;
                 }
                 if (
-                  value(op.left).type === "string" ||
-                  value(op.left).type === "optional-string"
+                  typeOf(op.left) === "string" ||
+                  typeOf(op.left) === "optional-string"
                 ) {
                   rawValue(9, op.left);
                   rawValue(10, op.right);
-                  if (value(op.left).type === "optional-string") {
+                  if (typeOf(op.left) === "optional-string") {
                     // Both present: compare content. Either absent: compare the zero sentinels.
                     const absentLeft = instructions.length;
                     emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
@@ -14605,16 +14773,57 @@ function emitModuleForms(
                   saveRaw(9, op.id);
                   break;
                 }
-                if (
-                  (op.operator === "+" ||
-                    op.operator === "-" ||
-                    op.operator === "*") &&
-                  wantsInteger(op.id) &&
-                  zeroSignResults[valueIds.intern(op.id)] !== 1 &&
-                  wordKinds[valueIds.intern(op.id)] === 6 &&
-                  exactInteger(op.left) &&
-                  exactInteger(op.right)
-                ) {
+                if (integerArithmetic(op) && immediate !== undefined) {
+                  // An immediate operand: an add/sub immediate, or a
+                  // multiplier 2^k (LSL) or 2^k + 1 (ADD shifted).
+                  const constant = deferredIntegers.get(immediate);
+                  if (constant === undefined) throw "immediate invariant";
+                  const source = intRegister(
+                      immediate === op.right ? op.left : op.right,
+                      9,
+                    ),
+                    target = intTarget(op.id, 9);
+                  if (op.operator === "*") {
+                    const k = multiplierShift(constant);
+                    if (k === undefined) throw "multiplier invariant";
+                    // 2^k is even; 2^k + 1 odd.
+                    if (constant % 2 === 0)
+                      emit({
+                        op: "ubfm",
+                        width: 64,
+                        rd: target,
+                        rn: source,
+                        immr: 64 - k,
+                        imms: 63 - k,
+                      });
+                    else
+                      emit({
+                        op: "add-reg",
+                        width: 64,
+                        rd: target,
+                        rn: source,
+                        rm: source,
+                        shift: "lsl",
+                        amount: k,
+                        setFlags: false,
+                      });
+                  } else {
+                    const addend = op.operator === "-" ? -constant : constant,
+                      magnitude = Math.abs(addend),
+                      shifted = magnitude > 4095;
+                    emit({
+                      op: addend < 0 ? "sub-imm" : "add-imm",
+                      width: 64,
+                      rd: target,
+                      rn: source,
+                      immediate: shifted ? magnitude / 4096 : magnitude,
+                      shift: shifted ? 12 : 0,
+                      setFlags: false,
+                    });
+                  }
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                } else if (integerArithmetic(op)) {
                   // Bounded below 2^53 (kind 6), so the int64 result is
                   // exact but for -0 (from a product, or a -0 operand),
                   // which becomes +0: its uses do not observe the sign (see
@@ -14759,6 +14968,7 @@ function emitModuleForms(
                     storedAsWord(op.id) || wantsInteger(op.id)
                       ? rawTarget(op.id, 9)
                       : 9;
+                  let extended = false;
                   if (rotation !== 0) {
                     const source = wordOperand(
                       rotateSources[valueIds.intern(op.id)] ?? 0,
@@ -14801,6 +15011,114 @@ function emitModuleForms(
                             imms: 31,
                           },
                     );
+                  } else if (
+                    (op.operator === "|" || op.operator === "^") &&
+                    (zeroConstants[rightIndex] === 1 ||
+                      zeroConstants[valueIds.intern(op.left)] === 1)
+                  ) {
+                    // `x | 0` and `x ^ 0`: the other operand's low 32 bits,
+                    // sign-extended at once for an int64 result.
+                    const source = wordOperand(
+                      zeroConstants[rightIndex] === 1 ? op.left : op.right,
+                      9,
+                    );
+                    if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                      emit({ op: "sxtw", rd: target, rn: source });
+                      extended = true;
+                    } else
+                      emit({
+                        op: "orr-reg",
+                        width: 32,
+                        rd: target,
+                        rn: "zr",
+                        rm: source,
+                      });
+                  } else if (
+                    immediate !== undefined &&
+                    op.operator === "imul"
+                  ) {
+                    // Low 32 bits of x * 2^k (LSL), x * (2^k + 1) (ADD
+                    // shifted) or x * (2^k - 1) (LSL, then SUB).
+                    const constant = deferredIntegers.get(immediate),
+                      form =
+                        constant === undefined
+                          ? 0
+                          : wordMultiplierShift(constant),
+                      k = form % 32,
+                      source = wordOperand(
+                        immediate === op.right ? op.left : op.right,
+                        9,
+                      );
+                    if (form === 0) throw "word multiplier invariant";
+                    if (form < 32 || form >= 64)
+                      emit({
+                        op: "ubfm",
+                        width: 32,
+                        rd: form < 32 ? target : 10,
+                        rn: source,
+                        immr: 32 - k,
+                        imms: 31 - k,
+                      });
+                    if (form >= 64)
+                      emit({
+                        op: "sub-reg",
+                        width: 32,
+                        rd: target,
+                        rn: 10,
+                        rm: source,
+                        shift: "lsl",
+                        amount: 0,
+                        setFlags: false,
+                      });
+                    else if (form >= 32)
+                      emit({
+                        op: "add-reg",
+                        width: 32,
+                        rd: target,
+                        rn: source,
+                        rm: source,
+                        shift: "lsl",
+                        amount: k,
+                        setFlags: false,
+                      });
+                  } else if (immediate !== undefined) {
+                    // A logical immediate, or an identity (`& -1`, and
+                    // `| 0` or `^ 0` with a deferred zero) whose result is
+                    // the other operand's word (see binaryImmediate).
+                    const constant = deferredIntegers.get(immediate);
+                    if (constant === undefined)
+                      throw "logical immediate invariant";
+                    const fields = logicalImmediate32(constant >>> 0),
+                      source = wordOperand(
+                        immediate === op.right ? op.left : op.right,
+                        9,
+                      );
+                    if (fields !== undefined)
+                      emit({
+                        op:
+                          op.operator === "&"
+                            ? "and-imm"
+                            : op.operator === "|"
+                              ? "orr-imm"
+                              : "eor-imm",
+                        width: 32,
+                        rd: target,
+                        rn: source,
+                        n: fields.n,
+                        immr: fields.immr,
+                        imms: fields.imms,
+                      });
+                    else if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                      emit({ op: "sxtw", rd: target, rn: source });
+                      extended = true;
+                    } else
+                      emit({
+                        op: "orr-reg",
+                        width: 32,
+                        rd: target,
+                        rn: "zr",
+                        rm: source,
+                      });
                   } else {
                     // The left operand stays in x13 (or its home) while the
                     // right one may call the conversion helper.
@@ -14869,7 +15187,7 @@ function emitModuleForms(
                   if (storedAsWord(op.id)) saveRaw(target, op.id);
                   else if (wantsInteger(op.id)) {
                     // A W-register result is zero-extended: right for >>>.
-                    if (op.operator !== ">>>")
+                    if (op.operator !== ">>>" && !extended)
                       emit({ op: "sxtw", rd: target, rn: target });
                     saveRaw(target, op.id);
                     markInteger(op.id);
@@ -14922,7 +15240,7 @@ function emitModuleForms(
                     }
                     break;
                   }
-                  if (value(op.left).type === "optional-number") {
+                  if (typeOf(op.left) === "optional-number") {
                     // Numerically equal (`undefined` is a NaN, so unordered),
                     // or both `undefined`: identical bits, the left absent.
                     const left = rawRegister(op.left, 9),
@@ -14953,7 +15271,7 @@ function emitModuleForms(
                     saveRaw(11, op.id);
                     break;
                   }
-                  if (value(op.left).type === "optional-boolean") {
+                  if (typeOf(op.left) === "optional-boolean") {
                     rawLoad(9, value(op.left).offset + 8);
                     rawLoad(10, value(op.right).offset + 8);
                     emit({
@@ -14999,28 +15317,37 @@ function emitModuleForms(
                   // Exact integers (no NaN) compare as int64 once either side is
                   // already held as one; -0 and +0 both convert to 0.
                   const integerComparison =
-                    value(op.left).type === "number" &&
+                    typeOf(op.left) === "number" &&
                     (storedAsInteger(op.left) || storedAsInteger(op.right)) &&
                     exactInteger(op.left) &&
                     exactInteger(op.right);
                   if (integerComparison) {
+                    // A right constant compares as an immediate: a uint32
+                    // word constant, or a deferred one (binaryImmediate),
+                    // negative ones with CMN.
                     const rightIndex = valueIds.intern(op.right),
-                      rightConstant =
-                        !storedAsInteger(op.right) &&
-                        wordKinds[rightIndex] === 3 &&
-                        (wordConstants[rightIndex] ?? 0) <= 4095;
+                      constant =
+                        immediate === op.right
+                          ? deferredIntegers.get(op.right)
+                          : !storedAsInteger(op.right) &&
+                              wordKinds[rightIndex] === 3 &&
+                              (wordConstants[rightIndex] ?? 0) <= 4095
+                            ? (wordConstants[rightIndex] ?? 0)
+                            : undefined;
                     const left = intRegister(op.left, 9);
-                    if (rightConstant)
+                    if (constant !== undefined) {
+                      const magnitude = Math.abs(constant),
+                        shifted = magnitude > 4095;
                       emit({
-                        op: "sub-imm",
+                        op: constant < 0 ? "add-imm" : "sub-imm",
                         width: 64,
                         rd: "zr",
                         rn: left,
-                        immediate: wordConstants[rightIndex] ?? 0,
-                        shift: 0,
+                        immediate: shifted ? magnitude / 4096 : magnitude,
+                        shift: shifted ? 12 : 0,
                         setFlags: true,
                       });
-                    else
+                    } else
                       emit({
                         op: "sub-reg",
                         width: 64,
@@ -15031,7 +15358,7 @@ function emitModuleForms(
                         amount: 0,
                         setFlags: true,
                       });
-                  } else if (value(op.left).type === "number") {
+                  } else if (typeOf(op.left) === "number") {
                     const left = floatOperand(op.left, 0),
                       right = floatOperand(op.right, 1);
                     emit({ op: "fcmp", rn: left, rm: right });
@@ -15881,6 +16208,7 @@ function emitModuleForms(
             }
           }
           const t = b.terminator;
+          visitTerminatorOperands(t, materializeInteger);
           if (viewAccesses) {
             viewExitTokens.set(b.id, viewToken);
             viewExitSlots.set(b.id, viewSlotTokens);
@@ -16319,6 +16647,8 @@ function emitModuleForms(
           }
           if (recordOperations) endOperation();
           if (tracker !== undefined) tracker.end(instructions.length * 4);
+          // Constants still deferred had only immediate uses.
+          deferredIntegers.clear();
           if (transient !== undefined && storage !== undefined)
             for (const op of b.instructions) {
               if (op === undefined) throw "temporary instruction invariant";

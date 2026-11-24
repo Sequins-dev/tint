@@ -60,18 +60,22 @@ const expected = inputs.flatMap((x) => [
   x ^ 7,
   x << 1,
   x >> 1,
+  x ^ 0,
+  0 | x,
+  x | -0,
+  x & -1,
 ]);
 verifyHostedFixture(
   `const inputs:number[]=[${inputs.map(literal).join(",")}];
 const expected:number[]=[${expected.map(literal).join(",")}];
-function results(x:number):number[]{return [x|0,x>>>0,x&0xffff,~x,x^7,x<<1,x>>1];}
+function results(x:number):number[]{return [x|0,x>>>0,x&0xffff,~x,x^7,x<<1,x>>1,x^0,0|x,x|-0,x&-1];}
 export function run():number {
  for(let i=0;i<inputs.length;i++){
   const x=inputs[i];
   if(x===undefined)return 1;
   const got=results(x);
-  for(let j=0;j<7;j++){
-   const want=expected[i*7+j],have=got[j];
+  for(let j=0;j<11;j++){
+   const want=expected[i*11+j],have=got[j];
    if(want===undefined||have===undefined)return 2;
    if(have!==want)return 10+i;
   }
