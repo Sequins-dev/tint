@@ -583,11 +583,13 @@ test("remainder emits a shared helper and large frames use indirect addressing",
             ...b,
             instructions: [
               ...b.instructions,
+              // A fractional dividend takes the helper.
+              { kind: "constant", id: 5, value: 5.5, ...span },
               {
                 kind: "binary",
                 id: 1,
                 operator: "%",
-                left: 0,
+                left: 5,
                 right: 0,
                 ...span,
               },
@@ -610,6 +612,33 @@ test("remainder emits a shared helper and large frames use indirect addressing",
     }
     assert.ok(resolvedCall, "shared helper calls must reach the helper");
   }
+  // Exact integers divide inline, without the helper.
+  const exact = emitModule({
+    functions: [
+      {
+        ...f,
+        blocks: [
+          {
+            ...b,
+            instructions: [
+              ...b.instructions,
+              {
+                kind: "binary",
+                id: 1,
+                operator: "%",
+                left: 0,
+                right: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(exact.ok);
+  assert.deepEqual(exact.value.helpers, []);
   const large = emitModule(liveLocalFrame(4096));
   assert.ok(large.ok, JSON.stringify(large));
   assert.ok(large.value.functions[0]!.frameBytes > 32752);
@@ -691,11 +720,12 @@ test("numeric helpers are shared, budgeted and linked after source functions", (
             ...b,
             instructions: [
               ...b.instructions,
+              { kind: "constant", id: 5, value: 5.5, ...span },
               {
                 kind: "binary",
                 id: 1,
                 operator: "%",
-                left: 0,
+                left: 5,
                 right: 0,
                 ...span,
               },

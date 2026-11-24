@@ -3551,9 +3551,10 @@ function emitModuleForms(
           ">=",
         ];
         /** Results whose zero sign an accepted integer use still observes:
-         * optional payloads, Float64Array element values and the operands
-         * of +, - and * results that may be -0 and are so observed. Such
-         * results are recorded in zeroSignResults. */
+         * optional payloads, Float64Array element values, the operands of
+         * +, - and * results that may be -0 and are so observed, and the
+         * dividends of % results so observed. Such results are recorded in
+         * zeroSignResults. */
         function findZeroSignResults(): Uint8Array {
           const signs = new Uint8Array(resultBound),
             results = new Uint8Array(resultBound),
@@ -3645,6 +3646,13 @@ function emitModuleForms(
                   signs[valueIds.intern(op.left)] = 1;
                   signs[valueIds.intern(op.right)] = 1;
                 }
+              } else if (op.kind === "binary" && op.operator === "%") {
+                // A zero remainder takes the dividend's sign.
+                const index = valueIds.intern(op.id);
+                if (signs[index] === 1) {
+                  results[index] = 1;
+                  signs[valueIds.intern(op.left)] = 1;
+                }
               }
             }
           }
@@ -3702,7 +3710,12 @@ function emitModuleForms(
                   (listReadShapes(op.target) !== undefined ||
                     (op.id === undefined &&
                       writeShapes[op.target] !== undefined)));
-              if (!accepts)
+              if (op.kind === "binary" && op.operator === "%")
+                // An int64 divisor divides directly (see the % case). The
+                // dividend's zero sign shows in the remainder (-0 % 3 is
+                // -0), so it is never accepted.
+                rejected[valueIds.intern(op.left)] = 1;
+              else if (!accepts)
                 visitInstructionOperands(op, (id) => {
                   rejected[valueIds.intern(id)] = 1;
                 });
@@ -3783,11 +3796,65 @@ function emitModuleForms(
         // equality fold into a presence test; neither is materialized.
         // String literal values by result ID, for inline comparisons.
         const stringLiterals = new Map<number, string>();
+        // Numeric constants by value ID (a divisor's value, see `%`), and
+        // values proven non-negative and never -0 (a dividend whose
+        // remainder is never -0): such constants, lengths, code units,
+        // uint32 and >>> words, & with a constant mask below 2^31, and +, *
+        // and % of such operands. Values are block-local, so one forward pass suffices.
+        const constantFlags = new Uint8Array(resultBound),
+          constantNumbers = new Float64Array(resultBound),
+          nonNegativeValues = new Uint8Array(resultBound);
+        /** The value of numeric constant `id`, else undefined. */
+        function numberConstant(id: number): number | undefined {
+          const index = valueIds.intern(id);
+          return constantFlags[index] === 1
+            ? constantNumbers[index]
+            : undefined;
+        }
+        function nonNegative(id: number): boolean {
+          return nonNegativeValues[valueIds.intern(id)] === 1;
+        }
         for (const block of fn.blocks) {
           if (block === undefined) throw "string literal block invariant";
-          for (const op of block.instructions)
-            if (op !== undefined && op.kind === "string-literal")
+          for (const op of block.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "string-literal")
               stringLiterals.set(op.id, op.value);
+            else if (op.kind === "constant") {
+              const constant = op.value;
+              if (typeof constant === "number") {
+                const index = valueIds.intern(op.id);
+                constantFlags[index] = 1;
+                constantNumbers[index] = constant;
+                if (constant > 0 || (constant === 0 && 1 / constant > 0))
+                  nonNegativeValues[index] = 1;
+              }
+            } else if (
+              op.kind === "string-length" ||
+              op.kind === "array-length" ||
+              (op.kind === "string-code-unit" && op.inBounds === true) ||
+              (op.kind === "unary" && op.operator === "uint32") ||
+              (op.kind === "binary" && op.operator === ">>>")
+            )
+              nonNegativeValues[valueIds.intern(op.id)] = 1;
+            else if (op.kind === "binary") {
+              const left = nonNegative(op.left),
+                right = nonNegative(op.right),
+                leftMask = numberConstant(op.left) ?? -1,
+                rightMask = numberConstant(op.right) ?? -1;
+              if (
+                // ToInt32 keeps a mask below 2^31 non-negative.
+                (op.operator === "&" &&
+                  ((leftMask >= 0 && leftMask <= 2147483647) ||
+                    (rightMask >= 0 && rightMask <= 2147483647))) ||
+                ((op.operator === "+" || op.operator === "*") &&
+                  left &&
+                  right) ||
+                (op.operator === "%" && left)
+              )
+                nonNegativeValues[valueIds.intern(op.id)] = 1;
+            }
+          }
         }
         const foldedConstants = new Uint8Array(resultBound),
           // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
@@ -14877,6 +14944,120 @@ function emitModuleForms(
                     rd: target,
                     rn: left,
                     rm: right,
+                  });
+                  floatStore(target, op.id);
+                } else if (
+                  op.operator === "%" &&
+                  exactInteger(op.left) &&
+                  exactInteger(op.right)
+                ) {
+                  // Exact integer operands (below 2^53) divide as int64s:
+                  // SDIV truncates toward zero, so MSUB leaves the
+                  // remainder with the dividend's sign, as in ECMAScript.
+                  // A nonzero constant divisor needs no zero test; a zero
+                  // divisor gives NaN. A non-negative dividend's remainder
+                  // is never -0, so with a nonzero constant divisor it is
+                  // an int64 result when its uses take one; otherwise a
+                  // zero remainder takes the dividend's sign.
+                  const divisor = numberConstant(op.right),
+                    constant =
+                      divisor !== undefined &&
+                      Number.isSafeInteger(divisor) &&
+                      divisor !== 0
+                        ? divisor
+                        : undefined;
+                  intOperand(op.left, 9);
+                  if (constant === undefined) intOperand(op.right, 10);
+                  else {
+                    const lo =
+                        ((constant % 4294967296) + 4294967296) % 4294967296,
+                      hi =
+                        (Math.floor(constant / 4294967296) + 4294967296) %
+                        4294967296;
+                    imm64(10, lo, hi);
+                  }
+                  if (
+                    constant !== undefined &&
+                    nonNegative(op.left) &&
+                    wantsInteger(op.id)
+                  ) {
+                    const target = intTarget(op.id, 11);
+                    emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                    emit({
+                      op: "msub",
+                      width: 64,
+                      rd: target,
+                      rn: 11,
+                      rm: 10,
+                      ra: 9,
+                    });
+                    saveRaw(target, op.id);
+                    markInteger(op.id);
+                    break;
+                  }
+                  const target = floatTarget(op.id, 0);
+                  let zeroDivisor = -1;
+                  if (constant === undefined) {
+                    zeroDivisor = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                  }
+                  emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                  emit({
+                    op: "msub",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    rm: 10,
+                    ra: 9,
+                  });
+                  const nonzero = instructions.length;
+                  emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+                  if (storedAsInteger(op.left)) {
+                    // An int64 dividend is never -0: its sign bit decides.
+                    emit({ op: "fmov-d-x", rd: target, rn: "zr" });
+                    emit({ op: "tbz", rt: 9, bit: 63, displacement: 8 });
+                    emit({ op: "fneg", rd: target, rn: target });
+                  } else {
+                    // left * +0 is a zero with the dividend's sign.
+                    const left = floatOperand(op.left, 1);
+                    emit({ op: "fmov-d-x", rd: 2, rn: "zr" });
+                    emit({ op: "fmul", rd: target, rn: left, rm: 2 });
+                  }
+                  const zeroDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(nonzero, {
+                    op: "cbnz",
+                    width: 64,
+                    rt: 11,
+                    displacement: (instructions.length - nonzero) * 4,
+                  });
+                  emit({ op: "scvtf-d-x", rd: target, rn: 11 });
+                  if (zeroDivisor >= 0) {
+                    const divided = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(zeroDivisor, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - zeroDivisor) * 4,
+                    });
+                    // x % 0 is NaN.
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 9,
+                      immediate: 0x7ff8,
+                      shift: 48,
+                    });
+                    emit({ op: "fmov-d-x", rd: target, rn: 9 });
+                    patchInstruction(divided, {
+                      op: "b",
+                      displacement: (instructions.length - divided) * 4,
+                    });
+                  }
+                  patchInstruction(zeroDone, {
+                    op: "b",
+                    displacement: (instructions.length - zeroDone) * 4,
                   });
                   floatStore(target, op.id);
                 } else if (op.operator === "%") {

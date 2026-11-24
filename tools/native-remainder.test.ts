@@ -73,3 +73,43 @@ export function run(): number {
 `;
   verifyHostedFixture(text, "remainder");
 });
+
+test("native remainder of exact integers: int64 results, -0 and constant divisors", () => {
+  // The same loops under Node give the expected checksum.
+  function kernel(): number {
+    const units = [3, 1, 4, 1, 5, 9, 2, 6];
+    let sum = 0;
+    for (let i = -60; i < 60; i++) {
+      // Integer results used as indices (constant divisors).
+      sum = (sum * 31 + (units[((i % 8) + 8) % 8] ?? 0)) % 1000003;
+      // A zero remainder keeps the dividend's sign where it is observed.
+      const r = i % 5;
+      if (r === 0) sum = (sum + (1 / r > 0 ? 1 : 2)) % 1000003;
+      sum = (sum + (i % -3) + 7) % 1000003;
+      if (i % 0 === i % 0) sum = -1;
+      const big = 4503599627370496 + i * 1000;
+      sum = (sum + (big % 9) + (big % 65536)) % 1000003;
+    }
+    return sum;
+  }
+  const expected = kernel();
+  const text = `function kernel(): number {
+  const units: number[] = [3, 1, 4, 1, 5, 9, 2, 6];
+  let sum = 0;
+  for (let i = -60; i < 60; i++) {
+    sum = (sum * 31 + (units[((i % 8) + 8) % 8] ?? 0)) % 1000003;
+    const r = i % 5;
+    if (r === 0) sum = (sum + (1 / r > 0 ? 1 : 2)) % 1000003;
+    sum = (sum + (i % -3) + 7) % 1000003;
+    if (i % 0 === i % 0) sum = -1;
+    const big = 4503599627370496 + i * 1000;
+    sum = (sum + (big % 9) + (big % 65536)) % 1000003;
+  }
+  return sum;
+}
+export function run(): number {
+  return kernel() === ${expected} ? 42 : 1;
+}
+`;
+  verifyHostedFixture(text, "remainder-integers");
+});
