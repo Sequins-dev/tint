@@ -142,7 +142,9 @@ function listen(
   listener: WorkerListener,
   once: boolean,
 ): void {
-  const { realm } = host();
+  const { bindings, realm } = host();
+  const method = read(object, once ? "once" : "on", realm);
+  if (bindings.listen(object, method, name, listener, once)) return;
   const callback = createCallableObject<ScriptPropertyKey, unknown>(
     realm.functionPrototype,
     (_receiver, args): unknown => {
@@ -151,7 +153,13 @@ function listen(
     },
     realm.executionContext,
   );
-  invoke(object, once ? "once" : "on", [name, callback]);
+  const call = callObjectValue(
+    method,
+    object,
+    [name, callback],
+    realm.objectPrototype,
+  );
+  if (call.error !== "none") throw call.value;
 }
 export interface MessagePort {
   readonly object: ScriptObject;

@@ -216,10 +216,67 @@ export function serializeWorkerValue(
   start: number,
   attachments?: WorkerCloneAttachments,
 ): number {
+  if (typeof value === "string" && start >= 0)
+    return serializeWorkerString(value, sink, start, attachments);
   const end = serializeWorkerPrimitive(value, sink, start);
   return end >= 0
     ? end
     : serializeWorkerGraph(value, realm, sink, start, attachments);
+}
+/** A lone string's encoding, matching serializeWorkerGraph without allocating
+ * the object, buffer and key reference tables. */
+function serializeWorkerString(
+  value: string,
+  sink: WorkerCloneSink,
+  start: number,
+  attachments: WorkerCloneAttachments | undefined,
+): number {
+  const sharedStringUnits = attachments?.sharedStringUnits ?? Infinity;
+  let bytes = sink.bytes,
+    position = start;
+  if (value.length >= sharedStringUnits) {
+    const grant = attachments?.encodeString?.(value);
+    if (grant !== undefined) {
+      if (!Number.isSafeInteger(grant) || grant < 0)
+        throw "WORKER_CLONE_COUNT_INVARIANT";
+      if (position + 10 > bytes.length) {
+        sink.grow(position, 10);
+        bytes = sink.bytes;
+      }
+      bytes[position++] = tagSharedString;
+      let remaining = grant;
+      while (remaining >= 128) {
+        bytes[position++] = (remaining % 128) + 128;
+        remaining = Math.floor(remaining / 128);
+      }
+      bytes[position++] = remaining;
+      return position;
+    }
+  }
+  const units = value.length;
+  const needed = 9 + units * 2;
+  if (position + needed > bytes.length) {
+    sink.grow(position, needed);
+    bytes = sink.bytes;
+  }
+  bytes[position++] = tagString;
+  let remaining = units;
+  while (remaining >= 128) {
+    bytes[position++] = (remaining % 128) + 128;
+    remaining = Math.floor(remaining / 128);
+  }
+  bytes[position++] = remaining;
+  if (units <= inlineStringUnits) {
+    for (let index = 0; index < units; index++) {
+      const unit = value.charCodeAt(index);
+      bytes[position++] = unit % 256;
+      bytes[position++] = Math.floor(unit / 256);
+    }
+  } else {
+    sink.writeString(position, value);
+    position += units * 2;
+  }
+  return position;
 }
 /** A lone primitive's encoding, the same bytes the graph encoder writes,
  * without the reference tables an object graph needs; -1 when the value is
@@ -719,6 +776,38 @@ export function deserializeWorkerValue(
         for (let at = start + 1; at < value; at++)
           if (bytes[at] !== 0) padded = false;
         if (padded) return source.readFloat64(value);
+      }
+    } else if (kind === tagString) {
+      let units = 0,
+        scale = 1,
+        position = start + 1;
+      while (position < end) {
+        const byte = bytes[position++] ?? 0;
+        units += (byte % 128) * scale;
+        if (byte < 128) {
+          if (Number.isSafeInteger(units) && position + units * 2 === end)
+            return source.readString(position, units);
+          break;
+        }
+        scale *= 128;
+        if (scale > 9007199254740992) break;
+      }
+    } else if (kind === tagSharedString) {
+      let grant = 0,
+        scale = 1,
+        position = start + 1;
+      while (position < end) {
+        const byte = bytes[position++] ?? 0;
+        grant += (byte % 128) * scale;
+        if (byte < 128) {
+          if (position === end && Number.isSafeInteger(grant)) {
+            const decoded = attachments?.decodeString?.(grant);
+            if (decoded !== undefined) return decoded;
+          }
+          break;
+        }
+        scale *= 128;
+        if (scale > 9007199254740992) break;
       }
     }
   }

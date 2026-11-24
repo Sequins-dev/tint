@@ -6,6 +6,7 @@ import {
   builtinFunctionMetadata,
   builtinProperty,
   callObjectValue,
+  createCallableObject,
   createConstructorObject,
   createDataProperty,
   createObject,
@@ -103,6 +104,16 @@ export interface NodeWorkerThreads {
     value: unknown,
     transfer: readonly unknown[] | undefined,
   ): boolean;
+  /** Registers a typed listener when `method`, the object's `on`/`once`, is
+   * still the intrinsic one so delivery can call `listener` directly without
+   * a realm trampoline. False, having done nothing, otherwise. */
+  listen(
+    object: ScriptObject,
+    method: unknown,
+    name: string,
+    listener: (value: unknown) => void,
+    once: boolean,
+  ): boolean;
   close(): void;
 }
 /** An intrinsic postMessage, by its function object's identity, and the
@@ -111,9 +122,15 @@ interface PostMethod {
   readonly identity: number;
   readonly state: (receiver: unknown) => Endpoint;
 }
+interface ListenMethod {
+  readonly identity: number;
+  readonly once: boolean;
+  readonly state: (receiver: unknown) => Endpoint;
+}
 interface Listener {
   readonly event: ScriptPropertyKey;
   readonly fn: ScriptObject;
+  readonly typed?: ((value: unknown) => void) | undefined;
   readonly once: boolean;
   active: boolean;
 }
@@ -140,6 +157,8 @@ const resourceNames: readonly string[] = [
   "codeRangeSizeMb",
   "stackSizeMb",
 ];
+const emptyTransfer: readonly unknown[] = [];
+const emptyArgs: readonly unknown[] = [];
 
 /** Create the public module in a fresh realm. A host selects image-local
  * worker entry modules and owns their per-isolate startup configuration. */
@@ -162,6 +181,8 @@ export function createNodeWorkerThreads(
   const workerObjects = new Map<number, WorkerState>();
   const endpoints: Endpoint[] = [];
   const postMethods: PostMethod[] = [];
+  const listenMethods: ListenMethod[] = [];
+  let cachedSingleArg: unknown[] | undefined;
   function read(object: ScriptObject, name: string): unknown {
     return getProperty<ScriptPropertyKey, unknown>(object, name, object, hooks);
   }
@@ -236,7 +257,7 @@ export function createNodeWorkerThreads(
     return worker;
   }
   function transferList(value: unknown): readonly unknown[] {
-    if (value === undefined) return [];
+    if (value === undefined) return emptyTransfer;
     const array = viewObjectValue(value, realm.objectPrototype);
     if (array === undefined || !array.internalArrayData)
       return typeError("transferList must be an array");
@@ -248,20 +269,49 @@ export function createNodeWorkerThreads(
       if (listener.active && listener.event === event) count++;
     return count;
   }
-  function emit(
+  function invokeListener(
     endpoint: Endpoint,
-    event: string,
+    listener: Listener,
     args: readonly unknown[],
   ): void {
-    const listeners = endpoint.listeners.filter(
-      (entry): boolean => entry.active && entry.event === event,
+    if (listener.once) {
+      listener.active = false;
+      endpoint.changed();
+    }
+    const direct = listener.typed;
+    if (direct !== undefined) {
+      direct(args[0]);
+      return;
+    }
+    const called = callObjectValue(
+      listener.fn,
+      endpoint.object,
+      args,
+      realm.objectPrototype,
     );
-    if (listeners.length === 0 && event === "error") throw args[0];
-    for (const listener of listeners) {
-      if (listener.once) {
-        listener.active = false;
-        endpoint.changed();
-      }
+    if (called.error !== "none") throw called.value;
+  }
+  function invokeListenerOne(
+    endpoint: Endpoint,
+    listener: Listener,
+    arg: unknown,
+  ): void {
+    if (listener.once) {
+      listener.active = false;
+      endpoint.changed();
+    }
+    const direct = listener.typed;
+    if (direct !== undefined) {
+      direct(arg);
+      return;
+    }
+    let args: unknown[];
+    if (cachedSingleArg !== undefined) {
+      args = cachedSingleArg;
+      cachedSingleArg = undefined;
+    } else args = [undefined];
+    args[0] = arg;
+    try {
       const called = callObjectValue(
         listener.fn,
         endpoint.object,
@@ -269,6 +319,67 @@ export function createNodeWorkerThreads(
         realm.objectPrototype,
       );
       if (called.error !== "none") throw called.value;
+    } finally {
+      args[0] = undefined;
+      if (cachedSingleArg === undefined) cachedSingleArg = args;
+    }
+  }
+  function emit(
+    endpoint: Endpoint,
+    event: string,
+    args: readonly unknown[],
+  ): void {
+    const all = endpoint.listeners;
+    let first: Listener | undefined;
+    let snapshot: Listener[] | undefined;
+    for (let index = 0; index < all.length; index++) {
+      const entry = all[index];
+      if (entry === undefined || !entry.active || entry.event !== event)
+        continue;
+      if (first === undefined) first = entry;
+      else {
+        if (snapshot === undefined) snapshot = [first];
+        snapshot.push(entry);
+      }
+    }
+    if (first === undefined) {
+      if (event === "error") throw args[0];
+      return;
+    }
+    if (snapshot === undefined) {
+      invokeListener(endpoint, first, args);
+      return;
+    }
+    for (let index = 0; index < snapshot.length; index++) {
+      const listener = snapshot[index];
+      if (listener !== undefined) invokeListener(endpoint, listener, args);
+    }
+  }
+  function emitOne(endpoint: Endpoint, event: string, arg: unknown): void {
+    const all = endpoint.listeners;
+    let first: Listener | undefined;
+    let snapshot: Listener[] | undefined;
+    for (let index = 0; index < all.length; index++) {
+      const entry = all[index];
+      if (entry === undefined || !entry.active || entry.event !== event)
+        continue;
+      if (first === undefined) first = entry;
+      else {
+        if (snapshot === undefined) snapshot = [first];
+        snapshot.push(entry);
+      }
+    }
+    if (first === undefined) {
+      if (event === "error") throw arg;
+      return;
+    }
+    if (snapshot === undefined) {
+      invokeListenerOne(endpoint, first, arg);
+      return;
+    }
+    for (let index = 0; index < snapshot.length; index++) {
+      const listener = snapshot[index];
+      if (listener !== undefined) invokeListenerOne(endpoint, listener, arg);
     }
   }
   function eventMethods(
@@ -293,11 +404,25 @@ export function createNodeWorkerThreads(
     }
     const on: ObjectCall<unknown> = (receiver, args): unknown =>
       add(receiver, args, false);
-    method(prototype, "on", 2, on);
-    method(prototype, "addListener", 2, on);
-    method(prototype, "once", 2, (receiver, args): unknown =>
+    const onFn = method(prototype, "on", 2, on);
+    onFn.internalIdentity = realm.agent.nextObjectIdentity++;
+    listenMethods.push({ identity: onFn.internalIdentity, once: false, state });
+    const addListenerFn = method(prototype, "addListener", 2, on);
+    addListenerFn.internalIdentity = realm.agent.nextObjectIdentity++;
+    listenMethods.push({
+      identity: addListenerFn.internalIdentity,
+      once: false,
+      state,
+    });
+    const onceFn = method(prototype, "once", 2, (receiver, args): unknown =>
       add(receiver, args, true),
     );
+    onceFn.internalIdentity = realm.agent.nextObjectIdentity++;
+    listenMethods.push({
+      identity: onceFn.internalIdentity,
+      once: true,
+      state,
+    });
     const remove: ObjectCall<unknown> = (receiver, args): unknown => {
       const endpoint = state(receiver);
       for (let index = endpoint.listeners.length - 1; index >= 0; index--) {
@@ -335,7 +460,7 @@ export function createNodeWorkerThreads(
     endpoint.watch = undefined;
     endpoint.port.close();
     if (notify)
-      reactor.loop.enqueueClose((): void => emit(endpoint, "close", []));
+      reactor.loop.enqueueClose((): void => emit(endpoint, "close", emptyArgs));
   }
   function watch(endpoint: Endpoint, onClose: () => void): void {
     if (
@@ -349,10 +474,10 @@ export function createNodeWorkerThreads(
       try {
         value = messages.receive(endpoint.port, entry);
       } catch (error) {
-        emit(endpoint, "messageerror", [error]);
+        emitOne(endpoint, "messageerror", error);
         return;
       }
-      emit(endpoint, "message", [value]);
+      emitOne(endpoint, "message", value);
     }, onClose);
   }
   function makePort(port: NativeMessagePort): ScriptObject {
@@ -587,13 +712,13 @@ export function createNodeWorkerThreads(
         if (failure !== undefined) {
           const error = createRuntimeError(realm, "error");
           builtinProperty(error, "message", failure, true, true, hooks);
-          emit(endpoint, "error", [error]);
+          emitOne(endpoint, "error", error);
         }
       } finally {
         for (const termination of worker.terminations)
           termination.resolve(status);
         worker.terminations.length = 0;
-        emit(endpoint, "exit", [status]);
+        emitOne(endpoint, "exit", status);
       }
     }
     let child: NodeWorkerChild;
@@ -713,12 +838,38 @@ export function createNodeWorkerThreads(
       const identity = fn.internalIdentity;
       for (const entry of postMethods)
         if (entry.identity === identity) {
-          const none: readonly unknown[] = [];
           messages.send(
             entry.state(object).port,
             value,
-            transfer === undefined ? none : transfer,
+            transfer === undefined ? emptyTransfer : transfer,
           );
+          return true;
+        }
+      return false;
+    },
+    listen: (object, method, name, listener, once): boolean => {
+      const fn = viewObjectValue(method, realm.objectPrototype);
+      if (fn === undefined) return false;
+      const identity = fn.internalIdentity;
+      for (const entry of listenMethods)
+        if (entry.identity === identity && entry.once === once) {
+          const endpoint = entry.state(object);
+          const callback = createCallableObject<ScriptPropertyKey, unknown>(
+            realm.functionPrototype,
+            (_receiver, args): unknown => {
+              listener(args[0]);
+              return undefined;
+            },
+            realm.executionContext,
+          );
+          endpoint.listeners.push({
+            event: name,
+            fn: callback,
+            typed: listener,
+            once,
+            active: true,
+          });
+          endpoint.changed();
           return true;
         }
       return false;

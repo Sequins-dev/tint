@@ -153,24 +153,38 @@ function returnLarge(
   if (unmap !== 0 && host.unmapMemory(unmap, unmapBytes) !== 0)
     throw "NATIVE_AGENT_MESSAGE_RELEASE";
 }
+/** Caller-owned mutable descriptor window reused across non-reentrant packet
+ * operations to avoid per-message header allocations. */
+export interface MutableSharedWindow {
+  base: number;
+  byteLength: number;
+  engineId: number;
+}
 /** Pops a free payload block, or returns 0. */
 function takeBlock(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
   scratch: Uint32Array,
+  header?: MutableSharedWindow,
 ): number {
   if (readNumber(host, registry, RECYCLE, scratch) === 0) return 0;
   lock(host, parking, registry, scratch);
   try {
     const block = readNumber(host, registry, FREE, scratch);
     if (block === 0) return 0;
-    const header = {
-      base: block,
-      byteLength: MESSAGE_HEADER,
-      engineId: registry.engineId,
-    };
-    writeNumber(host, registry, FREE, readNumber(host, header, 0, scratch));
+    const window: MutableSharedWindow =
+      header !== undefined
+        ? header
+        : {
+            base: block,
+            byteLength: MESSAGE_HEADER,
+            engineId: registry.engineId,
+          };
+    window.base = block;
+    window.byteLength = MESSAGE_HEADER;
+    window.engineId = registry.engineId;
+    writeNumber(host, registry, FREE, readNumber(host, window, 0, scratch));
     writeNumber(
       host,
       registry,
@@ -189,18 +203,25 @@ function returnBlock(
   registry: NativeSharedBlockRegistry,
   block: number,
   scratch: Uint32Array,
+  header?: MutableSharedWindow,
 ): boolean {
   if (readNumber(host, registry, RECYCLE, scratch) === 0) return false;
   lock(host, parking, registry, scratch);
   try {
     const count = readNumber(host, registry, FREE_COUNT, scratch);
     if (count >= recycledMessageBlocks) return false;
-    const header = {
-      base: block,
-      byteLength: MESSAGE_HEADER,
-      engineId: registry.engineId,
-    };
-    writeNumber(host, header, 0, readNumber(host, registry, FREE, scratch));
+    const window: MutableSharedWindow =
+      header !== undefined
+        ? header
+        : {
+            base: block,
+            byteLength: MESSAGE_HEADER,
+            engineId: registry.engineId,
+          };
+    window.base = block;
+    window.byteLength = MESSAGE_HEADER;
+    window.engineId = registry.engineId;
+    writeNumber(host, window, 0, readNumber(host, registry, FREE, scratch));
     writeNumber(host, registry, FREE, block);
     writeNumber(host, registry, FREE_COUNT, count + 1);
     return true;
@@ -243,17 +264,18 @@ export function allocateNativeAgentPacket(
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
   payload: number,
+  scratch: Uint32Array = new Uint32Array(2),
+  window?: MutableSharedWindow,
 ): NativeAgentPacket | undefined {
   if (!integer(payload) || payload > MAX_UNITS * 4) return undefined;
   const byteLength = packetBytes(payload);
-  const scratch = new Uint32Array(2);
   if (byteLength > MAPPING_QUANTUM) {
     const cached = takeLarge(host, parking, registry, byteLength, scratch);
     if (cached !== undefined) return cached;
   }
   const recycled =
     byteLength === MAPPING_QUANTUM
-      ? takeBlock(host, parking, registry, scratch)
+      ? takeBlock(host, parking, registry, scratch, window)
       : 0;
   const base = recycled !== 0 ? recycled : host.mapMemory(byteLength);
   if (!integer(base) || base <= 0 || base % 8 !== 0) return undefined;
@@ -265,8 +287,15 @@ function adjustSegment(
   segment: number,
   delta: number,
   scratch: Uint32Array,
+  header?: MutableSharedWindow,
 ): number {
-  const window = { base: segment, byteLength: SEGMENT_HEADER, engineId: 1 };
+  const window: MutableSharedWindow =
+    header !== undefined
+      ? header
+      : { base: segment, byteLength: SEGMENT_HEADER, engineId: 1 };
+  window.base = segment;
+  window.byteLength = SEGMENT_HEADER;
+  window.engineId = 1;
   let count = readNumber(host, window, 0, scratch);
   for (;;) {
     const next = count + delta;
@@ -283,9 +312,10 @@ function retireBlock(
   registry: NativeSharedBlockRegistry,
   block: number,
   scratch: Uint32Array,
+  window?: MutableSharedWindow,
 ): void {
   if (
-    !returnBlock(host, parking, registry, block, scratch) &&
+    !returnBlock(host, parking, registry, block, scratch, window) &&
     host.unmapMemory(block, MAPPING_QUANTUM) !== 0
   )
     throw "NATIVE_AGENT_MESSAGE_RELEASE";
@@ -298,15 +328,16 @@ export function releaseNativeAgentPacket(
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
   packet: NativeAgentPacket,
+  scratch: Uint32Array = new Uint32Array(2),
+  window?: MutableSharedWindow,
 ): void {
-  const scratch = new Uint32Array(2);
   if (packet.segment !== 0) {
-    if (adjustSegment(host, packet.segment, -1, scratch) === 0)
-      retireBlock(host, parking, registry, packet.segment, scratch);
+    if (adjustSegment(host, packet.segment, -1, scratch, window) === 0)
+      retireBlock(host, parking, registry, packet.segment, scratch, window);
     return;
   }
   if (packet.byteLength === MAPPING_QUANTUM)
-    retireBlock(host, parking, registry, packet.base, scratch);
+    retireBlock(host, parking, registry, packet.base, scratch, window);
   else returnLarge(host, parking, registry, packet, scratch);
 }
 /** One sender's packet allocator for one mailbox. Small packets are carved
@@ -327,6 +358,11 @@ export function createNativeAgentPacketProducer(
   registry: NativeSharedBlockRegistry,
 ): NativeAgentPacketProducer {
   const scratch = new Uint32Array(2);
+  const window: MutableSharedWindow = {
+    base: 0,
+    byteLength: SEGMENT_HEADER,
+    engineId: 1,
+  };
   // The open segment and its next packet's offset; `carved` packets have
   // used references from the segment's reservation.
   let segment = 0,
@@ -339,9 +375,15 @@ export function createNativeAgentPacketProducer(
     segment = 0;
     // Hand back the producer's own reference and every uncarved one.
     if (
-      adjustSegment(host, retired, carved - segmentReservation, scratch) === 0
+      adjustSegment(
+        host,
+        retired,
+        carved - segmentReservation,
+        scratch,
+        window,
+      ) === 0
     )
-      retireBlock(host, parking, registry, retired, scratch);
+      retireBlock(host, parking, registry, retired, scratch, window);
   }
   return {
     allocate: (payload: number): NativeAgentPacket | undefined => {
@@ -350,7 +392,14 @@ export function createNativeAgentPacketProducer(
         !integer(payload) ||
         payload > MAPPING_QUANTUM - SEGMENT_HEADER - PACKET_HEADER
       )
-        return allocateNativeAgentPacket(host, parking, registry, payload);
+        return allocateNativeAgentPacket(
+          host,
+          parking,
+          registry,
+          payload,
+          scratch,
+          window,
+        );
       const room = Math.max(payload, SEGMENT_MINIMUM) + PACKET_HEADER;
       if (
         segment === 0 ||
@@ -358,18 +407,16 @@ export function createNativeAgentPacketProducer(
         carved + 1 === segmentReservation
       ) {
         close();
-        const block = takeBlock(host, parking, registry, scratch);
+        const block = takeBlock(host, parking, registry, scratch, window);
         const fresh = block !== 0 ? block : host.mapMemory(MAPPING_QUANTUM);
         if (!integer(fresh) || fresh <= 0 || fresh % 8 !== 0) return undefined;
         // The producer reserves a reference for itself and one for every
         // packet it may carve, so carving needs no shared update; receivers
         // release theirs as they consume packets.
-        writeNumber(
-          host,
-          { base: fresh, byteLength: SEGMENT_HEADER, engineId: 1 },
-          0,
-          segmentReservation,
-        );
+        window.base = fresh;
+        window.byteLength = SEGMENT_HEADER;
+        window.engineId = 1;
+        writeNumber(host, window, 0, segmentReservation);
         segment = fresh;
         offset = SEGMENT_HEADER;
         carved = 0;
@@ -390,7 +437,14 @@ export function createNativeAgentPacketProducer(
     },
     release: (packet: NativeAgentPacket): void => {
       if (packet.base === open) open = 0;
-      releaseNativeAgentPacket(host, parking, registry, packet);
+      releaseNativeAgentPacket(
+        host,
+        parking,
+        registry,
+        packet,
+        scratch,
+        window,
+      );
     },
     close,
   };
@@ -406,15 +460,22 @@ export function publishNativeAgentPacket(
   packet: NativeAgentPacket,
   used: number,
   signal?: () => boolean,
+  scratch: Uint32Array = new Uint32Array(2),
+  headerWindow?: MutableSharedWindow,
 ): boolean {
   if (!integer(used) || used > packet.byteLength - PACKET_HEADER)
     throw "NATIVE_AGENT_PACKET_LENGTH";
-  const scratch = new Uint32Array(2);
-  const header = {
-    base: packet.base,
-    byteLength: PACKET_HEADER,
-    engineId: registry.engineId,
-  };
+  const header: MutableSharedWindow =
+    headerWindow !== undefined
+      ? headerWindow
+      : {
+          base: packet.base,
+          byteLength: PACKET_HEADER,
+          engineId: registry.engineId,
+        };
+  header.base = packet.base;
+  header.byteLength = PACKET_HEADER;
+  header.engineId = registry.engineId;
   // A recycled block still holds its free-stack link where the queue keeps
   // its next pointer.
   writeNumber(host, header, 0, 0);
@@ -450,8 +511,11 @@ export function drainNativeAgentPackets(
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
   empty?: () => void,
+  scratch: Uint32Array = new Uint32Array(2),
+  headerWindow?: MutableSharedWindow,
+  entries: NativeAgentPacketEntry[] = [],
 ): NativeAgentPacketEntry[] {
-  const scratch = new Uint32Array(2);
+  entries.length = 0;
   let head = 0;
   lock(host, parking, registry, scratch);
   try {
@@ -463,12 +527,17 @@ export function drainNativeAgentPackets(
   } finally {
     unlock(host, parking, registry, scratch);
   }
-  const entries: NativeAgentPacketEntry[] = [];
-  const header = {
-    base: 0,
-    byteLength: PACKET_HEADER,
-    engineId: registry.engineId,
-  };
+  if (head === 0) return entries;
+  const header: MutableSharedWindow =
+    headerWindow !== undefined
+      ? headerWindow
+      : {
+          base: 0,
+          byteLength: PACKET_HEADER,
+          engineId: registry.engineId,
+        };
+  header.byteLength = PACKET_HEADER;
+  header.engineId = registry.engineId;
   while (head !== 0) {
     header.base = head;
     const next = readNumber(host, header, 0, scratch);

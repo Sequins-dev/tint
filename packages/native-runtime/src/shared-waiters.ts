@@ -162,14 +162,15 @@ function facade(
   registry: NativeSharedBlockRegistry,
   capacity: number,
 ): NativeWaitRegistry {
-  function lock(scratch: Uint32Array): void {
+  const scratch = new Uint32Array(2);
+  const unlockScratch = new Uint32Array(2);
+  function lock(): void {
     lockRegistryWord(host, parking, registry, LOCK, scratch);
   }
-  const unlockScratch = new Uint32Array(2);
   function unlock(): void {
     unlockRegistryWord(host, parking, registry, LOCK, unlockScratch);
   }
-  function find(ticket: number, scratch: Uint32Array): number {
+  function find(ticket: number): number {
     const used = readNumber(host, registry, USED_ROWS, scratch);
     for (let i = 0; i < used; i++) {
       const row = HEADER + i * ROW;
@@ -218,8 +219,7 @@ function facade(
       return { ok: false, error: "invalid-range" };
     if (!word(lo) || !word(hi) || (width === 4 && hi !== 0))
       return { ok: false, error: "invalid-value" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
+    lock();
     let matches = false,
       fault = false;
     if (width === 4) {
@@ -292,8 +292,7 @@ function facade(
       return { ok: false, error: "invalid-range" };
     if (count < 0 || (count !== Infinity && !integer(count)))
       return { ok: false, error: "invalid-value" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
+    lock();
     try {
       const used = readNumber(host, registry, USED_ROWS, scratch);
       const firstCompletion =
@@ -356,9 +355,8 @@ function facade(
     consume: boolean,
   ): SharedResult<NativeWaitState> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
-    const row = find(ticket, scratch);
+    lock();
+    const row = find(ticket);
     const code = row < 0 ? 0 : readNumber(host, registry, row + STATE, scratch);
     if (consume && row >= 0 && code !== 1) {
       writeNumber(host, registry, row + TICKET, 0);
@@ -385,9 +383,8 @@ function facade(
   }
   function expire(ticket: number): SharedResult<boolean> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
-    const row = find(ticket, scratch);
+    lock();
+    const row = find(ticket);
     const won =
       row >= 0 && readNumber(host, registry, row + STATE, scratch) === 1;
     if (won) {
@@ -421,8 +418,7 @@ function facade(
     return version;
   }
   function interruptEvents(): void {
-    const scratch = new Uint32Array(2);
-    lock(scratch);
+    lock();
     try {
       signalEvents(scratch);
     } finally {
@@ -442,9 +438,8 @@ function facade(
   }
   function order(ticket: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
-    const row = find(ticket, scratch);
+    lock();
+    const row = find(ticket);
     const sequence =
       row < 0 ? 0 : readNumber(host, registry, row + COMPLETION, scratch);
     unlock();
@@ -460,10 +455,9 @@ function facade(
     const wake = parking.wakeAsync;
     if (wake === undefined || !integer(target) || target >= 2147483647)
       return { ok: false, error: "invalid-value" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
+    lock();
     try {
-      const row = find(ticket, scratch);
+      const row = find(ticket);
       if (row < 0) return { ok: false, error: "invalid-handle" };
       if (readNumber(host, registry, row + STATE, scratch) === 1)
         writeNumber(host, registry, row + WAKE_TARGET, target + 1);
@@ -476,9 +470,8 @@ function facade(
   function park(ticket: number, timeout: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
     if (!integer(timeout)) return { ok: false, error: "invalid-value" };
-    const scratch = new Uint32Array(2);
-    lock(scratch);
-    const row = find(ticket, scratch);
+    lock();
+    const row = find(ticket);
     unlock();
     if (row < 0) return { ok: false, error: "invalid-handle" };
     return {

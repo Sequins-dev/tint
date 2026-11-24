@@ -1367,19 +1367,19 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
  workerHost=session;
  const workers=session.exports;
  ${typedWorkerEntry ? 'initializeWorkerThreads(workers,realm);if(threadId===0){const status=typedStart();events.loop.run("callback");return failed?1:status;}' + typedGuestDispatch(typedGuests) : ""}`;
-  const drainJobs =
-    "drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});";
+  const drainJobs = "drainScriptJobs(realm.agent,rethrowScriptJobError);";
   const drainCheckpoint =
     workers === undefined
       ? drainJobs
       : `workerHost?.checkpointAtomicWaits();do{${drainJobs}}while((workerHost?.checkpointAtomicWaits()??0)>0);`;
   const eventSetup = nodeEventLoop
-    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;"}
+    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;const noopWake=():void=>{};"}
+ const rethrowScriptJobError=(error:unknown):void=>{throw error;};
  const events:ReactorEventLoop=createReactorEventLoop({
   createReactor:()=>createReactor(),
   now:():number=>monotonicMilliseconds(),
   drainMicrotasks:():void=>{${drainCheckpoint}},
-  onWake:():void=>{${workers === undefined ? "" : "events.loop.enqueueIO(():void=>{});"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
+  onWake:():void=>{${workers === undefined ? "" : "events.loop.enqueueIO(noopWake);"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
  });
  try {
   installNodeEventLoopGlobals(events.loop,object,realm,hooks);

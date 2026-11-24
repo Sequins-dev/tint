@@ -285,3 +285,45 @@ test("a clone error releases earlier buffer copies without publishing", () => {
   assert.equal(f.packets.size, 0);
   assert.equal(byteStorageData(original.storage), original.bytes);
 });
+
+test("re-entrant send from a serialization getter keeps both packets independent", () => {
+  const f = fixture();
+  const sent: NativeAgentPacketEntry[] = [];
+  const port = f.target((entry, commit) => {
+    commit?.();
+    sent.push(entry);
+    return true;
+  });
+  const outer = o.createObject(f.root);
+  const getter = o.createCallableObject(
+    f.realm.functionPrototype,
+    () => {
+      f.messages.send(port, "inner-message", []);
+      return "outer-value";
+    },
+    f.realm.executionContext,
+  );
+  assert.equal(
+    o.defineOwnProperty(
+      outer,
+      "nested",
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: getter,
+        set: undefined,
+        enumerable: true,
+        configurable: true,
+      },
+      f.hooks,
+    ),
+    "accepted",
+  );
+  f.messages.send(port, outer, []);
+  assert.equal(sent.length, 2);
+  assert.equal(f.messages.receive(port, sent[0]!), "inner-message");
+  const receivedOuter = f.messages.receive(port, sent[1]!) as ObjectValue;
+  assert.equal(o.getOwnProperty(receivedOuter, "nested")?.value, "outer-value");
+  assert.equal(f.packets.size, 0);
+});

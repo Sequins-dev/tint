@@ -9,6 +9,7 @@ import {
   releaseNativeAgentPacket,
   restoreNativeAgentPackets,
   settleNativeAgentPackets,
+  type MutableSharedWindow,
   type NativeAgentMailbox,
   type NativeAgentPacket,
   type NativeAgentPacketEntry,
@@ -101,6 +102,11 @@ export function createNativeMessagePorts(
   disposePacket: (entry: NativeAgentPacketEntry) => void,
 ): NativeMessagePorts {
   const scratch = new Uint32Array(2);
+  const packetHeader: MutableSharedWindow = {
+    base: 0,
+    byteLength: 32,
+    engineId: 0,
+  };
   const signal = new Uint8Array(1);
   const notifications = new Uint8Array(256);
   function registry(base: number): NativeSharedBlockRegistry {
@@ -190,6 +196,9 @@ export function createNativeMessagePorts(
         memory,
         parking,
         queue.registry,
+        undefined,
+        scratch,
+        packetHeader,
       ))
         undelivered.push(entry);
       for (const entry of undelivered) {
@@ -201,6 +210,8 @@ export function createNativeMessagePorts(
             parking,
             queue.registry,
             entry.packet,
+            scratch,
+            packetHeader,
           );
         }
       }
@@ -259,9 +270,9 @@ export function createNativeMessagePorts(
       outgoing.registry,
     );
     // Packets drained from the incoming queue; those from `cursor` on are
-    // not yet delivered.
-    let pending: NativeAgentPacketEntry[] = [],
-      cursor = 0;
+    // not yet delivered. The array itself is reused across drains.
+    const pending: NativeAgentPacketEntry[] = [];
+    let cursor = 0;
     function shift(): NativeAgentPacketEntry | undefined {
       const entry = pending[cursor];
       if (entry !== undefined) cursor++;
@@ -269,14 +280,22 @@ export function createNativeMessagePorts(
     }
     /** The undelivered packets, which leave this port's hands. */
     function undelivered(): NativeAgentPacketEntry[] {
-      const entries = pending.slice(cursor);
-      pending = [];
+      const entries = cursor < pending.length ? pending.slice(cursor) : [];
+      pending.length = 0;
       cursor = 0;
       return entries;
     }
     function next(): NativeAgentPacketEntry | undefined {
       if (cursor === pending.length) {
-        pending = drainNativeAgentPackets(memory, parking, incoming.registry);
+        drainNativeAgentPackets(
+          memory,
+          parking,
+          incoming.registry,
+          undefined,
+          scratch,
+          packetHeader,
+          pending,
+        );
         cursor = 0;
       }
       return shift();
@@ -287,11 +306,14 @@ export function createNativeMessagePorts(
      * and the first send after it runs dry wakes it again. */
     function nextWatched(): NativeAgentPacketEntry | undefined {
       if (cursor === pending.length) {
-        pending = drainNativeAgentPackets(
+        drainNativeAgentPackets(
           memory,
           parking,
           incoming.registry,
           clearSignal,
+          scratch,
+          packetHeader,
+          pending,
         );
         cursor = 0;
       }
@@ -336,6 +358,8 @@ export function createNativeMessagePorts(
               packet,
               used,
               signalPeer,
+              scratch,
+              packetHeader,
             )
           )
             wake = read(pair, peer + OUTPUT);
@@ -368,38 +392,39 @@ export function createNativeMessagePorts(
         // delivered. A packet stays pending through each checkpoint, so a
         // close or transfer it runs still hands it on; if a listener
         // throws, the next task is queued before the error leaves.
+        const deliver = (): void => {
+          scheduled = false;
+          if (!active) return;
+          let delivered = 0;
+          try {
+            for (;;) {
+              const entry = nextWatched();
+              if (entry === undefined) {
+                if (read(pair, peer + STATE) === CLOSED) {
+                  handle.close();
+                  peerClose();
+                }
+                return;
+              }
+              message(entry);
+              recent = true;
+              if (!active) return;
+              if (++delivered === deliveriesPerTask) {
+                schedule();
+                return;
+              }
+              reactor.loop.checkpointWithin();
+              if (!active) return;
+            }
+          } catch (error) {
+            schedule();
+            throw error;
+          }
+        };
         function schedule(): void {
           if (!active || scheduled) return;
           scheduled = true;
-          reactor.loop.enqueueIO((): void => {
-            scheduled = false;
-            if (!active) return;
-            let delivered = 0;
-            try {
-              for (;;) {
-                const entry = nextWatched();
-                if (entry === undefined) {
-                  if (read(pair, peer + STATE) === CLOSED) {
-                    handle.close();
-                    peerClose();
-                  }
-                  return;
-                }
-                message(entry);
-                recent = true;
-                if (!active) return;
-                if (++delivered === deliveriesPerTask) {
-                  schedule();
-                  return;
-                }
-                reactor.loop.checkpointWithin();
-                if (!active) return;
-              }
-            } catch (error) {
-              schedule();
-              throw error;
-            }
-          });
+          reactor.loop.enqueueIO(deliver);
         }
         // Before the loop blocks, a port that just delivered tells senders
         // it is awake (so they skip the pipe write) and polls its queue; it

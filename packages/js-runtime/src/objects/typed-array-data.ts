@@ -179,9 +179,10 @@ export function setTypedArrayElement(
     width = typedArrayElementWidth(kind);
   if (kind === "BigInt64" || kind === "BigUint64") {
     const converted = coerceBigInt(value, false, realm, hooks);
-    if (!validIndex(data, index)) return;
+    if (!Number.isInteger(index) || index < 0 || (index === 0 && 1 / index < 0))
+      return;
     const window = typedArrayWindow(data, "write", "unordered");
-    if (window === undefined) throw "TYPED_ARRAY_WRITE_INVARIANT";
+    if (window === undefined || index >= window.length) return;
     const ordinaryBytes = window.bytes;
     const bytes =
       ordinaryBytes === undefined ? new Uint8Array(width) : ordinaryBytes;
@@ -199,9 +200,10 @@ export function setTypedArrayElement(
   if (converted.error === "unsupported")
     return rejectUnsupportedExecution(realm);
   if (converted.error !== "none") throw createRuntimeError(realm, "type");
-  if (!validIndex(data, index)) return;
+  if (!Number.isInteger(index) || index < 0 || (index === 0 && 1 / index < 0))
+    return;
   const window = typedArrayWindow(data, "write", "unordered");
-  if (window === undefined) throw "TYPED_ARRAY_WRITE_INVARIANT";
+  if (window === undefined || index >= window.length) return;
   writeTypedArrayNumber(data, index, converted.value, window);
 }
 /** Internal creation after constructor validation; no observable property reads. */

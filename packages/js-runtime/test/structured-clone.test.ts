@@ -474,6 +474,68 @@ test("a typed program's native typed array arrives as the realm typed array it r
   assert.throws(() => serialize(Symbol("x"), realm));
 });
 
+test("lone string fast path handles empty, inline, bulk, shared and malformed payloads", () => {
+  const { realm } = isolate();
+  const sharedBodies = new Map<number, string>();
+  let nextGrant = 1;
+  const attachments: objects.WorkerCloneAttachments = {
+    sharedStringUnits: 128,
+    encodeString(value) {
+      if (value.startsWith("copy:")) return undefined;
+      const grant = nextGrant++;
+      sharedBodies.set(grant, value);
+      return grant;
+    },
+    decodeString(grant) {
+      return sharedBodies.get(grant);
+    },
+  };
+  const samples = [
+    "",
+    "ready",
+    "a\0b😀\ud800x\udfff",
+    "0123456789abcdef",
+    "worker-message-".repeat(69).slice(0, 1024),
+    "copy:" + "z".repeat(200),
+  ];
+  for (const text of samples) {
+    const encoded = serialize(text, realm, attachments);
+    const decoded = deserialize(encoded, realm, attachments);
+    assert.equal(decoded, text);
+  }
+  // Malformed lone tagString (99) and tagSharedString (115) payloads still throw.
+  for (const bytes of [
+    [99],
+    [99, 2, 65, 0],
+    [99, 1, 65, 0, 0],
+    [115],
+    [115, 99],
+    [115, 1, 0],
+  ]) {
+    const packet = Uint8Array.from(bytes);
+    assert.throws(() =>
+      codec.deserializeWorkerValue(
+        {
+          bytes: packet,
+          readFloat64: () => assert.fail("no floats"),
+          readString: (offset, units) => {
+            let out = "";
+            for (let i = 0; i < units; i++)
+              out += String.fromCharCode(
+                packet[offset + i * 2]! + packet[offset + i * 2 + 1]! * 256,
+              );
+            return out;
+          },
+        },
+        0,
+        packet.length,
+        realm,
+        attachments,
+      ),
+    );
+  }
+});
+
 test("native typed arrays keep later references aligned and share a shared block once", () => {
   const source = isolate();
   const target = isolate();

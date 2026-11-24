@@ -212,16 +212,27 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
     if (handle !== undefined && handle.kind === "timeout") handle.close();
   }
 
+  const runTick = (callback: Callback, _context: undefined): void => {
+    if (!stopped()) callback();
+  };
+
   function checkpoint(entry: Entry): void {
     if (stopped()) return;
-    if (entry === "microtask") host.drainMicrotasks();
-    while (!stopped()) {
-      drainJobs<undefined>(ticks, (callback, _context): void => {
-        if (!stopped()) callback();
-      });
-      if (stopped()) return;
+    if (entry === "microtask") {
       host.drainMicrotasks();
-      if (ticks.size === 0) return;
+      if (stopped()) return;
+    }
+    if (ticks.size === 0) {
+      host.drainMicrotasks();
+      if (ticks.size === 0 || stopped()) return;
+    }
+    for (;;) {
+      if (ticks.size !== 0) {
+        drainJobs<undefined>(ticks, runTick);
+        if (stopped()) return;
+      }
+      host.drainMicrotasks();
+      if (ticks.size === 0 || stopped()) return;
     }
   }
 

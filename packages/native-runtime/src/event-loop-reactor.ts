@@ -61,6 +61,7 @@ const readinessMilliseconds = 1;
 
 interface ReadWatch {
   readonly callback: () => void;
+  readonly dispatch: () => void;
   readonly reference: EventLoopHandle;
 }
 
@@ -117,6 +118,14 @@ export function createReactorEventLoop(
     reactor = created;
     return created;
   }
+  const onToken = (token: number): void => {
+    if (token === 0) {
+      options.onWake();
+      return;
+    }
+    const watch = reads.get(token);
+    if (watch !== undefined) loop.enqueueIO(watch.dispatch);
+  };
   const loop: EventLoop = createEventLoop({
     now: (): number => options.now(),
     drainMicrotasks: (): void => options.drainMicrotasks(),
@@ -131,17 +140,7 @@ export function createReactorEventLoop(
         timeout !== 0 && idleSources.length !== 0 ? idleWait(timeout) : timeout;
       if (wait === undefined) return;
       polled = options.now();
-      activeReactor().poll(wait, (token: number): void => {
-        if (token === 0) {
-          options.onWake();
-          return;
-        }
-        if (!reads.has(token)) return;
-        loop.enqueueIO((): void => {
-          const watch = reads.get(token);
-          if (watch !== undefined) watch.callback();
-        });
-      });
+      activeReactor().poll(wait, onToken);
     },
   });
 
@@ -166,7 +165,11 @@ export function createReactorEventLoop(
       active.watchReadable(fd, token);
       descriptors.set(fd, true);
       const reference = loop.retain();
-      reads.set(token, { callback, reference });
+      const dispatch = (): void => {
+        const current = reads.get(token);
+        if (current !== undefined) current.callback();
+      };
+      reads.set(token, { callback, dispatch, reference });
       const watch: EventLoopHandle = {
         kind: "handle",
         ref: (): EventLoopHandle => {
