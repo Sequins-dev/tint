@@ -387,11 +387,24 @@ export function deferNativeCase(
  * that marked such an object. */
 export interface NativeScriptHost {
   readonly htmlDDAObjects: boolean;
+  /** Whether compiled functions get native script entries
+   * (ScriptLoweringOptions.nativeScriptCalls); unset follows the target
+   * (nativeScriptCallsEnabled). */
+  readonly nativeScriptCalls?: boolean;
 }
 /** The Test262 host creates `$262.IsHTMLDDA`. */
 export const test262ScriptHost: NativeScriptHost = { htmlDDAObjects: true };
 /** The benchmark host (`benchmarkHost`) creates no [[IsHTMLDDA]] object. */
 export const benchmarkScriptHost: NativeScriptHost = { htmlDDAObjects: false };
+/** The Test262 host for linked Script units (createNativeUnitBatchBuilder).
+ * A unit's indirect calls must each name a signature class the host's
+ * Script surface publishes, and native script entries have none (their
+ * entry ABI is not a checked callback type), so unit Scripts call through
+ * register entries; program and suite linking keep native entries. */
+export const test262UnitScriptHost: NativeScriptHost = {
+  htmlDDAObjects: true,
+  nativeScriptCalls: false,
+};
 
 /** Lower a plan's harness and test Scripts for a host with `host`'s
  * capabilities. */
@@ -415,6 +428,7 @@ export function prepareNativeScripts(
     [...harness, { filename: "test", source: plan.source }],
     undefined,
     host.htmlDDAObjects,
+    host.nativeScriptCalls ?? nativeScriptCallsEnabled(),
   );
 }
 
@@ -422,6 +436,7 @@ function prepareNativeScriptInputs(
   inputs: readonly { readonly filename: string; readonly source: string }[],
   dynamicRootIndex?: number,
   htmlDDAObjects: boolean = true,
+  nativeScriptCalls: boolean = nativeScriptCallsEnabled(),
 ):
   | { readonly ok: true; readonly modules: readonly SourceModule[] }
   | { readonly ok: false; readonly outcome: ExecutionOutcome } {
@@ -430,7 +445,6 @@ function prepareNativeScriptInputs(
     outcome: { kind: "unsupported" as const, reason },
   });
   const modules: SourceModule[] = [];
-  const nativeScriptCalls = nativeScriptCallsEnabled();
   for (const [index, input] of inputs.entries()) {
     const bytes = new TextEncoder().encode(input.source);
     const source = createSourceText(bytes, bytes.length);

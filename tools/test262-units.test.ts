@@ -28,7 +28,12 @@ import {
   nativeUnitEligible,
   prepareNativeUnitHost,
   nativeUnitSlotsModule,
+  prepareNativeScripts,
+  test262ScriptHost,
+  test262UnitScriptHost,
 } from "./test262-native.ts";
+import { executionPlan } from "./test262-execution.ts";
+import { scriptRuntimeSurface } from "@tint/js-engine/lowering";
 import { executeNativeFile } from "./test262-native-process.ts";
 import { workspaceModules, workspaceSources } from "./workspace-sources.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
@@ -403,6 +408,53 @@ test("only Script cases without module graphs run as linked units", () => {
   assert.equal(
     nativeUnitEligible({ scripts: [script], asynchronous: false, modules: [] }),
     false,
+  );
+});
+
+test("lowered Test262 Scripts import only the published Script surface", () => {
+  // A linked unit compiles against that surface: an import outside it fails
+  // the unit and silently costs a whole-program batch.
+  const published = new Set(
+    scriptRuntimeSurface().map((entry) => entry.specifier + ":" + entry.name),
+  );
+  const source =
+    "function add(a, b) { return a + b; }\n" +
+    "function Box(v) { this.v = v; }\n" +
+    "if (add(1, 2) !== new Box(3).v) throw 1;";
+  const plan = executionPlan(source, "raw", {
+    flags: ["raw"],
+    features: [],
+    includes: [],
+  });
+  const imported = (host: typeof test262ScriptHost): string[] => {
+    const prepared = prepareNativeScripts(plan, "raw", [], host);
+    assert.ok(prepared.ok, JSON.stringify(prepared));
+    const names: string[] = [];
+    for (const script of prepared.modules)
+      for (const statement of script.module.statements)
+        if (statement.kind === "import")
+          for (const binding of statement.declaration.bindings)
+            names.push(
+              statement.declaration.specifier + ":" + binding.imported,
+            );
+    return names;
+  };
+  for (const host of [
+    test262ScriptHost,
+    test262UnitScriptHost,
+    { ...test262ScriptHost, nativeScriptCalls: true },
+  ])
+    for (const name of imported(host)) assert.ok(published.has(name), name);
+  // Unit Scripts call through register entries (their indirect calls need
+  // a published signature class); program-linked ones may use native entries.
+  const unitImports = imported(test262UnitScriptHost);
+  assert.ok(
+    !unitImports.some((name) => name.endsWith(":createNativeSourceFunction")),
+  );
+  assert.ok(
+    imported({ ...test262ScriptHost, nativeScriptCalls: true }).some((name) =>
+      name.endsWith(":createNativeSourceFunction"),
+    ),
   );
 });
 
