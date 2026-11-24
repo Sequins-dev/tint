@@ -53,10 +53,16 @@ const htmlDDACases: readonly {
   {
     // Lowered without the capability: the exclusion refuses the host's
     // marked object before the Script body runs, and the refusal escapes
-    // the entry uncaught (status 70, docs/runtime-diagnostics.md).
+    // the entry uncaught (status 70 on aarch64, 1 on x86-64; see
+    // runtime-diagnostics.test.ts).
     source: String.raw`if($262.IsHTMLDDA==null)throw 1;`,
     host: benchmarkScriptHost,
-    expected: { kind: "crash", detail: "unexpected native exit status 70" },
+    expected: {
+      kind: "crash",
+      detail:
+        "unexpected native exit status " +
+        (nativeFixtureTarget().arch === "x86_64" ? 1 : 70),
+    },
   },
   {
     // Without a skipped check there is nothing to exclude.
