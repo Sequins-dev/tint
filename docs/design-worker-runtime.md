@@ -287,6 +287,31 @@ the receiver uses the sender's copy directly.
   copied verbatim by its header's extent (`string-copy`). When the arena is
   full, or an isolate's hold queue is, the string is copied as before; the
   fallback is counted (`external-memory.ts`, `shared-string-arena.ts`).
+- **Writes after publication.** Immutable means the code units. PR #18's
+  string layout is: a u64 header at 0 (the marker in bits 0–47, flags and
+  collector bits in 48–52), the u32 length at 8, a u32 index field at 12 and
+  the code units at 16.
+  - **Who writes the index field.** Any isolate that holds a published body
+    may write it once, lazily, with a relaxed 32-bit store while it is 0. It
+    holds `(value << 1) | 1` for a canonical array index below 2^20; even
+    nonzero values are reserved for a hash.
+  - **What stays constant.** The header word and the length never change
+    after publication.
+  - **Precomputing.** A body's copy may precompute the index field with
+    `nativeStringIndexField(text)` (`nativeStringIndexFieldOffset`,
+    `@tint/abi/host`), or keep or clear it.
+  - **Readers.** Nothing here reads a published body's index field.
+    Receiving uses the body prefix and `string-at`, and the fallback copy
+    reads only the length and units. `string-copy` copies only an isolate's
+    own heap strings, index field included; a string already in the arena
+    takes a reference instead. It checks only the marker field.
+  - **Sliced strings.** Slices (32 bytes: the header, the length and index
+    field at 8 and 12, the start at 16, the parent at 24) never cache an
+    index, and a slice is flattened into its body.
+
+  Arena pages stay writable, and a body is freed only after its last hold,
+  so a lazy store never reaches a freed or released page.
+
 - **Sending.** A string in the arena (one this isolate received or sent) adds
   a reference for the message. Otherwise a bounded send cache of ephemerons,
   keyed weakly by the sent string with the body's string as value, finds a
