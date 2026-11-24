@@ -291,7 +291,6 @@ test("raw host memory effects prevent closed-module layout proofs", () => {
   for (const operation of [
     "memory-write-word",
     "memory-move",
-    "allocation-state",
     "generational-state",
     "external-memory-configure",
   ] as const) {

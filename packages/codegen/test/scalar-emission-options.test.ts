@@ -72,11 +72,11 @@ test("emission options preserve default and configured byte images", () => {
         hostABI: darwinHostABI(),
         debugSpans: true,
         linearAllocation: true,
-        generationalBarriers: false,
+        generationalBarriers: true,
         closedRoots: [0],
       },
-      832,
-      "136acaf1fc85b3e3065fd4aa59b9641a42885280742c7277810a11d10f2e9a36",
+      784,
+      "effbd87dcef898cb61f2ef1fdaf1bcd1b7512ff5909befbafa819b08ed557716",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);
