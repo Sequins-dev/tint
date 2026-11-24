@@ -30,10 +30,13 @@ semaphore uses `TINT_GATE_MEMORY_SLOTS` slots (default three) shared across
 checkouts in `~/.t3/tint-gate-memory`. Use the same count for all gates on
 the host. Node bootstrap, frozen toolchain preparation, and heavy test
 builds use this semaphore. An occupied semaphore waits between probes.
-The exclusive lock at `~/.t3/tint-gate.lock` is shared with legacy gate
-callers. The gate uses `/usr/bin/lockf -k` for every acquisition so the
-exclusive pathname and memory slot inodes survive release. Use `-k` for
-manual acquisitions and keep those lock files in place.
+The exclusive lock at `~/.t3/tint-gate.lock` is the launch lock that
+[`with-lock.sh`](#timing-and-profiling-on-the-shared-mac) queues for.
+Exclusive gate steps and Test262 smoke launches join that queue; native
+fixture launches probe the lock directly. The gate uses `/usr/bin/lockf -k`
+for every acquisition so the exclusive pathname and memory slot inodes
+survive release. Use `-k` for manual acquisitions and keep those lock files
+in place.
 
 The gate bounds native test file concurrency to limit simultaneous fixture
 builds and contention for LLDB admission. Set `TINT_GATE_NATIVE_CONCURRENCY`
@@ -94,10 +97,12 @@ failed step.
 ## Timing and profiling on the shared Mac
 
 Use the watched lock wrapper for commands that need either shared lock.
-Every job that needs both locks must use `with-lock.sh both`. Nesting
-`lockf` commands holds the first lock for the entire wait on the second.
-Prepare images and unrelated inputs before entering the wrapper.
-Pass the complete foreground command so the watchdog owns its descendants.
+Every job that needs both locks must use `with-lock.sh both`. Do not nest
+lock requests: the wrapper refuses a request from inside another wrapper's
+command, and nested `lockf` commands hold the first lock for the entire wait
+on the second. Prepare images and unrelated inputs before entering the
+wrapper. Pass the complete foreground command so the watchdog owns its
+descendants.
 
 ```sh
 tools/gate/with-lock.sh both frozen-v7 \
@@ -108,12 +113,39 @@ tools/gate/with-lock.sh both profile-stage \
 ```
 
 `launch` uses the native launch lock, `timing` uses the timing lock, and
-`both` runs only when it can acquire both. Single-lock calls join the blocking
-`lockf -k` queue. Dual-lock calls probe launch and then timing without
-blocking. If a probe fails, they release all acquired locks and join the
-busy lock's blocking pathname queue, then retry the complete set.
-A queued job keeps its place until the busy lock is available or the wrapper
-is interrupted. The wakeup does not reserve either lock for the next probe.
+`both` uses both. All three join one first-in, first-out queue in the
+`tint-gate-queue` directory beside the launch lock (`TINT_GATE_LOCK_QUEUE`
+overrides it). Each request takes a numbered ticket and waits until every
+earlier ticket that shares a lock with it has finished. A later launch-only
+or timing-only request therefore never overtakes an earlier `both` request,
+even while the lock it needs is idle. Requests with disjoint locks run
+concurrently. At the front of the queue a request takes timing and then
+launch, keeping timing while it waits in the launch lock's kernel queue.
+
+Run this to see who holds each lock and what each queued request waits for:
+
+```sh
+tools/gate/with-lock.sh status
+```
+
+The queue cannot deadlock or starve a request. A ticket waits only for
+earlier tickets, and two tickets that share a lock never reach the front
+together. At the front, a request waits only for callers outside the queue,
+none of which holds launch while waiting for timing. Each request runs after
+the finite set of earlier conflicting tickets, each bounded by its watchdog.
+
+Each ticket is a file that its owner flocks for as long as it lives. A
+request waits for an earlier ticket by blocking on that lock, so the kernel
+wakes it when the owner exits for any reason. The next request or `status`
+call to find a ticket left by a killed process removes it. Killing a wrapper
+releases its locks, and a lockf helper still waiting on its behalf exits once
+it gets its lock.
+
+The kernel locks still exclude callers outside the queue: raw `lockf -k`
+commands, native fixture launches in the gate, and wrappers from checkouts
+that predate the queue. Those callers are not ordered with queued requests.
+Run the wrapper from an up-to-date checkout.
+
 The wrapper starts both deadlines after acquisition. Set `TINT_GATE_IDLE_TIMEOUT` for a
 workload that intentionally goes without CPU progress for longer than 120
 seconds. The hard holder deadline is `TINT_GATE_STEP_TIMEOUT` and defaults to
@@ -125,8 +157,8 @@ write the inferior PID there at launch.
 
 See [profiling](profiling.md#profiling-a-verified-compiler) for how to verify an
 image under LLDB before sampling it. Existing raw `lockf -k` callers still
-share the same inodes. Adopt the wrapper to get no-progress detection for
-those jobs.
+share the same inodes. Adopt the wrapper to get a place in the queue and
+no-progress detection for those jobs.
 
 ## Classifying a test file
 
