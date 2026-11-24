@@ -85,6 +85,7 @@ export function scriptRuntimeImports(
   excludesHTMLDDAObjects: boolean = false,
   usesElementAccess: boolean = false,
   usesIntrinsicCalls: boolean = false,
+  usesObjectLiterals: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -313,6 +314,9 @@ export function scriptRuntimeImports(
               "scriptSetAdd",
               "scriptArrayPush",
             ]
+          : []),
+        ...(usesObjectLiterals || declarations === "all"
+          ? ["createObjectLiteralSite", "createLiteralObject"]
           : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",

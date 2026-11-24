@@ -1178,6 +1178,72 @@ export function createDataProperty<Key, Value>(
     ) === "accepted"
   );
 }
+/** An object literal site whose properties are all `key: value` data
+ * definitions with static keys, and the shape they reached from the
+ * prototype's root shape when an evaluation first left the object in fast
+ * mode on a shared shape. */
+export interface ObjectLiteralSite {
+  readonly keys: readonly ScriptPropertyKey[];
+  root: ScriptShape | undefined;
+  shape: ScriptShape | undefined;
+}
+export function createObjectLiteralSite(
+  keys: readonly ScriptPropertyKey[],
+): ObjectLiteralSite {
+  return { keys, root: undefined, shape: undefined };
+}
+/** A new ordinary object with `prototype` and the site's keys defined as data
+ * properties with `values`, as the literal's CreateDataPropertyOrThrow steps
+ * define them on a fresh extensible object (whose prototype they never
+ * consult). Shared shapes come from the prototype's root through one
+ * transition per key, so an evaluation starting at the root the site
+ * recorded reaches the recorded shape: it takes that shape and fills the
+ * slots in key order. Any other evaluation defines each key, which also
+ * covers duplicate, index-like and too many keys (they never leave a
+ * recordable shape). */
+export function createLiteralObject(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  values: readonly unknown[],
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  const object = createObject<ScriptPropertyKey, unknown>(prototype);
+  const keys = site.keys;
+  if (values.length !== keys.length) throw "OBJECT_LITERAL_INVARIANT";
+  const shape = site.shape;
+  if (shape !== undefined && object.internalShape === site.root) {
+    for (let index = 0; index < keys.length; index++)
+      setFastValue<ScriptPropertyKey, unknown>(object, index, values[index]);
+    object.internalShape = shape;
+    // One structural change per definition, as defining them notes.
+    object.internalPropertyEpoch += keys.length;
+    return object;
+  }
+  for (let index = 0; index < keys.length; index++) {
+    const key = keys[index];
+    if (key === undefined) throw "OBJECT_LITERAL_INVARIANT";
+    if (
+      !createDataProperty<ScriptPropertyKey, unknown>(
+        object,
+        key,
+        values[index],
+        hooks,
+      )
+    )
+      throw "OBJECT_LITERAL_INVARIANT";
+  }
+  const reached = object.internalShape;
+  if (
+    !object.internalDictionary &&
+    reached !== undefined &&
+    reached.shared &&
+    reached.keys.length === keys.length
+  ) {
+    site.root = prototype.internalChildShape;
+    site.shape = reached;
+  }
+  return object;
+}
 /** Define one literal accessor half; the other half survives repeated definitions. */
 export function createAccessorProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,

@@ -978,6 +978,7 @@ function lowerScriptEntry(
   const globalIdentifierCaches = new Map<string, number>();
   const globalCacheInitializers: Expression[] = [];
   const propertyCacheInitializers: Expression[] = [];
+  const objectLiteralSiteInitializers: Expression[] = [];
   // Fixed record fields work in AOT and managed entries. Each closure
   // captures the groups it uses, and one large host harness cannot exceed a
   // native record's field limit.
@@ -1039,7 +1040,22 @@ function lowerScriptEntry(
   function globalCacheDeclarations(): Statement[] {
     const tables = slotTable("$gc", globalCacheInitializers);
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
+    appendStatements(tables, slotTable("$oc", objectLiteralSiteInitializers));
     return tables;
+  }
+  /** A site record for an object literal of static-key data definitions. */
+  function objectLiteralSite(keys: readonly string[], span: Span): Expression {
+    const index = objectLiteralSiteInitializers.length;
+    const names: Expression[] = [];
+    for (const key of keys) names.push(text(key, generated));
+    objectLiteralSiteInitializers.push(
+      runtimeCall(
+        "createObjectLiteralSite",
+        [{ ...generated, kind: "array", elements: names }],
+        generated,
+      ),
+    );
+    return slotField("$oc", index, span);
   }
   /** A site's property cache; a method site (`o.m()`) caches the
    * receiver's own properties among its inherited entries. */
@@ -1226,6 +1242,7 @@ function lowerScriptEntry(
   let usesIndexedWrites = false;
   let usesElementAccess = false;
   let usesIntrinsicCalls = false;
+  let usesObjectLiterals = false;
   let usesNullishEquality = false;
   let excludesHTMLDDAObjects = false;
   let usesRelationalFallback = false;
@@ -8499,6 +8516,54 @@ function lowerScriptEntry(
         return result;
       }
       case "object": {
+        // Only `key: value` definitions with static keys: their values
+        // cannot observe the object (no methods, accessors, spreads or
+        // computed keys), so evaluating them before creating it is
+        // equivalent, and the site can remember the shape they reach.
+        const literalKeys: string[] = [];
+        let staticData = node.properties.length !== 0;
+        for (const property of node.properties) {
+          if (property === undefined) throw "SCRIPT_PROPERTY_INVARIANT";
+          if (property.kind === "spread") {
+            staticData = false;
+            continue;
+          }
+          if (
+            property.keyExpression !== undefined ||
+            property.computed === true ||
+            property.accessor !== undefined ||
+            property.prototypeSetter === true ||
+            property.method === true
+          )
+            staticData = false;
+          else literalKeys.push(property.name);
+        }
+        if (staticData) {
+          usesObjectLiterals = true;
+          const values: Expression[] = [];
+          for (const property of node.properties) {
+            if (property === undefined || property.kind === "spread")
+              throw "SCRIPT_PROPERTY_INVARIANT";
+            values.push(
+              temporary(
+                value(property.value, text(property.name, property)),
+                true,
+              ),
+            );
+          }
+          return temporary(
+            runtimeCall(
+              "createLiteralObject",
+              [
+                member(id("$errors"), "objectPrototype", node),
+                objectLiteralSite(literalKeys, node),
+                { ...at(node), kind: "array", elements: values },
+                member(id("$global"), "hooks", node),
+              ],
+              node,
+            ),
+          );
+        }
         const result = temporary(
           call(
             "createObject",
@@ -11343,6 +11408,7 @@ function lowerScriptEntry(
     excludesHTMLDDAObjects,
     usesElementAccess,
     usesIntrinsicCalls,
+    usesObjectLiterals,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
