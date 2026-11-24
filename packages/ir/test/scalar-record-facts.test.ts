@@ -226,6 +226,67 @@ test("closed modules preserve descriptor proofs across calls", () => {
     1,
   );
 });
+test("isolate operations keep closed-module layout proofs", () => {
+  // Worker threads re-enter the image's own hosted entry with a fresh heap,
+  // and shared memory, parking words and unmapped mappings are outside every
+  // managed heap (docs/design-worker-runtime.md).
+  for (const operation of [
+    "thread-start",
+    "thread-join",
+    "hosted-thread-entry",
+    "memory-unmap",
+    "word-park",
+    "word-wake",
+    "shared-read-unsigned",
+    "shared-write-unsigned",
+    "shared-read-word64",
+    "shared-write-word64",
+    "shared-compare-exchange-unsigned",
+    "shared-compare-exchange-word64",
+  ] as const) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...block,
+              instructions: [
+                { kind: "host-call", operation, id: 4, arguments: [], ...span },
+                ...block.instructions,
+              ],
+            },
+      ),
+    };
+    assert.equal(stableRecordLayouts({ functions: [fn] }), true, operation);
+    assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
+  }
+  // Code entry outside the image's own entry still leaves the closed world.
+  for (const operation of [
+    "collector-worker-entry",
+    "permanent-function-address",
+    "executable-call-value",
+  ] as const) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...block,
+              instructions: [
+                { kind: "host-call", operation, id: 4, arguments: [], ...span },
+                ...block.instructions,
+              ],
+            },
+      ),
+    };
+    assert.equal(stableRecordLayouts({ functions: [fn] }), false, operation);
+    assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
+  }
+});
 test("raw host memory effects prevent closed-module layout proofs", () => {
   for (const operation of [
     "memory-write-word",
@@ -967,9 +1028,13 @@ test("Test262 and JIT host operations preserve descriptors", () => {
             },
       ),
     };
+    // Signature queries and isolate operations also keep the closed world.
     assert.equal(
       stableRecordLayouts({ functions: [fn] }),
-      operation === "native-function-signature",
+      operation === "native-function-signature" ||
+        (!operation.startsWith("executable-") &&
+          !operation.startsWith("native-") &&
+          operation !== "external-memory-register"),
       operation,
     );
     assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
