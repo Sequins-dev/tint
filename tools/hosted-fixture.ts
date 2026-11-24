@@ -1,8 +1,17 @@
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { deserialize, serialize } from "node:v8";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -19,6 +28,7 @@ import {
   compileMacOSProgram,
   linkMacOSProgram,
   type BuildRequest,
+  type CompiledRuntimeUnits,
   type CompiledRuntimeUnitsResult,
   type ImageOperationRange,
   type RuntimeUnitInputs,
@@ -104,8 +114,93 @@ export interface FixtureForeignDeclaration {
 function fixtureCache(): boolean {
   return process.env.TINT_FIXTURE_CACHE !== "0";
 }
-/** Runtime unit compiles and reuses in this process (see shareRuntimeUnits). */
-export const fixtureCacheStatistics = { compiled: 0, shared: 0 };
+/** Runtime unit compiles, reuses in this process and restores from the
+ * gate's cache directory (see shareRuntimeUnits). */
+export const fixtureCacheStatistics = { compiled: 0, shared: 0, restored: 0 };
+/** Runtime units shared by every test process of one native batch: beside
+ * its journal (TINT_GATE_NATIVE_IMAGES), or in TINT_FIXTURE_CACHE_DIRECTORY.
+ * Standalone runs keep them in their process only. */
+function fixtureCacheDirectory(): string | undefined {
+  if (!fixtureCache()) return undefined;
+  const directory = process.env.TINT_FIXTURE_CACHE_DIRECTORY;
+  if (directory) return directory;
+  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
+  return journal ? join(dirname(journal), "fixture-cache") : undefined;
+}
+/** Parsed workspace modules, by syntax tree, with the identity of the
+ * captured sources they were parsed from: only those can be restored from
+ * another process's cache entry. */
+const snapshotSyntax = new WeakMap<object, string>();
+function snapshotModules(
+  roots: readonly string[],
+  snapshot: WorkspaceSourceSnapshot,
+  identity: string,
+): readonly SourceModule[] {
+  const modules = workspaceModules(roots, snapshot);
+  for (const module of modules) snapshotSyntax.set(module.module, identity);
+  return modules;
+}
+/** The cache file of runtime units compiled only from captured workspace
+ * sources, or undefined when a fixture supplies or transforms one of them. */
+function runtimeUnitsFile(inputs: RuntimeUnitInputs): string | undefined {
+  const directory = fixtureCacheDirectory();
+  const identity = snapshotSyntax.get(inputs.modules[0]?.module ?? {});
+  if (
+    directory === undefined ||
+    identity === undefined ||
+    inputs.allocator === undefined ||
+    !inputs.modules.every(
+      (source) => snapshotSyntax.get(source.module) === identity,
+    )
+  )
+    return undefined;
+  const key = createHash("sha256")
+    .update(
+      JSON.stringify([
+        "tint-fixture-runtime-units-v1",
+        identity,
+        fixtureTarget.name,
+        inputs.key,
+        inputs.allocator.id,
+        inputs.modules.map((source) => [
+          source.id,
+          [...source.dependencies].sort(),
+        ]),
+      ]),
+    )
+    .digest("hex");
+  return join(directory, "runtime-units-" + key + ".v8");
+}
+/** Restore runtime units from the cache file. The allocator source is not
+ * cloneable (it may hold position callbacks); it comes from this build's
+ * inputs, parsed from the same sources. */
+function restoreRuntimeUnits(
+  file: string,
+  inputs: RuntimeUnitInputs,
+): CompiledRuntimeUnitsResult | undefined {
+  if (inputs.allocator === undefined || !existsSync(file)) return undefined;
+  try {
+    const entry = deserialize(readFileSync(file)) as {
+      readonly file: string;
+      readonly units: Omit<CompiledRuntimeUnits, "allocatorSource">;
+    };
+    if (entry.file !== file) return undefined;
+    return {
+      ok: true,
+      value: { ...entry.units, allocatorSource: inputs.allocator },
+    };
+  } catch {
+    // An unreadable entry is compiled again and replaced.
+    return undefined;
+  }
+}
+function storeRuntimeUnits(file: string, units: CompiledRuntimeUnits): void {
+  mkdirSync(dirname(file), { recursive: true });
+  const staging = file + "." + process.pid + ".tmp";
+  const { allocatorSource: _source, ...stored } = units;
+  writeFileSync(staging, serialize({ file, units: stored }));
+  renameSync(staging, file);
+}
 let currentWorkspace:
   | {
       readonly snapshot: WorkspaceSourceSnapshot;
@@ -152,9 +247,20 @@ function shareRuntimeUnits(
     fixtureCacheStatistics.shared++;
     return shared;
   }
+  const file = runtimeUnitsFile(inputs);
+  const restored =
+    file === undefined ? undefined : restoreRuntimeUnits(file, inputs);
+  if (restored !== undefined) {
+    fixtureCacheStatistics.restored++;
+    sharedRuntimeUnits.set(key, restored);
+    return restored;
+  }
   fixtureCacheStatistics.compiled++;
   const units = compile();
-  if (units.ok) sharedRuntimeUnits.set(key, units);
+  if (units.ok) {
+    sharedRuntimeUnits.set(key, units);
+    if (file !== undefined) storeRuntimeUnits(file, units.value);
+  }
   return units;
 }
 
@@ -490,7 +596,7 @@ function buildHostedFixture(
       ? []
       : (() => {
           const capturedModules: SourceModule[] = [
-            ...workspaceModules(roots, foreign.snapshot),
+            ...snapshotModules(roots, foreign.snapshot, sourceSnapshot.sha256),
             ...fixtureGenerated,
             original,
           ];

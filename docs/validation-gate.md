@@ -56,8 +56,12 @@ Hosted fixture builds in one test process share the parsed workspace modules
 and the compiled allocator and runtime while the workspace sources are
 unchanged. Neither depends on the fixture program (`BuildRequest.runtimeUnits`
 in `packages/compiler/src/build.ts`), and images are byte-identical to builds
-that compile them again (`tools/fixture-cache.test.ts`). Set
-`TINT_FIXTURE_CACHE=0` to start every build from scratch.
+that compile them again (`tools/fixture-cache.test.ts`). The test processes of
+one native batch also share compiled runtime units through `fixture-cache/`
+beside its journal (or `TINT_FIXTURE_CACHE_DIRECTORY`). An entry is keyed by the
+captured workspace sources' identity, the target and the units' options, and
+is used only when every module the units are compiled from was parsed from
+those sources. Set `TINT_FIXTURE_CACHE=0` to start every build from scratch.
 
 Each macOS native bootstrap stage takes the exclusive lock for its LLDB
 invocation. LLDB attaches and debugserver launches can fail under concurrent
