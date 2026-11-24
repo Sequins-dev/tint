@@ -1919,6 +1919,116 @@ export function run() {
 }`,
   },
   {
+    // A guard on a mutable binding holds after inner loops, switches and
+    // labelled statements that never assign the binding (gc-granule and
+    // gc-release fixtures; the typed checker used to drop it there).
+    name: "loop-narrowing",
+    typed: `interface Cell { readonly id: number; readonly next: Cell | undefined }
+function walk(head: Cell | undefined): number {
+  let total = 0;
+  let cell: Cell | undefined = head;
+  while (cell !== undefined) {
+    total += cell.id;
+    for (let j = 0; j < cell.id; j++) total += j;
+    switch (cell.id) {
+      case 1:
+        total += 100;
+        break;
+      default:
+        total += 1;
+    }
+    scan: for (let j = 0; j < 4; j++) if (j === cell.id) break scan;
+    cell = cell.next;
+  }
+  return total;
+}
+export function run(): number {
+  const chain: Cell = { id: 1, next: { id: 3, next: undefined } };
+  return walk(chain) === 108 && walk(undefined) === 0 ? 42 : 1;
+}`,
+    untyped: `function walk(head) {
+  let total = 0;
+  let cell = head;
+  while (cell !== undefined) {
+    total += cell.id;
+    for (let j = 0; j < cell.id; j++) total += j;
+    switch (cell.id) {
+      case 1:
+        total += 100;
+        break;
+      default:
+        total += 1;
+    }
+    scan: for (let j = 0; j < 4; j++) if (j === cell.id) break scan;
+    cell = cell.next;
+  }
+  return total;
+}
+export function run() {
+  const chain = { id: 1, next: { id: 3, next: undefined } };
+  return walk(chain) === 108 && walk(undefined) === 0 ? 42 : 1;
+}`,
+  },
+  {
+    // Writes to a field every member of a record union declares
+    // (gc-granule fixture). The typed checker rejects the union receiver.
+    name: "union-field-write",
+    typed: `interface One { readonly kind: "one"; next: Item | undefined }
+interface Three { readonly kind: "three"; next: Item | undefined; text: string }
+type Item = One | Three;
+function link(old: Item, tail: Item): boolean {
+  old.next = tail;
+  return old.next === tail;
+}
+export function run(): number {
+  const one: One = { kind: "one", next: undefined };
+  const three: Three = { kind: "three", next: undefined, text: "x" };
+  return link(one, three) && link(three, one) && three.next === one ? 42 : 1;
+}`,
+    untyped: `function link(old, tail) {
+  old.next = tail;
+  return old.next === tail;
+}
+export function run() {
+  const one = { kind: "one", next: undefined };
+  const three = { kind: "three", next: undefined, text: "x" };
+  return link(one, three) && link(three, one) && three.next === one ? 42 : 1;
+}`,
+  },
+  {
+    // String() of a caught value (gc-release fixture). Typed String accepts
+    // only primitive inputs; a catch binding is unknown.
+    name: "caught-value-string",
+    typed: `function risky(n: number): number {
+  if (n > 2) throw new RangeError("big " + String(n));
+  return n;
+}
+function measure(n: number): number {
+  try {
+    return risky(n);
+  } catch (error) {
+    return String(error).length;
+  }
+}
+export function run(): number {
+  return measure(1) === 1 && measure(5) === "RangeError: big 5".length ? 42 : 1;
+}`,
+    untyped: `function risky(n) {
+  if (n > 2) throw new RangeError("big " + String(n));
+  return n;
+}
+function measure(n) {
+  try {
+    return risky(n);
+  } catch (error) {
+    return String(error).length;
+  }
+}
+export function run() {
+  return measure(1) === 1 && measure(5) === "RangeError: big 5".length ? 42 : 1;
+}`,
+  },
+  {
     name: "module-initializers",
     typed: `function scale(n: number): number { return n * 2; }
 const table: number[] = [];
