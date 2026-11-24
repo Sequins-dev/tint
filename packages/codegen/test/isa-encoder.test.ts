@@ -96,6 +96,13 @@ test("rejects truncation, illegal shifts and invalid selectors", () => {
   );
 });
 test("checks exact signed branch ranges and instruction alignment", () => {
+  for (const [instruction, expected] of [
+    [{ op: "fcsel", rd: 0, rn: 1, rm: 2, condition: "gt" }, 0x1e62cc20],
+    [{ op: "fcsel", rd: 8, rn: 16, rm: 9, condition: "mi" }, 0x1e694e08],
+    [{ op: "fcsel", rd: 31, rn: 30, rm: 29, condition: "eq" }, 0x1e7d0fdf],
+    [{ op: "fcsel", rd: 3, rn: 4, rm: 5, condition: "le" }, 0x1e65dc83],
+  ] as const)
+    assert.deepEqual(encode(instruction), { ok: true, value: expected });
   for (const op of ["b", "bl"] as const) {
     assert.equal(encode({ op, displacement: -134217728 }).ok, true);
     assert.equal(encode({ op, displacement: 134217724 }).ok, true);

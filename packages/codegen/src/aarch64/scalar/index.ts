@@ -100,7 +100,10 @@ import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import {
   chainedBlockOrder,
   fallsThrough,
+  findSelectDiamonds,
   forwardableEntries,
+  provenNonNullValues,
+  type SelectArm,
 } from "./block-entries.ts";
 import {
   createWordBuffer,
@@ -760,6 +763,7 @@ export type CodegenAnalysis =
   | "entry-live-homes"
   | "dead-slot-roots"
   | "join-record-guards"
+  | "proven-non-null"
   | "safepoint-liveness";
 
 export interface EmissionOptions {
@@ -1416,6 +1420,7 @@ function emitModuleForms(
       case "fmov-d-x":
       case "fmov-d-imm":
       case "fcmp":
+      case "fcsel":
       case "ldr-d":
       case "ldp-d":
       case "nop":
@@ -4042,12 +4047,13 @@ function emitModuleForms(
           if (array === undefined) throw "fused read array invariant";
           return array;
         }
+        const valueUses = new Uint32Array(resultBound);
         {
           const literalValues = new Uint8Array(resultBound);
           for (const [literal] of stringLiterals)
             literalValues[valueIds.intern(literal)] = 1;
           const numericConstants = new Uint8Array(resultBound),
-            uses = new Uint32Array(resultBound),
+            uses = valueUses,
             folded = new Uint32Array(resultBound);
           for (const block of fn.blocks) {
             if (block === undefined) throw "constant use block invariant";
@@ -6500,10 +6506,28 @@ function emitModuleForms(
           id: number,
           byteOffset: number = 0,
         ): void {
-          if (byteOffset === 0 && storedAsInteger(id)) {
-            // Exact (|x| < 2^53), so the conversion is too.
-            emit({ op: "scvtf-d-x", rd: rt, rn: rawRegister(id, 17) });
-            return;
+          if (byteOffset === 0) {
+            const deferred = deferredIntegers.get(id);
+            if (deferred !== undefined) {
+              const bits = encodeFloat64(deferred);
+              if (bits.lo === 0 && bits.hi === 0)
+                emit({ op: "fmov-d-x", rd: rt, rn: "zr" });
+              else {
+                const immediate = float64Immediate(deferred);
+                if (immediate !== undefined)
+                  emit({ op: "fmov-d-imm", rd: rt, imm8: immediate });
+                else {
+                  imm64(17, bits.lo, bits.hi);
+                  emit({ op: "fmov-d-x", rd: rt, rn: 17 });
+                }
+              }
+              return;
+            }
+            if (storedAsInteger(id)) {
+              // Exact (|x| < 2^53), so the conversion is too.
+              emit({ op: "scvtf-d-x", rd: rt, rn: rawRegister(id, 17) });
+              return;
+            }
           }
           const storage = scalarRegisters,
             offset = value(id).offset + byteOffset,
@@ -6560,6 +6584,10 @@ function emitModuleForms(
         /** Ordinary numeric ALU operands may name their existing FP homes. Only
          * stack-backed values need a scratch load; no conversion or guard changes. */
         function floatOperand(id: number, scratch: number): number {
+          if (deferredIntegers.has(id)) {
+            floatLoad(scratch, id);
+            return scratch;
+          }
           const storage = scalarRegisters,
             offset = value(id).offset,
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
@@ -8408,6 +8436,35 @@ function emitModuleForms(
             flowGuards === undefined || ((flowGuards[block] ?? 0) & 1) === 0
           );
         });
+        const provenNonNull = limited<Uint8Array>(
+          "proven-non-null",
+          fn,
+          provenNonNullValues(
+            fn,
+            (id) => valueIds.intern(id),
+            values.length,
+            work(2000000),
+          ),
+        );
+        const skippedCasts = new Uint8Array(values.length);
+        if (provenNonNull !== undefined)
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "skipped cast block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "skipped cast instruction invariant";
+              if (
+                (op.kind === "string-wrap" ||
+                  op.kind === "string-value" ||
+                  op.kind === "reference-wrap" ||
+                  op.kind === "reference-value" ||
+                  op.kind === "primitive-wrap" ||
+                  op.kind === "primitive-reference") &&
+                (valueUses[valueIds.intern(op.id)] ?? 0) === 0 &&
+                provenNonNull[valueIds.intern(op.value)] === 1
+              )
+                skippedCasts[valueIds.intern(op.id)] = 1;
+            }
+          }
         // Exact block-entry clears: zero only pool words some path may have
         // written since the last clear. Collecting blocks still observe an
         // all-zero pool, as with whole-prefix or whole-pool clears.
@@ -8467,9 +8524,11 @@ function emitModuleForms(
                   // Only words whose store reaches the stack slot itself.
                   const registers = scalarRegisters,
                     stored: number[] = [];
-                  for (const word of poolWords(
-                    preSafepointResults(current, noSafepoints),
-                  )) {
+                  const written = preSafepointResults(
+                    current,
+                    noSafepoints,
+                  ).filter((id) => skippedCasts[valueIds.intern(id)] !== 1);
+                  for (const word of poolWords(written)) {
                     if (word === undefined) throw "covered word invariant";
                     if (
                       registers === undefined ||
@@ -8487,6 +8546,23 @@ function emitModuleForms(
                 work(50000000),
               )
             : undefined;
+        const selects = findSelectDiamonds(
+          fn,
+          integerSlots,
+          dispatch?.fused,
+          (block) =>
+            (deadClears?.[block]?.length ?? 0) === 0 &&
+            (deadSlots?.[block]?.length ?? 0) === 0 &&
+            (poolClears?.[block]?.length ?? 0) === 0 &&
+            (preciseRoots ||
+              poolClears !== undefined ||
+              ((incomingReferences[block] ?? 0) === 0 &&
+                (incomingGenerals[block] ?? 0) === 0)),
+        );
+        for (const [head, diamond] of selects.diamonds) {
+          if (head < 0) continue;
+          forwardable.delete(diamond.join);
+        }
         // Operation ranges (analysis tooling): each IR operation owns the
         // words emitted from its start to the next operation, terminator or
         // block boundary. Representations are read after emission, once
@@ -8655,18 +8731,29 @@ function emitModuleForms(
           return token;
         }
         for (let position = 0; position < layout.length; position++) {
-          const b = fn.blocks[layout[position] ?? -1],
-            nextBlock = layout[position + 1];
+          const b = fn.blocks[layout[position] ?? -1];
           if (b === undefined) throw "block invariant";
           deferredIntegers.clear();
-          // Fused dispatch continuations are unreachable; their head tests
-          // every candidate layout.
-          if (dispatch?.fused[b.id] === 1) {
+          // Fused dispatch/select continuations are unreachable; their head
+          // already executed them.
+          if (dispatch?.fused[b.id] === 1 || selects.fused[b.id] === 1) {
             stackWords.clear();
             offsets[b.id * 2] = instructions.length * 4;
             joinLabelRun(b.id, true);
             continue;
           }
+          let nextPosition = position + 1;
+          while (nextPosition < layout.length) {
+            const candidate = layout[nextPosition];
+            if (
+              candidate === undefined ||
+              (dispatch?.fused[candidate] !== 1 &&
+                selects.fused[candidate] !== 1)
+            )
+              break;
+            nextPosition++;
+          }
+          const nextBlock = layout[nextPosition];
           const transient = transientRegisters,
             storage = scalarRegisters;
           if (transient !== undefined && storage !== undefined)
@@ -10475,6 +10562,16 @@ function emitModuleForms(
               case "reference-value":
               case "primitive-wrap":
               case "primitive-reference":
+                if (skippedCasts[valueIds.intern(op.id)] === 1) break;
+                if (
+                  provenNonNull !== undefined &&
+                  provenNonNull[valueIds.intern(op.value)] === 1
+                ) {
+                  const target = rawTarget(op.id, 9);
+                  rawValue(target, op.value);
+                  saveRaw(target, op.id);
+                  break;
+                }
                 rawValue(9, op.value);
                 trapIf({ op: "cbz", width: 64, rt: 9 });
                 saveRaw(9, op.id);
@@ -15010,9 +15107,13 @@ function emitModuleForms(
                 break;
               }
               case "binary": {
-                const immediate = binaryImmediate(op);
+                const immediate = binaryImmediate(op),
+                  floatCompare =
+                    comparisonOperators.includes(op.operator) &&
+                    typeOf(op.left) === "number" &&
+                    !(exactInteger(op.left) && exactInteger(op.right));
                 visitInstructionOperands(op, (id) => {
-                  if (id !== immediate) materializeInteger(id);
+                  if (id !== immediate && !floatCompare) materializeInteger(id);
                 });
                 if ((rotateAmounts[valueIds.intern(op.id)] ?? 0) !== 0)
                   materializeInteger(
@@ -16913,7 +17014,131 @@ function emitModuleForms(
           } else if (t.kind === "jump") {
             if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
           } else if (t.kind === "branch") {
-            if (comparisonBranch !== undefined) {
+            const diamond = selects.diamonds.get(b.id);
+            if (diamond !== undefined) {
+              let selectCondition: Condition;
+              if (comparisonBranch !== undefined)
+                selectCondition = comparisonBranch;
+              else {
+                const condReg = rawRegister(t.condition, 11);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: condReg,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: true,
+                });
+                selectCondition = "ne";
+              }
+              const targetSlot = diamond.targetSlot,
+                dstOffset = slotOffset(targetSlot),
+                dstHome = scalarRegisters?.[dstOffset / 8] ?? 0,
+                isFloat =
+                  fn.slots[targetSlot] === "number" &&
+                  integerSlots[targetSlot] !== 1;
+              if (isFloat) {
+                const loadFloatArm = (
+                  arm: SelectArm,
+                  scratch: number,
+                ): number => {
+                  if (arm.kind === "load") {
+                    const offset = slotOffset(arm.slot),
+                      reg = scalarRegisters?.[offset / 8] ?? 0;
+                    if (integerSlots[arm.slot] === 1) {
+                      const intReg = reg >= 32 ? reg - 32 : 9;
+                      if (reg < 32) rawLoad(9, offset);
+                      emit({ op: "scvtf-d-x", rd: scratch, rn: intReg });
+                      return scratch;
+                    }
+                    if (reg > 0 && reg < 32) return reg;
+                    if (reg >= 32)
+                      emit({ op: "fmov-d-x", rd: scratch, rn: reg - 32 });
+                    else emit({ op: "ldr-d", rt: scratch, rn: "sp", offset });
+                    return scratch;
+                  }
+                  const constant = arm.value;
+                  if (typeof constant !== "number")
+                    throw "float select arm invariant";
+                  const bits = encodeFloat64(constant);
+                  if (bits.lo === 0 && bits.hi === 0) {
+                    emit({ op: "fmov-d-x", rd: scratch, rn: "zr" });
+                    return scratch;
+                  }
+                  const immediate = float64Immediate(constant);
+                  if (immediate !== undefined) {
+                    emit({ op: "fmov-d-imm", rd: scratch, imm8: immediate });
+                    return scratch;
+                  }
+                  imm64(9, bits.lo, bits.hi);
+                  emit({ op: "fmov-d-x", rd: scratch, rn: 9 });
+                  return scratch;
+                };
+                const trueReg = loadFloatArm(diamond.trueArm, 0),
+                  falseReg = loadFloatArm(diamond.falseArm, 1),
+                  dstReg = dstHome > 0 && dstHome < 32 ? dstHome : 0;
+                emit({
+                  op: "fcsel",
+                  rd: dstReg,
+                  rn: trueReg,
+                  rm: falseReg,
+                  condition: selectCondition,
+                });
+                if (dstHome >= 32)
+                  emit({ op: "fmov-x-d", rd: dstHome - 32, rn: dstReg });
+                else if (dstHome === 0)
+                  emit({
+                    op: "str-d",
+                    rt: dstReg,
+                    rn: "sp",
+                    offset: dstOffset,
+                  });
+              } else {
+                const loadRawArm = (
+                  arm: SelectArm,
+                  scratch: number,
+                ): number | "zr" => {
+                  if (arm.kind === "none") return "zr";
+                  if (arm.kind === "constant") {
+                    const constant = arm.value;
+                    if (typeof constant === "boolean") {
+                      if (!constant) return "zr";
+                      imm(scratch, 1);
+                      return scratch;
+                    }
+                    const lo =
+                        ((constant % 4294967296) + 4294967296) % 4294967296,
+                      hi =
+                        (Math.floor(constant / 4294967296) + 4294967296) %
+                        4294967296;
+                    if (lo === 0 && hi === 0) return "zr";
+                    imm64(scratch, lo, hi);
+                    return scratch;
+                  }
+                  const offset = slotOffset(arm.slot),
+                    reg = scalarRegisters?.[offset / 8] ?? 0;
+                  if (reg >= 32) return reg - 32;
+                  rawLoad(scratch, offset);
+                  return scratch;
+                };
+                const trueReg = loadRawArm(diamond.trueArm, 9),
+                  falseReg = loadRawArm(diamond.falseArm, 10),
+                  dstReg = dstHome >= 32 ? dstHome - 32 : 9;
+                emit({
+                  op: "csel",
+                  width: 64,
+                  rd: dstReg,
+                  rn: trueReg,
+                  rm: falseReg,
+                  condition: selectCondition,
+                });
+                if (dstHome < 32) rawStore(dstReg, dstOffset);
+              }
+              stackWords.clear();
+              if (diamond.join !== nextBlock)
+                branch({ op: "b" }, fn.id, diamond.join);
+            } else if (comparisonBranch !== undefined) {
               if (t.consequent === nextBlock)
                 branch(
                   {

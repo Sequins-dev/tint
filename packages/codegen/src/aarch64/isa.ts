@@ -204,6 +204,14 @@ export type Instruction =
       readonly condition: Condition;
     }
   | {
+      /** Double-precision floating-point conditional select: Dd = cond ? Dn : Dm. */
+      readonly op: "fcsel";
+      readonly rd: number;
+      readonly rn: number;
+      readonly rm: number;
+      readonly condition: Condition;
+    }
+  | {
       /** fcvtnu-w-d rounds to nearest, ties to even, and saturates to
        * [0, 2^32 - 1] (NaN gives 0). */
       readonly op:
@@ -857,6 +865,17 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           rn * 32 +
           rd,
       );
+    }
+    case "fcsel": {
+      const cond = condition(i.condition);
+      if (
+        !integer(i.rd, 0, 31) ||
+        !integer(i.rn, 0, 31) ||
+        !integer(i.rm, 0, 31)
+      )
+        return fail("INVALID_REGISTER");
+      if (cond < 0 || cond >= 14) return fail("INVALID_CONDITION");
+      return word(0x1e600c00 + i.rm * 65536 + cond * 4096 + i.rn * 32 + i.rd);
     }
     case "mrs-thread": {
       const rt = register(i.rt, "zr");
