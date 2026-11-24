@@ -3,7 +3,6 @@ import {
   instructionResult,
   naturalLoops,
   recordReadsKept,
-  verifierRecordWork,
   visitInstructionOperands,
   visitTerminatorOperands,
   type Block,
@@ -99,7 +98,7 @@ export function hoistLoopInvariants(
       flush(pending, remarks);
       break;
     }
-    if (!recordReadsKept(current, result.fn, verifierRecordWork)) {
+    if (!recordReadsKept(current, result.fn)) {
       redone++;
       pending.length = 0;
       if (remarks !== undefined)
@@ -117,10 +116,7 @@ export function hoistLoopInvariants(
       result = hoistRound(current, module, budget - visited, sink, false);
       if (result === undefined) return undefined;
       visited += result.visited;
-      if (
-        result.hoisted === 0 ||
-        !recordReadsKept(current, result.fn, verifierRecordWork)
-      ) {
+      if (result.hoisted === 0 || !recordReadsKept(current, result.fn)) {
         flush(pending, remarks);
         break;
       }

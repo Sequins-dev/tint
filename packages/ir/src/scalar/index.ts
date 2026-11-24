@@ -14,9 +14,6 @@ export {
 } from "./function-builder.ts";
 /** Flat UTF-16 result limit: align8(16 + 2 * length) fits uint32 allocation sizes. */
 export const maximumStringLength = 0x7fffffec;
-/** Work limit of the verifier's direct record read proofs. Verification fails
- * loudly past it; passes that must keep IR verifiable check against it. */
-export const verifierRecordWork = 1000000;
 /** Name prefix of the cached-vector dense list readers that
  * cacheListVectors creates: (vector, list, index), where the vector is the
  * list's current root vector or none. Codegen inlines them on that trust. */
@@ -28,8 +25,14 @@ export {
   analyzeRecordAccesses,
   provenRecordReads,
   recordReadsKept,
+  verifierRecordBudget,
+  verifierRecordWork,
 } from "./record-facts.ts";
-import { provenRecordReads, stableDescriptors } from "./record-facts.ts";
+import {
+  provenRecordReads,
+  stableDescriptors,
+  verifierRecordBudget,
+} from "./record-facts.ts";
 export {
   promoteSlots,
   lowerSSA,
@@ -1781,7 +1784,11 @@ export function verify(
           if (op.kind !== "record-read") continue;
           instruction = index;
           if (proofs === undefined) {
-            proofs = provenRecordReads(fn, verifierRecordWork, stableLayouts);
+            proofs = provenRecordReads(
+              fn,
+              verifierRecordBudget(fn),
+              stableLayouts,
+            );
           }
           if (proofs === undefined || proofs[op.id] !== 1)
             fail("TYPE", "record read lacks a proven layout");

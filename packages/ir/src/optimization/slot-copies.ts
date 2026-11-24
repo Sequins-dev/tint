@@ -2,7 +2,7 @@ import type { Block, FunctionIR, Instruction } from "../scalar/index.ts";
 import {
   instructionResult,
   provenRecordReads,
-  verifierRecordWork,
+  verifierRecordBudget,
 } from "../scalar/index.ts";
 
 export interface SlotCopyPropagation {
@@ -427,7 +427,11 @@ export function propagateSlotCopies(
       if (op !== undefined && op.kind === "record-read") reads++;
   }
   if (reads > 0) {
-    const proofs = provenRecordReads(result, verifierRecordWork, stableLayouts);
+    const proofs = provenRecordReads(
+      result,
+      verifierRecordBudget(result),
+      stableLayouts,
+    );
     visited += reads;
     let proven = proofs !== undefined;
     if (proofs !== undefined)

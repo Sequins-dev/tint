@@ -426,20 +426,38 @@ export function provenRecordReads(
   // otherwise exhaust its budget and reject valid, already-lowered reads.
   return analyzeRecordAccesses(fn, maxWork, stableLayouts, false)?.reads;
 }
+/** Least work the verifier spends proving a function's direct record reads. */
+export const verifierRecordWork = 1000000;
+/** Work per instruction and terminator past the floor: proofs cost a few
+ * steps per instruction (the largest Test262 host initializer needs 4.5), so
+ * a large function keeps its reads verifiable instead of failing every one
+ * at a fixed limit. */
+const verifierRecordWorkPerInstruction = 16;
+/** The verifier's work limit for proving `fn`'s direct record reads; past it
+ * verification fails loudly. Passes that create or move direct reads check
+ * them against the same budget, so IR they keep stays verifiable. */
+export function verifierRecordBudget(fn: FunctionIR): number {
+  let size = 0;
+  for (const block of fn.blocks)
+    if (block !== undefined) size += block.instructions.length + 1;
+  const scaled = size * verifierRecordWorkPerInstruction;
+  return scaled > verifierRecordWork ? scaled : verifierRecordWork;
+}
 /** Whether every record read `before` proves (as the verifier does, with or
- * without module-stable layouts) is still proven in `after`, a rewrite that
- * keeps value IDs. `work` bounds each proof (the verifier's budget). Passes
- * that move checks or slot traffic use it to keep verified reads verified. */
+ * without module-stable layouts, under the verifier's budget) is still proven
+ * in `after`, a rewrite that keeps value IDs. Passes that move checks or slot
+ * traffic use it to keep verified reads verified. */
 export function recordReadsKept(
   before: FunctionIR,
   after: FunctionIR,
-  work: number,
 ): boolean {
+  const beforeWork = verifierRecordBudget(before),
+    afterWork = verifierRecordBudget(after);
   for (let pass = 0; pass < 2; pass++) {
     const stable = pass === 1;
-    const kept = provenRecordReads(before, work, stable);
+    const kept = provenRecordReads(before, beforeWork, stable);
     if (kept === undefined) return false;
-    const now = provenRecordReads(after, work, stable);
+    const now = provenRecordReads(after, afterWork, stable);
     if (now === undefined) return false;
     for (let id = 0; id < kept.length; id++)
       if (kept[id] === 1 && now[id] !== 1) return false;

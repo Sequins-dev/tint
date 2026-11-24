@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { FunctionIR, ModuleIR } from "../src/scalar/model.ts";
-import { verify, verifierRecordWork } from "../src/scalar/index.ts";
+import {
+  verify,
+  verifierRecordBudget,
+  verifierRecordWork,
+} from "../src/scalar/index.ts";
 import {
   provenRecordGuards,
   dataflowRecordGuards,
@@ -114,6 +118,90 @@ test("sparse result ids beyond the work budget do not exhaust read proofs", () =
   assert.equal(provenRecordReads(fn, 100)?.[read], 1);
   assert.equal(analyzeRecordAccesses(fn, 100)?.reads[read], 1);
   assert.ok(read > verifierRecordWork);
+  checked(fn);
+});
+test("the verifier's read proof budget grows with the function", () => {
+  // Ten receivers checked up front, read after 100 000 straight-line
+  // instructions: each read's proof scans them all, past the fixed floor
+  // (a Test262 unit host initializer grew there once closure factories
+  // inlined into it, and every lowered read failed verification).
+  const receivers = 10,
+    fillerBlocks = 100,
+    fillerSize = 1000;
+  const blocks: FunctionIR["blocks"][number][] = [],
+    slots: FunctionIR["slots"][number][] = ["number"],
+    parameters: number[] = [];
+  for (let r = 0; r < receivers; r++) {
+    slots.push("reference");
+    parameters.push(r + 1);
+  }
+  const trap = receivers + fillerBlocks + 1;
+  for (let r = 0; r < receivers; r++)
+    blocks.push({
+      id: r,
+      instructions: [{ kind: "load", id: r, slot: r + 1, ...span }],
+      terminator: {
+        kind: "record",
+        object: r,
+        record: 0,
+        field: 0,
+        operation: "read",
+        slot: 0,
+        consequent: r + 1,
+        alternate: trap,
+        ...span,
+      },
+    });
+  let id = receivers;
+  for (let b = 0; b < fillerBlocks; b++) {
+    const instructions: FunctionIR["blocks"][number]["instructions"][number][] =
+      [];
+    for (let i = 0; i < fillerSize; i++)
+      instructions.push({ kind: "constant", id: id++, value: i, ...span });
+    blocks.push({
+      id: receivers + b,
+      instructions,
+      terminator: { kind: "jump", target: receivers + b + 1, ...span },
+    });
+  }
+  const reads: FunctionIR["blocks"][number]["instructions"][number][] = [];
+  for (let r = 0; r < receivers; r++) {
+    const loaded = id++;
+    reads.push({ kind: "load", id: loaded, slot: r + 1, ...span });
+    reads.push({
+      kind: "record-read",
+      id: id++,
+      object: loaded,
+      record: 0,
+      field: 0,
+      ...span,
+    });
+  }
+  blocks.push({
+    id: receivers + fillerBlocks,
+    instructions: reads,
+    terminator: { kind: "return", value: id - 1, ...span },
+  });
+  blocks.push({
+    id: trap,
+    instructions: [],
+    terminator: { kind: "trap", ...span },
+  });
+  const fn: FunctionIR = {
+    id: 0,
+    name: "large",
+    exported: true,
+    parameters,
+    slots,
+    returnType: "number",
+    entry: 0,
+    blocks,
+  };
+  const needed = analyzeRecordAccesses(fn, 1e9, false, false)?.work ?? 0;
+  assert.ok(needed > verifierRecordWork, String(needed));
+  assert.ok(needed <= verifierRecordBudget(fn), String(needed));
+  // The fixed floor alone fails every read; the verifier proves them all.
+  assert.equal(provenRecordReads(fn, verifierRecordWork), undefined);
   checked(fn);
 });
 test("read proofs follow unique predecessor chains of any length", () => {

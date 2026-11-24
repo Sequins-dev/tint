@@ -1391,15 +1391,36 @@ export function optimizeModuleVersion(
   used += dispatched.visited;
   if (completed("dispatch-string-chains", dispatched, false)) return stop();
   const accessBudget = maxInstructions - used;
+  // Functions whose lowered reads the verifier's budget would not prove.
+  let accessFallbacks = 0;
   const accesses = rewriteModuleVersion(
     version,
     sweepChanges,
-    (module: ModuleIR): ModuleRewrite | undefined =>
-      lowerProvenRecordReads(module, accessBudget, remarks),
+    (module: ModuleIR): ModuleRewrite | undefined => {
+      const lowered = lowerProvenRecordReads(module, accessBudget, remarks);
+      if (lowered === undefined) return undefined;
+      accessFallbacks = lowered.fallbacks;
+      return {
+        module: lowered.module,
+        visited: lowered.visited,
+        rewritten: lowered.rewritten,
+      };
+    },
   );
   if (accesses.exhausted)
     return exhausted("lower-proven-record-reads", accessBudget);
-  if (completed("lower-proven-record-reads", accesses, false)) return stop();
+  const accessStep: PassStep =
+    accessFallbacks === 0
+      ? accesses
+      : {
+          visited: accesses.visited,
+          rewritten: accesses.rewritten,
+          skipped: accesses.skipped,
+          fallbacks: accessFallbacks,
+          exhausted: false,
+          replaced: accesses.replaced,
+        };
+  if (completed("lower-proven-record-reads", accessStep, false)) return stop();
   const accessVisited = accesses.visited;
   // Inlined parameters copy their arguments: loads of a copy read the
   // source slot instead, so facts proven on either slot cover both.
