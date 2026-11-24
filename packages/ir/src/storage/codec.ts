@@ -1673,7 +1673,8 @@ const importFlag = 1,
   debugFlag = 64,
   scriptEntryFlag = 128;
 /** Second function flags byte. */
-const safeIntegerSlotsFlag = 1;
+const safeIntegerSlotsFlag = 1,
+  nonzeroSlotsFlag = 2;
 /** Appends one function record to `writer`. */
 export function encodeFunction(
   writer: ByteWriter,
@@ -1686,6 +1687,7 @@ export function encodeFunction(
     integerSlots = fn.integerSlots,
     safeIntegerSlots = fn.safeIntegerSlots,
     safeIntegerBounds = fn.safeIntegerBounds,
+    nonzeroSlots = fn.nonzeroSlots,
     debug = fn.debug;
   writer.spanBase = 0;
   writeByte(writer, packedFunctionVersion);
@@ -1700,7 +1702,11 @@ export function encodeFunction(
       bit(debug !== undefined, debugFlag) +
       bit(fn.scriptEntry === true, scriptEntryFlag),
   );
-  writeByte(writer, bit(safeIntegerSlots !== undefined, safeIntegerSlotsFlag));
+  writeByte(
+    writer,
+    bit(safeIntegerSlots !== undefined, safeIntegerSlotsFlag) +
+      bit(nonzeroSlots !== undefined, nonzeroSlotsFlag),
+  );
   writeSigned(writer, fn.id);
   writeString(writer, fn.name);
   writeByte(writer, scalarCode(fn.returnType));
@@ -1727,6 +1733,7 @@ export function encodeFunction(
       writeUnsigned(writer, bound);
     }
   }
+  if (nonzeroSlots !== undefined) writeList(writer, nonzeroSlots);
   writeUnsigned(writer, fn.blocks.length);
   for (const block of fn.blocks) {
     if (block === undefined) throw "packed IR block invariant";
@@ -1773,6 +1780,9 @@ export function decodeFunction(
   const safeIntegerBounds: number[] = [];
   for (let index = 0; index < (safeIntegerSlots?.length ?? 0); index++)
     safeIntegerBounds.push(readUnsigned(reader));
+  const nonzeroSlots = flagged(moreFlags, nonzeroSlotsFlag)
+    ? readList(reader)
+    : undefined;
   const blockCount = readUnsigned(reader);
   const blocks: Block[] = [];
   for (let index = 0; index < blockCount; index++)
@@ -1797,6 +1807,7 @@ export function decodeFunction(
   if (integerSlots !== undefined) fn = { ...fn, integerSlots };
   if (safeIntegerSlots !== undefined)
     fn = { ...fn, safeIntegerSlots, safeIntegerBounds };
+  if (nonzeroSlots !== undefined) fn = { ...fn, nonzeroSlots };
   if (debug !== undefined) fn = { ...fn, debug };
   return fn;
 }

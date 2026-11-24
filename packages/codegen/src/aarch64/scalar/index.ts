@@ -3506,7 +3506,12 @@ function emitModuleForms(
         const integerSlots = new Uint8Array(fn.slots.length),
           // Safe integer slots (bounds): int64 slots whose loads are
           // bounded safe integers (word kind 6) of these magnitudes.
-          safeSlotBounds = new Float64Array(fn.slots.length);
+          safeSlotBounds = new Float64Array(fn.slots.length),
+          // Nonzero slots (bounds): integers other than 0, divisors whose
+          // remainders never divide by zero.
+          nonzeroSlots = new Uint8Array(fn.slots.length);
+        for (const slot of fn.nonzeroSlots ?? [])
+          if (slot !== undefined) nonzeroSlots[slot] = 1;
         const safeIntegerBounds = fn.safeIntegerBounds ?? [];
         for (
           let index = 0;
@@ -6238,6 +6243,8 @@ function emitModuleForms(
           // quieted unwraps. Moves, FNEG and memory reads keep raw bits.
           quietValues = new Uint8Array(values.length),
           wordKinds = new Uint8Array(values.length),
+          // Loads of nonzero slots: divisors that are never 0.
+          nonzeroValues = new Uint8Array(values.length),
           wordConstants = new Uint32Array(values.length),
           wordMagnitudes = new Float64Array(values.length),
           slotWordBlocks = new Uint32Array(fn.slots.length),
@@ -8867,6 +8874,12 @@ function emitModuleForms(
               }
             }
             if (
+              op.kind === "load" &&
+              nonzeroSlots[op.slot] === 1 &&
+              fn.slots[op.slot] === "number"
+            )
+              nonzeroValues[valueIds.intern(op.id)] = 1;
+            if (
               op.kind === "unary" &&
               (op.operator === "trunc" || op.operator === "ceil") &&
               exactInteger(op.operand)
@@ -8881,17 +8894,33 @@ function emitModuleForms(
             }
             if (op.kind === "binary" && op.operator === "%") {
               // An exact integer modulo a nonzero integer constant d is an
-              // integer below |d| in magnitude (-0 aside, as for sums).
-              const divisor = numberConstant(op.right);
+              // integer below |d| in magnitude (-0 aside, as for sums); one
+              // modulo a nonzero slot's value is below that value's bound,
+              // and no larger than the dividend.
+              const divisor = numberConstant(op.right),
+                index = valueIds.intern(op.id);
               if (
                 divisor !== undefined &&
                 Number.isSafeInteger(divisor) &&
                 divisor !== 0 &&
                 exactInteger(op.left)
               ) {
-                const index = valueIds.intern(op.id);
                 wordKinds[index] = 6;
                 wordMagnitudes[index] = Math.max(1, Math.abs(divisor) - 1);
+              } else if (
+                nonzeroValues[valueIds.intern(op.right)] === 1 &&
+                exactInteger(op.left) &&
+                exactInteger(op.right)
+              ) {
+                const left = wordMagnitude(valueIds.intern(op.left)),
+                  right = wordMagnitude(valueIds.intern(op.right));
+                if (left >= 0 && right >= 0) {
+                  wordKinds[index] = 6;
+                  wordMagnitudes[index] = Math.max(
+                    1,
+                    Math.min(left, right - 1),
+                  );
+                }
               }
             }
             // Binary operations keep an immediate operand deferred, and
@@ -15175,18 +15204,23 @@ function emitModuleForms(
                   // Exact integer operands (below 2^53) divide as int64s:
                   // SDIV truncates toward zero, so MSUB leaves the
                   // remainder with the dividend's sign, as in ECMAScript.
-                  // A nonzero constant divisor needs no zero test; a zero
-                  // divisor gives NaN. A non-negative dividend's remainder
-                  // is never -0, so with a nonzero constant divisor it is
-                  // an int64 result when its uses take one; otherwise a
-                  // zero remainder takes the dividend's sign.
+                  // A nonzero divisor (a constant, or a nonzero slot's
+                  // value) needs no zero test; a zero divisor gives NaN. A
+                  // non-negative dividend's remainder is never -0, so with
+                  // a nonzero divisor it is an int64 result when its uses
+                  // take one; otherwise a zero remainder takes the
+                  // dividend's sign.
                   const divisor = numberConstant(op.right),
                     constant =
                       divisor !== undefined &&
                       Number.isSafeInteger(divisor) &&
                       divisor !== 0
                         ? divisor
-                        : undefined;
+                        : undefined,
+                    // A nonzero slot's value never divides by zero either.
+                    nonzeroDivisor =
+                      constant !== undefined ||
+                      nonzeroValues[valueIds.intern(op.right)] === 1;
                   intOperand(op.left, 9);
                   if (constant === undefined) intOperand(op.right, 10);
                   else {
@@ -15198,7 +15232,7 @@ function emitModuleForms(
                     imm64(10, lo, hi);
                   }
                   if (
-                    constant !== undefined &&
+                    nonzeroDivisor &&
                     nonNegative(op.left) &&
                     wantsInteger(op.id)
                   ) {
@@ -15218,7 +15252,7 @@ function emitModuleForms(
                   }
                   const target = floatTarget(op.id, 0);
                   let zeroDivisor = -1;
-                  if (constant === undefined) {
+                  if (!nonzeroDivisor) {
                     zeroDivisor = instructions.length;
                     emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
                   }

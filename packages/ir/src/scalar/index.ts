@@ -628,6 +628,19 @@ export function verify(
           );
         previousSafe = slot ?? previousSafe;
       }
+      let previousNonzero = -1;
+      for (const slot of f.nonzeroSlots ?? []) {
+        if (
+          slot === undefined ||
+          !natural(slot) ||
+          slot <= previousNonzero ||
+          f.slots[slot] !== "number" ||
+          params[slot] === 1 ||
+          slot === receiverSlot
+        )
+          fail("GRAPH", "nonzero slots must be ascending local number slots");
+        previousNonzero = slot ?? previousNonzero;
+      }
       if (f.import !== undefined) {
         if (
           f.import !== true ||

@@ -543,9 +543,15 @@ export function selectArrayAccesses(
     return {
       // Earlier safe integer facts are replaced whole (see below).
       fn:
-        fn.safeIntegerSlots === undefined
+        fn.safeIntegerSlots === undefined && fn.nonzeroSlots === undefined
           ? fn
-          : { ...fn, safeIntegerSlots: [], safeIntegerBounds: [] },
+          : {
+              ...fn,
+              ...(fn.safeIntegerSlots === undefined
+                ? {}
+                : { safeIntegerSlots: [], safeIntegerBounds: [] }),
+              ...(fn.nonzeroSlots === undefined ? {} : { nonzeroSlots: [] }),
+            },
       visited,
       rewritten: 0,
     };
@@ -1026,16 +1032,19 @@ export function selectArrayAccesses(
   // Number slots whose every reachable write stores a proven 32-bit integer
   // (signed or unsigned) other than -0: codegen may hold them as integers.
   // Wider ones whose writes are all safe integers other than -0 are safe
-  // integer slots, with the largest magnitude written as their bound.
+  // integer slots, with the largest magnitude written as their bound. Either
+  // kind whose writes all exclude 0 is also a nonzero slot.
   // Entry values (parameters, the receiver) and opaque writes are unknown.
   const integral = new Uint8Array(trackedCount),
     safe = new Uint8Array(trackedCount),
+    nonzero = new Uint8Array(trackedCount),
     magnitudes = new Float64Array(trackedCount);
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
     if (index >= 0 && opaque[slot] !== 1 && fn.slots[slot] === "number") {
       integral[index] = 1;
       safe[index] = 1;
+      nonzero[index] = 1;
     }
   }
   for (const block of fn.blocks) {
@@ -1057,10 +1066,13 @@ export function selectArrayAccesses(
       ) {
         integral[index] = 0;
         safe[index] = 0;
+        nonzero[index] = 0;
         continue;
       }
       if (interval.lo < -2147483648 || interval.hi > 4294967295)
         integral[index] = 0;
+      // Integer intervals exclude NaN, so one excluding 0 is nonzero.
+      if (hasZero(interval)) nonzero[index] = 0;
       magnitudes[index] = Math.max(
         magnitudes[index] ?? 0,
         -interval.lo,
@@ -1070,10 +1082,13 @@ export function selectArrayAccesses(
   }
   const integerSlots: number[] = [],
     safeIntegerSlots: number[] = [],
-    safeIntegerBounds: number[] = [];
+    safeIntegerBounds: number[] = [],
+    nonzeroSlots: number[] = [];
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
     if (index < 0) continue;
+    if (nonzero[index] === 1 && (integral[index] === 1 || safe[index] === 1))
+      nonzeroSlots.push(slot);
     if (integral[index] === 1) integerSlots.push(slot);
     else if (safe[index] === 1) {
       safeIntegerSlots.push(slot);
@@ -1310,14 +1325,17 @@ export function selectArrayAccesses(
           : substituteTerminatorValues(block.terminator, substitution),
     });
   }
-  // Safe integer facts replace any earlier ones whole (an earlier list may
-  // name a slot that is now an integer slot).
+  // Safe integer and nonzero facts replace any earlier ones whole (an
+  // earlier list may name a slot that is now an integer slot).
   const facts: FunctionIR = {
     ...fn,
     ...(integerSlots.length === 0 ? {} : { integerSlots }),
     ...(safeIntegerSlots.length === 0 && fn.safeIntegerSlots === undefined
       ? {}
       : { safeIntegerSlots, safeIntegerBounds }),
+    ...(nonzeroSlots.length === 0 && fn.nonzeroSlots === undefined
+      ? {}
+      : { nonzeroSlots }),
   };
   if (rewritten === 0) return { fn: facts, visited, rewritten: 0 };
   return { fn: { ...facts, blocks }, visited, rewritten };

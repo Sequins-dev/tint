@@ -59,8 +59,9 @@ import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
 import { hoistLoopInvariants } from "./licm.ts";
-import { boundCountedLoops } from "./counted-loops.ts";
+import { boundCountedLoops, versionNonzeroDivisors } from "./counted-loops.ts";
 export { hoistLoopInvariants } from "./licm.ts";
+export { versionNonzeroDivisors } from "./counted-loops.ts";
 export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
 
@@ -1610,11 +1611,34 @@ export function optimizeModuleVersion(
   if (bounded.exhausted)
     return exhausted("bound-counted-loops", bounded.visited);
   if (completed("bound-counted-loops", bounded, false)) return stop();
-  // Interval facts again where a counter now has a word bound: values
-  // derived from it (a loop-invariant `round * 7` carried in a slot) become
-  // safe integer slots. Selection rewrites accesses in place and moves no
+  // Loops taking remainders by an invariant integer get a version for a
+  // positive divisor, whose remainders codegen keeps integers.
+  const divided = rewriteFunctions(
+    version,
+    vectorBudget - vectors.visited - bounded.visited,
+    undefined,
+    boundChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = versionNonzeroDivisors(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.versioned,
+            refused: false,
+          };
+    },
+  );
+  if (divided.exhausted)
+    return exhausted("version-nonzero-divisors", divided.visited);
+  if (completed("version-nonzero-divisors", divided, false)) return stop();
+  // Interval facts again where a counter now has a word bound or a divisor
+  // a positive slot: values derived from a counter (a loop-invariant
+  // `round * 7` carried in a slot) become safe integer slots, and positive
+  // divisors nonzero slots. Selection rewrites accesses in place and moves no
   // code, which the vector caches above require. It runs (and reports) only
-  // when some loop was bounded.
+  // when some loop was bounded or versioned.
   const reboundSelection = new Uint8Array(version.module.functions.length);
   let rebound = false;
   for (let id = 0; id < boundChanges.length; id++)
@@ -1625,7 +1649,7 @@ export function optimizeModuleVersion(
   if (!rebound) return { passes, budgetExhausted: false };
   const reselected = rewriteFunctions(
     version,
-    vectorBudget - vectors.visited - bounded.visited,
+    vectorBudget - vectors.visited - bounded.visited - divided.visited,
     reboundSelection,
     undefined,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {

@@ -563,6 +563,10 @@ export interface FunctionIR {
   /** The magnitude bound (at most 2^53 - 1) of each safeIntegerSlots entry,
    * entry for entry. */
   readonly safeIntegerBounds?: readonly number[];
+  /** Optimization facts: number slots (ascending) whose every write stores
+   * an integer other than 0 and -0, so remainders by their values never
+   * divide by zero. The same pass rules as for integerSlots apply. */
+  readonly nonzeroSlots?: readonly number[];
   readonly returnType: ReturnType;
   readonly entry: number;
   readonly blocks: readonly Block[];

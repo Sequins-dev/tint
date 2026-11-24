@@ -112,6 +112,11 @@ export function compactSlots(
       safeIntegerBounds.push(bound);
     }
   }
+  const nonzeroSlots: number[] = [];
+  for (const id of fn.nonzeroSlots ?? []) {
+    if (id === undefined || ++visited > budget) return undefined;
+    if ((mapping[id] ?? 0) !== 0) nonzeroSlots.push(slot(id));
+  }
   // Debug names follow their slots; bindings of removed slots are dropped.
   const debug = fn.debug,
     bindings: SlotBinding[] = [];
@@ -130,6 +135,7 @@ export function compactSlots(
       ...(fn.safeIntegerSlots === undefined
         ? {}
         : { safeIntegerSlots, safeIntegerBounds }),
+      ...(fn.nonzeroSlots === undefined ? {} : { nonzeroSlots }),
       ...(debug === undefined ? {} : { debug: { ...debug, slots: bindings } }),
       blocks,
       ...(fn.receiverSlot === undefined

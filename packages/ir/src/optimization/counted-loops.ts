@@ -211,6 +211,346 @@ export function boundCountedLoops(
   return { fn: current, visited, bounded };
 }
 
+export interface DivisorVersions {
+  readonly fn: FunctionIR;
+  readonly visited: number;
+  /** Loops given a version whose divisor is known positive. */
+  readonly versioned: number;
+}
+
+/** Loop versions for remainders by a loop-invariant divisor. `x % d` with
+ * an integer `d` that may be 0 yields NaN, so its result is a double. A
+ * loop whose body takes a remainder by a load of a number slot `d` that the
+ * loop never writes, where `d` is an integer or safe integer slot not
+ * already proven nonzero, tests
+ * `d > 0` once ahead of the loop. When that holds the loop runs reading `d`
+ * from a fresh slot holding that positive value, which bounds proves a
+ * nonzero slot, so codegen divides as int64s with an integer result;
+ * otherwise a cold copy of the loop runs as written. The copy renames the
+ * loop-local slots as boundCountedLoops' does, so its values never reach
+ * the hot loop's slots. Innermost loops first, one divisor per loop (the
+ * first in block order); loops with exception handlers, without a
+ * plain-jump preheader, or above the size limit are left alone. Verified
+ * IR with dense block IDs only. */
+export function versionNonzeroDivisors(
+  fn: FunctionIR,
+  budget: number,
+  remarks?: RemarkSink,
+): DivisorVersions | undefined {
+  if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
+  const count = fn.blocks.length;
+  for (let index = 0; index < count; index++)
+    if (fn.blocks[index]?.id !== index) return { fn, visited: 0, versioned: 0 };
+  // Divisors worth a version: integer slots, whose remainders codegen can
+  // keep integers once the divisor is known nonzero.
+  const integral = new Uint8Array(fn.slots.length);
+  let anyIntegral = false;
+  for (const slot of fn.integerSlots ?? [])
+    if (slot !== undefined) {
+      integral[slot] = 1;
+      anyIntegral = true;
+    }
+  for (const slot of fn.safeIntegerSlots ?? [])
+    if (slot !== undefined) {
+      integral[slot] = 1;
+      anyIntegral = true;
+    }
+  // Divisors already proven nonzero need no version.
+  for (const slot of fn.nonzeroSlots ?? [])
+    if (slot !== undefined) integral[slot] = 0;
+  if (!anyIntegral)
+    return count > budget ? undefined : { fn, visited: count, versioned: 0 };
+  const forest = naturalLoops(fn, budget);
+  if (forest === undefined) return undefined;
+  let visited = forest.visited;
+  if (forest.loops.length === 0) return { fn, visited, versioned: 0 };
+  const predecessors: number[][] = [];
+  for (let index = 0; index < count; index++) predecessors.push([]);
+  let nextValue = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "divisor version block invariant";
+    for (const target of successors(block.terminator)) {
+      if (target === undefined) throw "divisor version successor invariant";
+      predecessors[target]?.push(block.id);
+    }
+    const exception = block.exception;
+    if (exception !== undefined) predecessors[exception.target]?.push(block.id);
+    for (const op of block.instructions) {
+      if (op === undefined) throw "divisor version instruction invariant";
+      if (++visited > budget) return undefined;
+      const id = instructionResult(op);
+      if (id !== undefined && id >= nextValue) nextValue = id + 1;
+    }
+  }
+  const loops: NaturalLoop[] = [];
+  for (const loop of forest.loops) {
+    if (loop === undefined) throw "divisor version loop invariant";
+    let at = loops.length;
+    while (at > 0 && (loops[at - 1]?.body.size ?? 0) > loop.body.size) at--;
+    loops.splice(at, 0, loop);
+  }
+  let current = fn,
+    versioned = 0;
+  const touched = new Uint8Array(count);
+  for (const loop of loops) {
+    if (loop === undefined) throw "divisor version loop invariant";
+    let overlap = false;
+    for (const id of loop.body)
+      if (id !== undefined && touched[id] === 1) overlap = true;
+    if (overlap) continue;
+    const candidate = divisorLoop(current, loop, predecessors, integral);
+    if (candidate === undefined) continue;
+    visited += candidate.visited;
+    if (visited > budget) return undefined;
+    const local = loopLocalCandidates(current, loop, -1);
+    const live = analyzeLiveSlots(current, budget - visited, local);
+    if (live === undefined) return undefined;
+    visited += live.work;
+    let joined = false;
+    for (const id of candidate.exits)
+      if (predecessors[id]?.length === 1) joined = true;
+    const renamed = local.filter(
+      (slot) =>
+        live.slots[loop.header]?.includes(slot) !== true &&
+        candidate.exits.every((id) => live.slots[id]?.includes(slot) !== true),
+    );
+    const result = versionLoop(current, loop, candidate, renamed, nextValue);
+    visited += result.visited;
+    if (visited > budget) return undefined;
+    // The copy's exits join the loop's: a record read proven along the
+    // unique-predecessor chain through an exit must stay proven.
+    if (joined && !recordReadsKept(current, result.fn)) {
+      if (remarks !== undefined)
+        remarks({
+          pass: "version-nonzero-divisors",
+          outcome: "missed",
+          function: fn.name,
+          start: candidate.start,
+          end: candidate.end,
+          message: "cold copy would join a proven record read's path",
+        });
+      continue;
+    }
+    current = result.fn;
+    nextValue = result.nextValue;
+    versioned++;
+    for (const id of loop.body) if (id !== undefined) touched[id] = 1;
+    for (const id of candidate.exits) if (id !== undefined) touched[id] = 1;
+    touched[candidate.preheader] = 1;
+    if (remarks !== undefined)
+      remarks({
+        pass: "version-nonzero-divisors",
+        outcome: "applied",
+        function: fn.name,
+        start: candidate.start,
+        end: candidate.end,
+        message: "remainders by s" + String(candidate.divisor) + " > 0",
+      });
+  }
+  return { fn: current, visited, versioned };
+}
+
+interface DivisorLoop {
+  readonly preheader: number;
+  readonly divisor: number;
+  /** Blocks outside the loop that its blocks branch to. */
+  readonly exits: readonly number[];
+  readonly start: number;
+  readonly end: number;
+  readonly visited: number;
+}
+
+/** The divisor slot and preheader of `loop`, when it has the shape
+ * versionNonzeroDivisors handles. */
+function divisorLoop(
+  fn: FunctionIR,
+  loop: NaturalLoop,
+  predecessors: readonly (readonly number[])[],
+  integral: Uint8Array,
+): DivisorLoop | undefined {
+  const outside = (predecessors[loop.header] ?? []).filter(
+    (id) => !loop.body.has(id),
+  );
+  const preheaderId = outside[0];
+  if (outside.length !== 1 || preheaderId === undefined) return undefined;
+  const preheader = fn.blocks[preheaderId];
+  if (
+    preheader === undefined ||
+    preheader.terminator.kind !== "jump" ||
+    preheader.exception !== undefined
+  )
+    return undefined;
+  let instructions = 0,
+    divisor = -1,
+    start = 0,
+    end = 0;
+  const exits: number[] = [];
+  for (const id of loop.body) {
+    if (id === undefined) throw "divisor version body invariant";
+    const block = fn.blocks[id];
+    if (block === undefined) throw "divisor version block invariant";
+    if (block.exception !== undefined) return undefined;
+    const t = block.terminator;
+    for (const target of successors(t)) {
+      if (target === undefined) throw "divisor version successor invariant";
+      if (!loop.body.has(target) && !exits.includes(target)) exits.push(target);
+    }
+    const loaded = new Map<number, number>();
+    for (const op of block.instructions) {
+      if (op === undefined) throw "divisor version instruction invariant";
+      instructions++;
+      if (op.kind === "load") loaded.set(op.id, op.slot);
+      else if (op.kind === "binary" && op.operator === "%" && divisor < 0) {
+        const slot = loaded.get(op.right);
+        if (
+          slot !== undefined &&
+          fn.slots[slot] === "number" &&
+          integral[slot] === 1 &&
+          !loop.writes.has(slot)
+        ) {
+          divisor = slot;
+          start = op.start;
+          end = op.end;
+        }
+      }
+    }
+  }
+  if (divisor < 0 || instructions > maxBoundedInstructions) return undefined;
+  return {
+    preheader: preheaderId,
+    divisor,
+    exits,
+    start,
+    end,
+    visited: instructions,
+  };
+}
+
+/** `fn` with `loop` reading its divisor from a fresh slot, entered when the
+ * divisor is positive, and a cold copy entered otherwise (see
+ * versionNonzeroDivisors). */
+function versionLoop(
+  fn: FunctionIR,
+  loop: NaturalLoop,
+  candidate: DivisorLoop,
+  renamed: readonly number[],
+  firstValue: number,
+): {
+  readonly fn: FunctionIR;
+  readonly nextValue: number;
+  readonly visited: number;
+} {
+  let nextValue = firstValue,
+    visited = 0;
+  const blocks: Block[] = fn.blocks.slice(),
+    slots: ScalarType[] = fn.slots.slice();
+  const positive = slots.length;
+  slots.push("number");
+  const coldSlots = new Map<number, number>();
+  for (const slot of renamed) {
+    coldSlots.set(slot, slots.length);
+    slots.push(fn.slots[slot] ?? "number");
+  }
+  const start0 = candidate.start,
+    end0 = candidate.end;
+  const copy = copyLoop(fn, blocks, loop, coldSlots, nextValue);
+  nextValue = copy.nextValue;
+  visited += copy.visited;
+  // The hot loop reads the divisor from its positive slot.
+  for (const id of loop.body) {
+    if (id === undefined) throw "divisor version body invariant";
+    const block = blocks[id];
+    if (block === undefined) throw "divisor version block invariant";
+    const instructions: Instruction[] = [];
+    for (const op of block.instructions) {
+      if (op === undefined) throw "divisor version instruction invariant";
+      visited++;
+      instructions.push(
+        op.kind === "load" && op.slot === candidate.divisor
+          ? { ...op, slot: positive }
+          : op,
+      );
+    }
+    blocks[id] = { ...block, instructions };
+  }
+  const loaded = nextValue++,
+    hotEntry = blocks.length;
+  blocks.push({
+    id: hotEntry,
+    instructions: [
+      {
+        kind: "load",
+        id: loaded,
+        slot: candidate.divisor,
+        start: start0,
+        end: end0,
+      },
+      {
+        kind: "store",
+        slot: positive,
+        value: loaded,
+        start: start0,
+        end: end0,
+      },
+    ],
+    terminator: { kind: "jump", target: loop.header, start: start0, end: end0 },
+  });
+  // The preheader enters the hot loop only for a positive divisor.
+  const preheader = fn.blocks[candidate.preheader];
+  if (preheader === undefined) throw "divisor version preheader invariant";
+  const tested = nextValue++,
+    zero = nextValue++,
+    above = nextValue++;
+  const guard: Instruction[] = preheader.instructions.slice();
+  guard.push(
+    {
+      kind: "load",
+      id: tested,
+      slot: candidate.divisor,
+      start: start0,
+      end: end0,
+    },
+    { kind: "constant", id: zero, value: 0, start: start0, end: end0 },
+    {
+      kind: "binary",
+      id: above,
+      operator: ">",
+      left: tested,
+      right: zero,
+      start: start0,
+      end: end0,
+    },
+  );
+  blocks[candidate.preheader] = {
+    id: preheader.id,
+    instructions: guard,
+    terminator: {
+      kind: "branch",
+      condition: above,
+      consequent: hotEntry,
+      alternate: copy.header,
+      start: start0,
+      end: end0,
+    },
+  };
+  // The positive slot and the copy's slots are the same source variables.
+  const debug = fn.debug;
+  let result: FunctionIR = { ...fn, slots, blocks };
+  if (debug !== undefined) {
+    const bindings: SlotBinding[] = debug.slots.slice();
+    for (const binding of debug.slots) {
+      if (binding === undefined) continue;
+      if (binding.slot === candidate.divisor)
+        bindings.push({ slot: positive, variable: binding.variable });
+      const cold = coldSlots.get(binding.slot);
+      if (cold !== undefined)
+        bindings.push({ slot: cold, variable: binding.variable });
+    }
+    result = { ...fn, slots, blocks, debug: { ...debug, slots: bindings } };
+  }
+  return { fn: result, nextValue, visited };
+}
+
 /** Number slots other than `counter` that `loop` writes with store
  * instructions only (no terminator writes them), excluding parameters and
  * the receiver. */
@@ -479,59 +819,10 @@ function boundLoop(
   const start0 = candidate.start,
     end0 = candidate.end;
   // The cold copy: every body block, the counter renamed, exits unchanged.
-  const copies = new Map<number, number>();
-  for (const id of loop.body) {
-    if (id === undefined) throw "counted loop body invariant";
-    copies.set(id, blocks.length);
-    blocks.push({
-      id: blocks.length,
-      instructions: [],
-      terminator: { kind: "trap", start: 0, end: 0 },
-    });
-  }
-  const route = (target: number): number => copies.get(target) ?? target;
-  const substitution = new Uint32Array(firstValue);
-  for (const original of loop.body) {
-    if (original === undefined) throw "counted loop body invariant";
-    const block = fn.blocks[original],
-      copyId = copies.get(original);
-    if (block === undefined || copyId === undefined)
-      throw "counted loop block invariant";
-    substitution.fill(0);
-    const instructions: Instruction[] = [];
-    for (const op of block.instructions) {
-      if (op === undefined) throw "counted loop instruction invariant";
-      visited++;
-      const substituted = substituteInstructionValues(op, substitution),
-        result = instructionResult(op);
-      let copied = substituted;
-      if (result !== undefined) {
-        const renamed = nextValue++;
-        substitution[result] = renamed + 1;
-        copied = renumberInstructionResult(substituted, renamed);
-      }
-      const coldSlot =
-        copied.kind === "load" || copied.kind === "store"
-          ? coldSlots.get(copied.slot)
-          : undefined;
-      if (
-        coldSlot !== undefined &&
-        (copied.kind === "load" || copied.kind === "store")
-      )
-        instructions.push({ ...copied, slot: coldSlot });
-      else instructions.push(copied);
-    }
-    blocks[copyId] = {
-      id: copyId,
-      instructions,
-      terminator: retarget(
-        substituteTerminatorValues(block.terminator, substitution),
-        route,
-      ),
-    };
-  }
-  const coldHeader = copies.get(loop.header);
-  if (coldHeader === undefined) throw "counted loop entry invariant";
+  const copy = copyLoop(fn, blocks, loop, coldSlots, nextValue);
+  nextValue = copy.nextValue;
+  visited += copy.visited;
+  const coldHeader = copy.header;
   const coldStart = nextValue++,
     coldEntry = blocks.length;
   const cold: Instruction[] = [];
@@ -703,6 +994,79 @@ function boundLoop(
     result = { ...fn, slots, blocks, debug: { ...debug, slots: bindings } };
   }
   return { fn: result, nextValue, visited };
+}
+
+/** Appends to `blocks` a copy of `loop`'s body: fresh value IDs from
+ * `firstValue`, the slots of `slotRenames` renamed in loads and stores,
+ * edges within the loop routed to the copies and exits unchanged. Returns
+ * the copy of the header. */
+function copyLoop(
+  fn: FunctionIR,
+  blocks: Block[],
+  loop: NaturalLoop,
+  slotRenames: ReadonlyMap<number, number>,
+  firstValue: number,
+): {
+  readonly header: number;
+  readonly nextValue: number;
+  readonly visited: number;
+} {
+  let nextValue = firstValue,
+    visited = 0;
+  const copies = new Map<number, number>();
+  for (const id of loop.body) {
+    if (id === undefined) throw "loop copy body invariant";
+    copies.set(id, blocks.length);
+    blocks.push({
+      id: blocks.length,
+      instructions: [],
+      terminator: { kind: "trap", start: 0, end: 0 },
+    });
+  }
+  const route = (target: number): number => copies.get(target) ?? target;
+  const substitution = new Uint32Array(firstValue);
+  for (const original of loop.body) {
+    if (original === undefined) throw "loop copy body invariant";
+    const block = fn.blocks[original],
+      copyId = copies.get(original);
+    if (block === undefined || copyId === undefined)
+      throw "loop copy block invariant";
+    substitution.fill(0);
+    const instructions: Instruction[] = [];
+    for (const op of block.instructions) {
+      if (op === undefined) throw "loop copy instruction invariant";
+      visited++;
+      const substituted = substituteInstructionValues(op, substitution),
+        result = instructionResult(op);
+      let copied = substituted;
+      if (result !== undefined) {
+        const renamed = nextValue++;
+        substitution[result] = renamed + 1;
+        copied = renumberInstructionResult(substituted, renamed);
+      }
+      const slot =
+        copied.kind === "load" || copied.kind === "store"
+          ? slotRenames.get(copied.slot)
+          : undefined;
+      if (
+        slot !== undefined &&
+        (copied.kind === "load" || copied.kind === "store")
+      )
+        instructions.push({ ...copied, slot });
+      else instructions.push(copied);
+    }
+    blocks[copyId] = {
+      id: copyId,
+      instructions,
+      terminator: retarget(
+        substituteTerminatorValues(block.terminator, substitution),
+        route,
+      ),
+    };
+  }
+  const header = copies.get(loop.header);
+  if (header === undefined) throw "loop copy entry invariant";
+  return { header, nextValue, visited };
 }
 
 function successors(term: Terminator): number[] {
