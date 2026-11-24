@@ -114,6 +114,14 @@
   do not append a progress diary or merge focused rechecks into older totals.
   Link detailed evidence instead of copying logs into design documents.
 
+## Merging to main
+
+- Land pull requests on `main` only as squash merges, so each PR becomes one
+  commit with a descriptive message. Never use merge commits or rebase merges
+  for `main`.
+- For stacked PRs, squash-merge the lower PR first, then rebase the next PR onto
+  the updated `main` and retarget it before squashing it.
+
 ## Continuous cleanup
 
 Always watch for opportunities to clean up and improve the code while working.
