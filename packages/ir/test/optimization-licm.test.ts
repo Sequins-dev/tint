@@ -385,13 +385,14 @@ test("a check a direct read relies on through a slot copy stays in the loop", ()
   });
   // hoist() verifies the result: the read keeps its proof.
   const fn = hoist(module);
-  // The redo backstop is a visible fallback.
+  // The dependence test follows the copy, so the redo backstop (a visible
+  // fallback) never fires.
   const redone = hoistLoopInvariants(
     module.functions[0]!,
     module,
     100000,
   )?.redone;
-  assert.equal(redone, 1);
+  assert.equal(redone, 0);
   assert.equal(
     fn.blocks.find((block) => block.id === 0)!.terminator.kind,
     "jump",

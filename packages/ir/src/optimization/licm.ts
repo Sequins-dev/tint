@@ -354,11 +354,35 @@ function constructedIn(block: Block, value: number): boolean {
       return true;
   return false;
 }
+/** The slot whose value a stored value copies (through reference unwraps
+ * and wraps), as the verifier's layout trace follows slot stores. Looks up
+ * the block's definitions so far. */
+function copiedSlot(
+  definitions: ReadonlyMap<number, Instruction>,
+  value: number,
+): number | undefined {
+  let current = value;
+  for (let depth = 0; depth < 8; depth++) {
+    const definition = definitions.get(current);
+    if (definition === undefined) return undefined;
+    if (definition.kind === "load") return definition.slot;
+    if (
+      definition.kind === "reference-value" ||
+      definition.kind === "reference-wrap"
+    )
+      current = definition.value;
+    else return undefined;
+  }
+  return undefined;
+}
 function recordProofs(fn: FunctionIR, readHoists: boolean): RecordProof {
   // Objects of unchecked record operations anywhere in the function, whose
   // layout proof may rest on a checked read in the loop: such reads stay in
-  // place.
+  // place. A proof traces its object's slot back through stores of copied
+  // slots, so every slot such a slot copies (transitively) counts too.
   const provenOrigins = new Set<number>();
+  // Slot -> the slots stored into it as copies.
+  const copies = new Map<number, number[]>();
   let unknownProven = false;
   // Blocks entered on the failure edge of another check, such as the later
   // layouts of a union dispatch: they run only when that check failed, so a
@@ -374,16 +398,37 @@ function recordProofs(fn: FunctionIR, readHoists: boolean): RecordProof {
       exit.kind === "cell"
     )
       failureTargets.add(exit.alternate);
+    const definitions = new Map<number, Instruction>();
     for (const op of block.instructions) {
       if (op === undefined) continue;
+      const result = instructionResult(op);
+      if (result !== undefined) definitions.set(result, op);
       if (op.kind === "record-read" || op.kind === "record-has") {
         const slot = recordObjectOrigin(block, op.object);
         if (slot !== undefined) provenOrigins.add(slot);
         // An object constructed in the same block has its layout from the
         // construction, not from any check a hoist could move.
         else if (!constructedIn(block, op.object)) unknownProven = true;
+      } else if (op.kind === "store") {
+        const source = copiedSlot(definitions, op.value);
+        if (source !== undefined && source !== op.slot) {
+          const sources = copies.get(op.slot);
+          if (sources === undefined) copies.set(op.slot, [source]);
+          else sources.push(source);
+        }
       }
     }
+  }
+  const pending: number[] = [];
+  for (const slot of provenOrigins) pending.push(slot);
+  while (pending.length > 0) {
+    const slot = pending.pop();
+    if (slot === undefined) break;
+    for (const source of copies.get(slot) ?? [])
+      if (source !== undefined && !provenOrigins.has(source)) {
+        provenOrigins.add(source);
+        pending.push(source);
+      }
   }
   return { provenOrigins, failureTargets, unknownProven, readHoists };
 }
