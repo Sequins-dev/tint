@@ -74,3 +74,50 @@ export function run(): number {
     [],
   );
 });
+
+// A double addend (a fraction, NaN from an out-of-range charCodeAt, an
+// infinity or an integer near and beyond 2^52 and 2^63) keeps the product's
+// sign extension and ToInt32 of the double sum: every result folds into a
+// checksum that never resets.
+const doublesSource = `function doubles(): number {
+  const addends: number[] = [
+    0, -0, 1, -1, 0.5, -0.5, 1.5, -2.75, 65535, 2147483647, 2147483648,
+    -2147483649, 4294967297, 4503599627370495, 4503599627370496,
+    -4503599627370496, -4503599627370497, 9007199254740991, 9007199254740992,
+    9007199254740993, 18014398509481984, 9223372036854775807,
+    -9223372036854775808, 1e21, -1e21, 5e-324,
+  ];
+  addends.push(1 / 0, -1 / 0, 0 / 0);
+  const seeds: number[] = [0, 1, 3, -7, 31, 123456789, -2000000001, 2147483647];
+  const text = "abcdef";
+  let checksum = 0;
+  for (let i = 0; i < addends.length; i++)
+    for (let j = 0; j < seeds.length; j++) {
+      const d = addends[i] ?? 0,
+        p = seeds[j] ?? 0;
+      const r = (Math.imul(p, 31) + d) | 0;
+      const s = (Math.imul(p, -3) + d * 3) ^ 5;
+      const u = (Math.imul(p, 7) + text.charCodeAt(j)) >>> 0;
+      checksum = (Math.imul(checksum, 33) + (r ^ (s >>> 1) ^ u)) | 0;
+    }
+  return checksum;
+}`;
+const doubles = new Function(
+  stripTypeScriptTypes(doublesSource) + "\nreturn doubles();",
+) as () => number;
+const doublesExpected = doubles();
+
+test("products plus double addends convert like Node", () => {
+  verifyHostedFixture(
+    `${doublesSource}
+export function run(): number {
+  return doubles() === ${doublesExpected} ? 42 : 1;
+}
+`,
+    "truncated-double-sums",
+    [],
+    [],
+    [],
+    [],
+  );
+});
