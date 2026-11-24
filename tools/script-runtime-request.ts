@@ -174,6 +174,18 @@ export function createScriptRuntimeRequest(
       "createSourceInstance",
       "sourceArgumentCount",
       "sourceArgument",
+      // Inline element access, builtin intrinsics, and object literal sites (step 5a).
+      "packedNumberElement",
+      "absentElementValue",
+      "storePackedNumberElement",
+      "readCachedLengthValue",
+      "scriptMapGet",
+      "scriptMapHas",
+      "scriptMapSet",
+      "scriptSetAdd",
+      "scriptArrayPush",
+      "createObjectLiteralSite",
+      "createLiteralObject",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }
