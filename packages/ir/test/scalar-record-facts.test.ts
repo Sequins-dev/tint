@@ -956,6 +956,84 @@ test("join-crossing descriptor facts need the check on every incoming path", () 
       dataflowRecordGuards(fn),
     );
 });
+/** Two union field reads of one receiver: each tests layout 0, then the
+ * continuation reloads the receiver and tests layout 1 (or, with `third`,
+ * layout 2 after that) for the same read. */
+function unionReads(third: boolean): FunctionIR {
+  const guard = (
+    id: number,
+    record: number,
+    consequent: number,
+    alternate: number,
+  ): FunctionIR["blocks"][number] => ({
+    id,
+    instructions: [{ kind: "load", id, slot: 0, ...span }],
+    terminator: {
+      kind: "record",
+      object: id,
+      record,
+      field: 0,
+      operation: "read",
+      slot: 1,
+      consequent,
+      alternate,
+      ...span,
+    },
+  });
+  return {
+    id: 0,
+    name: "union",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      guard(0, 0, 2, 1),
+      guard(1, 1, 2, third ? 6 : 5),
+      guard(2, 0, 4, 3),
+      guard(3, 1, 4, third ? 7 : 5),
+      {
+        id: 4,
+        instructions: [{ kind: "load", id: 4, slot: 1, ...span }],
+        terminator: { kind: "return", value: 4, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+      ...(third ? [guard(6, 2, 2, 5), guard(7, 2, 4, 5)] : []),
+    ],
+  };
+}
+test("union dispatch joins keep both layouts and a failed test leaves the other", () => {
+  const records = [16, 16, 24].map((offset) => ({
+    byteLength: 32,
+    fields: [{ offset, type: "number" as const, mutable: false }],
+  }));
+  for (const third of [false, true]) {
+    const fn = unionReads(third);
+    assert.ok(verify({ records, functions: [fn] }).ok);
+    for (const dense of [undefined, 0]) {
+      const pairs = new Map<number, readonly number[]>(),
+        proven = dataflowRecordGuards(
+          fn,
+          2000000,
+          false,
+          dense,
+          undefined,
+          pairs,
+        );
+      if (!third) {
+        // The second read's receiver is layout 0 or 1; after its failed
+        // test of 0 only 1 remains.
+        assert.deepEqual([...(proven ?? [])], [0, 0, 0, 1, 0, 0]);
+        assert.deepEqual([...pairs], [[2, [0, 1]]]);
+      } else {
+        // Three layouts join to unknown: every test stays.
+        assert.deepEqual([...(proven ?? [])], [0, 0, 0, 0, 0, 0, 0, 0]);
+        assert.deepEqual([...pairs], []);
+      }
+    }
+  }
+});
 test("join-crossing facts respect opaque calls, exception entries and budgets", () => {
   const called = diamond([
     { kind: "load", id: 2, slot: 0, ...span },

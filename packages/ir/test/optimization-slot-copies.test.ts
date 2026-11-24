@@ -6,6 +6,7 @@ import type {
   Instruction,
   ScalarType,
 } from "@tint/ir/scalar";
+import { verify } from "@tint/ir/scalar";
 import { propagateSlotCopies } from "../src/optimization/slot-copies.ts";
 const s = { start: 0, end: 0 };
 
@@ -134,10 +135,25 @@ test("loop bodies read the source until it changes", () => {
   }
 });
 
-test("reference copies of optional references stay copies", () => {
-  // Reading the source would need an unwrap at every load.
+test("reference copies of optional references read the source unwrapped", () => {
+  // s1 = unwrap(s0): a load of s1 that a checked field read takes as its
+  // object becomes an unwrap of a load of s0 that keeps the load's value id,
+  // so facts proven on either slot cover both. Other loads keep the copy
+  // (an unwrap there would only add a null test).
+  const read = (id: number, object: number, next: number): Block =>
+    block(id, [{ kind: "load", id: object, slot: 1, ...s }], {
+      kind: "record",
+      object,
+      record: 0,
+      field: 0,
+      operation: "read",
+      slot: 2,
+      consequent: next,
+      alternate: 3,
+      ...s,
+    });
   const input = fn(
-    ["optional-reference", "reference"],
+    ["optional-reference", "reference", "number"],
     [
       block(
         0,
@@ -148,12 +164,130 @@ test("reference copies of optional references stay copies", () => {
         ],
         { kind: "jump", target: 1, ...s },
       ),
-      block(1, [{ kind: "load", id: 2, slot: 1, ...s }], ret),
+      read(1, 2, 2),
+      block(2, [{ kind: "load", id: 4, slot: 1, ...s }], ret),
+      block(3, [], { kind: "trap", ...s }),
     ],
   );
   const result = propagateSlotCopies(input, 10000);
   assert.ok(result);
-  assert.equal(result.rewritten, 0);
+  assert.equal(result.rewritten, 1);
+  assert.deepEqual(loadSlots(result.fn, 2), [1]);
+  assert.deepEqual(
+    result.fn.blocks[1]?.instructions.map((op) =>
+      op.kind === "load"
+        ? ["load", op.id, op.slot]
+        : op.kind === "reference-value"
+          ? ["reference-value", op.id, op.value]
+          : [op.kind],
+    ),
+    [
+      ["load", 5, 0],
+      ["reference-value", 2, 5],
+    ],
+  );
+});
+
+test("copies of copies read the root of the chain", () => {
+  // s2 = s1 = s0 (nested inlining): s2's loads end at s0, not s1.
+  const input = fn(
+    ["number", "number", "number"],
+    [
+      block(
+        0,
+        [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "store", slot: 2, value: 1, ...s },
+        ],
+        { kind: "jump", target: 1, ...s },
+      ),
+      block(
+        1,
+        [
+          { kind: "load", id: 2, slot: 2, ...s },
+          { kind: "load", id: 3, slot: 1, ...s },
+        ],
+        ret,
+      ),
+    ],
+  );
+  const result = propagateSlotCopies(input, 10000);
+  assert.ok(result);
+  assert.deepEqual(loadSlots(result.fn, 1), [0, 0]);
+  assert.deepEqual(loadSlots(result.fn, 0), [0, 0]);
+});
+
+test("chained copies keep a record read proven through the chain", () => {
+  // s1 = s0 and s2 = s1 copy a receiver whose check reads s1; a direct read
+  // through s2 after the check stays proven only when both copies resolve
+  // to s0 (one round would leave the check on s0 and the read on s1).
+  const input: FunctionIR = {
+    ...fn(
+      ["reference", "reference", "reference", "number"],
+      [
+        block(
+          0,
+          [
+            { kind: "load", id: 0, slot: 0, ...s },
+            { kind: "store", slot: 1, value: 0, ...s },
+          ],
+          { kind: "jump", target: 1, ...s },
+        ),
+        block(
+          1,
+          [
+            { kind: "load", id: 1, slot: 1, ...s },
+            { kind: "store", slot: 2, value: 1, ...s },
+          ],
+          {
+            kind: "record",
+            object: 1,
+            record: 0,
+            field: 0,
+            operation: "read",
+            slot: 3,
+            consequent: 2,
+            alternate: 3,
+            ...s,
+          },
+        ),
+        block(
+          2,
+          [
+            { kind: "load", id: 2, slot: 2, ...s },
+            {
+              kind: "record-read",
+              id: 3,
+              object: 2,
+              record: 0,
+              field: 0,
+              ...s,
+            },
+          ],
+          ret,
+        ),
+        block(3, [], { kind: "trap", ...s }),
+      ],
+    ),
+  };
+  const module = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [{ offset: 8, type: "number" as const, mutable: false }],
+      },
+    ],
+    functions: [input],
+  };
+  assert.ok(verify(module).ok);
+  const result = propagateSlotCopies(input, 100000);
+  assert.ok(result);
+  assert.equal(result.refused, false);
+  assert.deepEqual(loadSlots(result.fn, 1), [0]);
+  assert.deepEqual(loadSlots(result.fn, 2), [0]);
+  assert.ok(verify({ ...module, functions: [result.fn] }).ok);
 });
 
 test("slots with different sources or non-copy stores stay", () => {

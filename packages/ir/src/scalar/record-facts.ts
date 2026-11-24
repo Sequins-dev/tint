@@ -464,10 +464,18 @@ export function recordReadsKept(
   }
   return true;
 }
+/** Two-layout fact codes start here (record + 1 codes stay below). */
+const pairBit = 0x80000000;
+/** Pairs need both codes below this bound to key their interning. */
+const pairKeyLimit = 0x200000;
 /** Codegen-only descriptor guard proofs for verified IR by forward must-dataflow.
- * A fact maps a managed frame slot to the exact layout of the object it holds
- * at block entry; facts meet by intersection, so a check repeated on every
- * incoming path is proven across joins and loops. Facts come only from
+ * A fact maps a managed frame slot to the layout of the object it holds at
+ * block entry: one exact layout, or one of two (a union whose dispatch joins
+ * again); facts meet by union up to two layouts, so a check repeated on every
+ * incoming path is proven across joins and loops. A failed test of one of
+ * two layouts leaves the other. Only exact facts prove a guard; two-layout
+ * facts are reported to `layoutPairs` for codegen, whose fused union
+ * dispatch reads a field placed alike in both without a test. Facts come only from
  * constructors, successful descriptor checks and verified direct reads (whose
  * layout the verifier already proved); stores replace them, transfer slots of
  * record/cell terminators lose them, exception entries start empty and, when
@@ -488,6 +496,9 @@ export function dataflowRecordGuards(
   /** Receives each reached `record-has` whose object the same facts prove
    * to be its layout (so never null): its guard is redundant. */
   provenPresence?: Set<Instruction>,
+  /** Receives, by block, the two layouts a reached `record` or
+   * `record-cell` terminator's object is known to be one of (never null). */
+  layoutPairs?: Map<number, readonly number[]>,
 ): Uint8Array | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   const blockCount = fn.blocks.length,
@@ -562,6 +573,45 @@ export function dataflowRecordGuards(
     head = 0,
     tail = 0,
     pending = 0;
+  // Layout codes: 0 unknown, record + 1 for one exact layout, pairBit + i
+  // for one of the exact codes pairLow[i] < pairHigh[i].
+  const pairLow: number[] = [],
+    pairHigh: number[] = [],
+    pairCodes = new Map<number, number>();
+  /** The least precise code covering both, or 0 beyond two layouts. */
+  function join(a: number, b: number): number {
+    if (a === b) return a;
+    if (a === 0 || b === 0) return 0;
+    if (a >= pairBit || b >= pairBit) {
+      // A pair absorbs either of its own layouts.
+      const pairCode = a >= pairBit ? a : b,
+        exact = a >= pairBit ? b : a;
+      if (exact >= pairBit) return 0;
+      const index = pairCode - pairBit;
+      return pairLow[index] === exact || pairHigh[index] === exact
+        ? pairCode
+        : 0;
+    }
+    const low = a < b ? a : b,
+      high = a < b ? b : a;
+    if (high >= pairKeyLimit) return 0;
+    const key = low * pairKeyLimit + high,
+      known = pairCodes.get(key);
+    if (known !== undefined) return known;
+    const code = pairBit + pairLow.length;
+    pairLow.push(low);
+    pairHigh.push(high);
+    pairCodes.set(key, code);
+    return code;
+  }
+  /** The other layout of a pair `code` that includes `exact`, or 0. */
+  function remaining(code: number, exact: number): number {
+    if (code < pairBit) return 0;
+    const index = code - pairBit;
+    if (pairLow[index] === exact) return pairHigh[index] ?? 0;
+    if (pairHigh[index] === exact) return pairLow[index] ?? 0;
+    return 0;
+  }
   function enqueue(target: number): void {
     if (queued[target] === 1) return;
     queued[target] = 1;
@@ -635,22 +685,24 @@ export function dataflowRecordGuards(
     }
     const start = starts[target] ?? 0,
       count = counts[target] ?? 0;
-    let kept = 0;
+    let kept = 0,
+      widened = false;
     for (let pair = 0; pair < count; pair++) {
       const index = pool[start + pair * 2] ?? 0,
-        layout = pool[start + pair * 2 + 1] ?? 0;
-      if (
-        !empty &&
-        outgoingStamps[index] === outgoingGeneration &&
-        outgoing[index] === layout
-      ) {
+        layout = pool[start + pair * 2 + 1] ?? 0,
+        joined =
+          !empty && outgoingStamps[index] === outgoingGeneration
+            ? join(layout, outgoing[index] ?? 0)
+            : 0;
+      if (joined !== 0) {
         pool[start + kept * 2] = index;
-        pool[start + kept * 2 + 1] = layout;
+        pool[start + kept * 2 + 1] = joined;
         kept++;
+        if (joined !== layout) widened = true;
       }
     }
     work += count + 1;
-    if (kept !== count) {
+    if (kept !== count || widened) {
       counts[target] = kept;
       enqueue(target);
     }
@@ -770,12 +822,16 @@ export function dataflowRecordGuards(
     simulate(block);
     const term = block.terminator;
     if (term.kind === "record" || term.kind === "record-cell") {
-      const slot = holder(term.object);
+      const slot = holder(term.object),
+        narrowed = slot !== 0 && slotIndex[term.slot] !== slot;
       kill(term.slot);
+      const other = narrowed
+        ? remaining(current[slot] ?? 0, term.record + 1)
+        : 0;
+      if (other !== 0) set(slot, other);
       collect();
       meet(term.alternate, false);
-      if (slot !== 0 && slotIndex[term.slot] !== slot)
-        set(slot, term.record + 1);
+      if (narrowed) set(slot, term.record + 1);
       collect();
       meet(term.consequent, false);
     } else if (term.kind === "cell") {
@@ -802,11 +858,14 @@ export function dataflowRecordGuards(
     const checked = term.kind === "record" || term.kind === "record-cell";
     if (!checked && !recordPresence) continue;
     simulate(block);
-    if (
-      (term.kind === "record" || term.kind === "record-cell") &&
-      layoutOf(term.object) === term.record + 1
-    )
-      proven[block.id] = 1;
+    if (term.kind !== "record" && term.kind !== "record-cell") continue;
+    const layout = layoutOf(term.object);
+    if (layout === term.record + 1) proven[block.id] = 1;
+    else if (layoutPairs !== undefined && layout >= pairBit)
+      layoutPairs.set(block.id, [
+        (pairLow[layout - pairBit] ?? 0) - 1,
+        (pairHigh[layout - pairBit] ?? 0) - 1,
+      ]);
   }
   return work > maxWork ? undefined : proven;
 }

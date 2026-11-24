@@ -64,6 +64,7 @@ import {
 import {
   recordDispatchChains,
   type RecordDispatchChain,
+  type RecordDispatchGroup,
 } from "./record-dispatch.ts";
 import {
   deadSlotClearPlan,
@@ -3445,6 +3446,8 @@ function emitModuleForms(
         cachedJoinGuards: Uint8Array | undefined;
       // record-has instructions whose object the join dataflow proves.
       const provenPresence = new Set<IRInstruction>();
+      /** Record terminators whose object is one of two known layouts. */
+      const layoutPairs = new Map<number, readonly number[]>();
       // Numbers whose uses all want integers take GP homes, but one computed
       // as a double moves between banks at its definition and at each use.
       // The first attempt records those; one re-emission gives them FP homes.
@@ -8368,6 +8371,7 @@ function emitModuleForms(
           );
           // Join-crossing proofs; emission-only, never fed back into the IR.
           provenPresence.clear();
+          layoutPairs.clear();
           cachedJoinGuards = limited<Uint8Array>(
             "join-record-guards",
             fn,
@@ -8377,10 +8381,14 @@ function emitModuleForms(
               stableGuards,
               undefined,
               provenPresence,
+              layoutPairs,
             ),
           );
           // An exhausted analysis proves nothing.
-          if (cachedJoinGuards === undefined) provenPresence.clear();
+          if (cachedJoinGuards === undefined) {
+            provenPresence.clear();
+            layoutPairs.clear();
+          }
           recordGuardsKnown = true;
         }
         const chainGuards = cachedChainGuards,
@@ -16948,6 +16956,17 @@ function emitModuleForms(
             if (layout === undefined || field === undefined)
               throw "verified record invariant";
             const chain = dispatch?.chains.get(b.id);
+            // A fused chain needs no test when the object's two known
+            // layouts share one placement group: read that placement.
+            const pair =
+              chain === undefined ? undefined : layoutPairs.get(b.id);
+            let covering: RecordDispatchGroup | undefined;
+            if (chain !== undefined && pair !== undefined)
+              for (const group of chain.groups) {
+                if (group === undefined) throw "dispatch group invariant";
+                if (pair.every((record) => group.records.includes(record)))
+                  covering = group;
+              }
             const byteLength = scalarByteLength(field.type);
             const nonNull =
               nonNullValues[valueIds.intern(t.object)] === 1 ||
@@ -17022,7 +17041,12 @@ function emitModuleForms(
                 }
               }
             }
-            if (chain !== undefined && chain.groups.length > 1) {
+            if (covering !== undefined) {
+              const placed = module.records?.[covering.record];
+              if (placed === undefined) throw "dispatch group invariant";
+              rawValue(9, t.object);
+              transfer(placed, covering.field, 9);
+            } else if (chain !== undefined && chain.groups.length > 1) {
               // One membership test and read per placement group; a group's
               // misses fall through to the next group's test.
               let misses: LocalBranch[] = [];
