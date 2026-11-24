@@ -23,6 +23,7 @@ import { TintPlugin } from "./devtools/tint-plugin.ts";
 import { CdpTestClient } from "./devtools/test-client.ts";
 import type { CpuProfile } from "./profiling/devtools-profiles.ts";
 import { tintSession } from "./devtools-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 // The inlined callee does most of the work: a wall-clock sampler on a busy
 // host sees a descheduled thread at its preemption point, so a profile
@@ -251,8 +252,10 @@ testNativeLaunch(
   "CPU profiles of a Tint debug build name source functions",
   {
     skip:
-      (!debuggable || external === undefined) &&
-      "needs lldb-dap and pprofessor or perf",
+      ((!debuggable || external === undefined) &&
+        "needs lldb-dap and pprofessor or perf") ||
+      (nativeFixtureTarget().arch !== "aarch64" &&
+        "Tint debug-build DWARF inlines and heap introspection require aarch64"),
     timeout: 300000,
   },
   async (onAdmitted) => {

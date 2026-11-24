@@ -111,27 +111,31 @@ if (
 )
   throw Error("TINT_TEST262_UNIT_HOST must be prepare, require or unset");
 const prepareUnitHostOnly = unitHostMode === "prepare";
-if (transport) {
-  if (
-    runner !== "x64-local" &&
-    runner !== "x64-qemu-dev" &&
-    runner !== "x64-ssh"
-  )
+if (!prepareUnitHostOnly) {
+  if (transport) {
+    if (
+      runner !== "x64-local" &&
+      runner !== "x64-qemu-dev" &&
+      runner !== "x64-ssh"
+    )
+      throw Error(
+        "Linux x86-64 Test262 requires an explicit x86-64 TINT_NATIVE_RUNNER",
+      );
+    if (nativeDebuggerLaunch !== "process" || process.env.TINT_TEST262_PAUSE)
+      throw Error(
+        "Linux x86-64 Test262 transport requires process launch without diagnostic pauses",
+      );
+  } else if (
+    (target.name === "darwin-aarch64" &&
+      (process.platform !== "darwin" || process.arch !== "arm64")) ||
+    (target.name === "linux-aarch64" &&
+      (process.platform !== "linux" || process.arch !== "arm64")) ||
+    (target.name !== "darwin-aarch64" && target.name !== "linux-aarch64")
+  ) {
     throw Error(
-      "Linux x86-64 Test262 requires an explicit x86-64 TINT_NATIVE_RUNNER",
+      "the Test262 adapter requires local Darwin arm64, Linux arm64 or a Linux x86-64 runner",
     );
-  if (nativeDebuggerLaunch !== "process" || process.env.TINT_TEST262_PAUSE)
-    throw Error(
-      "Linux x86-64 Test262 transport requires process launch without diagnostic pauses",
-    );
-} else if (
-  target.name !== "darwin-aarch64" ||
-  (!prepareUnitHostOnly &&
-    (process.platform !== "darwin" || process.arch !== "arm64"))
-) {
-  throw Error(
-    "the Test262 adapter requires local Darwin arm64 or a Linux x86-64 runner",
-  );
+  }
 }
 /** Concurrent native processes of a suite image (TINT_TEST262_SUITE_JOBS). */
 function suiteJobs(): number {
@@ -252,8 +256,8 @@ try {
     scriptLinking !== "suite"
   )
     throw Error("TINT_TEST262_LINKING must be program, units, suite or unset");
-  if (transport && scriptLinking !== "program")
-    throw Error("Linux x86-64 Test262 currently requires program linking");
+  if (transport && scriptLinking === "suite")
+    throw Error("Linux x86-64 Test262 does not support suite linking");
   if (unitHostMode !== undefined && scriptLinking !== "units")
     throw Error("TINT_TEST262_UNIT_HOST requires TINT_TEST262_LINKING=units");
   // Only a frozen toolchain identifies the host's compiler exactly.
@@ -266,6 +270,7 @@ try {
               ".tint-bootstrap/unit-host-cache",
           ),
           key: JSON.stringify([
+            target.name,
             frozenToolchainSha256,
             sourceSnapshot.sha256,
             moduleExecution,

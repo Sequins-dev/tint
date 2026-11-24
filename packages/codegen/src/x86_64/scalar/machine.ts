@@ -78,14 +78,36 @@ export function setBoolean(emit: Emit, cc: Condition, reg: number): void {
 
 export interface ImageRelocations {
   readonly addressFixups: readonly ImageAddressReference[];
-  readonly patchAddress: ImageAddressPatcher;
+  readonly relativeFixups?: readonly RelativeFixup[];
+  readonly patchAddress?: ImageAddressPatcher;
+}
+
+/** Reconstructs the x86-64 address patcher from plain relative fixup records. */
+export function x64AddressPatcher(
+  fixups: readonly RelativeFixup[],
+): ImageAddressPatcher {
+  return (bytes, index, siteOffset, targetOffset, siteAddress) => {
+    const fixup = fixups[index];
+    if (fixup === undefined) return "invalid";
+    return patchRelative(bytes, fixup, siteOffset, targetOffset, siteAddress);
+  };
+}
+
+/** Returns the module's address patcher, reconstructing it when deserialized. */
+export function x64ModulePatcher(
+  relocations: ImageRelocations,
+): ImageAddressPatcher {
+  return (
+    relocations.patchAddress ??
+    x64AddressPatcher(relocations.relativeFixups ?? [])
+  );
 }
 
 /** The image writer gets the exact rel32 or rel64 field and its PC base. */
 export function imageRelocations(
   fixups: readonly RelativeFixup[],
   external: ReadonlyMap<string, ImageAddressTarget>,
-): ImageRelocations {
+): ImageRelocations & { readonly patchAddress: ImageAddressPatcher } {
   const addressFixups: ImageAddressReference[] = [];
   for (const fixup of fixups) {
     if (fixup === undefined) throw "rel32 fixup invariant";
@@ -98,16 +120,9 @@ export function imageRelocations(
       target,
     });
   }
-  const patchAddress: ImageAddressPatcher = (
-    bytes,
-    index,
-    siteOffset,
-    targetOffset,
-    siteAddress,
-  ) => {
-    const fixup = fixups[index];
-    if (fixup === undefined) return "invalid";
-    return patchRelative(bytes, fixup, siteOffset, targetOffset, siteAddress);
+  return {
+    addressFixups,
+    relativeFixups: fixups,
+    patchAddress: x64AddressPatcher(fixups),
   };
-  return { addressFixups, patchAddress };
 }

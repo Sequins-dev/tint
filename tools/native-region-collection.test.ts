@@ -9,6 +9,7 @@
 // full collection and returns +0.
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const source = `import {collectGarbage} from "memory";
@@ -67,28 +68,36 @@ export function run(): number {
   return 42;
 }
 `;
-test("the region collector survives churn and forced collections", () => {
-  const managedBytes = 4194304;
-  verifyHostedFixture(
-    source,
-    "region-collection",
-    [["memory", memory]],
-    [],
-    [],
-    [{ module: memory, namespace: "native-memory" }],
-    {
-      managedBytes,
-      allocationCapacity: managedBytes / 16,
-      rootCapacity: 16384,
-      stackBytes: 2097152,
-      hostBindings: [
-        {
-          module: memory,
-          name: "collectGarbage",
-          operation: "collect-garbage",
-        },
-      ],
-      runtimeEntry: "initializeRuntime",
-    },
-  );
-});
+test(
+  "the region collector survives churn and forced collections",
+  {
+    skip:
+      nativeFixtureTarget().arch === "x86_64" &&
+      "linux-x86_64 does not implement initializeRuntime",
+  },
+  () => {
+    const managedBytes = 4194304;
+    verifyHostedFixture(
+      source,
+      "region-collection",
+      [["memory", memory]],
+      [],
+      [],
+      [{ module: memory, namespace: "native-memory" }],
+      {
+        managedBytes,
+        allocationCapacity: managedBytes / 16,
+        rootCapacity: 16384,
+        stackBytes: 2097152,
+        hostBindings: [
+          {
+            module: memory,
+            name: "collectGarbage",
+            operation: "collect-garbage",
+          },
+        ],
+        runtimeEntry: "initializeRuntime",
+      },
+    );
+  },
+);

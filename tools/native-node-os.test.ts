@@ -8,14 +8,23 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import { verifyOsFixture } from "./native-os-fixtures.ts";
 
 test("node:os userInfo, networkInterfaces and loadavg match Node (generational)", () => {
   verifyOsFixture();
 });
-test("node:os userInfo, networkInterfaces and loadavg match Node (copying)", () => {
-  verifyOsFixture("initializeCopyingRuntime");
-});
+test(
+  "node:os userInfo, networkInterfaces and loadavg match Node (copying)",
+  {
+    skip:
+      nativeFixtureTarget().arch === "x86_64" &&
+      "linux-x86_64 does not implement initializeCopyingRuntime",
+  },
+  () => {
+    verifyOsFixture("initializeCopyingRuntime");
+  },
+);
 /** Build `module` as node:os for `target` in a child process (the fixture
  * target is fixed when hosted-fixture.ts loads). */
 function buildOsFor(module: string, target: string) {

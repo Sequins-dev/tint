@@ -1,6 +1,6 @@
-// BSD flock primitives built on /usr/bin/lockf, the only flock interface that
-// both Node and the shell scripts share on macOS. Every pathname acquisition
-// uses -k so lock files keep their inodes between holders.
+// BSD flock primitives: /usr/bin/lockf on macOS and /usr/bin/flock on Linux,
+// the flock interfaces shared by Node and the shell scripts. Every Darwin
+// pathname acquisition uses -k so lock files keep their inodes between holders.
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import { closeSync, fstatSync, openSync, statSync } from "node:fs";
@@ -9,23 +9,33 @@ import { closeSync, fstatSync, openSync, statSync } from "node:fs";
 export type Interrupted = 130 | 143;
 
 const LOCKF = "/usr/bin/lockf";
+const FLOCK = "/usr/bin/flock";
+const USE_FLOCK = process.platform === "linux";
 const EX_UNAVAILABLE = 69;
 const EX_TEMPFAIL = 75;
 
 /**
  * Takes a non-blocking flock on an open descriptor. The lock belongs to the
- * open file description, so it stays held after lockf exits and is released
- * when the caller closes the descriptor or dies.
+ * open file description, so it stays held after lockf/flock exits and is
+ * released when the caller closes the descriptor or dies.
  */
 export function lockDescriptor(fd: number, file: string): boolean {
-  const result = spawnSync(LOCKF, ["-k", "-s", "-t", "0", "3"], {
-    stdio: ["ignore", "ignore", "inherit", fd],
-  });
+  const result = USE_FLOCK
+    ? spawnSync(FLOCK, ["-n", "-x", "-E", String(EX_TEMPFAIL), "3"], {
+        stdio: ["ignore", "ignore", "inherit", fd],
+      })
+    : spawnSync(LOCKF, ["-k", "-s", "-t", "0", "3"], {
+        stdio: ["ignore", "ignore", "inherit", fd],
+      });
   if (result.error !== undefined) throw result.error;
   if (result.status === EX_TEMPFAIL) return false;
   if (result.status !== 0)
     throw Error(
-      "lockf failed for " + file + ": " + (result.signal ?? result.status),
+      (USE_FLOCK ? "flock" : "lockf") +
+        " failed for " +
+        file +
+        ": " +
+        (result.signal ?? result.status),
     );
   return true;
 }
@@ -51,6 +61,33 @@ export function tryAcquire(file: string): number | undefined {
  * when the file does not exist. A free lock is held only for the probe.
  */
 export function isLocked(file: string): boolean | undefined {
+  if (USE_FLOCK) {
+    let fd: number;
+    try {
+      fd = openSync(file, "r");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+      throw error;
+    }
+    try {
+      const result = spawnSync(
+        FLOCK,
+        ["-n", "-x", "-E", String(EX_TEMPFAIL), "3"],
+        { stdio: ["ignore", "ignore", "ignore", fd] },
+      );
+      if (result.error !== undefined) throw result.error;
+      if (result.status === 0) return false;
+      if (result.status === EX_TEMPFAIL) return true;
+      throw Error(
+        "flock probe failed for " +
+          file +
+          ": " +
+          (result.signal ?? result.status),
+      );
+    } finally {
+      closeSync(fd);
+    }
+  }
   const result = spawnSync(
     LOCKF,
     ["-k", "-n", "-s", "-t", "0", file, "/usr/bin/true"],
@@ -95,6 +132,37 @@ export async function waitForGateLock(
   file: string,
   { mustExist = false } = {},
 ): Promise<Interrupted | undefined> {
+  if (USE_FLOCK) {
+    let fd: number | undefined;
+    if (mustExist) {
+      try {
+        fd = openSync(file, "r");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT")
+          return undefined;
+        throw error;
+      }
+    }
+    const child =
+      fd === undefined
+        ? spawn(FLOCK, ["-x", file, "/usr/bin/true"], { stdio: "ignore" })
+        : spawn(FLOCK, ["-x", "3"], {
+            stdio: ["ignore", "ignore", "ignore", fd],
+          });
+    const signals = interruptible(child);
+    try {
+      const [status, signal] = await once(child, "exit");
+      if (signals.interrupted !== undefined) return signals.interrupted;
+      if (status !== 0)
+        throw Error(
+          "flock wait failed for " + file + ": " + (signal ?? status),
+        );
+      return undefined;
+    } finally {
+      signals.dispose();
+      if (fd !== undefined) closeSync(fd);
+    }
+  }
   const missing = mustExist ? ["-n"] : [];
   // A waiter outlives a killed caller until the lock is free. It must not
   // keep the caller's output pipes open; -s leaves only the exit status.
@@ -118,18 +186,24 @@ export interface HeldLock {
 }
 
 /**
- * Waits in the kernel's queue for the lock and keeps it. A detached lockf
- * process holds the lock until the caller releases it or exits: its command
- * reads the pipe from this process, so the lock is released when the pipe
- * closes, including when this process is killed. A holder orphaned while it
- * waits takes the lock when it is free, finds the pipe closed and exits.
+ * Waits in the kernel's queue for the lock and keeps it. A detached lock
+ * helper process holds the lock until the caller releases it or exits: its
+ * command reads the pipe from this process, so the lock is released when the
+ * pipe closes, including when this process is killed. A holder orphaned while
+ * it waits takes the lock when it is free, finds the pipe closed and exits.
  */
 export function holdGateLock(file: string): Promise<HeldLock | Interrupted> {
-  const holder = spawn(
-    LOCKF,
-    ["-k", "-s", file, "/bin/sh", "-c", "echo held && exec cat >/dev/null"],
-    { detached: true, stdio: ["pipe", "pipe", "ignore"] },
-  );
+  const holder = USE_FLOCK
+    ? spawn(
+        FLOCK,
+        ["-x", file, "/bin/sh", "-c", "echo held && exec cat >/dev/null"],
+        { detached: true, stdio: ["pipe", "pipe", "ignore"] },
+      )
+    : spawn(
+        LOCKF,
+        ["-k", "-s", file, "/bin/sh", "-c", "echo held && exec cat >/dev/null"],
+        { detached: true, stdio: ["pipe", "pipe", "ignore"] },
+      );
   // A spawn failure rejects the returned promise through the error listener,
   // and ending the pipe to a holder that already exited is not an error.
   const exited = once(holder, "exit").catch(() => undefined);

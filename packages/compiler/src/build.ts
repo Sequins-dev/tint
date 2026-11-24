@@ -36,6 +36,7 @@ import {
   type ManagedSurfaceRequest,
   type SourceLineRange,
   type CompiledProgram,
+  type CompiledX64HostedProgram,
   type NativeServiceImport,
   type ProgramOptimizationObserver,
 } from "./native/index.ts";
@@ -99,7 +100,11 @@ import type {
   ImageSymbol,
   ReadOnlySection,
 } from "@tint/image/executable";
-import type { X64Module, X64SignpostSite } from "@tint/codegen/x86_64/scalar";
+import {
+  x64ModulePatcher,
+  type X64Module,
+  type X64SignpostSite,
+} from "@tint/codegen/x86_64/scalar";
 import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
 import { nativeCStackReserveBytes } from "@tint/abi/host";
 import { writeExecutableImage } from "./image-writer.ts";
@@ -325,6 +330,34 @@ export type CompiledMacOSProgramResult =
         readonly module?: string;
       };
     };
+export interface CompiledX64Runtime {
+  readonly native: X64Module;
+  readonly lines: readonly SourceLineRange[];
+  readonly functionNames: ReadonlyMap<string, string>;
+  readonly parameterNames: ReadonlyMap<string, string>;
+  readonly entry: number;
+  readonly controlBytes: number;
+  readonly allocationCapacity: number;
+  readonly rootCapacity: number;
+}
+/** Compiled Linux x86-64 runtime and program, before service units are linked
+ * and the ELF executable is composed. */
+export interface CompiledX64Program {
+  readonly arch: "x86_64";
+  readonly forceFarReach: boolean;
+  readonly runtime?: CompiledX64Runtime;
+  readonly program: CompiledX64HostedProgram;
+}
+export type CompiledX64ProgramResult =
+  | { readonly ok: true; readonly value: CompiledX64Program }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        readonly module?: string;
+      };
+    };
 function compileFailure(
   stage: string,
   message: string,
@@ -351,42 +384,89 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       "Node worker libraries require threaded startup and exit records",
     );
   const target = buildTarget(request);
-  if (target.arch === "x86_64") {
-    const built = buildX64HostedProgram(request, target);
-    if (
-      !built.ok &&
-      request.forceFarReach !== true &&
-      (built.error.message.includes("rel32 displacement out of range") ||
-        built.error.message === "ELF image: ADDRESS_OUT_OF_RANGE")
-    )
-      return buildX64HostedProgram({ ...request, forceFarReach: true }, target);
-    return built;
-  }
+  if (target.arch === "x86_64") return buildX64HostedProgram(request);
   const compiled = compileMacOSProgram(request);
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkMacOSProgram(compiled.value, request);
 }
-function buildX64HostedProgram(
+function buildX64HostedProgram(request: BuildRequest): BuildResult {
+  const compiled = compileX64Program(request);
+  if (!compiled.ok) return { ok: false, error: compiled.error };
+  return linkX64Program(compiled.value, request);
+}
+function withoutX64Patcher(module: X64Module): X64Module {
+  return {
+    code: module.code,
+    data: module.data,
+    functions: module.functions,
+    imports: module.imports,
+    hostedThreadFixups: module.hostedThreadFixups,
+    far: module.far,
+    linearAllocation: module.linearAllocation,
+    generationalBarriers: module.generationalBarriers,
+    managedImports: module.managedImports,
+    managedFixups: module.managedFixups,
+    ...(module.liveSlotOffset === undefined
+      ? {}
+      : { liveSlotOffset: module.liveSlotOffset }),
+    ...(module.jitDebug === undefined ? {} : { jitDebug: module.jitDebug }),
+    ...(module.functionDescriptor === undefined
+      ? {}
+      : { functionDescriptor: module.functionDescriptor }),
+    signatures: module.signatures,
+    records: module.records,
+    unwind: module.unwind,
+    sourceRanges: module.sourceRanges,
+    probes: module.probes,
+    ...(module.callbackKeyOffset === undefined
+      ? {}
+      : { callbackKeyOffset: module.callbackKeyOffset }),
+    stackMaps: module.stackMaps,
+    addressFixups: module.addressFixups,
+    ...(module.relativeFixups === undefined
+      ? {}
+      : { relativeFixups: module.relativeFixups }),
+  };
+}
+/** Validate the memory policy and compile the Linux x86-64 runtime and
+ * program. Native services are linked by linkX64Program. */
+export function compileX64Program(
   request: BuildRequest,
-  target: LinuxX86_64Target,
-): BuildResult {
-  function deferred(operation: string): BuildResult {
-    return failure(
-      "target",
-      target.name +
-        ": unsupported operation " +
-        operation +
-        " (requires slice 7)",
-    );
+): CompiledX64ProgramResult {
+  const target = buildTarget(request);
+  if (target.arch !== "x86_64")
+    return {
+      ok: false,
+      error: { stage: "target", message: target.name + " is not linux-x86_64" },
+    };
+  function deferred(operation: string): CompiledX64ProgramResult {
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          target.name +
+          ": unsupported operation " +
+          operation +
+          " (requires slice 7)",
+      },
+    };
   }
   if (request.requireParallelCollection === true && !target.parallelCollection)
-    return failure(
-      "target",
-      target.name + ": parallel collection is unavailable",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message: target.name + ": parallel collection is unavailable",
+      },
+    };
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
+  // X64 service units always emit with far reach (using r14/r15 as scratch),
+  // so hosts reserving serviceSlots must compile with far reach up front to
+  // link units directly without recompiling the host.
   const forceFarReach =
     request.forceFarReach === true ||
+    (request.serviceSlots?.length ?? 0) !== 0 ||
     (request.nativeServices ?? []).some((service) => {
       if (service === undefined) return false;
       const unit = service.unit;
@@ -401,17 +481,29 @@ function buildX64HostedProgram(
         binding !== undefined && binding.operation.startsWith("executable-"),
     )
   )
-    return failure(
-      "host-binding",
-      "executable-memory capabilities require allowJit",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "host-binding",
+        message: "executable-memory capabilities require allowJit",
+      },
+    };
   if (request.jitDebugInterface === true && request.allowJit !== true)
-    return failure("startup", "the JIT debug interface requires allowJit");
+    return {
+      ok: false,
+      error: {
+        stage: "startup",
+        message: "the JIT debug interface requires allowJit",
+      },
+    };
   if (request.stackTraces === true || request.heapIntrospection === true)
-    return failure(
-      "target",
-      target.name + ": native diagnostics are unavailable",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message: target.name + ": native diagnostics are unavailable",
+      },
+    };
   if (
     request.onOperationRanges !== undefined ||
     request.onEmittedFunctions !== undefined ||
@@ -420,10 +512,14 @@ function buildX64HostedProgram(
     request.optimizationObserver !== undefined ||
     request.optimizationPassLimit !== undefined
   )
-    return failure(
-      "target",
-      target.name + ": emission and optimization reports are unavailable",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          target.name + ": emission and optimization reports are unavailable",
+      },
+    };
   const managedBytes = request.managedBytes,
     stackBytes = request.stackBytes;
   const pageBytes = target.memoryPageBytes;
@@ -437,26 +533,22 @@ function buildX64HostedProgram(
     stackBytes + pageBytes * 2 > 0x7fffffff ||
     managedBytes > 0xffffffff
   )
-    return failure(
-      "memory-policy",
-      target.name + ": invalid hosted mapping or stack size",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "memory-policy",
+        message: target.name + ": invalid hosted mapping or stack size",
+      },
+    };
 
-  let runtime:
-    | {
-        native: X64Module;
-        lines: readonly SourceLineRange[];
-        functionNames: ReadonlyMap<string, string>;
-        parameterNames: ReadonlyMap<string, string>;
-        entry: number;
-        controlBytes: number;
-        allocationCapacity: number;
-        rootCapacity: number;
-      }
-    | undefined;
+  let runtime: CompiledX64Runtime | undefined;
   if (generational) {
     const invalid = movingWorkspaceError(request, true);
-    if (invalid !== undefined) return failure("memory-policy", invalid);
+    if (invalid !== undefined)
+      return {
+        ok: false,
+        error: { stage: "memory-policy", message: invalid },
+      };
     request.report("runtime");
     const hostBindings = x64CollectorBindings(request.memoryModule);
     for (const binding of parallelCollectorBindings(request)) {
@@ -488,16 +580,22 @@ function buildX64HostedProgram(
       },
     );
     if (!loweredRuntime.ok)
-      return failure(
-        "runtime " + loweredRuntime.error.stage,
-        loweredRuntime.error.message,
-      );
+      return {
+        ok: false,
+        error: {
+          stage: "runtime " + loweredRuntime.error.stage,
+          message: loweredRuntime.error.message,
+        },
+      };
     const entry =
       loweredRuntime.native.functions[loweredRuntime.invocation]?.offset;
     if (entry === undefined)
-      return failure("runtime", "missing collector initializer");
+      return {
+        ok: false,
+        error: { stage: "runtime", message: "missing collector initializer" },
+      };
     runtime = {
-      native: loweredRuntime.native,
+      native: withoutX64Patcher(loweredRuntime.native),
       lines: loweredRuntime.lines,
       functionNames: loweredRuntime.functionNames,
       parameterNames: loweredRuntime.parameterNames,
@@ -565,6 +663,58 @@ function buildX64HostedProgram(
     },
   );
   if (!compiled.ok) return compiled;
+  return {
+    ok: true,
+    value: {
+      arch: "x86_64",
+      forceFarReach,
+      ...(runtime === undefined ? {} : { runtime }),
+      program: {
+        ...compiled,
+        native: withoutX64Patcher(compiled.native),
+      },
+    },
+  };
+}
+/** Link the request's native services into a compiled Linux x86-64 program and
+ * compose the ELF executable. */
+export function linkX64Program(
+  host: CompiledX64Program,
+  request: BuildRequest,
+): BuildResult {
+  const target = buildTarget(request);
+  if (target.arch !== "x86_64")
+    return failure("target", target.name + " is not linux-x86_64");
+  const needsFar =
+    !host.forceFarReach &&
+    (request.nativeServices ?? []).some((service) => {
+      if (service === undefined) return false;
+      const unit = service.unit;
+      return unit.arch === "x86_64" && unit.native.far;
+    });
+  if (needsFar)
+    return buildX64HostedProgram({ ...request, forceFarReach: true });
+  const built = linkX64Image(host, request, target);
+  if (
+    !built.ok &&
+    !host.forceFarReach &&
+    request.forceFarReach !== true &&
+    (built.error.message.includes("rel32 displacement out of range") ||
+      built.error.message === "ELF image: ADDRESS_OUT_OF_RANGE")
+  )
+    return buildX64HostedProgram({ ...request, forceFarReach: true });
+  return built;
+}
+function linkX64Image(
+  host: CompiledX64Program,
+  request: BuildRequest,
+  target: LinuxX86_64Target,
+): BuildResult {
+  const compiled = host.program,
+    runtime = host.runtime;
+  const managedBytes = request.managedBytes,
+    stackBytes = request.stackBytes,
+    pageBytes = target.memoryPageBytes;
   let native = compiled.native;
   let programCodePlan: CodePlan | undefined;
   if (
@@ -703,7 +853,7 @@ function buildX64HostedProgram(
           : undefined,
       imports: image.imports,
       addressFixups: image.addressFixups,
-      patchAddress: image.patchAddress,
+      patchAddress: x64ModulePatcher(image),
     };
     const written = writeExecutableImage(
       target,

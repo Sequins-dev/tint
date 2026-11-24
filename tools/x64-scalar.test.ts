@@ -906,7 +906,10 @@ const runner = process.env.TINT_X64_SCALAR_RUNNER;
 test(
   "x86-64 runner executes freestanding scalar fixtures",
   {
-    skip: runner !== "x64-qemu-dev" && runner !== "x64-ssh",
+    skip:
+      runner !== "x64-local" &&
+      runner !== "x64-qemu-dev" &&
+      runner !== "x64-ssh",
   },
   (t) => {
     const directory = mkdtempSync(join(tmpdir(), "tint-x64-scalar-"));

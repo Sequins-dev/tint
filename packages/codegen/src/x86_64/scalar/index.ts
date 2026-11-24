@@ -164,7 +164,11 @@ import {
   type PendingSafepoint,
 } from "./stack-maps.ts";
 
-export { imageRelocations } from "./machine.ts";
+export {
+  imageRelocations,
+  x64AddressPatcher,
+  x64ModulePatcher,
+} from "./machine.ts";
 export { appendExitEntry } from "./exit-entry.ts";
 export type { X64SignpostSite } from "../probes.ts";
 
@@ -238,6 +242,8 @@ export interface X64ManagedOptions {
   readonly bindings?: ManagedABIRequest;
   readonly functions: readonly number[];
   readonly records: readonly number[];
+  /** Standalone managed units linked without an ELF GOT inline byte helpers. */
+  readonly inlineBytes?: boolean;
 }
 export interface X64Diagnostic {
   readonly code: "INVALID_IR" | "UNSUPPORTED" | "FRAME_LIMIT" | "ENCODING";
@@ -540,10 +546,11 @@ export function emitModule(
   function foreign(symbol: string): void {
     emit({ op: "call", target: importSlot(symbol) });
   }
-  /** Live code has no ELF GOT. Use the same caller-clobbered operands as
-   * the libc leaves for overlapping moves and byte equality. */
+  /** Live code and standalone service units have no ELF GOT. Use the same
+   * caller-clobbered operands as the libc leaves for overlapping moves and
+   * byte equality. */
   function bytesOperation(symbol: string): void {
-    if (!live) {
+    if (!live && managed?.inlineBytes !== true) {
       foreign(symbol);
       return;
     }
@@ -3966,7 +3973,12 @@ export function emitModule(
         ...(callbackKeyOffset === undefined ? {} : { callbackKeyOffset }),
         stackMaps,
         addressFixups: relocations.addressFixups,
-        patchAddress: relocations.patchAddress,
+        ...(relocations.relativeFixups === undefined
+          ? {}
+          : { relativeFixups: relocations.relativeFixups }),
+        ...(relocations.patchAddress === undefined
+          ? {}
+          : { patchAddress: relocations.patchAddress }),
       },
     };
   } catch (caught) {
