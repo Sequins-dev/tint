@@ -2,6 +2,8 @@ import {
   blockSuccessors,
   instructionResult,
   naturalLoops,
+  recordReadsKept,
+  verifierRecordWork,
   visitInstructionOperands,
   visitTerminatorOperands,
   type Block,
@@ -13,7 +15,7 @@ import {
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
-import type { RemarkSink } from "./observer.ts";
+import type { OptimizationRemark, RemarkSink } from "./observer.ts";
 
 export interface InvariantMotion {
   readonly fn: FunctionIR;
@@ -65,7 +67,10 @@ function pureType(op: Instruction): ScalarType | undefined {
  * effect, and a check that would trap in the body traps in the preheader. A
  * check entered on another check's failure edge (a later layout of a union
  * dispatch) stays: its trap is conditional on that earlier failure.
- * Repeated rounds lift computations out of nested loops. */
+ * Repeated rounds lift computations out of nested loops. A direct record
+ * read in the loop may rest on a moved check through slot copies the origin
+ * test does not follow (as after inlining): a round that leaves any verified
+ * read unproven is redone without moving checked reads. */
 export function hoistLoopInvariants(
   fn: FunctionIR,
   module: ModuleIR,
@@ -76,14 +81,47 @@ export function hoistLoopInvariants(
     hoisted = 0,
     current = fn;
   for (let round = 0; round < 8; round++) {
-    const result = hoistRound(current, module, budget - visited, remarks);
+    // Remarks wait for the round that is kept.
+    const pending: OptimizationRemark[] = [];
+    const sink: RemarkSink | undefined =
+      remarks === undefined
+        ? undefined
+        : (remark) => {
+            pending.push(remark);
+          };
+    let result = hoistRound(current, module, budget - visited, sink, true);
     if (result === undefined) return undefined;
     visited += result.visited;
-    if (result.hoisted === 0) break;
+    if (result.hoisted === 0) {
+      flush(pending, remarks);
+      break;
+    }
+    if (!recordReadsKept(current, result.fn, verifierRecordWork)) {
+      pending.length = 0;
+      result = hoistRound(current, module, budget - visited, sink, false);
+      if (result === undefined) return undefined;
+      visited += result.visited;
+      if (
+        result.hoisted === 0 ||
+        !recordReadsKept(current, result.fn, verifierRecordWork)
+      ) {
+        flush(pending, remarks);
+        break;
+      }
+    }
+    flush(pending, remarks);
     hoisted += result.hoisted;
     current = result.fn;
   }
   return { fn: current, visited, hoisted };
+}
+function flush(
+  pending: readonly OptimizationRemark[],
+  remarks: RemarkSink | undefined,
+): void {
+  if (remarks === undefined) return;
+  const sink: RemarkSink = remarks;
+  for (const remark of pending) if (remark !== undefined) sink(remark);
 }
 
 function hoistRound(
@@ -91,6 +129,8 @@ function hoistRound(
   module: ModuleIR,
   budget: number,
   remarks: RemarkSink | undefined,
+  /** Whether checked reads may move (see hoistLoopInvariants). */
+  readHoists: boolean,
 ): InvariantMotion | undefined {
   const forest = naturalLoops(fn, budget);
   if (forest === undefined) return undefined;
@@ -164,7 +204,7 @@ function hoistRound(
     }
     // This round reads the original function for every loop. Recompute the
     // proof summary only after committing a round that rewrites it.
-    const proofs = recordProof ?? recordProofs(fn);
+    const proofs = recordProof ?? recordProofs(fn, readHoists);
     recordProof = proofs;
     const motion = hoistLoop(
       loop,
@@ -237,6 +277,7 @@ function missedLoop(
 }
 /** Why a checked record read in a loop stays there (remarks only). */
 function readHoistRefusal(
+  readHoists: boolean,
   readHoisted: boolean,
   unknownProven: boolean,
   originKnown: boolean,
@@ -251,6 +292,8 @@ function readHoistRefusal(
   if (!objectInvariant) return "object is not loop invariant";
   if (!trappingFailure) return "failed check does not trap";
   if (afterFailedCheck) return "reached only when another check fails";
+  if (!readHoists)
+    return "moving a check would leave a direct read in the function unproven";
   if (readHoisted) return "one read already hoisted from this loop";
   if (unknownProven || !originKnown)
     return "object origin unknown to the layout proofs";
@@ -262,6 +305,8 @@ interface RecordProof {
   readonly provenOrigins: ReadonlySet<number>;
   readonly failureTargets: ReadonlySet<number>;
   readonly unknownProven: boolean;
+  /** False when moving any check cost a direct read its proof. */
+  readonly readHoists: boolean;
 }
 // The slot a block-local value derives from (through unwraps and
 // environment reads), which identifies the object a record access uses.
@@ -287,7 +332,7 @@ function constructedIn(block: Block, value: number): boolean {
       return true;
   return false;
 }
-function recordProofs(fn: FunctionIR): RecordProof {
+function recordProofs(fn: FunctionIR, readHoists: boolean): RecordProof {
   // Objects of unchecked record operations anywhere in the function, whose
   // layout proof may rest on a checked read in the loop: such reads stay in
   // place.
@@ -318,7 +363,7 @@ function recordProofs(fn: FunctionIR): RecordProof {
       }
     }
   }
-  return { provenOrigins, failureTargets, unknownProven };
+  return { provenOrigins, failureTargets, unknownProven, readHoists };
 }
 
 function hoistLoop(
@@ -343,7 +388,7 @@ function hoistLoop(
   const blocks: Block[] = [];
   let hoisted = 0,
     readHoisted = false;
-  const { provenOrigins, failureTargets, unknownProven } = proofs;
+  const { provenOrigins, failureTargets, unknownProven, readHoists } = proofs;
   for (const id of loop.body) {
     const block = byId.get(id);
     if (block === undefined) throw "licm block invariant";
@@ -383,6 +428,7 @@ function hoistLoop(
       const field = module.records?.[term.record]?.fields[term.field];
       const objectOrigin = recordObjectOrigin(block, term.object);
       readHoist =
+        readHoists &&
         !readHoisted &&
         !unknownProven &&
         !failureTargets.has(block.id) &&
@@ -410,6 +456,7 @@ function hoistLoop(
             String(loop.header) +
             ": " +
             readHoistRefusal(
+              readHoists,
               readHoisted,
               unknownProven,
               objectOrigin !== undefined,

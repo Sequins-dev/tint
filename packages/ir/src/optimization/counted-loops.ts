@@ -3,7 +3,7 @@ import {
   instructionResult,
   naturalLoops,
   provenInductionWords,
-  provenRecordReads,
+  recordReadsKept,
   verifierRecordWork,
   substituteInstructionValues,
   substituteTerminatorValues,
@@ -177,7 +177,7 @@ export function boundCountedLoops(
     if (visited > budget) return undefined;
     // The copy's exits join the loop's: a record read proven along the
     // unique-predecessor chain through an exit must stay proven.
-    if (joined && !recordReadsKept(current, result.fn)) {
+    if (joined && !recordReadsKept(current, result.fn, verifierRecordWork)) {
       missed("cold copy would join a proven record read's path");
       continue;
     }
@@ -319,7 +319,7 @@ export function versionNonzeroDivisors(
     if (visited > budget) return undefined;
     // The copy's exits join the loop's: a record read proven along the
     // unique-predecessor chain through an exit must stay proven.
-    if (joined && !recordReadsKept(current, result.fn)) {
+    if (joined && !recordReadsKept(current, result.fn, verifierRecordWork)) {
       if (remarks !== undefined)
         remarks({
           pass: "version-nonzero-divisors",
@@ -580,22 +580,6 @@ function loopLocalCandidates(
       local.push(slot);
   local.sort((left, right) => left - right);
   return local;
-}
-
-/** Whether every record read `before` proves (as the verifier does, with
- * or without module-stable layouts) is still proven in `after`, which only
- * adds blocks and values. */
-function recordReadsKept(before: FunctionIR, after: FunctionIR): boolean {
-  for (let pass = 0; pass < 2; pass++) {
-    const stable = pass === 1;
-    const kept = provenRecordReads(before, verifierRecordWork, stable);
-    if (kept === undefined) return false;
-    const now = provenRecordReads(after, verifierRecordWork, stable);
-    if (now === undefined) return false;
-    for (let id = 0; id < kept.length; id++)
-      if (kept[id] === 1 && now[id] !== 1) return false;
-  }
-  return true;
 }
 
 interface CountedLoop {

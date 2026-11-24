@@ -426,6 +426,26 @@ export function provenRecordReads(
   // otherwise exhaust its budget and reject valid, already-lowered reads.
   return analyzeRecordAccesses(fn, maxWork, stableLayouts, false)?.reads;
 }
+/** Whether every record read `before` proves (as the verifier does, with or
+ * without module-stable layouts) is still proven in `after`, a rewrite that
+ * keeps value IDs. `work` bounds each proof (the verifier's budget). Passes
+ * that move checks or slot traffic use it to keep verified reads verified. */
+export function recordReadsKept(
+  before: FunctionIR,
+  after: FunctionIR,
+  work: number,
+): boolean {
+  for (let pass = 0; pass < 2; pass++) {
+    const stable = pass === 1;
+    const kept = provenRecordReads(before, work, stable);
+    if (kept === undefined) return false;
+    const now = provenRecordReads(after, work, stable);
+    if (now === undefined) return false;
+    for (let id = 0; id < kept.length; id++)
+      if (kept[id] === 1 && now[id] !== 1) return false;
+  }
+  return true;
+}
 /** Codegen-only descriptor guard proofs for verified IR by forward must-dataflow.
  * A fact maps a managed frame slot to the exact layout of the object it holds
  * at block entry; facts meet by intersection, so a check repeated on every

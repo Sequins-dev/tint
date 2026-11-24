@@ -332,6 +332,69 @@ test("unchecked reads of objects built in the same block do not block read hoist
   );
 });
 
+test("a check a direct read relies on through a slot copy stays in the loop", () => {
+  // The body checks slot 4's layout, copies the object to slot 6 and reads
+  // it unchecked: the read's proof runs through the copy back to the check
+  // (as inlining produces), which the origin test alone does not see.
+  const module = loop([{ kind: "load", id: 40, slot: 4, ...span }], {
+    slots: ["reference", "number", "reference"],
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: false }],
+      },
+    ],
+    bodyTerminator: {
+      kind: "record",
+      object: 40,
+      record: 0,
+      field: 0,
+      operation: "read",
+      slot: 5,
+      consequent: 4,
+      alternate: 5,
+      ...span,
+    },
+    extraBlocks: [
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 50, slot: 4, ...span },
+          { kind: "store", slot: 6, value: 50, ...span },
+        ],
+        terminator: { kind: "jump", target: 6, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+      {
+        id: 6,
+        instructions: [
+          { kind: "load", id: 60, slot: 6, ...span },
+          {
+            kind: "record-read",
+            id: 61,
+            object: 60,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+          { kind: "store", slot: 3, value: 61, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+    ],
+  });
+  // hoist() verifies the result: the read keeps its proof.
+  const fn = hoist(module);
+  assert.equal(
+    fn.blocks.find((block) => block.id === 0)!.terminator.kind,
+    "jump",
+  );
+  assert.equal(
+    fn.blocks.find((block) => block.id === 2)!.terminator.kind,
+    "record",
+  );
+});
+
 test("a union dispatch's later layout checks stay behind the earlier check", () => {
   // b2 tests layout 0 and, failing that, b6 tests layout 1 then traps. The
   // second check runs only for objects that are not layout 0, so hoisting it
