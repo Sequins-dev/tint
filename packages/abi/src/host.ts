@@ -4,9 +4,14 @@ import type { CTarget } from "./c/types.ts";
  * published and fixed afterwards), so the allocation fast path forms an
  * object's address with one load and one add. */
 export const nativeGenerationalNurseryAddressOffset = 64;
+/** Byte offset in the generational allocation state block of the large-object
+ * threshold (u32, written before publication): requests of at least this many
+ * bytes go directly to old space, so an inline fast path that matches the
+ * allocator's policy compares against it instead of deriving it. */
+export const nativeGenerationalLargeObjectOffset = 72;
 /** The generational state block's minimum length in uint32 words, through the
- * nursery address; publication rejects a shorter block. */
-export const nativeGenerationalStateWords = 18;
+ * large-object threshold; publication rejects a shorter block. */
+export const nativeGenerationalStateWords = 19;
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.

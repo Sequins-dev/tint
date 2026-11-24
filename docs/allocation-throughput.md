@@ -241,7 +241,7 @@ is allowed in the barrier or collection callbacks. Minor collection promotes all
 survivors initially, so successful repair leaves no old-to-young edges and permits
 clearing the remembered set. More nuanced aging can follow measurement.
 
-The implemented generational publication extends the allocation state to eighteen
+The implemented generational publication extends the allocation state to nineteen
 uint32 words, retaining the existing context pointer and young allocation fields:
 young top/limit/base at words 0/1/2, old top at 3, native young-start pointer at 4/5,
 generation flag and old-prefix capacity at 6/7, native dirty-bitmap pointer at 8/9,
@@ -249,7 +249,10 @@ native dirty-queue pointer at 10/11, queue count/capacity at 12/13, and overflow
 Words 16/17 hold the nursery's absolute address (managed base plus old-prefix
 capacity), written by the runtime before publication; the inline fast path adds
 the young top to it instead of loading the base offset and the context's managed
-base. The nursery keeps no object-start bits. Publication must validate buffer sizes and initial state
+base. The nursery keeps no object-start bits. Word 18 holds the large-object
+threshold, max(128, nursery capacity / 4), also written before publication: the
+allocator sends requests of at least that size directly to old space, and the
+x86-64 fast path compares against it instead of deriving it per allocation. Publication must validate buffer sizes and initial state
 before enabling either the fast allocator or write barrier. The existing copying
 runtime remains available and must keep generation flags disabled. The ABI, emitted leaf barrier and opt-in
 `initializeGenerationalRuntime` now pass native fixtures. Minor collections promote
