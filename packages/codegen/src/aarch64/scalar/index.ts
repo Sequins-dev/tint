@@ -246,6 +246,7 @@ import {
   float64Immediate,
   logicalImmediate32,
   encode,
+  branchAt,
   type EncodingResult,
   type Instruction,
   type Branch,
@@ -15769,22 +15770,7 @@ function emitModuleForms(
                   const slow: { site: number; branch: Branch }[] = [];
                   const toSlow = (branch: Branch): void => {
                     slow.push({ site: instructions.length, branch });
-                    emit(
-                      branch.op === "b.cond"
-                        ? {
-                            op: "b.cond",
-                            condition: branch.condition,
-                            displacement: 0,
-                          }
-                        : branch.op === "cbz" || branch.op === "cbnz"
-                          ? {
-                              op: branch.op,
-                              width: branch.width,
-                              rt: branch.rt,
-                              displacement: 0,
-                            }
-                          : { op: branch.op, displacement: 0 },
-                    );
+                    emit(branchAt(branch, 0));
                   };
                   // The root vector: the cached argument, or read from the
                   // list header and tested to be a reference vector.
@@ -15939,20 +15925,7 @@ function emitModuleForms(
                       displacement = (instructions.length - entry.site) * 4;
                     patchInstruction(
                       entry.site,
-                      branch.op === "b.cond"
-                        ? {
-                            op: "b.cond",
-                            condition: branch.condition,
-                            displacement,
-                          }
-                        : branch.op === "cbz" || branch.op === "cbnz"
-                          ? {
-                              op: branch.op,
-                              width: branch.width,
-                              rt: branch.rt,
-                              displacement,
-                            }
-                          : { op: branch.op, displacement },
+                      branchAt(branch, displacement),
                     );
                   }
                 }
