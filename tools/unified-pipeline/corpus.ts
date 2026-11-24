@@ -1970,30 +1970,79 @@ export function run() {
 }`,
   },
   {
-    // Writes to a field every member of a record union declares
-    // (gc-granule fixture). The typed checker rejects the union receiver.
-    name: "union-field-write",
-    typed: `interface One { readonly kind: "one"; next: Item | undefined }
-interface Three { readonly kind: "three"; next: Item | undefined; text: string }
+    // Writes and updates to fields every member of a record union declares
+    // with a type the value fits, at different positions in each member
+    // (gc-granule fixture).
+    name: "union-field-write-shared",
+    typed: `interface One { readonly kind: "one"; next: Item | undefined; count: number }
+interface Three { readonly kind: "three"; text: string; count: number; next: Item | undefined }
 type Item = One | Three;
 function link(old: Item, tail: Item): boolean {
   old.next = tail;
+  old.count += 1;
   return old.next === tail;
 }
 export function run(): number {
-  const one: One = { kind: "one", next: undefined };
-  const three: Three = { kind: "three", next: undefined, text: "x" };
-  return link(one, three) && link(three, one) && three.next === one ? 42 : 1;
+  const one: One = { kind: "one", next: undefined, count: 0 };
+  const three: Three = { kind: "three", text: "x", count: 10, next: undefined };
+  return link(one, three) && link(three, one) && three.next === one &&
+    one.count === 1 && three.count === 11 && three.text === "x" ? 42 : 1;
 }`,
     untyped: `function link(old, tail) {
   old.next = tail;
+  old.count += 1;
   return old.next === tail;
 }
 export function run() {
-  const one = { kind: "one", next: undefined };
-  const three = { kind: "three", next: undefined, text: "x" };
-  return link(one, three) && link(three, one) && three.next === one ? 42 : 1;
+  const one = { kind: "one", next: undefined, count: 0 };
+  const three = { kind: "three", text: "x", count: 10, next: undefined };
+  return link(one, three) && link(three, one) && three.next === one &&
+    one.count === 1 && three.count === 11 && three.text === "x" ? 42 : 1;
 }`,
+  },
+  {
+    // A write through a record union of a value one member's declared type
+    // excludes: TypeScript accepts any value of the union's read type, but
+    // One declares x as string, so the write must throw a TypeError when the
+    // object is a One (explicit annotations are contracts). The typed path
+    // has no per-member run-time check yet and falls back
+    // (union-field-write capability). Type-erased Node stores the number.
+    name: "union-field-write",
+    typed: `interface One { readonly kind: "one"; x: string }
+interface Three { readonly kind: "three"; x: string | number }
+type Item = One | Three;
+function set(o: Item, value: string | number): void {
+  o.x = value;
+}
+export function run(): number {
+  const one: One = { kind: "one", x: "a" };
+  const three: Three = { kind: "three", x: "b" };
+  set(three, 1);
+  if (three.x !== 1) return 2;
+  set(one, "c");
+  if (one.x !== "c") return 3;
+  try {
+    set(one, 1);
+    return 4;
+  } catch (error) {
+    if (!(error instanceof TypeError)) return 5;
+  }
+  return one.x === "c" ? 42 : 6;
+}`,
+    untyped: `function set(o, value) {
+  o.x = value;
+}
+export function run() {
+  const one = { kind: "one", x: "a" };
+  const three = { kind: "three", x: "b" };
+  set(three, 1);
+  if (three.x !== 1) return 2;
+  set(one, "c");
+  if (one.x !== "c") return 3;
+  set(one, 1);
+  return one.x === 1 ? 42 : 4;
+}`,
+    node: { typed: 4 },
   },
   {
     // String() of a caught value (gc-release fixture). Typed String accepts

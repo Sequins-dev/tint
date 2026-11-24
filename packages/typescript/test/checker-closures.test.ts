@@ -861,6 +861,38 @@ test("undefined guards on mutable bindings survive nested loops, switches and la
     assert.equal(source.slice(r.error.start, r.error.end), "cell.next");
   }
 });
+test("writes through a record union check the field against every member", () => {
+  const header =
+    'interface One {readonly kind:"one";next:Item|undefined;count:number;x:string;readonly r:number}' +
+    'interface Three {readonly kind:"three";text:string;count:number;next:Item|undefined;x:string|number;r:number}' +
+    "type Item=One|Three;";
+  // Every member declares the field with a type the value fits: the write
+  // dispatches on the member, with no run-time check.
+  for (const body of [
+    "function f(o:Item,t:Item):void{o.next=t;}",
+    "function f(o:Item):void{o.next=undefined;}",
+    "function f(o:Item):void{o.count+=1;o.count++;}",
+    'function f(o:Item):void{o.x="s";}',
+  ]) {
+    const r = check(header + body);
+    assert.ok(r.ok, body + ": " + JSON.stringify(r));
+  }
+  // TypeScript accepts a value of the union's read type, but One declares
+  // x as string: the typed path has no per-member run-time check yet, so
+  // the write falls back explicitly.
+  const mixed = check(header + "function f(o:Item):void{o.x=1;}");
+  assert.ok(!mixed.ok, JSON.stringify(mixed));
+  assert.equal(mixed.error.fallback?.capability, "union-field-write");
+  // As in TypeScript: a member's readonly field, and a value outside every
+  // member's type, are errors.
+  for (const body of [
+    "function f(o:Item):void{o.r=1;}",
+    'function f(o:Item):void{o.count="s";}',
+  ]) {
+    const r = check(header + body);
+    assert.ok(!r.ok && r.error.fallback === undefined, body);
+  }
+});
 test("string sets check standard construction, methods and readonly views", () => {
   for (const source of [
     'function f():number{const s=new Set<string>();s.add("a").add("b");if(s.has("a"))s.delete("b");const n=s.size;s.clear();return n;}',
