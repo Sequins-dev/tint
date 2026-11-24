@@ -25,6 +25,7 @@ import { join } from "node:path";
 import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 import { withNativeFixtureMemory } from "./gate/native-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import { executionPlan } from "./test262-execution.ts";
 import { NativeImageRunner } from "./test262-native-process.ts";
 import {
@@ -260,9 +261,10 @@ for (var i = 0; i < expected.length; i++)
   );
 }
 
-// Native entries are the subject of the call cases; the variable is read
-// per preparation.
-process.env.TINT_NATIVE_SCRIPT_CALLS = "1";
+// Native entries are the subject of the call cases on targets that implement
+// the entry ABI (aarch64); x86-64 runs the same cases on register/list entries.
+if (nativeFixtureTarget().arch === "aarch64")
+  process.env.TINT_NATIVE_SCRIPT_CALLS = "1";
 const callSources = [
   ...activationSections,
   ...tailCallSections,
