@@ -7,7 +7,6 @@ import {
 import { viewSymbolValue, wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
-  exoticSlots,
   getProperty,
   indexedPropertyCell,
   type ObjectHooks,
@@ -64,15 +63,19 @@ export function readObjectValuePropertyKey(
     // prototype chain; ToString of a Number is canonical, naming the Number
     // itself (-0 names "0"). Read the element without the string round trip.
     let object = viewObjectValue(base, realm.objectPrototype);
+    const exotic =
+      object === undefined ? undefined : object.internalExoticSlots;
     const data =
-      object === undefined
-        ? undefined
-        : exoticSlots(object).internalTypedArrayData;
+      exotic === undefined ? undefined : exotic.internalTypedArrayData;
     if (data !== undefined)
       return typedArrayElementAt(data, key === 0 ? 0 : key);
     if (Number.isSafeInteger(key) && object !== undefined) {
       while (object !== undefined) {
-        const typed = exoticSlots(object).internalTypedArrayData;
+        const cursorExotic = object.internalExoticSlots;
+        const typed =
+          cursorExotic === undefined
+            ? undefined
+            : cursorExotic.internalTypedArrayData;
         if (typed !== undefined)
           return typedArrayElementAt(typed, key === 0 ? 0 : key);
         const methods = object.internalMethods;
@@ -140,12 +143,21 @@ export function writeObjectValuePropertyKey(
   if (typeof key === "number") {
     const object = viewObjectValue(base, realm.objectPrototype);
     if (object !== undefined) {
-      const data = exoticSlots(object).internalTypedArrayData;
-      if (data !== undefined) {
-        if (!bufferStorageImmutable(data.storage))
-          setTypedArrayElement(data, key === 0 ? 0 : key, value, realm, hooks);
-        else if (strict) throw createRuntimeError(realm, "type");
-        return;
+      const exotic = object.internalExoticSlots;
+      if (exotic !== undefined) {
+        const data = exotic.internalTypedArrayData;
+        if (data !== undefined) {
+          if (!bufferStorageImmutable(data.storage))
+            setTypedArrayElement(
+              data,
+              key === 0 ? 0 : key,
+              value,
+              realm,
+              hooks,
+            );
+          else if (strict) throw createRuntimeError(realm, "type");
+          return;
+        }
       }
       const rare = object.internalRareSlots;
       if (

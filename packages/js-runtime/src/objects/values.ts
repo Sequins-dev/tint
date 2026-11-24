@@ -11,7 +11,6 @@ import type { ScriptPropertyKey } from "./symbols.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import {
   ensureExoticSlots,
-  exoticSlots,
   getProperty,
   setProperty,
   deleteProperty,
@@ -317,7 +316,8 @@ export function viewWeakRegistryOwner(
 export function isArrayValue(value: unknown, realm: ErrorRealm): boolean {
   let object = viewObjectValue(value, realm.objectPrototype);
   while (object !== undefined) {
-    const proxy = exoticSlots(object).internalProxyData;
+    const exotic = object.internalExoticSlots;
+    const proxy = exotic === undefined ? undefined : exotic.internalProxyData;
     if (proxy === undefined) return object.internalArrayData;
     if (proxy.target === undefined) throw createRuntimeError(realm, "type");
     object = proxy.target;
@@ -366,7 +366,8 @@ export function scriptIsHTMLDDA(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  return object !== undefined && exoticSlots(object).internalIsHTMLDDA;
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  return exotic !== undefined && exotic.internalIsHTMLDDA;
 }
 
 /** Annex B.3.6 [[IsHTMLDDA]] objects are host-defined. Code lowered for a
@@ -396,8 +397,8 @@ export function scriptBoolean(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  if (object !== undefined && exoticSlots(object).internalIsHTMLDDA)
-    return false;
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  if (exotic !== undefined && exotic.internalIsHTMLDDA) return false;
   const bigint = viewBigIntValue(value);
   return bigint === undefined ? !!value : bigIntToBoolean(bigint);
 }

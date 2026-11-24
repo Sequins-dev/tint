@@ -9,7 +9,6 @@ import {
   compareBigIntNumber,
   compareBigIntString,
 } from "./bigints.ts";
-import { exoticSlots } from "./operations.ts";
 
 interface EqualityResult {
   readonly error: "none" | "type" | "unsupported";
@@ -105,7 +104,9 @@ export function looselyEqual(
     (typeof right === "object" || typeof right === "function")
   ) {
     const object = viewObjectValue(right, realm.objectPrototype);
-    if (object !== undefined && exoticSlots(object).internalIsHTMLDDA)
+    const exotic =
+      object === undefined ? undefined : object.internalExoticSlots;
+    if (exotic !== undefined && exotic.internalIsHTMLDDA)
       return { error: "none", value: true };
   }
   if (
@@ -114,7 +115,9 @@ export function looselyEqual(
     (typeof left === "object" || typeof left === "function")
   ) {
     const object = viewObjectValue(left, realm.objectPrototype);
-    if (object !== undefined && exoticSlots(object).internalIsHTMLDDA)
+    const exotic =
+      object === undefined ? undefined : object.internalExoticSlots;
+    if (exotic !== undefined && exotic.internalIsHTMLDDA)
       return { error: "none", value: true };
   }
   if (typeof left === typeof right)
