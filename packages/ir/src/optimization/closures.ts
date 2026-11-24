@@ -170,6 +170,12 @@ export function devirtualizeClosureCalls(
       else if (previous === undefined) targets.set(slot, known);
       else if (previous.target !== known.target) unknown.add(slot);
     };
+    // Indexed by value ID, one array per function: value IDs are unique
+    // within it. (A fresh array per block would grow to the function's
+    // largest ID in every block: dense native lists fill the gap.)
+    const local: (KnownClosure | undefined)[] = [],
+      // Slot (+ 1) a value loads, for stores that copy another slot.
+      loaded: number[] = [];
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
       if (block.exception !== undefined) unknown.add(block.exception.slot);
@@ -186,9 +192,6 @@ export function devirtualizeClosureCalls(
             ? fieldTarget(term.record, term.field)
             : undefined,
         );
-      const local: (KnownClosure | undefined)[] = [],
-        // Slot (+ 1) a value loads, for stores that copy another slot.
-        loaded: number[] = [];
       for (const op of block.instructions) {
         if (op === undefined) throw "closure instruction invariant";
         if (visited >= budget) return undefined;
@@ -277,12 +280,14 @@ export function devirtualizeClosureCalls(
       if (own === undefined) return undefined;
       const slotTarget = (slot: number): KnownClosure | undefined =>
         own.unknown.has(slot) ? undefined : own.targets.get(slot);
+      // By value ID and by slot, one array per function (see slotFacts);
+      // `stored` holds this block's stores to the slots in `storedHere`.
+      const local: (KnownClosure | undefined)[] = [],
+        stored: (KnownClosure | undefined)[] = [];
       for (const block of fn.blocks) {
         if (block === undefined) throw "closure block invariant";
-        const local: (KnownClosure | undefined)[] = [],
-          // Closures stored to slots in this block (absent: unknown).
-          stored: (KnownClosure | undefined)[] = [],
-          storedHere = new Set<number>();
+        // Slots stored in this block (their closures in `stored`).
+        const storedHere = new Set<number>();
         for (const op of block.instructions) {
           if (op === undefined) throw "closure instruction invariant";
           if (visited >= budget) return undefined;
@@ -362,10 +367,11 @@ export function devirtualizeClosureCalls(
       }
     }
     let changed = false;
-    const blocks: Block[] = [];
+    const blocks: Block[] = [],
+      // By value ID, one array per function (see slotFacts).
+      known: (KnownClosure | undefined)[] = [];
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
-      const known: (KnownClosure | undefined)[] = [];
       let instructions: Instruction[] | undefined;
       for (let i = 0; i < block.instructions.length; i++) {
         const op = block.instructions[i];
