@@ -1107,6 +1107,10 @@ export function emitModule(
         emit({ op: "cmovcc", cc: "b", dst: word(8), src: word(1) });
         emit({ op: "cmp", dst: r10, src: gpr(8) });
         branch(emit, "ae", slow);
+        // top + size against the limit: zero-extended uint32 offsets in
+        // 64-bit registers, so a limit lowered below an in-flight top (a
+        // debugger arming sampling) sends the next allocation to the slow
+        // path instead of wrapping (docs/allocation-throughput.md).
         emit({ op: "mov", dst: word(9), src: { ...mem(11, 0), width: 32 } });
         emit({
           op: "lea",

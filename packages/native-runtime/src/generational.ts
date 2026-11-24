@@ -338,7 +338,10 @@ export function initializeGenerationalRuntime(
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
     // No collection can make room for this request (an impossible string
     // length lands here too): a catchable RangeError, not an engine abort.
-    if (bytes > oldCapacity) throw engineRangeError();
+    // Every heap is below 2^31 bytes; requests of 2^31 or more are rejected
+    // outright, which keeps tops and sizes within the 32 bits the inline
+    // fast path's limit check adds without wrapping.
+    if (bytes >= 2147483648 || bytes > oldCapacity) throw engineRangeError();
     const size = Math.ceil(bytes / 8) * 8;
     if (size >= Math.max(128, youngCapacity / 4)) {
       if (size > oldCapacity - (allocation[3] ?? 0) && !collect(true))
