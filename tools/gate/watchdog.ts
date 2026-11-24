@@ -202,14 +202,10 @@ function watchProgress(
   };
 }
 
-export async function runWithWatchdog(
-  label: string,
-  command: string,
-  args: string[],
-  locked = false,
-): Promise<number> {
-  const seconds = Number(process.env.TINT_GATE_STEP_TIMEOUT);
-  const evidence = process.env.TINT_GATE_EVIDENCE;
+/** Validates a watched step's label and deadlines from the environment. */
+export function watchdogSettings(label: string, env = process.env) {
+  const seconds = Number(env.TINT_GATE_STEP_TIMEOUT);
+  const evidence = env.TINT_GATE_EVIDENCE;
   if (
     !Number.isInteger(seconds) ||
     seconds < 1 ||
@@ -221,17 +217,26 @@ export async function runWithWatchdog(
     );
   if (!/^[a-zA-Z0-9_-]+$/.test(label))
     throw Error("Invalid gate step: " + label);
-
-  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
-  const native =
-    label === "check-native" && journal ? nativeBatchState(journal) : undefined;
-  const idleSeconds = Number(process.env.TINT_GATE_IDLE_TIMEOUT ?? "120");
+  const idleSeconds = Number(env.TINT_GATE_IDLE_TIMEOUT ?? "120");
   if (
     !Number.isInteger(idleSeconds) ||
     idleSeconds < 1 ||
     idleSeconds > 2_147_483
   )
     throw Error("Expected TINT_GATE_IDLE_TIMEOUT (1–2147483 seconds)");
+  return { seconds, evidence, idleSeconds };
+}
+
+export async function runWithWatchdog(
+  label: string,
+  command: string,
+  args: string[],
+  locked = false,
+): Promise<number> {
+  const { seconds, evidence, idleSeconds } = watchdogSettings(label);
+  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
+  const native =
+    label === "check-native" && journal ? nativeBatchState(journal) : undefined;
   const progress =
     locked || native
       ? watchProgress(
