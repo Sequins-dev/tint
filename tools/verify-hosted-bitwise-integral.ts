@@ -99,15 +99,4 @@ export function run():number {
  return 42;
 }`,
   "bitwise-integral",
-  [],
-  [],
-  [],
-  [],
-  {
-    runtimeEntry: "initializeCopyingRuntime",
-    managedBytes: 524288,
-    allocationCapacity: 32768,
-    rootCapacity: 4096,
-    stackBytes: 1048576,
-  },
 );
