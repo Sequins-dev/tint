@@ -14,7 +14,7 @@ export function run():number{
   [],
   [{ module: memory, namespace: "native-memory" }],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 1048576,
     allocationCapacity: 65536,
     hostBindings: [

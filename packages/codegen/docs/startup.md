@@ -26,7 +26,7 @@ and normal process return.
 
 The context now reserves 64 bytes. Offset 56 holds an optional native pointer to
 permanent linear-allocation control data; startup zeroes it before initializing
-the runtime. Only the copying runtime publishes it. Code emitted with the explicit
+the runtime. Only the generational runtime publishes it. Code emitted with the explicit
 linear-allocation capability uses the fast path when present and the existing
 checked allocation closure otherwise. The runtime factory itself continues to use
 the control allocator and cannot take the application fast path.

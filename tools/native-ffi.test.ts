@@ -44,10 +44,6 @@ const arm64Abi =
     : {
         skip: "ARM64 ABI probes (x86-64 SysV ABI is covered by native-x64-ffi.test.ts)",
       };
-const copying =
-  nativeFixtureTarget().arch === "x86_64"
-    ? { skip: "linux-x86_64 does not implement initializeCopyingRuntime" }
-    : {};
 
 test(
   "C library ABI probes observe every C call shape natively",
@@ -66,93 +62,38 @@ test(
     verifyDylibProbe();
   },
 );
-test("node:zlib sync codecs match the system zlib and Node under GC (generational)", () => {
+test("node:zlib sync codecs match the system zlib and Node under GC", () => {
   verifyZlibFixture();
 });
-test(
-  "node:zlib sync codecs match the system zlib and Node under GC (copying)",
-  copying,
-  () => {
-    verifyZlibFixture("initializeCopyingRuntime");
-  },
-);
 test("optional libraries: availability and calls for absent and present ones", () => {
   verifyAvailabilityFixture();
 });
-test("external storage and raw addresses work natively (generational)", () => {
+test("external storage and raw addresses work natively", () => {
   verifyStorageFixture();
 });
-test(
-  "external storage and raw addresses work natively (copying)",
-  copying,
-  () => {
-    verifyStorageFixture("initializeCopyingRuntime");
-  },
-);
-test("C views read and write records as properties under GC (generational)", () => {
+test("C views read and write records as properties under GC", () => {
   verifyViewFixture();
 });
-test(
-  "C views read and write records as properties under GC (copying)",
-  copying,
-  () => {
-    verifyViewFixture("initializeCopyingRuntime");
-  },
-);
-test("tint:ffi/unsafe views read C-owned memory across collections (generational)", () => {
+test("tint:ffi/unsafe views read C-owned memory across collections", () => {
   verifyForeignFixture();
 });
-test(
-  "tint:ffi/unsafe views read C-owned memory across collections (copying)",
-  copying,
-  () => {
-    verifyForeignFixture("initializeCopyingRuntime");
-  },
-);
 /** Dynamic calls load a C library clang builds at test time. */
 const clang =
   spawnSync("clang", ["--version"], { encoding: "utf8" }).status === 0
     ? {}
     : { skip: "clang is not installed (the test library is compiled)" };
-test(
-  "dynamic calls reach every C argument and result class (generational)",
-  clang,
-  () => {
-    withDynamicLibrary((library) => verifyDynamicFixture(library));
-  },
-);
-test(
-  "dynamic calls reach every C argument and result class (copying)",
-  { skip: clang.skip ?? copying.skip },
-  () => {
-    withDynamicLibrary((library) =>
-      verifyDynamicFixture(library, "initializeCopyingRuntime"),
-    );
-  },
-);
-test("callbacks: qsort over records, nesting, GC inside and exceptions (generational)", () => {
+test("dynamic calls reach every C argument and result class", clang, () => {
+  withDynamicLibrary((library) => verifyDynamicFixture(library));
+});
+test("callbacks: qsort over records, nesting, GC inside and exceptions", () => {
   verifyCallbackFixture();
 });
-test(
-  "callbacks: qsort over records, nesting, GC inside and exceptions (copying)",
-  copying,
-  () => {
-    verifyCallbackFixture("initializeCopyingRuntime");
-  },
-);
 test("a may-callback call in a program without callbacks finds its callback state", () => {
   verifyMayCallbackOnlyFixture();
 });
-test("registered callbacks: zlib's allocator round trip under GC (generational)", () => {
+test("registered callbacks: zlib's allocator round trip under GC", () => {
   verifyZlibCallbackFixture();
 });
-test(
-  "registered callbacks: zlib's allocator round trip under GC (copying)",
-  copying,
-  () => {
-    verifyZlibCallbackFixture("initializeCopyingRuntime");
-  },
-);
 for (const scenario of [
   "ok",
   "leaf-later",

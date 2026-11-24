@@ -282,7 +282,7 @@ and signals queue overflow without dropping the dirty bit. Raw-memory mutators a
 borrowed reference environments require a separate barrier contract and are rejected
 in this mode. Direct old-space allocations are remembered by the runtime before
 constructor initialization. Immutable fields cannot be initialized through an ordinary
-write. Whole-heap copying remains available without generational barriers.
+write. Non-generational execution remains available without generational barriers.
 
 `pnpm verify:records` executes guarded numeric, boolean and reference reads/writes with
 adapter-owned record storage. It checks exact NaN bits, descriptor/null failures,

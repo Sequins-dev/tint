@@ -33,7 +33,7 @@ export function run():number {
   [{ module: memory, namespace: "native-memory" }],
   {
     allowJit: true,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeRuntime",
     managedBytes: 16777216,
     allocationCapacity: 1048576,
     hostBindings: [

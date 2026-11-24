@@ -34,7 +34,9 @@ export { scriptRuntimeGlobals as managedScriptGlobals } from "./script-runtime-r
 /** Node-only fixture. Its numeric leaves model an issued directory for emission
  * and selection tests; they are never dereferenced or executed. Native fixtures
  * obtain the same declarations and directory from their image's bind stub. */
-export function createManagedScriptFixture() {
+export function createManagedScriptFixture(
+  generationalBarriers: boolean = false,
+) {
   const dependencies = new Map([
     ["@tint/js-runtime/modules", "packages/js-runtime/src/modules/index.ts"],
     ["@tint/js-runtime/objects", "packages/js-runtime/src/objects/index.ts"],
@@ -173,7 +175,7 @@ export function createManagedScriptFixture() {
   const directory = compiler.createManagedSurfaceDirectory(
     "scriptRuntime",
     canonical.value,
-    facts.value,
+    { ...facts.value, generationalBarriers },
     "ScriptEntryFrame",
   );
   assert.ok(directory.ok, JSON.stringify(directory));

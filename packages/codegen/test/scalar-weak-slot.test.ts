@@ -77,7 +77,7 @@ test("generational weak operations remember ephemeron stores without a heap flag
   );
   // ...and the ephemeron value store runs the write barrier on the cell.
   assert.ok(contains([{ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: 10 }]));
-  const copying = emitModule(module, {});
-  assert.ok(copying.ok);
-  assert.ok(copying.value.code.byteLength < code.byteLength);
+  const unbarriered = emitModule(module, {});
+  assert.ok(unbarriered.ok);
+  assert.ok(unbarriered.value.code.byteLength < code.byteLength);
 });

@@ -90,7 +90,7 @@ export function run(argument:number):number {
     threaded: true,
     managedBytes: 1048576,
     allocationCapacity: 65536,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     hostBindings: bindings,
   },
 );

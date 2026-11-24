@@ -73,6 +73,6 @@ export function run():number {
   {
     managedBytes: 33554432,
     allocationCapacity: 1048576,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
   },
 );

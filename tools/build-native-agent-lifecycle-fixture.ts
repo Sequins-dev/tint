@@ -10,8 +10,6 @@ const bindings = [
   [clock, "monotonicMilliseconds", "monotonic-time"],
   [memory, "mapMemory", "memory-map"],
   [memory, "unmapMemory", "memory-unmap"],
-  [memory, "readMemoryWord", "memory-read-word"],
-  [memory, "writeMemoryWord", "memory-write-word"],
   [memory, "startNativeThread", "thread-start"],
   [memory, "joinNativeThread", "thread-join"],
   [memory, "hostedThreadEntry", "hosted-thread-entry"],
@@ -66,7 +64,7 @@ export function run(argument:number):number {
     threaded: true,
     managedBytes: 4194304,
     allocationCapacity: 65536,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     hostBindings: bindings.map(([module, name, operation]) => ({
       module,
       name,

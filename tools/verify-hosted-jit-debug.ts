@@ -180,7 +180,7 @@ const path = buildNativeFixture("jit-debug", () => {
     allowJit: true,
     jitDebugInterface: true,
     // Raw code capabilities do not yet have the generational write proof.
-    ...(x64 ? {} : { runtimeEntry: "initializeCopyingRuntime" as const }),
+    ...(x64 ? {} : { runtimeEntry: "initializeRuntime" as const }),
     denseReferenceLists: false,
     entry: "fixture",
     start: "run",

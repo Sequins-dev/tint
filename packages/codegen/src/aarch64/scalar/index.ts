@@ -7814,81 +7814,27 @@ function emitModuleForms(
             const exhausted = instructions.length;
             emit({ op: "b.cond", condition: "hi", displacement: 0 });
             emit({ op: "str", width: 32, rt: 14, rn: 12, offset: 0 });
-            // The copying runtime's space keeps one start bit per 8-byte
-            // granule: word top >> 8, bit (top >> 3) & 31. A generational
-            // nursery keeps none: it is bump-allocated without gaps, so the
-            // compactor's rare fallback and heap tools walk it by extents.
-            if (!generationalBarriers) {
-              emit({ op: "ldr", width: 64, rt: 13, rn: 12, offset: 16 });
-              emit({
-                op: "ubfm",
-                width: 32,
-                rd: 14,
-                rn: 11,
-                immr: 8,
-                imms: 31,
-              });
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 14,
-                rn: 13,
-                rm: 14,
-                shift: "lsl",
-                amount: 2,
-                setFlags: false,
-              });
-              emit({
-                op: "ubfm",
-                width: 32,
-                rd: 15,
-                rn: 11,
-                immr: 3,
-                imms: 7,
-              });
-              imm(9, 1);
-              emit({ op: "lslv", width: 32, rd: 9, rn: 9, rm: 15 });
-              emit({ op: "ldr", width: 32, rt: 15, rn: 14, offset: 0 });
-              emit({ op: "orr-reg", width: 32, rd: 15, rn: 15, rm: 9 });
-              emit({ op: "str", width: 32, rt: 15, rn: 14, offset: 0 });
-            }
-            const addTop = (): void =>
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 9,
-                rn: 9,
-                rm: 11,
-                shift: "lsl",
-                amount: 0,
-                setFlags: false,
-              });
-            if (generationalBarriers) {
-              // The nursery's absolute address plus the young top.
-              emit({
-                op: "ldr",
-                width: 64,
-                rt: 9,
-                rn: 12,
-                offset: nativeGenerationalNurseryAddressOffset,
-              });
-              addTop();
-            } else {
-              // The semispace's base offset plus the top, then the managed base.
-              emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-              addTop();
-              emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 9,
-                rn: 10,
-                rm: 9,
-                shift: "lsl",
-                amount: 0,
-                setFlags: false,
-              });
-            }
+            // The generational nursery keeps no start bits: it is
+            // bump-allocated without gaps, so the compactor's rare fallback
+            // and heap tools walk it by extents. Add the young top to the
+            // nursery's absolute address.
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 9,
+              rn: 12,
+              offset: nativeGenerationalNurseryAddressOffset,
+            });
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: 9,
+              rn: 9,
+              rm: 11,
+              shift: "lsl",
+              amount: 0,
+              setFlags: false,
+            });
             fastDone = instructions.length;
             emit({ op: "b", displacement: 0 });
             const slow = instructions.length;
@@ -12859,12 +12805,8 @@ function emitModuleForms(
                   floatStore(0, resultId);
                   break;
                 }
-                if (
-                  operation === "allocation-state" ||
-                  operation === "generational-state"
-                ) {
-                  const generational = operation === "generational-state";
-                  // State and bitmap are permanent, caller-owned control storage.
+                if (operation === "generational-state") {
+                  // State and bitmaps are permanent, caller-owned control storage.
                   // Context +56 is zero until this checked publication succeeds.
                   const failures: {
                     index: number;
@@ -12895,7 +12837,7 @@ function emitModuleForms(
                     rn: 10,
                     offset: nativeArrayLengthOffset,
                   });
-                  imm(12, generational ? nativeGenerationalStateWords : 8);
+                  imm(12, nativeGenerationalStateWords);
                   compareState(9, 12);
                   requireState("cc");
                   emit({
@@ -12923,33 +12865,27 @@ function emitModuleForms(
                   emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 0 });
                   compareState(9, 10);
                   requireState("ne");
-                  if (generational) {
-                    emit({ op: "ldr", width: 32, rt: 17, rn: 12, offset: 28 });
-                    imm(10, 512);
-                    compareState(17, 10);
-                    requireState("cc");
-                    emit({
-                      op: "ubfm",
-                      width: 32,
-                      rd: 10,
-                      rn: 17,
-                      immr: 0,
-                      imms: 8,
-                    });
-                    imm(11, 0);
-                    compareState(10, 11);
-                    requireState("ne");
-                    emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-                    compareState(9, 17);
-                    requireState("ne");
-                    emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 12 });
-                    compareState(9, 11);
-                    requireState("ne");
-                  } else {
-                    emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-                    compareState(9, 10);
-                    requireState("ne");
-                  }
+                  emit({ op: "ldr", width: 32, rt: 17, rn: 12, offset: 28 });
+                  imm(10, 512);
+                  compareState(17, 10);
+                  requireState("cc");
+                  emit({
+                    op: "ubfm",
+                    width: 32,
+                    rd: 10,
+                    rn: 17,
+                    immr: 0,
+                    imms: 8,
+                  });
+                  imm(11, 0);
+                  compareState(10, 11);
+                  requireState("ne");
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
+                  compareState(9, 17);
+                  requireState("ne");
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 12 });
+                  compareState(9, 11);
+                  requireState("ne");
                   emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 4 });
                   imm(10, 16);
                   compareState(9, 10);
@@ -12957,21 +12893,19 @@ function emitModuleForms(
                   imm(10, 0x7ffffff0);
                   compareState(9, 10);
                   requireState("hi");
-                  if (generational) {
-                    emit({
-                      op: "add-reg",
-                      width: 64,
-                      rd: 10,
-                      rn: 9,
-                      rm: 17,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: false,
-                    });
-                    imm(11, 0x7ffffff0);
-                    compareState(10, 11);
-                    requireState("hi");
-                  }
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 10,
+                    rn: 9,
+                    rm: 17,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  imm(11, 0x7ffffff0);
+                  compareState(10, 11);
+                  requireState("hi");
                   emit({
                     op: "ubfm",
                     width: 32,
@@ -13002,87 +12936,76 @@ function emitModuleForms(
                   });
                   compareState(13, 9);
                   requireState("cc");
-                  if (generational) {
-                    rawValue(15, argument(2));
-                    emit({
-                      op: "ldr",
-                      width: 32,
-                      rt: 13,
-                      rn: 15,
-                      offset: nativeArrayLengthOffset,
-                    });
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 15,
-                      rn: 15,
-                      offset: nativeArrayDataOffset,
-                    });
-                    emit({
-                      op: "add-imm",
-                      width: 64,
-                      rd: 9,
-                      rn: 17,
-                      immediate: 63,
-                      shift: 0,
-                      setFlags: false,
-                    });
-                    emit({
-                      op: "ubfm",
-                      width: 64,
-                      rd: 9,
-                      rn: 9,
-                      immr: 6,
-                      imms: 63,
-                    });
-                    compareState(13, 9);
-                    requireState("cc");
-                    rawValue(16, argument(3));
-                    emit({
-                      op: "ldr",
-                      width: 32,
-                      rt: 13,
-                      rn: 16,
-                      offset: nativeArrayLengthOffset,
-                    });
-                    imm(9, 1);
-                    compareState(13, 9);
-                    requireState("cc");
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 16,
-                      rn: 16,
-                      offset: nativeArrayDataOffset,
-                    });
-                    emit({ op: "str", width: 64, rt: 15, rn: 12, offset: 32 });
-                    emit({ op: "str", width: 64, rt: 16, rn: 12, offset: 40 });
-                    emit({
-                      op: "str",
-                      width: 32,
-                      rt: "zr",
-                      rn: 12,
-                      offset: 48,
-                    });
-                    emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 52 });
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: "zr",
-                      rn: 12,
-                      offset: 56,
-                    });
-                    emit({ op: "str", width: 32, rt: 9, rn: 12, offset: 24 });
-                  } else {
-                    // A copying-runtime publication cannot accidentally enable barriers.
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: "zr",
-                      rn: 12,
-                      offset: 24,
-                    });
-                  }
+                  rawValue(15, argument(2));
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 13,
+                    rn: 15,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 15,
+                    rn: 15,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 9,
+                    rn: 17,
+                    immediate: 63,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    immr: 6,
+                    imms: 63,
+                  });
+                  compareState(13, 9);
+                  requireState("cc");
+                  rawValue(16, argument(3));
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 13,
+                    rn: 16,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  imm(9, 1);
+                  compareState(13, 9);
+                  requireState("cc");
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 16,
+                    rn: 16,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({ op: "str", width: 64, rt: 15, rn: 12, offset: 32 });
+                  emit({ op: "str", width: 64, rt: 16, rn: 12, offset: 40 });
+                  emit({
+                    op: "str",
+                    width: 32,
+                    rt: "zr",
+                    rn: 12,
+                    offset: 48,
+                  });
+                  emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 52 });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: "zr",
+                    rn: 12,
+                    offset: 56,
+                  });
+                  emit({ op: "str", width: 32, rt: 9, rn: 12, offset: 24 });
                   emit({ op: "str", width: 64, rt: 14, rn: 12, offset: 16 });
                   rawLoad(10, contextOffset);
                   emit({

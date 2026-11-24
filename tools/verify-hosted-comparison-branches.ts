@@ -15,7 +15,7 @@ churn();if(identity(first,first)!==1||first.value!==42||!saved(-1,1)||saved(NaN,
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 524288,
     allocationCapacity: 32768,
     rootCapacity: 4096,

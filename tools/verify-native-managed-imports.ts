@@ -100,7 +100,7 @@ const built = buildMacOSProgram({
   ...request,
   allowDebugger: true,
   debugSymbols: true,
-  runtimeEntry: "initializeCopyingRuntime",
+  runtimeEntry: "initializeGenerationalRuntime",
   entry: "fixture",
   start: "run",
   denseReferenceLists: false,
