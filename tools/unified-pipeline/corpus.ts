@@ -2073,36 +2073,59 @@ export function run() {
     node: { typed: 4 },
   },
   {
-    // String() of a caught value (gc-release fixture). Typed String accepts
-    // only primitive inputs; a catch binding is unknown.
+    // String() of a caught value, which typed code holds as unknown
+    // (gc-release fixture): native errors (with and without messages) and
+    // primitives of each kind.
     name: "caught-value-string",
     typed: `function risky(n: number): number {
-  if (n > 2) throw new RangeError("big " + String(n));
+  if (n === 1) throw new RangeError("big " + String(n));
+  if (n === 2) throw new TypeError("odd");
+  if (n === 3) throw new Error();
+  if (n === 4) throw "text";
+  if (n === 5) throw 42.5;
+  if (n === 6) throw undefined;
+  if (n === 7) throw null;
+  if (n === 8) throw false;
+  if (n === 9) throw true;
   return n;
 }
-function measure(n: number): number {
+function measure(n: number): string {
   try {
-    return risky(n);
+    return String(risky(n));
   } catch (error) {
-    return String(error).length;
+    return String(error);
   }
 }
 export function run(): number {
-  return measure(1) === 1 && measure(5) === "RangeError: big 5".length ? 42 : 1;
+  const expected = ["RangeError: big 1", "TypeError: odd", "Error", "text", "42.5", "undefined", "null", "false", "true", "10"];
+  for (let i = 0; i < expected.length; i++)
+    if (measure(i + 1) !== expected[i]) return 10 + i;
+  return 42;
 }`,
     untyped: `function risky(n) {
-  if (n > 2) throw new RangeError("big " + String(n));
+  if (n === 1) throw new RangeError("big " + String(n));
+  if (n === 2) throw new TypeError("odd");
+  if (n === 3) throw new Error();
+  if (n === 4) throw "text";
+  if (n === 5) throw 42.5;
+  if (n === 6) throw undefined;
+  if (n === 7) throw null;
+  if (n === 8) throw false;
+  if (n === 9) throw true;
   return n;
 }
 function measure(n) {
   try {
-    return risky(n);
+    return String(risky(n));
   } catch (error) {
-    return String(error).length;
+    return String(error);
   }
 }
 export function run() {
-  return measure(1) === 1 && measure(5) === "RangeError: big 5".length ? 42 : 1;
+  const expected = ["RangeError: big 1", "TypeError: odd", "Error", "text", "42.5", "undefined", "null", "false", "true", "10"];
+  for (let i = 0; i < expected.length; i++)
+    if (measure(i + 1) !== expected[i]) return 10 + i;
+  return 42;
 }`,
   },
   {
