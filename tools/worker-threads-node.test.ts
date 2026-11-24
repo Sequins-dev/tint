@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { resolve } from "node:path";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 test("Worker suite matches the Node host", () => {
   const url = new URL("./worker-threads-suite.mjs", import.meta.url);
@@ -36,10 +37,7 @@ test(
         "--batch",
         "-o",
         "settings set target.disable-aslr false",
-        "-o",
-        "process launch --stop-at-entry",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
+        ...lldbStartCommands(),
         "-o",
         "continue",
         "-o",

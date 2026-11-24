@@ -13,6 +13,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 /** Builds lists that die young, with a few survivors, so the generational
  * runtime runs minor collections and majors whose mark and forwarding
@@ -45,10 +46,7 @@ export function runUnderLldb(image: string): string {
       [
         "--no-lldbinit",
         "--batch",
-        "-o",
-        "process launch --stop-at-entry",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
+        ...lldbStartCommands(),
         "-o",
         "continue",
         "-o",

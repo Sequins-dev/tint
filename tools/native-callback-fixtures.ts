@@ -16,6 +16,7 @@ import {
 } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 export const callbackDeclarations: FixtureForeignDeclaration = {
   id: "fixture/callbacks.d.ts",
@@ -387,10 +388,7 @@ export function verifyCallbackTrap(
         [
           "--no-lldbinit",
           "--batch",
-          "-o",
-          "process launch --stop-at-entry",
-          "-o",
-          "script assert lldb.process.GetState() == lldb.eStateStopped",
+          ...lldbStartCommands(),
           "-o",
           "continue",
           "-o",

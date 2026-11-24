@@ -89,6 +89,14 @@ captured workspace sources' identity, the target and the units' options, and
 is used only when every module the units are compiled from was parsed from
 those sources. Set `TINT_FIXTURE_CACHE=0` to start every build from scratch.
 
+Native fixtures launch under LLDB through `tint_start`
+(`tools/lldb/native_launch.py`; `lldbStartCommands` in `tools/lldb-launch.ts`
+builds the batch arguments). It launches the target with its usual settings and
+the stop-at-entry flag through the SB API, fails unless the process is then
+stopped, and leaves it stopped for the following commands. In batch mode
+`process launch --stop-at-entry` costs about two seconds more per launch, which
+dominated short fixture runs.
+
 The macOS stage 2 build takes the exclusive lock for its LLDB invocation.
 LLDB attaches and debugserver launches can fail under concurrent load, so
 these invocations are serialized with native fixture launches and other
