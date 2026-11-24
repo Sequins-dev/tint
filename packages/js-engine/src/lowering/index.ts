@@ -333,8 +333,9 @@ function numericLeafExpression(
       return numericLeafExpression(node.expression, bindings);
     case "member":
       return numericMember(node, bindings);
-    case "index":
-      return numericArrayRead(node, bindings);
+    // A bare read of a numeric literal stays general: the typed checker reads
+    // `number[]` elements as `number | undefined`, so only `read ?? number`
+    // (below) is a number to it.
     case "unary":
       return (
         (node.operator === "+" || node.operator === "-") &&

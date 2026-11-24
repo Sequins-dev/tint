@@ -329,6 +329,11 @@ function appends() {
   try { push(frozenElements, 3); } catch (e) { out.push(e.constructor.name); }
   return out.join(",");
 }
+// Loops over a fresh numeric literal: a masked read inside the literal is a
+// number; a read past it is undefined.
+function sumMasked(n) { let sum = 0; for (let i = 0; i < n; i++) { const values = [1, 2, 3, 4]; sum += values[i & 3]; } return sum; }
+function sumDefaulted(n) { let sum = 0; for (let i = 0; i < n; i++) { const values = [1, 2, 3, 4]; sum += values[i & 3] ?? 10; } return sum; }
+function sumPastEnd(n) { let sum = 0; for (let i = 0; i < n; i++) { const values = [1, 2, 3, 4]; sum += values[i & 7]; } return sum; }
 function literals() {
   // out and log own index 1 before the setter below exists.
   const out = ["literals", ":"];
@@ -381,6 +386,7 @@ function literals() {
   const frozen = Object.freeze([1, 2]);
   try { write(frozen, 0, 5); } catch (e) { out.push(e.constructor.name); }
   out.push(frozen[0]);
+  out.push(sumMasked(10), sumDefaulted(10), String(sumPastEnd(10)), sumPastEnd(4));
   return out.join(",");
 }
 export function sections() {
