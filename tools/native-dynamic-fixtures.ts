@@ -3,11 +3,11 @@
 // through the universal trampoline for every argument and result class,
 // plus libc symbols found in the program itself. Expected values are C's.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 /** The test library: records of every passing class, narrow and 64-bit
  * integers, bools, floats, stack arguments, variadics and buffers. */
@@ -393,7 +393,7 @@ export function verifyDynamicFixture(
 export function withDynamicLibrary<T>(
   body: (library: string) => T,
 ): T | undefined {
-  const directory = mkdtempSync(join(tmpdir(), "tint-dynamic-"));
+  const directory = stableScratchDirectory("dynamic-library");
   try {
     const library = buildDynamicLibrary(directory);
     return library === undefined ? undefined : body(library);

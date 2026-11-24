@@ -187,7 +187,12 @@ test("a published directory is read only while it stays canonical", () => {
 });
 
 test("x86-64 links a managed service, collects through its frames and rejects a changed fixup", () => {
-  const host = compileCounterHost();
+  // The generational x86-64 host publishes a barriered surface, so the unit
+  // must compile against a directory with the same policy.
+  const host = compileArm64Program({
+    ...counterHostRequest(),
+    generationalBarriers: true,
+  });
   assert.ok(host.ok, JSON.stringify(host));
   const published = host.value.managedSurfaces?.[0];
   assert.ok(published);

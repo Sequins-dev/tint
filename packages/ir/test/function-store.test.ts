@@ -485,6 +485,9 @@ function everyKind(id: number): FunctionIR {
     parameters: [0, 1],
     slots: ["general", "number", "optional-string", "Float64Array"],
     integerSlots: [1],
+    // A round trip only: bounds reach 2^53 - 1.
+    safeIntegerSlots: [1, 3],
+    safeIntegerBounds: [0, 9007199254740991],
     returnType: "void",
     entry: 0,
     blocks,

@@ -391,6 +391,7 @@ export interface ClosureFallback {
     | "realm-library-member"
     | "realm-library-construction"
     | "union-member-narrowing"
+    | "union-field-write"
     | "realm-aggregate-update"
     | "general-result-projection"
     | "operator-layout";
@@ -3291,41 +3292,88 @@ function checkClosureModuleLayout(
    * functions, whose bindings are captured and so never retain facts across
    * effects), or undefined when a destructuring target hides them. */
   function assignedWithin(node: Expression): Set<number> | undefined {
+    return assignedWithinStatement({
+      start: node.start,
+      end: node.end,
+      kind: "expression",
+      expression: node,
+    });
+  }
+  /** Bindings a statement assigns directly, as assignedWithin; `var`
+   * declarations and for-in/of assignment targets assign too. */
+  function assignedWithinStatement(node: Statement): Set<number> | undefined {
     const written = new Set<number>();
     let complete = true;
+    function assignTarget(node: Expression): void {
+      const target = ungroup(node);
+      const binding =
+        target.kind === "identifier" ? references.get(target) : undefined;
+      if (binding !== undefined) written.add(binding.id);
+      else if (target.kind !== "member" && target.kind !== "index")
+        complete = false;
+    }
+    function declare(declaration: VariableBinding): void {
+      if (
+        declaration.kind === "object-binding" ||
+        declaration.kind === "array-binding"
+      ) {
+        complete = false;
+        return;
+      }
+      const binding = declarations.get(declaration);
+      if (binding !== undefined) written.add(binding.id);
+    }
     rewriteModule(
+      { start: node.start, end: node.end, imports: [], statements: [node] },
       {
-        start: node.start,
-        end: node.end,
-        imports: [],
-        statements: [
-          {
-            start: node.start,
-            end: node.end,
-            kind: "expression",
-            expression: node,
-          },
-        ],
-      },
-      {
+        statement: (mapped: Statement, original: Statement): Statement => {
+          if (
+            original.kind === "for-in-assignment" ||
+            original.kind === "for-of-assignment"
+          )
+            assignTarget(original.target);
+          else if (
+            (original.kind === "for-in" || original.kind === "for-of") &&
+            original.mode === "var"
+          )
+            declare(original.binding);
+          else if (original.kind === "variable" && original.mode === "var")
+            for (const declaration of original.declarations) {
+              if (declaration === undefined) throw "declaration invariant";
+              declare(declaration);
+            }
+          return mapped;
+        },
         expression: (mapped: Expression, original: Expression): Expression => {
           if (
             original.kind === "assignment" ||
             original.kind === "compound" ||
             original.kind === "update"
-          ) {
-            const target = ungroup(original.target);
-            const binding =
-              target.kind === "identifier" ? references.get(target) : undefined;
-            if (binding !== undefined) written.add(binding.id);
-            else if (target.kind !== "member" && target.kind !== "index")
-              complete = false;
-          }
+          )
+            assignTarget(original.target);
           return mapped;
         },
       },
     );
     return complete ? written : undefined;
+  }
+  /** Facts that hold on every entry to a statement that loops or joins
+   * several exits (a loop, switch or labelled statement): stableFacts, plus
+   * the presence of uncaptured mutable bindings the statement never assigns,
+   * which no iteration, call or exit can change. */
+  function entryFacts(node: Statement): Set<number> {
+    const facts = stableFacts();
+    const written = assignedWithinStatement(node);
+    if (written === undefined) return facts;
+    for (const token of present)
+      if (
+        token >= 0 &&
+        token < graph.bindings.length &&
+        graph.bindings[token]?.captured === false &&
+        !written.has(token)
+      )
+        facts.add(token);
+    return facts;
   }
   function refine(
     node: Expression,
@@ -4159,6 +4207,34 @@ function checkClosureModuleLayout(
       node,
       "invalid realm array type",
     );
+  }
+  /** Checks a record field write. Through a union receiver the value must
+   * fit every member's declared field type (system.writeProperty), while
+   * TypeScript accepts any value of the union's read type. The native write
+   * has no per-member run-time check, so a value TypeScript accepts but some
+   * member's contract rejects falls back to the general path. */
+  function checkFieldWrite(
+    target: Span,
+    receiver: number,
+    name: string,
+    value: number,
+    message: string,
+  ): void {
+    const checked = system.writeProperty(receiver, name, value);
+    if (checked.ok) return;
+    if (
+      checked.error === "TYPE_MISMATCH" &&
+      types[receiver]?.kind === "union"
+    ) {
+      const read = system.property(receiver, name);
+      if (read.ok && system.assignable(value, read.value))
+        unsupported(
+          target,
+          "union-field-write",
+          "a write through a union receiver requires a value of every member's declared field type",
+        );
+    }
+    fail(target, checked.error, message);
   }
   function finiteRecordKeys(
     object: number,
@@ -7672,9 +7748,13 @@ function checkClosureModuleLayout(
             expressions.set(target, property.value);
             if (node.kind === "compound")
               requireType(expression(node.value, owner), number, node.value);
-            const checked = system.writeProperty(object, propertyName, number);
-            if (!checked.ok)
-              fail(target, checked.error, "invalid property update");
+            checkFieldWrite(
+              target,
+              object,
+              propertyName,
+              number,
+              "invalid property update",
+            );
             invalidateCalls();
             result = number;
             break;
@@ -7985,9 +8065,13 @@ function checkClosureModuleLayout(
               if (!read.ok)
                 fail(target, read.error, "invalid property assignment");
               result = expression(node.value, owner, read.value);
-              const checked = system.writeProperty(receiver, property, result);
-              if (!checked.ok)
-                fail(target, checked.error, "invalid property assignment");
+              checkFieldWrite(
+                target,
+                receiver,
+                property,
+                result,
+                "invalid property assignment",
+              );
               intrinsics.set(
                 node,
                 realmAggregate(receiver)
@@ -9287,7 +9371,7 @@ function checkClosureModuleLayout(
           return yes | no;
         }
         case "switch": {
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           const switchNode = node;
           condition(node.expression, owner);
           const before = new Set(present),
@@ -9363,7 +9447,7 @@ function checkClosureModuleLayout(
           return completion;
         }
         case "label": {
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           const completion = statement(node.body, owner, result);
           // Labelled exits can bypass assignments in their body. Keep entry
           // facts until completion analysis tracks individual named targets.
@@ -9371,7 +9455,7 @@ function checkClosureModuleLayout(
           return completion | 1;
         }
         case "do-while": {
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           present = new Set(definiteEntry);
           const body = loopBody(node.body, owner, result);
           present = new Set(definiteEntry);
@@ -9380,7 +9464,7 @@ function checkClosureModuleLayout(
           return loopCompletion(body, true, unconditionalTest(node.test));
         }
         case "while": {
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           present = new Set(definiteEntry);
           condition(node.test, owner);
           present = refine(node.test, true, present);
@@ -9393,7 +9477,7 @@ function checkClosureModuleLayout(
         case "for-in-assignment": {
           const iterable = expression(node.iterable, owner);
           requireForInObject(iterable, node.iterable);
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           present = new Set(definiteEntry);
           const target = ungroup(node.target);
           if (target.kind === "identifier") {
@@ -9457,7 +9541,7 @@ function checkClosureModuleLayout(
         case "for-in": {
           const iterable = expression(node.iterable, owner);
           requireForInObject(iterable, node.iterable);
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           present = new Set(definiteEntry);
           const binding = node.binding;
           if (
@@ -9485,7 +9569,7 @@ function checkClosureModuleLayout(
           // The iterable is evaluated once, under the incoming facts. Only
           // immutable object discriminants remain valid across iterations.
           const iterable = expression(node.iterable, owner);
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           present = new Set(definiteEntry);
           const map = types[iterable];
           if (loopBinding.kind === "array-binding" && map?.kind === "map") {
@@ -9565,7 +9649,7 @@ function checkClosureModuleLayout(
         case "for": {
           if (node.initializer !== undefined)
             statement(node.initializer, owner, result);
-          const definiteEntry = stableFacts();
+          const definiteEntry = entryFacts(node);
           present = new Set(definiteEntry);
           const test = node.test;
           if (test !== undefined) {

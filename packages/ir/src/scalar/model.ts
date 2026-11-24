@@ -604,6 +604,18 @@ export interface FunctionIR {
    * A pass that adds a write to a slot must drop or re-prove its entry; slot
    * renumbering must remap the list. */
   readonly integerSlots?: readonly number[];
+  /** Optimization facts: number slots (ascending, none of them integer
+   * slots) whose every write stores a safe integer other than -0, of
+   * magnitude at most the slot's safeIntegerBounds entry, so they may be
+   * held as int64s. The same pass rules as for integerSlots apply. */
+  readonly safeIntegerSlots?: readonly number[];
+  /** The magnitude bound (at most 2^53 - 1) of each safeIntegerSlots entry,
+   * entry for entry. */
+  readonly safeIntegerBounds?: readonly number[];
+  /** Optimization facts: number slots (ascending) whose every write stores
+   * an integer other than 0 and -0, so remainders by their values never
+   * divide by zero. The same pass rules as for integerSlots apply. */
+  readonly nonzeroSlots?: readonly number[];
   readonly returnType: ReturnType;
   readonly entry: number;
   readonly blocks: readonly Block[];

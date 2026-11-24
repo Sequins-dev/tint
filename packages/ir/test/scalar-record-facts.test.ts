@@ -7,6 +7,7 @@ import {
   dataflowRecordGuards,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
   analyzeRecordAccesses,
   provenRecordReads,
 } from "../src/scalar/record-facts.ts";
@@ -313,6 +314,71 @@ test("raw host memory effects prevent closed-module layout proofs", () => {
     assert.equal(stableRecordLayouts({ functions: [fn] }), false);
     assert.equal(stableDescriptors({ functions: [fn] }), false, operation);
   }
+});
+test("the generational write proof admits executable calls only under the trusted-code contract", () => {
+  const withHost = (operation: string): ModuleIR => {
+    const base = fixture();
+    return {
+      functions: [
+        {
+          ...base,
+          blocks: base.blocks.map((block) =>
+            block.id !== 1
+              ? block
+              : {
+                  ...block,
+                  instructions: [
+                    {
+                      kind: "host-call",
+                      operation: operation as "executable-call-value",
+                      id: 4,
+                      arguments: [],
+                      ...span,
+                    },
+                    ...block.instructions,
+                  ],
+                },
+          ),
+        },
+      ],
+    };
+  };
+  // Publishing code bytes is not a managed write.
+  for (const operation of [
+    "executable-map",
+    "executable-write",
+    "executable-unmap",
+  ])
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, false),
+      true,
+      operation,
+    );
+  // The code a call enters is opaque: only the image's unit linker, which
+  // rejects a differing barrier policy, can vouch for it.
+  for (const operation of [
+    "executable-call-number",
+    "executable-call-value",
+    "executable-call-managed",
+  ]) {
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, false),
+      false,
+      operation,
+    );
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, true),
+      true,
+      operation,
+    );
+  }
+  // A raw word write or move could store an unbarriered reference.
+  for (const operation of ["memory-write-word", "memory-move"])
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, true),
+      false,
+      operation,
+    );
 });
 function fixture(): FunctionIR {
   return {

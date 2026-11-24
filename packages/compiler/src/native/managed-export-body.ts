@@ -19,6 +19,9 @@ function text(value: string): Expression {
 function number(value: number): Expression {
   return { kind: "number", value, raw: String(value), start: 0, end: 0 };
 }
+function boolean(value: boolean): Expression {
+  return { kind: "boolean", value, start: 0, end: 0 };
+}
 function array(elements: readonly Expression[]): Expression {
   return { kind: "array", elements, start: 0, end: 0 };
 }
@@ -64,6 +67,10 @@ function directoryLiteral(
       object([
         field("signature", number(directory.abi.signature)),
         field("functionBrand", array(directory.abi.functionBrand.map(number))),
+        field(
+          "generationalBarriers",
+          boolean(directory.abi.generationalBarriers),
+        ),
       ]),
     ),
     field(

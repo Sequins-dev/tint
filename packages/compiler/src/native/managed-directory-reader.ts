@@ -100,7 +100,8 @@ export function readManagedSurfaceDirectory(
   if (
     input.abi.signature !== nativeSignatureVersion ||
     input.abi.functionBrand.length !== brandWords.length ||
-    brandWords.some((word, index) => input.abi.functionBrand[index] !== word)
+    brandWords.some((word, index) => input.abi.functionBrand[index] !== word) ||
+    typeof input.abi.generationalBarriers !== "boolean"
   )
     return reject("ABI mismatch");
   if (!digestText(input.digest)) return reject("invalid digest");
@@ -139,6 +140,7 @@ export function readManagedSurfaceDirectory(
       records: recordFacts,
       signatures: signatureFacts,
       runtimes: input.runtimes,
+      generationalBarriers: input.abi.generationalBarriers,
     },
     input.frame,
     restorations,
@@ -416,6 +418,11 @@ export function linkManagedSurfaceModule(
 ): ManagedPointerResolution {
   if (domain !== read.domain)
     return { ok: false, error: "surface link: context domain changed" };
+  if (
+    (native.generationalBarriers === true) !==
+    read.directory.abi.generationalBarriers
+  )
+    return { ok: false, error: "surface link: allocation policy differs" };
   let imports: readonly NativeManagedPointerImport[] = [];
   const supplied = native.managedImports;
   if (supplied !== undefined) imports = supplied;
@@ -432,6 +439,8 @@ export function linkX64ManagedSurfaceModule(
 ): ManagedPointerResolution {
   if (domain !== read.domain)
     return { ok: false, error: "surface link: context domain changed" };
+  if (native.generationalBarriers !== read.directory.abi.generationalBarriers)
+    return { ok: false, error: "surface link: allocation policy differs" };
   const selected = selectManagedIdentityBindings(read, native.managedImports);
   if (!selected.ok) return selected;
   return resolveX64ManagedPointers(native, selected.value, readWord, domain);

@@ -304,7 +304,10 @@ export function prepareDateTimeNativeService(
   const directory = compiler.createManagedSurfaceDirectory(
     "dateTime",
     canonical.value,
-    facts.value,
+    {
+      ...facts.value,
+      generationalBarriers: options.generationalBarriers === true,
+    },
     "Frame",
   );
   assert.ok(directory.ok, JSON.stringify(directory));

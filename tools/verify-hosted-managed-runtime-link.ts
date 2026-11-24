@@ -152,6 +152,7 @@ export function run():number {
   [{ module: memory, namespace: "runtime-link-memory" }],
   {
     allowJit: true,
+    trustedExecutableCode: true,
     runtimeEntry: x64
       ? "initializeGenerationalRuntime"
       : "initializeCopyingRuntime",

@@ -29,6 +29,13 @@ export type Branch =
       readonly op: "cbz" | "cbnz";
       readonly width: RegisterWidth;
       readonly rt: DataRegister;
+    }
+  /** Test bit `bit` (0-63) of `rt`: branch when it is clear (tbz) or set
+   * (tbnz), within ±32 KiB. */
+  | {
+      readonly op: "tbz" | "tbnz";
+      readonly rt: DataRegister;
+      readonly bit: number;
     };
 export type Instruction =
   | { readonly op: "clrex" | "yield" | "isb" }
@@ -384,6 +391,19 @@ function branchWord(
     return word(
       (branch.op === "b" ? 0x14000000 : 0x94000000) +
         (imm < 0 ? imm + 0x4000000 : imm),
+    );
+  }
+  if (branch.op === "tbz" || branch.op === "tbnz") {
+    if (!integer(branch.bit, 0, 63)) return fail("INVALID_IMMEDIATE");
+    const rt = register(branch.rt, "zr");
+    if (rt < 0) return fail("INVALID_REGISTER");
+    if (!integer(imm, -0x2000, 0x1fff)) return fail("OUT_OF_RANGE");
+    return word(
+      (branch.bit >= 32 ? 0x80000000 : 0) +
+        (branch.op === "tbnz" ? 0x37000000 : 0x36000000) +
+        (branch.bit % 32) * 0x80000 +
+        (imm < 0 ? imm + 0x4000 : imm) * 32 +
+        rt,
     );
   }
   if (!integer(imm, -0x40000, 0x3ffff)) return fail("OUT_OF_RANGE");
@@ -888,6 +908,8 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "b.cond":
     case "cbz":
     case "cbnz":
+    case "tbz":
+    case "tbnz":
       return branchWord(i, i.displacement);
     case "br":
     case "blr":
@@ -1091,6 +1113,16 @@ export function writeInstruction(
   const written = writeUnsigned(bytes, offset, 4, result.value, "little");
   if (!written.ok) return fail("OUT_OF_BOUNDS");
   return { ok: true, value: undefined };
+}
+/** The instruction of `branch` at a byte displacement. */
+export function branchAt(branch: Branch, displacement: number): Instruction {
+  if (branch.op === "b.cond")
+    return { op: "b.cond", condition: branch.condition, displacement };
+  if (branch.op === "cbz" || branch.op === "cbnz")
+    return { op: branch.op, width: branch.width, rt: branch.rt, displacement };
+  if (branch.op === "tbz" || branch.op === "tbnz")
+    return { op: branch.op, rt: branch.rt, bit: branch.bit, displacement };
+  return { op: branch.op, displacement };
 }
 /** Whether `branch` can encode this byte displacement in its compact form. */
 export function branchInReach(branch: Branch, displacement: number): boolean {

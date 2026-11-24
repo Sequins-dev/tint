@@ -32,7 +32,7 @@ import {
   type SerializedManagedSurfaceTypes,
 } from "./managed-surface-text.ts";
 
-export const managedSurfaceDirectoryVersion = 3;
+export const managedSurfaceDirectoryVersion = 4;
 
 export interface ManagedSurfaceDirectoryData {
   readonly version: number;
@@ -42,6 +42,10 @@ export interface ManagedSurfaceDirectoryData {
   readonly abi: {
     readonly signature: number;
     readonly functionBrand: readonly number[];
+    /** The image's generational barrier policy. The surface linkers reject
+     * code compiled with a different one, which upholds the image's
+     * trustedExecutableCode contract (docs/native-code-loading.md). */
+    readonly generationalBarriers: boolean;
   };
   readonly types: SerializedManagedSurfaceTypes;
   readonly signatures: readonly {
@@ -150,6 +154,7 @@ export function encodeManagedSurfaceDirectory(
       if (word === undefined) throw "directory ABI contains a hole";
       uint(word);
     }
+    uint(directory.abi.generationalBarriers ? 1 : 0);
     const types = directory.types;
     uint(types.version);
     text(types.declarations);
@@ -522,6 +527,7 @@ export function createManagedSurfaceDirectory(
         nativeFunctionEnvironmentOffset,
         nativeFunctionGeneralCount,
       ],
+      generationalBarriers: facts.generationalBarriers === true,
     },
     types: serialized.value,
     runtimes: runtimes.value,
