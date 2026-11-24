@@ -28,7 +28,10 @@ test("primitive constructors have realm-local prototypes and readonly Number con
       objects.getOwnProperty(object, "constructor")?.value,
       constructor,
     );
-    assert.equal(object.internalPrimitiveData?.kind, name.toLowerCase());
+    assert.equal(
+      objects.exoticSlots(object).internalPrimitiveData?.kind,
+      name.toLowerCase(),
+    );
   }
   const number = objects.getOwnProperty(root, "Number")!
     .value as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -46,7 +49,7 @@ test("primitive wrapper payloads are internal and strings expose immutable UTF-1
     root,
     hooks,
   );
-  assert.deepEqual(box.internalPrimitiveData, {
+  assert.deepEqual(objects.exoticSlots(box).internalPrimitiveData, {
     kind: "string",
     value: "a\uD83D\uDE00",
   });
@@ -65,7 +68,9 @@ test("primitive wrapper payloads are internal and strings expose immutable UTF-1
   assert.equal(objects.getOwnProperty(box, "length")?.enumerable, false);
   assert.equal(objects.deleteProperty(box, "0"), false);
   const number = objects.createPrimitiveObject("number", -0, root, hooks);
-  assert.ok(Object.is(number.internalPrimitiveData?.value, -0));
+  assert.ok(
+    Object.is(objects.exoticSlots(number).internalPrimitiveData?.value, -0),
+  );
   assert.equal(number.properties.size, 0);
 });
 

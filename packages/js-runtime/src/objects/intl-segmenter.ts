@@ -4,6 +4,8 @@ import {
   type SegmentationGranularity,
 } from "@tint/foundation/unicode/segmentation";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -92,7 +94,10 @@ function requireState(
   realm: ErrorRealm,
 ): SegmenterState {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const state = object === undefined ? undefined : object.internalSegmenterData;
+  const state =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalSegmenterData;
   if (state === undefined || state.kind !== kind)
     throw createRuntimeError(realm, "type");
   return state;
@@ -178,7 +183,7 @@ export function installSegmenterIntrinsic(
       localeMatcher(options, realm, hooks);
       const locale = resolveLocale(requested);
       const granularity = granularityOption(options, realm, hooks);
-      object.internalSegmenterData = {
+      ensureExoticSlots(object).internalSegmenterData = {
         kind: "segmenter",
         locale,
         granularity,
@@ -263,7 +268,7 @@ export function installSegmenterIntrinsic(
         const segments = createObject<ScriptPropertyKey, unknown>(
           segmentsPrototype,
         );
-        segments.internalSegmenterData = {
+        ensureExoticSlots(segments).internalSegmenterData = {
           kind: "segments",
           locale: state.locale,
           granularity: state.granularity,
@@ -318,7 +323,7 @@ export function installSegmenterIntrinsic(
         const iterator = createObject<ScriptPropertyKey, unknown>(
           iteratorPrototype,
         );
-        iterator.internalSegmenterData = {
+        ensureExoticSlots(iterator).internalSegmenterData = {
           kind: "iterator",
           locale: state.locale,
           granularity: state.granularity,

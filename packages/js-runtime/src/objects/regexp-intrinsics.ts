@@ -2,6 +2,7 @@ import { installRegExpLegacyAccessors } from "./regexp-legacy-intrinsics.ts";
 import { escapeRegExpText } from "./regexp-escape.ts";
 import { installRegExpProtocols } from "./regexp-protocols.ts";
 import {
+  exoticSlots,
   createConstructorObject,
   getProperty,
   type OrdinaryObject,
@@ -42,7 +43,7 @@ export function isRegExpValue(
     hooks,
   );
   return matcher === undefined
-    ? object.internalRegExpData !== undefined
+    ? exoticSlots(object).internalRegExpData !== undefined
     : scriptBoolean(matcher, realm.objectPrototype);
 }
 export function installRegExpIntrinsics(
@@ -92,7 +93,9 @@ export function installRegExpIntrinsics(
     let source = pattern,
       selectedFlags = flags;
     const data =
-      original === undefined ? undefined : original.internalRegExpData;
+      original === undefined
+        ? undefined
+        : exoticSlots(original).internalRegExpData;
     if (data !== undefined) {
       source = data.originalSource;
       if (flags === undefined) selectedFlags = data.originalFlags;
@@ -177,7 +180,7 @@ export function installRegExpIntrinsics(
     if (name === undefined || flag === undefined) throw "REGEXP_FLAG_INVARIANT";
     accessor(prototype, name, name, (receiver, args): unknown => {
       const object = requireObject(receiver),
-        data = object.internalRegExpData;
+        data = exoticSlots(object).internalRegExpData;
       if (data !== undefined) return data.originalFlags.includes(flag);
       if (object === prototype) return undefined;
       throw createRuntimeError(realm, "type");
@@ -208,7 +211,7 @@ export function installRegExpIntrinsics(
   });
   accessor(prototype, "source", "source", (receiver, args): unknown => {
     const object = requireObject(receiver),
-      data = object.internalRegExpData;
+      data = exoticSlots(object).internalRegExpData;
     if (data !== undefined) return regexpSource(data.originalSource);
     if (object === prototype) return "(?:)";
     throw createRuntimeError(realm, "type");
@@ -222,7 +225,7 @@ export function installRegExpIntrinsics(
       2,
       (receiver, args): unknown => {
         const object = requireObject(receiver),
-          data = object.internalRegExpData;
+          data = exoticSlots(object).internalRegExpData;
         if (
           data === undefined ||
           data.legacyState !== realm.regexpLegacyState ||
@@ -231,7 +234,9 @@ export function installRegExpIntrinsics(
           throw createRuntimeError(realm, "type");
         const pattern = viewObjectValue(args[0], realm.objectPrototype);
         const original =
-          pattern === undefined ? undefined : pattern.internalRegExpData;
+          pattern === undefined
+            ? undefined
+            : exoticSlots(pattern).internalRegExpData;
         if (original !== undefined) {
           if (args[1] !== undefined) throw createRuntimeError(realm, "type");
           initializeRegExpObject(
@@ -269,7 +274,7 @@ export function installRegExpIntrinsics(
       1,
       (receiver, args): unknown => {
         const object = requireObject(receiver);
-        if (object.internalRegExpData === undefined)
+        if (exoticSlots(object).internalRegExpData === undefined)
           throw createRuntimeError(realm, "type");
         return executeRegExpObject(
           object,

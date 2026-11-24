@@ -14,6 +14,8 @@ import {
 } from "@tint/foundation/collections/linked-map";
 import { collectionKeyHash, collectionKeyEqual } from "./collection-keys.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   getProperty,
@@ -40,7 +42,8 @@ function requireMap(
   realm: ErrorRealm,
 ): LinkedMap<unknown, unknown> {
   const object = viewObjectValue(receiver, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalMapData;
+  const data =
+    object === undefined ? undefined : exoticSlots(object).internalMapData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -61,7 +64,10 @@ export function installMapIntrinsics(
       const map = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "map", realm, hooks),
       );
-      map.internalMapData = createMapWithKeys<unknown, unknown>({
+      ensureExoticSlots(map).internalMapData = createMapWithKeys<
+        unknown,
+        unknown
+      >({
         hash: collectionKeyHash,
         equals: collectionKeyEqual,
       });
@@ -141,7 +147,7 @@ export function installMapIntrinsics(
           hash: collectionKeyHash,
           equals: collectionKeyEqual,
         });
-        result.internalMapData = data;
+        ensureExoticSlots(result).internalMapData = data;
         for (const group of groups) {
           if (group === undefined) throw "MAP_GROUP_INVARIANT";
           setMap<unknown, unknown>(
@@ -328,7 +334,9 @@ export function installMapIntrinsics(
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype);
         const data =
-          object === undefined ? undefined : object.internalMapIteratorData;
+          object === undefined
+            ? undefined
+            : exoticSlots(object).internalMapIteratorData;
         if (data === undefined) throw createRuntimeError(realm, "type");
         if (!advanceMapCursor<unknown, unknown>(data.cursor))
           return createIteratorResult(undefined, true, realm, hooks);
@@ -365,7 +373,7 @@ export function installMapIntrinsics(
         const iterator = createObject<ScriptPropertyKey, unknown>(
           realm.mapIteratorPrototype,
         );
-        iterator.internalMapIteratorData = {
+        ensureExoticSlots(iterator).internalMapIteratorData = {
           cursor: createMapCursor<unknown, unknown>(map),
           kind: name === "keys" ? "key" : name === "values" ? "value" : "entry",
         };

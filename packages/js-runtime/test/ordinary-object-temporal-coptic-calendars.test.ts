@@ -5,6 +5,7 @@ import {
   objects,
   type ObjectValue,
 } from "./ordinary-object-temporal-fixture.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 const families = [
   ["coptic", 1739],
   ["ethiopic", 2015],
@@ -17,7 +18,7 @@ test("Coptic-family public fields expose thirteen months, epagomenal days and ca
       "PlainDate",
       f.bag({ calendar, year, monthCode: "M13", day: 6 }),
     );
-    assert.deepEqual(d.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(d).internalTemporalPlainDate, {
       year: 2023,
       month: 9,
       day: 11,
@@ -60,7 +61,7 @@ test("calendar month/year addition constrains only the final epagomenal day", ()
       f.bag({ years: 1, months: 1 }),
       f.bag({ overflow: "reject" }),
     ]) as ObjectValue;
-    assert.deepEqual(combined.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(combined).internalTemporalPlainDate, {
       year: 2024,
       month: 9,
       day: 16,
@@ -74,14 +75,14 @@ test("YearMonth and MonthDay operations preserve non-Gregorian reference compone
     assert.equal(f.get(ym, "month"), 13);
     assert.equal(f.get(ym, "daysInMonth"), 6);
     const next = f.call(ym, "add", [f.bag({ months: 1 })]) as ObjectValue;
-    assert.deepEqual(next.internalTemporalPlainYearMonth, {
+    assert.deepEqual(exoticSlots(next).internalTemporalPlainYearMonth, {
       year: 2023,
       month: 9,
       day: 12,
     });
     assert.equal(f.get(next, "month"), 1);
     const date = f.call(ym, "toPlainDate", [f.bag({ day: 6 })]) as ObjectValue;
-    assert.deepEqual(date.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(date).internalTemporalPlainDate, {
       year: 2023,
       month: 9,
       day: 11,
@@ -90,20 +91,20 @@ test("YearMonth and MonthDay operations preserve non-Gregorian reference compone
       "PlainMonthDay",
       f.bag({ calendar, monthCode: "M13", day: 6 }),
     );
-    assert.deepEqual(md.internalTemporalPlainMonthDay, {
+    assert.deepEqual(exoticSlots(md).internalTemporalPlainMonthDay, {
       year: 1971,
       month: 9,
       day: 11,
     });
     assert.equal(f.get(md, "monthCode"), "M13");
     const withDay = f.call(md, "with", [f.bag({ day: 5 })]) as ObjectValue;
-    assert.deepEqual(withDay.internalTemporalPlainMonthDay, {
+    assert.deepEqual(exoticSlots(withDay).internalTemporalPlainMonthDay, {
       year: 1972,
       month: 9,
       day: 10,
     });
     const plain = f.call(md, "toPlainDate", [f.bag({ year })]) as ObjectValue;
-    assert.deepEqual(plain.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(plain).internalTemporalPlainDate, {
       year: 2023,
       month: 9,
       day: 11,
@@ -232,25 +233,25 @@ test("calendar reference conversions preserve month codes when ISO months differ
     const d = f.from("PlainDate", f.bag({ calendar, year, month: 13, day: 6 }));
     const ym = f.call(d, "toPlainYearMonth") as ObjectValue,
       md = f.call(d, "toPlainMonthDay") as ObjectValue;
-    assert.deepEqual(ym.internalTemporalPlainYearMonth, {
+    assert.deepEqual(exoticSlots(ym).internalTemporalPlainYearMonth, {
       year: 2023,
       month: 9,
       day: 6,
     });
-    assert.deepEqual(md.internalTemporalPlainMonthDay, {
+    assert.deepEqual(exoticSlots(md).internalTemporalPlainMonthDay, {
       year: 1971,
       month: 9,
       day: 11,
     });
     assert.deepEqual(
-      f.from("PlainYearMonth", `2023-09-11[u-ca=${calendar}]`)
+      exoticSlots(f.from("PlainYearMonth", `2023-09-11[u-ca=${calendar}]`))
         .internalTemporalPlainYearMonth,
-      ym.internalTemporalPlainYearMonth,
+      exoticSlots(ym).internalTemporalPlainYearMonth,
     );
     assert.deepEqual(
-      f.from("PlainMonthDay", `2023-09-11[u-ca=${calendar}]`)
+      exoticSlots(f.from("PlainMonthDay", `2023-09-11[u-ca=${calendar}]`))
         .internalTemporalPlainMonthDay,
-      md.internalTemporalPlainMonthDay,
+      exoticSlots(md).internalTemporalPlainMonthDay,
     );
     const changed = f.call(ym, "with", [f.bag({ month: 1 })]) as ObjectValue;
     assert.equal(f.get(changed, "year"), year);

@@ -22,7 +22,7 @@ function setup() {
   assert.ok(result.ok);
   const storage = result.value,
     buffer = o.createObject<o.ScriptPropertyKey, unknown>(undefined);
-  buffer.internalArrayBufferData = storage;
+  o.ensureExoticSlots(buffer).internalArrayBufferData = storage;
   const data: o.TypedArrayData = {
     buffer,
     storage,
@@ -62,7 +62,7 @@ test("typed-array views share byte storage and reacquire it across resize", () =
     [],
   );
   assert.equal(o.hasProperty(tracking, "0"), false);
-  assert.equal(fixed.internalArrayBufferView, true);
+  assert.equal(o.exoticSlots(fixed).internalArrayBufferView, true);
 });
 test("typed-array indexed access preserves negative zero distinction", () => {
   const { fixed } = setup();
@@ -74,9 +74,9 @@ test("typed-array indexed access preserves negative zero distinction", () => {
 
 test("byte-range projection uses internal slots and shares the real backing", () => {
   const { fixed, tracking, storage } = setup();
-  const data = fixed.internalTypedArrayData!;
+  const data = o.exoticSlots(fixed).internalTypedArrayData!;
   const view = o.createObject<o.ScriptPropertyKey, unknown>(undefined);
-  view.internalDataViewData = {
+  o.ensureExoticSlots(view).internalDataViewData = {
     buffer: data.buffer,
     storage,
     byteOffset: 3,
@@ -119,7 +119,7 @@ test("immutable typed-array indices remain readable and reject writes without co
   const root = o.createObject<o.ScriptPropertyKey, unknown>(undefined);
   const realm = o.createErrorRealm(root, hooks);
   const buffer = o.createObject<o.ScriptPropertyKey, unknown>(undefined);
-  buffer.internalArrayBufferData = frozen.value;
+  o.ensureExoticSlots(buffer).internalArrayBufferData = frozen.value;
   const view = o.createTypedArrayView(
     root,
     {
@@ -170,7 +170,10 @@ test("typedArrayElementAt reads exactly what the canonical string key reads", as
     for (const key of keys) {
       const expected = o.getProperty(view, String(key), view, hooks);
       assert.equal(
-        typedArrayElementAt(view.internalTypedArrayData!, key === 0 ? 0 : key),
+        typedArrayElementAt(
+          o.exoticSlots(view).internalTypedArrayData!,
+          key === 0 ? 0 : key,
+        ),
         expected,
         String(key),
       );

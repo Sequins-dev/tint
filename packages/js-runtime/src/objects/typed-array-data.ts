@@ -31,6 +31,7 @@ import {
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "./errors.ts";
+import { ensureExoticSlots, exoticSlots } from "./operations.ts";
 export type TypedArrayElementKind =
   NumericElementKind | "BigInt64" | "BigUint64";
 /** A fixed element count may become out of bounds and later recover. Undefined
@@ -49,7 +50,10 @@ export function requireTypedArray(
   access: StorageAccess = "read",
 ): TypedArrayData {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalTypedArrayData;
+  const data =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTypedArrayData;
   if (
     data === undefined ||
     (access === "write" && bufferStorageImmutable(data.storage))
@@ -239,7 +243,7 @@ export function createTypedArrayView(
     },
     hooks,
   );
-  object.internalTypedArrayData = data;
-  object.internalArrayBufferView = true;
+  ensureExoticSlots(object).internalTypedArrayData = data;
+  ensureExoticSlots(object).internalArrayBufferView = true;
   return object;
 }

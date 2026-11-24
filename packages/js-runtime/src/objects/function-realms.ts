@@ -1,6 +1,7 @@
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
+import { exoticSlots } from "./operations.ts";
 
 /** GetFunctionRealm follows internal targets; it never invokes Proxy traps. */
 export function getFunctionRealm(
@@ -14,7 +15,7 @@ export function getFunctionRealm(
       target = bound;
       continue;
     }
-    const proxy = target.internalProxyData;
+    const proxy = exoticSlots(target).internalProxyData;
     if (proxy !== undefined) {
       const proxyTarget = proxy.target;
       if (proxyTarget === undefined || proxy.handler === undefined) {

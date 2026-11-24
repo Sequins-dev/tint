@@ -11,7 +11,13 @@ import {
   getScriptIterator,
   type ScriptIterator,
 } from "./iteration.ts";
-import { createObject, getProperty, type ObjectHooks } from "./operations.ts";
+import {
+  ensureExoticSlots,
+  exoticSlots,
+  createObject,
+  getProperty,
+  type ObjectHooks,
+} from "./operations.ts";
 import { getObjectValueProperty, viewObjectValue } from "./values.ts";
 import {
   createRuntimeError,
@@ -58,7 +64,7 @@ export function createAsyncFromSyncIterator(
   const wrapper = createObject<ScriptPropertyKey, unknown>(
     realm.asyncFromSyncIteratorPrototype,
   );
-  wrapper.internalSyncIteratorData = record;
+  ensureExoticSlots(wrapper).internalSyncIteratorData = record;
   return {
     record: {
       iterator: wrapper,
@@ -167,7 +173,9 @@ export function installAsyncFromSyncIntrinsics(
           );
           const object = viewObjectValue(receiver, realm.objectPrototype);
           const sync =
-            object === undefined ? undefined : object.internalSyncIteratorData;
+            object === undefined
+              ? undefined
+              : exoticSlots(object).internalSyncIteratorData;
           if (sync === undefined)
             functions.reject(createRuntimeError(realm, "type"));
           else

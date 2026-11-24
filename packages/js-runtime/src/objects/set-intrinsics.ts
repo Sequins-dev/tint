@@ -10,6 +10,8 @@ import {
   readMapCursorKey,
 } from "@tint/foundation/collections/linked-map";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   getProperty,
@@ -51,7 +53,7 @@ export function installSetIntrinsics(
       const set = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "set", realm, hooks),
       );
-      set.internalSetData = createSetData();
+      ensureExoticSlots(set).internalSetData = createSetData();
       const iterable = args[0];
       if (iterable === undefined || iterable === null) return set;
       const adder = getProperty<ScriptPropertyKey, unknown>(
@@ -205,7 +207,9 @@ export function installSetIntrinsics(
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype);
         const data =
-          object === undefined ? undefined : object.internalSetIteratorData;
+          object === undefined
+            ? undefined
+            : exoticSlots(object).internalSetIteratorData;
         if (data === undefined) throw createRuntimeError(realm, "type");
         if (!advanceMapCursor<unknown, unknown>(data.cursor))
           return createIteratorResult(undefined, true, realm, hooks);
@@ -238,7 +242,7 @@ export function installSetIntrinsics(
         const iterator = createObject<ScriptPropertyKey, unknown>(
           realm.setIteratorPrototype,
         );
-        iterator.internalSetIteratorData = {
+        ensureExoticSlots(iterator).internalSetIteratorData = {
           cursor: createMapCursor<unknown, unknown>(set),
           entries: name === "entries",
         };

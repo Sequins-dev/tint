@@ -1,4 +1,5 @@
 import {
+  ensureExoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -416,7 +417,7 @@ export function installLocaleIntrinsic(
         realm,
         hooks,
       );
-      object.internalLocaleData = {
+      ensureExoticSlots(object).internalLocaleData = {
         locale,
         keywords: unicodeKeywords(parsed(locale)),
       };

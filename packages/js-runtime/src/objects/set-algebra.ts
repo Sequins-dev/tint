@@ -7,7 +7,11 @@ import {
   readMapCursorKey,
   type LinkedMap,
 } from "@tint/foundation/collections/linked-map";
-import { createObject, type ObjectHooks } from "./operations.ts";
+import {
+  ensureExoticSlots,
+  createObject,
+  type ObjectHooks,
+} from "./operations.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import { callObjectValue, scriptBoolean } from "./values.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
@@ -25,7 +29,7 @@ function setResult(
   realm: ErrorRealm,
 ): unknown {
   const result = createObject<ScriptPropertyKey, unknown>(realm.setPrototype);
-  result.internalSetData = data;
+  ensureExoticSlots(result).internalSetData = data;
   return result;
 }
 function otherHas(

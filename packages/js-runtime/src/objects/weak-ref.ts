@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createConstructorObject,
   createObject,
   type OrdinaryObject,
@@ -40,7 +42,7 @@ export function installWeakRefIntrinsics(
       // This strong agent root covers allocation of the cell itself as well as all
       // subsequent collections in the current synchronous execution sequence.
       realm.agent.keptAlive.push(key);
-      object.internalWeakData = {
+      ensureExoticSlots(object).internalWeakData = {
         kind: "ref",
         storage,
         cell: storage.create(key, undefined, false),
@@ -69,7 +71,10 @@ export function installWeakRefIntrinsics(
       0,
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype),
-          data = object === undefined ? undefined : object.internalWeakData;
+          data =
+            object === undefined
+              ? undefined
+              : exoticSlots(object).internalWeakData;
         if (data === undefined || data.kind !== "ref")
           throw createRuntimeError(realm, "type");
         const key = data.storage.key(data.cell);

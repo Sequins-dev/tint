@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   getProperty,
   type OrdinaryObject,
@@ -107,7 +109,9 @@ export function installRegExpIterator(
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype);
         const data =
-          object === undefined ? undefined : object.internalRegExpIteratorData;
+          object === undefined
+            ? undefined
+            : exoticSlots(object).internalRegExpIteratorData;
         if (data === undefined) throw createRuntimeError(realm, "type");
         if (data.executing) throw createRuntimeError(realm, "type");
         if (data.done)
@@ -157,7 +161,7 @@ export function matchAllRegExp(
   const iterator = createObject<ScriptPropertyKey, unknown>(
     realm.regexpStringIteratorPrototype,
   );
-  iterator.internalRegExpIteratorData = {
+  ensureExoticSlots(iterator).internalRegExpIteratorData = {
     matcher,
     input,
     executing: false,

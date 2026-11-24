@@ -1,5 +1,7 @@
 import { typedArrayWindow } from "./typed-array-data.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createDataProperty,
   getProperty,
@@ -172,7 +174,7 @@ export function installIteratorIntrinsics(
         // Capture the index before observable length access. Abrupt completion
         // preserves the slots; only exhaustion releases the iterated object.
         const index = state.index;
-        const data = source.internalTypedArrayData;
+        const data = exoticSlots(source).internalTypedArrayData;
         let length: number;
         if (data === undefined)
           length = lengthOfArrayLike(source, realm, hooks);
@@ -235,7 +237,7 @@ export function installIteratorIntrinsics(
         const iterator = createObject<ScriptPropertyKey, unknown>(
           realm.stringIteratorPrototype,
         );
-        iterator.internalStringIteratorData = {
+        ensureExoticSlots(iterator).internalStringIteratorData = {
           text: converted.value,
           index: 0,
         };
@@ -259,7 +261,7 @@ export function installIteratorIntrinsics(
         const state =
           iterator === undefined
             ? undefined
-            : iterator.internalStringIteratorData;
+            : exoticSlots(iterator).internalStringIteratorData;
         if (state === undefined) throw createRuntimeError(realm, "type");
         const text = state.text;
         if (text === undefined)

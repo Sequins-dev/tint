@@ -7,6 +7,8 @@ import {
 } from "./number-ranges.ts";
 import { chainIntlLegacy, unwrapIntlLegacy } from "./intl-legacy.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -468,7 +470,7 @@ export function formatNumberForLocale(
 function numberFormatBrand(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
-  return object.internalNumberFormatData !== undefined;
+  return exoticSlots(object).internalNumberFormatData !== undefined;
 }
 function requireFormatter(
   value: unknown,
@@ -476,7 +478,9 @@ function requireFormatter(
 ): DecimalNumberFormatter {
   const object = viewObjectValue(value, realm.objectPrototype);
   const formatter =
-    object === undefined ? undefined : object.internalNumberFormatData;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalNumberFormatData;
   if (formatter === undefined) throw createRuntimeError(realm, "type");
   return formatter;
 }
@@ -508,12 +512,8 @@ export function installNumberFormatIntrinsic(
         ? prototype
         : constructorPrototype(target, "intl-number-format", realm, hooks),
     );
-    object.internalNumberFormatData = configureDecimalNumberFormatter(
-      locales,
-      options,
-      realm,
-      hooks,
-    );
+    ensureExoticSlots(object).internalNumberFormatData =
+      configureDecimalNumberFormatter(locales, options, realm, hooks);
     return object;
   }
   const constructor: OrdinaryObject<ScriptPropertyKey, unknown> =

@@ -22,7 +22,7 @@ test("async-from-sync objects retain a private iterator and shared methods", () 
     object.ScriptPropertyKey,
     unknown
   >;
-  assert.ok(wrapper.internalSyncIteratorData === record);
+  assert.ok(object.exoticSlots(wrapper).internalSyncIteratorData === record);
   assert.ok(wrapper.prototype === realm.asyncFromSyncIteratorPrototype);
   assert.ok(
     realm.asyncFromSyncIteratorPrototype.prototype ===
@@ -30,7 +30,8 @@ test("async-from-sync objects retain a private iterator and shared methods", () 
   );
   assert.equal(wrapper.properties.size, 0);
   assert.equal(
-    realm.asyncFromSyncIteratorPrototype.internalSyncIteratorData,
+    object.exoticSlots(realm.asyncFromSyncIteratorPrototype)
+      .internalSyncIteratorData,
     undefined,
   );
   for (const name of ["next", "return", "throw"]) {

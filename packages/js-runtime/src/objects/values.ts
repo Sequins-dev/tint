@@ -10,6 +10,8 @@ import { scriptPropertyKeyOrder } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   getProperty,
   setProperty,
   deleteProperty,
@@ -315,7 +317,7 @@ export function viewWeakRegistryOwner(
 export function isArrayValue(value: unknown, realm: ErrorRealm): boolean {
   let object = viewObjectValue(value, realm.objectPrototype);
   while (object !== undefined) {
-    const proxy = object.internalProxyData;
+    const proxy = exoticSlots(object).internalProxyData;
     if (proxy === undefined) return object.internalArrayData;
     if (proxy.target === undefined) throw createRuntimeError(realm, "type");
     object = proxy.target;
@@ -336,7 +338,11 @@ export function objectTypeof(
 ): string {
   if (viewSymbolValue(value) !== undefined) return "symbol";
   if (viewBigIntValue(value) !== undefined) return "bigint";
-  if (object !== undefined && object.internalIsHTMLDDA) return "undefined";
+  // Retained typeof helpers reach this classifier, and retained code may
+  // not call into other modules, so it reads the exotic slot directly
+  // instead of through exoticSlots.
+  if (object !== undefined && object.internalIsHTMLDDA === true)
+    return "undefined";
   if (object !== undefined && object.internalCall !== undefined)
     return "function";
   // Runtime internals use raw typeof. In particular this fallback recognizes
@@ -360,7 +366,7 @@ export function scriptIsHTMLDDA(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  return object !== undefined && object.internalIsHTMLDDA;
+  return object !== undefined && exoticSlots(object).internalIsHTMLDDA;
 }
 
 /** Annex B.3.6 [[IsHTMLDDA]] objects are host-defined. Code lowered for a
@@ -376,7 +382,7 @@ export function markHTMLDDAObject(
   if (htmlDDAObjects === "excluded")
     throw "IsHTMLDDA objects were excluded by code lowered without them";
   htmlDDAObjects = "present";
-  object.internalIsHTMLDDA = true;
+  ensureExoticSlots(object).internalIsHTMLDDA = true;
 }
 
 export function excludeHTMLDDAObjects(): void {
@@ -390,7 +396,8 @@ export function scriptBoolean(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  if (object !== undefined && object.internalIsHTMLDDA) return false;
+  if (object !== undefined && exoticSlots(object).internalIsHTMLDDA)
+    return false;
   const bigint = viewBigIntValue(value);
   return bigint === undefined ? !!value : bigIntToBoolean(bigint);
 }

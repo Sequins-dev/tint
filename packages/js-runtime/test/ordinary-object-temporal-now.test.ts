@@ -71,9 +71,10 @@ test("Temporal.Now.instant floors the supplied clock before exact nanosecond con
     >;
     assert.equal(reads, 1);
     assert.equal(value.prototype, realm.temporalInstantPrototype);
-    assert.ok(value.internalTemporalInstant);
+    const instantSlot = objects.exoticSlots(value).internalTemporalInstant;
+    assert.ok(instantSlot !== undefined);
     assert.equal(
-      formatInteger(value.internalTemporalInstant.integer, 10),
+      formatInteger(instantSlot.integer, 10),
       String(
         BigInt(
           Math.floor(
@@ -143,26 +144,34 @@ test("Temporal.Now provides every ISO clock view using intrinsic prototypes and 
       >;
       if (name === "zonedDateTimeISO") {
         assert.equal(value.prototype, realm.temporalZonedDateTimePrototype);
-        assert.equal(
-          formatInteger(value.internalTemporalZonedDateTime!.epoch.integer, 10),
-          "-1000000",
-        );
+        const zoned = objects.exoticSlots(value).internalTemporalZonedDateTime;
+        assert.ok(zoned !== undefined);
+        assert.equal(formatInteger(zoned.epoch.integer, 10), "-1000000");
       } else if (name === "plainDateISO") {
         assert.equal(value.prototype, realm.temporalPlainDatePrototype);
-        assert.deepEqual(value.internalTemporalPlainDate, {
+        assert.deepEqual(objects.exoticSlots(value).internalTemporalPlainDate, {
           year: 1969,
           month: 12,
           day: 31,
         });
       } else if (name === "plainTimeISO") {
         assert.equal(value.prototype, realm.temporalPlainTimePrototype);
-        assert.equal(value.internalTemporalPlainTime!.hour, 23);
-        assert.equal(value.internalTemporalPlainTime!.nanosecond, 999000000);
+        assert.equal(
+          objects.exoticSlots(value).internalTemporalPlainTime!.hour,
+          23,
+        );
+        assert.equal(
+          objects.exoticSlots(value).internalTemporalPlainTime!.nanosecond,
+          999000000,
+        );
       } else {
         assert.equal(value.prototype, realm.temporalPlainDateTimePrototype);
-        assert.equal(value.internalTemporalPlainDateTime!.date.year, 1969);
         assert.equal(
-          value.internalTemporalPlainDateTime!.nanosecond,
+          objects.exoticSlots(value).internalTemporalPlainDateTime!.date.year,
+          1969,
+        );
+        assert.equal(
+          objects.exoticSlots(value).internalTemporalPlainDateTime!.nanosecond,
           999000000,
         );
       }

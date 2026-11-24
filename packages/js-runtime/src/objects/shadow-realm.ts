@@ -14,6 +14,8 @@ import { createModuleCapability } from "../modules/loading.ts";
 import { evaluateImportCall } from "../modules/dynamic-import.ts";
 import { performPromiseThen } from "../promises/index.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createCallableObject,
   createConstructorObject,
   createObject,
@@ -59,7 +61,8 @@ function requireShadowRealm(
   realm: ErrorRealm,
 ): ShadowRealmHost {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const host = object === undefined ? undefined : object.internalShadowRealm;
+  const host =
+    object === undefined ? undefined : exoticSlots(object).internalShadowRealm;
   if (host === undefined) throw createRuntimeError(realm, "type");
   return host;
 }
@@ -80,7 +83,7 @@ export function installShadowRealmIntrinsics(
       const instance = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(newTarget, "shadow-realm", realm, hooks),
       );
-      instance.internalShadowRealm = createHost();
+      ensureExoticSlots(instance).internalShadowRealm = createHost();
       return instance;
     },
   );

@@ -146,6 +146,8 @@ export {
   findOrdinaryProperty,
   createPropertyCellCache,
   createScriptPropertyCache,
+  ensureExoticSlots,
+  exoticSlots,
   useDictionaryProperties,
   ordinaryHasOwnProperty,
   cachedPropertyCell,

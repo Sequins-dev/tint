@@ -13,6 +13,7 @@ import { plainTimeFrom } from "./temporal-time-conversion.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
+  ensureExoticSlots,
   createObject,
   getProperty,
   type OrdinaryObject,
@@ -149,8 +150,8 @@ export function installPlainDateCopyMethods(
             const result = createObject<ScriptPropertyKey, unknown>(
               realm.temporalPlainDateTimePrototype,
             );
-            result.internalTemporalPlainDateTime = data;
-            result.internalTemporalCalendar = calendar;
+            ensureExoticSlots(result).internalTemporalPlainDateTime = data;
+            ensureExoticSlots(result).internalTemporalCalendar = calendar;
             return result;
           }
           const yearMonth = name === "toPlainYearMonth";
@@ -159,7 +160,7 @@ export function installPlainDateCopyMethods(
               ? realm.temporalPlainYearMonthPrototype
               : realm.temporalPlainMonthDayPrototype,
           );
-          result.internalTemporalCalendar = calendar;
+          ensureExoticSlots(result).internalTemporalCalendar = calendar;
           const fields = calendarFieldsFromISO(calendar, date);
           if (fields === undefined)
             throw "PLAIN_DATE_CALENDAR_FIELDS_INVARIANT";
@@ -179,8 +180,11 @@ export function installPlainDateCopyMethods(
           if (converted.value === undefined)
             throw createRuntimeError(realm, "range");
           if (yearMonth)
-            result.internalTemporalPlainYearMonth = converted.value;
-          else result.internalTemporalPlainMonthDay = converted.value;
+            ensureExoticSlots(result).internalTemporalPlainYearMonth =
+              converted.value;
+          else
+            ensureExoticSlots(result).internalTemporalPlainMonthDay =
+              converted.value;
           return result;
         },
         hooks,

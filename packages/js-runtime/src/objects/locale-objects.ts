@@ -1,5 +1,10 @@
 import { createArrayFromList, lengthOfArrayLike } from "./array-like.ts";
-import { getProperty, hasProperty, type ObjectHooks } from "./operations.ts";
+import {
+  exoticSlots,
+  getProperty,
+  hasProperty,
+  type ObjectHooks,
+} from "./operations.ts";
 import { toObjectValue } from "./boxing.ts";
 import { viewObjectValue } from "./values.ts";
 import { stringValue } from "./coercion.ts";
@@ -20,12 +25,15 @@ export function localeObjectTag(
   realm: ErrorRealm,
 ): string | undefined {
   const object = viewObjectValue(value, realm.objectPrototype);
-  return object === undefined ? undefined : object.internalLocaleData?.locale;
+  return object === undefined
+    ? undefined
+    : exoticSlots(object).internalLocaleData?.locale;
 }
 
 export function requireLocale(value: unknown, realm: ErrorRealm): LocaleData {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalLocaleData;
+  const data =
+    object === undefined ? undefined : exoticSlots(object).internalLocaleData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }

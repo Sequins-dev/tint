@@ -31,6 +31,7 @@ import { toNumber } from "@tint/foundation/numeric/big-integer";
 import { viewSymbolValue, symbolDescriptiveString } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  exoticSlots,
   createConstructorObject,
   getProperty,
   type OrdinaryObject,
@@ -101,7 +102,9 @@ export function installPrimitiveIntrinsics(
       if (typeof receiver === kind) return receiver;
       const object = viewObjectValue(receiver, realm.objectPrototype);
       const data =
-        object === undefined ? undefined : object.internalPrimitiveData;
+        object === undefined
+          ? undefined
+          : exoticSlots(object).internalPrimitiveData;
       if (data === undefined || data.kind !== kind)
         throw createRuntimeError(realm, "type");
       return data.value;

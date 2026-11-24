@@ -92,7 +92,7 @@ test("Error stack getter checks the receiver slot without inheritance or traps",
       get: () => assert.fail("getter must not perform property access"),
     },
   );
-  proxy.internalProxyData = {
+  o.ensureExoticSlots(proxy).internalProxyData = {
     target: o.createRuntimeError(a.realm, "error"),
     handler: a.prototype,
   };

@@ -29,6 +29,8 @@ import {
 } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createCallableObject,
   createConstructorObject,
@@ -382,7 +384,7 @@ export function createErrorRealm(
       throw errorFromPrototype(typePrototype, agent, "TypeError");
     },
   );
-  throwTypeError.internalInitialName = "";
+  ensureExoticSlots(throwTypeError).internalInitialName = "";
   builtinProperty(throwTypeError, "length", 0, false, false, hooks);
   builtinProperty(throwTypeError, "name", "", false, false, hooks);
   preventExtensions<ScriptPropertyKey, unknown>(throwTypeError);
@@ -654,12 +656,12 @@ export function createErrorRealm(
         throw createRuntimeError(realm, "type");
       const source = fn.internalSourceText;
       if (source !== undefined) return source;
-      const name = fn.internalInitialName;
+      const name = exoticSlots(fn).internalInitialName;
       if (name !== undefined)
         return "function " + nativeFunctionName(name) + "() { [native code] }";
       if (
         fn.internalBoundTarget !== undefined ||
-        fn.internalProxyData !== undefined
+        exoticSlots(fn).internalProxyData !== undefined
       )
         return "function () { [native code] }";
       return rejectUnsupportedExecution(realm);
@@ -698,10 +700,13 @@ export function createRuntimeError(
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const prototype = realm.prototypes.get(kind);
   if (prototype === undefined) throw "UNKNOWN_RUNTIME_ERROR_KIND";
+  const constructor = realm.constructors.get(kind);
   return errorFromPrototype(
     prototype,
     realm.agent,
-    realm.constructors.get(kind)?.internalInitialName ?? "Error",
+    (constructor === undefined
+      ? undefined
+      : exoticSlots(constructor).internalInitialName) ?? "Error",
   );
 }
 
@@ -711,6 +716,8 @@ export function realmErrorOperation(
   value: unknown,
   operation: string,
 ): unknown {
+  // Retained: it reads the exotic slot directly instead of calling
+  // exoticSlots in another module.
   const access = viewTypeofObject(value)?.internalTypedErrorAccess;
   return access === undefined ? undefined : access(operation);
 }
@@ -726,7 +733,9 @@ function attachTypedErrorAccess(
   function get(key: string): unknown {
     return getProperty<ScriptPropertyKey, unknown>(object, key, value, hooks);
   }
-  object.internalTypedErrorAccess = (operation: string): unknown => {
+  ensureExoticSlots(object).internalTypedErrorAccess = (
+    operation: string,
+  ): unknown => {
     if (operation.startsWith("has:"))
       return hasProperty<ScriptPropertyKey, unknown>(
         object,
@@ -786,7 +795,7 @@ export function prepareRealmErrorArgument(
 ): unknown {
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object === undefined) return value;
-  const access = object.internalTypedErrorAccess;
+  const access = exoticSlots(object).internalTypedErrorAccess;
   if (access !== undefined) return access("identity");
   attachTypedErrorAccess(object, value, value, realm, hooks, global);
   return value;
@@ -963,7 +972,7 @@ function errorFromPrototype(
   name: string,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const error = createObject<ScriptPropertyKey, unknown>(prototype);
-  error.internalErrorData = true;
+  ensureExoticSlots(error).internalErrorData = true;
   let trace = name;
   const frames = activeExecutionNames(agent, prototype);
   for (const frameName of frames)
@@ -975,7 +984,7 @@ function errorFromPrototype(
       active.scriptOrModule === undefined
         ? "\n    at <runtime>"
         : "\n    at <script>";
-  error.internalErrorStack = trace;
+  ensureExoticSlots(error).internalErrorStack = trace;
   return error;
 }
 
@@ -1142,7 +1151,7 @@ export function installErrorIntrinsics(
         return initialize(args, fallback);
       },
     );
-    constructor.internalInitialName = name;
+    ensureExoticSlots(constructor).internalInitialName = name;
     realm.constructors.set(kind, constructor);
     builtinProperty(
       constructor,
@@ -1169,7 +1178,7 @@ export function installErrorIntrinsics(
       1,
       (receiver, args): unknown => {
         const object = viewObjectValue(args[0], realm.objectPrototype);
-        return object !== undefined && object.internalErrorData;
+        return object !== undefined && exoticSlots(object).internalErrorData;
       },
       hooks,
     ),
@@ -1232,7 +1241,9 @@ export function installErrorIntrinsics(
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype);
         if (object === undefined) throw createRuntimeError(realm, "type");
-        return object.internalErrorData ? object.internalErrorStack : undefined;
+        return exoticSlots(object).internalErrorData
+          ? exoticSlots(object).internalErrorStack
+          : undefined;
       },
       hooks,
     ),

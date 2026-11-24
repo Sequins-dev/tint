@@ -9,12 +9,14 @@ import {
 import { collectionKeyHash, collectionKeyEqual } from "./collection-keys.ts";
 import { viewObjectValue } from "./values.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
+import { exoticSlots } from "./operations.ts";
 export function requireSet(
   receiver: unknown,
   realm: ErrorRealm,
 ): LinkedMap<unknown, unknown> {
   const object = viewObjectValue(receiver, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalSetData;
+  const data =
+    object === undefined ? undefined : exoticSlots(object).internalSetData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }

@@ -6,6 +6,7 @@ import {
   excludeHTMLDDAObjects,
   markHTMLDDAObject,
 } from "../src/objects/index.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 
 // Module state is per process: this file runs the exclusion first.
 test("a host cannot mark IsHTMLDDA objects once lowered code excluded them", () => {
@@ -17,5 +18,5 @@ test("a host cannot mark IsHTMLDDA objects once lowered code excluded them", () 
     (error) =>
       error === "IsHTMLDDA objects were excluded by code lowered without them",
   );
-  assert.equal(object.internalIsHTMLDDA, false);
+  assert.equal(exoticSlots(object).internalIsHTMLDDA, false);
 });

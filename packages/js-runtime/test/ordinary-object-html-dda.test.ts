@@ -7,17 +7,18 @@ import {
   excludeHTMLDDAObjects,
   markHTMLDDAObject,
 } from "../src/objects/index.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 
 test("IsHTMLDDA is a host-only internal slot, not inherited state", () => {
   const host = createCallableObject<ScriptPropertyKey, unknown>(
     undefined,
     () => null,
   );
-  assert.equal(host.internalIsHTMLDDA, false);
+  assert.equal(exoticSlots(host).internalIsHTMLDDA, false);
   markHTMLDDAObject(host);
-  assert.equal(host.internalIsHTMLDDA, true);
+  assert.equal(exoticSlots(host).internalIsHTMLDDA, true);
   const child = createObject<ScriptPropertyKey, unknown>(host);
-  assert.equal(child.internalIsHTMLDDA, false);
+  assert.equal(exoticSlots(child).internalIsHTMLDDA, false);
   assert.equal(child.properties.has("internalIsHTMLDDA"), false);
 });
 

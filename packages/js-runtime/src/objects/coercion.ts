@@ -7,6 +7,7 @@ import {
 import { viewSymbolValue, wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  exoticSlots,
   getProperty,
   indexedPropertyCell,
   type ObjectHooks,
@@ -63,12 +64,15 @@ export function readObjectValuePropertyKey(
     // prototype chain; ToString of a Number is canonical, naming the Number
     // itself (-0 names "0"). Read the element without the string round trip.
     let object = viewObjectValue(base, realm.objectPrototype);
-    const data = object?.internalTypedArrayData;
+    const data =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalTypedArrayData;
     if (data !== undefined)
       return typedArrayElementAt(data, key === 0 ? 0 : key);
     if (Number.isSafeInteger(key) && object !== undefined) {
       while (object !== undefined) {
-        const typed = object.internalTypedArrayData;
+        const typed = exoticSlots(object).internalTypedArrayData;
         if (typed !== undefined)
           return typedArrayElementAt(typed, key === 0 ? 0 : key);
         const methods = object.internalMethods;
@@ -135,7 +139,7 @@ export function writeObjectValuePropertyKey(
   if (typeof key === "number") {
     const object = viewObjectValue(base, realm.objectPrototype);
     if (object !== undefined) {
-      const data = object.internalTypedArrayData;
+      const data = exoticSlots(object).internalTypedArrayData;
       if (data !== undefined) {
         if (!bufferStorageImmutable(data.storage))
           setTypedArrayElement(data, key === 0 ? 0 : key, value, realm, hooks);

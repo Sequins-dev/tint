@@ -6,6 +6,7 @@ import {
   createTemporalObjectFixture as fixture,
   type ObjectValue,
 } from "./ordinary-object-temporal-fixture.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 test("Indian new year and Chaitra leap days follow the associated Gregorian year", () => {
   for (const [iso, expected] of [
     [{ year: 2023, month: 3, day: 21 }, [1944, 12, 30]],
@@ -136,7 +137,7 @@ test("Indian public calendar operations preserve Shaka metadata and constrain fi
   assert.equal(f.get(ym, "month"), 1);
   assert.equal(f.get(ym, "daysInMonth"), 31);
   const md = f.call(d, "toPlainMonthDay") as ObjectValue;
-  assert.deepEqual(md.internalTemporalPlainMonthDay, {
+  assert.deepEqual(exoticSlots(md).internalTemporalPlainMonthDay, {
     year: 1972,
     month: 4,
     day: 20,

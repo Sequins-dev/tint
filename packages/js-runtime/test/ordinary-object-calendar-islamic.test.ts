@@ -7,6 +7,7 @@ import {
   objects,
   type ObjectValue,
 } from "./ordinary-object-temporal-fixture.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 const families = ["islamic-civil", "islamic-tbla", "islamic-umalqura"] as const;
 test("Islamic civil and Thursday epochs differ by one day and Umm al-Qura uses its complete month data", () => {
   for (const [id, day] of [
@@ -180,7 +181,7 @@ test("islamicc canonicalizes to civil arithmetic without changing Intl calendar 
     f.bag({ calendar: "ISLAMICC", year: 1445, month: 9, day: 1 }),
   );
   assert.equal(f.get(date, "calendarId"), "islamic-civil");
-  assert.deepEqual(date.internalTemporalPlainDate, {
+  assert.deepEqual(exoticSlots(date).internalTemporalPlainDate, {
     year: 2024,
     month: 3,
     day: 11,

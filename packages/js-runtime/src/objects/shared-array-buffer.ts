@@ -21,6 +21,8 @@ import {
   builtinProperty,
 } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createConstructorObject,
   createObject,
   getProperty,
@@ -38,7 +40,9 @@ export function requireSharedArrayBuffer(
 ): SharedBlockStorage {
   const object = viewObjectValue(value, realm.objectPrototype);
   const storage =
-    object === undefined ? undefined : object.internalSharedArrayBufferData;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalSharedArrayBufferData;
   if (storage === undefined) throw createRuntimeError(realm, "type");
   return storage;
 }
@@ -93,7 +97,7 @@ export function installSharedArrayBufferIntrinsics(
       const created = createSharedStorage(service, initial, maximum, growable);
       if (!created.ok) return storageFailure(created.error, realm);
       const object = createObject<ScriptPropertyKey, unknown>(parent);
-      object.internalSharedArrayBufferData = created.value;
+      ensureExoticSlots(object).internalSharedArrayBufferData = created.value;
       return object;
     },
   );

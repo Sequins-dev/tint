@@ -25,7 +25,7 @@ test("native function initial names survive public name redefinition", () => {
       objects.ScriptPropertyKey,
       unknown
     >;
-    assert.equal(fn.internalInitialName, name);
+    assert.equal(objects.exoticSlots(fn).internalInitialName, name);
     if (fn !== realm.throwTypeError) {
       objects.defineOwnProperty(
         fn,
@@ -41,7 +41,7 @@ test("native function initial names survive public name redefinition", () => {
         },
         hooks,
       );
-      assert.equal(fn.internalInitialName, name);
+      assert.equal(objects.exoticSlots(fn).internalInitialName, name);
     }
   }
 });
@@ -65,7 +65,7 @@ test("source methods retain source text without acquiring a built-in initial nam
     hooks,
     "method /* exact */ () { return 42; }",
   );
-  assert.equal(method.internalInitialName, undefined);
+  assert.equal(objects.exoticSlots(method).internalInitialName, undefined);
   assert.equal(
     method.internalSourceText,
     "method /* exact */ () { return 42; }",

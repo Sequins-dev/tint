@@ -21,6 +21,7 @@ import {
 } from "./typed-array-data.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import {
+  exoticSlots,
   createObject,
   createDataProperty,
   type ObjectCall,
@@ -145,7 +146,7 @@ export function installUint8ArrayCodecs(
       hooks,
       endian,
     );
-    const data = target.internalTypedArrayData;
+    const data = exoticSlots(target).internalTypedArrayData;
     if (data === undefined) throw "UINT8_CODEC_TARGET_INVARIANT";
     const window = typedArrayWindow(data, "write");
     if (window === undefined) throw "UINT8_CODEC_TARGET_INVARIANT";

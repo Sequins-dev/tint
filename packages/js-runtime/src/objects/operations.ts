@@ -551,6 +551,24 @@ export interface Receiver<Key, Value> {
   readonly value: Value;
   readonly object: OrdinaryObject<Key, Value> | undefined;
 }
+/** The internal slots few objects have: a builtin kind's data ([[DateValue]],
+ * [[RegExpMatcher]], [[MapData]], ...) and rarely read function and error
+ * details. Every read goes through exoticSlots (an object without any reads
+ * the defaults: undefined or false) and every write through
+ * ensureExoticSlots. */
+export function exoticSlots(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  return object;
+}
+/** The exotic slots of `object` for a write. Neither function is generic:
+ * every object with such slots is a script object, and retained runtime
+ * helpers (typeof) may call them. */
+export function ensureExoticSlots(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  return object;
+}
 export function createObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
 ): OrdinaryObject<Key, Value> {

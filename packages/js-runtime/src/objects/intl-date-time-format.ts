@@ -4,6 +4,8 @@ import {
   dateTimeValueRangeParts,
 } from "./intl-date-time-value.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -331,7 +333,10 @@ function property(
     throw "DATE_TIME_PROPERTY_INVARIANT";
 }
 function branded(object: Obj): boolean {
-  return viewDateTimeFormatter(object.internalIntlFormatData) !== undefined;
+  return (
+    viewDateTimeFormatter(exoticSlots(object).internalIntlFormatData) !==
+    undefined
+  );
 }
 function requireFormatter(
   receiver: unknown,
@@ -341,7 +346,7 @@ function requireFormatter(
     data =
       object === undefined
         ? undefined
-        : viewDateTimeFormatter(object.internalIntlFormatData);
+        : viewDateTimeFormatter(exoticSlots(object).internalIntlFormatData);
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -437,12 +442,8 @@ export function installDateTimeFormatIntrinsic(
         ? prototype
         : constructorPrototype(target, "intl-date-time-format", realm, hooks),
     );
-    object.internalIntlFormatData = configureDateTimeFormatter(
-      locales,
-      options,
-      realm,
-      hooks,
-    );
+    ensureExoticSlots(object).internalIntlFormatData =
+      configureDateTimeFormatter(locales, options, realm, hooks);
     return object;
   }
   const constructor: Obj = createConstructorObject<ScriptPropertyKey, unknown>(

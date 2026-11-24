@@ -2,6 +2,7 @@ import { installLegacyAccessors } from "./legacy-accessors.ts";
 import { wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  exoticSlots,
   hasPrototype,
   getOwnProperty,
   getProperty,
@@ -48,10 +49,10 @@ function defaultObjectTag(
   if (isArrayValue(object, realm)) return "Array";
   if (object.internalArgumentsData) return "Arguments";
   if (object.internalCall !== undefined) return "Function";
-  if (object.internalErrorData) return "Error";
-  if (object.internalRegExpData !== undefined) return "RegExp";
-  if (object.internalDateValue !== undefined) return "Date";
-  const primitive = object.internalPrimitiveData;
+  if (exoticSlots(object).internalErrorData) return "Error";
+  if (exoticSlots(object).internalRegExpData !== undefined) return "RegExp";
+  if (exoticSlots(object).internalDateValue !== undefined) return "Date";
+  const primitive = exoticSlots(object).internalPrimitiveData;
   if (primitive !== undefined) {
     if (primitive.kind === "number") return "Number";
     if (primitive.kind === "boolean") return "Boolean";
