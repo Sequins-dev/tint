@@ -18,7 +18,7 @@ export function run():number {
  const next=getProperty<ScriptPropertyKey,unknown>(other.generatorPrototype,"next",other.generatorPrototype,hooks);
  const first=callObjectValue(next,generator,[99],root);
  if(first.error!=="none"||first.value!==yielded)return 1;
- for(let i=0;i<30000;i++){const garbage=createObject<ScriptPropertyKey,unknown>(root);if(garbage.internalExoticSlots!.internalGeneratorData!==undefined)return 11;}
+ for(let i=0;i<30000;i++){const garbage=createObject<ScriptPropertyKey,unknown>(root);if(garbage.internalExoticSlots?.internalGeneratorData!==undefined)return 11;}
  const second=callObjectValue(next,generator,[42],root);
  const result=viewObjectValue(second.value,root);
  if(second.error!=="none"||result===undefined)return 2;

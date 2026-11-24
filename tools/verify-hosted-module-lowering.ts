@@ -124,8 +124,8 @@ export function run():number {
  if(first.error!=="none"||again.error!=="none"||other.error!=="none"||first.value!==again.value||first.value===other.value)return 72;
  const capability=root.topLevelCapability;if(capability===undefined||evaluateModule(root,hooks)!==capability.promise||log.text!=="bard")return 73;
  const early=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(aNamespace,"early",aNamespace,hooks),object),namedClass=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(dcNamespace,"Named",dcNamespace,hooks),object);
- if(early===undefined||early.internalExoticSlots!.internalSourceText!=="function early(){return 42;}")return 74;
- if(namedClass===undefined||namedClass.internalExoticSlots!.internalSourceText!=="class Named{}")return 75;
+ if(early===undefined||early.internalExoticSlots?.internalSourceText!=="function early(){return 42;}")return 74;
+ if(namedClass===undefined||namedClass.internalExoticSlots?.internalSourceText!=="class Named{}")return 75;
  const md=create_mutableDefault(global,realm,undefined);if(settledModulePromise(loadRequestedModules(md,hooks,undefined),realm).kind!=="fulfilled"||!linkModule(md).ok||settledModulePromise(evaluateModule(md,hooks),realm).kind!=="fulfilled")return 76;
  const mdNamespace=getModuleNamespace(md),mutableDefault=getProperty<ScriptPropertyKey,unknown>(mdNamespace,"default",mdNamespace,hooks),changed=callObjectValue(mutableDefault,undefined,[],object);
  if(changed.error!=="none"||changed.value!==42||getProperty<ScriptPropertyKey,unknown>(mdNamespace,"default",mdNamespace,hooks)!==42||getProperty<ScriptPropertyKey,unknown>(mdNamespace,"f",mdNamespace,hooks)!==42)return 77;

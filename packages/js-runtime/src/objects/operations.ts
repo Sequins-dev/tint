@@ -1433,7 +1433,11 @@ const maxFastKeys = 128;
 /** Keys fast mode holds: symbols and strings other than canonical numeric
  * strings (numeric keys use the dictionary's indexed view). */
 function fastKey<Key>(key: Key): boolean {
-  return typeof key !== "string" || canonicalNumericIndex(key) === undefined;
+  const candidate: unknown = key;
+  return (
+    typeof candidate !== "string" ||
+    canonicalNumericIndex(candidate) === undefined
+  );
 }
 /** The shape kind of a complete descriptor. */
 function descriptorKind<Value>(descriptor: Descriptor<Value>): number {
@@ -1456,21 +1460,24 @@ function shapeKeyIndex<Key, Value>(
   key: Key,
 ): number {
   const keys = shape.keys;
-  if (keys.length <= indexedShapeKeys || typeof key !== "string")
-    return keys.indexOf(key);
-  const existing = shape.index;
-  const index =
-    existing === undefined ? indexShapeKeys<Key, Value>(shape) : existing;
-  const position = index.get(key);
-  return position === undefined ? -1 : position;
+  if (keys.length <= indexedShapeKeys) return keys.indexOf(key);
+  const candidate: unknown = key;
+  if (typeof candidate === "string") {
+    const existing = shape.index;
+    const index =
+      existing === undefined ? indexShapeKeys<Key, Value>(shape) : existing;
+    const position = index.get(candidate);
+    return position === undefined ? -1 : position;
+  }
+  return keys.indexOf(key);
 }
 function indexShapeKeys<Key, Value>(
   shape: OrdinaryPropertyShape<Key, Value>,
 ): Map<string, number> {
   const index = new Map<string, number>();
   for (let position = 0; position < shape.keys.length; position++) {
-    const key = shape.keys[position];
-    if (typeof key === "string") index.set(key, position);
+    const candidate: unknown = shape.keys[position];
+    if (typeof candidate === "string") index.set(candidate, position);
   }
   shape.index = index;
   return index;
@@ -1767,7 +1774,8 @@ function transitionPropertyShape<Key, Value>(
   const kinds = shape.kinds.slice();
   kinds.push(kind);
   const linked = shape.shared && shape.successors < maxPropertyTransitions;
-  const keyHash = typeof key === "string" ? hashString(key) : 0;
+  const candidate: unknown = key;
+  const keyHash = typeof candidate === "string" ? hashString(candidate) : 0;
   const next: OrdinaryPropertyShape<Key, Value> = {
     keys,
     kinds,
@@ -1800,8 +1808,9 @@ function buildIndexedPropertyLayout<Key, Value>(
   const properties = object.properties;
   if (properties === undefined) return null;
   for (const [key, descriptor] of properties) {
-    if (typeof key !== "string") continue;
-    const numeric = canonicalNumericIndex(key);
+    const candidate: unknown = key;
+    if (typeof candidate !== "string") continue;
+    const numeric = canonicalNumericIndex(candidate);
     if (
       numeric === undefined ||
       !Number.isSafeInteger(numeric) ||
