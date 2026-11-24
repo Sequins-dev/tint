@@ -1919,6 +1919,7 @@ function lowerEntries(
               speculativeBinary: dynamicAliases.get("speculativeBinary"),
               speculativeString: dynamicAliases.get("speculativeString"),
               speculativeUnary: dynamicAliases.get("speculativeUnary"),
+              stringConstructor: dynamicAliases.get("stringConstructor"),
             };
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
@@ -2857,12 +2858,18 @@ function lowerEntries(
                 exprArguments(node.arguments);
                 break;
               }
-              if (intrinsic === "string-convert") {
+              if (
+                intrinsic === "string-convert" ||
+                intrinsic === "dynamic-object-string"
+              ) {
                 builtin = "string-convert";
                 const argument = node.arguments[0];
                 if (argument !== undefined) {
                   expr(argument);
-                  if (scalar(checked.expressions.get(argument)) === "number")
+                  if (
+                    intrinsic === "dynamic-object-string" ||
+                    scalar(checked.expressions.get(argument)) === "number"
+                  )
                     callee = numberFormatter();
                 }
                 break;
@@ -3414,6 +3421,8 @@ function lowerEntries(
           generalCall,
           bigIntRecord:
             (generalTypeof && realmTypeof === undefined) ||
+            (dynamicIntrinsic === "dynamic-object-string" &&
+              bigints !== undefined) ||
             (dynamicIntrinsic === "flow-property-read" &&
               checkedType !== undefined &&
               bigIntType(checked, checkedType) !== undefined)
