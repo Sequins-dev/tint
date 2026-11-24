@@ -56,6 +56,16 @@ export function devirtualizeClosureCalls(
       fn !== undefined && fn.import !== true && fn.environment === undefined
     );
   }
+  // Twins built by an earlier run of this pass (it runs again after each
+  // productive inlining round) are reused: their names are unique.
+  const byName = new Map<string, number>();
+  for (const fn of module.functions)
+    if (fn !== undefined) byName.set(fn.name, fn.id);
+  for (const fn of module.functions) {
+    if (fn === undefined || !fn.name.endsWith("$direct")) continue;
+    const original = byName.get(fn.name.slice(0, fn.name.length - 7));
+    if (original !== undefined) twins[original] = fn.id;
+  }
   /** Closure targets given a direct twin, in twin order. */
   const reserved: number[] = [];
   /** The direct function to call for closures of `target`. Twins are built
@@ -110,7 +120,9 @@ export function devirtualizeClosureCalls(
       slots.push("reference");
       parameters.push(environmentSlot);
     }
-    return {
+    // The body keeps its source-debugging metadata: an earlier inlining
+    // round may have left inline sites its instructions refer to.
+    const twin: FunctionIR = {
       id,
       name: fn.name + "$direct",
       exported: false,
@@ -120,6 +132,7 @@ export function devirtualizeClosureCalls(
       entry: fn.entry,
       blocks,
     };
+    return fn.debug === undefined ? twin : { ...twin, debug: fn.debug };
   }
   // With closed records (no foreign code constructs or writes this module's
   // records), fields are written only by record-new arguments and record
@@ -144,7 +157,9 @@ export function devirtualizeClosureCalls(
   /** Slot facts of `fn` under the current field facts. */
   function slotFacts(fn: FunctionIR): SlotFacts | undefined {
     const targets = new Map<number, KnownClosure>(),
-      unknown = new Set<number>();
+      unknown = new Set<number>(),
+      // Slot -> slots it is copied from (store of a load).
+      copies = new Map<number, number[]>();
     for (const parameter of fn.parameters)
       if (parameter !== undefined) unknown.add(parameter);
     if (fn.receiverSlot !== undefined) unknown.add(fn.receiverSlot);
@@ -171,7 +186,9 @@ export function devirtualizeClosureCalls(
             ? fieldTarget(term.record, term.field)
             : undefined,
         );
-      const local: (KnownClosure | undefined)[] = [];
+      const local: (KnownClosure | undefined)[] = [],
+        // Slot (+ 1) a value loads, for stores that copy another slot.
+        loaded: number[] = [];
       for (const op of block.instructions) {
         if (op === undefined) throw "closure instruction invariant";
         if (visited >= budget) return undefined;
@@ -181,10 +198,56 @@ export function devirtualizeClosureCalls(
             target: op.target,
             environment: op.environment !== undefined,
           };
-        else if (op.kind === "store") write(op.slot, local[op.value]);
-        else if (op.kind === "call-indirect") candidates = true;
+        else if (op.kind === "load") loaded[op.id] = op.slot + 1;
+        else if (op.kind === "store") {
+          const source = loaded[op.value] ?? 0;
+          // Storing a slot's own value back changes nothing.
+          if (source - 1 === op.slot) continue;
+          if (source !== 0) {
+            // A copy (as an inlined callee's result reaches its caller's
+            // variable): the slot holds what the source slot holds.
+            const sources = copies.get(op.slot);
+            if (sources === undefined) copies.set(op.slot, [source - 1]);
+            else sources.push(source - 1);
+          } else write(op.slot, local[op.value]);
+        } else if (op.kind === "call-indirect") candidates = true;
       }
     }
+    // Copies take their sources' facts, to a fixpoint (facts only grow); a
+    // source no write ever reaches holds its initial value: unknown.
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const [slot, sources] of copies) {
+        if (unknown.has(slot)) continue;
+        for (const source of sources) {
+          if (visited >= budget) return undefined;
+          visited++;
+          const known = targets.get(source);
+          if (
+            unknown.has(source) ||
+            (known === undefined && !copies.has(source))
+          ) {
+            unknown.add(slot);
+            changed = true;
+            break;
+          }
+          if (known !== undefined && targets.get(slot) === undefined) {
+            targets.set(slot, known);
+            changed = true;
+          } else if (
+            known !== undefined &&
+            targets.get(slot)?.target !== known.target
+          ) {
+            unknown.add(slot);
+            changed = true;
+            break;
+          }
+        }
+      }
+    }
+    // A copy of a copy cycle no closure write reaches is unknown too.
+    for (const [slot] of copies)
+      if (targets.get(slot) === undefined) unknown.add(slot);
     return { targets, unknown, candidates };
   }
   // With closed records (no foreign code constructs or writes this module's
@@ -341,6 +404,37 @@ export function devirtualizeClosureCalls(
         // to model the target's actual result in IR.
         if (op.discardResult === true && target?.returnType !== "void")
           continue;
+        // The direct call defines the call's result as the target returns
+        // it: the result shapes must agree exactly.
+        const expected = module.functions[op.target]?.returnType;
+        if (
+          target !== undefined &&
+          op.discardResult !== true &&
+          (op.id === undefined
+            ? target.returnType !== "void"
+            : target.returnType !== expected)
+        ) {
+          if (remarks !== undefined)
+            remarks({
+              pass: "devirtualize-closures",
+              outcome: "missed",
+              function: fn.name,
+              start: op.start,
+              end: op.end,
+              message:
+                "indirect call stays indirect: " +
+                target.name +
+                " returns " +
+                target.returnType +
+                ", the call expects " +
+                (op.id === undefined
+                  ? "void"
+                  : expected === undefined
+                    ? "an unknown result"
+                    : expected),
+            });
+          continue;
+        }
         if (
           target === undefined ||
           target.parameters.length !== op.arguments.length ||

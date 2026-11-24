@@ -1112,9 +1112,20 @@ export function optimizeModuleVersion(
   let inlinedAny = false;
   // Indirect calls of closures created in the same function become direct
   // calls (environment passed explicitly), so the inliner sees callbacks.
-  if (options.devirtualizeClosures === true) {
+  // Inlining a closure factory exposes its closure in the caller, so this
+  // runs again after every inlining round that inlined something.
+  // Returns false when the pass stopped (exhausted or the pass limit).
+  let devirtualizeResult: OptimizationReport | undefined,
+    inlineVisited = 0;
+  function devirtualize(): boolean {
+    if (options.devirtualizeClosures !== true) return true;
     const devirtualizeBudget =
-      maxInstructions - visited - storeVisited - deadVisited - recordVisited;
+      maxInstructions -
+      visited -
+      storeVisited -
+      deadVisited -
+      recordVisited -
+      inlineVisited;
     const devirtualized = rewriteModuleVersion(
       version,
       inlineChanges,
@@ -1126,13 +1137,22 @@ export function optimizeModuleVersion(
           remarks,
         ),
     );
-    if (devirtualized.exhausted)
-      return exhausted("devirtualize-closures", devirtualizeBudget);
-    if (completed("devirtualize-closures", devirtualized, false)) return stop();
+    if (devirtualized.exhausted) {
+      devirtualizeResult = exhausted(
+        "devirtualize-closures",
+        devirtualizeBudget,
+      );
+      return false;
+    }
+    if (completed("devirtualize-closures", devirtualized, false)) {
+      devirtualizeResult = stop();
+      return false;
+    }
     recordVisited += devirtualized.visited;
     if (devirtualized.replaced) inlinedAny = true;
+    return true;
   }
-  let inlineVisited = 0;
+  if (!devirtualize()) return devirtualizeResult ?? stop();
   const guardedInlining = options.inlining === "guarded";
   // Inlining considers leaf callees only, so a wrapper becomes eligible once
   // its own callees were inlined: repeat while rounds make progress.
@@ -1172,6 +1192,7 @@ export function optimizeModuleVersion(
     if (completed("inline-small-functions", inlined, false)) return stop();
     inlineVisited += inlined.visited;
     if (inlined.rewritten === 0) break;
+    if (!devirtualize()) return devirtualizeResult ?? stop();
   }
   if (inlinedAny) {
     const changed = changedFunctions(

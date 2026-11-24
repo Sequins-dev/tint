@@ -171,6 +171,303 @@ test("devirtualization is an explicit closed-program option", () => {
   assert.ok(!optimized.passes.some((p) => p.pass === "devirtualize-closures"));
 });
 
+/** closureModule with the closure copied from slot 1 to slot 2 (as an
+ * inlined factory's result reaches its caller's variable) and called
+ * through slot 2. */
+function slotCopyModule(): ModuleIR {
+  const base = closureModule();
+  const run = base.functions[0]!;
+  const block = run.blocks[0]!;
+  return {
+    ...base,
+    functions: [
+      {
+        ...run,
+        slots: ["number", "reference", "reference"],
+        blocks: [
+          {
+            ...block,
+            instructions: block.instructions.flatMap((op) =>
+              op.kind === "load" && op.slot === 1
+                ? [
+                    { kind: "load" as const, id: 7, slot: 1, ...span },
+                    { kind: "store" as const, slot: 2, value: 7, ...span },
+                    { kind: "load" as const, id: 3, slot: 2, ...span },
+                  ]
+                : [op],
+            ),
+          },
+        ],
+      },
+      ...base.functions.slice(1),
+    ],
+  };
+}
+
+test("closures copied between slots devirtualize, and a later run reuses the twin", () => {
+  const input = slotCopyModule();
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const first = devirtualizeClosureCalls(input, 1000);
+  assert.ok(first);
+  assert.equal(first.rewritten, 1);
+  assert.ok(verify(first.module).ok, JSON.stringify(verify(first.module)));
+  // The pass runs again after inlining: a new indirect call of the same
+  // closure targets the existing twin instead of building another.
+  const run = first.module.functions[0]!;
+  const block = run.blocks[0]!;
+  const again: ModuleIR = {
+    ...first.module,
+    functions: [
+      {
+        ...run,
+        blocks: [
+          {
+            ...block,
+            instructions: [
+              ...block.instructions,
+              { kind: "load", id: 20, slot: 2, ...span },
+              { kind: "constant", id: 21, value: 2, ...span },
+              {
+                kind: "call-indirect",
+                id: 22,
+                target: 1,
+                callee: 20,
+                arguments: [21],
+                ...span,
+              },
+            ],
+          },
+        ],
+      },
+      ...first.module.functions.slice(1),
+    ],
+  };
+  assert.ok(verify(again).ok, JSON.stringify(verify(again)));
+  const second = devirtualizeClosureCalls(again, 1000);
+  assert.ok(second);
+  assert.equal(second.rewritten, 1);
+  assert.equal(
+    second.module.functions.length,
+    first.module.functions.length,
+    "no second twin",
+  );
+  assert.ok(verify(second.module).ok, JSON.stringify(verify(second.module)));
+  const calls = second.module.functions[0]!.blocks[0]!.instructions.filter(
+    (op) => op.kind === "call",
+  );
+  assert.deepEqual(
+    calls.map((op) => (op.kind === "call" ? op.target : -1)),
+    [3, 3],
+  );
+});
+
+test("a closure whose result shape differs from the call's stays indirect", () => {
+  // The call expects a number (its witness, captured, returns one) but the
+  // known closure is a void function.
+  const base = closureModule();
+  const sink: FunctionIR = {
+    id: 3,
+    name: "sink",
+    exported: false,
+    parameters: [0],
+    slots: ["number"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+    ],
+  };
+  const run = base.functions[0]!;
+  const block = run.blocks[0]!;
+  const input: ModuleIR = {
+    ...base,
+    functions: [
+      {
+        ...run,
+        blocks: [
+          {
+            ...block,
+            instructions: block.instructions.map((op) =>
+              op.kind === "function-new"
+                ? {
+                    kind: "function-new" as const,
+                    id: op.id,
+                    target: 3,
+                    ...span,
+                  }
+                : op,
+            ),
+          },
+        ],
+      },
+      ...base.functions.slice(1),
+      sink,
+    ],
+  };
+  const result = devirtualizeClosureCalls(input, 1000);
+  assert.ok(result);
+  assert.equal(result.rewritten, 0);
+});
+
+test("a closure factory inlines, and its closure then devirtualizes and inlines", () => {
+  // run(n) = make(n)(1), where make(n) returns a closure of `captured` over
+  // an environment holding n.
+  const base = closureModule();
+  const make: FunctionIR = {
+    id: 3,
+    name: "make",
+    exported: false,
+    parameters: [0],
+    slots: ["number"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+          { kind: "function-new", id: 2, target: 1, environment: 1, ...span },
+        ],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+    ],
+  };
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "call", id: 1, target: 3, arguments: [0], ...span },
+          { kind: "store", slot: 1, value: 1, ...span },
+          { kind: "load", id: 3, slot: 1, ...span },
+          { kind: "constant", id: 4, value: 1, ...span },
+          {
+            kind: "call-indirect",
+            id: 5,
+            target: 1,
+            callee: 3,
+            arguments: [4],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 5, ...span },
+      },
+    ],
+  };
+  const input: ModuleIR = {
+    ...base,
+    functions: [run, ...base.functions.slice(1), make],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const optimized = optimizeModule(input, 20000000, {
+    devirtualizeClosures: true,
+  });
+  assert.ok(verify(optimized.module).ok);
+  const passes = optimized.passes.filter(
+    (p) => p.pass === "devirtualize-closures",
+  );
+  assert.ok(passes.length >= 2, "devirtualization runs again after inlining");
+  assert.equal(
+    passes.reduce((sum, p) => sum + p.rewritten, 0),
+    1,
+  );
+  const body = optimized.module.functions[0]!;
+  assert.ok(
+    !body.blocks.some((b) =>
+      b.instructions.some(
+        (op) => op.kind === "call-indirect" || op.kind === "call",
+      ),
+    ),
+    "factory and closure are inlined into run",
+  );
+});
+
+test("a callee calling a closure parameter inlines, and the cloned call devirtualizes", () => {
+  // run(n) = apply(closure, 1), where apply(f, x) = f(x): the indirect call
+  // clones into run, where the closure is known.
+  const base = closureModule();
+  const apply: FunctionIR = {
+    id: 3,
+    name: "apply",
+    exported: false,
+    parameters: [0, 1],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "load", id: 1, slot: 1, ...span },
+          {
+            kind: "call-indirect",
+            id: 2,
+            target: 1,
+            callee: 0,
+            arguments: [1],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+    ],
+  };
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+          { kind: "function-new", id: 2, target: 1, environment: 1, ...span },
+          { kind: "constant", id: 4, value: 1, ...span },
+          { kind: "call", id: 5, target: 3, arguments: [2, 4], ...span },
+        ],
+        terminator: { kind: "return", value: 5, ...span },
+      },
+    ],
+  };
+  const input: ModuleIR = {
+    ...base,
+    functions: [run, ...base.functions.slice(1), apply],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const optimized = optimizeModule(input, 20000000, {
+    devirtualizeClosures: true,
+  });
+  assert.ok(verify(optimized.module).ok);
+  const body = optimized.module.functions[0]!;
+  assert.ok(
+    !body.blocks.some((b) =>
+      b.instructions.some(
+        (op) => op.kind === "call-indirect" || op.kind === "call",
+      ),
+    ),
+    "apply and the closure are inlined into run",
+  );
+});
+
 test("exhausted devirtualization reports no partial result", () => {
   assert.equal(devirtualizeClosureCalls(closureModule(), 2), undefined);
 });

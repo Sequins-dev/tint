@@ -42,10 +42,12 @@ function crossingType(
   module: ModuleIR,
 ): ScalarType | undefined {
   switch (op.kind) {
-    case "call": {
+    case "call":
+    case "call-indirect": {
       const type = module.functions[op.target]?.returnType;
       return type === undefined || type === "void" ? undefined : type;
     }
+    case "function-new":
     case "reference-value":
       return "reference";
     case "general-is":
@@ -155,7 +157,15 @@ function supported(op: Instruction, references: boolean = true): boolean {
     // their messages are position-independent.
     case "string-literal":
     case "error-new":
+    // A closure's environment is an explicit operand: it clones with the
+    // callee (a factory such as makeCounter then exposes its closure to
+    // devirtualization in the caller).
+    case "function-new":
       return references;
+    // An indirect call stays a call in the caller, as a direct one does.
+    // Script calls (a JavaScript call header) stay out.
+    case "call-indirect":
+      return references && op.scriptArguments === undefined;
     // A direct call stays a call in the caller: an exception it throws
     // reaches the caller's handler, as it did through the callee.
     case "call":
@@ -1063,6 +1073,35 @@ export function inlineSmallFunctions(
                     ? {}
                     : { receiver: value(instruction.receiver) }),
                   arguments: instruction.arguments.map(value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "call-indirect":
+                cloned.push({
+                  ...instruction,
+                  id:
+                    instruction.id === undefined
+                      ? undefined
+                      : value(instruction.id),
+                  callee: value(instruction.callee),
+                  ...(instruction.receiver === undefined
+                    ? {}
+                    : { receiver: value(instruction.receiver) }),
+                  arguments: instruction.arguments.map(value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "function-new":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  ...(instruction.environment === undefined
+                    ? {}
+                    : { environment: value(instruction.environment) }),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,
