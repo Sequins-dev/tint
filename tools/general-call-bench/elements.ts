@@ -1,6 +1,7 @@
 // Untyped element access and builtin calls (step 5 of the general runtime
 // re-architecture): packed number and object elements read, written and
-// updated in place, String and Math builtins, and Map and Set methods.
+// updated in place, String and Math builtins, Map and Set methods, and
+// array and object literals and appends.
 
 function numberArray(): number[] {
   const values: number[] = [];
@@ -76,4 +77,43 @@ export function setAddHas(iterations: number): number {
     if (set.has(i & 127)) sum++;
   }
   return sum + set.size;
+}
+
+export function numberArrayLiteral(iterations: number): number {
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) {
+    const values = [i, i + 1, i + 2, i + 3];
+    sum += values[i % 4]!;
+  }
+  return sum;
+}
+
+export function objectArrayLiteral(iterations: number): number {
+  const item = { x: 1 };
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) {
+    const values = [item, item, item, item];
+    sum += values.length;
+  }
+  return sum;
+}
+
+export function objectLiteral(iterations: number): number {
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) {
+    const pair = { left: i, right: 1 };
+    sum += pair.left + pair.right;
+  }
+  return sum;
+}
+
+export function pushLength(iterations: number): number {
+  let values: number[] = [];
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) {
+    if (values.length === 64) values = [];
+    values.push(i & 7);
+    sum += values.length;
+  }
+  return sum;
 }
