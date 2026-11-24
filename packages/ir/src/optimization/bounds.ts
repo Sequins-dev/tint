@@ -98,17 +98,12 @@ function multiply(left: Interval, right: Interval): Interval {
     : top;
 }
 function remainder(left: Interval, right: Interval): Interval {
-  // Non-negative finite integers modulo a positive integer constant.
-  if (
-    !bounded(left) ||
-    left.lo < 0 ||
-    !right.integer ||
-    right.lo !== right.hi ||
-    right.lo <= 0
-  )
+  // Non-negative finite integers modulo a positive integer (below the
+  // largest divisor, and no larger than the dividend).
+  if (!bounded(left) || left.lo < 0 || !right.integer || right.lo < 1)
     return top;
   // The remainder takes the dividend's sign: -0 only from -0.
-  return integerInterval(0, Math.min(left.hi, right.lo - 1), left.negativeZero);
+  return integerInterval(0, Math.min(left.hi, right.hi - 1), left.negativeZero);
 }
 /** Math.min/Math.max of two integer intervals (the result is one of the
  * operands, so -0 only from a -0 operand). */

@@ -3721,6 +3721,10 @@ function emitModuleForms(
                       op.operator === "*") &&
                       uses[valueIds.intern(op.id)] === 1) ||
                     comparisonOperators.includes(op.operator))) ||
+                // Rounding an integer is the identity (see the unary case).
+                (op.kind === "unary" &&
+                  (op.operator === "trunc" || op.operator === "ceil") &&
+                  uses[valueIds.intern(op.id)] === 1) ||
                 op.kind === "array-read" ||
                 op.kind === "array-element" ||
                 op.kind === "array-valid" ||
@@ -8860,6 +8864,19 @@ function emitModuleForms(
                     ? 7
                     : 6;
                 wordMagnitudes[index] = Math.max(1, bound);
+              }
+            }
+            if (
+              op.kind === "unary" &&
+              (op.operator === "trunc" || op.operator === "ceil") &&
+              exactInteger(op.operand)
+            ) {
+              // Rounding an exact integer is the identity.
+              const magnitude = wordMagnitude(valueIds.intern(op.operand));
+              if (magnitude >= 0) {
+                const index = valueIds.intern(op.id);
+                wordKinds[index] = 6;
+                wordMagnitudes[index] = Math.max(1, magnitude);
               }
             }
             if (op.kind === "binary" && op.operator === "%") {
@@ -14613,6 +14630,24 @@ function emitModuleForms(
                 break;
               case "unary": {
                 if (
+                  (op.operator === "ceil" || op.operator === "trunc") &&
+                  wantsInteger(op.id) &&
+                  exactInteger(op.operand)
+                ) {
+                  // Rounding an exact integer is the integer itself.
+                  const source = intRegister(op.operand, 9),
+                    target = intTarget(op.id, 9);
+                  if (source !== target)
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: target,
+                      rn: "zr",
+                      rm: source,
+                    });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                } else if (
                   op.operator === "ceil" ||
                   op.operator === "trunc" ||
                   op.operator === "sqrt"
