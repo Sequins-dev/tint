@@ -107,6 +107,56 @@ interface CheneyState {
   readonly sharedMarks: Uint8Array;
 }
 
+// Zeroes for bulk clears. `set` copies a block with one memmove where `fill`
+// stores element by element (about ten times slower), and a collection
+// must not allocate, so the blocks are permanent.
+const zeroWords = new Uint32Array(512);
+const zeroBytes = new Uint8Array(2048);
+/** Zeroes elements [start, end) of `array`. */
+export function clearWords(
+  array: Uint32Array,
+  start: number,
+  end: number,
+): void {
+  let at = start;
+  while (end - at >= 512) {
+    array.set(zeroWords, at);
+    at += 512;
+  }
+  if (at < end) array.fill(0, at, end);
+}
+/** Records the object starts of a gap-free run of objects [from, to) (a
+ * bump-allocated nursery) as start bits relative to `base`: the bits the
+ * allocation fast path does not keep, for a compaction that covers the run. */
+export function recordObjectStarts(
+  starts: Uint32Array,
+  base: number,
+  from: number,
+  to: number,
+): void {
+  let address = from;
+  while (address < to) {
+    const granule = (address - base) >>> 3,
+      word = granule >>> 5;
+    starts[word] = ((starts[word] ?? 0) | (1 << (granule & 31))) >>> 0;
+    address += compactObjectSize(address, read(address));
+  }
+  if (address !== to) throw "COMPACT_NURSERY_WALK";
+}
+/** Zeroes elements [start, end) of `array`. */
+export function clearBytes(
+  array: Uint8Array,
+  start: number,
+  end: number,
+): void {
+  let at = start;
+  while (end - at >= 2048) {
+    array.set(zeroBytes, at);
+    at += 2048;
+  }
+  if (at < end) array.fill(0, at, end);
+}
+
 // Single host operations, so the inliner folds them into their callers.
 // Headers, descriptors and references are trusted (see the contract below).
 function read(address: number): number {
@@ -984,7 +1034,7 @@ export function createCompactor(
       state.liveBytes = 0;
       state.sawView = false;
       state.sawWeak = false;
-      live.fill(0, 0, words);
+      clearWords(live, 0, words);
       // 1. Mark (in parallel for large regions).
       const delegate = used >= parallelMinimum ? helpers : undefined;
       let parallel = false;

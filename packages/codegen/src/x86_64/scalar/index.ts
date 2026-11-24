@@ -24,6 +24,7 @@ import {
   nativeStringDataOffset,
   nativeStringLengthOffset,
   nativeCStackReserveBytes,
+  nativeGenerationalNurseryAddressOffset,
   nativeStackMapFooterMagic,
   nativeStackMapRegistryOffset,
   nativeStackLimitOffset,
@@ -1145,19 +1146,16 @@ export function emitModule(
         emit({ op: "cmp", dst: rax, src: gpr(8) });
         branch(emit, "b", slow);
         emit({ op: "mov", dst: { ...mem(11, 0), width: 32 }, src: word(8) });
-        // Young start bitmap: offset bit (top / 8), addressed in bytes.
-        emit({ op: "mov", dst: gpr(8), src: r9 });
-        emit({ op: "mov", dst: result, src: r9 });
-        emit({ op: "shr", dst: gpr(8), count: 6 });
-        emit({ op: "shr", dst: result, count: 3 });
-        emit({ op: "and", dst: result, src: imm(7) });
-        emit({ op: "mov", dst: eax, src: imm(1) });
-        emit({ op: "shl", dst: eax, count: "cl" });
-        emit({ op: "add", dst: gpr(8), src: mem(11, 16) });
-        emit({ op: "or", dst: { ...mem(8, 0), width: 8 }, src: byte(0) });
-        emit({ op: "mov", dst: eax, src: { ...mem(11, 28), width: 32 } });
+        // A generational nursery keeps no start bits: it is bump-allocated
+        // without gaps, so the compactor's rare fallback and heap tools walk
+        // it by extents. The object's address is the nursery's absolute
+        // address plus the young top before this allocation.
+        emit({
+          op: "mov",
+          dst: rax,
+          src: mem(11, nativeGenerationalNurseryAddressOffset),
+        });
         emit({ op: "add", dst: rax, src: r9 });
-        emit({ op: "add", dst: rax, src: mem(2, managedBaseOffset) });
         emit({ op: "jmp", target: label(clear) });
       }
       emit({ op: "label", name: slow });

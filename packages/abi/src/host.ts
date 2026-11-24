@@ -1,4 +1,12 @@
 import type { CTarget } from "./c/types.ts";
+/** Byte offset in the generational allocation state block of the nursery's
+ * absolute address (u64: managed base + young base, written before the block is
+ * published and fixed afterwards), so the allocation fast path forms an
+ * object's address with one load and one add. */
+export const nativeGenerationalNurseryAddressOffset = 64;
+/** The generational state block's minimum length in uint32 words, through the
+ * nursery address; publication rejects a shorter block. */
+export const nativeGenerationalStateWords = 18;
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.

@@ -2,7 +2,11 @@ import {
   createSharedStringHolds,
   initializeExternalMemory,
 } from "./external-memory.ts";
-import { createCheneyCollector, noSharedStrings } from "./tracing/cheney.ts";
+import {
+  clearWords,
+  createCheneyCollector,
+  noSharedStrings,
+} from "./tracing/cheney.ts";
 import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
 import {
   currentRootHead,
@@ -95,7 +99,7 @@ export function initializeCopyingRuntime(
       destination = managedBase + (reverse ? 0 : capacity);
     // Start bits are relative to the active space; clear the used prefix and
     // let the evacuation describe the packed destination.
-    bits.fill(0, 0, Math.ceil(top / 256));
+    clearWords(bits, 0, Math.ceil(top / 256));
     const bytes = heap.collect(
       source,
       top,

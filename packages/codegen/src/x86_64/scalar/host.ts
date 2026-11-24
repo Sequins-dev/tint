@@ -2,6 +2,7 @@ import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
   nativeContextDomainOffset,
+  nativeGenerationalStateWords,
   nativeIdentityReleasableBaseOffset,
   nativeIdentityReleasableLengthOffset,
   nativeStackMapRegistryOffset,
@@ -498,7 +499,7 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "cmp", dst: mem(11, allocationStateOffset), src: imm(0) });
       branch(emit, "ne", invalid);
       array(0);
-      emit({ op: "cmp", dst: edx, src: imm(16) });
+      emit({ op: "cmp", dst: edx, src: imm(nativeGenerationalStateWords) });
       branch(emit, "b", invalid);
       emit({ op: "cmp", dst: { ...mem(10, 0), width: 32 }, src: imm(0) });
       branch(emit, "ne", invalid);

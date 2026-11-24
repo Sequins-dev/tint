@@ -59,7 +59,7 @@ RECORD_PREFIX = "__tint_record."
 # The generational collector's `collect` (snapshot points stop there).
 COLLECT_FUNCTION = "generational.ts:collect"
 MAGIC = b"TINTHEAP"
-VERSION = 2
+VERSION = 3
 # Version 2 headers are one word: the marker (or record descriptor address)
 # in the bits below FLAGS_SHIFT, the kind flags in the three bits above it.
 FLAGS_SHIFT = 48
@@ -284,9 +284,26 @@ def _object_extent(descriptor, read_word, address, record_sizes):
     return (size + granule - 1) // granule * granule, "record"
 
 
+def _young_starts(descriptor, read_word, base, top, record_sizes):
+    """The object starts of the nursery, which keeps no start bits: it is
+    bump-allocated without gaps, so each object ends where the next begins."""
+    starts = []
+    address = base
+    while address < base + top:
+        size, label = _object_extent(descriptor, read_word, address, record_sizes)
+        if size is None:
+            raise TintError("young object 0x%x: %s" % (address, label))
+        starts.append(address)
+        address += size
+    if address != base + top:
+        raise TintError("the young walk passes the young top at 0x%x" % address)
+    return starts
+
+
 def verify_heap(descriptor):
-    """Walks both spaces through the start bits and checks every header and
-    extent: objects decode, stay inside their space and never overlap."""
+    """Walks the old space through the start bits and the nursery by object
+    extents, and checks every header and extent: objects decode, stay inside
+    their space and never overlap."""
     p = descriptor.inferior
     s = descriptor.state
     if s is None:
@@ -300,7 +317,6 @@ def verify_heap(descriptor):
             totals[name] = {"objects": 0, "bytes": 0, "kinds": {}}
             continue
         data = p.read(base, top)
-        first, bits = _granule_bits(descriptor, base, top)
 
         def read_word(address, data=data, base=base):
             offset = address - base
@@ -308,17 +324,20 @@ def verify_heap(descriptor):
                 return struct.unpack_from("<Q", data, offset)[0]
             return read_u64(p, address)
 
+        if name == "young":
+            addresses = _young_starts(descriptor, read_word, base, top, record_sizes)
+        else:
+            first, bits = _granule_bits(descriptor, base, top)
+            addresses = [
+                base + unit * granule
+                for unit in range(top // granule)
+                if (bits[((first + unit) // 8) - (first // 8)] >> ((first + unit) & 7)) & 1
+            ]
         objects = 0
         walked = 0
         kinds = {}
         end_of_last = base
-        units = top // granule
-        for unit in range(units):
-            bit = first + unit
-            byte = bits[(bit // 8) - (first // 8)]
-            if not (byte >> (bit & 7)) & 1:
-                continue
-            address = base + unit * granule
+        for address in addresses:
             if address < end_of_last:
                 raise TintError("%s object 0x%x overlaps the previous one" % (name, address))
             size, label = _object_extent(descriptor, read_word, address, record_sizes)
@@ -1088,7 +1107,7 @@ def collect_end(descriptor):
 USAGE = """tint-heap: Tint native heap tools (docs/native-heap-profiling.md)
 
     tint-heap info [--json]        the heap descriptor and current heap state
-    tint-heap verify [--json]      walk every object through the start bits
+    tint-heap verify [--json]      walk every object (old: start bits; young: extents)
     tint-heap dump <directory>     raw heap dump for tools/heap-snapshot
     tint-heap arm <bytes>          arm allocation sampling (0 disarms)
     tint-heap sample ...           drive allocation sampling (see --help)
