@@ -583,11 +583,13 @@ test("remainder emits a shared helper and large frames use indirect addressing",
             ...b,
             instructions: [
               ...b.instructions,
+              // A fractional dividend takes the helper.
+              { kind: "constant", id: 5, value: 5.5, ...span },
               {
                 kind: "binary",
                 id: 1,
                 operator: "%",
-                left: 0,
+                left: 5,
                 right: 0,
                 ...span,
               },
@@ -610,6 +612,33 @@ test("remainder emits a shared helper and large frames use indirect addressing",
     }
     assert.ok(resolvedCall, "shared helper calls must reach the helper");
   }
+  // Exact integers divide inline, without the helper.
+  const exact = emitModule({
+    functions: [
+      {
+        ...f,
+        blocks: [
+          {
+            ...b,
+            instructions: [
+              ...b.instructions,
+              {
+                kind: "binary",
+                id: 1,
+                operator: "%",
+                left: 0,
+                right: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(exact.ok);
+  assert.deepEqual(exact.value.helpers, []);
   const large = emitModule(liveLocalFrame(4096));
   assert.ok(large.ok, JSON.stringify(large));
   assert.ok(large.value.functions[0]!.frameBytes > 32752);
@@ -691,11 +720,12 @@ test("numeric helpers are shared, budgeted and linked after source functions", (
             ...b,
             instructions: [
               ...b.instructions,
+              { kind: "constant", id: 5, value: 5.5, ...span },
               {
                 kind: "binary",
                 id: 1,
                 operator: "%",
-                left: 0,
+                left: 5,
                 right: 0,
                 ...span,
               },
@@ -1908,7 +1938,7 @@ test("bitwise chains convert only inputs without a proven word representation", 
   }
   assert.equal(calls, 1);
 });
-test("unknown bitwise operands try an exact 64-bit round trip before the conversion helper", () => {
+test("unknown bitwise operands truncate inline and take the conversion helper only when saturated", () => {
   const result = emitModule({
     functions: [
       {
@@ -1942,17 +1972,26 @@ test("unknown bitwise operands try an exact 64-bit round trip before the convers
   });
   assert.ok(result.ok, JSON.stringify(result));
   // The operand may come from its FP home (any source register n): the
-  // sequence is fcvtzs x9, dn; scvtf d1, x9; fcmp dn, d1.
+  // sequence is fcvtzs x9, dn; cmn x9, x9 (V from 2^62, as saturation
+  // needs), with no integrality round trip.
   const view = new DataView(result.value.code.buffer),
     end = result.value.functions[0]!.byteLength;
   let found = -1;
-  for (let offset = 0; offset + 12 <= end && found < 0; offset += 4) {
+  for (let offset = 0; offset + 8 <= end && found < 0; offset += 4) {
     const first = view.getUint32(offset, true),
       source = (first >>> 5) & 31;
     const words = [
       encode({ op: "fcvtzs-x-d", rd: 9, rn: source }),
-      encode({ op: "scvtf-d-x", rd: 1, rn: 9 }),
-      encode({ op: "fcmp", rn: source, rm: 1 }),
+      encode({
+        op: "add-reg",
+        width: 64,
+        rd: "zr",
+        rn: 9,
+        rm: 9,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      }),
     ].map((word) => {
       assert.ok(word.ok);
       return word.value;
@@ -1964,8 +2003,8 @@ test("unknown bitwise operands try an exact 64-bit round trip before the convers
     )
       found = offset;
   }
-  assert.ok(found >= 0, "inline integral fast path");
-  // The helper remains for non-integral, non-finite and saturated inputs.
+  assert.ok(found >= 0, "inline truncation fast path");
+  // The helper remains for non-finite and saturated inputs.
   const helper = result.value.helpers.find(
     (value) => value.kind === "to-uint32",
   );

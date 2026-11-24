@@ -453,6 +453,30 @@ test("SXTW sign-extends a 32-bit register", () => {
   assert.equal(encode({ op: "sxtw", rd: 0, rn: 31 }).ok, false);
 });
 
+test("TBZ and TBNZ test one bit within 32 KiB", () => {
+  // As assembled by clang at offsets 0, 4, 8, 12 and 16:
+  // tbz x9, #49, +8; tbnz x15, #49, -8; tbz w3, #5, +0x7ff4;
+  // tbnz x0, #63, -0x8000; tbz w30, #0, +0.
+  const cases: [Parameters<typeof encode>[0], number][] = [
+    [{ op: "tbz", rt: 9, bit: 49, displacement: 8 }, 0xb6880049],
+    [{ op: "tbnz", rt: 15, bit: 49, displacement: -8 }, 0xb78fffcf],
+    [{ op: "tbz", rt: 3, bit: 5, displacement: 0x7ff4 }, 0x362bffa3],
+    [{ op: "tbnz", rt: 0, bit: 63, displacement: -0x8000 }, 0xb7fc0000],
+    [{ op: "tbz", rt: 30, bit: 0, displacement: 0 }, 0x3600001e],
+  ];
+  for (const [instruction, value] of cases)
+    assert.deepEqual(encode(instruction), { ok: true, value });
+  for (const [instruction, error] of [
+    [{ op: "tbz", rt: 0, bit: 0, displacement: 0x8000 }, "OUT_OF_RANGE"],
+    [{ op: "tbnz", rt: 0, bit: 0, displacement: -0x8004 }, "OUT_OF_RANGE"],
+    [{ op: "tbz", rt: 0, bit: 64, displacement: 0 }, "INVALID_IMMEDIATE"],
+    [{ op: "tbz", rt: 0, bit: 1.5, displacement: 0 }, "INVALID_IMMEDIATE"],
+    [{ op: "tbz", rt: 0, bit: 0, displacement: 2 }, "MISALIGNED"],
+    [{ op: "tbnz", rt: 32, bit: 0, displacement: 0 }, "INVALID_REGISTER"],
+  ] as const)
+    assert.deepEqual(encode(instruction), { ok: false, error });
+});
+
 test("UBFM and SBFM encode immediate shifts", () => {
   // As assembled by llvm-mc: lsr w9, w9, #7; lsl w9, w9, #25;
   // asr w0, w1, #3; asr w9, w13, #7; asr x2, x3, #5.

@@ -109,9 +109,79 @@ test("slot compaction remaps integer slot facts and drops removed slots", () => 
   assert.deepEqual(verify({ functions: [result.fn] }), { ok: true });
 });
 
+test("slot compaction remaps safe integer slots with their bounds", () => {
+  const fn: FunctionIR = {
+    ...base,
+    parameters: [],
+    slots: ["number", "number", "number", "number"],
+    safeIntegerSlots: [0, 1, 3],
+    safeIntegerBounds: [10, 4294967296, 7696581394432],
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 4294967296, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+          { kind: "store", slot: 3, value: 0, ...s },
+          { kind: "load", id: 1, slot: 3, ...s },
+        ],
+        terminator: { kind: "return", value: 1, ...s },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const result = compactSlots(fn, 1000)!;
+  assert.deepEqual(result.fn.slots, ["number", "number"]);
+  assert.deepEqual(result.fn.safeIntegerSlots, [0, 1]);
+  assert.deepEqual(result.fn.safeIntegerBounds, [4294967296, 7696581394432]);
+  assert.deepEqual(verify({ functions: [result.fn] }), { ok: true });
+});
+
 test("the verifier rejects integer slot facts on non-number or parameter slots", () => {
   for (const integerSlots of [[1], [2], [0, 0], [9]]) {
     const fn: FunctionIR = { ...base, integerSlots };
     assert.equal(verify({ functions: [fn] }).ok, false, String(integerSlots));
   }
+});
+
+test("the verifier rejects malformed safe integer slot facts", () => {
+  // Slot 0 is a local number, 1 a reference and 2 the number parameter.
+  const local: FunctionIR = {
+    ...base,
+    slots: ["number", "reference", "number", "general"],
+  };
+  const cases: [readonly number[], readonly number[]][] = [
+    [[2], [5]], // the parameter
+    [[1], [5]], // not a number slot
+    [[9], [5]], // no such slot
+    [
+      [0, 0],
+      [5, 5],
+    ], // not ascending
+    [[0], []], // a missing bound
+    [[0], [9007199254740992]], // beyond 2^53 - 1
+    [[0], [-1]],
+    [[0], [0.5]],
+  ];
+  for (const [safeIntegerSlots, safeIntegerBounds] of cases) {
+    const fn: FunctionIR = { ...local, safeIntegerSlots, safeIntegerBounds };
+    assert.equal(
+      verify({ functions: [fn] }).ok,
+      false,
+      String(safeIntegerSlots) + " " + String(safeIntegerBounds),
+    );
+  }
+  const overlapping: FunctionIR = {
+    ...local,
+    integerSlots: [0],
+    safeIntegerSlots: [0],
+    safeIntegerBounds: [5],
+  };
+  assert.equal(verify({ functions: [overlapping] }).ok, false);
+  assert.deepEqual(
+    verify({
+      functions: [{ ...local, safeIntegerSlots: [0], safeIntegerBounds: [5] }],
+    }),
+    { ok: true },
+  );
 });

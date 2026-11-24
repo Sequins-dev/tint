@@ -6,8 +6,9 @@
 // including early exits (break, return, throw) out of both versions. Loops
 // the rewrite must leave alone (bound or counter written in the body or by
 // a closure, fractional or negative starts, other steps, `<=`, counters
-// read after the loop) run as written too. The same source runs in Node for
-// the expected checksum and natively under LLDB.
+// read after the loop) run as written too, as do slots the cold copy
+// renames. The same source runs in Node for the expected checksum and
+// natively under LLDB.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -155,6 +156,23 @@ function lastIndex(items: number[], bound: number): number {
   }
   return mix(total, i);
 }
+// Loop-local slots (a loop-invariant product carried in a slot and a
+// per-iteration temporary) take fresh slots in the cold copy; a value
+// carried between iterations and one read after the loop keep theirs.
+function locals(items: number[], bound: number, scale: number): number {
+  let total = 0,
+    carried = 1,
+    last = 0;
+  for (let i = 0; i < bound; i++) {
+    if (i > 48) break;
+    const product = scale * 7;
+    const temp = (items[i] ?? 3) + i * product;
+    carried = (carried * 3 + temp) % 1000003;
+    last = temp;
+    total = mix(total, (temp % 1009) + carried);
+  }
+  return mix(total, last % 1000003);
+}
 // Nested counted loops sharing one bound.
 function nested(items: number[], bound: number): number {
   let total = 0;
@@ -193,6 +211,7 @@ export function checksum(): number {
     total = mix(total, inclusive(items, bound));
     total = mix(total, lastIndex(items, bound));
     total = mix(total, nested(items, bound));
+    total = mix(total, locals(items, bound, 1048583));
   }
   return total;
 }
