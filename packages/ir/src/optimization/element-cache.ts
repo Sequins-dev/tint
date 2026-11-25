@@ -1,16 +1,14 @@
 import {
   blockSuccessors,
-  dominates,
-  immediateDominators,
   instructionResult,
   naturalLoops,
   type Block,
-  type Dominators,
   type FunctionIR,
   type Instruction,
   type NaturalLoop,
   type ScalarType,
 } from "../scalar/index.ts";
+import { hasScriptOperations } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 
 export interface ElementStorageCaching {
@@ -98,7 +96,7 @@ export function cacheElementStorage(
   remarks?: RemarkSink,
 ): ElementStorageCaching | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
-  if (fn.import === true || fn.blocks.length === 0)
+  if (fn.import === true || fn.blocks.length === 0 || !hasScriptOperations(fn))
     return { fn, visited: 0, rewritten: 0 };
   let visited = 0,
     elementAccesses = 0,
@@ -148,32 +146,60 @@ export function cacheElementStorage(
   }
   if (visited > budget) return undefined;
 
-  // Innermost loop for each block.
-  const innermost = new Map<number, NaturalLoop>();
-  for (const loop of forest.loops) {
+  // Enclosing loops for each block, ordered outermost to innermost so each
+  // loop-invariant array can hoist its (storage, count) cache as high as safe.
+  const sortedLoops = forest.loops.slice();
+  sortedLoops.sort((a, b) => b.body.size - a.body.size);
+  const enclosing = new Map<number, NaturalLoop[]>();
+  for (const loop of sortedLoops) {
     if (loop === undefined) throw "element cache loop invariant";
     for (const id of loop.body) {
-      const current = innermost.get(id);
-      if (current === undefined || loop.body.size < current.body.size)
-        innermost.set(id, loop);
+      let list = enclosing.get(id);
+      if (list === undefined) {
+        list = [];
+        enclosing.set(id, list);
+      }
+      list.push(loop);
     }
   }
 
-  let dominators: Dominators | undefined;
-  function everyIteration(
+  /** Whether at least one path from `loop.header` to a latch avoids every block
+   * in `invalidatingBlocks`. Rejects loops where an invalidation runs on every
+   * iteration — including lowered JS call diamonds (`if (entry) call-indirect
+   * else call`) where neither branch dominates the latch on its own. */
+  function hasCleanIteration(
     loop: NaturalLoop,
-    block: number,
-  ): boolean | undefined {
-    if (dominators === undefined) {
-      dominators = immediateDominators(fn, Math.max(1, budget - visited));
-      if (dominators === undefined) return undefined;
-      visited += dominators.visited;
+    invalidatingBlocks: ReadonlySet<number>,
+  ): boolean {
+    if (invalidatingBlocks.size === 0) return true;
+    if (invalidatingBlocks.has(loop.header)) return false;
+    const latches = new Set<number>();
+    for (const latch of loop.latches) {
+      if (latch !== undefined) latches.add(latch);
     }
-    const tree = dominators;
-    visited += loop.latches.length;
-    for (const latch of loop.latches)
-      if (!dominates(tree, fn.entry, block, latch)) return false;
-    return true;
+    const seen = new Set<number>();
+    seen.add(loop.header);
+    const queue: number[] = [loop.header];
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const id = queue[cursor];
+      if (id === undefined) continue;
+      visited++;
+      if (latches.has(id)) return true;
+      const block = fn.blocks[id];
+      if (block === undefined) continue;
+      for (const next of blockSuccessors(block)) {
+        if (next === undefined) continue;
+        if (
+          !loop.body.has(next) ||
+          invalidatingBlocks.has(next) ||
+          seen.has(next)
+        )
+          continue;
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+    return false;
   }
 
   function preheader(loop: NaturalLoop): Block | undefined {
@@ -200,6 +226,7 @@ export function cacheElementStorage(
     }
     const invalidatingOps = new Set<Instruction>();
     const invalidatingTerminators = new Set<number>();
+    const invalidatingBlocks = new Set<number>();
     const writtenSlots = new Set<number>(loop.writes);
     for (const id of loop.body) {
       const block = fn.blocks[id];
@@ -232,24 +259,22 @@ export function cacheElementStorage(
       ) {
         if (term.operation === "read") writtenSlots.add(term.slot);
         else {
-          if (everyIteration(loop, id) !== false) {
-            loopInfo.set(loop, undefined);
-            return undefined;
-          }
           invalidatingTerminators.add(id);
+          invalidatingBlocks.add(id);
         }
       }
       for (const op of block.instructions) {
         if (op === undefined) throw "element cache instruction invariant";
         visited++;
         if (mayInvalidateElements(op)) {
-          if (everyIteration(loop, id) !== false) {
-            loopInfo.set(loop, undefined);
-            return undefined;
-          }
           invalidatingOps.add(op);
+          invalidatingBlocks.add(id);
         }
       }
+    }
+    if (!hasCleanIteration(loop, invalidatingBlocks)) {
+      loopInfo.set(loop, undefined);
+      return undefined;
     }
     const info: LoopInfo = {
       preheader: entry,
@@ -261,14 +286,29 @@ export function cacheElementStorage(
     return info;
   }
 
-  // Count cacheable accesses per loop and key to pick the hottest arrays first.
+  // Choose the outermost valid loop where `objectSlot` is invariant, and
+  // count accesses per (loop, key) weighted by loop nesting depth.
+  function targetLoop(
+    blockId: number,
+    objectSlot: number,
+  ): NaturalLoop | undefined {
+    const loops = enclosing.get(blockId);
+    if (loops === undefined) return undefined;
+    for (const loop of loops) {
+      if (loop === undefined) continue;
+      const info = inspectLoop(loop);
+      if (info !== undefined && !info.writtenSlots.has(objectSlot)) return loop;
+    }
+    return undefined;
+  }
+
   const loopCounts = new Map<NaturalLoop, Map<string, number>>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "element cache block invariant";
-    const loop = innermost.get(block.id);
-    if (loop === undefined) continue;
-    const info = inspectLoop(loop);
-    if (info === undefined) continue;
+    const loops = enclosing.get(block.id);
+    if (loops === undefined) continue;
+    const depth = loops.length;
+    const weight = depth <= 1 ? 1 : depth === 2 ? 4 : 16;
     for (const op of block.instructions) {
       if (op === undefined) throw "element cache instruction invariant";
       if (
@@ -280,10 +320,11 @@ export function cacheElementStorage(
       if (
         source === undefined ||
         source.kind !== "load" ||
-        fn.slots[source.slot] !== "general" ||
-        info.writtenSlots.has(source.slot)
+        fn.slots[source.slot] !== "general"
       )
         continue;
+      const loop = targetLoop(block.id, source.slot);
+      if (loop === undefined) continue;
       const key = cacheKey(
         source.slot,
         op.record,
@@ -297,12 +338,12 @@ export function cacheElementStorage(
         counts = new Map<string, number>();
         loopCounts.set(loop, counts);
       }
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+      counts.set(key, (counts.get(key) ?? 0) + weight);
     }
   }
   if (loopCounts.size === 0) return { fn, visited, rewritten: 0 };
 
-  // Select up to maxCachedArraysPerLoop per loop (sorted by access count desc).
+  // Select up to maxCachedArraysPerLoop per loop (sorted by weighted count desc).
   const selected = new Map<NaturalLoop, Map<string, CachedArray>>();
   const slots: ScalarType[] = fn.slots.slice();
   for (const [loop, counts] of loopCounts) {
@@ -328,6 +369,7 @@ export function cacheElementStorage(
           continue;
         const source = definitions.get(op.object);
         if (source === undefined || source.kind !== "load") continue;
+        if (targetLoop(id, source.slot) !== loop) continue;
         const key = cacheKey(
           source.slot,
           op.record,
@@ -362,9 +404,7 @@ export function cacheElementStorage(
   let rewritten = 0;
   for (const block of fn.blocks) {
     if (block === undefined) throw "element cache block invariant";
-    const loop = innermost.get(block.id);
-    const caches = loop === undefined ? undefined : selected.get(loop);
-    if (caches === undefined) continue;
+    if (!enclosing.has(block.id)) continue;
     let instructions: Instruction[] | undefined;
     for (let at = 0; at < block.instructions.length; at++) {
       const op = block.instructions[at];
@@ -375,16 +415,21 @@ export function cacheElementStorage(
       ) {
         const source = definitions.get(op.object);
         if (source !== undefined && source.kind === "load") {
-          const cache = caches.get(
-            cacheKey(
-              source.slot,
-              op.record,
-              op.field,
-              op.elementsRecord,
-              op.countField,
-              op.storageField,
-            ),
-          );
+          const loop = targetLoop(block.id, source.slot);
+          const caches = loop === undefined ? undefined : selected.get(loop);
+          const cache =
+            caches === undefined
+              ? undefined
+              : caches.get(
+                  cacheKey(
+                    source.slot,
+                    op.record,
+                    op.field,
+                    op.elementsRecord,
+                    op.countField,
+                    op.storageField,
+                  ),
+                );
           if (cache !== undefined) {
             if (instructions === undefined)
               instructions = block.instructions.slice(0, at);

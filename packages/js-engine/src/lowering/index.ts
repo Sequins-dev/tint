@@ -3107,7 +3107,6 @@ function lowerScriptEntry(
       // A String's length; for other values, inline packed array length (IR
       // element-length, zero FP registers) with fused miss to the cached read.
       usesElementAccess = true;
-      const witness = member(id("$errors"), "objectPrototype", span);
       const result = temporary(id("undefined", span), true, true);
       if (result.kind !== "identifier")
         throw "element length temporary invariant";
@@ -3116,7 +3115,7 @@ function lowerScriptEntry(
         statements.push(
           assignTo(
             name,
-            runtimeCall("packedArrayLength", [witness, object], span),
+            runtimeCall("packedArrayLength", [id("$errors"), object], span),
             span,
           ),
         );
@@ -3125,7 +3124,7 @@ function lowerScriptEntry(
           kind: "if",
           test: runtimeCall(
             "absentElementValue",
-            [id(name, span), witness],
+            [id(name, span), id("$errors")],
             span,
           ),
           consequent: assignTo(name, read, span),
@@ -3209,13 +3208,12 @@ function lowerScriptEntry(
     span: Span,
   ): void {
     usesElementAccess = true;
-    const witness = member(id("$errors"), "objectPrototype", span);
     statements.push(
       assignTo(
         name,
         runtimeCall(
           "packedNumberElement",
-          [witness, base, elementIndex(key, span)],
+          [id("$errors"), base, elementIndex(key, span)],
           span,
         ),
         span,
@@ -3226,7 +3224,7 @@ function lowerScriptEntry(
       kind: "if",
       test: runtimeCall(
         "absentElementValue",
-        [id(name, span), { ...witness }],
+        [id(name, span), id("$errors")],
         span,
       ),
       consequent: block(nestedStatements(fallback), span),
@@ -3240,7 +3238,11 @@ function lowerScriptEntry(
     base: Expression,
     key: Expression,
     span: Span,
-  ): { readonly index: Expression; readonly cell: Expression } {
+  ): {
+    readonly index: Expression;
+    readonly valid: Expression;
+    readonly cell: Expression;
+  } {
     const index = temporary(
       scalarBranch(
         numberOperand(key, span),
@@ -3249,16 +3251,22 @@ function lowerScriptEntry(
         span,
       ),
     );
+    // Guard with typeof key === "number" so TypeScript narrows `key` to number
+    // and emits a typed numeric comparison instead of dynamic `===`.
+    const valid = temporary(
+      scalarBinary(
+        "&&",
+        numberOperand(key, span),
+        scalarBinary("===", { ...key }, index, span),
+        span,
+      ),
+    );
     const values = temporary(
       scalarBranch(
-        scalarBinary("===", key, index, span),
+        valid,
         optionalMember(
           optionalMember(
-            runtimeCall(
-              "viewObjectValue",
-              [base, member(id("$errors"), "objectPrototype", span)],
-              span,
-            ),
+            runtimeCall("viewTypeofObject", [base], span),
             "internalArrayElements",
             span,
           ),
@@ -3282,7 +3290,7 @@ function lowerScriptEntry(
         span,
       ),
     );
-    return { index, cell };
+    return { index, valid, cell };
   }
   /** Overwrite the packed number element (IR element-store natively) or a
    * packed general element's cell, else PutValue through the runtime (which
@@ -3298,7 +3306,6 @@ function lowerScriptEntry(
   ): void {
     usesElementAccess = true;
     usesIndexedWrites = true;
-    const witness = member(id("$errors"), "objectPrototype", span);
     // A packed general element is a writable data property below the count.
     const general = nestedStatements(() => {
       const cell = packedGeneralCell(base, key, span).cell;
@@ -3341,7 +3348,7 @@ function lowerScriptEntry(
       kind: "if",
       test: runtimeCall(
         "storePackedNumberElement",
-        [witness, base, elementIndex(key, span), value],
+        [id("$errors"), base, elementIndex(key, span), value],
         span,
       ),
       consequent: block([], span),
@@ -3378,6 +3385,7 @@ function lowerScriptEntry(
       () => {
         const general = packedGeneralCell(base, key, span);
         const index = general.index,
+          valid = general.valid,
           cell = general.cell;
         const element = scalarBranch(
           scalarBinary("!==", cell, id("undefined", span), span),
@@ -3395,7 +3403,7 @@ function lowerScriptEntry(
                 categoryOperand(text, "string", span),
                 scalarBinary(
                   "&&",
-                  scalarBinary("===", key, index, span),
+                  { ...valid },
                   scalarBinary("<", index, member(text, "length", span), span),
                   span,
                 ),
@@ -4155,11 +4163,7 @@ function lowerScriptEntry(
           ...at(span),
           kind: "binary",
           operator: "===",
-          left: runtimeCall(
-            "viewObjectValue",
-            [returned, member(id("$errors", span), "objectPrototype", span)],
-            span,
-          ),
+          left: runtimeCall("viewTypeofObject", [returned], span),
           right: id("undefined", span),
         },
         consequent: instance,
@@ -4776,11 +4780,7 @@ function lowerScriptEntry(
     // compare. A realm that never installed the builtin leaves its field
     // undefined, which no view matches.
     const calleeObject = temporary(
-      runtimeCall(
-        "viewObjectValue",
-        [callee, member(id("$errors"), "objectPrototype", span)],
-        span,
-      ),
+      runtimeCall("viewTypeofObject", [callee], span),
     );
     const is = (property: string): Expression =>
       and(
@@ -4865,11 +4865,7 @@ function lowerScriptEntry(
     } else {
       // A collection method: the receiver's storage when the callee is the
       // builtin and the receiver has that storage.
-      const view = runtimeCall(
-        "viewObjectValue",
-        [base, member(id("$errors"), "objectPrototype", span)],
-        span,
-      );
+      const view = runtimeCall("viewTypeofObject", [base], span);
       let dataExpr: Expression;
       if (shape === "has") {
         const isMap = temporary(is("mapHas"));
@@ -6638,14 +6634,7 @@ function lowerScriptEntry(
           kind: "if",
           test: scalarBinary(
             "===",
-            runtimeCall(
-              "viewObjectValue",
-              [
-                { ...rawReceiver },
-                member(id("$errors"), "objectPrototype", span),
-              ],
-              span,
-            ),
+            runtimeCall("viewTypeofObject", [{ ...rawReceiver }], span),
             id("undefined", span),
             span,
           ),
@@ -10705,11 +10694,7 @@ function lowerScriptEntry(
               evaluateGeneralIdentifier: (identNode) =>
                 temporary(value(identNode), true),
               viewObjectValueCall: (target, span) =>
-                runtimeCall(
-                  "viewObjectValue",
-                  [target, member(id("$errors"), "objectPrototype", span)],
-                  span,
-                ),
+                runtimeCall("viewTypeofObject", [target], span),
               lowerGeneralLoopTail: (innerFor, outerUpdate) => {
                 const prev = suppressingNumericLoopSpec;
                 suppressingNumericLoopSpec = true;
@@ -10908,14 +10893,11 @@ function lowerScriptEntry(
         if (test !== undefined) loopTest(test);
       }
       statement(node.body);
-<<<<<<< HEAD
-      suppressingNumericLoopSpec = prevSuppressGeneralBody;
-=======
       if (first === undefined && node.kind === "for") {
         const update = node.update;
         if (update !== undefined) expression(value(update));
       }
->>>>>>> 375ca840f (Optimize element loops, Math intrinsics, and Map/Set hot paths (Step 5a-4))
+      suppressingNumericLoopSpec = prevSuppressGeneralBody;
       const body: BlockStatement = {
         ...at(node),
         kind: "block",

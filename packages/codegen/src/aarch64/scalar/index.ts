@@ -3755,6 +3755,7 @@ function emitModuleForms(
               } else if (
                 (op.kind === "load" && nonNegativeZeroSlots[op.slot] === 1) ||
                 op.kind === "array-length" ||
+                op.kind === "element-count" ||
                 op.kind === "string-length" ||
                 op.kind === "string-code-unit" ||
                 (op.kind === "unary" &&
@@ -3828,6 +3829,25 @@ function emitModuleForms(
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
             rejected = new Uint8Array(resultBound);
+          let hasScriptOps = fn.scriptEntry === true;
+          if (!hasScriptOps) {
+            for (const b of fn.blocks) {
+              if (b === undefined) continue;
+              for (const op of b.instructions) {
+                if (
+                  op !== undefined &&
+                  (op.kind === "element-load" ||
+                    op.kind === "element-store" ||
+                    op.kind === "property-load" ||
+                    op.kind === "property-store")
+                ) {
+                  hasScriptOps = true;
+                  break;
+                }
+              }
+              if (hasScriptOps) break;
+            }
+          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "integer use block invariant";
             visitTerminatorOperands(block.terminator, (id) => {
@@ -3864,13 +3884,18 @@ function emitModuleForms(
                 op.kind === "array-store" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
+                // Packed element accesses compare integer indices and cached
+                // counts directly when kept in int64 registers.
+                op.kind === "element-load" ||
+                op.kind === "element-store" ||
                 // Inline code units index with an int64 (the helper path
                 // converts with floatLoad).
                 op.kind === "string-code-unit" ||
-                // Slice bounds load through floatLoad, and optional
+                // Slice bounds load through floatLoad, and optional/general
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
+                (hasScriptOps && op.kind === "general-wrap") ||
                 // C integer arguments convert from an int64 directly
                 // (numberToInteger); C double arguments through floatLoad.
                 op.kind === "c-call" ||
@@ -4027,6 +4052,7 @@ function emitModuleForms(
           } else if (
             op.kind === "string-length" ||
             op.kind === "array-length" ||
+            op.kind === "element-count" ||
             (op.kind === "string-code-unit" && op.inBounds === true) ||
             (op.kind === "unary" && op.operator === "uint32") ||
             (op.kind === "binary" && op.operator === ">>>") ||
@@ -9049,6 +9075,7 @@ function emitModuleForms(
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
               op.kind === "array-length" ||
+              op.kind === "element-count" ||
               (op.kind === "string-code-unit" && op.inBounds === true)
             )
               wordKinds[valueIds.intern(op.id)] = 2;
@@ -10110,7 +10137,12 @@ function emitModuleForms(
                       : t === "string"
                         ? 3
                         : 5;
-                rawValue(9, op.value);
+                if (t === "number" && storedAsInteger(op.value)) {
+                  floatLoad(0, op.value);
+                  emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                } else {
+                  rawValue(9, op.value);
+                }
                 rawStore(9, value(op.id).offset + 8);
                 imm(9, tag);
                 saveRaw(9, op.id);
@@ -12636,23 +12668,28 @@ function emitModuleForms(
                 let index = 12;
                 if (exactInteger(op.index)) {
                   index = intRegister(op.index, 12);
-                  let countReg = 1;
-                  if (cachedCount !== undefined)
-                    countReg = floatOperand(cachedCount, 1);
-                  else
-                    emit({
-                      op: "ldr-d",
-                      rt: 1,
-                      rn: 10,
-                      offset: countField.offset,
-                    });
-                  emit({ op: "fcvtzu-x-d", rd: 11, rn: countReg });
+                  let countInt = 11;
+                  if (cachedCount !== undefined && exactInteger(cachedCount)) {
+                    countInt = intRegister(cachedCount, 11);
+                  } else {
+                    let countReg = 1;
+                    if (cachedCount !== undefined)
+                      countReg = floatOperand(cachedCount, 1);
+                    else
+                      emit({
+                        op: "ldr-d",
+                        rt: 1,
+                        rn: 10,
+                        offset: countField.offset,
+                      });
+                    emit({ op: "fcvtzu-x-d", rd: 11, rn: countReg });
+                  }
                   emit({
                     op: "sub-reg",
                     width: 64,
                     rd: "zr",
                     rn: index,
-                    rm: 11,
+                    rm: countInt,
                     shift: "lsl",
                     amount: 0,
                     setFlags: true,
@@ -12674,18 +12711,33 @@ function emitModuleForms(
                     setFlags: true,
                   });
                   missIfNegative();
-                  let countReg = 1;
-                  if (cachedCount !== undefined)
-                    countReg = floatOperand(cachedCount, 1);
-                  else
+                  if (cachedCount !== undefined && exactInteger(cachedCount)) {
+                    const countInt = intRegister(cachedCount, 11);
                     emit({
-                      op: "ldr-d",
-                      rt: 1,
-                      rn: 10,
-                      offset: countField.offset,
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      rm: countInt,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
                     });
-                  emit({ op: "fcmp", rn: number, rm: countReg });
-                  missUnless(true);
+                    missUnless(true);
+                  } else {
+                    let countReg = 1;
+                    if (cachedCount !== undefined)
+                      countReg = floatOperand(cachedCount, 1);
+                    else
+                      emit({
+                        op: "ldr-d",
+                        rt: 1,
+                        rn: 10,
+                        offset: countField.offset,
+                      });
+                    emit({ op: "fcmp", rn: number, rm: countReg });
+                    missUnless(true);
+                  }
                 } else {
                   const number = floatOperand(op.index, 0);
                   emit({ op: "fcvtzu-x-d", rd: 12, rn: number });
@@ -12978,6 +13030,43 @@ function emitModuleForms(
                     op: "b",
                     displacement: (instructions.length - hit) * 4,
                   });
+                  saveRaw(target, op.id);
+                } else if (wantsInteger(op.id)) {
+                  const target = intTarget(op.id, 12);
+                  emit({
+                    op: "ldr-d",
+                    rt: 0,
+                    rn: 10,
+                    offset: countField.offset,
+                  });
+                  emit({ op: "fcvtzu-x-d", rd: target, rn: 0 });
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: target,
+                    rn: "zr",
+                    rm: "zr",
+                  });
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  markInteger(op.id);
                   saveRaw(target, op.id);
                 } else {
                   const target = floatTarget(op.id, 0);

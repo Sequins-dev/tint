@@ -1677,11 +1677,12 @@ export function optimizeModuleVersion(
   // Loop-invariant packed binary64 array accesses cache (storage, count) in
   // the loop preheader and invalidate count to 0 after cold calls/writes.
   const elementBudget = vectorBudget - vectors.visited;
+  const boundChanges: number[] = [];
   const cachedElements = rewriteFunctions(
     version,
     elementBudget,
     undefined,
-    undefined,
+    boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
       const result = cacheElementStorage(fn, budget, remarks);
       return result === undefined
@@ -1701,7 +1702,6 @@ export function optimizeModuleVersion(
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
-  const boundChanges: number[] = [];
   const bounded = rewriteFunctions(
     version,
     elementBudget - cachedElements.visited,

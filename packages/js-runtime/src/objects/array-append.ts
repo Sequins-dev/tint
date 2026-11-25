@@ -108,20 +108,6 @@ export function scriptArrayPush(
     objectPrototype.internalDictionary
   )
     return -1;
-  // Refresh the fast array-push lookup epoch once after realm install or
-  // unrelated Array.prototype changes so subsequent `arr.push(x)` reads skip
-  // readCachedObjectValueProperty.
-  const intrinsics = realm.intrinsicFunctions;
-  const epoch = arrayPrototype.internalPropertyEpoch;
-  if (intrinsics.arrayPushEpoch !== epoch) {
-    const push = arrayPrototype.properties?.get("push");
-    if (
-      push !== undefined &&
-      !push.accessor &&
-      push.value === intrinsics.arrayPush
-    )
-      intrinsics.arrayPushEpoch = epoch;
-  }
   // Fast steady-state path: append a Number directly into existing capacity
   // without helper or hook closure dispatch.
   if (elements.values === undefined) {

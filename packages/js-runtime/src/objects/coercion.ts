@@ -60,10 +60,26 @@ export function readObjectValuePropertyKey(
   let converted: ScriptPropertyKey;
   if (typeof key === "string") converted = key;
   else if (typeof key === "number") {
+    // Packed array elements (both binary64 numbers and general ElementCells)
+    // are own writable data properties with no prototype lookup or coercion.
+    let object = viewObjectValue(base, realm.objectPrototype);
+    if (object !== undefined) {
+      const elements = object.internalArrayElements;
+      if (elements !== undefined && key >= 0 && (key | 0) === key) {
+        const values = elements.values;
+        if (values !== undefined) {
+          if (key < values.length) {
+            const cell = values[key];
+            if (cell !== undefined) return cell.value;
+          }
+        } else if (key < elements.numberCount) {
+          return elements.numbers[key];
+        }
+      }
+    }
     // A TypedArray's [[Get]] of a canonical numeric key never consults the
     // prototype chain; ToString of a Number is canonical, naming the Number
     // itself (-0 names "0"). Read the element without the string round trip.
-    let object = viewObjectValue(base, realm.objectPrototype);
     const exotic =
       object === undefined ? undefined : object.internalExoticSlots;
     const data =

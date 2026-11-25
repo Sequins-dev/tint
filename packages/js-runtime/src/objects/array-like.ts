@@ -76,6 +76,85 @@ export function createArray0(
   });
 }
 
+function createGeneralArray1(
+  v0: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const values: ElementCell<unknown>[] = [{ value: v0 }];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 1,
+    lengthWritable: true,
+  });
+}
+
+function createGeneralArray2(
+  v0: unknown,
+  v1: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const values: ElementCell<unknown>[] = [{ value: v0 }, { value: v1 }];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 2,
+    lengthWritable: true,
+  });
+}
+
+function createGeneralArray3(
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const values: ElementCell<unknown>[] = [
+    { value: v0 },
+    { value: v1 },
+    { value: v2 },
+  ];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 3,
+    lengthWritable: true,
+  });
+}
+
+function createGeneralArray4(
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const values: ElementCell<unknown>[] = [
+    { value: v0 },
+    { value: v1 },
+    { value: v2 },
+    { value: v3 },
+  ];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 4,
+    lengthWritable: true,
+  });
+}
+
 export function createArray1(
   v0: unknown,
   realm: ErrorRealm,
@@ -93,16 +172,7 @@ export function createArray1(
       lengthWritable: true,
     });
   }
-  const values: ElementCell<unknown>[] = [{ value: v0 }];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 1,
-    lengthWritable: true,
-  });
+  return createGeneralArray1(v0, realm);
 }
 
 export function createArray2(
@@ -124,16 +194,7 @@ export function createArray2(
       lengthWritable: true,
     });
   }
-  const values: ElementCell<unknown>[] = [{ value: v0 }, { value: v1 }];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 2,
-    lengthWritable: true,
-  });
+  return createGeneralArray2(v0, v1, realm);
 }
 
 export function createArray3(
@@ -161,20 +222,7 @@ export function createArray3(
       lengthWritable: true,
     });
   }
-  const values: ElementCell<unknown>[] = [
-    { value: v0 },
-    { value: v1 },
-    { value: v2 },
-  ];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 3,
-    lengthWritable: true,
-  });
+  return createGeneralArray3(v0, v1, v2, realm);
 }
 
 export function createArray4(
@@ -205,21 +253,7 @@ export function createArray4(
       lengthWritable: true,
     });
   }
-  const values: ElementCell<unknown>[] = [
-    { value: v0 },
-    { value: v1 },
-    { value: v2 },
-    { value: v3 },
-  ];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 4,
-    lengthWritable: true,
-  });
+  return createGeneralArray4(v0, v1, v2, v3, realm);
 }
 
 export function lengthOfArrayLike(

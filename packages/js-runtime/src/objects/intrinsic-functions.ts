@@ -36,10 +36,6 @@ export interface IntrinsicFunctions {
   setAdd: IntrinsicFunction;
   arrayPush: IntrinsicFunction;
   arrayPop: IntrinsicFunction;
-  /** `realm.arrayPrototype.internalPropertyEpoch` when `arrayPush` was last
-   * verified as the own data property `"push"` on `Array.prototype` (-1 before
-   * verification). */
-  arrayPushEpoch: number;
 }
 
 export function createIntrinsicFunctions(): IntrinsicFunctions {
@@ -65,6 +61,5 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     setAdd: undefined,
     arrayPush: undefined,
     arrayPop: undefined,
-    arrayPushEpoch: -1,
   };
 }

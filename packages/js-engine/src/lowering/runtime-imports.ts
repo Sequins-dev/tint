@@ -167,7 +167,7 @@ export function scriptRuntimeImports(
         "defineClassMethodValue",
         "defineClassAccessor",
         "initializeClassFields",
-        "viewObjectValue",
+        "viewTypeofObject",
         "createBigIntLiteral",
         "createRegExpLiteral",
         "scriptBoolean",

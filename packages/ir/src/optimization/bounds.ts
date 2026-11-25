@@ -528,7 +528,10 @@ export function selectArrayAccesses(
           dependencies.set(op.id, combine(op.operand, op.operand));
         else if (op.kind === "array-read" || op.kind === "array-write")
           mark(op.index);
-        else if (op.kind === "array-new") mark(op.length);
+        else if (op.kind === "element-load" || op.kind === "element-store") {
+          mark(op.index);
+          if (op.cachedCount !== undefined) mark(op.cachedCount);
+        } else if (op.kind === "array-new") mark(op.length);
         else if (op.kind === "store" && relevant[op.slot] === 1) mark(op.value);
       }
     }
@@ -780,6 +783,10 @@ export function selectArrayAccesses(
         }
         case "array-length":
           // Typed array lengths are uint32.
+          values.set(op.id, integerInterval(0, 4294967295, false));
+          break;
+        case "element-count":
+          // Packed binary64 element counts are uint32 (0 on miss/invalidation).
           values.set(op.id, integerInterval(0, 4294967295, false));
           break;
         case "string-length":

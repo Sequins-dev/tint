@@ -9,6 +9,7 @@ import {
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
+import { hasScriptOperations } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 
 export interface GeneralNumberShadows {
@@ -160,6 +161,7 @@ export function shadowGeneralNumbers(
     }
   if (count === 0 || fn.import === true || fn.blocks.length === 0)
     return { fn, visited, shadowed: 0 };
+  const scriptFn = hasScriptOperations(fn);
   const blockCount = fn.blocks.length;
   let nextId = 0;
   for (const block of fn.blocks) {
@@ -232,6 +234,11 @@ export function shadowGeneralNumbers(
       ) {
         const slot = loads.get(op.value);
         if (slot !== undefined) uses[slot] = (uses[slot] ?? 0) + 2 * weight;
+      } else if (op.kind === "element-store") {
+        // Storing into a packed number array takes the unboxed fast path when
+        // the value comes from a shadowed number slot.
+        const slot = loads.get(op.value);
+        if (slot !== undefined) uses[slot] = (uses[slot] ?? 0) + 4 * weight;
       } else if (op.kind === "store") {
         const number = wrapped.get(op.value) === true;
         const cheapNonNumber = knownNonNumber.has(op.value);
@@ -260,25 +267,56 @@ export function shadowGeneralNumbers(
       shadows[slot] = ++shadowed;
   }
   // Also shadow merge temporaries that feed an already-shadowed slot (e.g.
-  // `sum += x` merge slots): shadowing them avoids a `general-is` tag check on
-  // every store into the shadowed destination.
+  // `sum += x` merge slots): shadowing them moves the `general-is` tag check
+  // off the hot merge into cold non-number branches and breaks GP/FP boxing
+  // chains around loop accumulators.
   if (shadowed > 0) {
-    for (const edge of copyEdges) {
-      if (edge === undefined) continue;
-      if (
-        (shadows[edge.to] ?? 0) > 0 &&
-        (shadows[edge.from] ?? 0) === 0 &&
-        wrappedStores[edge.from] === 1
-      ) {
-        const multiplier = edge.weight > 1 ? 6 : 3;
-        uses[edge.from] = (uses[edge.from] ?? 0) + multiplier * edge.weight;
+    if (scriptFn) {
+      const countedEdge = new Uint8Array(copyEdges.length);
+      let added = true;
+      while (added) {
+        added = false;
+        for (let i = 0; i < copyEdges.length; i++) {
+          if (countedEdge[i] === 1) continue;
+          const edge = copyEdges[i];
+          if (edge === undefined) continue;
+          if (
+            (shadows[edge.to] ?? 0) > 0 &&
+            (shadows[edge.from] ?? 0) === 0 &&
+            wrappedStores[edge.from] === 1
+          ) {
+            countedEdge[i] = 1;
+            const multiplier = edge.weight > 1 ? 12 : 4;
+            uses[edge.from] = (uses[edge.from] ?? 0) + multiplier * edge.weight;
+          }
+        }
+        for (let slot = 0; slot < slotCount; slot++) {
+          if (candidates[slot] !== 1 || (shadows[slot] ?? 0) > 0) continue;
+          const benefit = uses[slot] ?? 0;
+          if (benefit > 0 && benefit >= (costs[slot] ?? 0)) {
+            shadows[slot] = ++shadowed;
+            added = true;
+          }
+        }
       }
-    }
-    for (let slot = 0; slot < slotCount; slot++) {
-      if (candidates[slot] !== 1 || (shadows[slot] ?? 0) > 0) continue;
-      const benefit = uses[slot] ?? 0;
-      if (benefit > 0 && benefit >= (costs[slot] ?? 0))
-        shadows[slot] = ++shadowed;
+    } else {
+      for (const edge of copyEdges) {
+        if (edge === undefined) continue;
+        if (
+          (shadows[edge.to] ?? 0) > 0 &&
+          (shadows[edge.from] ?? 0) === 0 &&
+          wrappedStores[edge.from] === 1
+        ) {
+          const multiplier = edge.weight > 1 ? 6 : 3;
+          uses[edge.from] = (uses[edge.from] ?? 0) + multiplier * edge.weight;
+        }
+      }
+      for (let slot = 0; slot < slotCount; slot++) {
+        if (candidates[slot] !== 1 || (shadows[slot] ?? 0) > 0) continue;
+        const benefit = uses[slot] ?? 0;
+        if (benefit > 0 && benefit >= (costs[slot] ?? 0))
+          shadows[slot] = ++shadowed;
+      }
     }
   }
   if (shadowed === 0) return { fn, visited, shadowed: 0 };
@@ -583,16 +621,45 @@ export function shadowGeneralNumbers(
       const other = nonNumberResult(op, fn.slots);
       if (other !== undefined) nonNumbers.add(other);
       if (op.kind === "load") {
-        instructions.push(op);
         const trackIndex = tracked(op.slot);
         if (trackIndex >= 0) {
+          const shadowIdx = shadow(op.slot);
+          if (scriptFn && shadowIdx >= 0 && state[trackIndex] === 1) {
+            // The slot is proven to hold a Number here: materialize from its
+            // number shadow so general-slot stores die when all readers are
+            // proven (leaving boxing only on cold/exit paths).
+            const numId = nextId++;
+            instructions.push(
+              {
+                kind: "load",
+                id: numId,
+                slot: payload[shadowIdx] ?? 0,
+                start: op.start,
+                end: op.end,
+              },
+              {
+                kind: "general-wrap",
+                id: op.id,
+                value: numId,
+                start: op.start,
+                end: op.end,
+              },
+            );
+            numbers.add(numId);
+            wraps.set(op.id, numId);
+            loads.set(op.id, describe(trackIndex));
+            knownLoads.add(op.id);
+            proofs++;
+            continue;
+          }
+          instructions.push(op);
           const wrappedNumber =
-            shadow(op.slot) < 0 ? unshadowedWrap.get(op.slot) : undefined;
+            shadowIdx < 0 ? unshadowedWrap.get(op.slot) : undefined;
           if (wrappedNumber !== undefined) {
             wraps.set(op.id, wrappedNumber);
           } else {
             const copiedDesc =
-              shadow(op.slot) < 0 ? unshadowedCopy.get(op.slot) : undefined;
+              shadowIdx < 0 ? unshadowedCopy.get(op.slot) : undefined;
             if (copiedDesc !== undefined) {
               const copiedTrack = described(copiedDesc);
               if (copiedTrack >= 0) {
@@ -603,13 +670,15 @@ export function shadowGeneralNumbers(
                 if (state[trackIndex] === 1) knownLoads.add(op.id);
               }
             } else {
-              if (shadow(op.slot) < 0 && unshadowedNotNumber.has(op.slot))
+              if (shadowIdx < 0 && unshadowedNotNumber.has(op.slot))
                 notNumbers.add(op.id);
               loads.set(op.id, describe(trackIndex));
               if (state[trackIndex] === 1) knownLoads.add(op.id);
             }
           }
+          continue;
         }
+        instructions.push(op);
         continue;
       }
       if (op.kind === "general-wrap") {

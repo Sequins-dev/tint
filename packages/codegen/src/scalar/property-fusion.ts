@@ -1,5 +1,6 @@
 import {
   blockSuccessors,
+  visitInstructionOperands,
   type Block,
   type FunctionIR,
   type Instruction,
@@ -202,12 +203,11 @@ export function fusedPropertyAccesses(
     for (let next = index + 1; next <= last && valid; next++) {
       const op = block.instructions[next];
       if (op === undefined) throw "property fusion instruction invariant";
-      const test =
-        next === last && t.kind === "branch" && op.kind === "general-is";
-      if (!followLoad(uses, op) && !test && !skippable(op)) valid = false;
+      if (!followLoad(uses, op) && !skippable(op)) valid = false;
     }
     if (!valid) continue;
     let testBlock: Block = block;
+    let testStart = index + 1;
     if (t.kind === "jump") {
       const target = fn.blocks[t.target];
       if (target === undefined || target.id === block.id) continue;
@@ -215,33 +215,56 @@ export function fusedPropertyAccesses(
       const predecessors = counted;
       if (predecessors[target.id] !== 1 || target.exception !== undefined)
         continue;
-      const targetLast = target.instructions.length - 1;
-      for (let next = 0; next < targetLast && valid; next++) {
+      for (let next = 0; next < target.instructions.length && valid; next++) {
         const op = target.instructions[next];
         if (op === undefined) throw "property fusion instruction invariant";
         if (op.kind === "load") followLoad(uses, op);
         else if (
           op.kind !== "constant" &&
           op.kind !== "reference-none" &&
-          op.kind !== "general-none"
+          op.kind !== "general-none" &&
+          !(op.kind === "general-is" && op.type === "absent")
         )
           valid = false;
       }
       if (!valid) continue;
       testBlock = target;
+      testStart = 0;
     }
     const branch = testBlock.terminator;
-    const test = testBlock.instructions[testBlock.instructions.length - 1];
-    if (
-      branch.kind !== "branch" ||
-      branch.consequent === branch.alternate ||
-      test === undefined ||
-      test.kind !== "general-is" ||
-      test.type !== "absent" ||
-      test.id !== branch.condition ||
-      !uses.aliases.has(test.value)
-    )
+    if (branch.kind !== "branch" || branch.consequent === branch.alternate)
       continue;
+    let testId = -1;
+    let testIndex = -1;
+    for (let next = testStart; next < testBlock.instructions.length; next++) {
+      const op = testBlock.instructions[next];
+      if (
+        op !== undefined &&
+        op.kind === "general-is" &&
+        op.type === "absent" &&
+        op.id === branch.condition &&
+        uses.aliases.has(op.value)
+      ) {
+        testId = op.id;
+        testIndex = next;
+        break;
+      }
+    }
+    if (testId < 0) continue;
+    // The skipped test value may only be consumed by the branch terminator.
+    let usedByOp = false;
+    for (
+      let next = testIndex + 1;
+      next < testBlock.instructions.length && !usedByOp;
+      next++
+    ) {
+      const op = testBlock.instructions[next];
+      if (op !== undefined)
+        visitInstructionOperands(op, (id) => {
+          if (id === branch.condition) usedByOp = true;
+        });
+    }
+    if (usedByOp) continue;
     // The test is true when the load missed.
     if (
       uses.stored.length > 0 &&
@@ -272,7 +295,7 @@ export function fusedPropertyAccesses(
     fused.set(block.id, {
       access: load.id,
       miss: branch.consequent,
-      test: testBlock === block ? test.id : undefined,
+      test: testBlock === block ? testId : undefined,
       hit: branch.alternate,
       skipped,
     });
@@ -280,7 +303,7 @@ export function fusedPropertyAccesses(
       fused.set(testBlock.id, {
         access: undefined,
         miss: branch.consequent,
-        test: test.id,
+        test: testId,
         hit: branch.alternate,
         skipped: [],
       });

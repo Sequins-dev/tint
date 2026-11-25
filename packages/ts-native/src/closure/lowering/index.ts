@@ -4760,20 +4760,38 @@ function lowerEntries(
         binding.operation === "element-store"
       ) {
         const store = binding.operation === "element-store";
-        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          countName = binding.siteField;
+        // Accept either OrdinaryObject or ErrorRealm (extracting
+        // objectPrototype's record type) as parameter 0 so call sites can
+        // pass $errors directly without loading $errors.objectPrototype.
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
         const record =
           witnessType === undefined
             ? undefined
             : recordContracts.forType(witnessType);
-        const elementsName = binding.field,
-          countName = binding.siteField;
         const field =
           record === undefined || elementsName === undefined
             ? undefined
             : recordContracts.fieldIndex(record, elementsName);
         // The elements field holds `Elements | undefined`.
-        const witness =
-          witnessType === undefined ? undefined : checked.types[witnessType];
         const property =
           witness?.kind === "object" && elementsName !== undefined
             ? witness.properties.find(
@@ -4836,19 +4854,34 @@ function lowerEntries(
         continue;
       }
       if (binding.operation === "element-length") {
-        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          lengthName = binding.siteField;
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
         const record =
           witnessType === undefined
             ? undefined
             : recordContracts.forType(witnessType);
-        const elementsName = binding.field,
-          lengthName = binding.siteField;
         const field =
           record === undefined || elementsName === undefined
             ? undefined
             : recordContracts.fieldIndex(record, elementsName);
-        const witness =
-          witnessType === undefined ? undefined : checked.types[witnessType];
         const property =
           witness?.kind === "object" && elementsName !== undefined
             ? witness.properties.find(

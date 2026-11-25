@@ -7,6 +7,10 @@ import { collectionKeyEqual } from "./collection-keys.ts";
 // cold insertion/rehash split out to keep hot frames compact).
 export interface ScriptMapEntry {
   readonly key: unknown;
+  /** Non-NaN numeric key payload (with -0 normalized to +0), or NaN for
+   * non-number / NaN keys so numeric lookups compare a typed double directly
+   * (`entry.numberKey === key`) without reading the 16-byte general `key`. */
+  readonly numberKey: number;
   readonly hash: number;
   value: unknown;
   next: ScriptMapEntry | undefined;
@@ -93,6 +97,7 @@ function rebuild(map: ScriptMap, size: number): void {
 function insertScriptMapEntry(
   map: ScriptMap,
   key: unknown,
+  numberKey: number,
   hash: number,
   value: unknown,
 ): boolean {
@@ -101,6 +106,7 @@ function insertScriptMapEntry(
   const tail = map.tail;
   const entry: ScriptMapEntry = {
     key,
+    numberKey,
     hash,
     value,
     next: undefined,
@@ -125,26 +131,14 @@ function insertScriptMapEntry(
   return true;
 }
 
-export function hasScriptMap(map: ScriptMap, key: unknown): boolean {
+function hasScriptMapSlow(map: ScriptMap, key: unknown): boolean {
   if (map.size === 0) return false;
   const buckets = map.buckets;
   if (typeof key === "number") {
     if (key === key) {
-      const normalized = key === 0 ? 0 : key;
-      if (buckets !== undefined) {
-        let entry =
-          buckets[(Math.imul(normalized >>> 0, 0x9e3779b1) >>> 0) & map.mask];
-        while (entry !== undefined) {
-          if (typeof entry.key === "number" && entry.key === normalized)
-            return true;
-          entry = entry.chain;
-        }
-        return false;
-      }
       let entry = map.head;
       while (entry !== undefined) {
-        if (typeof entry.key === "number" && entry.key === normalized)
-          return true;
+        if (entry.numberKey === key) return true;
         entry = entry.next;
       }
       return false;
@@ -181,26 +175,27 @@ export function hasScriptMap(map: ScriptMap, key: unknown): boolean {
   return findOtherEntry(map, key) !== undefined;
 }
 
-export function getScriptMap(map: ScriptMap, key: unknown): unknown {
+export function hasScriptMap(map: ScriptMap, key: unknown): boolean {
+  const buckets = map.buckets;
+  if (buckets !== undefined && typeof key === "number" && key === key) {
+    let entry = buckets[(Math.imul(key >>> 0, 0x9e3779b1) >>> 0) & map.mask];
+    while (entry !== undefined) {
+      if (entry.numberKey === key) return true;
+      entry = entry.chain;
+    }
+    return false;
+  }
+  return hasScriptMapSlow(map, key);
+}
+
+function getScriptMapSlow(map: ScriptMap, key: unknown): unknown {
   if (map.size === 0) return undefined;
   const buckets = map.buckets;
   if (typeof key === "number") {
     if (key === key) {
-      const normalized = key === 0 ? 0 : key;
-      if (buckets !== undefined) {
-        let entry =
-          buckets[(Math.imul(normalized >>> 0, 0x9e3779b1) >>> 0) & map.mask];
-        while (entry !== undefined) {
-          if (typeof entry.key === "number" && entry.key === normalized)
-            return entry.value;
-          entry = entry.chain;
-        }
-        return undefined;
-      }
       let entry = map.head;
       while (entry !== undefined) {
-        if (typeof entry.key === "number" && entry.key === normalized)
-          return entry.value;
+        if (entry.numberKey === key) return entry.value;
         entry = entry.next;
       }
       return undefined;
@@ -239,7 +234,20 @@ export function getScriptMap(map: ScriptMap, key: unknown): unknown {
   return found === undefined ? undefined : found.value;
 }
 
-export function setScriptMap(
+export function getScriptMap(map: ScriptMap, key: unknown): unknown {
+  const buckets = map.buckets;
+  if (buckets !== undefined && typeof key === "number" && key === key) {
+    let entry = buckets[(Math.imul(key >>> 0, 0x9e3779b1) >>> 0) & map.mask];
+    while (entry !== undefined) {
+      if (entry.numberKey === key) return entry.value;
+      entry = entry.chain;
+    }
+    return undefined;
+  }
+  return getScriptMapSlow(map, key);
+}
+
+function setScriptMapSlow(
   map: ScriptMap,
   key: unknown,
   value: unknown,
@@ -248,34 +256,28 @@ export function setScriptMap(
   if (typeof key === "number") {
     if (key === key) {
       const normalized = key === 0 ? 0 : key;
-      const hash = normalized >>> 0;
-      if (buckets !== undefined) {
-        let entry = buckets[(Math.imul(hash, 0x9e3779b1) >>> 0) & map.mask];
-        while (entry !== undefined) {
-          if (typeof entry.key === "number" && entry.key === normalized) {
-            entry.value = value;
-            return false;
-          }
-          entry = entry.chain;
+      let entry = map.head;
+      while (entry !== undefined) {
+        if (entry.numberKey === normalized) {
+          entry.value = value;
+          return false;
         }
-      } else {
-        let entry = map.head;
-        while (entry !== undefined) {
-          if (typeof entry.key === "number" && entry.key === normalized) {
-            entry.value = value;
-            return false;
-          }
-          entry = entry.next;
-        }
+        entry = entry.next;
       }
-      return insertScriptMapEntry(map, normalized, hash, value);
+      return insertScriptMapEntry(
+        map,
+        normalized,
+        normalized,
+        normalized >>> 0,
+        value,
+      );
     }
     const existing = findNaNEntry(map);
     if (existing !== undefined) {
       existing.value = value;
       return false;
     }
-    return insertScriptMapEntry(map, key, 0, value);
+    return insertScriptMapEntry(map, key, Number.NaN, 0, value);
   }
   if (typeof key === "string") {
     const hash = hashString(key);
@@ -306,40 +308,59 @@ export function setScriptMap(
         entry = entry.next;
       }
     }
-    return insertScriptMapEntry(map, key, hash, value);
+    return insertScriptMapEntry(map, key, Number.NaN, hash, value);
   }
   const existing = findOtherEntry(map, key);
   if (existing !== undefined) {
     existing.value = value;
     return false;
   }
-  return insertScriptMapEntry(map, key, 0, value);
+  return insertScriptMapEntry(map, key, Number.NaN, 0, value);
 }
 
-export function addScriptSet(map: ScriptMap, value: unknown): void {
+export function setScriptMap(
+  map: ScriptMap,
+  key: unknown,
+  value: unknown,
+): boolean {
+  const buckets = map.buckets;
+  if (buckets !== undefined && typeof key === "number" && key === key) {
+    const hash = key >>> 0;
+    let entry = buckets[(Math.imul(hash, 0x9e3779b1) >>> 0) & map.mask];
+    while (entry !== undefined) {
+      if (entry.numberKey === key) {
+        entry.value = value;
+        return false;
+      }
+      entry = entry.chain;
+    }
+    const normalized = key === 0 ? 0 : key;
+    return insertScriptMapEntry(map, normalized, normalized, hash, value);
+  }
+  return setScriptMapSlow(map, key, value);
+}
+
+function addScriptSetSlow(map: ScriptMap, value: unknown): void {
   const buckets = map.buckets;
   if (typeof value === "number") {
     if (value === value) {
       const normalized = value === 0 ? 0 : value;
-      const hash = normalized >>> 0;
-      if (buckets !== undefined) {
-        let entry = buckets[(Math.imul(hash, 0x9e3779b1) >>> 0) & map.mask];
-        while (entry !== undefined) {
-          if (typeof entry.key === "number" && entry.key === normalized) return;
-          entry = entry.chain;
-        }
-      } else {
-        let entry = map.head;
-        while (entry !== undefined) {
-          if (typeof entry.key === "number" && entry.key === normalized) return;
-          entry = entry.next;
-        }
+      let entry = map.head;
+      while (entry !== undefined) {
+        if (entry.numberKey === normalized) return;
+        entry = entry.next;
       }
-      insertScriptMapEntry(map, normalized, hash, normalized);
+      insertScriptMapEntry(
+        map,
+        normalized,
+        normalized,
+        normalized >>> 0,
+        normalized,
+      );
       return;
     }
     if (findNaNEntry(map) !== undefined) return;
-    insertScriptMapEntry(map, value, 0, value);
+    insertScriptMapEntry(map, value, Number.NaN, 0, value);
     return;
   }
   if (typeof value === "string") {
@@ -367,11 +388,27 @@ export function addScriptSet(map: ScriptMap, value: unknown): void {
         entry = entry.next;
       }
     }
-    insertScriptMapEntry(map, value, hash, value);
+    insertScriptMapEntry(map, value, Number.NaN, hash, value);
     return;
   }
   if (findOtherEntry(map, value) !== undefined) return;
-  insertScriptMapEntry(map, value, 0, value);
+  insertScriptMapEntry(map, value, Number.NaN, 0, value);
+}
+
+export function addScriptSet(map: ScriptMap, value: unknown): void {
+  const buckets = map.buckets;
+  if (buckets !== undefined && typeof value === "number" && value === value) {
+    const hash = value >>> 0;
+    let entry = buckets[(Math.imul(hash, 0x9e3779b1) >>> 0) & map.mask];
+    while (entry !== undefined) {
+      if (entry.numberKey === value) return;
+      entry = entry.chain;
+    }
+    const normalized = value === 0 ? 0 : value;
+    insertScriptMapEntry(map, normalized, normalized, hash, normalized);
+    return;
+  }
+  addScriptSetSlow(map, value);
 }
 
 export function deleteScriptMap(map: ScriptMap, key: unknown): boolean {
@@ -380,13 +417,12 @@ export function deleteScriptMap(map: ScriptMap, key: unknown): boolean {
   let entry: ScriptMapEntry | undefined;
   if (typeof key === "number") {
     if (key === key) {
-      const normalized = key === 0 ? 0 : key;
       entry =
         buckets === undefined
           ? map.head
-          : buckets[bucketOf(normalized >>> 0, map.mask)];
+          : buckets[bucketOf(key >>> 0, map.mask)];
       while (entry !== undefined) {
-        if (typeof entry.key === "number" && entry.key === normalized) break;
+        if (entry.numberKey === key) break;
         entry = buckets === undefined ? entry.next : entry.chain;
       }
     } else {
