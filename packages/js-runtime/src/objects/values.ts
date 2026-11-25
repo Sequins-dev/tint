@@ -20,7 +20,6 @@ import {
   lookupCachedStringPrimitiveProperty,
   cachedScriptPropertyValue,
   storeCachedScriptProperty,
-  readSpillSlot,
   type PropertySpill,
   type ScriptPropertyCache,
   type ObjectHooks,
@@ -297,6 +296,49 @@ export function propertySlotWord(
   return 2;
 }
 
+/** Read one slot of a PropertySpill chunk locally (retained property-cache
+ * helpers cannot call into other modules). */
+function readLocalSpillSlot(
+  chunk: PropertySpill<unknown>,
+  index: number,
+): unknown {
+  switch (index) {
+    case 0:
+      return chunk.v0;
+    case 1:
+      return chunk.v1;
+    case 2:
+      return chunk.v2;
+    case 3:
+      return chunk.v3;
+    case 4:
+      return chunk.v4;
+    case 5:
+      return chunk.v5;
+    case 6:
+      return chunk.v6;
+    case 7:
+      return chunk.v7;
+    case 8:
+      return chunk.v8;
+    case 9:
+      return chunk.v9;
+    case 10:
+      return chunk.v10;
+    case 11:
+      return chunk.v11;
+    case 12:
+      return chunk.v12;
+    case 13:
+      return chunk.v13;
+    case 14:
+      return chunk.v14;
+    case 15:
+      return chunk.v15;
+  }
+  throw "PROPERTY_SLOT_INVARIANT";
+}
+
 /** Read a fast-mode own value given its encoded raw-bit slot (positive for
  * in-place slots starting at word 2, negative for linked PropertySpill chunks). */
 function readEncodedPropertySlot(
@@ -313,7 +355,7 @@ function readEncodedPropertySlot(
     }
     return chunk === undefined
       ? undefined
-      : readSpillSlot<unknown>(chunk, ((raw & 0xffff) - 2) >>> 1);
+      : readLocalSpillSlot(chunk, ((raw & 0xffff) - 2) >>> 1);
   }
   return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
 }
