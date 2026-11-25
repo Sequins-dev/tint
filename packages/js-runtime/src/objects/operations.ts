@@ -522,6 +522,10 @@ export interface ScriptPropertyCache {
   /** A method site (`o.m()`) reads only its inherited entries, so it keeps
    * the receiver's own properties there too, with non-zero slot. */
   readonly method: boolean;
+  /** Stride counter and rotating slot for promoting hot megamorphic shapes
+   * into the inline entries without thrashing on every miss. */
+  evictClock: number;
+  evictSlot: number;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
   return {
@@ -581,6 +585,8 @@ export function createScriptPropertyCache(
     used: 0,
     megamorphic: false,
     method,
+    evictClock: 0,
+    evictSlot: 0,
   };
 }
 export interface ScriptPropertyStubCache {
@@ -2492,9 +2498,20 @@ function prepareInheritedEpoch(cache: ScriptPropertyCache): boolean {
   }
   return cache.inheritedShape3 === unusedPropertyShape;
 }
+function nextEvictSlot(cache: ScriptPropertyCache): number {
+  const clock = (cache.evictClock + 1) & 7;
+  cache.evictClock = clock;
+  if (clock !== 0) return -1;
+  const slot = cache.evictSlot;
+  cache.evictSlot = (slot + 1) & 3;
+  return slot;
+}
 /** Make a found property an inline entry: own when the object holds it,
  * except at a method site, else inherited (direct value cached with slot = 0
- * for prototype hits, or non-zero slot for the receiver's own property). */
+ * for prototype hits, or non-zero slot for the receiver's own property).
+ * When all inline entries are occupied (e.g. cold setup shapes ahead of hot
+ * loop shapes), promote every 8th miss into a rotating slot so hot shapes
+ * replace cold ones without thrashing on every miss. */
 function addInlineEntry(
   cache: ScriptPropertyCache,
   object: ScriptObject,
@@ -2507,19 +2524,33 @@ function addInlineEntry(
   if (holder === object) {
     const bits = ownSlotBits(offset, slotWord);
     if (!cache.method) {
-      if (cache.ownShape3 !== unusedPropertyShape) return;
       const index = inlineEntryIndex(cache, false, shape);
-      if (index >= 0) setOwnEntry(cache, index, shape, bits);
+      if (index >= 0) {
+        setOwnEntry(cache, index, shape, bits);
+        return;
+      }
+      const evict = nextEvictSlot(cache);
+      if (evict >= 0) setOwnEntry(cache, evict, shape, bits);
       return;
     }
-    if (!prepareInheritedEpoch(cache)) return;
+    prepareInheritedEpoch(cache);
     const index = inlineEntryIndex(cache, true, shape);
-    if (index >= 0) setInheritedEntry(cache, index, shape, bits, undefined);
+    if (index >= 0) {
+      setInheritedEntry(cache, index, shape, bits, undefined);
+      return;
+    }
+    const evict = nextEvictSlot(cache);
+    if (evict >= 0) setInheritedEntry(cache, evict, shape, bits, undefined);
     return;
   }
-  if (!prepareInheritedEpoch(cache)) return;
+  prepareInheritedEpoch(cache);
   const index = inlineEntryIndex(cache, true, shape);
-  if (index >= 0) setInheritedEntry(cache, index, shape, 0, directValue);
+  if (index >= 0) {
+    setInheritedEntry(cache, index, shape, 0, directValue);
+    return;
+  }
+  const evict = nextEvictSlot(cache);
+  if (evict >= 0) setInheritedEntry(cache, evict, shape, 0, directValue);
 }
 /** Maximum prototype hops cached in lookupCachedScriptProperty. */
 const maxCachedPrototypeDepth = 16;
@@ -2539,6 +2570,41 @@ export function lookupCachedScriptProperty(
 ): ScriptObject | undefined {
   const shape = cacheableShape(object, key);
   if (shape === undefined) return undefined;
+  const stubIndex = ((shape.hash ^ cache.nameHash) >>> 0) & 255;
+  const stub = global.buckets[stubIndex];
+  if (stub === undefined) throw "PROPERTY_STUB_ENTRY_INVARIANT";
+  // On megamorphic sites, check the direct-mapped global stub cache first so
+  // misses skip scanning the 4 per-site entries that already missed inline.
+  if (cache.megamorphic && stub.name === key) {
+    const holder = cachedScriptPropertyHolder(object, stub, own);
+    if (holder !== undefined) {
+      if (holder === object) {
+        cache.foundIndex = stub.offset;
+        addInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          stub.offset,
+          undefined,
+          slotWord,
+        );
+      } else {
+        cache.foundIndex = -1;
+        cache.foundValue = stub.directValue;
+        addInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          -1,
+          stub.directValue,
+          slotWord,
+        );
+      }
+      return holder;
+    }
+  }
   // Generated code missed every inline entry: an entry found below goes
   // back inline.
   for (let index = 0; index < cache.used; index++) {
@@ -2567,39 +2633,6 @@ export function lookupCachedScriptProperty(
           holder,
           -1,
           entry.directValue,
-          slotWord,
-        );
-      }
-      return holder;
-    }
-  }
-  const index = ((shape.hash ^ cache.nameHash) >>> 0) & 255;
-  const stub = global.buckets[index];
-  if (stub === undefined) throw "PROPERTY_STUB_ENTRY_INVARIANT";
-  if (cache.megamorphic && stub.name === key) {
-    const holder = cachedScriptPropertyHolder(object, stub, own);
-    if (holder !== undefined) {
-      if (holder === object) {
-        cache.foundIndex = stub.offset;
-        addInlineEntry(
-          cache,
-          object,
-          shape,
-          holder,
-          stub.offset,
-          undefined,
-          slotWord,
-        );
-      } else {
-        cache.foundIndex = -1;
-        cache.foundValue = stub.directValue;
-        addInlineEntry(
-          cache,
-          object,
-          shape,
-          holder,
-          -1,
-          stub.directValue,
           slotWord,
         );
       }

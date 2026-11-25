@@ -108,6 +108,10 @@ export interface ErrorRealm {
   evalFunction: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   /** %Function.prototype.apply%, which forwarding call sites compare. */
   functionApply: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** %Function.prototype.call%, which forwarding call sites compare. */
+  functionCall: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** Private sentinel returned by scriptArrayPop when the fast path misses. */
+  readonly arrayPopMiss: OrdinaryObject<ScriptPropertyKey, unknown>;
   evalCompiler: EvalCompiler | undefined;
   directEvalCompiler: DirectEvalCompiler | undefined;
   dynamicFunctionCompiler: DynamicFunctionCompiler | undefined;
@@ -469,6 +473,8 @@ export function createErrorRealm(
     dynamicFunctionCompiler: undefined,
     evalFunction: undefined,
     functionApply: undefined,
+    functionCall: undefined,
+    arrayPopMiss: createObject<ScriptPropertyKey, unknown>(undefined),
     evalCompiler: undefined,
     directEvalCompiler: undefined,
     namedTimeZones: undefined,

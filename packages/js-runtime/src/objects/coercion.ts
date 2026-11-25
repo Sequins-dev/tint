@@ -172,7 +172,7 @@ export function writeObjectValuePropertyKey(
             writeArrayElement<ScriptPropertyKey, unknown>(elements, key, value);
             return;
           }
-          if (key === count && appendPackedElement(object, value, realm))
+          if (key === count && appendPackedElement(object, value, realm, true))
             return;
         }
         if (

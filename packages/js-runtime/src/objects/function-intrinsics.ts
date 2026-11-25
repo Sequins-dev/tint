@@ -180,6 +180,7 @@ export function installFunctionIntrinsics(
     },
     hooks,
   );
+  realm.functionCall = call;
   realm.functionApply = apply;
   function forwardCall(
     receiver: unknown,

@@ -1,5 +1,5 @@
 import { joinIndexedProperties } from "./join-indexed-properties.ts";
-import { appendPackedElement } from "./array-append.ts";
+import { appendPackedElement, popPackedElement } from "./array-append.ts";
 import { installArraySorting } from "./array-sorting.ts";
 import { scriptBoolean, scriptStrictEqual } from "./values.ts";
 import { installArrayCopying } from "./array-copying.ts";
@@ -207,8 +207,12 @@ export function installArrayPrototype(
       name,
       0,
       (receiver, args): unknown => {
-        const object = toObject(receiver),
-          length = lengthOf(object);
+        const object = toObject(receiver);
+        if (!front) {
+          const popped = popPackedElement(object, realm);
+          if (popped !== realm.arrayPopMiss) return popped;
+        }
+        const length = lengthOf(object);
         if (length === 0) {
           set(object, "length", 0);
           return undefined;
@@ -244,6 +248,7 @@ export function installArrayPrototype(
       hooks,
     );
     builtinProperty(realm.arrayPrototype, name, method, true, true, hooks);
+    if (!front) realm.intrinsicFunctions.arrayPop = method;
   }
   removalMethod("pop", false);
   removalMethod("shift", true);

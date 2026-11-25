@@ -14,6 +14,7 @@ export {
   type IntrinsicFunctions,
 } from "./intrinsic-functions.ts";
 export { scriptArrayPush } from "./array-append.ts";
+export { scriptArrayPop } from "./array-append.ts";
 export { createModuleSourceObject } from "./module-source.ts";
 export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";

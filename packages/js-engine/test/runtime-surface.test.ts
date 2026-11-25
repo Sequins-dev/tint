@@ -13,7 +13,7 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "7d10295409ca6ba024cfc3d9130b921631773fd6fd20c49eaba79f610719d642",
+    sha256: "ac4e3bd68cc78e93bea725f5f5a2a7be99bfea75a7cfaa4e48982019011cfaef",
   },
   {
     source:
@@ -28,7 +28,7 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "3b7d8cfbe25602b799c4efaebfef7d331e1183baf3b2628ef5632ec028840578",
+    sha256: "36607579cdb032e153b91c57814ac2abf112b89bf5da57f379679cb1eb8dffe3",
   },
   {
     source:
@@ -38,12 +38,12 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "66b3c69e1060bcff86fa404ad10be913dc2bcb1266bf148a4efa8e85e1d3eb96",
+    sha256: "795b30ac8df69be3dbede43ba527909319010dcb4582bd3e9fcef21ffbe65273",
   },
   {
     source:
       "{using resource=null;}async function f(){await using resource=null;}",
-    sha256: "7336538dee2ec9934d03e90466ce729c9ce2a598ee70e2acc0c4c8d85a9b2fca",
+    sha256: "327a724d59317df03e2b47c63e4091abd0794b3b32185d2f38dc189553579eae",
   },
   {
     source:
@@ -57,9 +57,9 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 199);
+  assert.equal(surface.length, 200);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 199);
+  assert.equal(names.size, 200);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "09aa3da747e7c8c8d037e92d7c4412bb763e170c45090ca7bd37080f270ad88e",
+    "1aac2fd90e7d7ed68ce49ab53285cac94292646777a0978f26af912c9002ea98",
   );
 });

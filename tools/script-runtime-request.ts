@@ -186,6 +186,7 @@ export function createScriptRuntimeRequest(
       "scriptMapSet",
       "scriptSetAdd",
       "scriptArrayPush",
+      "scriptArrayPop",
       "createObjectLiteralSite",
       "createLiteralObject",
     ]) {

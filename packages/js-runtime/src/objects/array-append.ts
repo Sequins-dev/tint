@@ -1,4 +1,9 @@
-import { arrayElementCount, writeArrayElement } from "./array-elements.ts";
+import {
+  arrayElementCount,
+  readArrayElement,
+  truncateArrayElements,
+  writeArrayElement,
+} from "./array-elements.ts";
 import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { ErrorRealm } from "./errors.ts";
@@ -8,23 +13,29 @@ import { viewObjectValue } from "./values.ts";
 const lastAppendIndex = 4294967294;
 
 /** Append `value` as element `count` of a packed array when [[Set]] there can
- * only create that element: the array is extensible, its writable length
- * equals its count, its prototype is the realm's Array.prototype with no
- * elements, and that prototype's is the realm's Object.prototype in fast mode
- * (an index key moves an ordinary object to dictionary mode), so no object
- * on the chain has the index or intercepts it. Then the element and the
- * length update in place; otherwise nothing changes and the caller takes the
- * ordinary path. */
+ * only create that element: the array is extensible, its prototype is the
+ * realm's Array.prototype with no elements, and that prototype's is the
+ * realm's Object.prototype in fast mode (an index key moves an ordinary object
+ * to dictionary mode), so no object on the chain has the index or intercepts
+ * it. When `allowPreallocated` is false (Array.prototype.push), `length` must
+ * equal `count` and be writable, and grows by 1; when true (indexed assignment
+ * `a[count] = value`), `count < length` is also accepted and leaves `length`
+ * unchanged. Otherwise nothing changes and the caller takes the ordinary path. */
 export function appendPackedElement(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   realm: ErrorRealm,
+  allowPreallocated: boolean = false,
 ): boolean {
   const elements = object.internalArrayElements;
-  if (elements === undefined || !object.extensible || !elements.lengthWritable)
-    return false;
+  if (elements === undefined || !object.extensible) return false;
   const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
-  if (elements.length !== count || count > lastAppendIndex) return false;
+  const growing = elements.length === count;
+  if (growing) {
+    if (!elements.lengthWritable || count > lastAppendIndex) return false;
+  } else if (!allowPreallocated || count >= elements.length) {
+    return false;
+  }
   const arrayPrototype = object.prototype;
   if (arrayPrototype === undefined || arrayPrototype !== realm.arrayPrototype)
     return false;
@@ -42,8 +53,29 @@ export function appendPackedElement(
   )
     return false;
   writeArrayElement<ScriptPropertyKey, unknown>(elements, count, value);
-  elements.length = count + 1;
+  if (growing) elements.length = count + 1;
   return true;
+}
+
+/** Pop the last element of a dense packed array (writable `length === count`)
+ * without property-key conversion or prototype traversal. Returns
+ * `realm.arrayPopMiss` when the fast path does not apply, leaving the object
+ * unchanged. */
+export function popPackedElement(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+  realm: ErrorRealm,
+): unknown {
+  const elements = object.internalArrayElements;
+  if (elements === undefined || !elements.lengthWritable)
+    return realm.arrayPopMiss;
+  const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
+  if (elements.length !== count) return realm.arrayPopMiss;
+  if (count === 0) return undefined;
+  const last = count - 1;
+  const result = readArrayElement<ScriptPropertyKey, unknown>(elements, last);
+  truncateArrayElements<ScriptPropertyKey, unknown>(elements, last);
+  elements.length = last;
+  return result;
 }
 
 /** Array.prototype.push's result for one item when it is a packed append
@@ -60,4 +92,12 @@ export function scriptArrayPush(
   const elements = object.internalArrayElements;
   if (elements === undefined) throw "ARRAY_APPEND_INVARIANT";
   return elements.length;
+}
+
+/** Array.prototype.pop's result for a dense packed array (see
+ * popPackedElement), else `realm.arrayPopMiss` with nothing changed. */
+export function scriptArrayPop(value: unknown, realm: ErrorRealm): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (object === undefined) return realm.arrayPopMiss;
+  return popPackedElement(object, realm);
 }

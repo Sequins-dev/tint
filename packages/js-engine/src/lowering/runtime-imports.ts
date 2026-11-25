@@ -315,6 +315,7 @@ export function scriptRuntimeImports(
               "scriptMapSet",
               "scriptSetAdd",
               "scriptArrayPush",
+              "scriptArrayPop",
             ]
           : []),
         ...(usesObjectLiterals || declarations === "all"
