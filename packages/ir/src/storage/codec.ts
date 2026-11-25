@@ -482,7 +482,13 @@ export function encodeInstruction(
       writeSigned(writer, op.index);
       return true;
     case "property-load":
-      writePrefix(writer, 86, op, bit(op.inherited, 2));
+      writePrefix(
+        writer,
+        86,
+        op,
+        bit(op.inherited, 2) |
+          bit(op.spillRecord !== undefined && op.spillField !== undefined, 4),
+      );
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
       writeSigned(writer, op.site);
@@ -494,6 +500,10 @@ export function encodeInstruction(
       writeSigned(writer, op.entries);
       writeSigned(writer, op.epochRecord);
       writeSigned(writer, op.epochField);
+      if (op.spillRecord !== undefined && op.spillField !== undefined) {
+        writeSigned(writer, op.spillRecord);
+        writeSigned(writer, op.spillField);
+      }
       return true;
     case "property-store":
       writePrefix(writer, 87, op, 0);
@@ -1444,7 +1454,10 @@ export function decodeInstruction(
         siteField = readSigned(reader),
         entries = readSigned(reader),
         epochRecord = readSigned(reader),
-        epochField = readSigned(reader);
+        epochField = readSigned(reader),
+        hasSpill = flagged(flags, 4),
+        spillRecord = hasSpill ? readSigned(reader) : undefined,
+        spillField = hasSpill ? readSigned(reader) : undefined;
       return {
         kind: "property-load",
         id,
@@ -1459,6 +1472,9 @@ export function decodeInstruction(
         entries,
         epochRecord,
         epochField,
+        ...(spillRecord !== undefined && spillField !== undefined
+          ? { spillRecord, spillField }
+          : {}),
         ...span,
       };
     }

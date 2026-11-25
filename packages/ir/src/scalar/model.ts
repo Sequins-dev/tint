@@ -172,6 +172,10 @@ export type Instruction = Span &
         readonly entries: number;
         readonly epochRecord: number;
         readonly epochField: number;
+        /** Optional linked 16-slot PropertySpill layout for reading spilled own
+         * properties past the in-place slots (negative raw-bit slot index). */
+        readonly spillRecord?: number;
+        readonly spillField?: number;
       }
     | {
         /** Store general `value` through a cached property store (js-runtime

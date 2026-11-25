@@ -106,6 +106,8 @@ export interface PropertyCacheLayout {
   readonly count: number;
   readonly siteRecord: number;
   readonly siteField: number;
+  readonly spillRecord?: number;
+  readonly spillField?: number;
 }
 /** A bound body's slots: its parameters only, so the replaced source
  * body's locals cannot keep it from inlining. */
@@ -271,6 +273,9 @@ export function bindPropertyLoad(
       entries,
       epochRecord,
       epochField,
+      ...(layout.spillRecord !== undefined && layout.spillField !== undefined
+        ? { spillRecord: layout.spillRecord, spillField: layout.spillField }
+        : {}),
     }),
     span,
   );

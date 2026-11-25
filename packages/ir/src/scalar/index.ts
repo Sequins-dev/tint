@@ -840,55 +840,110 @@ export function verify(
                 siteSlot.offset !== siteShape.offset + 8
               )
                 fail("TYPE", "property cache requires shape and value fields");
-              // Site fields read in pairs after the shape and word index.
-              const pair = (index: number, type: ScalarType): boolean => {
+              // Site fields checked by exact byte offset relative to siteShape.
+              const siteAt = (
+                index: number,
+                byteOffset: number,
+                type: ScalarType,
+              ): boolean => {
                 const field = siteFields?.[op.siteField + index];
                 return (
                   plainRecordField(field, type) &&
                   field !== undefined &&
                   siteShape !== undefined &&
-                  field.offset === siteShape.offset + 8 * index
+                  field.offset === siteShape.offset + byteOffset
                 );
               };
-              // A load's further entries follow at a stride of two fields
-              // (own) or three (inherited: with the holder). Inherited entries
-              // and a store's transition entry end with an epoch and the
-              // record holding its current value.
               const entries = op.kind === "property-load" ? op.entries : 1;
-              const stride =
-                op.kind === "property-load" && op.inherited ? 3 : 2;
               if (!natural(entries) || entries < 1 || entries > 4)
                 fail("TYPE", "property load requires one to four entries");
-              for (let entry = 1; entry < entries; entry++)
-                if (
-                  !pair(entry * stride, "reference") ||
-                  !pair(entry * stride + 1, "number")
-                )
-                  fail("TYPE", "property load entries require shape and value");
               const epoch =
                 module.records?.[op.epochRecord]?.fields[op.epochField];
-              const epochFields = (at: number): boolean =>
+              const epochFields = (
+                index: number,
+                byteOffset: number,
+              ): boolean =>
                 natural(op.epochRecord) &&
                 natural(op.epochField) &&
-                pair(at, "number") &&
-                pair(at + 1, "reference") &&
+                siteAt(index, byteOffset, "number") &&
+                siteAt(index + 1, byteOffset + 8, "reference") &&
                 plainRecordField(epoch, "number");
               if (op.kind === "property-load" && op.inherited) {
-                let holders = true;
+                // Inherited entries are (shape: ref 8B, slot: num 8B,
+                // value: general 16B) = 32B stride, followed by
+                // (inheritedEpoch: num, inheritedEpochs: ref, stringShape: ref).
                 for (let entry = 0; entry < entries; entry++)
-                  if (!pair(entry * 3 + 2, "optional-reference"))
-                    holders = false;
-                if (!holders || !epochFields(entries * 3))
+                  if (
+                    !siteAt(entry * 3, entry * 32, "reference") ||
+                    !siteAt(entry * 3 + 1, entry * 32 + 8, "number") ||
+                    !siteAt(entry * 3 + 2, entry * 32 + 16, "general")
+                  )
+                    fail(
+                      "TYPE",
+                      "inherited property load requires shape, slot and value entries",
+                    );
+                if (
+                  !epochFields(entries * 3, entries * 32) ||
+                  !siteAt(entries * 3 + 2, entries * 32 + 16, "reference")
+                )
                   fail(
                     "TYPE",
-                    "inherited property load requires a holder entry",
+                    "inherited property load requires epoch and string shape fields",
                   );
+              } else {
+                for (let entry = 1; entry < entries; entry++)
+                  if (
+                    !siteAt(entry * 2, entry * 16, "reference") ||
+                    !siteAt(entry * 2 + 1, entry * 16 + 8, "number")
+                  )
+                    fail(
+                      "TYPE",
+                      "property load entries require shape and value",
+                    );
               }
               if (
                 op.kind === "property-store" &&
-                (!pair(2, "optional-reference") || !epochFields(3))
+                (!siteAt(2, 16, "optional-reference") || !epochFields(3, 24))
               )
                 fail("TYPE", "property store requires a transition entry");
+              if (
+                op.kind === "property-load" &&
+                (op.spillRecord !== undefined || op.spillField !== undefined)
+              ) {
+                const spillRef =
+                  op.spillField === undefined
+                    ? undefined
+                    : fields[op.spillField];
+                const spillFields =
+                  op.spillRecord === undefined
+                    ? undefined
+                    : module.records?.[op.spillRecord]?.fields;
+                const spillNext = spillFields?.[0];
+                let validSpill =
+                  op.spillRecord !== undefined &&
+                  op.spillField !== undefined &&
+                  natural(op.spillRecord) &&
+                  natural(op.spillField) &&
+                  plainRecordField(spillRef, "optional-reference") &&
+                  spillFields !== undefined &&
+                  plainRecordField(spillNext, "optional-reference") &&
+                  spillNext !== undefined &&
+                  spillNext.offset === 8;
+                for (let slot = 0; validSpill && slot < 16; slot++) {
+                  const field = spillFields?.[slot + 1];
+                  if (
+                    !plainRecordField(field, "general") ||
+                    field === undefined ||
+                    field.offset !== 16 + slot * 16
+                  )
+                    validSpill = false;
+                }
+                if (!validSpill)
+                  fail(
+                    "TYPE",
+                    "property load spill requires linked 16-slot spill record",
+                  );
+              }
               for (let slot = 0; slot < op.count; slot++) {
                 const field = fields[op.field + slot];
                 if (

@@ -17,8 +17,11 @@ import {
   setPrototype,
   markPrototype,
   lookupCachedScriptProperty,
+  lookupCachedStringPrimitiveProperty,
   cachedScriptPropertyValue,
   storeCachedScriptProperty,
+  readSpillSlot,
+  type PropertySpill,
   type ScriptPropertyCache,
   type ObjectHooks,
   type ObjectScriptCall,
@@ -286,11 +289,33 @@ export function writePropertyValueSlot(
 
 /** The word index of internalValue0 in an ordinary object record. Native
  * code binds this to the layout's constant (field-word); unbound, value
- * words are numbered from zero, consistently for the functions below. */
+ * words start at 2 so slot 0 stays reserved for directly cached inherited
+ * values. */
 export function propertySlotWord(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): number {
-  return 0;
+  return 2;
+}
+
+/** Read a fast-mode own value given its encoded raw-bit slot (positive for
+ * in-place slots starting at word 2, negative for linked PropertySpill chunks). */
+function readEncodedPropertySlot(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+  slot: number,
+): unknown {
+  if (slot < 0) {
+    const raw = -slot / Number.MIN_VALUE;
+    let chunkIndex = raw >>> 16;
+    let chunk: PropertySpill<unknown> | undefined = object.internalValues;
+    while (chunkIndex > 0 && chunk !== undefined) {
+      chunk = chunk.next;
+      chunkIndex--;
+    }
+    return chunk === undefined
+      ? undefined
+      : readSpillSlot<unknown>(chunk, ((raw & 0xffff) - 2) >>> 1);
+  }
+  return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
 }
 
 /** The value of `value`'s own data property cached at `site`: its shape is
@@ -313,43 +338,44 @@ export function cachedOwnPropertyValue(
   else if (shape === site.ownShape2) slot = site.ownSlot2;
   else if (shape === site.ownShape3) slot = site.ownSlot3;
   else return site;
-  // The site's raw-bit word index, two words per value.
-  return readPropertyValueSlot(object, slot / Number.MIN_VALUE / 2);
+  return readEncodedPropertySlot(object, slot);
 }
 
-/** As cachedOwnPropertyValue, for a method site: a data property of an
- * object on the receiver's prototype chain, an inherited entry's holder, or
- * of the receiver itself when the entry has none. The receiver's shape
- * implies its prototype, and the site's inherited epoch must still be
- * current (no prototype changed structure since the entries were found). */
+/** As cachedOwnPropertyValue, for a method site: a directly cached inherited
+ * value (slot === 0, valid across any prototype depth, spilled slots,
+ * dictionary-mode prototypes, and String primitives while the epoch holds),
+ * or a data property of the receiver itself when slot !== 0. */
 export function cachedInheritedPropertyValue(
   value: unknown,
   site: ScriptPropertyCache,
 ): unknown {
   const object = viewTypeofObject(value);
-  if (
-    object === undefined ||
-    site.inheritedEpochs.value !== site.inheritedEpoch
-  )
+  const shape =
+    object !== undefined
+      ? object.internalShape
+      : typeof value === "string"
+        ? site.stringShape
+        : undefined;
+  if (shape === undefined || site.inheritedEpochs.value !== site.inheritedEpoch)
     return site;
-  // An entry without a holder is a property of the receiver itself.
-  const shape = object.internalShape;
   let slot = 0,
-    holder: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined;
+    direct: unknown = undefined;
   if (shape === site.inheritedShape) {
     slot = site.inheritedSlot;
-    holder = site.inheritedObject;
+    direct = site.inheritedValue;
   } else if (shape === site.inheritedShape1) {
     slot = site.inheritedSlot1;
-    holder = site.inheritedObject1;
+    direct = site.inheritedValue1;
   } else if (shape === site.inheritedShape2) {
     slot = site.inheritedSlot2;
-    holder = site.inheritedObject2;
+    direct = site.inheritedValue2;
   } else if (shape === site.inheritedShape3) {
     slot = site.inheritedSlot3;
-    holder = site.inheritedObject3;
+    direct = site.inheritedValue3;
   } else return site;
-  return readPropertyValueSlot(holder ?? object, slot / Number.MIN_VALUE / 2);
+  if (slot === 0) return direct;
+  if (object === undefined) return site;
+  return readEncodedPropertySlot(object, slot);
 }
 
 /** Whether a cached read missed. Native code binds it to the miss test of
@@ -378,7 +404,11 @@ export function cachedPropertyStore(
     if (site.epoch.value !== site.storeEpoch) return false;
     object.internalShape = transition;
   }
-  writePropertyValueSlot(object, site.storeSlot / Number.MIN_VALUE / 2, value);
+  writePropertyValueSlot(
+    object,
+    (site.storeSlot / Number.MIN_VALUE - 2) / 2,
+    value,
+  );
   return true;
 }
 
@@ -713,6 +743,15 @@ export function readCachedObjectValueProperty(
   cache: ScriptPropertyCache,
 ): unknown {
   const object = viewObjectValue(base, realm.objectPrototype);
+  if (
+    object === undefined &&
+    typeof base === "string" &&
+    cache.method &&
+    key !== "length" &&
+    scriptPropertyKeyOrder(key) < 0 &&
+    lookupCachedStringPrimitiveProperty(realm.stringPrototype, key, cache)
+  )
+    return cache.foundValue;
   // A String's own properties are its length and indices, and Number and
   // Boolean wrappers have none, so other keys of those primitives are the
   // keys of their prototype, which the site caches like a receiver's own.

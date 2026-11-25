@@ -286,6 +286,17 @@ export function provenRecordFacts(
             case "property-load":
               for (let slot = 0; slot < op.count; slot++)
                 edge(field(op.record, op.field + slot), result);
+              if (op.kind === "property-load") {
+                if (op.inherited)
+                  for (let entry = 0; entry < op.entries; entry++)
+                    edge(
+                      field(op.siteRecord, op.siteField + entry * 3 + 2),
+                      result,
+                    );
+                if (op.spillRecord !== undefined)
+                  for (let slot = 1; slot <= 16; slot++)
+                    edge(field(op.spillRecord, slot), result);
+              }
               break;
             case "global-cell":
               edge(field(op.cacheRecord, op.cacheCellField), result);

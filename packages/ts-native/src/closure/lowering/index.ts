@@ -4594,29 +4594,32 @@ function lowerEntries(
           siteName = binding.siteField,
           count = binding.count,
           entries = binding.entries ?? 1;
-        // Read the object record layout from `site.inheritedObject`
+        // Read the object record layout from `site.witnessObject`
         // (`OrdinaryObject | undefined`) and the epoch record from
         // `site.epoch` so callers pass no dead witness argument.
         let record: number | undefined = undefined,
+          objectTypeId: number | undefined = undefined,
           epochRecord: number | undefined = undefined,
           epochField: number | undefined = undefined;
         const site =
           siteType === undefined ? undefined : checked.types[siteType];
         if (site?.kind === "object") {
-          const holder = site.properties.find(
+          const witness = site.properties.find(
             (property) =>
-              property !== undefined && property.name === "inheritedObject",
+              property !== undefined && property.name === "witnessObject",
           );
-          const holderType =
-            holder === undefined ? undefined : checked.types[holder.type];
-          if (holder !== undefined && holderType?.kind === "object")
-            record = recordContracts.forType(holder.type);
-          else if (holderType?.kind === "union") {
-            for (const member of holderType.members) {
+          const witnessType =
+            witness === undefined ? undefined : checked.types[witness.type];
+          if (witness !== undefined && witnessType?.kind === "object") {
+            objectTypeId = witness.type;
+            record = recordContracts.forType(witness.type);
+          } else if (witnessType?.kind === "union") {
+            for (const member of witnessType.members) {
               if (
                 member !== undefined &&
                 checked.types[member]?.kind === "object"
               ) {
+                objectTypeId = member;
                 record = recordContracts.forType(member);
                 break;
               }
@@ -4633,6 +4636,50 @@ function lowerEntries(
             epochRecord === undefined
               ? undefined
               : recordContracts.fieldIndex(epochRecord, "value");
+        }
+        let spillRecord: number | undefined = undefined,
+          spillField: number | undefined = undefined;
+        if (!store && record !== undefined && objectTypeId !== undefined) {
+          const candidateSpillField = recordContracts.fieldIndex(
+            record,
+            "internalValues",
+          );
+          const objectType = checked.types[objectTypeId];
+          if (
+            candidateSpillField !== undefined &&
+            objectType?.kind === "object"
+          ) {
+            const valuesProp = objectType.properties.find(
+              (property) =>
+                property !== undefined && property.name === "internalValues",
+            );
+            const valuesType =
+              valuesProp === undefined
+                ? undefined
+                : checked.types[valuesProp.type];
+            let spillTypeId: number | undefined = undefined;
+            if (valuesProp !== undefined && valuesType?.kind === "object")
+              spillTypeId = valuesProp.type;
+            else if (valuesType?.kind === "union") {
+              for (const member of valuesType.members) {
+                if (
+                  member !== undefined &&
+                  checked.types[member]?.kind === "object"
+                ) {
+                  spillTypeId = member;
+                  break;
+                }
+              }
+            }
+            const candidateSpillRecord =
+              spillTypeId === undefined
+                ? undefined
+                : recordContracts.forType(spillTypeId);
+            if (candidateSpillRecord !== undefined) {
+              spillRecord = candidateSpillRecord;
+              spillField = candidateSpillField;
+            }
+          }
         }
         const field =
             record === undefined || valueName === undefined
@@ -4673,7 +4720,16 @@ function lowerEntries(
           fail(
             "property cache bindings take unknown values and a cache site with named object and epoch fields",
           );
-        const layout = { record, field, count, siteRecord, siteField };
+        const layout = {
+          record,
+          field,
+          count,
+          siteRecord,
+          siteField,
+          ...(spillRecord !== undefined && spillField !== undefined
+            ? { spillRecord, spillField }
+            : {}),
+        };
         functions[fn.id] = store
           ? bindPropertyStore(
               fn,

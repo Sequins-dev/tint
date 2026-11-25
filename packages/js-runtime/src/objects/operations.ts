@@ -76,13 +76,37 @@ export interface PropertyWriteContract<Key, Value> {
   ) => void;
   readonly canDelete: (key: Key) => boolean;
 }
+/** Linked 16-slot spill chunk for fast-mode own properties past propertySlots.
+ * `next` is first (offset 8) followed by 16 consecutive general value slots so
+ * generated property-load instructions can walk chunks and index slots inline. */
+export interface PropertySpill<Value> {
+  next: PropertySpill<Value> | undefined;
+  v0: Value | undefined;
+  v1: Value | undefined;
+  v2: Value | undefined;
+  v3: Value | undefined;
+  v4: Value | undefined;
+  v5: Value | undefined;
+  v6: Value | undefined;
+  v7: Value | undefined;
+  v8: Value | undefined;
+  v9: Value | undefined;
+  v10: Value | undefined;
+  v11: Value | undefined;
+  v12: Value | undefined;
+  v13: Value | undefined;
+  v14: Value | undefined;
+  v15: Value | undefined;
+}
 /** Internal object state with optional runtime capabilities. Keys must be canonical;
  * values and callable handles belong to the embedding runtime. Mutate through this module. */
 export interface OrdinaryObject<Key, Value> {
   /** Fast mode (internalDictionary false): the shared shape of the own
    * properties, whose values are internalValue0..7 and internalValues in
    * key order; undefined while the object has none and its prototype has no
-   * root shape yet. Dictionary mode: undefined. It is the first field, so a
+   * root shape yet. Dictionary mode: undefined, except packed arrays with no
+   * expando properties may carry their prototype's shared empty-array shape
+   * for inherited method caches. It is the first field, so a
    * generated cache compares the first word of any object record: no other
    * record a JavaScript value can hold has a shape in that word. */
   internalShape: OrdinaryPropertyShape<Key, Value> | undefined;
@@ -106,11 +130,13 @@ export interface OrdinaryObject<Key, Value> {
    * maxFastKeys keys, or prevented extensions. Permanent. */
   internalDictionary: boolean;
   /** Set once the object is some object's [[Prototype]]: its structural
-   * changes then invalidate cached transitions (propertyEpoch), and its
-   * shapes are private, so no cached transition starts at one. */
+   * changes and own property value writes then invalidate cached transitions
+   * and direct inherited value caches (propertyEpoch), and its shapes are
+   * private, so no cached transition starts at one. */
   internalUsedAsPrototype: boolean;
-  /** Fast-mode values of the shape's keys from propertySlots on. */
-  internalValues: Value[] | undefined;
+  /** Fast-mode values of the shape's keys from propertySlots on, in linked
+   * 16-slot chunks so generated caches can read spilled own slots inline. */
+  internalValues: PropertySpill<Value> | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
   internalRegisterCall: ObjectRegisterEntry<Value> | undefined;
@@ -160,6 +186,10 @@ export interface OrdinaryRareSlots<Key, Value> {
   /** Definition-time [[HomeObject]] for super; independent of call receiver. */
   internalHomeObject: OrdinaryObject<Key, Value> | undefined;
   internalDataAliases: Map<Key, DataAlias<Value>> | undefined;
+  /** Shared shape for packed array instances with this prototype and no
+   * expando properties, kept distinct from internalChildShape so numeric/length
+   * sites never conflate plain objects with packed arrays. */
+  internalArrayChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
 }
 /** Internal slots present only on specific builtin, exotic, error or host
  * objects. Kept out of OrdinaryObject so ordinary instances stay compact. */
@@ -414,15 +444,17 @@ interface IndexedPropertyLayout<Value> {
 interface ScriptPropertyCacheEntry {
   name: string;
   receiver: ScriptShape | undefined;
-  parent: ScriptShape | undefined;
-  ancestor: ScriptShape | undefined;
-  holder: ScriptShape | undefined;
+  /** Non-undefined for inherited properties; validated by epoch === propertyEpoch.value. */
+  holderObject: ScriptObject | undefined;
+  /** Value cached directly when holderObject !== undefined (works for any
+   * depth, spilled slots, and dictionary-mode prototypes). */
+  directValue: unknown;
+  epoch: number;
   offset: number;
 }
-/** Bumped by every structural change of an object used as a prototype
- * outside generated caches, so cached transitions (which add writable data
- * properties only) know no setter or read-only property appeared on a
- * receiver's chain. */
+/** Bumped by every structural change or own property value write of an object
+ * used as a prototype, so cached transitions and direct inherited value caches
+ * stay valid while the epoch is unchanged. */
 export interface PropertyEpoch {
   value: number;
 }
@@ -432,20 +464,22 @@ export const propertyEpoch: PropertyEpoch = { value: 0 };
 export const propertyCacheEntries = 4;
 export interface ScriptPropertyCache {
   /** The own entries as generated code reads them (IR property-load), each
-   * the receiver shape and the value's raw-bit word index (inlineSlotBits).
+   * the receiver shape and the value's raw-bit word index (inlineSlotBits, or
+   * negative inlineSpillSlotBits for spilled slots past propertySlots).
    * The inherited entries follow, read by method sites (`method`), each the
-   * receiver shape, the word index and the holder (undefined for a property
-   * of the receiver itself), then the
-   * propertyEpoch value they were found under and the epoch record itself. A receiver shape implies
-   * its prototype (prototypes have private shapes, and changing an
-   * object's prototype reshapes it), and every structural change of a
-   * prototype advances the epoch, so an unchanged epoch keeps the whole
-   * chain down to each holder. Then the newest store: the receiver shape,
-   * the value's word index, the shape a transition reaches (undefined for
-   * a store to an existing property) and the propertyEpoch value the
-   * transition was found under. The fields are first and consecutive; an
-   * empty shape is unusedPropertyShape. Values past the in-place slots
-   * take the miss path. */
+   * receiver shape, the word index (0 for a directly cached inherited value,
+   * or non-zero for an own property of the receiver), and the cached value
+   * itself (`unknown`, 16 bytes), then the propertyEpoch value they were found
+   * under, the epoch record itself, and the sentinel string-primitive shape.
+   * A receiver shape implies its prototype (prototypes have private shapes,
+   * and changing an object's prototype reshapes it), and every structural
+   * change or value write of a prototype advances the epoch, so an unchanged
+   * epoch keeps every directly cached inherited value valid across arbitrary
+   * prototype depths and dictionary-mode prototypes. Then the newest store:
+   * the receiver shape, the value's word index, the shape a transition reaches
+   * (undefined for a store to an existing property) and the propertyEpoch
+   * value the transition was found under. The fields are first and
+   * consecutive; an empty shape is unusedPropertyShape. */
   ownShape: ScriptShape;
   ownSlot: number;
   ownShape1: ScriptShape;
@@ -456,41 +490,46 @@ export interface ScriptPropertyCache {
   ownSlot3: number;
   inheritedShape: ScriptShape;
   inheritedSlot: number;
-  inheritedObject: ScriptObject | undefined;
+  inheritedValue: unknown;
   inheritedShape1: ScriptShape;
   inheritedSlot1: number;
-  inheritedObject1: ScriptObject | undefined;
+  inheritedValue1: unknown;
   inheritedShape2: ScriptShape;
   inheritedSlot2: number;
-  inheritedObject2: ScriptObject | undefined;
+  inheritedValue2: unknown;
   inheritedShape3: ScriptShape;
   inheritedSlot3: number;
-  inheritedObject3: ScriptObject | undefined;
+  inheritedValue3: unknown;
   inheritedEpoch: number;
   readonly inheritedEpochs: PropertyEpoch;
+  readonly stringShape: ScriptShape;
   storeShape: ScriptShape;
   storeSlot: number;
   storeTransition: ScriptShape | undefined;
   storeEpoch: number;
   readonly epoch: PropertyEpoch;
-  /** The shape index of the property the last lookup found. */
+  /** Carries the OrdinaryObject record layout for ts-native property-load/store bindings. */
+  readonly witnessObject: ScriptObject | undefined;
+  /** The shape index of the property the last lookup found (-1 for direct value). */
   foundIndex: number;
+  /** The value found by the last dictionary/direct inherited lookup. */
+  foundValue: unknown;
   readonly first: ScriptPropertyCacheEntry;
   readonly entries: readonly ScriptPropertyCacheEntry[];
   readonly nameHash: number;
   used: number;
   megamorphic: boolean;
   /** A method site (`o.m()`) reads only its inherited entries, so it keeps
-   * the receiver's own properties there too, with no holder. */
+   * the receiver's own properties there too, with non-zero slot. */
   readonly method: boolean;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
   return {
     name: "",
     receiver: undefined,
-    parent: undefined,
-    ancestor: undefined,
-    holder: undefined,
+    holderObject: undefined,
+    directValue: undefined,
+    epoch: -1,
     offset: 0,
   };
 }
@@ -510,24 +549,27 @@ export function createScriptPropertyCache(
     ownSlot3: 0,
     inheritedShape: unusedPropertyShape,
     inheritedSlot: 0,
-    inheritedObject: undefined,
+    inheritedValue: undefined,
     inheritedShape1: unusedPropertyShape,
     inheritedSlot1: 0,
-    inheritedObject1: undefined,
+    inheritedValue1: undefined,
     inheritedShape2: unusedPropertyShape,
     inheritedSlot2: 0,
-    inheritedObject2: undefined,
+    inheritedValue2: undefined,
     inheritedShape3: unusedPropertyShape,
     inheritedSlot3: 0,
-    inheritedObject3: undefined,
+    inheritedValue3: undefined,
     inheritedEpoch: 0,
     inheritedEpochs: propertyEpoch,
+    stringShape: stringPrimitiveShape,
     storeShape: unusedPropertyShape,
     storeSlot: 0,
     storeTransition: undefined,
     storeEpoch: 0,
     epoch: propertyEpoch,
+    witnessObject: undefined,
     foundIndex: -1,
+    foundValue: undefined,
     first,
     entries: [
       first,
@@ -671,6 +713,7 @@ export function ensureRareSlots<Key, Value>(
     internalBoundTarget: undefined,
     internalHomeObject: undefined,
     internalDataAliases: undefined,
+    internalArrayChildShape: undefined,
   };
   object.internalRareSlots = created;
   return created;
@@ -720,7 +763,10 @@ export function createPackedArrayObject<Key, Value>(
   if (prototype !== undefined && !prototype.internalUsedAsPrototype)
     markPrototype<Key, Value>(prototype);
   return {
-    internalShape: undefined,
+    internalShape:
+      prototype === undefined
+        ? undefined
+        : prototype.internalRareSlots?.internalArrayChildShape,
     prototype,
     extensible: true,
     properties: undefined,
@@ -799,6 +845,7 @@ function ensureProperties<Key, Value>(
   if (existing !== undefined) return existing;
   const created = new Map<Key, Descriptor<Value>>();
   object.properties = created;
+  if (object.internalDictionary) object.internalShape = undefined;
   return created;
 }
 /** Attach only to an existing writable data property. This is an internal
@@ -897,6 +944,7 @@ function allocateObject<Key, Value>(
           internalBoundTarget: undefined,
           internalHomeObject: undefined,
           internalDataAliases,
+          internalArrayChildShape: undefined,
         };
   return {
     // A fast object starts at its prototype's root shape once one exists.
@@ -1029,8 +1077,10 @@ export function ordinaryDefineOwnProperty<Key, Value>(
     if (index >= 0) {
       const count = arrayElementCount<Key, Value>(elements);
       if (index < count && packedElementUpdate<Value>(update, false)) {
-        if ((update.fields & valueField) !== 0)
+        if ((update.fields & valueField) !== 0) {
           writeArrayElement<Key, Value>(elements, index, update.value);
+          if (object.internalUsedAsPrototype) propertyEpoch.value++;
+        }
         return "accepted";
       }
       if (
@@ -1045,6 +1095,7 @@ export function ordinaryDefineOwnProperty<Key, Value>(
             ? update.value
             : hooks.undefinedValue,
         );
+        if (object.internalUsedAsPrototype) propertyEpoch.value++;
         return "accepted";
       }
       unpackArrayElements<Key, Value>(object, elements);
@@ -1170,6 +1221,7 @@ function unpackArrayElements<Key, Value>(
   if (existing !== undefined)
     for (const [key, descriptor] of existing) properties.set(key, descriptor);
   object.properties = properties;
+  object.internalShape = undefined;
   noteStructureChange<Key, Value>(object);
   object.internalArrayElements = undefined;
 }
@@ -1399,6 +1451,7 @@ export function preventExtensions<Key, Value>(
   if (method !== undefined) return method(object);
   // Cached transitions rely on fast-mode objects being extensible.
   useDictionaryProperties<Key, Value>(object);
+  object.internalShape = undefined;
   object.extensible = false;
   return true;
 }
@@ -1452,6 +1505,7 @@ export function setPrototype<Key, Value>(
       prototype === undefined || object.internalUsedAsPrototype
         ? undefined
         : prototype.internalChildShape;
+  else object.internalShape = undefined;
   noteStructureChange<Key, Value>(object);
   return true;
 }
@@ -1643,7 +1697,127 @@ function noteStructureChange<Key, Value>(
  * shape position, the extension point for values held outside the
  * object's own slots. */
 export const propertySlots = 8;
-function storedValue<Key, Value>(
+/** Slots per PropertySpill chunk. */
+const propertySpillSlots = 16;
+function createPropertySpill<Value>(): PropertySpill<Value> {
+  return {
+    next: undefined,
+    v0: undefined,
+    v1: undefined,
+    v2: undefined,
+    v3: undefined,
+    v4: undefined,
+    v5: undefined,
+    v6: undefined,
+    v7: undefined,
+    v8: undefined,
+    v9: undefined,
+    v10: undefined,
+    v11: undefined,
+    v12: undefined,
+    v13: undefined,
+    v14: undefined,
+    v15: undefined,
+  };
+}
+export function readSpillSlot<Value>(
+  spill: PropertySpill<Value>,
+  slot: number,
+): Value | undefined {
+  switch (slot) {
+    case 0:
+      return spill.v0;
+    case 1:
+      return spill.v1;
+    case 2:
+      return spill.v2;
+    case 3:
+      return spill.v3;
+    case 4:
+      return spill.v4;
+    case 5:
+      return spill.v5;
+    case 6:
+      return spill.v6;
+    case 7:
+      return spill.v7;
+    case 8:
+      return spill.v8;
+    case 9:
+      return spill.v9;
+    case 10:
+      return spill.v10;
+    case 11:
+      return spill.v11;
+    case 12:
+      return spill.v12;
+    case 13:
+      return spill.v13;
+    case 14:
+      return spill.v14;
+    case 15:
+      return spill.v15;
+  }
+  throw "PROPERTY_VALUE_INDEX_INVARIANT";
+}
+function writeSpillSlot<Value>(
+  spill: PropertySpill<Value>,
+  slot: number,
+  value: Value,
+): void {
+  switch (slot) {
+    case 0:
+      spill.v0 = value;
+      return;
+    case 1:
+      spill.v1 = value;
+      return;
+    case 2:
+      spill.v2 = value;
+      return;
+    case 3:
+      spill.v3 = value;
+      return;
+    case 4:
+      spill.v4 = value;
+      return;
+    case 5:
+      spill.v5 = value;
+      return;
+    case 6:
+      spill.v6 = value;
+      return;
+    case 7:
+      spill.v7 = value;
+      return;
+    case 8:
+      spill.v8 = value;
+      return;
+    case 9:
+      spill.v9 = value;
+      return;
+    case 10:
+      spill.v10 = value;
+      return;
+    case 11:
+      spill.v11 = value;
+      return;
+    case 12:
+      spill.v12 = value;
+      return;
+    case 13:
+      spill.v13 = value;
+      return;
+    case 14:
+      spill.v14 = value;
+      return;
+    case 15:
+      spill.v15 = value;
+      return;
+  }
+  throw "PROPERTY_VALUE_INDEX_INVARIANT";
+}
+export function storedValue<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
 ): Value | undefined {
@@ -1665,8 +1839,16 @@ function storedValue<Key, Value>(
     case 7:
       return object.internalValue7;
   }
-  const values = object.internalValues;
-  return values === undefined ? undefined : values[index - propertySlots];
+  const spillIndex = index - propertySlots;
+  let chunkIndex = spillIndex >>> 4;
+  let chunk: PropertySpill<Value> | undefined = object.internalValues;
+  while (chunkIndex > 0 && chunk !== undefined) {
+    chunk = chunk.next;
+    chunkIndex--;
+  }
+  return chunk === undefined
+    ? undefined
+    : readSpillSlot<Value>(chunk, spillIndex & (propertySpillSlots - 1));
 }
 /** The value of the shape's key at index of a fast-mode object. */
 function fastValue<Key, Value>(
@@ -1678,12 +1860,13 @@ function fastValue<Key, Value>(
   return value === undefined ? shape.undefinedValue : value;
 }
 /** Store the value of the shape's key at index. Indices past the in-place
- * slots extend internalValues in order. */
+ * slots extend linked PropertySpill chunks in order. */
 function setFastValue<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
   value: Value,
 ): void {
+  if (object.internalUsedAsPrototype) propertyEpoch.value++;
   switch (index) {
     case 0:
       object.internalValue0 = value;
@@ -1710,14 +1893,28 @@ function setFastValue<Key, Value>(
       object.internalValue7 = value;
       return;
   }
-  const spill = index - propertySlots;
-  const values = object.internalValues;
-  if (values === undefined) {
-    if (spill !== 0) throw "PROPERTY_VALUE_INDEX_INVARIANT";
-    object.internalValues = [value];
-  } else if (spill === values.length) values.push(value);
-  else if (spill < values.length) values[spill] = value;
-  else throw "PROPERTY_VALUE_INDEX_INVARIANT";
+  const spillIndex = index - propertySlots;
+  let chunkIndex = spillIndex >>> 4;
+  let chunk: PropertySpill<Value>;
+  const existing = object.internalValues;
+  if (existing === undefined) {
+    if (spillIndex !== 0) throw "PROPERTY_VALUE_INDEX_INVARIANT";
+    const created = createPropertySpill<Value>();
+    object.internalValues = created;
+    chunk = created;
+  } else chunk = existing;
+  while (chunkIndex > 0) {
+    const next = chunk.next;
+    if (next === undefined) {
+      if (chunkIndex !== 1 || (spillIndex & (propertySpillSlots - 1)) !== 0)
+        throw "PROPERTY_VALUE_INDEX_INVARIANT";
+      const created = createPropertySpill<Value>();
+      chunk.next = created;
+      chunk = created;
+    } else chunk = next;
+    chunkIndex--;
+  }
+  writeSpillSlot<Value>(chunk, spillIndex & (propertySpillSlots - 1), value);
 }
 /** A fast-mode property as a (fresh) data descriptor. */
 function fastDescriptor<Key, Value>(
@@ -1908,6 +2105,20 @@ export const unusedPropertyShape: ScriptShape = {
   undefinedValue: undefined,
   index: undefined,
 };
+/** Sentinel shape for String primitives on inherited method sites: never
+ * installed on any object, so object hits never match it while tag-3 string
+ * primitives load it from the site's stringShape field. */
+export const stringPrimitiveShape: ScriptShape = {
+  keys: [],
+  kinds: [],
+  hash: emptyPropertyShapeHash ^ 0x53545249,
+  shared: false,
+  firstSuccessor: undefined,
+  nextSibling: undefined,
+  successors: 0,
+  undefinedValue: undefined,
+  index: undefined,
+};
 /** Shapes past this many keys, or past this many successors of one shape,
  * stay private to their object so dictionary-like use cannot grow the
  * shared trees without bound. */
@@ -2032,18 +2243,79 @@ export function indexedPropertyCell<Key, Value>(
   }
 }
 
-/** A fast-mode object's shape, which the per-site caches key on. The cache
- * owns only shapes and slot numbers; the receiver and prototype objects own
- * their values, so the cache keeps no JavaScript object or symbol alive. */
-function cacheableShape(object: ScriptObject): ScriptShape | undefined {
-  if (object.internalDictionary) return undefined;
-  const shape = object.internalShape;
-  if (shape !== undefined) return shape;
-  // An object without own properties takes its (empty) root shape so its
-  // inherited properties cache too.
-  const root = rootPropertyShape<ScriptPropertyKey, unknown>(object, undefined);
-  object.internalShape = root;
-  return root;
+/** True when `object` overrides an internal method that can intercept or
+ * observe property lookup or prototype traversal. Array exotic objects only
+ * override [[DefineOwnProperty]], so they return false. */
+function hasCustomPropertyGet<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): boolean {
+  const methods = object.internalMethods;
+  return (
+    methods !== undefined &&
+    (methods.getOwnProperty !== undefined ||
+      methods.get !== undefined ||
+      methods.getPrototype !== undefined)
+  );
+}
+/** Shared empty shape for packed arrays with `prototype` and no expando
+ * properties. Stored on `prototype.internalRareSlots` so plain objects keep
+ * using `prototype.internalChildShape`. */
+function arrayEmptyShape(object: ScriptObject): ScriptShape | undefined {
+  const prototype = object.prototype;
+  if (prototype === undefined || object.internalUsedAsPrototype)
+    return undefined;
+  const rare = ensureRareSlots<ScriptPropertyKey, unknown>(prototype);
+  let shape: ScriptShape | undefined = rare.internalArrayChildShape;
+  if (shape === undefined) {
+    const created: ScriptShape = {
+      keys: [],
+      kinds: [],
+      hash: emptyPropertyShapeHash ^ 0x41525259,
+      shared: false,
+      firstSuccessor: undefined,
+      nextSibling: undefined,
+      successors: 0,
+      undefinedValue: undefined,
+      index: undefined,
+    };
+    rare.internalArrayChildShape = created;
+    shape = created;
+  }
+  object.internalShape = shape;
+  return shape;
+}
+/** A fast-mode object's shape (or a packed array's clean empty-array shape for
+ * non-index, non-length keys), which the per-site caches key on. */
+function cacheableShape(
+  object: ScriptObject,
+  key: string,
+): ScriptShape | undefined {
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    if (shape !== undefined) return shape;
+    // An object without own properties takes its (empty) root shape so its
+    // inherited properties cache too.
+    const root = rootPropertyShape<ScriptPropertyKey, unknown>(
+      object,
+      undefined,
+    );
+    object.internalShape = root;
+    return root;
+  }
+  // A packed array with no expando properties has no own named keys other than
+  // "length" and array indices, so inherited method reads can cache on its
+  // prototype-specific empty-array shape.
+  if (
+    object.internalArrayElements !== undefined &&
+    object.properties === undefined &&
+    !hasCustomPropertyGet<ScriptPropertyKey, unknown>(object) &&
+    key !== "length" &&
+    fastKey<string>(key)
+  ) {
+    const existing = object.internalShape;
+    return existing !== undefined ? existing : arrayEmptyShape(object);
+  }
+  return undefined;
 }
 /** The holder an entry names for an object of the entry's receiver shape. */
 function cachedScriptPropertyHolder(
@@ -2052,32 +2324,23 @@ function cachedScriptPropertyHolder(
   own: boolean,
 ): ScriptObject | undefined {
   if (entry.receiver !== object.internalShape) return undefined;
-  if (entry.holder === undefined) return object;
-  if (own) return undefined;
-  let prototype = object.prototype;
-  const parent = entry.parent,
-    ancestor = entry.ancestor;
-  if (parent !== undefined) {
-    const checked = prototype;
-    if (checked === undefined || checked.internalShape !== parent)
-      return undefined;
-    prototype = checked.prototype;
+  if (entry.holderObject === undefined) {
+    return object.internalDictionary ? undefined : object;
   }
-  if (ancestor !== undefined) {
-    const checked = prototype;
-    if (checked === undefined || checked.internalShape !== ancestor)
-      return undefined;
-    prototype = checked.prototype;
-  }
-  if (prototype === undefined || prototype.internalShape !== entry.holder)
-    return undefined;
-  return prototype;
+  if (own || entry.epoch !== propertyEpoch.value) return undefined;
+  return entry.holderObject;
 }
 /** A cached value's word index as generated code reads it: the binary64
  * whose bits are the integer (exact as a subnormal multiple of the least
  * positive value, with flush-to-zero off as native code runs). */
 export function inlineSlotBits(word: number): number {
   return word * Number.MIN_VALUE;
+}
+/** A spilled own property's chunk index and chunk-local word index, encoded
+ * with sign bit (bit 63) set so generated code distinguishes it from in-place
+ * slots with a single `tbnz x13, #63` test. */
+export function inlineSpillSlotBits(chunk: number, word: number): number {
+  return -(chunk * 65536 + word) * Number.MIN_VALUE;
 }
 /** The receiver shape of a site's inline own (or inherited) entry. */
 export function inlineEntryShape(
@@ -2115,20 +2378,20 @@ export function inlineEntrySlot(
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
-/** The holder of a site's inline inherited entry. */
-export function inlineEntryHolder(
+/** The directly cached value of a site's inline inherited entry. */
+export function inlineEntryValue(
   cache: ScriptPropertyCache,
   index: number,
-): ScriptObject | undefined {
+): unknown {
   switch (index) {
     case 0:
-      return cache.inheritedObject;
+      return cache.inheritedValue;
     case 1:
-      return cache.inheritedObject1;
+      return cache.inheritedValue1;
     case 2:
-      return cache.inheritedObject2;
+      return cache.inheritedValue2;
     case 3:
-      return cache.inheritedObject3;
+      return cache.inheritedValue3;
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
@@ -2163,28 +2426,28 @@ function setInheritedEntry(
   index: number,
   shape: ScriptShape,
   slot: number,
-  holder: ScriptObject | undefined,
+  value: unknown,
 ): void {
   switch (index) {
     case 0:
       cache.inheritedShape = shape;
       cache.inheritedSlot = slot;
-      cache.inheritedObject = holder;
+      cache.inheritedValue = value;
       return;
     case 1:
       cache.inheritedShape1 = shape;
       cache.inheritedSlot1 = slot;
-      cache.inheritedObject1 = holder;
+      cache.inheritedValue1 = value;
       return;
     case 2:
       cache.inheritedShape2 = shape;
       cache.inheritedSlot2 = slot;
-      cache.inheritedObject2 = holder;
+      cache.inheritedValue2 = value;
       return;
     case 3:
       cache.inheritedShape3 = shape;
       cache.inheritedSlot3 = slot;
-      cache.inheritedObject3 = holder;
+      cache.inheritedValue3 = value;
       return;
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
@@ -2207,51 +2470,65 @@ function inlineEntryIndex(
   }
   return empty;
 }
+/** Encode an own fast-mode property's slot bits: positive word index for
+ * in-place slots 0..7, negative (chunk << 16 | chunkWord) for spilled slots. */
+function ownSlotBits(offset: number, slotWord: number): number {
+  if (offset < propertySlots) return inlineSlotBits(slotWord + offset * 2);
+  const spillIndex = offset - propertySlots;
+  return inlineSpillSlotBits(
+    spillIndex >>> 4,
+    2 + (spillIndex & (propertySpillSlots - 1)) * 2,
+  );
+}
+/** Clear stale inherited entries when propertyEpoch has advanced. Returns true
+ * if an entry may be inserted (site is not full under the current epoch). */
+function prepareInheritedEpoch(cache: ScriptPropertyCache): boolean {
+  const epoch = propertyEpoch.value;
+  if (cache.inheritedEpoch !== epoch) {
+    for (let index = 0; index < propertyCacheEntries; index++)
+      setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
+    cache.inheritedEpoch = epoch;
+    return true;
+  }
+  return cache.inheritedShape3 === unusedPropertyShape;
+}
 /** Make a found property an inline entry: own when the object holds it,
- * except at a method site, else inherited (with no holder for the object's
- * own property, as an object literal's methods). Each value is a two-word
- * general slot; values past the in-place slots stay off the inline
- * entries. A megamorphic site misses here on every read of a shape past
- * its entries, so a full site returns before any other work (its last
- * entry, propertyCacheEntries - 1, is in use). */
+ * except at a method site, else inherited (direct value cached with slot = 0
+ * for prototype hits, or non-zero slot for the receiver's own property). */
 function addInlineEntry(
   cache: ScriptPropertyCache,
   object: ScriptObject,
   shape: ScriptShape,
   holder: ScriptObject,
   offset: number,
+  directValue: unknown,
   slotWord: number,
 ): void {
-  if (offset >= propertySlots) return;
-  if (holder === object && !cache.method) {
-    if (cache.ownShape3 !== unusedPropertyShape) return;
-    const index = inlineEntryIndex(cache, false, shape);
-    if (index >= 0)
-      setOwnEntry(cache, index, shape, inlineSlotBits(slotWord + offset * 2));
+  if (holder === object) {
+    const bits = ownSlotBits(offset, slotWord);
+    if (!cache.method) {
+      if (cache.ownShape3 !== unusedPropertyShape) return;
+      const index = inlineEntryIndex(cache, false, shape);
+      if (index >= 0) setOwnEntry(cache, index, shape, bits);
+      return;
+    }
+    if (!prepareInheritedEpoch(cache)) return;
+    const index = inlineEntryIndex(cache, true, shape);
+    if (index >= 0) setInheritedEntry(cache, index, shape, bits, undefined);
     return;
   }
-  // Inherited entries share one epoch: entries found under an older one
-  // are stale, so they are cleared before a newer entry is added.
-  const epoch = propertyEpoch.value;
-  if (cache.inheritedEpoch !== epoch) {
-    for (let index = 0; index < propertyCacheEntries; index++)
-      setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
-    cache.inheritedEpoch = epoch;
-  } else if (cache.inheritedShape3 !== unusedPropertyShape) return;
+  if (!prepareInheritedEpoch(cache)) return;
   const index = inlineEntryIndex(cache, true, shape);
-  if (index >= 0)
-    setInheritedEntry(
-      cache,
-      index,
-      shape,
-      inlineSlotBits(slotWord + offset * 2),
-      holder === object ? undefined : holder,
-    );
+  if (index >= 0) setInheritedEntry(cache, index, shape, 0, directValue);
 }
-/** Find `key` on a fast-mode object or its first prototypes and cache where
- * it was found. Returns the holder of the data property, with its shape
- * index in cache.foundIndex, or undefined to take the ordinary lookup.
- * `slotWord` is the word index of internalValue0 in the object record. */
+/** Maximum prototype hops cached in lookupCachedScriptProperty. */
+const maxCachedPrototypeDepth = 16;
+/** Find `key` on a fast-mode object, a clean packed array, or any prototype
+ * chain up to maxCachedPrototypeDepth (including dictionary-mode prototypes
+ * such as Array.prototype, Map.prototype, String.prototype) and cache it.
+ * Returns the holder of the data property, with either its shape index in
+ * cache.foundIndex (for own hits) or cache.foundIndex = -1 and the value in
+ * cache.foundValue (for direct inherited hits). */
 export function lookupCachedScriptProperty(
   object: ScriptObject,
   key: string,
@@ -2260,7 +2537,7 @@ export function lookupCachedScriptProperty(
   global: ScriptPropertyStubCache,
   slotWord: number,
 ): ScriptObject | undefined {
-  const shape = cacheableShape(object);
+  const shape = cacheableShape(object, key);
   if (shape === undefined) return undefined;
   // Generated code missed every inline entry: an entry found below goes
   // back inline.
@@ -2269,8 +2546,30 @@ export function lookupCachedScriptProperty(
     if (entry === undefined) throw "PROPERTY_CACHE_ENTRY_INVARIANT";
     const holder = cachedScriptPropertyHolder(object, entry, own);
     if (holder !== undefined) {
-      cache.foundIndex = entry.offset;
-      addInlineEntry(cache, object, shape, holder, entry.offset, slotWord);
+      if (holder === object) {
+        cache.foundIndex = entry.offset;
+        addInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          entry.offset,
+          undefined,
+          slotWord,
+        );
+      } else {
+        cache.foundIndex = -1;
+        cache.foundValue = entry.directValue;
+        addInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          -1,
+          entry.directValue,
+          slotWord,
+        );
+      }
       return holder;
     }
   }
@@ -2280,42 +2579,99 @@ export function lookupCachedScriptProperty(
   if (cache.megamorphic && stub.name === key) {
     const holder = cachedScriptPropertyHolder(object, stub, own);
     if (holder !== undefined) {
-      cache.foundIndex = stub.offset;
-      addInlineEntry(cache, object, shape, holder, stub.offset, slotWord);
+      if (holder === object) {
+        cache.foundIndex = stub.offset;
+        addInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          stub.offset,
+          undefined,
+          slotWord,
+        );
+      } else {
+        cache.foundIndex = -1;
+        cache.foundValue = stub.directValue;
+        addInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          -1,
+          stub.directValue,
+          slotWord,
+        );
+      }
       return holder;
     }
   }
-  let holder = object,
-    holderShape = shape;
-  let offset = shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
-  let parent: ScriptShape | undefined = undefined;
-  let ancestor: ScriptShape | undefined = undefined;
-  if (offset < 0 && !own) {
-    let prototype = object.prototype;
-    // Keep the intermediate guards in the cache entry itself. Longer
-    // prototype chains retain the ordinary lookup.
-    for (let depth = 0; depth < 3 && offset < 0; depth++) {
-      const current = prototype;
-      if (current === undefined || current.internalMethods !== undefined)
+  let holder: ScriptObject | undefined = undefined;
+  let offset = -1;
+  let directValue: unknown = undefined;
+  if (!object.internalDictionary) {
+    const ownOffset = shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
+    if (ownOffset >= 0) {
+      if (((shape.kinds[ownOffset] ?? 0) & propertyNotInlineData) !== 0)
         return undefined;
-      const inherited = cacheableShape(current);
-      if (inherited === undefined) return undefined;
-      holder = current;
-      holderShape = inherited;
-      offset = shapeKeyIndex<ScriptPropertyKey, unknown>(inherited, key);
-      if (offset >= 0) break;
-      if (depth === 0) parent = inherited;
-      else if (depth === 1) ancestor = inherited;
+      holder = object;
+      offset = ownOffset;
+    }
+  }
+  if (holder === undefined && !own) {
+    let prototype = object.prototype;
+    for (let depth = 0; depth < maxCachedPrototypeDepth; depth++) {
+      const current = prototype;
+      if (
+        current === undefined ||
+        hasCustomPropertyGet<ScriptPropertyKey, unknown>(current)
+      )
+        return undefined;
+      if (!current.internalUsedAsPrototype)
+        markPrototype<ScriptPropertyKey, unknown>(current);
+      if (!current.internalDictionary) {
+        const inherited = current.internalShape;
+        if (inherited !== undefined) {
+          const found = shapeKeyIndex<ScriptPropertyKey, unknown>(
+            inherited,
+            key,
+          );
+          if (found >= 0) {
+            if (((inherited.kinds[found] ?? 0) & propertyNotInlineData) !== 0)
+              return undefined;
+            holder = current;
+            directValue = fastValue<ScriptPropertyKey, unknown>(
+              current,
+              inherited,
+              found,
+            );
+            break;
+          }
+        }
+      } else {
+        const rare = current.internalRareSlots;
+        if (rare !== undefined && rare.internalDataAliases !== undefined)
+          return undefined;
+        // Packed array prototype with numeric/length key stays on ordinary path.
+        if (
+          current.internalArrayElements !== undefined &&
+          (key === "length" || !fastKey<string>(key))
+        )
+          return undefined;
+        const properties = current.properties;
+        const descriptor =
+          properties === undefined ? undefined : properties.get(key);
+        if (descriptor !== undefined) {
+          if (descriptor.accessor) return undefined;
+          holder = current;
+          directValue = descriptor.value;
+          break;
+        }
+      }
       prototype = current.prototype;
     }
   }
-  // Accessors (and other kinds without a plain in-place value) keep the
-  // ordinary lookup.
-  if (
-    offset < 0 ||
-    ((holderShape.kinds[offset] ?? 0) & propertyNotInlineData) !== 0
-  )
-    return undefined;
+  if (holder === undefined) return undefined;
   let entry = cache.entries[cache.used];
   if (entry === undefined) {
     cache.megamorphic = true;
@@ -2323,20 +2679,91 @@ export function lookupCachedScriptProperty(
     entry = stub;
   } else cache.used++;
   entry.receiver = shape;
-  entry.parent = parent;
-  entry.ancestor = ancestor;
-  entry.holder = holder === object ? undefined : holderShape;
+  entry.holderObject = holder === object ? undefined : holder;
+  entry.directValue = holder === object ? undefined : directValue;
+  entry.epoch = holder === object ? -1 : propertyEpoch.value;
   entry.offset = offset;
-  addInlineEntry(cache, object, shape, holder, offset, slotWord);
-  cache.foundIndex = offset;
+  if (holder === object) {
+    cache.foundIndex = offset;
+    addInlineEntry(cache, object, shape, holder, offset, undefined, slotWord);
+  } else {
+    cache.foundIndex = -1;
+    cache.foundValue = directValue;
+    addInlineEntry(cache, object, shape, holder, -1, directValue, slotWord);
+  }
   return holder;
+}
+/** Look up a non-length, non-index property on a String primitive's prototype
+ * chain and cache its value directly under stringPrimitiveShape. */
+export function lookupCachedStringPrimitiveProperty(
+  prototype: ScriptObject,
+  key: string,
+  cache: ScriptPropertyCache,
+): boolean {
+  let cursor: ScriptObject | undefined = prototype;
+  for (let depth = 0; depth < maxCachedPrototypeDepth; depth++) {
+    const current: ScriptObject | undefined = cursor;
+    if (
+      current === undefined ||
+      hasCustomPropertyGet<ScriptPropertyKey, unknown>(current)
+    )
+      return false;
+    if (!current.internalUsedAsPrototype)
+      markPrototype<ScriptPropertyKey, unknown>(current);
+    if (!current.internalDictionary) {
+      const inherited = current.internalShape;
+      if (inherited !== undefined) {
+        const found = shapeKeyIndex<ScriptPropertyKey, unknown>(inherited, key);
+        if (found >= 0) {
+          if (((inherited.kinds[found] ?? 0) & propertyNotInlineData) !== 0)
+            return false;
+          const value = fastValue<ScriptPropertyKey, unknown>(
+            current,
+            inherited,
+            found,
+          );
+          cache.foundIndex = -1;
+          cache.foundValue = value;
+          if (prepareInheritedEpoch(cache)) {
+            const index = inlineEntryIndex(cache, true, stringPrimitiveShape);
+            if (index >= 0)
+              setInheritedEntry(cache, index, stringPrimitiveShape, 0, value);
+          }
+          return true;
+        }
+      }
+    } else {
+      const rare = current.internalRareSlots;
+      if (rare !== undefined && rare.internalDataAliases !== undefined)
+        return false;
+      const properties = current.properties;
+      const descriptor =
+        properties === undefined ? undefined : properties.get(key);
+      if (descriptor !== undefined) {
+        if (descriptor.accessor) return false;
+        const value = descriptor.value;
+        cache.foundIndex = -1;
+        cache.foundValue = value;
+        if (prepareInheritedEpoch(cache)) {
+          const index = inlineEntryIndex(cache, true, stringPrimitiveShape);
+          if (index >= 0)
+            setInheritedEntry(cache, index, stringPrimitiveShape, 0, value);
+        }
+        return true;
+      }
+    }
+    cursor = current.prototype;
+  }
+  return false;
 }
 /** The value of the property a cached lookup found on holder. */
 export function cachedScriptPropertyValue(
   holder: ScriptObject,
   cache: ScriptPropertyCache,
 ): unknown {
-  return storedValue<ScriptPropertyKey, unknown>(holder, cache.foundIndex);
+  return cache.foundIndex < 0
+    ? cache.foundValue
+    : storedValue<ScriptPropertyKey, unknown>(holder, cache.foundIndex);
 }
 /** Whether [[Set]] of `key` on the object, which lacks it, adds a writable
  * data property to the object itself: every object on the prototype chain
@@ -2386,7 +2813,7 @@ export function storeCachedScriptProperty(
   if (shape !== undefined && index >= 0) {
     if (!inlineWritableData(shape.kinds[index] ?? 0)) return false;
     setFastValue<ScriptPropertyKey, unknown>(object, index, value);
-    if (index < propertySlots) {
+    if (index < propertySlots && !object.internalUsedAsPrototype) {
       cache.storeShape = shape;
       cache.storeSlot = inlineSlotBits(slotWord + index * 2);
       cache.storeTransition = undefined;
@@ -2560,6 +2987,7 @@ export function setProperty<Key, Value>(
         // receiver gets its own property through the ordinary path.
         if (receiver.object !== cursor) break;
         writeArrayElement<Key, Value>(elements, index, value);
+        if (cursor.internalUsedAsPrototype) propertyEpoch.value++;
         return true;
       }
     }
@@ -2586,6 +3014,7 @@ export function setProperty<Key, Value>(
         // The stored descriptor is this object's own cell (no alias built a
         // copy), so the value is replaced in place and caches stay valid.
         writePropertyCell<Value>(descriptor, value);
+        if (object.internalUsedAsPrototype) propertyEpoch.value++;
         return true;
       }
       break;

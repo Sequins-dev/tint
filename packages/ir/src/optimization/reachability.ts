@@ -95,6 +95,8 @@ export function traceModuleReferences(
           includeRecord(op.record);
           includeRecord(op.siteRecord);
           includeRecord(op.epochRecord);
+          if (op.kind === "property-load" && op.spillRecord !== undefined)
+            includeRecord(op.spillRecord);
         } else if (op.kind === "script-entry") {
           includeRecord(op.realmRecord);
           includeRecord(op.agentRecord);

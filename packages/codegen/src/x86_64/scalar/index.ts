@@ -2546,17 +2546,15 @@ export function emitModule(
           const missed = site + ":miss",
             done = site + ":done",
             hit = site + ":hit";
-          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
-          branch(emit, "ne", missed);
-          emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
-          emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
-          let holder: number = 9;
           if (op.kind === "property-load") {
             const inherited = op.inherited,
-              stride = inherited ? 3 : 2;
+              stride = inherited ? 3 : 2,
+              loadValue = site + ":load";
+            emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
+            emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
             if (inherited) {
-              // The entries' holders are current while the epoch they were
-              // found under is the epoch record's value.
+              const isObject = site + ":obj",
+                shapeReady = site + ":shape";
               const epoch = recordField(
                   op.siteRecord,
                   op.siteField + op.entries * 3,
@@ -2565,16 +2563,42 @@ export function emitModule(
                   op.siteRecord,
                   op.siteField + op.entries * 3 + 1,
                 ),
+                stringShape = recordField(
+                  op.siteRecord,
+                  op.siteField + op.entries * 3 + 2,
+                ),
                 current = recordField(op.epochRecord, op.epochField);
-              emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
-              emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
-              emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
+              branch(emit, "e", isObject);
+              emit({ op: "cmp", dst: frame(home(op.object)), src: imm(3) });
               branch(emit, "ne", missed);
-              holder = 11;
+              emit({ op: "mov", dst: rax, src: mem(10, stringShape.offset) });
+              emit({ op: "jmp", target: label(shapeReady) });
+              emit({ op: "label", name: isObject });
+              emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+              emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+              emit({ op: "label", name: shapeReady });
+              // Direct inherited values are current while the epoch they were
+              // found under is the epoch record's value.
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(10, epochRecord.offset),
+              });
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(11, current.offset),
+              });
+              emit({ op: "cmp", dst: scratch, src: mem(10, epoch.offset) });
+              branch(emit, "ne", missed);
+            } else {
+              branch(emit, "ne", missed);
+              emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+              emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
             }
-            emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
             // Every entry but the last branches to its own hit tail, which
-            // loads the word index (and holder) into rax (and r11).
+            // loads the word index into rax (and the direct inherited value
+            // address into r11).
             for (let entry = 0; entry < op.entries; entry++) {
               const first = op.siteField + entry * stride,
                 entryShape = recordField(op.siteRecord, first);
@@ -2586,7 +2610,7 @@ export function emitModule(
             const lastEntry = op.siteField + (op.entries - 1) * stride;
             if (inherited)
               emit({
-                op: "mov",
+                op: "lea",
                 dst: scratch,
                 src: mem(10, recordField(op.siteRecord, lastEntry + 2).offset),
               });
@@ -2601,7 +2625,7 @@ export function emitModule(
               emit({ op: "label", name: site + ":entry" + String(entry) });
               if (inherited)
                 emit({
-                  op: "mov",
+                  op: "lea",
                   dst: scratch,
                   src: mem(10, recordField(op.siteRecord, first + 2).offset),
                 });
@@ -2614,47 +2638,60 @@ export function emitModule(
                 emit({ op: "jmp", target: label(hit) });
             }
             if (op.entries > 1) emit({ op: "label", name: hit });
-            if (inherited) {
-              // An entry without a holder is the receiver's own property.
-              emit({ op: "test", dst: scratch, src: scratch });
-              emit({ op: "cmovcc", cc: "e", dst: scratch, src: r9 });
-            }
-          } else {
-            const siteShape = recordField(op.siteRecord, op.siteField);
-            emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
-            emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
-            branch(emit, "ne", missed);
-          }
-          if (op.kind === "property-store") {
-            const transition = recordField(op.siteRecord, op.siteField + 2),
-              epoch = recordField(op.siteRecord, op.siteField + 3),
-              epochRecord = recordField(op.siteRecord, op.siteField + 4),
-              current = recordField(op.epochRecord, op.epochField);
-            const existing = site + ":existing";
-            emit({ op: "mov", dst: scratch, src: mem(10, transition.offset) });
-            emit({ op: "test", dst: scratch, src: scratch });
-            branch(emit, "e", existing);
-            emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
-            emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
-            emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
-            branch(emit, "ne", missed);
-            emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
-            emit({ op: "label", name: existing });
+            const hasSpill =
+              op.spillField !== undefined && op.spillRecord !== undefined;
+            const spillLabel = site + ":spill";
+            if (hasSpill || inherited) emit({ op: "test", dst: rax, src: rax });
+            if (hasSpill) branch(emit, "s", spillLabel);
+            if (inherited) branch(emit, "e", loadValue);
             emit({
-              op: "mov",
-              dst: rax,
-              src: mem(10, recordField(op.siteRecord, op.siteField + 1).offset),
+              op: "lea",
+              dst: scratch,
+              src: {
+                kind: "mem",
+                width: 64,
+                address: { kind: "base", base: 9, index: 0, scale: 8, disp: 0 },
+              },
             });
-          }
-          const word = (disp: number): Memory<64> => ({
-            kind: "mem",
-            width: 64,
-            address: { kind: "base", base: holder, index: 0, scale: 8, disp },
-          });
-          if (op.kind === "property-load") {
-            emit({ op: "mov", dst: gpr(10), src: word(8) });
+            if (hasSpill) {
+              const spillField = recordField(op.record, op.spillField!),
+                spillNext = recordField(op.spillRecord!, 0),
+                spillLoop = site + ":spillLoop",
+                spillDone = site + ":spillDone";
+              emit({ op: "jmp", target: label(loadValue) });
+              emit({ op: "label", name: spillLabel });
+              emit({ op: "mov", dst: r9, src: mem(9, spillField.offset) });
+              emit({ op: "mov", dst: scratch, src: rax });
+              emit({ op: "shr", dst: scratch, count: 16 });
+              emit({ op: "and", dst: scratch, src: imm(0xffff) });
+              emit({ op: "test", dst: scratch, src: scratch });
+              branch(emit, "e", spillDone);
+              emit({ op: "label", name: spillLoop });
+              emit({ op: "mov", dst: r9, src: mem(9, spillNext.offset) });
+              emit({ op: "dec", dst: scratch });
+              branch(emit, "ne", spillLoop);
+              emit({ op: "label", name: spillDone });
+              emit({ op: "and", dst: rax, src: imm(0xffff) });
+              emit({
+                op: "lea",
+                dst: scratch,
+                src: {
+                  kind: "mem",
+                  width: 64,
+                  address: {
+                    kind: "base",
+                    base: 9,
+                    index: 0,
+                    scale: 8,
+                    disp: 0,
+                  },
+                },
+              });
+            }
+            emit({ op: "label", name: loadValue });
+            emit({ op: "mov", dst: gpr(10), src: mem(11, 8) });
             emit({ op: "mov", dst: frame(home(op.id) + 8), src: gpr(10) });
-            emit({ op: "mov", dst: rax, src: word(0) });
+            emit({ op: "mov", dst: rax, src: mem(11, 0) });
             emit({ op: "jmp", target: label(done) });
             emit({ op: "label", name: missed });
             // The absent value: undefined's tag with payload 1.
@@ -2664,6 +2701,38 @@ export function emitModule(
             define(op.id, "general");
             return;
           }
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
+          const siteShape = recordField(op.siteRecord, op.siteField);
+          emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
+          branch(emit, "ne", missed);
+          const transition = recordField(op.siteRecord, op.siteField + 2),
+            epoch = recordField(op.siteRecord, op.siteField + 3),
+            epochRecord = recordField(op.siteRecord, op.siteField + 4),
+            current = recordField(op.epochRecord, op.epochField);
+          const existing = site + ":existing";
+          emit({ op: "mov", dst: scratch, src: mem(10, transition.offset) });
+          emit({ op: "test", dst: scratch, src: scratch });
+          branch(emit, "e", existing);
+          emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
+          emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
+          emit({ op: "label", name: existing });
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(10, recordField(op.siteRecord, op.siteField + 1).offset),
+          });
+          const word = (disp: number): Memory<64> => ({
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 9, index: 0, scale: 8, disp },
+          });
           emit({ op: "mov", dst: scratch, src: frame(home(op.value)) });
           emit({ op: "mov", dst: word(0), src: scratch });
           emit({ op: "mov", dst: scratch, src: frame(home(op.value) + 8) });

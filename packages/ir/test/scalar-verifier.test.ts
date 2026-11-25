@@ -2496,18 +2496,19 @@ test("a tail call is a script entry's returned last call", () => {
 
 test("property loads verify every entry of their site layout", () => {
   // Object record 1 (shape, one value), epoch record 3, and site record 2
-  // with four inherited entries (shape, word index, holder) then the epoch
-  // and its record.
+  // with four inherited entries (shape, word index, general value) then the
+  // epoch, its record, and stringShape.
   const siteFields: RecordField[] = [];
   for (let entry = 0; entry < 4; entry++)
     siteFields.push(
-      { offset: 8 + entry * 24, type: "reference", mutable: true },
-      { offset: 16 + entry * 24, type: "number", mutable: true },
-      { offset: 24 + entry * 24, type: "optional-reference", mutable: true },
+      { offset: 8 + entry * 32, type: "reference", mutable: true },
+      { offset: 16 + entry * 32, type: "number", mutable: true },
+      { offset: 24 + entry * 32, type: "general", mutable: true },
     );
   siteFields.push(
-    { offset: 104, type: "number", mutable: true },
-    { offset: 112, type: "reference", mutable: false },
+    { offset: 136, type: "number", mutable: true },
+    { offset: 144, type: "reference", mutable: false },
+    { offset: 152, type: "reference", mutable: false },
   );
   const records: RecordLayout[] = [
     { byteLength: 16, fields: [] },
@@ -2518,7 +2519,7 @@ test("property loads verify every entry of their site layout", () => {
         { offset: 16, type: "general", mutable: true },
       ],
     },
-    { byteLength: 120, fields: siteFields },
+    { byteLength: 160, fields: siteFields },
     { byteLength: 16, fields: [{ offset: 8, type: "number", mutable: true }] },
   ];
   const load = (

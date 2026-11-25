@@ -114,6 +114,8 @@ const instructions: Instruction[] = [
     entries: 4,
     epochRecord: 10,
     epochField: 11,
+    spillRecord: 12,
+    spillField: 13,
     ...span,
     inline: 0,
   },

@@ -11224,26 +11224,112 @@ function emitModuleForms(
                 }
                 // The receiver's tag (x9) and payload (x10), then its first
                 // word (x9) against the site's entry shapes (x12; the verified
-                // site layout pairs each with its word index, x13).
+                // site layout pairs each with its word index, x13). Inherited
+                // loads also accept string primitives (tag 3) via the site's
+                // stringShape sentinel and cache inherited values directly in
+                // the site entry (slot === 0).
+                const stride =
+                  op.kind === "property-load" && op.inherited ? 32 : 16;
+                const epochAt =
+                  op.kind === "property-load" && op.inherited
+                    ? siteShape.offset + op.entries * stride
+                    : 0;
+                const useColdStubs =
+                  coldStubsAvailable() &&
+                  (fusedMiss === undefined ||
+                    offsets[fusedMiss * 2] === undefined);
+                const stringCold =
+                  op.kind === "property-load" && op.inherited && useColdStubs;
                 generalPair(9, value(op.object).offset, true);
-                emit({
-                  op: "sub-imm",
-                  width: 64,
-                  rd: "zr",
-                  rn: 9,
-                  immediate: 5,
-                  shift: 0,
-                  setFlags: true,
-                });
-                miss();
-                const site = rawRegister(op.site, 11);
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 9,
-                  rn: 10,
-                  offset: shapeField.offset,
-                });
+                let site: number;
+                let stringBranch = -1,
+                  shapeReadyAt = -1;
+                if (op.kind === "property-load" && op.inherited) {
+                  if (epochAt + 16 > 4088)
+                    throw "property cache layout invariant";
+                  site = rawRegister(op.site, 11);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 5,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  if (stringCold) {
+                    if (fusedMiss !== undefined) forwardable.delete(fusedMiss);
+                    stringBranch = instructions.length;
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 10,
+                      offset: shapeField.offset,
+                    });
+                    shapeReadyAt = instructions.length;
+                    stackWords.clear();
+                  } else {
+                    const isObj = instructions.length;
+                    emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 3,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    miss();
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: site,
+                      offset: epochAt + 16,
+                    });
+                    const doneShape = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(isObj, {
+                      op: "b.cond",
+                      condition: "eq",
+                      displacement: (instructions.length - isObj) * 4,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 10,
+                      offset: shapeField.offset,
+                    });
+                    patchInstruction(doneShape, {
+                      op: "b",
+                      displacement: (instructions.length - doneShape) * 4,
+                    });
+                    stackWords.clear();
+                  }
+                } else {
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 5,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  miss();
+                  site = rawRegister(op.site, 11);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 10,
+                    offset: shapeField.offset,
+                  });
+                }
                 /** x12/x13 = the shape and word index of the entry at `at`. */
                 function entryPair(at: number): void {
                   emit({
@@ -11257,16 +11343,26 @@ function emitModuleForms(
                   });
                 }
                 if (op.kind === "property-load") {
-                  let holder = 10;
-                  const stride = op.inherited ? 24 : 16;
+                  const spillField =
+                    op.spillField === undefined
+                      ? undefined
+                      : fields?.[op.spillField];
+                  const spillNext =
+                    op.spillRecord === undefined
+                      ? undefined
+                      : module.records?.[op.spillRecord]?.fields[0];
+                  if (
+                    op.spillField !== undefined &&
+                    (spillField === undefined || spillNext === undefined)
+                  )
+                    throw "property cache layout invariant";
                   if (op.inherited) {
-                    // The receiver's shape implies its prototype; the entries'
-                    // holders are current while the epoch they were found
-                    // under (x12) is the epoch record's value (x15).
+                    // The receiver's shape implies its prototype; direct
+                    // inherited values are current while the epoch they were
+                    // found under (x12) is the epoch record's value (x15).
                     const epochField =
                       module.records?.[op.epochRecord]?.fields[op.epochField];
-                    const epochAt = siteShape.offset + op.entries * stride;
-                    if (epochField === undefined || epochAt > 4088)
+                    if (epochField === undefined)
                       throw "property cache layout invariant";
                     emit({
                       op: "ldr",
@@ -11290,21 +11386,23 @@ function emitModuleForms(
                       offset: epochAt,
                     });
                     compare(15, 12);
-                    holder = 14;
                   }
                   // Entry 0 first, falling through to the hit with the word
-                  // index in x13 (and the holder in x14). Further entries
-                  // are tested in a cold stub after the function body that
-                  // branches back to the hit, so a single-shape site keeps
-                  // its fallthrough; without cold stubs they are tested
-                  // inline. The last entry's mismatch is the miss.
-                  function holderOf(at: number): void {
+                  // index in x13 (and the direct inherited value address in
+                  // x14). Further entries are tested in a cold stub after the
+                  // function body that branches back to the hit, so a
+                  // single-shape site keeps its fallthrough; without cold
+                  // stubs they are tested inline. The last entry's mismatch is
+                  // the miss.
+                  function valueAddressOf(at: number): void {
                     emit({
-                      op: "ldr",
+                      op: "add-imm",
                       width: 64,
-                      rt: 14,
+                      rd: 14,
                       rn: site,
-                      offset: at + 16,
+                      immediate: at + 16,
+                      shift: 0,
+                      setFlags: false,
                     });
                   }
                   function compareShape(): void {
@@ -11321,14 +11419,7 @@ function emitModuleForms(
                   }
                   if (siteShape.offset + (op.entries - 1) * stride > 496)
                     throw "property cache layout invariant";
-                  // A fused miss block reached from the stub has an edge
-                  // after it: it must not seed its entry's stack words, so
-                  // it must not have been emitted yet.
-                  const cold =
-                    op.entries > 1 &&
-                    coldStubsAvailable() &&
-                    (fusedMiss === undefined ||
-                      offsets[fusedMiss * 2] === undefined);
+                  const cold = op.entries > 1 && useColdStubs;
                   if (cold && fusedMiss !== undefined)
                     forwardable.delete(fusedMiss);
                   let further = -1;
@@ -11340,20 +11431,20 @@ function emitModuleForms(
                       further = instructions.length;
                       emit({ op: "b.cond", condition: "ne", displacement: 0 });
                     } else compare(9, 12);
-                    if (op.inherited) holderOf(siteShape.offset);
+                    if (op.inherited) valueAddressOf(siteShape.offset);
                   } else
                     for (let entry = 0; entry < op.entries; entry++) {
                       const at = siteShape.offset + entry * stride;
                       entryPair(at);
                       if (entry === op.entries - 1) {
                         compare(9, 12);
-                        if (op.inherited) holderOf(at);
+                        if (op.inherited) valueAddressOf(at);
                         break;
                       }
                       compareShape();
                       const next = instructions.length;
                       emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                      if (op.inherited) holderOf(at);
+                      if (op.inherited) valueAddressOf(at);
                       hits.push(instructions.length);
                       emit({ op: "b", displacement: 0 });
                       patchInstruction(next, {
@@ -11370,14 +11461,123 @@ function emitModuleForms(
                   const hitAt = instructions.length;
                   // A join: the further entries branch here.
                   if (cold) stackWords.clear();
+                  const spillCold =
+                    spillField !== undefined && coldStubsAvailable();
+                  let spillBranch = -1,
+                    spillJump = -1;
+                  function emitSpillWalk(): void {
+                    if (spillField === undefined || spillNext === undefined)
+                      throw "property cache layout invariant";
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 10,
+                      offset: spillField.offset,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 12,
+                      rn: 13,
+                      immr: 16,
+                      imms: 31,
+                    });
+                    const done = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
+                    const loop = instructions.length;
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 9,
+                      offset: spillNext.offset,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (loop - instructions.length) * 4,
+                    });
+                    patchInstruction(done, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 12,
+                      displacement: (instructions.length - done) * 4,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immr: 0,
+                      imms: 15,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 9,
+                      rn: 9,
+                      rm: 13,
+                      shift: "lsl",
+                      amount: 3,
+                      setFlags: false,
+                    });
+                  }
+                  if (spillField !== undefined) {
+                    if (spillCold) {
+                      spillBranch = instructions.length;
+                      emit({
+                        op: "tbnz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: 0,
+                      });
+                    } else {
+                      const notSpill = instructions.length;
+                      emit({
+                        op: "tbz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: 0,
+                      });
+                      emitSpillWalk();
+                      spillJump = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(notSpill, {
+                        op: "tbz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: (instructions.length - notSpill) * 4,
+                      });
+                    }
+                  }
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 10,
+                    rm: 13,
+                    shift: "lsl",
+                    amount: 3,
+                    setFlags: false,
+                  });
                   if (op.inherited) {
-                    // An entry without a holder is the receiver's own
-                    // property (x10).
+                    // Slot 0 carries a direct inherited value in the cache
+                    // entry (x14); positive slots are own receiver words (x9).
                     emit({
                       op: "sub-imm",
                       width: 64,
                       rd: "zr",
-                      rn: 14,
+                      rn: 13,
                       immediate: 0,
                       shift: 0,
                       setFlags: true,
@@ -11385,22 +11585,19 @@ function emitModuleForms(
                     emit({
                       op: "csel",
                       width: 64,
-                      rd: 14,
-                      rn: 10,
-                      rm: 14,
+                      rd: 9,
+                      rn: 14,
+                      rm: 9,
                       condition: "eq",
                     });
                   }
-                  emit({
-                    op: "add-reg",
-                    width: 64,
-                    rd: 9,
-                    rn: holder,
-                    rm: 13,
-                    shift: "lsl",
-                    amount: 3,
-                    setFlags: false,
-                  });
+                  if (spillJump >= 0)
+                    patchInstruction(spillJump, {
+                      op: "b",
+                      displacement: (instructions.length - spillJump) * 4,
+                    });
+                  const loadValueAt = instructions.length;
+                  if (spillField !== undefined) stackWords.clear();
                   const offset = value(op.id).offset,
                     tagHome = scalarRegisters?.[offset / 8] ?? 0,
                     payloadHome = scalarRegisters?.[offset / 8 + 1] ?? 0;
@@ -11453,11 +11650,64 @@ function emitModuleForms(
                       displacement: (instructions.length - hit) * 4,
                     });
                   }
+                  const owner = fn.id;
+                  if (stringCold) {
+                    const siteReg = site,
+                      stringShapeOffset = epochAt + 16;
+                    coldStubs.push((): void => {
+                      farBranch(stringBranch, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - stringBranch) * 4,
+                      });
+                      stackWords.clear();
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 9,
+                        immediate: 3,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                      if (fusedMiss !== undefined)
+                        branch(
+                          { op: "b.cond", condition: "ne" },
+                          owner,
+                          fusedMiss,
+                        );
+                      else {
+                        const missed = instructions.length;
+                        emit({
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: 0,
+                        });
+                        farBranch(missed, {
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: (absentAt - missed) * 4,
+                        });
+                      }
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: siteReg,
+                        offset: stringShapeOffset,
+                      });
+                      const back = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      farBranch(back, {
+                        op: "b",
+                        displacement: (shapeReadyAt - back) * 4,
+                      });
+                    });
+                  }
                   if (cold) {
                     const entries = op.entries,
                       inherited = op.inherited,
-                      first = siteShape.offset,
-                      owner = fn.id;
+                      first = siteShape.offset;
                     coldStubs.push((): void => {
                       farBranch(further, {
                         op: "b.cond",
@@ -11496,7 +11746,7 @@ function emitModuleForms(
                             displacement: (absentAt - missed) * 4,
                           });
                         }
-                        if (inherited) holderOf(at);
+                        if (inherited) valueAddressOf(at);
                         const back = instructions.length;
                         emit({ op: "b", displacement: 0 });
                         farBranch(back, {
@@ -11512,6 +11762,23 @@ function emitModuleForms(
                       }
                     });
                   }
+                  if (spillCold)
+                    coldStubs.push((): void => {
+                      farBranch(spillBranch, {
+                        op: "tbnz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: (instructions.length - spillBranch) * 4,
+                      });
+                      stackWords.clear();
+                      emitSpillWalk();
+                      const back = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      farBranch(back, {
+                        op: "b",
+                        displacement: (loadValueAt - back) * 4,
+                      });
+                    });
                   break;
                 }
                 entryPair(siteShape.offset);

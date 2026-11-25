@@ -253,13 +253,14 @@ test("an inherited property load retains and remaps its epoch record", () => {
         ],
       },
       {
-        byteLength: 48,
+        byteLength: 64,
         fields: [
           { offset: 8, type: "reference", mutable: true },
           { offset: 16, type: "number", mutable: true },
-          { offset: 24, type: "optional-reference", mutable: true },
-          { offset: 32, type: "number", mutable: true },
-          { offset: 40, type: "reference", mutable: false },
+          { offset: 24, type: "general", mutable: true },
+          { offset: 40, type: "number", mutable: true },
+          { offset: 48, type: "reference", mutable: false },
+          { offset: 56, type: "reference", mutable: false },
         ],
       },
       {

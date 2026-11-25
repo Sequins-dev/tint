@@ -131,13 +131,21 @@ function pruneTracedModule(
         ) {
           const record = recordId(op.record),
             siteRecord = recordId(op.siteRecord),
-            epochRecord = recordId(op.epochRecord);
+            epochRecord = recordId(op.epochRecord),
+            spillRecord =
+              op.kind === "property-load" && op.spillRecord !== undefined
+                ? recordId(op.spillRecord)
+                : undefined;
           if (
             record !== op.record ||
             siteRecord !== op.siteRecord ||
-            epochRecord !== op.epochRecord
+            epochRecord !== op.epochRecord ||
+            (op.kind === "property-load" && spillRecord !== op.spillRecord)
           )
-            rewritten = { ...op, record, siteRecord, epochRecord };
+            rewritten =
+              op.kind === "property-load" && spillRecord !== undefined
+                ? { ...op, record, siteRecord, epochRecord, spillRecord }
+                : { ...op, record, siteRecord, epochRecord };
         } else if (op.kind === "script-entry") {
           const realmRecord = recordId(op.realmRecord),
             agentRecord = recordId(op.agentRecord),

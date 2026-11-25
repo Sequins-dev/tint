@@ -382,7 +382,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   // string-to-number map anchor (a map collection with eleven operations).
   // Packed general element cells (ElementCell[]) and static-key object literal
   // sites (keys) add two list anchors and one list class (eight operations).
-  assert.equal(census.value.anchors.length, 133);
+  // Linked 16-slot PropertySpill chunks replace the OrdinaryObject.internalValues
+  // list anchor (-1 anchor).
+  assert.equal(census.value.anchors.length, 132);
   assert.equal(census.value.collections.length, 59);
   assert.deepEqual(
     ["list", "set", "map"].map(

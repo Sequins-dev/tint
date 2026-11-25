@@ -292,8 +292,8 @@ test("record-new stores zero-valued fields as XZR without materializing them", (
  * record 2: own entries are a shape and a word index, inherited entries add
  * a holder and are followed by the epoch they were found under and the
  * epoch record (record 3). */
-function propertyLoadWords(inherited: boolean): number[] {
-  const stride = inherited ? 24 : 16;
+function propertyLoadWords(inherited: boolean, spill = false): number[] {
+  const stride = inherited ? 32 : 16;
   const siteFields: RecordField[] = [];
   for (let entry = 0; entry < 4; entry++) {
     siteFields.push(
@@ -303,7 +303,7 @@ function propertyLoadWords(inherited: boolean): number[] {
     if (inherited)
       siteFields.push({
         offset: 24 + entry * stride,
-        type: "optional-reference",
+        type: "general",
         mutable: true,
       });
   }
@@ -311,22 +311,45 @@ function propertyLoadWords(inherited: boolean): number[] {
     siteFields.push(
       { offset: 8 + 4 * stride, type: "number", mutable: true },
       { offset: 16 + 4 * stride, type: "reference", mutable: false },
+      { offset: 24 + 4 * stride, type: "reference", mutable: false },
     );
+  const spillFields: RecordField[] = [
+    { offset: 8, type: "optional-reference", mutable: true },
+  ];
+  for (let slot = 0; slot < 16; slot++)
+    spillFields.push({
+      offset: 16 + slot * 16,
+      type: "general",
+      mutable: true,
+    });
   const module: ModuleIR = {
     records: [
       { byteLength: 16, fields: [] },
       {
-        byteLength: 32,
+        byteLength: spill ? 40 : 32,
         fields: [
           { offset: 8, type: "optional-reference", mutable: true },
           { offset: 16, type: "general", mutable: true },
+          ...(spill
+            ? [
+                {
+                  offset: 32,
+                  type: "optional-reference" as const,
+                  mutable: true,
+                },
+              ]
+            : []),
         ],
       },
-      { byteLength: 8 + siteFields.length * 8, fields: siteFields },
+      {
+        byteLength: 8 + 4 * stride + (inherited ? 24 : 0),
+        fields: siteFields,
+      },
       {
         byteLength: 16,
         fields: [{ offset: 8, type: "number", mutable: true }],
       },
+      { byteLength: 272, fields: spillFields },
     ],
     functions: [
       {
@@ -357,6 +380,7 @@ function propertyLoadWords(inherited: boolean): number[] {
                 entries: 4,
                 epochRecord: 3,
                 epochField: 0,
+                ...(spill ? { spillRecord: 4, spillField: 2 } : {}),
                 ...span,
               },
               { kind: "store", slot: 2, value: 2, ...span },
@@ -417,15 +441,16 @@ test("a fused four-entry property load tests entries 1-3 in a cold stub", () => 
   assert.ok(at[1]! - at[0]! > 4);
 });
 
-test("an inherited entry without a holder reads the receiver", () => {
-  // CSEL x14, x10, x14, EQ after CMP x14, #0 at the shared hit: method
-  // sites cache a receiver's own methods with no holder.
+test("an inherited entry with slot 0 selects its direct cached value", () => {
+  // CSEL x9, x14, x9, EQ after CMP x13, #0 at the shared hit: slot 0 reads the
+  // direct inherited value from the cache entry (x14), positive slots read the
+  // receiver (x9).
   const select = encode({
     op: "csel",
     width: 64,
-    rd: 14,
-    rn: 10,
-    rm: 14,
+    rd: 9,
+    rn: 14,
+    rm: 9,
     condition: "eq",
   });
   assert.ok(select.ok);
@@ -433,6 +458,23 @@ test("an inherited entry without a holder reads the receiver", () => {
     words.filter((word) => word === select.value).length;
   assert.equal(count(propertyLoadWords(true)), 1);
   assert.equal(count(propertyLoadWords(false)), 0);
+});
+
+test("a property load with spill storage walks chunks in a cold stub", () => {
+  const extractChunk = encode({
+    op: "ubfm",
+    width: 64,
+    rd: 12,
+    rn: 13,
+    immr: 16,
+    imms: 31,
+  });
+  assert.ok(extractChunk.ok);
+  const count = (words: number[]): number =>
+    words.filter((word) => word === extractChunk.value).length;
+  assert.equal(count(propertyLoadWords(true, true)), 1);
+  assert.equal(count(propertyLoadWords(false, true)), 1);
+  assert.equal(count(propertyLoadWords(true, false)), 0);
 });
 
 test("reference vector copies are one indexed loop with at most one barrier", () => {

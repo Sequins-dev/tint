@@ -397,6 +397,87 @@ function literals() {
   out.push(stored.left, stored.more, make(2, 2).more === undefined);
   return out.join(",");
 }
+function deepSpilledAndBuiltins() {
+  const out = [];
+  // Depth 5 prototype chain + prototype method past slot 8 + prototype overwrite.
+  const p0 = {};
+  for (let i = 0; i < 12; i++) p0["m" + i] = function () { return "p0:" + i + ":" + this.id; };
+  const p1 = Object.create(p0);
+  const p2 = Object.create(p1);
+  const p3 = Object.create(p2);
+  const p4 = Object.create(p3);
+  const leaf = Object.create(p4);
+  leaf.id = 7;
+  const callFar = (o) => o.m10();
+  for (let i = 0; i < 3; i++) out.push(callFar(leaf));
+  p0.m10 = function () { return "p0-new:" + this.id; };
+  out.push(callFar(leaf));
+  p2.m10 = function () { return "p2-mid:" + this.id; };
+  out.push(callFar(leaf));
+  delete p2.m10;
+  out.push(callFar(leaf));
+  // Dictionary-mode prototype (deleted key forces dictionary mode) + overwrite.
+  const dictProto = { a: 1, b: 2, run() { return "dict1:" + this.id; } };
+  delete dictProto.a;
+  const dObj = Object.create(dictProto);
+  dObj.id = 9;
+  const callDict = (o) => o.run();
+  for (let i = 0; i < 3; i++) out.push(callDict(dObj));
+  dictProto.run = function () { return "dict2:" + this.id; };
+  out.push(callDict(dObj));
+  // Own spilled properties across chunk 0 (offset 10) and chunk 1 (offset 26).
+  const makeSpilled = (base) => {
+    const o = {};
+    for (let i = 0; i < 30; i++) o["s" + i] = base + i;
+    return o;
+  };
+  const readS10 = (o) => o.s10;
+  const readS26 = (o) => o.s26;
+  const s1 = makeSpilled(100), s2 = makeSpilled(200);
+  for (let i = 0; i < 3; i++) out.push(readS10(s1), readS26(s1), readS10(s2), readS26(s2));
+  s1.s10 = "mut10";
+  s2.s26 = "mut26";
+  out.push(readS10(s1), readS26(s1), readS10(s2), readS26(s2));
+  // Spilled builtin own properties (Math.floor, Math.sqrt, Math.abs).
+  const mathOp = (x) => Math.floor(Math.sqrt(Math.abs(x)));
+  for (let i = 0; i < 3; i++) out.push(mathOp(-16 - i * 9));
+  // Packed array inherited methods, expando invalidation, and Array.prototype mutation.
+  const pushAndPop = (a, v) => { a.push(v); return a.pop(); };
+  const a1 = [1, 2], a2 = [3];
+  for (let i = 0; i < 3; i++) out.push(pushAndPop(a1, 10 + i), pushAndPop(a2, 20 + i));
+  a1.push = function (v) { return this.unshift(v); };
+  out.push(pushAndPop(a1, 99), a1[0], pushAndPop(a2, 30));
+  const origJoin = Array.prototype.join;
+  const joinIt = (a) => a.join("-");
+  out.push(joinIt([1, 2, 3]), joinIt([4, 5]));
+  Array.prototype.join = function () { return "custom:" + this.length; };
+  out.push(joinIt([1, 2, 3]), joinIt([4, 5]));
+  Array.prototype.join = origJoin;
+  out.push(joinIt([1, 2, 3]));
+  // String primitive inherited method caching & String.prototype mutation.
+  const code0 = (s) => s.charCodeAt(0);
+  for (let i = 0; i < 3; i++) out.push(code0("abc"), code0("XYZ"));
+  const origCharCodeAt = String.prototype.charCodeAt;
+  String.prototype.charCodeAt = function () { return 999; };
+  out.push(code0("abc"));
+  String.prototype.charCodeAt = origCharCodeAt;
+  out.push(code0("abc"));
+  // Module-level global identifier caching + globalThis write/delete invalidation.
+  const readMath = () => Math.abs(-42);
+  for (let i = 0; i < 3; i++) out.push(readMath());
+  globalThis.__tintA5Global = 11;
+  const readG = () => __tintA5Global;
+  out.push(readG(), readG());
+  globalThis.__tintA5Global = 22;
+  out.push(readG());
+  delete globalThis.__tintA5Global;
+  try {
+    out.push(readG());
+  } catch (e) {
+    out.push(e instanceof ReferenceError ? "RefErr" : "other");
+  }
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -412,6 +493,7 @@ export function sections() {
     polymorphic(),
     ownMethods(),
     literals(),
+    deepSpilledAndBuiltins(),
   ];
 }
 `;
@@ -429,7 +511,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 13);
+  assert.equal(expected.length, 14);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;
