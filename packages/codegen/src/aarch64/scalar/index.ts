@@ -103,6 +103,7 @@ import {
   findSelectDiamonds,
   forwardableEntries,
   provenNonNullValues,
+  type NestedSelect,
   type SelectArm,
 } from "./block-entries.ts";
 import {
@@ -174,6 +175,7 @@ export type LeafHelperKind =
   | "stack-overflow";
 import {
   cachedListReadPrefix,
+  uncheckedListReadPrefix,
   listVectorPrefix,
   verify,
   maximumStringLength,
@@ -604,10 +606,21 @@ interface ListReadShape {
   readonly header: number;
   readonly field: number;
   /** cached: a cacheListVectors reader (vector, list, index) whose first
-   * argument is the list's current root vector or none. */
-  readonly mode: "read" | "has" | "cached";
+   * argument is the list's current root vector or none.
+   * unchecked: a preheader-guarded reader (vector, list, index) whose vector
+   * is proven non-null with length > index. */
+  readonly mode: "read" | "has" | "cached" | "unchecked";
 }
 function listReadShape(fn: FunctionIR): ListReadShape | undefined {
+  if (fn.import === true) return undefined;
+  if (fn.name.startsWith(uncheckedListReadPrefix))
+    return fn.returnType === "optional-reference" &&
+      fn.parameters.length === 3 &&
+      fn.slots[0] === "optional-reference" &&
+      fn.slots[1] === "reference" &&
+      fn.slots[2] === "number"
+      ? { header: -1, field: -1, mode: "unchecked" }
+      : undefined;
   if (fn.name.startsWith(cachedListReadPrefix))
     return fn.returnType === "optional-reference" &&
       fn.parameters.length === 3 &&
@@ -4040,7 +4053,10 @@ function emitModuleForms(
           // emits one ROR (rotateAmounts holds n + 1) and the shifts none.
           rotateAmounts = new Uint8Array(resultBound),
           rotateSources = new Uint32Array(resultBound),
-          rotatedShifts = new Uint8Array(resultBound);
+          rotatedShifts = new Uint8Array(resultBound),
+          // `(int32 +/- f64) | 0` or `^ 0` with single-use `+/-` followed only
+          // by constants before the bitwise op: maps add/sub id -> bitwise id.
+          pendingFusedAdd = new Map<number, number>();
         /** The typed array a fused read (by its result ID) indexed. */
         function arrayOf(read: number): number {
           const array = fusedArrays.get(read);
@@ -4146,13 +4162,49 @@ function emitModuleForms(
             constantValues = new Map<number, number>();
           for (const block of fn.blocks) {
             if (block === undefined) throw "rotate block invariant";
-            const shifts = new Map<number, IRInstruction>();
-            for (const op of block.instructions) {
+            const shifts = new Map<number, IRInstruction>(),
+              addIndex = new Map<number, number>();
+            for (let at = 0; at < block.instructions.length; at++) {
+              const op = block.instructions[at];
               if (op === undefined) throw "rotate instruction invariant";
               if (op.kind === "constant") {
                 const constant = op.value;
                 if (typeof constant === "number")
                   constantValues.set(op.id, constant);
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === "+" || op.operator === "-")
+              )
+                addIndex.set(op.id, at);
+              if (
+                op.kind === "binary" &&
+                (op.operator === "|" || op.operator === "^")
+              ) {
+                const rightZero =
+                    zeroConstants[valueIds.intern(op.right)] === 1,
+                  leftZero = zeroConstants[valueIds.intern(op.left)] === 1;
+                if (rightZero || leftZero) {
+                  const candidate = rightZero ? op.left : op.right,
+                    pos = addIndex.get(candidate);
+                  if (
+                    pos !== undefined &&
+                    uses[valueIds.intern(candidate)] === 1
+                  ) {
+                    let pureBetween = true;
+                    for (let mid = pos + 1; mid < at; mid++) {
+                      const between = block.instructions[mid];
+                      if (
+                        between === undefined ||
+                        between.kind !== "constant"
+                      ) {
+                        pureBetween = false;
+                        break;
+                      }
+                    }
+                    if (pureBetween) pendingFusedAdd.set(candidate, op.id);
+                  }
+                }
               }
               if (
                 op.kind === "binary" &&
@@ -4256,6 +4308,12 @@ function emitModuleForms(
             if (op?.kind === "c-call" && op.call.mayCallback === true)
               callsBack = true;
         function mayCollect(op: IRInstruction): boolean {
+          if (
+            op.kind === "call" &&
+            op.environment === undefined &&
+            listReadShapes(op.target)?.mode === "unchecked"
+          )
+            return false;
           return op.kind === "call"
             ? closedRoots === undefined ||
                 noSafepoints === undefined ||
@@ -8897,28 +8955,267 @@ function emitModuleForms(
             for (let index = 0; index < viewSlots.size; index++)
               viewSlotTokens.push(-1);
           }
-          // SSA values are block-local. A final comparison used by the branch
-          // has no other consumer, so its flags can replace a boolean carrier.
-          const finalInstruction = b.instructions[b.instructions.length - 1];
-          let comparisonValue: number | undefined = undefined;
-          if (
-            finalInstruction !== undefined &&
-            (finalInstruction.kind === "binary" ||
-              finalInstruction.kind === "optional-present")
-          ) {
-            const terminator = b.terminator;
+          // SSA values are block-local. A comparison used by the branch has no
+          // other consumer when followed only by flag-preserving stores of
+          // other values, so its flags can replace a boolean carrier.
+          const blockDiamond = selects.diamonds.get(b.id),
+            blockTerm = b.terminator;
+          let comparisonValue: number | undefined = undefined,
+            comparisonIndex = -1;
+          if (blockTerm.kind === "branch") {
+            const condId = blockTerm.condition;
+            let scan = b.instructions.length - 1;
+            while (scan >= 0) {
+              const tail = b.instructions[scan];
+              if (
+                tail !== undefined &&
+                tail.kind === "store" &&
+                tail.value !== condId &&
+                (integerSlots[tail.slot] !== 1 || storedAsInteger(tail.value))
+              )
+                scan--;
+              else break;
+            }
+            const candidate = scan >= 0 ? b.instructions[scan] : undefined;
+            const nestedSafe =
+              blockDiamond?.nested === undefined ||
+              (scan === b.instructions.length - 1 &&
+                candidate !== undefined &&
+                (candidate.kind === "optional-present" ||
+                  (candidate.kind === "binary" &&
+                    (candidate.operator === "===" ||
+                      candidate.operator === "!==" ||
+                      candidate.operator === "==" ||
+                      candidate.operator === "!=" ||
+                      candidate.operator === "<" ||
+                      candidate.operator === "<=" ||
+                      candidate.operator === ">" ||
+                      candidate.operator === ">=") &&
+                    (typeOf(candidate.left) === "number" ||
+                      typeOf(candidate.left) === "boolean" ||
+                      typeOf(candidate.left) === "reference" ||
+                      typeOf(candidate.left) === "optional-reference"))));
             if (
-              terminator.kind === "branch" &&
-              finalInstruction.id === terminator.condition
-            )
-              comparisonValue = finalInstruction.id;
+              candidate !== undefined &&
+              (candidate.kind === "binary" ||
+                candidate.kind === "optional-present") &&
+              candidate.id === condId &&
+              nestedSafe
+            ) {
+              comparisonValue = candidate.id;
+              comparisonIndex = scan;
+            }
           }
           let comparisonBranch: Condition | undefined = undefined;
+          const activeFusedAdd = new Map<
+            number,
+            {
+              readonly add: boolean;
+              readonly left: number;
+              readonly right: number;
+              readonly leftIsInt: boolean;
+            }
+          >();
+          const loadFloatSelectArm = (
+            arm: SelectArm,
+            scratch: number,
+          ): number => {
+            if (arm.kind === "load") {
+              const offset = slotOffset(arm.slot),
+                reg = scalarRegisters?.[offset / 8] ?? 0;
+              if (integerSlots[arm.slot] === 1) {
+                const intReg = reg >= 32 ? reg - 32 : 9;
+                if (reg < 32) rawLoad(9, offset);
+                emit({ op: "scvtf-d-x", rd: scratch, rn: intReg });
+                return scratch;
+              }
+              if (reg > 0 && reg < 32) return reg;
+              if (reg >= 32)
+                emit({ op: "fmov-d-x", rd: scratch, rn: reg - 32 });
+              else emit({ op: "ldr-d", rt: scratch, rn: "sp", offset });
+              return scratch;
+            }
+            const constant = arm.value;
+            if (typeof constant !== "number")
+              throw "float select arm invariant";
+            const bits = encodeFloat64(constant);
+            if (bits.lo === 0 && bits.hi === 0) {
+              emit({ op: "fmov-d-x", rd: scratch, rn: "zr" });
+              return scratch;
+            }
+            const immediate = float64Immediate(constant);
+            if (immediate !== undefined) {
+              emit({ op: "fmov-d-imm", rd: scratch, imm8: immediate });
+              return scratch;
+            }
+            imm64(9, bits.lo, bits.hi);
+            emit({ op: "fmov-d-x", rd: scratch, rn: 9 });
+            return scratch;
+          };
+          const loadRawSelectArm = (
+            arm: SelectArm,
+            scratch: number,
+          ): number | "zr" => {
+            if (arm.kind === "none") return "zr";
+            if (arm.kind === "constant") {
+              const constant = arm.value;
+              if (typeof constant === "boolean") {
+                if (!constant) return "zr";
+                imm(scratch, 1);
+                return scratch;
+              }
+              const lo = ((constant % 4294967296) + 4294967296) % 4294967296,
+                hi =
+                  (Math.floor(constant / 4294967296) + 4294967296) % 4294967296;
+              if (lo === 0 && hi === 0) return "zr";
+              imm64(scratch, lo, hi);
+              return scratch;
+            }
+            const offset = slotOffset(arm.slot),
+              reg = scalarRegisters?.[offset / 8] ?? 0;
+            if (reg >= 32) return reg - 32;
+            rawLoad(scratch, offset);
+            return scratch;
+          };
+          const emitNestedSelect = (
+            nested: NestedSelect,
+            isFloat: boolean,
+          ): void => {
+            stackWords.clear();
+            const cmp = nested.compare;
+            let innerCond: Condition;
+            let cachedCmpLeftReg = -1,
+              cachedCmpRightReg = -1;
+            if (cmp.type === "number") {
+              const isIntOperand = (arm: SelectArm): boolean =>
+                arm.kind === "load"
+                  ? integerSlots[arm.slot] === 1
+                  : arm.kind === "constant" &&
+                    typeof arm.value === "number" &&
+                    Number.isSafeInteger(arm.value) &&
+                    !(arm.value === 0 && 1 / arm.value < 0);
+              const integerCmp =
+                isIntOperand(cmp.left) && isIntOperand(cmp.right);
+              if (integerCmp) {
+                const lReg = loadRawSelectArm(cmp.left, 9),
+                  rReg = loadRawSelectArm(cmp.right, 10);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: lReg,
+                  rm: rReg,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+              } else {
+                const lReg = loadFloatSelectArm(cmp.left, 0),
+                  rReg = loadFloatSelectArm(cmp.right, 1);
+                cachedCmpLeftReg = lReg;
+                cachedCmpRightReg = rReg;
+                emit({ op: "fcmp", rn: lReg, rm: rReg });
+              }
+              innerCond =
+                cmp.operator === "===" || cmp.operator === "=="
+                  ? "eq"
+                  : cmp.operator === "!==" || cmp.operator === "!="
+                    ? "ne"
+                    : cmp.operator === "<"
+                      ? integerCmp
+                        ? "lt"
+                        : "mi"
+                      : cmp.operator === "<="
+                        ? integerCmp
+                          ? "le"
+                          : "ls"
+                        : cmp.operator === ">"
+                          ? "gt"
+                          : "ge";
+            } else {
+              const lReg = loadRawSelectArm(cmp.left, 9),
+                rReg = loadRawSelectArm(cmp.right, 10);
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: "zr",
+                rn: lReg,
+                rm: rReg,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              innerCond =
+                cmp.operator === "===" || cmp.operator === "==" ? "eq" : "ne";
+            }
+            if (isFloat) {
+              const sameFloat = (
+                a: number | boolean,
+                b: number | boolean,
+              ): boolean =>
+                typeof a === "number" &&
+                typeof b === "number" &&
+                a === b &&
+                (a !== 0 || 1 / a === 1 / b);
+              const reuseFloat = (arm: SelectArm, scratch: number): number => {
+                if (
+                  cachedCmpRightReg >= 0 &&
+                  arm.kind === "constant" &&
+                  cmp.right.kind === "constant" &&
+                  sameFloat(arm.value, cmp.right.value)
+                )
+                  return cachedCmpRightReg;
+                if (
+                  cachedCmpLeftReg >= 0 &&
+                  arm.kind === "constant" &&
+                  cmp.left.kind === "constant" &&
+                  sameFloat(arm.value, cmp.left.value)
+                )
+                  return cachedCmpLeftReg;
+                return loadFloatSelectArm(arm, scratch);
+              };
+              const tReg = reuseFloat(nested.innerDiamond.trueArm, 0),
+                fReg = reuseFloat(
+                  nested.innerDiamond.falseArm,
+                  tReg === 1 ? 0 : 1,
+                );
+              emit({
+                op: "fcsel",
+                rd: 2,
+                rn: tReg,
+                rm: fReg,
+                condition: innerCond,
+              });
+            } else {
+              const tReg = loadRawSelectArm(nested.innerDiamond.trueArm, 9),
+                fReg = loadRawSelectArm(nested.innerDiamond.falseArm, 10);
+              emit({
+                op: "csel",
+                width: 64,
+                rd: 14,
+                rn: tReg,
+                rm: fReg,
+                condition: innerCond,
+              });
+            }
+            stackWords.clear();
+          };
+          const blockNested = blockDiamond?.nested;
           for (
             let operationIndex = 0;
             operationIndex < b.instructions.length;
             operationIndex++
           ) {
+            if (
+              blockDiamond !== undefined &&
+              blockNested !== undefined &&
+              operationIndex === comparisonIndex
+            ) {
+              const nestedFloat =
+                fn.slots[blockDiamond.targetSlot] === "number" &&
+                integerSlots[blockDiamond.targetSlot] !== 1;
+              emitNestedSelect(blockNested, nestedFloat);
+            }
             const op: IRInstruction | undefined =
               b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
@@ -15517,6 +15814,34 @@ function emitModuleForms(
                 } else if (
                   ["+", "-", "*", "/", "min", "max"].includes(op.operator)
                 ) {
+                  const fusedOr =
+                    op.operator === "+" || op.operator === "-"
+                      ? pendingFusedAdd.get(op.id)
+                      : undefined;
+                  const leftIsInt =
+                      storedAsInteger(op.left) &&
+                      (wordKinds[valueIds.intern(op.left)] === 2 ||
+                        wordKinds[valueIds.intern(op.left)] === 3),
+                    rightIsInt =
+                      storedAsInteger(op.right) &&
+                      (wordKinds[valueIds.intern(op.right)] === 2 ||
+                        wordKinds[valueIds.intern(op.right)] === 3);
+                  if (
+                    fusedOr !== undefined &&
+                    options.hostABI?.javascriptConversion?.kind ===
+                      "baseline" &&
+                    leftIsInt !== rightIsInt &&
+                    typeOf(op.left) === "number" &&
+                    typeOf(op.right) === "number"
+                  ) {
+                    activeFusedAdd.set(fusedOr, {
+                      add: op.operator === "+",
+                      left: op.left,
+                      right: op.right,
+                      leftIsInt,
+                    });
+                    break;
+                  }
                   const left = floatOperand(op.left, 0),
                     right = floatOperand(op.right, 1),
                     target = floatTarget(op.id, 0);
@@ -15795,23 +16120,87 @@ function emitModuleForms(
                     (zeroConstants[rightIndex] === 1 ||
                       zeroConstants[valueIds.intern(op.left)] === 1)
                   ) {
-                    // `x | 0` and `x ^ 0`: the other operand's low 32 bits,
-                    // sign-extended at once for an int64 result.
-                    const source = wordOperand(
-                      zeroConstants[rightIndex] === 1 ? op.left : op.right,
-                      9,
-                    );
-                    if (!storedAsWord(op.id) && wantsInteger(op.id)) {
-                      emit({ op: "sxtw", rd: target, rn: source });
-                      extended = true;
-                    } else
-                      emit({
-                        op: "orr-reg",
-                        width: 32,
-                        rd: target,
-                        rn: "zr",
-                        rm: source,
+                    const fusedAdd = activeFusedAdd.get(op.id);
+                    if (fusedAdd !== undefined) {
+                      // `(int32 +/- f64) | 0`: convert the float operand with
+                      // FJCVTZS (which sets Z=1 iff it is an exact signed
+                      // int32) and add/sub in 32-bit GP registers, breaking
+                      // the GP->FP->GP loop-carried dependency chain on `int`.
+                      const intId = fusedAdd.leftIsInt
+                          ? fusedAdd.left
+                          : fusedAdd.right,
+                        fltId = fusedAdd.leftIsInt
+                          ? fusedAdd.right
+                          : fusedAdd.left;
+                      const intReg = intRegister(intId, 10),
+                        fltReg = floatOperand(fltId, 0);
+                      emit({ op: "fjcvtzs", rd: 9, rn: fltReg });
+                      const toSlow = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                      if (fusedAdd.add)
+                        emit({
+                          op: "add-reg",
+                          width: 32,
+                          rd: target,
+                          rn: intReg,
+                          rm: 9,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      else
+                        emit({
+                          op: "sub-reg",
+                          width: 32,
+                          rd: target,
+                          rn: fusedAdd.leftIsInt ? intReg : 9,
+                          rm: fusedAdd.leftIsInt ? 9 : intReg,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      const toDone = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(toSlow, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - toSlow) * 4,
                       });
+                      emit({ op: "scvtf-d-x", rd: 1, rn: intReg });
+                      emit({
+                        op: fusedAdd.add ? "fadd" : "fsub",
+                        rd: 0,
+                        rn: fusedAdd.leftIsInt ? 1 : fltReg,
+                        rm: fusedAdd.leftIsInt ? fltReg : 1,
+                      });
+                      emit({ op: "fjcvtzs", rd: target, rn: 0 });
+                      patchInstruction(toDone, {
+                        op: "b",
+                        displacement: (instructions.length - toDone) * 4,
+                      });
+                      if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                        emit({ op: "sxtw", rd: target, rn: target });
+                        extended = true;
+                      }
+                    } else {
+                      // `x | 0` and `x ^ 0`: the other operand's low 32 bits,
+                      // sign-extended at once for an int64 result.
+                      const source = wordOperand(
+                        zeroConstants[rightIndex] === 1 ? op.left : op.right,
+                        9,
+                      );
+                      if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                        emit({ op: "sxtw", rd: target, rn: source });
+                        extended = true;
+                      } else
+                        emit({
+                          op: "orr-reg",
+                          width: 32,
+                          rd: target,
+                          rn: "zr",
+                          rm: source,
+                        });
+                    }
                   } else if (
                     immediate !== undefined &&
                     op.operator === "imul"
@@ -16546,6 +16935,62 @@ function emitModuleForms(
                 }
                 const listResult = op.id;
                 if (listShape !== undefined && listResult !== undefined) {
+                  if (listShape.mode === "unchecked") {
+                    const vector = op.arguments[0],
+                      index = op.arguments[2];
+                    if (vector === undefined || index === undefined)
+                      throw "list read argument invariant";
+                    const vectorRegister = rawRegister(vector, 10),
+                      indexFact = valueIds.intern(index);
+                    let indexRegister = 12;
+                    if (storedAsInteger(index))
+                      indexRegister = intRegister(index, 12);
+                    else if (wordKinds[indexFact] === 3)
+                      imm(12, wordConstants[indexFact] ?? 0);
+                    else {
+                      const number = floatOperand(index, 0);
+                      emit({ op: "fcvtzs-x-d", rd: 12, rn: number });
+                    }
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 13,
+                      rn: vectorRegister,
+                      immediate: nativeArrayInlineOffset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "ldr-indexed",
+                      size: 3,
+                      fp: false,
+                      rt: 11,
+                      rn: 13,
+                      rm: indexRegister,
+                      scaled: true,
+                    });
+                    const resultRegister = rawTarget(listResult, 11);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      rm: vectorRegister,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: resultRegister,
+                      rn: "zr",
+                      rm: 11,
+                      condition: "eq",
+                    });
+                    saveRaw(resultRegister, listResult);
+                    break;
+                  }
                   const cachedRead = listShape.mode === "cached",
                     list = op.arguments[cachedRead ? 1 : 0],
                     index = op.arguments[cachedRead ? 2 : 1],
@@ -17016,6 +17461,15 @@ function emitModuleForms(
           } else if (t.kind === "branch") {
             const diamond = selects.diamonds.get(b.id);
             if (diamond !== undefined) {
+              const targetSlot = diamond.targetSlot,
+                dstOffset = slotOffset(targetSlot),
+                dstHome = scalarRegisters?.[dstOffset / 8] ?? 0,
+                isFloat =
+                  fn.slots[targetSlot] === "number" &&
+                  integerSlots[targetSlot] !== 1;
+              const diamondNested = diamond.nested;
+              if (diamondNested !== undefined && comparisonValue === undefined)
+                emitNestedSelect(diamondNested, isFloat);
               let selectCondition: Condition;
               if (comparisonBranch !== undefined)
                 selectCondition = comparisonBranch;
@@ -17032,51 +17486,15 @@ function emitModuleForms(
                 });
                 selectCondition = "ne";
               }
-              const targetSlot = diamond.targetSlot,
-                dstOffset = slotOffset(targetSlot),
-                dstHome = scalarRegisters?.[dstOffset / 8] ?? 0,
-                isFloat =
-                  fn.slots[targetSlot] === "number" &&
-                  integerSlots[targetSlot] !== 1;
               if (isFloat) {
-                const loadFloatArm = (
-                  arm: SelectArm,
-                  scratch: number,
-                ): number => {
-                  if (arm.kind === "load") {
-                    const offset = slotOffset(arm.slot),
-                      reg = scalarRegisters?.[offset / 8] ?? 0;
-                    if (integerSlots[arm.slot] === 1) {
-                      const intReg = reg >= 32 ? reg - 32 : 9;
-                      if (reg < 32) rawLoad(9, offset);
-                      emit({ op: "scvtf-d-x", rd: scratch, rn: intReg });
-                      return scratch;
-                    }
-                    if (reg > 0 && reg < 32) return reg;
-                    if (reg >= 32)
-                      emit({ op: "fmov-d-x", rd: scratch, rn: reg - 32 });
-                    else emit({ op: "ldr-d", rt: scratch, rn: "sp", offset });
-                    return scratch;
-                  }
-                  const constant = arm.value;
-                  if (typeof constant !== "number")
-                    throw "float select arm invariant";
-                  const bits = encodeFloat64(constant);
-                  if (bits.lo === 0 && bits.hi === 0) {
-                    emit({ op: "fmov-d-x", rd: scratch, rn: "zr" });
-                    return scratch;
-                  }
-                  const immediate = float64Immediate(constant);
-                  if (immediate !== undefined) {
-                    emit({ op: "fmov-d-imm", rd: scratch, imm8: immediate });
-                    return scratch;
-                  }
-                  imm64(9, bits.lo, bits.hi);
-                  emit({ op: "fmov-d-x", rd: scratch, rn: 9 });
-                  return scratch;
-                };
-                const trueReg = loadFloatArm(diamond.trueArm, 0),
-                  falseReg = loadFloatArm(diamond.falseArm, 1),
+                const trueReg =
+                    diamond.nested?.inTrueArm === true
+                      ? 2
+                      : loadFloatSelectArm(diamond.trueArm, 0),
+                  falseReg =
+                    diamond.nested?.inTrueArm === false
+                      ? 2
+                      : loadFloatSelectArm(diamond.falseArm, 1),
                   dstReg = dstHome > 0 && dstHome < 32 ? dstHome : 0;
                 emit({
                   op: "fcsel",
@@ -17095,35 +17513,14 @@ function emitModuleForms(
                     offset: dstOffset,
                   });
               } else {
-                const loadRawArm = (
-                  arm: SelectArm,
-                  scratch: number,
-                ): number | "zr" => {
-                  if (arm.kind === "none") return "zr";
-                  if (arm.kind === "constant") {
-                    const constant = arm.value;
-                    if (typeof constant === "boolean") {
-                      if (!constant) return "zr";
-                      imm(scratch, 1);
-                      return scratch;
-                    }
-                    const lo =
-                        ((constant % 4294967296) + 4294967296) % 4294967296,
-                      hi =
-                        (Math.floor(constant / 4294967296) + 4294967296) %
-                        4294967296;
-                    if (lo === 0 && hi === 0) return "zr";
-                    imm64(scratch, lo, hi);
-                    return scratch;
-                  }
-                  const offset = slotOffset(arm.slot),
-                    reg = scalarRegisters?.[offset / 8] ?? 0;
-                  if (reg >= 32) return reg - 32;
-                  rawLoad(scratch, offset);
-                  return scratch;
-                };
-                const trueReg = loadRawArm(diamond.trueArm, 9),
-                  falseReg = loadRawArm(diamond.falseArm, 10),
+                const trueReg =
+                    diamond.nested?.inTrueArm === true
+                      ? 14
+                      : loadRawSelectArm(diamond.trueArm, 9),
+                  falseReg =
+                    diamond.nested?.inTrueArm === false
+                      ? 14
+                      : loadRawSelectArm(diamond.falseArm, 10),
                   dstReg = dstHome >= 32 ? dstHome - 32 : 9;
                 emit({
                   op: "csel",

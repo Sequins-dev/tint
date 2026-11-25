@@ -18,6 +18,12 @@ export const maximumStringLength = 0x7fffffec;
  * cacheListVectors creates: (vector, list, index), where the vector is the
  * list's current root vector or none. Codegen inlines them on that trust. */
 export const cachedListReadPrefix = "__tint_reference_list_readv$";
+/** Name prefix of the preheader-bounds-proven dense list readers that
+ * cacheListVectors creates: (vector, list, index), where a dominating guard
+ * proved `vector` is a non-null reference vector of length >= the loop bound
+ * and `index` is an integer in `[0, bound)`. Codegen inlines them without
+ * null or bounds checks on that trust. */
+export const uncheckedListReadPrefix = "__tint_reference_list_readu$";
 /** Name prefix of cacheListVectors' vector accessors: (list or none) to the
  * list's root when it is a reference vector, else none. */
 export const listVectorPrefix = "__tint_reference_list_vector$";

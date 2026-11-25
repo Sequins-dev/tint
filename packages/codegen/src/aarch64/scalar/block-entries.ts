@@ -1,7 +1,9 @@
 import {
+  analyzeLiveSlots,
   blockSuccessors,
   isNativeTypedArray,
   type FunctionIR,
+  type Instruction,
   type ScalarType,
 } from "@tint/ir/scalar";
 /** Blocks whose register contents at entry the emitter can derive from the
@@ -488,12 +490,28 @@ export interface SelectArm {
   readonly value: number | boolean;
 }
 
+export interface NestedSelectCompare {
+  readonly operator: "<" | "<=" | ">" | ">=" | "===" | "!==" | "==" | "!=";
+  readonly type: ScalarType;
+  readonly left: SelectArm;
+  readonly right: SelectArm;
+}
+
+export interface NestedSelect {
+  readonly innerBlock: number;
+  readonly compare: NestedSelectCompare;
+  readonly innerDiamond: SelectDiamond;
+  readonly inTrueArm: boolean;
+  readonly copyJoin: number | undefined;
+}
+
 export interface SelectDiamond {
   readonly targetSlot: number;
   readonly join: number;
   readonly trueArm: SelectArm;
   readonly falseArm: SelectArm;
   readonly fusedBlocks: readonly number[];
+  readonly nested?: NestedSelect;
 }
 
 export interface SelectDiamondPlan {
@@ -655,6 +673,239 @@ export function findSelectDiamonds(
         fusedBlocks: [t.alternate],
       });
     }
+  }
+  // Second pass: recognize 2-level nested select diamonds (e.g. `clamp`:
+  // `x < lo ? lo : x > hi ? hi : x`), where one arm is a simple SelectArm
+  // and the other is a single-predecessor pure-comparison 1-level diamond
+  // joining either directly or through a single-slot copy block whose source
+  // slot is dead at the outer join.
+  let livenessChecked = false,
+    liveSlots: readonly (readonly number[])[] | undefined;
+  function isDeadAt(slot: number, blockId: number): boolean {
+    if (!livenessChecked) {
+      livenessChecked = true;
+      liveSlots = analyzeLiveSlots(fn, 500000)?.slots;
+    }
+    if (liveSlots === undefined) return false;
+    const live = liveSlots[blockId];
+    return live === undefined || !live.includes(slot);
+  }
+  function parsePureCompare(blockId: number): NestedSelectCompare | undefined {
+    if (
+      blockId === fn.entry ||
+      (predecessors[blockId] ?? 0) !== 1 ||
+      dispatchFused?.[blockId] === 1 ||
+      !armAllowed(blockId)
+    )
+      return undefined;
+    const block = fn.blocks[blockId];
+    if (
+      block === undefined ||
+      block.exception !== undefined ||
+      block.instructions.length < 2
+    )
+      return undefined;
+    const term = block.terminator;
+    if (term.kind !== "branch") return undefined;
+    const last = block.instructions[block.instructions.length - 1];
+    if (
+      last === undefined ||
+      last.kind !== "binary" ||
+      last.id !== term.condition
+    )
+      return undefined;
+    const op = last.operator;
+    if (
+      op !== "<" &&
+      op !== "<=" &&
+      op !== ">" &&
+      op !== ">=" &&
+      op !== "===" &&
+      op !== "!==" &&
+      op !== "==" &&
+      op !== "!="
+    )
+      return undefined;
+    const defs = new Map<number, Instruction>();
+    for (let i = 0; i < block.instructions.length - 1; i++) {
+      const inst = block.instructions[i];
+      if (inst === undefined) return undefined;
+      if (
+        inst.kind === "load" ||
+        inst.kind === "constant" ||
+        inst.kind === "reference-none" ||
+        inst.kind === "string-none"
+      )
+        defs.set(inst.id, inst);
+      else return undefined;
+    }
+    const toOperand = (
+      id: number,
+    ): { readonly arm: SelectArm; readonly type: ScalarType } | undefined => {
+      const def = defs.get(id);
+      if (def === undefined) return undefined;
+      if (def.kind === "load") {
+        const t = fn.slots[def.slot];
+        if (
+          t !== "number" &&
+          t !== "boolean" &&
+          t !== "reference" &&
+          t !== "optional-reference"
+        )
+          return undefined;
+        return { arm: { kind: "load", slot: def.slot, value: 0 }, type: t };
+      }
+      if (def.kind === "constant") {
+        if (typeof def.value === "number")
+          return {
+            arm: { kind: "constant", slot: -1, value: def.value },
+            type: "number",
+          };
+        if (typeof def.value === "boolean")
+          return {
+            arm: { kind: "constant", slot: -1, value: def.value },
+            type: "boolean",
+          };
+        return undefined;
+      }
+      if (def.kind === "reference-none")
+        return {
+          arm: { kind: "none", slot: -1, value: 0 },
+          type: "optional-reference",
+        };
+      return undefined;
+    };
+    const left = toOperand(last.left),
+      right = toOperand(last.right);
+    if (left === undefined || right === undefined || left.type !== right.type)
+      return undefined;
+    if (
+      left.type !== "number" &&
+      op !== "===" &&
+      op !== "!==" &&
+      op !== "==" &&
+      op !== "!="
+    )
+      return undefined;
+    return { operator: op, type: left.type, left: left.arm, right: right.arm };
+  }
+  function parseCopyJoin(
+    blockId: number,
+    fromSlot: number,
+    toSlot: number,
+    expectedJoin: number,
+  ): boolean {
+    if (
+      blockId === fn.entry ||
+      (predecessors[blockId] ?? 0) !== 2 ||
+      dispatchFused?.[blockId] === 1 ||
+      fused[blockId] === 1 ||
+      !armAllowed(blockId)
+    )
+      return false;
+    const block = fn.blocks[blockId];
+    if (
+      block === undefined ||
+      block.exception !== undefined ||
+      block.instructions.length !== 2
+    )
+      return false;
+    const term = block.terminator;
+    if (term.kind !== "jump" || term.target !== expectedJoin) return false;
+    const op0 = block.instructions[0],
+      op1 = block.instructions[1];
+    if (
+      op0 === undefined ||
+      op1 === undefined ||
+      op0.kind !== "load" ||
+      op0.slot !== fromSlot ||
+      op1.kind !== "store" ||
+      op1.slot !== toSlot ||
+      op1.value !== op0.id
+    )
+      return false;
+    if (
+      fn.slots[fromSlot] !== fn.slots[toSlot] ||
+      (integerSlots[fromSlot] === 1) !== (integerSlots[toSlot] === 1)
+    )
+      return false;
+    return isDeadAt(fromSlot, expectedJoin);
+  }
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "select diamond block invariant";
+    if (
+      dispatchFused?.[block.id] === 1 ||
+      fused[block.id] === 1 ||
+      diamonds.has(block.id)
+    )
+      continue;
+    const t = block.terminator;
+    if (
+      t.kind !== "branch" ||
+      t.consequent === t.alternate ||
+      t.consequent === block.id ||
+      t.alternate === block.id
+    )
+      continue;
+    const tryNested = (
+      simpleId: number,
+      innerId: number,
+      innerInTrue: boolean,
+    ): boolean => {
+      const simple = parseArm(simpleId),
+        inner = diamonds.get(innerId);
+      if (
+        simple === undefined ||
+        inner === undefined ||
+        inner.nested !== undefined ||
+        simple.join === block.id ||
+        simple.join === simpleId ||
+        simple.join === innerId ||
+        fused[simpleId] === 1 ||
+        fused[innerId] === 1
+      )
+        return false;
+      const compare = parsePureCompare(innerId);
+      if (compare === undefined) return false;
+      const targetSlot = simple.targetSlot,
+        join = simple.join;
+      let copyJoin: number | undefined;
+      if (inner.join === join && inner.targetSlot === targetSlot) {
+        copyJoin = undefined;
+      } else if (
+        parseCopyJoin(inner.join, inner.targetSlot, targetSlot, join)
+      ) {
+        copyJoin = inner.join;
+      } else return false;
+      diamonds.delete(innerId);
+      fused[simpleId] = 1;
+      fused[innerId] = 1;
+      const fusedBlocks: number[] = [simpleId, innerId];
+      for (const fb of inner.fusedBlocks)
+        if (fb !== undefined) fusedBlocks.push(fb);
+      if (copyJoin !== undefined) {
+        fused[copyJoin] = 1;
+        fusedBlocks.push(copyJoin);
+      }
+      const placeholder: SelectArm = { kind: "none", slot: -1, value: 0 };
+      diamonds.set(block.id, {
+        targetSlot,
+        join,
+        trueArm: innerInTrue ? placeholder : simple.arm,
+        falseArm: innerInTrue ? simple.arm : placeholder,
+        fusedBlocks,
+        nested: {
+          innerBlock: innerId,
+          compare,
+          innerDiamond: inner,
+          inTrueArm: innerInTrue,
+          copyJoin,
+        },
+      });
+      return true;
+    };
+    if (!tryNested(t.consequent, t.alternate, false))
+      tryNested(t.alternate, t.consequent, true);
   }
   return { diamonds, fused };
 }

@@ -605,4 +605,118 @@ test("loop-invariant header length read and uint32 conversion hoist when header 
   );
   assert.ok(rw !== undefined);
   assert.equal(rw.module.functions[2]?.blocks[1]?.terminator.kind, "record");
+  // Preheader-guarded unchecked list reads fire for the read-only loop (i < len
+  // starting at 0, reading list[i]), and NOT for the header-writing loop.
+  assert.ok(
+    ro.module.functions.some((f) =>
+      f.name.startsWith("__tint_reference_list_readu$"),
+    ),
+  );
+  assert.ok(
+    !rw.module.functions.some((f) =>
+      f.name.startsWith("__tint_reference_list_readu$"),
+    ),
+  );
+});
+
+test("preheader-guarded unchecked reads handle i-1 with start=1 and reject i-2", () => {
+  const makeShiftLoop = (startVal: number, subOffset: number): FunctionIR => ({
+    id: 1,
+    name: "shiftLoop",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number", "number"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: startVal, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          object: 1,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 2,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 2, slot: 1, ...s },
+          { kind: "load", id: 3, slot: 2, ...s },
+          { kind: "unary", id: 4, operator: "uint32", operand: 3, ...s },
+          { kind: "binary", id: 5, operator: "<", left: 2, right: 4, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 3,
+          alternate: 4,
+          ...s,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 1, ...s },
+          { kind: "constant", id: 8, value: subOffset, ...s },
+          { kind: "binary", id: 9, operator: "-", left: 7, right: 8, ...s },
+          { kind: "call", id: 10, target: 0, arguments: [6, 9], ...s },
+          { kind: "constant", id: 11, value: 1, ...s },
+          { kind: "binary", id: 12, operator: "+", left: 7, right: 11, ...s },
+          { kind: "store", slot: 1, value: 12, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  });
+  const records = [
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "number" as const, mutable: true },
+        { offset: 16, type: "optional-reference" as const, mutable: true },
+      ],
+    },
+  ];
+  const valid = cacheListVectors(
+    { records, functions: [reader(0, 0), makeShiftLoop(1, 1)] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(valid !== undefined);
+  assert.ok(
+    valid.module.functions.some((f) =>
+      f.name.startsWith("__tint_reference_list_readu$"),
+    ),
+  );
+  const outOfRange = cacheListVectors(
+    { records, functions: [reader(0, 0), makeShiftLoop(1, 2)] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(outOfRange !== undefined);
+  assert.ok(
+    !outOfRange.module.functions.some((f) =>
+      f.name.startsWith("__tint_reference_list_readu$"),
+    ),
+  );
 });

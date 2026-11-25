@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
+import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { provenNonNullValues } from "../src/aarch64/scalar/block-entries.ts";
 import { encode, type Condition } from "../src/aarch64/isa.ts";
 const s = { start: 0, end: 0 };
@@ -114,8 +115,13 @@ test("all comparison flags work with either successor in fallthrough position", 
   }
 });
 
-function countMasked(module: ModuleIR, mask: number, expected: number): number {
-  const r = emitModule(module);
+function countMasked(
+  module: ModuleIR,
+  mask: number,
+  expected: number,
+  options?: Parameters<typeof emitModule>[1],
+): number {
+  const r = emitModule(module, options);
   assert.ok(r.ok, JSON.stringify(r));
   const view = new DataView(r.value.code.buffer, r.value.code.byteOffset);
   const fn = r.value.functions[0]!;
@@ -443,4 +449,191 @@ test("proven non-null reference-value skips cbz traps and omits dead unwraps", (
   );
   assert.equal(withCatch?.[2], 0);
   assert.equal(withoutCatch?.[2], 1);
+});
+
+test("comparison branches fuse past trailing flag-preserving stores", () => {
+  const mod: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "trailingStore",
+        exported: true,
+        parameters: [0, 1],
+        slots: [
+          "optional-reference",
+          "optional-reference",
+          "optional-reference",
+        ],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "load", id: 1, slot: 1, ...s },
+              { kind: "reference-none", id: 2, ...s },
+              {
+                kind: "binary",
+                id: 3,
+                operator: "===",
+                left: 0,
+                right: 2,
+                ...s,
+              },
+              { kind: "store", slot: 2, value: 1, ...s },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 3,
+              consequent: 1,
+              alternate: 2,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "constant", id: 4, value: true, ...s }],
+            terminator: { kind: "return", value: 4, ...s },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "constant", id: 5, value: false, ...s }],
+            terminator: { kind: "return", value: 5, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  // CSINC (cset): 0xffe00c00 == 0x1a800400 (32-bit) / 0x9a800400 (64-bit).
+  assert.equal(countMasked(mod, 0x7fe00c00, 0x1a800400), 0);
+});
+
+test("2-level nested float select diamonds emit two fcsel instructions without branches", () => {
+  // clamp(x, -64, 64): x < -64 ? -64 : (x > 64 ? 64 : x)
+  const clampMod: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "clampNested",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "constant", id: 1, value: -64, ...s },
+              { kind: "binary", id: 2, operator: "<", left: 0, right: 1, ...s },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 2,
+              consequent: 1,
+              alternate: 2,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "constant", id: 3, value: -64, ...s },
+              { kind: "store", slot: 1, value: 3, ...s },
+            ],
+            terminator: { kind: "jump", target: 6, ...s },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 4, slot: 0, ...s },
+              { kind: "constant", id: 5, value: 64, ...s },
+              { kind: "binary", id: 6, operator: ">", left: 4, right: 5, ...s },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 6,
+              consequent: 3,
+              alternate: 4,
+              ...s,
+            },
+          },
+          {
+            id: 3,
+            instructions: [
+              { kind: "constant", id: 7, value: 64, ...s },
+              { kind: "store", slot: 2, value: 7, ...s },
+            ],
+            terminator: { kind: "jump", target: 5, ...s },
+          },
+          {
+            id: 4,
+            instructions: [
+              { kind: "load", id: 8, slot: 0, ...s },
+              { kind: "store", slot: 2, value: 8, ...s },
+            ],
+            terminator: { kind: "jump", target: 5, ...s },
+          },
+          {
+            id: 5,
+            instructions: [
+              { kind: "load", id: 9, slot: 2, ...s },
+              { kind: "store", slot: 1, value: 9, ...s },
+            ],
+            terminator: { kind: "jump", target: 6, ...s },
+          },
+          {
+            id: 6,
+            instructions: [{ kind: "load", id: 10, slot: 1, ...s }],
+            terminator: { kind: "return", value: 10, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  // Double-precision FCSEL: 0xffe00c00 == 0x1e600c00.
+  assert.equal(countMasked(clampMod, 0xffe00c00, 0x1e600c00), 2);
+});
+
+test("(int32 + f64) | 0 fuses into fjcvtzs fast path", () => {
+  const mod: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "addOrZero",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "number"],
+        integerSlots: [1],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 1, ...s },
+              { kind: "store", slot: 1, value: 0, ...s },
+              { kind: "load", id: 1, slot: 1, ...s },
+              { kind: "load", id: 2, slot: 0, ...s },
+              { kind: "binary", id: 3, operator: "+", left: 1, right: 2, ...s },
+              { kind: "constant", id: 4, value: 0, ...s },
+              { kind: "binary", id: 5, operator: "|", left: 3, right: 4, ...s },
+              { kind: "store", slot: 1, value: 5, ...s },
+              { kind: "load", id: 6, slot: 1, ...s },
+            ],
+            terminator: { kind: "return", value: 6, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  // FJCVTZS: 0xfffffc00 == 0x1e7e0000 (1 fast path + 1 slow path = 2) when
+  // baseline JavaScript conversion is available, and 0 without it.
+  assert.equal(
+    countMasked(mod, 0xfffffc00, 0x1e7e0000, { hostABI: darwinHostABI() }),
+    2,
+  );
+  assert.equal(countMasked(mod, 0xfffffc00, 0x1e7e0000), 0);
 });

@@ -1,5 +1,6 @@
 import {
   cachedListReadPrefix,
+  uncheckedListReadPrefix,
   createFunctionBuilder,
   indirectCallClass,
   indirectCallTargets,
@@ -11,7 +12,10 @@ import {
   naturalLoops,
   blockSuccessors,
   recordReadsKept,
+  renumberInstructionResult,
   retainDebugValues,
+  substituteInstructionValues,
+  substituteTerminatorValues,
   visitInstructionOperands,
   visitTerminatorOperands,
   type Block,
@@ -316,7 +320,8 @@ export function cacheListVectors(
   }
   const functions: FunctionIR[] = module.functions.slice();
   // Cached-read accessors, created on first use, by reader.
-  const cached = new Map<number, number>();
+  const cached = new Map<number, number>(),
+    cachedOrigin = new Map<number, number>();
   function cachedReader(reader: number): number {
     const existing = cached.get(reader);
     if (existing !== undefined) return existing;
@@ -349,6 +354,45 @@ export function cacheListVectors(
       ],
     });
     cached.set(reader, id);
+    cachedOrigin.set(id, reader);
+    readOnly.add(id);
+    return id;
+  }
+  // Unchecked-read accessors, created on first use, by reader: valid IR
+  // forwarding to `reader`, inlined without bounds checks when guarded.
+  const unchecked = new Map<number, number>();
+  function uncheckedReader(reader: number): number {
+    const existing = unchecked.get(reader);
+    if (existing !== undefined) return existing;
+    const id = functions.length,
+      readArguments: number[] = [0, 1];
+    functions.push({
+      id,
+      name: uncheckedListReadPrefix + String(id),
+      exported: false,
+      parameters: [0, 1, 2],
+      slots: ["optional-reference", "reference", "number"],
+      returnType: "optional-reference",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "load", id: 0, slot: 1, ...span },
+            { kind: "load", id: 1, slot: 2, ...span },
+            {
+              kind: "call",
+              id: 2,
+              target: reader,
+              arguments: readArguments,
+              ...span,
+            },
+          ],
+          terminator: { kind: "return", value: 2, ...span },
+        },
+      ],
+    });
+    unchecked.set(reader, id);
     readOnly.add(id);
     return id;
   }
@@ -1006,6 +1050,8 @@ export function cacheListVectors(
         if (!cSinglePred) break;
       }
       const cBlock = cSinglePred ? candBlocks[term.consequent] : undefined;
+      let hoistedBoundSlot: number | undefined,
+        hoistedBoundValue: number | undefined;
       if (cBlock !== undefined) {
         const lenLoads = new Set<number>();
         for (const op of cBlock.instructions)
@@ -1071,6 +1117,8 @@ export function cacheListVectors(
               ...cBlock,
               instructions: finalCInsts,
             };
+            hoistedBoundSlot = uSlot;
+            hoistedBoundValue = uOp.id;
           }
         }
       }
@@ -1105,9 +1153,503 @@ export function cacheListVectors(
         currentFn = candidate;
         nextValue = candNextValue;
         count++;
+        // If the hoisted bound drives a counted loop `i < uSlot` starting at a
+        // non-negative uint32 constant `start` and stepping solely by `i + 1`
+        // after all cached reads of this list, guard `vector !== null &&
+        // vector.length >= uSlot` in `freshId` and specialize reads of `i` and
+        // `i - k` (`0 <= k <= start`) in the hot loop to unchecked vector loads.
+        if (hoistedBoundSlot !== undefined && hoistedBoundValue !== undefined) {
+          const guarded = tryUncheckedListBounds(
+            currentFn,
+            loop,
+            freshId,
+            term.consequent,
+            cache.vector,
+            hoistedBoundSlot,
+            hoistedBoundValue,
+            nextValue,
+            cachedOrigin,
+            uncheckedReader,
+          );
+          if (guarded !== undefined && recordReadsKept(currentFn, guarded.fn)) {
+            currentFn = guarded.fn;
+            nextValue = guarded.nextValue;
+            count += guarded.rewritten;
+          }
+        }
       }
     }
     return { fn: currentFn, visited: work, rewritten: count };
   }
   return { module: { ...module, functions }, visited, rewritten };
+}
+
+/** Most instructions a bounds-versioned loop may have: its cold copy doubles them. */
+const maxVersionedListLoopInstructions = 2000;
+
+function isUint32Constant(value: number): boolean {
+  return (
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 4294967295 &&
+    (value !== 0 || 1 / value > 0)
+  );
+}
+
+/** The uint32 constant `slot` holds on every path to the end of block `at`,
+ * if any (same forward dataflow as boundCountedLoops). */
+function slotEntryConstant(
+  fn: FunctionIR,
+  slot: number,
+  at: number,
+): number | undefined {
+  const count = fn.blocks.length,
+    state = new Uint8Array(count),
+    known = new Float64Array(count),
+    out = new Uint8Array(count),
+    outValue = new Float64Array(count),
+    worklist: number[] = [fn.entry];
+  state[fn.entry] = 2;
+  const meet = (target: number, kind: number, value: number): void => {
+    const before = state[target] ?? 0;
+    if (before === 2) return;
+    if (before === 1 && kind === 1 && known[target] === value) return;
+    state[target] = before === 0 ? kind : 2;
+    known[target] = value;
+    worklist.push(target);
+  };
+  const constants = new Map<number, number>();
+  while (worklist.length > 0) {
+    const id = worklist.pop();
+    if (id === undefined) break;
+    const block = fn.blocks[id];
+    if (block === undefined) continue;
+    let kind = state[id] ?? 2,
+      value = known[id] ?? 0;
+    constants.clear();
+    for (const op of block.instructions) {
+      if (op === undefined) continue;
+      if (op.kind === "constant") {
+        const literal = op.value;
+        if (typeof literal === "number") constants.set(op.id, literal);
+      } else if (op.kind === "store" && op.slot === slot) {
+        const stored = constants.get(op.value);
+        if (stored === undefined || !isUint32Constant(stored)) kind = 2;
+        else {
+          kind = 1;
+          value = stored;
+        }
+      }
+    }
+    const t = block.terminator;
+    if (
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+      t.slot === slot &&
+      t.operation !== "write"
+    )
+      kind = 2;
+    out[id] = kind;
+    outValue[id] = value;
+    for (const target of blockSuccessors(block))
+      if (target !== undefined) meet(target, kind, value);
+    if (block.exception !== undefined) meet(block.exception.target, 2, 0);
+  }
+  return out[at] === 1 ? outValue[at] : undefined;
+}
+
+function retargetTerminator(
+  term: Terminator,
+  route: (id: number) => number,
+): Terminator {
+  if (term.kind === "jump") return { ...term, target: route(term.target) };
+  if (
+    term.kind === "branch" ||
+    term.kind === "record" ||
+    term.kind === "record-cell" ||
+    term.kind === "cell"
+  )
+    return {
+      ...term,
+      consequent: route(term.consequent),
+      alternate: route(term.alternate),
+    };
+  return term;
+}
+
+function tryUncheckedListBounds(
+  fn: FunctionIR,
+  loop: NaturalLoop,
+  freshId: number,
+  condBlockId: number,
+  vectorSlot: number,
+  boundSlot: number,
+  boundValueId: number,
+  firstValue: number,
+  cachedOrigin: ReadonlyMap<number, number>,
+  uncheckedReader: (reader: number) => number,
+):
+  | {
+      readonly fn: FunctionIR;
+      readonly nextValue: number;
+      readonly rewritten: number;
+    }
+  | undefined {
+  const condBlock = fn.blocks[condBlockId],
+    freshBlock = fn.blocks[freshId];
+  if (condBlock === undefined || freshBlock === undefined) return undefined;
+  const cTerm = condBlock.terminator;
+  if (
+    cTerm.kind !== "branch" ||
+    !loop.body.has(cTerm.consequent) ||
+    loop.body.has(cTerm.alternate)
+  )
+    return undefined;
+  let condOp: Instruction | undefined;
+  const condLoads = new Map<number, number>();
+  for (const op of condBlock.instructions) {
+    if (op === undefined) return undefined;
+    if (op.kind === "load") condLoads.set(op.id, op.slot);
+    if (instructionResult(op) === cTerm.condition) condOp = op;
+  }
+  if (
+    condOp === undefined ||
+    condOp.kind !== "binary" ||
+    condOp.operator !== "<" ||
+    condOp.right !== boundValueId
+  )
+    return undefined;
+  const counter = condLoads.get(condOp.left);
+  if (
+    counter === undefined ||
+    counter === boundSlot ||
+    fn.slots[counter] !== "number"
+  )
+    return undefined;
+  for (const op of condBlock.instructions)
+    if (op !== undefined && op.kind === "store" && op.slot === counter)
+      return undefined;
+  const startValue = slotEntryConstant(fn, counter, freshId);
+  if (startValue === undefined) return undefined;
+  // Verify the counter is written solely by one `counter = counter + 1` in
+  // the loop, collect matching cached reads, and ensure loop size is bounded.
+  let totalInstructions = 0,
+    stepBlock = -1,
+    stepIndex = -1;
+  const matched: {
+    readonly blockId: number;
+    readonly index: number;
+    readonly reader: number;
+  }[] = [];
+  const matchedByBlock = new Map<number, number[]>();
+  for (const id of loop.body) {
+    const block = fn.blocks[id];
+    if (block === undefined) return undefined;
+    totalInstructions += block.instructions.length;
+    if (totalInstructions > maxVersionedListLoopInstructions) return undefined;
+    if (block.exception !== undefined && block.exception.slot === counter)
+      return undefined;
+    const bt = block.terminator;
+    if (
+      (bt.kind === "record" ||
+        bt.kind === "record-cell" ||
+        bt.kind === "cell") &&
+      bt.operation === "read" &&
+      bt.slot === counter
+    )
+      return undefined;
+    const defs = new Map<number, Instruction>();
+    for (let i = 0; i < block.instructions.length; i++) {
+      const op = block.instructions[i];
+      if (op === undefined) return undefined;
+      const res = instructionResult(op);
+      if (res !== undefined) defs.set(res, op);
+      if (op.kind === "store" && op.slot === counter) {
+        if (stepBlock >= 0) return undefined;
+        const rhs = defs.get(op.value);
+        if (rhs === undefined || rhs.kind !== "binary" || rhs.operator !== "+")
+          return undefined;
+        const l = defs.get(rhs.left),
+          r = defs.get(rhs.right);
+        const isOne = (x: Instruction | undefined): boolean =>
+          x !== undefined && x.kind === "constant" && x.value === 1;
+        const loaded = isOne(l) ? r : isOne(r) ? l : undefined;
+        if (
+          loaded === undefined ||
+          loaded.kind !== "load" ||
+          loaded.slot !== counter
+        )
+          return undefined;
+        stepBlock = id;
+        stepIndex = i;
+      } else if (
+        id !== loop.header &&
+        id !== condBlockId &&
+        op.kind === "call" &&
+        op.id !== undefined
+      ) {
+        const reader = cachedOrigin.get(op.target);
+        if (reader === undefined) continue;
+        const vecArg = op.arguments[0],
+          idxArg = op.arguments[2];
+        if (vecArg === undefined || idxArg === undefined) continue;
+        const vecDef = defs.get(vecArg);
+        if (
+          vecDef === undefined ||
+          vecDef.kind !== "load" ||
+          vecDef.slot !== vectorSlot
+        )
+          continue;
+        const idxDef = defs.get(idxArg);
+        let inRange = false;
+        if (
+          idxDef !== undefined &&
+          idxDef.kind === "load" &&
+          idxDef.slot === counter
+        )
+          inRange = true;
+        else if (
+          idxDef !== undefined &&
+          idxDef.kind === "binary" &&
+          idxDef.operator === "-"
+        ) {
+          const base = defs.get(idxDef.left),
+            sub = defs.get(idxDef.right);
+          if (
+            base !== undefined &&
+            base.kind === "load" &&
+            base.slot === counter &&
+            sub !== undefined &&
+            sub.kind === "constant"
+          ) {
+            const subValue = sub.value;
+            if (
+              typeof subValue === "number" &&
+              Number.isInteger(subValue) &&
+              subValue >= 0 &&
+              subValue <= startValue
+            )
+              inRange = true;
+          }
+        }
+        if (inRange) {
+          matched.push({ blockId: id, index: i, reader });
+          let list = matchedByBlock.get(id);
+          if (list === undefined) {
+            list = [];
+            matchedByBlock.set(id, list);
+          }
+          list.push(i);
+        }
+      }
+    }
+  }
+  if (stepBlock < 0 || matched.length === 0) return undefined;
+  // Ensure no matched read executes after the counter increment in the same
+  // iteration (before re-checking `counter < bound` at the loop header).
+  for (const idx of matchedByBlock.get(stepBlock) ?? [])
+    if (idx !== undefined && idx > stepIndex) return undefined;
+  const stepB = fn.blocks[stepBlock];
+  if (stepB === undefined) return undefined;
+  const seenAfterStep = new Set<number>(),
+    queue: number[] = [];
+  for (const succ of blockSuccessors(stepB))
+    if (succ !== undefined && succ !== loop.header && loop.body.has(succ)) {
+      seenAfterStep.add(succ);
+      queue.push(succ);
+    }
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id === undefined) break;
+    if (id === stepBlock || matchedByBlock.has(id)) return undefined;
+    const b = fn.blocks[id];
+    if (b === undefined) return undefined;
+    for (const succ of blockSuccessors(b))
+      if (
+        succ !== undefined &&
+        succ !== loop.header &&
+        loop.body.has(succ) &&
+        !seenAfterStep.has(succ)
+      ) {
+        seenAfterStep.add(succ);
+        queue.push(succ);
+      }
+  }
+  // Clone loop.body into a cold copy (keeping cachedReader calls) and rewrite
+  // matched reads in the hot loop to uncheckedReader.
+  let nextValue = firstValue;
+  const blocks: Block[] = fn.blocks.slice(),
+    copies = new Map<number, number>();
+  for (const id of loop.body) {
+    if (id === undefined) return undefined;
+    copies.set(id, blocks.length);
+    blocks.push({
+      id: blocks.length,
+      instructions: [],
+      terminator: { kind: "trap", start: 0, end: 0 },
+    });
+  }
+  const route = (target: number): number => copies.get(target) ?? target,
+    substitution = new Uint32Array(firstValue);
+  for (const original of loop.body) {
+    if (original === undefined) return undefined;
+    const block = fn.blocks[original],
+      copyId = copies.get(original);
+    if (block === undefined || copyId === undefined) return undefined;
+    substitution.fill(0);
+    const instructions: Instruction[] = [];
+    for (const op of block.instructions) {
+      if (op === undefined) return undefined;
+      const substituted = substituteInstructionValues(op, substitution),
+        result = instructionResult(op);
+      let copied = substituted;
+      if (result !== undefined) {
+        const renamed = nextValue++;
+        substitution[result] = renamed + 1;
+        copied = renumberInstructionResult(substituted, renamed);
+      }
+      instructions.push(copied);
+    }
+    const copyTerm = retargetTerminator(
+      substituteTerminatorValues(block.terminator, substitution),
+      route,
+    );
+    blocks[copyId] =
+      block.exception === undefined
+        ? { id: copyId, instructions, terminator: copyTerm }
+        : {
+            id: copyId,
+            instructions,
+            terminator: copyTerm,
+            exception: {
+              ...block.exception,
+              target: route(block.exception.target),
+            },
+          };
+  }
+  const coldHeader = copies.get(loop.header);
+  if (coldHeader === undefined) return undefined;
+  // Rewrite matched reads in the hot loop to uncheckedReader.
+  const hotBlocks = new Map<number, Instruction[]>();
+  for (const m of matched) {
+    if (m === undefined) continue;
+    let insts = hotBlocks.get(m.blockId);
+    if (insts === undefined) {
+      const orig = blocks[m.blockId];
+      if (orig === undefined) return undefined;
+      insts = orig.instructions.slice();
+      hotBlocks.set(m.blockId, insts);
+    }
+    const op = insts[m.index];
+    if (op === undefined || op.kind !== "call") return undefined;
+    insts[m.index] = { ...op, target: uncheckedReader(m.reader) };
+  }
+  for (const [id, instructions] of hotBlocks) {
+    const orig = blocks[id];
+    if (orig === undefined) return undefined;
+    blocks[id] = { ...orig, instructions };
+  }
+  // Guard in freshId: vector !== none && vector.length >= boundSlot.
+  const lenCheckId = blocks.length,
+    hotEntryId = lenCheckId + 1,
+    coldEntryId = lenCheckId + 2;
+  const vVecOpt = nextValue++,
+    vPresent = nextValue++,
+    freshInsts: Instruction[] = freshBlock.instructions.slice();
+  freshInsts.push({
+    kind: "load",
+    id: vVecOpt,
+    slot: vectorSlot,
+    start: 0,
+    end: 0,
+  });
+  freshInsts.push({
+    kind: "unary",
+    id: vPresent,
+    operator: "truthy",
+    operand: vVecOpt,
+    start: 0,
+    end: 0,
+  });
+  blocks[freshId] = {
+    ...freshBlock,
+    instructions: freshInsts,
+    terminator: {
+      kind: "branch",
+      condition: vPresent,
+      consequent: lenCheckId,
+      alternate: coldEntryId,
+      start: 0,
+      end: 0,
+    },
+  };
+  const vVecOpt2 = nextValue++,
+    vVec = nextValue++,
+    vVecLen = nextValue++,
+    vBound = nextValue++,
+    vOk = nextValue++;
+  const lenInsts: Instruction[] = [];
+  lenInsts.push({
+    kind: "load",
+    id: vVecOpt2,
+    slot: vectorSlot,
+    start: 0,
+    end: 0,
+  });
+  lenInsts.push({
+    kind: "reference-value",
+    id: vVec,
+    value: vVecOpt2,
+    start: 0,
+    end: 0,
+  });
+  lenInsts.push({
+    kind: "reference-vector-length",
+    id: vVecLen,
+    vector: vVec,
+    start: 0,
+    end: 0,
+  });
+  lenInsts.push({
+    kind: "load",
+    id: vBound,
+    slot: boundSlot,
+    start: 0,
+    end: 0,
+  });
+  lenInsts.push({
+    kind: "binary",
+    id: vOk,
+    operator: ">=",
+    left: vVecLen,
+    right: vBound,
+    start: 0,
+    end: 0,
+  });
+  blocks.push({
+    id: lenCheckId,
+    instructions: lenInsts,
+    terminator: {
+      kind: "branch",
+      condition: vOk,
+      consequent: hotEntryId,
+      alternate: coldEntryId,
+      start: 0,
+      end: 0,
+    },
+  });
+  blocks.push({
+    id: hotEntryId,
+    instructions: [],
+    terminator: { kind: "jump", target: loop.header, start: 0, end: 0 },
+  });
+  blocks.push({
+    id: coldEntryId,
+    instructions: [],
+    terminator: { kind: "jump", target: coldHeader, start: 0, end: 0 },
+  });
+  const debug =
+    fn.debug === undefined ? undefined : retainDebugValues(fn, blocks);
+  const resultFn: FunctionIR =
+    debug === undefined ? { ...fn, blocks } : { ...fn, blocks, debug };
+  return { fn: resultFn, nextValue, rewritten: matched.length };
 }
