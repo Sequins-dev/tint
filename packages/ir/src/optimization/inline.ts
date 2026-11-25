@@ -136,9 +136,10 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "property-store":
     case "script-entry":
     case "global-cell":
-    // Element loads and stores are inline, nonallocating and nonthrowing.
+    // Element loads, stores, and length reads are inline, nonallocating and nonthrowing.
     case "element-load":
     case "element-store":
+    case "element-length":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -196,6 +197,7 @@ function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
     last.kind === "property-store" ||
     last.kind === "element-load" ||
     last.kind === "element-store" ||
+    last.kind === "element-length" ||
     last.kind === "script-entry" ||
     last.kind === "global-cell"
   );
@@ -1045,6 +1047,16 @@ export function inlineSmallFunctions(
                   object: value(instruction.object),
                   index: value(instruction.index),
                   value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "element-length":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

@@ -6,13 +6,221 @@ import {
   type ObjectHooks,
 } from "./operations.ts";
 import { createArrayWithElements } from "./arrays.ts";
-import { createArrayElementsFromList } from "./array-elements.ts";
+import {
+  createArrayElementsFromList,
+  firstCapacity,
+  noNumbers,
+  type ArrayElements,
+  type ElementCell,
+} from "./array-elements.ts";
 import { numberValue } from "./coercion.ts";
 import {
   createRuntimeError,
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "./errors.ts";
+
+/** Direct compact array allocation for realm-prototype dense literals.
+ * `createErrorRealm` marks `realm.arrayPrototype` and initializes
+ * `realm.arrayHooks.internalMethods` before any Script executes. */
+function packRealmArray(
+  realm: ErrorRealm,
+  elements: ArrayElements<ScriptPropertyKey, unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const methods = realm.arrayHooks.internalMethods;
+  if (methods === undefined) throw "ARRAY_METHODS_INVARIANT";
+  return {
+    internalShape:
+      realm.arrayPrototype.internalRareSlots?.internalArrayChildShape,
+    prototype: realm.arrayPrototype,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: true,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: true,
+    internalArrayElements: elements,
+    internalMethods: methods,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
+}
+
+/** Direct fixed-arity dense array literal constructors (0..4 elements) that
+ * avoid temporary argument lists, loops, and nested helper dispatch. */
+export function createArray0(
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values: undefined,
+    length: 0,
+    lengthWritable: true,
+  });
+}
+
+export function createArray1(
+  v0: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  if (typeof v0 === "number") {
+    const numbers = new Float64Array(firstCapacity);
+    numbers[0] = v0;
+    return packRealmArray(realm, {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 1,
+      numbers,
+      values: undefined,
+      length: 1,
+      lengthWritable: true,
+    });
+  }
+  const values: ElementCell<unknown>[] = [{ value: v0 }];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 1,
+    lengthWritable: true,
+  });
+}
+
+export function createArray2(
+  v0: unknown,
+  v1: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  if (typeof v0 === "number" && typeof v1 === "number") {
+    const numbers = new Float64Array(firstCapacity);
+    numbers[0] = v0;
+    numbers[1] = v1;
+    return packRealmArray(realm, {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 2,
+      numbers,
+      values: undefined,
+      length: 2,
+      lengthWritable: true,
+    });
+  }
+  const values: ElementCell<unknown>[] = [{ value: v0 }, { value: v1 }];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 2,
+    lengthWritable: true,
+  });
+}
+
+export function createArray3(
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  if (
+    typeof v0 === "number" &&
+    typeof v1 === "number" &&
+    typeof v2 === "number"
+  ) {
+    const numbers = new Float64Array(firstCapacity);
+    numbers[0] = v0;
+    numbers[1] = v1;
+    numbers[2] = v2;
+    return packRealmArray(realm, {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 3,
+      numbers,
+      values: undefined,
+      length: 3,
+      lengthWritable: true,
+    });
+  }
+  const values: ElementCell<unknown>[] = [
+    { value: v0 },
+    { value: v1 },
+    { value: v2 },
+  ];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 3,
+    lengthWritable: true,
+  });
+}
+
+export function createArray4(
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  if (
+    typeof v0 === "number" &&
+    typeof v1 === "number" &&
+    typeof v2 === "number" &&
+    typeof v3 === "number"
+  ) {
+    const numbers = new Float64Array(firstCapacity);
+    numbers[0] = v0;
+    numbers[1] = v1;
+    numbers[2] = v2;
+    numbers[3] = v3;
+    return packRealmArray(realm, {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 4,
+      numbers,
+      values: undefined,
+      length: 4,
+      lengthWritable: true,
+    });
+  }
+  const values: ElementCell<unknown>[] = [
+    { value: v0 },
+    { value: v1 },
+    { value: v2 },
+    { value: v3 },
+  ];
+  return packRealmArray(realm, {
+    keys: realm.arrayHooks,
+    undefinedValue: undefined,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length: 4,
+    lengthWritable: true,
+  });
+}
 
 export function lengthOfArrayLike(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,

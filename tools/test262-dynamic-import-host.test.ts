@@ -649,6 +649,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "packedNumberElement",
     "absentElementValue",
     "storePackedNumberElement",
+    "packedArrayLength",
     "readCachedLengthValue",
     "scriptMapGet",
     "scriptMapHas",
@@ -658,6 +659,15 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "scriptArrayPop",
     "createObjectLiteralSite",
     "createLiteralObject",
+    "createLiteralObject1",
+    "createLiteralObject2",
+    "createLiteralObject3",
+    "createLiteralObject4",
+    "createArray0",
+    "createArray1",
+    "createArray2",
+    "createArray3",
+    "createArray4",
   ];
   const old = {
     ...snapshot,
@@ -702,8 +712,9 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   // The inline property caches import two value readers (own and
   // inherited), their miss test and the cached store where they imported
   // one slot reader; native script entries add six helpers; step 5a adds
-  // eleven helpers for element access, builtin intrinsics and object literals.
-  assert.equal(current.values.length, 173);
+  // eleven helpers for element access, builtin intrinsics and object literals;
+  // step 5a-3 adds ten helpers for packed length and fixed-arity literals.
+  assert.equal(current.values.length, 183);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

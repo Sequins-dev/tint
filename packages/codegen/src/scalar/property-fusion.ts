@@ -100,7 +100,11 @@ function slotsLiveAt(
  * unobservable. */
 /** A load whose miss is the absent value. */
 function missingLoad(op: Instruction | undefined): boolean {
-  return op?.kind === "property-load" || op?.kind === "element-load";
+  return (
+    op?.kind === "property-load" ||
+    op?.kind === "element-load" ||
+    op?.kind === "element-length"
+  );
 }
 /** Predecessor counts over normal and exceptional edges. */
 function predecessorCounts(fn: FunctionIR): Uint32Array {
@@ -182,7 +186,9 @@ export function fusedPropertyAccesses(
     const load = block.instructions[index];
     if (
       load === undefined ||
-      (load.kind !== "property-load" && load.kind !== "element-load")
+      (load.kind !== "property-load" &&
+        load.kind !== "element-load" &&
+        load.kind !== "element-length")
     )
       continue;
     const uses: LoadUses = {

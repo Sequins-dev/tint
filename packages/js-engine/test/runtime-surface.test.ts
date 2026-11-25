@@ -28,17 +28,17 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "36607579cdb032e153b91c57814ac2abf112b89bf5da57f379679cb1eb8dffe3",
+    sha256: "13932c75a5e0f7a84eb7241a5b830c4ad721fbf2d69d4a6291cbf90114fd9c3e",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "b67a6601d237f35bd909fddb5d304e626f58c567c73844569e07841ce28a5c8f",
+    sha256: "b4b9dd7aaae589fceec3255394d185cfb50f7053817aa6906608c5b1526fb153",
   },
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "795b30ac8df69be3dbede43ba527909319010dcb4582bd3e9fcef21ffbe65273",
+    sha256: "cf3bde9bd5fed43da9d91bcbe25471eb9e2574ed531a973fc58310a16c5b8fec",
   },
   {
     source:
@@ -57,9 +57,9 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 200);
+  assert.equal(surface.length, 210);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 200);
+  assert.equal(names.size, 210);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,

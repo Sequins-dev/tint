@@ -304,6 +304,7 @@ export function provenRecordFacts(
               break;
             case "element-load":
             case "element-store":
+            case "element-length":
               // Numbers (or the absent value) and booleans: binary64
               // elements hold no record, so nothing flows in or out.
               break;

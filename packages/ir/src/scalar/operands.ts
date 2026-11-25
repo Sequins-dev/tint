@@ -95,6 +95,9 @@ export function visitInstructionOperands(
       visit(op.index);
       visit(op.value);
       return;
+    case "element-length":
+      visit(op.object);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;

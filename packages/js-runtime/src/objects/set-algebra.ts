@@ -1,12 +1,12 @@
 import {
-  hasMap,
-  setMap,
-  deleteMap,
-  createMapCursor,
-  advanceMapCursor,
-  readMapCursorKey,
-  type LinkedMap,
-} from "@tint/foundation/collections/linked-map";
+  hasScriptMap,
+  setScriptMap,
+  deleteScriptMap,
+  createScriptMapCursor,
+  advanceScriptMapCursor,
+  readScriptMapCursorKey,
+  type ScriptMap,
+} from "./collection-data.ts";
 import {
   ensureExoticSlots,
   createObject,
@@ -24,10 +24,7 @@ import {
 } from "./set-record.ts";
 import { requireSet, createSetData, copySetData } from "./set-data.ts";
 
-function setResult(
-  data: LinkedMap<unknown, unknown>,
-  realm: ErrorRealm,
-): unknown {
+function setResult(data: ScriptMap, realm: ErrorRealm): unknown {
   const result = createObject<ScriptPropertyKey, unknown>(realm.setPrototype);
   ensureExoticSlots(result).internalSetData = data;
   return result;
@@ -78,12 +75,9 @@ export function installSetAlgebra(
               const step = stepScriptIterator(iterator);
               if (step.done) return setResult(result, realm);
               const value = step.value === 0 ? 0 : step.value;
-              if (
-                name === "symmetricDifference" &&
-                hasMap<unknown, unknown>(set, value)
-              )
-                deleteMap<unknown, unknown>(result, value);
-              else setMap<unknown, unknown>(result, value, value);
+              if (name === "symmetricDifference" && hasScriptMap(set, value))
+                deleteScriptMap(result, value);
+              else setScriptMap(result, value, value);
             }
           }
           if (name === "isSubsetOf" && set.size > other.size) return false;
@@ -92,16 +86,16 @@ export function installSetAlgebra(
             name === "difference" ? copySetData(set) : createSetData();
           if (name !== "isSupersetOf" && set.size <= other.size) {
             // Difference traverses a snapshot; the other has-based paths stay live.
-            const cursor = createMapCursor<unknown, unknown>(
+            const cursor = createScriptMapCursor(
               name === "difference" ? result : set,
             );
-            while (advanceMapCursor<unknown, unknown>(cursor)) {
-              const value = readMapCursorKey<unknown, unknown>(cursor),
+            while (advanceScriptMapCursor(cursor)) {
+              const value = readScriptMapCursorKey(cursor),
                 found = otherHas(other, value, realm);
               if (name === "difference" && found)
-                deleteMap<unknown, unknown>(result, value);
+                deleteScriptMap(result, value);
               if (name === "intersection" && found)
-                setMap<unknown, unknown>(result, value, value);
+                setScriptMap(result, value, value);
               if (
                 (name === "isSubsetOf" && !found) ||
                 (name === "isDisjointFrom" && found)
@@ -114,12 +108,11 @@ export function installSetAlgebra(
               const step = stepScriptIterator(iterator);
               if (step.done) break;
               const value = step.value === 0 ? 0 : step.value;
-              if (name === "difference")
-                deleteMap<unknown, unknown>(result, value);
+              if (name === "difference") deleteScriptMap(result, value);
               else {
-                const found = hasMap<unknown, unknown>(set, value);
+                const found = hasScriptMap(set, value);
                 if (name === "intersection" && found)
-                  setMap<unknown, unknown>(result, value, value);
+                  setScriptMap(result, value, value);
                 if (
                   (name === "isSupersetOf" && !found) ||
                   (name === "isDisjointFrom" && found)

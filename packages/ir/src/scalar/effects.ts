@@ -42,6 +42,7 @@ export function instructionEffects(op: Instruction): number {
     case "script-entry":
     case "global-cell":
     case "element-load":
+    case "element-length":
     case "array-read":
     case "array-element":
     case "weak-slot-key":

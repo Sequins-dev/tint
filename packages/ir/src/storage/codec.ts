@@ -574,6 +574,15 @@ export function encodeInstruction(
       writeSigned(writer, op.countField);
       writeSigned(writer, op.storageField);
       return true;
+    case "element-length":
+      writePrefix(writer, 122, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.lengthField);
+      return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
       writeSigned(writer, op.id);
@@ -1631,6 +1640,24 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
+        ...span,
+      };
+    }
+    case 122: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        lengthField = readSigned(reader);
+      return {
+        kind: "element-length",
+        id,
+        object,
+        record,
+        field,
+        elementsRecord,
+        lengthField,
         ...span,
       };
     }

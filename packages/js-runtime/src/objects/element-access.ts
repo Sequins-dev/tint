@@ -63,6 +63,17 @@ export function storePackedNumberElement(
   return true;
 }
 
+/** The mirrored `length` of an array with packed elements, or a miss:
+ * `witness`, which no length number can be (natively IR element-length). */
+export function packedArrayLength(
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+  value: unknown,
+): unknown {
+  const elements = viewObjectValue(value, witness)?.internalArrayElements;
+  if (elements === undefined) return witness;
+  return elements.length;
+}
+
 /** A generated `length` read of a value that is not a String: the length an
  * array with packed elements mirrors (every length definition refreshes it),
  * else the site's cached read. */

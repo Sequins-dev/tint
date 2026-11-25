@@ -44,6 +44,7 @@ import {
   setProperty,
   hasProperty,
   preventExtensions,
+  markPrototype,
   makePrototypeImmutable,
   defineOwnProperty,
   type OrdinaryObject,
@@ -447,6 +448,7 @@ export function createErrorRealm(
     arrayHooks,
     hooks,
   );
+  markPrototype<ScriptPropertyKey, unknown>(arrayPrototype);
   const iteratorPrototype = createObject<ScriptPropertyKey, unknown>(
     objectPrototype,
   );

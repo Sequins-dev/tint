@@ -2689,4 +2689,67 @@ test("element access requires an elements reference with a number count and Floa
       false,
     );
   }
+
+  function lengthModule(
+    elementsType: "optional-reference" | "number",
+    lengthType: "number" | "general",
+    objectType: "general" | "reference",
+  ) {
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "length",
+          exported: true,
+          parameters: [0],
+          slots: [objectType],
+          returnType: "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                {
+                  kind: "element-length",
+                  id: 1,
+                  object: 0,
+                  record: 0,
+                  field: 1,
+                  elementsRecord: 1,
+                  lengthField: 0,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 1, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: elementsType, mutable: true },
+          ],
+        },
+        {
+          byteLength: 24,
+          fields: [{ offset: 8, type: lengthType, mutable: true }],
+        },
+      ],
+    });
+  }
+  const validLength = lengthModule("optional-reference", "number", "general");
+  assert.ok(validLength.ok, JSON.stringify(validLength));
+  assert.equal(lengthModule("number", "number", "general").ok, false);
+  assert.equal(
+    lengthModule("optional-reference", "general", "general").ok,
+    false,
+  );
+  assert.equal(
+    lengthModule("optional-reference", "number", "reference").ok,
+    false,
+  );
 });

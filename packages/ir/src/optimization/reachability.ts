@@ -110,7 +110,11 @@ export function traceModuleReferences(
           includeRecord(op.globalRecord);
           includeRecord(op.globalObjectRecord);
           includeRecord(op.cacheRecord);
-        } else if (op.kind === "element-load" || op.kind === "element-store") {
+        } else if (
+          op.kind === "element-load" ||
+          op.kind === "element-store" ||
+          op.kind === "element-length"
+        ) {
           includeRecord(op.record);
           includeRecord(op.elementsRecord);
         }

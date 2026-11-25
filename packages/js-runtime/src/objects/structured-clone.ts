@@ -3,7 +3,7 @@ import {
   createStringBuilder,
   finishString,
 } from "@tint/foundation/text/string-builder";
-import { setMap } from "@tint/foundation/collections/linked-map";
+import { setScriptMap } from "./collection-data.ts";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
 import { createArrayObject } from "./arrays.ts";
 import {
@@ -538,7 +538,7 @@ export function deserializeWorkerValue(
       const length = count();
       for (let index = 0; index < length; index++) {
         const key = decode();
-        setMap<unknown, unknown>(data, key, isMap ? decode() : key);
+        setScriptMap(data, key, isMap ? decode() : key);
       }
       return object;
     }

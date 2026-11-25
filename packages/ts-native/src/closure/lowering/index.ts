@@ -44,6 +44,7 @@ import {
   bindAbsentTest,
   bindElementLoad,
   bindElementStore,
+  bindElementLength,
   bindRecordOperation,
   bindScriptEntry,
   bindGlobalCell,
@@ -4832,6 +4833,70 @@ function lowerEntries(
           store && fourth !== undefined
             ? bindElementStore(fn, second, third, fourth, layout, span)
             : bindElementLoad(fn, second, third, layout, span);
+        continue;
+      }
+      if (binding.operation === "element-length") {
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const elementsName = binding.field,
+          lengthName = binding.siteField;
+        const field =
+          record === undefined || elementsName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, elementsName);
+        const witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        const property =
+          witness?.kind === "object" && elementsName !== undefined
+            ? witness.properties.find(
+                (item) => item !== undefined && item.name === elementsName,
+              )
+            : undefined;
+        let elementsType: number | undefined = undefined;
+        const declared =
+          property === undefined ? undefined : checked.types[property.type];
+        if (declared?.kind === "union") {
+          for (const member of declared.members) {
+            if (member === undefined) throw "element binding union invariant";
+            if (checked.types[member]?.kind === "undefined") continue;
+            elementsType = elementsType === undefined ? member : -1;
+          }
+        } else if (property !== undefined) elementsType = property.type;
+        const elementsRecord =
+          elementsType === undefined || elementsType < 0
+            ? undefined
+            : recordContracts.forType(elementsType);
+        const lengthField =
+          elementsRecord === undefined || lengthName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, lengthName);
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.returnType !== "general" ||
+          record === undefined ||
+          field === undefined ||
+          elementsRecord === undefined ||
+          lengthField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "element-length binding takes a record witness with an elements field and an unknown value",
+          );
+        functions[fn.id] = bindElementLength(
+          fn,
+          second,
+          { record, field, elementsRecord, lengthField },
+          span,
+        );
         continue;
       }
       if (binding.operation === "slot-read") {

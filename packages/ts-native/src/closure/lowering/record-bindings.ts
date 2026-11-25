@@ -44,6 +44,9 @@ export type RecordOperation =
   /** `(witness: T, target: unknown, index: number, value: unknown):
    * boolean`: overwrite a packed binary64 element (IR element-store). */
   | "element-store"
+  /** `(witness: T, value: unknown): unknown`: the mirrored `length` of a
+   * packed array object, or a miss (IR element-length). */
+  | "element-length"
   /** Native activation chain reads (IR activation-read), without a record
    * witness: `(): number` the innermost record; `(record: number): F` a
    * record's previous record, kind, actual count (numbers) or callee
@@ -344,6 +347,38 @@ export function bindElementStore(
       elementsRecord: layout.elementsRecord,
       countField: layout.countField,
       storageField: layout.storageField,
+    }),
+    span,
+  );
+}
+/** The record fields element-length reads: the witness record's elements
+ * field and the elements record's length field. */
+export interface ElementLengthLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly elementsRecord: number;
+  readonly lengthField: number;
+}
+/** The body of an element-length binding: its value parameter. */
+export function bindElementLength(
+  fn: FunctionIR,
+  value: number,
+  layout: ElementLengthLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "element-length",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      lengthField: layout.lengthField,
     }),
     span,
   );

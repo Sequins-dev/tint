@@ -97,8 +97,26 @@ function replaced() {
   const originalCode = String.prototype.charCodeAt;
   String.prototype.charCodeAt = function (i) { return "patched " + this + i; };
   out.push(code("ab", 1));
-  String.prototype.charCodeAt = originalCode;
+  delete String.prototype.charCodeAt;
+  try { code("ab", 1); out.push("called"); } catch (e) { out.push(e.constructor.name); }
+  let codeGetterHits = 0;
+  Object.defineProperty(String.prototype, "charCodeAt", {
+    get() { codeGetterHits++; return originalCode; },
+    configurable: true,
+  });
+  out.push(code("ab", 1), codeGetterHits);
+  Object.defineProperty(String.prototype, "charCodeAt", {
+    value: originalCode,
+    writable: true,
+    enumerable: false,
+    configurable: true,
+  });
   out.push(code("ab", 1));
+  const originalSqrt = Math.sqrt;
+  Math.sqrt = (x) => "sqrt:" + x;
+  out.push(sqrt(9));
+  Math.sqrt = originalSqrt;
+  out.push(sqrt(9), Math.PI > 3.14 && Math.E > 2.71 && Math.SQRT2 > 1.41);
   const OriginalNumber = Number;
   globalThis.Number = (x) => "shadowed " + x;
   out.push(Number(5));
@@ -142,6 +160,41 @@ function collections() {
   const order = [];
   m.set((order.push("key"), "x"), (order.push("value"), 1));
   out.push(order.join(), get(m, "x"), m.get());
+  // ScriptMap: BigInt vs number vs string, rehash, and live iteration mutation.
+  const big = new Map();
+  big.set(0n, "zeroN");
+  big.set(0, "zero");
+  big.set("0", "zeroS");
+  big.set(1n << 80n, "huge");
+  for (let i = 0; i < 32; i++) big.set("k" + i, i);
+  big.delete("k5");
+  out.push(
+    big.get(0n),
+    big.get(-0),
+    big.get("0"),
+    big.get(1n << 80n),
+    big.has("k5"),
+    big.get("k31"),
+    big.size,
+  );
+  const live = new Map([["a", 1], ["b", 2], ["c", 3]]);
+  const seen = [];
+  for (const [k, v] of live) {
+    seen.push(k + v);
+    if (k === "a") {
+      live.delete("b");
+      live.delete("a");
+      live.set("a", 9);
+    }
+  }
+  out.push(seen.join("/"));
+  const cleared = new Set([1, 2, 3]);
+  const seenSet = [];
+  for (const v of cleared) {
+    seenSet.push(v);
+    if (v === 1) cleared.clear();
+  }
+  out.push(seenSet.join("/"), cleared.size);
   return out.join(",");
 }
 export function sections() {

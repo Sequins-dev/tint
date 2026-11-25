@@ -18,10 +18,7 @@ import type {
 } from "@tint/foundation/chrono/iso-date-time";
 import type { Duration } from "@tint/foundation/chrono/temporal-duration";
 import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
-import type {
-  LinkedMap,
-  MapCursor,
-} from "@tint/foundation/collections/linked-map";
+import type { ScriptMap, ScriptMapCursor } from "./collection-data.ts";
 import type { TypedArrayData } from "./typed-array-data.ts";
 import type { RegExpIteratorData } from "./regexp-iterator.ts";
 import type { DataViewData } from "./data-view.ts";
@@ -260,18 +257,18 @@ export interface ExoticObjectSlots {
   internalDataViewData: DataViewData | undefined;
   internalTypedArrayData: TypedArrayData | undefined;
   internalProxyData: ProxyState<ScriptPropertyKey, unknown> | undefined;
-  internalSetData: LinkedMap<unknown, unknown> | undefined;
+  internalSetData: ScriptMap | undefined;
   internalSetIteratorData:
     | {
-        readonly cursor: MapCursor<unknown, unknown>;
+        readonly cursor: ScriptMapCursor;
         readonly entries: boolean;
       }
     | undefined;
-  internalMapData: LinkedMap<unknown, unknown> | undefined;
+  internalMapData: ScriptMap | undefined;
   internalWeakData: WeakData | undefined;
   internalMapIteratorData:
     | {
-        readonly cursor: MapCursor<unknown, unknown>;
+        readonly cursor: ScriptMapCursor;
         readonly kind: "key" | "value" | "entry";
       }
     | undefined;
@@ -1376,6 +1373,187 @@ export function createLiteralObject(
     site.shape = reached;
   }
   return object;
+}
+/** Direct fixed-arity static-key object literal constructors (1..4 keys):
+ * bypass temporary value lists, `createObject`, and `setFastValue` once the
+ * site has recorded its shared shape from `prototype`'s root child shape. */
+export function createLiteralObject1(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  const shape = site.shape;
+  const root = site.root;
+  if (
+    shape !== undefined &&
+    root !== undefined &&
+    prototype.internalChildShape === root
+  )
+    return {
+      internalShape: shape,
+      prototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 1,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: undefined,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return createLiteralObject(prototype, site, [v0], hooks);
+}
+export function createLiteralObject2(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  v1: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  const shape = site.shape;
+  const root = site.root;
+  if (
+    shape !== undefined &&
+    root !== undefined &&
+    prototype.internalChildShape === root
+  )
+    return {
+      internalShape: shape,
+      prototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 2,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return createLiteralObject(prototype, site, [v0, v1], hooks);
+}
+export function createLiteralObject3(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  const shape = site.shape;
+  const root = site.root;
+  if (
+    shape !== undefined &&
+    root !== undefined &&
+    prototype.internalChildShape === root
+  )
+    return {
+      internalShape: shape,
+      prototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 3,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return createLiteralObject(prototype, site, [v0, v1, v2], hooks);
+}
+export function createLiteralObject4(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  const shape = site.shape;
+  const root = site.root;
+  if (
+    shape !== undefined &&
+    root !== undefined &&
+    prototype.internalChildShape === root
+  )
+    return {
+      internalShape: shape,
+      prototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 4,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: v3,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return createLiteralObject(prototype, site, [v0, v1, v2, v3], hooks);
 }
 /** Define one literal accessor half; the other half survives repeated definitions. */
 export function createAccessorProperty<Key, Value>(

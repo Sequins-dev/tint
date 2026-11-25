@@ -123,6 +123,7 @@ export const propertyCacheNames: readonly string[] = [
   "packedNumberElement",
   "absentElementValue",
   "storePackedNumberElement",
+  "packedArrayLength",
 ];
 export interface PropertyCacheBinding {
   readonly module: string;
@@ -135,6 +136,7 @@ export interface PropertyCacheBinding {
     | "property-store"
     | "element-load"
     | "element-store"
+    | "element-length"
     | "activation-top"
     | "activation-previous"
     | "activation-kind"
@@ -209,6 +211,13 @@ export function propertyCacheBindings(
       operation: "element-store",
       field: "internalArrayElements",
       siteField: "numberCount",
+    },
+    {
+      module,
+      name: "packedArrayLength",
+      operation: "element-length",
+      field: "internalArrayElements",
+      siteField: "length",
     },
   ];
 }
@@ -1283,6 +1292,7 @@ function lowerScriptEntry(
   let usesElementAccess = false;
   let usesIntrinsicCalls = false;
   let usesObjectLiterals = false;
+  let usesSmallArrays = false;
   let usesNullishEquality = false;
   let excludesHTMLDDAObjects = false;
   let usesRelationalFallback = false;
@@ -3094,34 +3104,42 @@ function lowerScriptEntry(
       span,
     );
     if (cached && key.kind === "string" && key.value === "length") {
-      // Packed array length or String length inline; other values take the
-      // runtime read.
+      // A String's length; for other values, inline packed array length (IR
+      // element-length, zero FP registers) with fused miss to the cached read.
       usesElementAccess = true;
-      const elements = temporary(
-        optionalMember(
-          runtimeCall(
-            "viewObjectValue",
-            [object, member(id("$errors"), "objectPrototype", span)],
+      const witness = member(id("$errors"), "objectPrototype", span);
+      const result = temporary(id("undefined", span), true, true);
+      if (result.kind !== "identifier")
+        throw "element length temporary invariant";
+      const name = result.name;
+      const fallback = nestedStatements(() => {
+        statements.push(
+          assignTo(
+            name,
+            runtimeCall("packedArrayLength", [witness, object], span),
             span,
           ),
-          "internalArrayElements",
-          span,
-        ),
-      );
-      return temporary(
-        scalarBranch(
-          scalarBinary("!==", elements, id("undefined", span), span),
-          member(elements, "length", span),
-          scalarBranch(
-            categoryOperand(object, "string", span),
-            member(object, "length", span),
-            runtimeCall("readCachedLengthValue", args, span),
+        );
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: runtimeCall(
+            "absentElementValue",
+            [id(name, span), witness],
             span,
           ),
-          span,
-        ),
-        true,
-      );
+          consequent: assignTo(name, read, span),
+          alternate: undefined,
+        });
+      });
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: categoryOperand(base, "string", span),
+        consequent: assignTo(name, member(base, "length", span), span),
+        alternate: block(fallback, span),
+      });
+      return id(name, span);
     }
     if (cache === undefined) return temporary(read, true);
     // The site's inline value (IR property-load natively); a miss takes the
@@ -8612,19 +8630,12 @@ function lowerScriptEntry(
         return result;
       }
       case "array": {
-        if (node.elements.length === 0)
+        if (node.elements.length === 0) {
+          usesSmallArrays = true;
           return temporary(
-            call(
-              "createArrayObject",
-              [
-                { ...at(node), kind: "number", value: 0, raw: "0" },
-                member(id("$errors"), "arrayPrototype", node),
-                member(id("$errors"), "arrayHooks", node),
-                member(id("$global"), "hooks", node),
-              ],
-              node,
-            ),
+            runtimeCall("createArray0", [id("$errors", node)], node),
           );
+        }
         let dense = true;
         for (const element of node.elements)
           if (element.kind === "spread" || element.kind === "elision")
@@ -8638,6 +8649,15 @@ function lowerScriptEntry(
             if (element.kind === "spread" || element.kind === "elision")
               throw "SCRIPT_ARRAY_ELEMENT_INVARIANT";
             values.push(temporary(value(element), true));
+          }
+          if (values.length <= 4) {
+            usesSmallArrays = true;
+            const args: Expression[] = [];
+            for (const item of values) args.push(item);
+            args.push(id("$errors", node));
+            return temporary(
+              runtimeCall(`createArray${values.length}`, args, node),
+            );
           }
           return temporary(
             runtimeCall(
@@ -8772,6 +8792,17 @@ function lowerScriptEntry(
                 value(property.value, text(property.name, property)),
                 true,
               ),
+            );
+          }
+          if (values.length <= 4) {
+            const args: Expression[] = [
+              member(id("$errors"), "objectPrototype", node),
+              objectLiteralSite(literalKeys, node),
+            ];
+            for (const item of values) args.push(item);
+            args.push(member(id("$global"), "hooks", node));
+            return temporary(
+              runtimeCall(`createLiteralObject${values.length}`, args, node),
             );
           }
           return temporary(
@@ -11747,6 +11778,7 @@ function lowerScriptEntry(
     usesElementAccess,
     usesIntrinsicCalls,
     usesObjectLiterals,
+    usesSmallArrays,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

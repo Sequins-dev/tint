@@ -4982,6 +4982,7 @@ function emitModuleForms(
                 type = "boolean";
                 break;
               case "element-load":
+              case "element-length":
                 id = op.id;
                 type = "general";
                 break;
@@ -12678,6 +12679,102 @@ function emitModuleForms(
                 emit({ op: "b", displacement: 0 });
                 patchMisses();
                 // The absent value: undefined's tag with payload 1.
+                emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: "zr" });
+                imm(10, 1);
+                generalPair(9, offset, false);
+                patchInstruction(hit, {
+                  op: "b",
+                  displacement: (instructions.length - hit) * 4,
+                });
+                break;
+              }
+              case "element-length": {
+                const elementsField =
+                    module.records?.[op.record]?.fields[op.field],
+                  lengthField =
+                    module.records?.[op.elementsRecord]?.fields[op.lengthField];
+                if (elementsField === undefined || lengthField === undefined)
+                  throw "element length layout invariant";
+                const fusedMiss =
+                  fusion !== undefined && fusion.access === op.id
+                    ? fusion.miss
+                    : undefined;
+                const misses: number[] = [];
+                const cbzMisses: number[] = [];
+                function missNe(): void {
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition: "ne" }, fn.id, fusedMiss);
+                  else {
+                    misses.push(instructions.length);
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  }
+                }
+                // Check general tag 5 (reference), record descriptor, non-null
+                // elements, then read the 64-bit IEEE-754 length bits directly
+                // into GP registers (zero FP register usage).
+                generalPair(9, value(op.object).offset, true);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                descriptorPointer(op.record);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: elementsField.offset,
+                });
+                if (fusedMiss !== undefined)
+                  branch({ op: "cbz", width: 64, rt: 10 }, fn.id, fusedMiss);
+                else {
+                  cbzMisses.push(instructions.length);
+                  emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                }
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: lengthField.offset,
+                });
+                imm(9, 1);
+                const offset = value(op.id).offset;
+                generalPair(9, offset, false);
+                if (fusedMiss !== undefined) break;
+                const hit = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                for (const site of misses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (instructions.length - site) * 4,
+                  });
+                for (const site of cbzMisses)
+                  patchInstruction(site, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 10,
+                    displacement: (instructions.length - site) * 4,
+                  });
                 emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: "zr" });
                 imm(10, 1);
                 generalPair(9, offset, false);

@@ -3,6 +3,7 @@ export {
   packedNumberElement,
   absentElementValue,
   storePackedNumberElement,
+  packedArrayLength,
   readCachedLengthValue,
 } from "./element-access.ts";
 export {
@@ -64,6 +65,11 @@ export type {
 export { runGeneratorSteps } from "../iterators/index.ts";
 export { createIteratorResult } from "./iterator-intrinsics.ts";
 export {
+  createArray0,
+  createArray1,
+  createArray2,
+  createArray3,
+  createArray4,
   createArrayFromList,
   lengthOfArrayLike,
   arrayLikeValues,
@@ -153,6 +159,10 @@ export {
   createAccessorProperty,
   createObjectLiteralSite,
   createLiteralObject,
+  createLiteralObject1,
+  createLiteralObject2,
+  createLiteralObject3,
+  createLiteralObject4,
   type ObjectLiteralSite,
   getOwnProperty,
   defineOwnProperty,

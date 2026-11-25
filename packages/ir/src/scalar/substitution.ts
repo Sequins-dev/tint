@@ -160,6 +160,10 @@ export function substituteInstructionValues(
         ? op
         : { ...op, object, index, value };
     }
+    case "element-length": {
+      const object = substitutedValue(values, op.object);
+      return object === op.object ? op : { ...op, object };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };

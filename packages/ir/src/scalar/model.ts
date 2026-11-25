@@ -287,6 +287,18 @@ export type Instruction = Span &
         readonly countField: number;
         readonly storageField: number;
       }
+    | {
+        /** The mirrored `length` of a packed array exotic object (the Number
+         * general value of `elementsRecord.lengthField`), or the absent value
+         * when `object` is not a `record` object with a present `field`. */
+        readonly kind: "element-length";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly lengthField: number;
+      }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
         readonly kind: "boolean-wrap" | "boolean-value" | "boolean-present";

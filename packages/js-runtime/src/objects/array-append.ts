@@ -87,10 +87,57 @@ export function scriptArrayPush(
   realm: ErrorRealm,
 ): number {
   const object = viewObjectValue(value, realm.objectPrototype);
-  if (object === undefined || !appendPackedElement(object, item, realm))
-    return -1;
+  if (object === undefined) return -1;
   const elements = object.internalArrayElements;
-  if (elements === undefined) throw "ARRAY_APPEND_INVARIANT";
+  if (elements === undefined || !object.extensible || !elements.lengthWritable)
+    return -1;
+  const arrayPrototype = object.prototype;
+  if (arrayPrototype === undefined || arrayPrototype !== realm.arrayPrototype)
+    return -1;
+  const inherited = arrayPrototype.internalArrayElements;
+  if (
+    inherited === undefined ||
+    inherited.values !== undefined ||
+    inherited.numberCount !== 0
+  )
+    return -1;
+  const objectPrototype = arrayPrototype.prototype;
+  if (
+    objectPrototype === undefined ||
+    objectPrototype !== realm.objectPrototype ||
+    objectPrototype.internalDictionary
+  )
+    return -1;
+  // Refresh the fast array-push lookup epoch once after realm install or
+  // unrelated Array.prototype changes so subsequent `arr.push(x)` reads skip
+  // readCachedObjectValueProperty.
+  const intrinsics = realm.intrinsicFunctions;
+  const epoch = arrayPrototype.internalPropertyEpoch;
+  if (intrinsics.arrayPushEpoch !== epoch) {
+    const push = arrayPrototype.properties?.get("push");
+    if (
+      push !== undefined &&
+      !push.accessor &&
+      push.value === intrinsics.arrayPush
+    )
+      intrinsics.arrayPushEpoch = epoch;
+  }
+  // Fast steady-state path: append a Number directly into existing capacity
+  // without helper or hook closure dispatch.
+  if (elements.values === undefined) {
+    const count = elements.numberCount;
+    if (elements.length === count && typeof item === "number") {
+      const numbers = elements.numbers;
+      if (count < numbers.length) {
+        numbers[count] = item;
+        const next = count + 1;
+        elements.numberCount = next;
+        elements.length = next;
+        return next;
+      }
+    }
+  }
+  if (!appendPackedElement(object, item, realm)) return -1;
   return elements.length;
 }
 

@@ -2946,6 +2946,32 @@ export function emitModule(
           define(op.id, "general");
           return;
         }
+        case "element-length": {
+          const elements = recordField(op.record, op.field),
+            length = recordField(op.elementsRecord, op.lengthField);
+          const site = fnLabel + ":element-length:" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+          address(scratch, descriptor(op.record));
+          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", missed);
+          emit({ op: "mov", dst: rax, src: mem(10, length.offset) });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: rax });
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "general");
+          return;
+        }
         case "record-has": {
           const field = recordField(op.record, op.field);
           const site = fnLabel + ":record-has:" + String(op.id);

@@ -1089,6 +1089,26 @@ export function verify(
               define(op.id, op.kind === "element-load" ? "general" : "boolean");
               break;
             }
+            case "element-length": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.lengthField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.lengthField], "number")
+              )
+                fail(
+                  "TYPE",
+                  "element length requires an elements reference with a number length",
+                );
+              define(op.id, "general");
+              break;
+            }
             case "record-has": {
               const type = use(op.object);
               if (type !== "reference" && type !== "optional-reference")

@@ -180,6 +180,7 @@ export function createScriptRuntimeRequest(
       "packedNumberElement",
       "absentElementValue",
       "storePackedNumberElement",
+      "packedArrayLength",
       "readCachedLengthValue",
       "scriptMapGet",
       "scriptMapHas",
@@ -189,6 +190,15 @@ export function createScriptRuntimeRequest(
       "scriptArrayPop",
       "createObjectLiteralSite",
       "createLiteralObject",
+      "createLiteralObject1",
+      "createLiteralObject2",
+      "createLiteralObject3",
+      "createLiteralObject4",
+      "createArray0",
+      "createArray1",
+      "createArray2",
+      "createArray3",
+      "createArray4",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

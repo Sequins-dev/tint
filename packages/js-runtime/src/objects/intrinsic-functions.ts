@@ -1,9 +1,9 @@
 import {
-  getMap,
-  hasMap,
-  setMap,
-  type LinkedMap,
-} from "@tint/foundation/collections/linked-map";
+  getScriptMap,
+  hasScriptMap,
+  setScriptMap,
+  type ScriptMap,
+} from "./collection-data.ts";
 import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 
@@ -42,6 +42,10 @@ export interface IntrinsicFunctions {
   setAdd: IntrinsicFunction;
   arrayPush: IntrinsicFunction;
   arrayPop: IntrinsicFunction;
+  /** `realm.arrayPrototype.internalPropertyEpoch` when `arrayPush` was last
+   * verified as the own data property `"push"` on `Array.prototype` (-1 before
+   * verification). */
+  arrayPushEpoch: number;
 }
 
 export function createIntrinsicFunctions(): IntrinsicFunctions {
@@ -67,6 +71,7 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     setAdd: undefined,
     arrayPush: undefined,
     arrayPop: undefined,
+    arrayPushEpoch: -1,
   };
 }
 
@@ -74,32 +79,23 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
 // (Map.prototype.get and friends after their receiver check): keys compare
 // with SameValueZero, so -0 is stored and found as +0.
 
-export function scriptMapGet(
-  data: LinkedMap<unknown, unknown>,
-  key: unknown,
-): unknown {
-  return getMap<unknown, unknown>(data, key === 0 ? 0 : key);
+export function scriptMapGet(data: ScriptMap, key: unknown): unknown {
+  return getScriptMap(data, key);
 }
 
-export function scriptMapHas(
-  data: LinkedMap<unknown, unknown>,
-  key: unknown,
-): boolean {
-  return hasMap<unknown, unknown>(data, key === 0 ? 0 : key);
+export function scriptMapHas(data: ScriptMap, key: unknown): boolean {
+  return hasScriptMap(data, key);
 }
 
 export function scriptMapSet(
-  data: LinkedMap<unknown, unknown>,
+  data: ScriptMap,
   key: unknown,
   value: unknown,
 ): void {
-  setMap<unknown, unknown>(data, key === 0 ? 0 : key, value);
+  setScriptMap(data, key, value);
 }
 
-export function scriptSetAdd(
-  data: LinkedMap<unknown, unknown>,
-  value: unknown,
-): void {
+export function scriptSetAdd(data: ScriptMap, value: unknown): void {
   const key = value === 0 ? 0 : value;
-  setMap<unknown, unknown>(data, key, key);
+  setScriptMap(data, key, key);
 }

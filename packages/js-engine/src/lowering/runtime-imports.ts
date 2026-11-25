@@ -86,6 +86,7 @@ export function scriptRuntimeImports(
   usesElementAccess: boolean = false,
   usesIntrinsicCalls: boolean = false,
   usesObjectLiterals: boolean = false,
+  usesSmallArrays: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -305,6 +306,7 @@ export function scriptRuntimeImports(
               "packedNumberElement",
               "absentElementValue",
               "storePackedNumberElement",
+              "packedArrayLength",
               "readCachedLengthValue",
             ]
           : []),
@@ -319,7 +321,23 @@ export function scriptRuntimeImports(
             ]
           : []),
         ...(usesObjectLiterals || declarations === "all"
-          ? ["createObjectLiteralSite", "createLiteralObject"]
+          ? [
+              "createObjectLiteralSite",
+              "createLiteralObject",
+              "createLiteralObject1",
+              "createLiteralObject2",
+              "createLiteralObject3",
+              "createLiteralObject4",
+            ]
+          : []),
+        ...(usesSmallArrays || declarations === "all"
+          ? [
+              "createArray0",
+              "createArray1",
+              "createArray2",
+              "createArray3",
+              "createArray4",
+            ]
           : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
