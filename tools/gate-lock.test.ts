@@ -7,7 +7,10 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { withGateLock } from "./gate/lock.ts";
 import * as fixturePhases from "./gate/native-fixture.ts";
-import { nativeBatchWaiting } from "./gate/native-batch-clock.ts";
+import {
+  nativeBatchWaiting,
+  nativeFixtureMemoryWaiting,
+} from "./gate/native-batch-clock.ts";
 const { buildNativeFixture, beginNativeFixtureExecution } = fixturePhases;
 
 test(
@@ -228,6 +231,35 @@ test(
   },
 );
 
+test("a fixture watchdog excludes only its worker's memory admission wait", () => {
+  const directory = mkdtempSync(join(tmpdir(), "tint-fixture-memory-clock-"));
+  try {
+    const journal = join(directory, "images.jsonl");
+    const waiting = nativeFixtureMemoryWaiting(journal, 101);
+    assert.equal(waiting(), false);
+    writeFileSync(journal, '{"phase":"memory-wait-start","worker":102}\n');
+    assert.equal(waiting(), false);
+    writeFileSync(journal, '{"phase":"memory-wait-start","worker":101}\n', {
+      flag: "a",
+    });
+    assert.equal(waiting(), true);
+    writeFileSync(journal, '{"phase":"build-start","worker":102}\n', {
+      flag: "a",
+    });
+    assert.equal(waiting(), true);
+    writeFileSync(journal, '{"phase":"build-start","worker":101}\n', {
+      flag: "a",
+    });
+    assert.equal(waiting(), false);
+    writeFileSync(journal, '{"phase":"lock-wait-start","worker":101}\n', {
+      flag: "a",
+    });
+    assert.equal(waiting(), false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 for (const resource of ["exclusive", "smoke"])
   test(
     `a macOS ${resource} step can queue past the former wall cap and pass`,
@@ -375,7 +407,10 @@ test("fixture preparation releases its memory slot before admission and records 
           (row) => row.path === image && row.bytes === 5 && row.elapsedMs >= 0,
         ),
     );
-    assert.equal(rows.filter((row) => row.phase === "build-start").length, 1);
+    assert.deepEqual(
+      rows.slice(0, 3).map((row) => row.phase),
+      ["memory-wait-start", "memory-wait", "build-start"],
+    );
     const result = spawnSync(
       process.execPath,
       [

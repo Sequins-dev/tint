@@ -1,0 +1,4868 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "node-ffi-8cf9a9389-dev-lldb-v2",
+  "recorded": "2026-11-21T05:20:04.344Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+  "summary": {
+    "typed": {
+      "typed": 47,
+      "general": 44,
+      "build-failed": 1,
+      "run-failed": 5,
+      "type-error": 2,
+      "unsupported": 1
+    },
+    "untyped": {
+      "general": 97,
+      "run-failed": 2,
+      "unsupported": 1
+    }
+  },
+  "entries": [
+    {
+      "construct": "worker-construction",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 45.8
+    },
+    {
+      "construct": "worker-construction",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "./worker-construction/peer.ts"
+      ],
+      "reason": "link: unresolved module: node:worker_threads",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "module-evaluation",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 45
+          },
+          "owner": {
+            "kind": "module",
+            "module": "fixture",
+            "start": 0,
+            "end": 45
+          }
+        }
+      ],
+      "seconds": 42.9
+    },
+    {
+      "construct": "numeric-loop",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 12.7
+    },
+    {
+      "construct": "numeric-loop",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:229: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 229
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 229
+          }
+        }
+      ],
+      "seconds": 86
+    },
+    {
+      "construct": "string-methods",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:87:103: invalid method call",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "PROPERTY",
+          "capability": "realm-library-member",
+          "location": {
+            "module": "fixture",
+            "start": 87,
+            "end": 103
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 325
+          }
+        }
+      ],
+      "seconds": 79.5
+    },
+    {
+      "construct": "string-methods",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:309: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 309
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 309
+          }
+        }
+      ],
+      "seconds": 84.4
+    },
+    {
+      "construct": "array-callbacks",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:180:193: invalid method call",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "PROPERTY",
+          "capability": "realm-library-member",
+          "location": {
+            "module": "fixture",
+            "start": 180,
+            "end": 193
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 307
+          }
+        }
+      ],
+      "seconds": 84.3
+    },
+    {
+      "construct": "array-callbacks",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:257: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 257
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 257
+          }
+        }
+      ],
+      "seconds": 83.6
+    },
+    {
+      "construct": "explicit-dynamic-property-contract",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 81.5
+    },
+    {
+      "construct": "explicit-dynamic-property-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:151: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 151
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 151
+          }
+        }
+      ],
+      "seconds": 83.4
+    },
+    {
+      "construct": "dynamic-object-literal",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 78.7
+    },
+    {
+      "construct": "dynamic-object-literal",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:114: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 114
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 114
+          }
+        }
+      ],
+      "seconds": 75.9
+    },
+    {
+      "construct": "dynamic-object-index",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 78.9
+    },
+    {
+      "construct": "dynamic-object-index",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:117: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 117
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 117
+          }
+        }
+      ],
+      "seconds": 86.5
+    },
+    {
+      "construct": "dynamic-object-local-aggregate",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 85.7
+    },
+    {
+      "construct": "dynamic-object-local-aggregate",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:271: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 271
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 271
+          }
+        }
+      ],
+      "seconds": 88.1
+    },
+    {
+      "construct": "dynamic-object-own-data-definition",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 84.6
+    },
+    {
+      "construct": "dynamic-object-own-data-definition",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:314: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 314
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 314
+          }
+        }
+      ],
+      "seconds": 97.3
+    },
+    {
+      "construct": "dynamic-object-update",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 93.2
+    },
+    {
+      "construct": "dynamic-object-update",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:193: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 193
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 193
+          }
+        }
+      ],
+      "seconds": 102.3
+    },
+    {
+      "construct": "dynamic-object-realm-methods",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 91.5
+    },
+    {
+      "construct": "dynamic-object-realm-methods",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:254: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 254
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 254
+          }
+        }
+      ],
+      "seconds": 107.7
+    },
+    {
+      "construct": "dynamic-object-aggregate-flow",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 105.5
+    },
+    {
+      "construct": "dynamic-object-aggregate-flow",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:38: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 38
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 38
+          }
+        }
+      ],
+      "seconds": 90.7
+    },
+    {
+      "construct": "native-callable-property-views",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 95.7
+    },
+    {
+      "construct": "native-callable-property-views",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:542: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 542
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 542
+          }
+        }
+      ],
+      "seconds": 110.8
+    },
+    {
+      "construct": "native-storage-keyed-views",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 105.4
+    },
+    {
+      "construct": "native-storage-keyed-views",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:331: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 331
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 331
+          }
+        }
+      ],
+      "seconds": 104.9
+    },
+    {
+      "construct": "dynamic-object-in-delete",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 104.4
+    },
+    {
+      "construct": "dynamic-object-in-delete",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:156: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 156
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 156
+          }
+        }
+      ],
+      "seconds": 111.1
+    },
+    {
+      "construct": "dynamic-object-own-enumeration",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 105.4
+    },
+    {
+      "construct": "dynamic-object-own-enumeration",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:239: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 239
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 239
+          }
+        }
+      ],
+      "seconds": 107.2
+    },
+    {
+      "construct": "dynamic-object-for-in",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 90.9
+    },
+    {
+      "construct": "dynamic-object-for-in",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:149: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 149
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 149
+          }
+        }
+      ],
+      "seconds": 99.3
+    },
+    {
+      "construct": "dynamic-object-spread",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 96.8
+    },
+    {
+      "construct": "dynamic-object-spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:128: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 128
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 128
+          }
+        }
+      ],
+      "seconds": 89.6
+    },
+    {
+      "construct": "object-records",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11.3
+    },
+    {
+      "construct": "object-records",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:72: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 72
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 72
+          }
+        }
+      ],
+      "seconds": 99.4
+    },
+    {
+      "construct": "closures",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11.7
+    },
+    {
+      "construct": "closures",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:72: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 72
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 72
+          }
+        }
+      ],
+      "seconds": 86.4
+    },
+    {
+      "construct": "class-basic",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "runtime: module instance classes require scoped contract and construction lowering",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "runtime",
+          "code": "UNSUPPORTED",
+          "capability": "module-class-construction",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 239
+          },
+          "owner": {
+            "kind": "class",
+            "module": "fixture",
+            "start": 0,
+            "end": 239
+          }
+        }
+      ],
+      "seconds": 94.8
+    },
+    {
+      "construct": "class-basic",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:163:325: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 163,
+            "end": 325
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 163,
+            "end": 325
+          }
+        }
+      ],
+      "seconds": 103.2
+    },
+    {
+      "construct": "class-inheritance",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:85:152: class accessor contracts require separate read and write checking",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "class-accessor-contract",
+          "location": {
+            "module": "fixture",
+            "start": 85,
+            "end": 152
+          },
+          "owner": {
+            "kind": "class",
+            "module": "fixture",
+            "start": 0,
+            "end": 154
+          }
+        }
+      ],
+      "seconds": 94
+    },
+    {
+      "construct": "class-inheritance",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:276:410: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 276,
+            "end": 410
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 276,
+            "end": 410
+          }
+        }
+      ],
+      "seconds": 88.5
+    },
+    {
+      "construct": "class-private-static",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:68:95: typed class static blocks require initialization lowering",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "class-static-block",
+          "location": {
+            "module": "fixture",
+            "start": 68,
+            "end": 95
+          },
+          "owner": {
+            "kind": "class",
+            "module": "fixture",
+            "start": 0,
+            "end": 211
+          }
+        }
+      ],
+      "seconds": 90.8
+    },
+    {
+      "construct": "class-private-static",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:52:79: typed class static blocks require initialization lowering",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "class-static-block",
+          "location": {
+            "module": "fixture",
+            "start": 52,
+            "end": 79
+          },
+          "owner": {
+            "kind": "class",
+            "module": "fixture",
+            "start": 0,
+            "end": 179
+          }
+        }
+      ],
+      "seconds": 78.5
+    },
+    {
+      "construct": "destructuring",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11
+    },
+    {
+      "construct": "destructuring",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:290: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 290
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 290
+          }
+        }
+      ],
+      "seconds": 84.1
+    },
+    {
+      "construct": "destructuring-entry-points",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 10.8
+    },
+    {
+      "construct": "destructuring-entry-points",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:57: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 57
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 57
+          }
+        }
+      ],
+      "seconds": 83.2
+    },
+    {
+      "construct": "destructuring-realm",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 85.7
+    },
+    {
+      "construct": "destructuring-realm",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:42:82: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 42,
+            "end": 82
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 42,
+            "end": 82
+          }
+        }
+      ],
+      "seconds": 88.5
+    },
+    {
+      "construct": "spread",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:196:220: only [string, T] entry tuple types are implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "tuple-layout",
+          "location": {
+            "module": "fixture",
+            "start": 196,
+            "end": 220
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 77,
+            "end": 370
+          }
+        }
+      ],
+      "seconds": 90.7
+    },
+    {
+      "construct": "spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:44: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 44
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 44
+          }
+        }
+      ],
+      "seconds": 89.1
+    },
+    {
+      "construct": "rest-default-parameters",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 12.8
+    },
+    {
+      "construct": "rest-default-parameters",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:121: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 121
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 121
+          }
+        }
+      ],
+      "seconds": 84.2
+    },
+    {
+      "construct": "rest-spread",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11
+    },
+    {
+      "construct": "rest-spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:108: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 108
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 108
+          }
+        }
+      ],
+      "seconds": 98.5
+    },
+    {
+      "construct": "void-callbacks",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 10.8
+    },
+    {
+      "construct": "void-callbacks",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:37: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 37
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 37
+          }
+        }
+      ],
+      "seconds": 98.7
+    },
+    {
+      "construct": "void-callback-result",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 12.2
+    },
+    {
+      "construct": "void-callback-result",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:49: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 49
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 49
+          }
+        }
+      ],
+      "seconds": 81.9
+    },
+    {
+      "construct": "array-mixed-spread",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 12.4
+    },
+    {
+      "construct": "array-mixed-spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:120: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 120
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 120
+          }
+        }
+      ],
+      "seconds": 78.7
+    },
+    {
+      "construct": "generators",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:111: generator suspension lowering is not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "generator-suspension",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 111
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 111
+          }
+        }
+      ],
+      "seconds": 74.6
+    },
+    {
+      "construct": "generators",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:76: generator suspension lowering is not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "generator-suspension",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 76
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 76
+          }
+        }
+      ],
+      "seconds": 77.6
+    },
+    {
+      "construct": "async-await",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:28:204: typed async function lowering is not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "async-suspension",
+          "location": {
+            "module": "fixture",
+            "start": 28,
+            "end": 204
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 28,
+            "end": 204
+          }
+        }
+      ],
+      "seconds": 74.6
+    },
+    {
+      "construct": "async-await",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:18:169: typed async function lowering is not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "async-suspension",
+          "location": {
+            "module": "fixture",
+            "start": 18,
+            "end": 169
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 18,
+            "end": 169
+          }
+        }
+      ],
+      "seconds": 71.1
+    },
+    {
+      "construct": "errors",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.9
+    },
+    {
+      "construct": "errors",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:52: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 52
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 52
+          }
+        }
+      ],
+      "seconds": 77.2
+    },
+    {
+      "construct": "exposed-native-error",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 10.1
+    },
+    {
+      "construct": "exposed-native-error",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:43:284: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 43,
+            "end": 284
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 43,
+            "end": 284
+          }
+        }
+      ],
+      "seconds": 81.1
+    },
+    {
+      "construct": "unknown-typeof-callable",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 10.2
+    },
+    {
+      "construct": "unknown-typeof-callable",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:45: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 45
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 45
+          }
+        }
+      ],
+      "seconds": 77.8
+    },
+    {
+      "construct": "unknown-callable-direct",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11.3
+    },
+    {
+      "construct": "unknown-callable-direct",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:116: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 116
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 116
+          }
+        }
+      ],
+      "seconds": 79.9
+    },
+    {
+      "construct": "unknown-callable-arguments",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.6
+    },
+    {
+      "construct": "unknown-callable-arguments",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:113: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 113
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 113
+          }
+        }
+      ],
+      "seconds": 85.4
+    },
+    {
+      "construct": "unknown-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:90:103: invalid method call",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "PROPERTY",
+          "capability": "realm-library-member",
+          "location": {
+            "module": "fixture",
+            "start": 90,
+            "end": 103
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 224
+          }
+        }
+      ],
+      "seconds": 90.8
+    },
+    {
+      "construct": "unknown-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:207: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 207
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 207
+          }
+        }
+      ],
+      "seconds": 85.2
+    },
+    {
+      "construct": "map-set",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:186:215: Set iterable does not match the native element layout",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "collection-construction",
+          "location": {
+            "module": "fixture",
+            "start": 186,
+            "end": 215
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 383
+          }
+        }
+      ],
+      "seconds": 82.7
+    },
+    {
+      "construct": "map-set",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:351: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 351
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 351
+          }
+        }
+      ],
+      "seconds": 82.3
+    },
+    {
+      "construct": "typed-arrays",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:142:174: Realm constructor DataView requires library overload lowering",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "realm-library-construction",
+          "location": {
+            "module": "fixture",
+            "start": 142,
+            "end": 174
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 399
+          }
+        }
+      ],
+      "seconds": 74.2
+    },
+    {
+      "construct": "typed-arrays",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:391: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 391
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 391
+          }
+        }
+      ],
+      "seconds": 82.6
+    },
+    {
+      "construct": "math",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:41:45: unsupported global",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 41,
+            "end": 45
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 208
+          }
+        }
+      ],
+      "seconds": 83
+    },
+    {
+      "construct": "math",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:200: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 200
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 200
+          }
+        }
+      ],
+      "seconds": 87.8
+    },
+    {
+      "construct": "json",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: JSON",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 98,
+            "end": 102
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 51,
+            "end": 272
+          }
+        }
+      ],
+      "seconds": 90.2
+    },
+    {
+      "construct": "json",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: JSON",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 39,
+            "end": 43
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 203
+          }
+        }
+      ],
+      "seconds": 79.5
+    },
+    {
+      "construct": "optional-chaining",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11.6
+    },
+    {
+      "construct": "optional-chaining",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:57: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 57
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 57
+          }
+        }
+      ],
+      "seconds": 96.7
+    },
+    {
+      "construct": "labels-switch",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 11.5
+    },
+    {
+      "construct": "labels-switch",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:113: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 113
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 113
+          }
+        }
+      ],
+      "seconds": 95
+    },
+    {
+      "construct": "var-hoisting",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 12.4
+    },
+    {
+      "construct": "var-hoisting",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:195: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 195
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 195
+          }
+        }
+      ],
+      "seconds": 86
+    },
+    {
+      "construct": "iterator-protocol",
+      "form": "typed",
+      "path": "none",
+      "outcome": "build-failed",
+      "reason": "{\"ok\":false,\"error\":{\"code\":\"SYNTAX_ERROR\",\"message\":\"expected {\",\"start\":16,\"end\":26,\"position\":{\"line\":1,\"column\":17}}}",
+      "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"ok\":false,\"error\":{\"code\":\"SYNTAX_ERROR\",\"message\":\"expected {\",\"start\":16,\"end\":26,\"position\":{\"line\":1,\"column\":17}}}\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:276:18\n    at buildHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:286:11)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:755:47\n    at buildNativeFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/gate/native-fixture.ts:58:23)\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:755:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "seconds": 1.3
+    },
+    {
+      "construct": "iterator-protocol",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:230:340: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 230,
+            "end": 340
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 230,
+            "end": 340
+          }
+        }
+      ],
+      "seconds": 83.9
+    },
+    {
+      "construct": "accessors-object-literal",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:64:208: typed object accessors require accessor layout support",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "object-accessor-layout",
+          "location": {
+            "module": "fixture",
+            "start": 64,
+            "end": 208
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 304
+          }
+        }
+      ],
+      "seconds": 82.8
+    },
+    {
+      "construct": "accessors-object-literal",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:280: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 280
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 280
+          }
+        }
+      ],
+      "seconds": 88.3
+    },
+    {
+      "construct": "regexp",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: typed RegExp values are not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "regexp-literal",
+          "location": {
+            "module": "fixture",
+            "start": 48,
+            "end": 61
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 234
+          }
+        }
+      ],
+      "seconds": 89.1
+    },
+    {
+      "construct": "regexp",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: typed RegExp values are not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "regexp-literal",
+          "location": {
+            "module": "fixture",
+            "start": 40,
+            "end": 53
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 226
+          }
+        }
+      ],
+      "seconds": 89.4
+    },
+    {
+      "construct": "enums",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:40: object, array and arrow expressions need a contextual or explicit type",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "aggregate-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 40
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 40
+          }
+        }
+      ],
+      "seconds": 93.2
+    },
+    {
+      "construct": "enums",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:80:201: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 80,
+            "end": 201
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 80,
+            "end": 201
+          }
+        }
+      ],
+      "seconds": 95
+    },
+    {
+      "construct": "arguments-object",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 54,
+            "end": 63
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 73
+          }
+        }
+      ],
+      "seconds": 90.9
+    },
+    {
+      "construct": "arguments-object",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 26,
+            "end": 35
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 45
+          }
+        }
+      ],
+      "seconds": 93.5
+    },
+    {
+      "construct": "arguments-function-fallback",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 88,
+            "end": 97
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 44,
+            "end": 107
+          }
+        }
+      ],
+      "seconds": 88.4
+    },
+    {
+      "construct": "arguments-function-fallback",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 72,
+            "end": 81
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 36,
+            "end": 91
+          }
+        }
+      ],
+      "seconds": 96.6
+    },
+    {
+      "construct": "arguments-function-fallback-reentry",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 102,
+            "end": 111
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 50,
+            "end": 162
+          }
+        }
+      ],
+      "seconds": 99.3
+    },
+    {
+      "construct": "arguments-function-fallback-reentry",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 76,
+            "end": 85
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 42,
+            "end": 136
+          }
+        }
+      ],
+      "seconds": 100.8
+    },
+    {
+      "construct": "arguments-function-fallback-throw",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 83,
+            "end": 92
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 39,
+            "end": 102
+          }
+        }
+      ],
+      "seconds": 107.1
+    },
+    {
+      "construct": "arguments-function-fallback-throw",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 67,
+            "end": 76
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 31,
+            "end": 86
+          }
+        }
+      ],
+      "seconds": 109.7
+    },
+    {
+      "construct": "arguments-function-fallback-numeric",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 143,
+            "end": 152
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 83,
+            "end": 167
+          }
+        }
+      ],
+      "seconds": 96.7
+    },
+    {
+      "construct": "arguments-function-fallback-numeric",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 103,
+            "end": 112
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 59,
+            "end": 127
+          }
+        }
+      ],
+      "seconds": 115.1
+    },
+    {
+      "construct": "function-fallback-primitive-contracts",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "error": "ure (link: unknown value name: arguments)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":1,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-function-fallback-primitive-contracts-typed-bGFKWe/construct-function-fallback-primitive-contracts-typed\",\"imageSha256\":\"faf90eaf3e3bde5e90510aa9cbf28195852bd2e125e1d4b59e962f12eae1cb63\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-function-fallback-primitive-contracts-typed-bGFKWe/construct-function-fallback-primitive-contracts-typed.manifest.json\",\"sha256\":\"19a45eb1e1f9e9a733c40ae24023fef01cd72698a450bdaba08cd43c5707dd3a\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 153,
+            "end": 162
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 68,
+            "end": 274
+          }
+        }
+      ],
+      "seconds": 115.2
+    },
+    {
+      "construct": "function-fallback-primitive-contracts",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 113,
+            "end": 122
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 68,
+            "end": 178
+          }
+        }
+      ],
+      "seconds": 92.7
+    },
+    {
+      "construct": "function-fallback-defaults-mixed",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 123,
+            "end": 132
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 49,
+            "end": 203
+          }
+        }
+      ],
+      "seconds": 98.4
+    },
+    {
+      "construct": "function-fallback-defaults-mixed",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 99,
+            "end": 108
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 41,
+            "end": 179
+          }
+        }
+      ],
+      "seconds": 82.7
+    },
+    {
+      "construct": "function-fallback-reexport-identity",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:reexport.ts"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 117,
+            "end": 126
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 84,
+            "end": 136
+          }
+        }
+      ],
+      "seconds": 78.5
+    },
+    {
+      "construct": "function-fallback-reexport-identity",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:reexport.ts"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 109,
+            "end": 118
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 84,
+            "end": 128
+          }
+        }
+      ],
+      "seconds": 83.1
+    },
+    {
+      "construct": "function-fallback-mixed-throw-object",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 52,
+            "end": 61
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 127
+          }
+        }
+      ],
+      "seconds": 89.4
+    },
+    {
+      "construct": "function-fallback-mixed-throw-object",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 33,
+            "end": 42
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 108
+          }
+        }
+      ],
+      "seconds": 83.6
+    },
+    {
+      "construct": "function-fallback-rest-spread",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 80,
+            "end": 89
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 161
+          }
+        }
+      ],
+      "seconds": 81.4
+    },
+    {
+      "construct": "function-fallback-rest-spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 54,
+            "end": 63
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 135
+          }
+        }
+      ],
+      "seconds": 73.7
+    },
+    {
+      "construct": "tagged-templates",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:22:42: template strings require the realm template-site object",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "template-call",
+          "location": {
+            "module": "fixture",
+            "start": 22,
+            "end": 42
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 127
+          }
+        }
+      ],
+      "seconds": 78.8
+    },
+    {
+      "construct": "tagged-templates",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:87: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 87
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 87
+          }
+        }
+      ],
+      "seconds": 69
+    },
+    {
+      "construct": "object-reflection",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 249,
+            "end": 256
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 302
+          }
+        }
+      ],
+      "seconds": 65.5
+    },
+    {
+      "construct": "object-reflection",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 217,
+            "end": 224
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 270
+          }
+        }
+      ],
+      "seconds": 66
+    },
+    {
+      "construct": "generic-functions",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "specialize: generic calls require explicit type arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "specialize",
+          "code": "UNSUPPORTED",
+          "capability": "generic-inference",
+          "location": {
+            "module": "fixture",
+            "start": 361,
+            "end": 375
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 247,
+            "end": 440
+          }
+        }
+      ],
+      "seconds": 69.4
+    },
+    {
+      "construct": "generic-functions",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:85: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 85
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 85
+          }
+        }
+      ],
+      "seconds": 70.9
+    },
+    {
+      "construct": "open-variable",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 68.4
+    },
+    {
+      "construct": "open-variable",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 71.5
+    },
+    {
+      "construct": "open-object-literal-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 294,
+            "end": 301
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 38,
+            "end": 472
+          }
+        }
+      ],
+      "seconds": 70.1
+    },
+    {
+      "construct": "open-object-literal-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "realm-library-global",
+          "location": {
+            "module": "fixture",
+            "start": 257,
+            "end": 264
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 38,
+            "end": 435
+          }
+        }
+      ],
+      "seconds": 62.7
+    },
+    {
+      "construct": "open-class-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 70.7
+    },
+    {
+      "construct": "open-class-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 79.3
+    },
+    {
+      "construct": "open-array-elements",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 85.3
+    },
+    {
+      "construct": "open-array-elements",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 84.6
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:108:113: invalid binding operation",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "TYPE_MISMATCH",
+          "capability": "open-binding-write",
+          "location": {
+            "module": "fixture",
+            "start": 108,
+            "end": 113
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 95,
+            "end": 144
+          }
+        }
+      ],
+      "seconds": 87.3
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:176: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 176
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 176
+          }
+        }
+      ],
+      "seconds": 77.5
+    },
+    {
+      "construct": "nested-shared-captures",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 248,
+            "end": 257
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 198,
+            "end": 345
+          }
+        }
+      ],
+      "seconds": 78.5
+    },
+    {
+      "construct": "nested-shared-captures",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 163,
+            "end": 172
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 129,
+            "end": 260
+          }
+        }
+      ],
+      "seconds": 79.5
+    },
+    {
+      "construct": "nested-capture-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "error": "xture\",\"start\":148,\"end\":545}}\ngeneral fallback for fixture (link: unknown value name: arguments)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":3,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-nested-capture-contract-typed-C3OqLJ/construct-nested-capture-contract-typed\",\"imageSha256\":\"a722bcefbd6f8ccaa936776b5bc93d73d8c3b72e3c3928087c18034ababc277d\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-nested-capture-contract-typed-C3OqLJ/construct-nested-capture-contract-typed.manifest.json\",\"sha256\":\"7f2fbf92efb6f501fe0bb8f06e06f6fc133ba9c0b2d142365a1ea159fdbb914c\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNKNOWN_NAME",
+          "capability": "arguments-object",
+          "location": {
+            "module": "fixture",
+            "start": 198,
+            "end": 207
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 148,
+            "end": 545
+          }
+        }
+      ],
+      "seconds": 88.5
+    },
+    {
+      "construct": "nested-capture-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:204: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 204
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 204
+          }
+        }
+      ],
+      "seconds": 87.5
+    },
+    {
+      "construct": "explicit-field-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "error": "heck: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":1,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-explicit-field-contract-typed-4bxbGb/construct-explicit-field-contract-typed\",\"imageSha256\":\"ef4f90e3812cbde1f15dd8b0b54157dee4221580e1b3b0cdfa57af12cbff48e0\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-explicit-field-contract-typed-4bxbGb/construct-explicit-field-contract-typed.manifest.json\",\"sha256\":\"55eeff95bd782ec206321369a68fc15185646b51512da18e8b72fa393929222f\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 89.8
+    },
+    {
+      "construct": "explicit-field-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          },
+          "owner": {
+            "kind": "function",
+            "module": "construct-helper:untyped.ts",
+            "start": 0,
+            "end": 66
+          }
+        }
+      ],
+      "seconds": 84.5
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: direct eval requires the hosted evaluator and shared binding contracts",
+      "error": "untyped.ts (link: direct eval requires the hosted evaluator and shared binding contracts)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":1,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-explicit-binding-contract-typed-mVYYVu/construct-explicit-binding-contract-typed\",\"imageSha256\":\"d821e795019142413762592d8016de1c86a391a151a9ca7b8ca11b8204b2a093\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-explicit-binding-contract-typed-mVYYVu/construct-explicit-binding-contract-typed.manifest.json\",\"sha256\":\"75066423c1fa6ed3ae8c926428adf5173f39038bbf90372e921db48324049051\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 70
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: direct eval requires the hosted evaluator and shared binding contracts",
+      "error": "s (link: direct eval requires the hosted evaluator and shared binding contracts)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":70,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-explicit-binding-contract-untyped-nMPxKy/construct-explicit-binding-contract-untyped\",\"imageSha256\":\"9b25198541aeb5f198606460dfbdf1e4e1473cf8174ad53dd07ded37c97832ce\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-explicit-binding-contract-untyped-nMPxKy/construct-explicit-binding-contract-untyped.manifest.json\",\"sha256\":\"9c63c109c814f76f320d4d5757ab30c12852816c67de4abbc34048a328c6d1f4\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 67.6
+    },
+    {
+      "construct": "general-value-casts",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 10.4
+    },
+    {
+      "construct": "general-value-casts",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:95: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 95
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 95
+          }
+        }
+      ],
+      "seconds": 65.3
+    },
+    {
+      "construct": "typed-array-buffer-views",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:101:114: typed-array buffer construction requires the realm constructor",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "realm-library-construction",
+          "location": {
+            "module": "fixture",
+            "start": 101,
+            "end": 114
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 268
+          }
+        }
+      ],
+      "seconds": 70.9
+    },
+    {
+      "construct": "typed-array-buffer-views",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:260: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 260
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 260
+          }
+        }
+      ],
+      "seconds": 68.8
+    },
+    {
+      "construct": "unknown-realm-instanceof",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 61.2
+    },
+    {
+      "construct": "unknown-realm-instanceof",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:152: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 152
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 152
+          }
+        }
+      ],
+      "seconds": 65.6
+    },
+    {
+      "construct": "unknown-typed-array-instanceof",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 8.8
+    },
+    {
+      "construct": "unknown-typed-array-instanceof",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:137: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 137
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 137
+          }
+        }
+      ],
+      "seconds": 57.1
+    },
+    {
+      "construct": "native-error-flow",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.7
+    },
+    {
+      "construct": "native-error-flow",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:152: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 152
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 152
+          }
+        }
+      ],
+      "seconds": 57.6
+    },
+    {
+      "construct": "caught-error-reads",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 10.2
+    },
+    {
+      "construct": "caught-error-reads",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:435: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 435
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 435
+          }
+        }
+      ],
+      "seconds": 58.6
+    },
+    {
+      "construct": "coded-error-guard",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 8.8
+    },
+    {
+      "construct": "coded-error-guard",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:172: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 172
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 172
+          }
+        }
+      ],
+      "seconds": 56.3
+    },
+    {
+      "construct": "tuple-types",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:26:42: only [string, T] entry tuple types are implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "tuple-layout",
+          "location": {
+            "module": "fixture",
+            "start": 26,
+            "end": 42
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 64
+          }
+        }
+      ],
+      "seconds": 57.3
+    },
+    {
+      "construct": "tuple-types",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:38: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 38
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 38
+          }
+        }
+      ],
+      "seconds": 59.3
+    },
+    {
+      "construct": "nested-type-declarations",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: nested type declarations are not supported",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "nested-type-declaration",
+          "location": {
+            "module": "fixture",
+            "start": 34,
+            "end": 67
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 247
+          }
+        }
+      ],
+      "seconds": 58.4
+    },
+    {
+      "construct": "nested-type-declarations",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:170: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 170
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 170
+          }
+        }
+      ],
+      "seconds": 58.5
+    },
+    {
+      "construct": "forward-inferred-const",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "runtime: forward or recursive inferred bindings require an annotation",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "runtime",
+          "code": "UNSUPPORTED",
+          "capability": "binding-initialization",
+          "location": {
+            "module": "fixture",
+            "start": 48,
+            "end": 54
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 57
+          }
+        }
+      ],
+      "seconds": 56.8
+    },
+    {
+      "construct": "forward-inferred-const",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:41: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 41
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 41
+          }
+        }
+      ],
+      "seconds": 60.2
+    },
+    {
+      "construct": "union-object-ternary",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:281:318: expected an unambiguous object type",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "TYPE_MISMATCH",
+          "capability": "aggregate-inference",
+          "location": {
+            "module": "fixture",
+            "start": 281,
+            "end": 318
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 198,
+            "end": 338
+          }
+        }
+      ],
+      "seconds": 60
+    },
+    {
+      "construct": "union-object-ternary",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:100: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 100
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 100
+          }
+        }
+      ],
+      "seconds": 59.7
+    },
+    {
+      "construct": "typed-array-index",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:92:116: invalid binding operation",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "TYPE_MISMATCH",
+          "capability": "checked-index-read",
+          "location": {
+            "module": "fixture",
+            "start": 92,
+            "end": 116
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 204
+          }
+        }
+      ],
+      "seconds": 58.5
+    },
+    {
+      "construct": "typed-array-index",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:188: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 188
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 188
+          }
+        }
+      ],
+      "seconds": 59.7
+    },
+    {
+      "construct": "typed-array-index-unproven",
+      "form": "typed",
+      "path": "type-error",
+      "outcome": "pass",
+      "reason": "{\"stage\":\"source\",\"message\":\"fixture:75:80: TS2322: Type 'number | undefined' is not assignable to type 'number'.\\n  Type 'undefined' is not assignable to type 'number'.\",\"module\":\"fixture\"}",
+      "sourceDiagnostics": [
+        {
+          "code": "TS2322",
+          "message": "Type 'number | undefined' is not assignable to type 'number'.\n  Type 'undefined' is not assignable to type 'number'.",
+          "module": "fixture",
+          "start": 75,
+          "end": 80
+        }
+      ],
+      "seconds": 4.9
+    },
+    {
+      "construct": "typed-array-index-unproven",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:125: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 125
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 125
+          }
+        }
+      ],
+      "seconds": 60.5
+    },
+    {
+      "construct": "type-error-after-generator",
+      "form": "typed",
+      "path": "type-error",
+      "outcome": "pass",
+      "reason": "{\"stage\":\"source\",\"message\":\"fixture:106:113: TS2322: Type 'string' is not assignable to type 'number'.\",\"module\":\"fixture\"}",
+      "sourceDiagnostics": [
+        {
+          "code": "TS2322",
+          "message": "Type 'string' is not assignable to type 'number'.",
+          "module": "fixture",
+          "start": 106,
+          "end": 113
+        }
+      ],
+      "seconds": 3.9
+    },
+    {
+      "construct": "type-error-after-generator",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:31: generator suspension lowering is not implemented",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "generator-suspension",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 31
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 31
+          }
+        }
+      ],
+      "seconds": 62.5
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.7
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:193: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 193
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 193
+          }
+        }
+      ],
+      "seconds": 60.8
+    },
+    {
+      "construct": "typed-array-index-unchecked",
+      "form": "typed",
+      "path": "none",
+      "outcome": "unsupported",
+      "error": "",
+      "seconds": 0.7
+    },
+    {
+      "construct": "typed-array-index-unchecked",
+      "form": "untyped",
+      "path": "none",
+      "outcome": "unsupported",
+      "error": "",
+      "seconds": 0.9
+    },
+    {
+      "construct": "for-of-record-reads",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.1
+    },
+    {
+      "construct": "for-of-record-reads",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:111: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 111
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 111
+          }
+        }
+      ],
+      "seconds": 63.6
+    },
+    {
+      "construct": "bigint",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.4
+    },
+    {
+      "construct": "bigint",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:48: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 48
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 48
+          }
+        }
+      ],
+      "seconds": 62.6
+    },
+    {
+      "construct": "module-statements",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "module-evaluation",
+          "location": {
+            "module": "fixture",
+            "start": 44,
+            "end": 86
+          },
+          "owner": {
+            "kind": "module",
+            "module": "fixture",
+            "start": 0,
+            "end": 170
+          }
+        }
+      ],
+      "seconds": 63.3
+    },
+    {
+      "construct": "module-statements",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "module-evaluation",
+          "location": {
+            "module": "fixture",
+            "start": 34,
+            "end": 76
+          },
+          "owner": {
+            "kind": "module",
+            "module": "fixture",
+            "start": 0,
+            "end": 152
+          }
+        }
+      ],
+      "seconds": 66.9
+    },
+    {
+      "construct": "weak-collections",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:85:91: unknown type: object",
+      "error": "general fallback for fixture (check: fixture:85:91: unknown type: object)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":70,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-weak-collections-typed-GYTn3f/construct-weak-collections-typed\",\"imageSha256\":\"962b8ef67baa3613860a5c2c5f834013c8f0a7d3d81091c34eb6709e175853a5\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-weak-collections-typed-GYTn3f/construct-weak-collections-typed.manifest.json\",\"sha256\":\"bdbc94f28e4c90a1d74961ad84432ce3328c4a92997ba3e96610d0794b8c395d\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 60.6
+    },
+    {
+      "construct": "weak-collections",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:212: named functions require parameter and return annotations",
+      "error": ":212}}\ngeneral fallback for fixture (check: fixture:0:212: named functions require parameter and return annotations)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":70,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-weak-collections-untyped-3QnhPI/construct-weak-collections-untyped\",\"imageSha256\":\"d090a9def17b891903d595f2270f1c6c4c959a4970ba953221c2b84271ac8c00\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-weak-collections-untyped-3QnhPI/construct-weak-collections-untyped.manifest.json\",\"sha256\":\"da697173caaae919593850cc8bcc36efc4128a047cf119fb59937e0c96f138ea\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64 | lldb version 19.1.7\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/hosted-fixture.ts:778:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-8cf9-linux.tahVWG/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 212
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 212
+          }
+        }
+      ],
+      "seconds": 61.1
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.1
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:110: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 110
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 110
+          }
+        }
+      ],
+      "seconds": 60.1
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.9
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:121: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 121
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 121
+          }
+        }
+      ],
+      "seconds": 64.4
+    },
+    {
+      "construct": "for-of-object-list",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.1
+    },
+    {
+      "construct": "for-of-object-list",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:170: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 170
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 170
+          }
+        }
+      ],
+      "seconds": 70.2
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "seconds": 9.8
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:64: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 64
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 64
+          }
+        }
+      ],
+      "seconds": 67.4
+    },
+    {
+      "construct": "module-initializers",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "module-evaluation",
+          "location": {
+            "module": "fixture",
+            "start": 80,
+            "end": 129
+          },
+          "owner": {
+            "kind": "module",
+            "module": "fixture",
+            "start": 0,
+            "end": 277
+          }
+        }
+      ],
+      "seconds": 70.4
+    },
+    {
+      "construct": "module-initializers",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "link",
+          "code": "UNSUPPORTED",
+          "capability": "module-evaluation",
+          "location": {
+            "module": "fixture",
+            "start": 54,
+            "end": 103
+          },
+          "owner": {
+            "kind": "module",
+            "module": "fixture",
+            "start": 0,
+            "end": 219
+          }
+        }
+      ],
+      "seconds": 65.6
+    },
+    {
+      "construct": "evolving-empty-array",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:45:47: object, array and arrow expressions need a contextual or explicit type",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "aggregate-inference",
+          "location": {
+            "module": "fixture",
+            "start": 45,
+            "end": 47
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 141
+          }
+        }
+      ],
+      "seconds": 74.1
+    },
+    {
+      "construct": "evolving-empty-array",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:133: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 133
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 133
+          }
+        }
+      ],
+      "seconds": 72.5
+    },
+    {
+      "construct": "discriminant-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:159:169: invalid property read",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "PROPERTY",
+          "capability": "union-member-narrowing",
+          "location": {
+            "module": "fixture",
+            "start": 159,
+            "end": 169
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 88,
+            "end": 205
+          }
+        }
+      ],
+      "seconds": 68.9
+    },
+    {
+      "construct": "discriminant-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:102: named functions require parameter and return annotations",
+      "sourceSnapshot": "efa862ce02e6e2f35c6561b24de22d28df0573ea4ceb52133b9674ca4088e750",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 102
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 102
+          }
+        }
+      ],
+      "seconds": 68.9
+    }
+  ]
+}

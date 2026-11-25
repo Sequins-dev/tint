@@ -21,7 +21,8 @@ const nodeDependencies: [string, string][] = [
 const heap = { managedBytes: 67108864, allocationCapacity: 1048576 };
 const form = process.argv[2];
 assert.ok(
-  form === undefined || ["typed", "mixed", "contracts", "os"].includes(form),
+  form === undefined ||
+    ["typed", "mixed", "contracts", "os", "ffi-type-error"].includes(form),
 );
 process.env.TINT_GENERAL_FALLBACK = "0";
 if (form === undefined || form === "typed")
@@ -93,6 +94,63 @@ if (form === undefined || form === "contracts")
     typedNodeErrorProducers,
     nodeDependencies,
   );
+
+if (form === "ffi-type-error") {
+  const errors: [string, string][] = [
+    ["./type-error.ts", "packages/native-runtime/src/node/type-error.ts"],
+  ];
+  const producer = `
+import { codedTypeError } from "./type-error.ts";
+export function make(): unknown {
+  return codedTypeError("Invalid FFI argument", "ERR_INVALID_ARG_VALUE");
+}
+export function fail(error: unknown): void { throw error; }
+export function typed(error: unknown): boolean {
+  if (!(error instanceof TypeError) || !(error instanceof Error)) return false;
+  if (error instanceof RangeError || "errno" in error || !("code" in error)) return false;
+  return error.name === "TypeError" && error.message === "Invalid FFI argument" &&
+    error.code === "ERR_INVALID_ARG_VALUE";
+}
+`;
+  verifyHostedFixture(
+    producer +
+      `
+export function run(): number {
+  const error = make();
+  if (!typed(error)) return 1;
+  try { fail(error); return 2; }
+  catch (caught) { return caught === error && typed(caught) ? 42 : 3; }
+}`,
+    "ffi-coded-type-error-typed",
+    errors,
+    [],
+    [],
+    [],
+    heap,
+  );
+  mixed(
+    "ffi-coded-type-error-mixed",
+    `
+import { make, fail, typed } from "./producers.ts";
+export function run() {
+  const error = make();
+  if (!typed(error)) return 1;
+  if (Object.getPrototypeOf(error) !== TypeError.prototype ||
+      Object.prototype.toString.call(error) !== "[object Error]") return 2;
+  const code = Object.getOwnPropertyDescriptor(error, "code");
+  if (!code.writable || !code.enumerable || !code.configurable ||
+      code.value !== "ERR_INVALID_ARG_VALUE") return 3;
+  const message = Object.getOwnPropertyDescriptor(error, "message");
+  if (!message.writable || message.enumerable || !message.configurable ||
+      message.value !== "Invalid FFI argument") return 4;
+  try { fail(error); return 5; }
+  catch (caught) { return caught === error ? 42 : 6; }
+}
+`,
+    producer,
+    errors,
+  );
+}
 
 if (form === undefined || form === "os") {
   const platform = nativeFixtureTarget().os;

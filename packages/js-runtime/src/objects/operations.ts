@@ -347,6 +347,12 @@ export interface ObjectInternalMethods<Key, Value> {
   readonly preventExtensions?: (object: OrdinaryObject<Key, Value>) => boolean;
   /** The typed (native) record a record view presents (record-views.ts). */
   readonly typedRecord?: () => unknown;
+  /** The same view when it never changes, so hot typed callers read it
+   * without calling `typedRecord`. */
+  readonly typedView?: TypedRecordView;
+}
+export interface TypedRecordView {
+  readonly value: unknown;
 }
 /** Internal parameter access, never user-visible accessor functions. Callbacks
  * must not execute user code; descriptor changes can disconnect this alias. */

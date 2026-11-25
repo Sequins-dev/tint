@@ -61,7 +61,9 @@ function changesArrayLength(op: Instruction): boolean {
   if (op.kind === "c-call") return op.call.mayCallback === true;
   if (op.kind === "c-memory")
     return (
-      op.access.operation === "adopt" || op.access.operation === "retarget"
+      op.access.operation === "adopt" ||
+      op.access.operation === "adopt-words" ||
+      op.access.operation === "retarget"
     );
   return (instructionEffects(op) & effectInvoke) !== 0;
 }

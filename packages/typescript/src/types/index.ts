@@ -100,6 +100,7 @@ export type Type =
       readonly view?: string;
       /** A typed-array flow fact retains a general carrier. */
       readonly arrayFlow?: boolean;
+      readonly realmByteView?: boolean;
     }
   | { readonly kind: "literal"; readonly value: string | number | boolean }
   | {
@@ -1801,6 +1802,7 @@ function copyType(
           ? {
               kind: t.kind,
               ...(t.arrayFlow === true ? { arrayFlow: true } : {}),
+              ...(t.realmByteView === true ? { realmByteView: true } : {}),
             }
           : { kind: t.kind, view };
       break;

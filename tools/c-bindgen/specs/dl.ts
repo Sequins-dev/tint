@@ -33,6 +33,10 @@ struct DynamicFrame {
   uint64_t patchTargets[16]; uint64_t patchBases[16]; int64_t patchAddends[16];
   uint8_t stack[512]; uint8_t scratch[512];
 };
+struct DynamicScalarFrame {
+  union Word x[8]; union Word d[8];
+  uint64_t stackBytes; struct Handle target;
+};
 union Cell {
   int8_t i8; uint8_t u8; int16_t i16; uint16_t u16; int32_t i32; uint32_t u32;
   int64_t i64; uint64_t u64; float f32; double f64; void *address;
@@ -61,6 +65,10 @@ union Cell {
     {
       name: "DynamicFrame",
       doc: "The universal trampoline's call frame (dynamicCallFrame in @tint/ir/scalar; a test checks the two agree).",
+    },
+    {
+      name: "DynamicScalarFrame",
+      doc: "The growable scalar trampoline's header, followed by stack words.",
     },
     {
       name: "Cell",

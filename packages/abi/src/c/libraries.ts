@@ -55,6 +55,7 @@ export const cLibraryManifest: readonly CLibraryManifestEntry[] = [
   { module: "tint:c/linux-reactor", linux: glibc },
   { module: "tint:c/worker-thread-host", darwin: libSystem, linux: glibc },
   { module: "tint:c/dl", darwin: libSystem, linux: glibc },
+  { module: "tint:c/ffi-callbacks", darwin: libSystem, linux: glibc },
   { module: "tint:c/openssl3", darwin: openSSL, linux: openSSL },
   { module: "tint:c/memory", darwin: libSystem, linux: glibc },
   {

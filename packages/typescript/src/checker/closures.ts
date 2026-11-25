@@ -1,5 +1,6 @@
 import {
   aggregatePayload,
+  nativeByteView,
   planLocalRealm,
   type LocalRealmPlan,
 } from "./local-realm.ts";
@@ -115,6 +116,7 @@ export interface BindingOperation {
 export type ClosureIntrinsic =
   | "function-call"
   | "general-call"
+  | "general-construct"
   | "map-new"
   | "map-get"
   | "map-has"
@@ -344,6 +346,7 @@ export interface CheckedClosures {
   readonly cViewUses: ReadonlyKeyIndex<Expression, CViewUse>;
   /** The registry those views come from (shapes by key). */
   readonly cViews?: CViewRegistry | undefined;
+  readonly realmImports?: ReadonlyMap<string, "callable" | "value"> | undefined;
   readonly bindings: BoundModule;
   readonly types: readonly Type[];
   /** The checker's own relation system, kept in lockstep with exactly
@@ -363,6 +366,10 @@ export interface CheckedClosures {
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
   readonly dynamicEnrollments?: ReadonlyKeyIndex<Expression, number>;
   readonly nativeCallableViews?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly nativeCallbackViews?: ReadonlyKeyIndex<
+    Expression,
+    NativeCallbackView
+  >;
   readonly nativeListViews?: ReadonlyKeyIndex<Expression, boolean>;
   readonly nativeRecordViews?: ReadonlyKeyIndex<
     Expression,
@@ -375,6 +382,12 @@ export interface CheckedClosures {
   readonly uninitializedFields?: ReadonlyKeyIndex<Span, boolean>;
   readonly operations: readonly BindingOperation[];
 }
+export interface NativeCallbackView {
+  readonly parameters: readonly string[];
+  readonly result: string;
+  readonly minimumArguments: number;
+}
+
 export interface NativeRecordViewField {
   readonly name: string;
   readonly type: "number" | "string" | "boolean" | "unknown";
@@ -435,6 +448,7 @@ export interface ClosureCheckOptions {
   readonly interfaceCache?: InterfaceResolutionCache | undefined;
   /** C binding records usable as views (c-views.ts). */
   readonly cViews?: CViewRegistry | undefined;
+  readonly realmImports?: ReadonlyMap<string, "callable" | "value"> | undefined;
 }
 export function checkClosureModule(
   module: Module,
@@ -3228,12 +3242,19 @@ function checkClosureModuleLayout(
     globalConstructors.set(name, id);
     return id;
   }
+  function isOpenRealmValue(type: Type | undefined): boolean {
+    return (
+      options.realmImports !== undefined &&
+      (type?.kind === "dynamic-result" || type?.kind === "realm-callable")
+    );
+  }
   function instanceofCandidate(
     ctor: number,
     operand: number,
     node: Expression,
   ): number | undefined {
     const type = types[ctor];
+    if (isOpenRealmValue(type)) return undefined;
     if (type?.kind === "union") {
       const candidates: number[] = [];
       let complete = true;
@@ -3321,6 +3342,7 @@ function checkClosureModuleLayout(
     if (type?.kind === "union")
       return type.members.some(validInstanceofOperand);
     return (
+      isOpenRealmValue(type) ||
       type?.kind === "unknown" ||
       type?.kind === "never" ||
       type?.kind === "object" ||
@@ -4692,6 +4714,9 @@ function checkClosureModuleLayout(
     downcasts = createKeyIndex<Expression, number>(syntaxHash),
     dynamicEnrollments = createKeyIndex<Expression, number>(syntaxHash),
     nativeCallableViews = createKeyIndex<Expression, boolean>(syntaxHash),
+    nativeCallbackViews = createKeyIndex<Expression, NativeCallbackView>(
+      syntaxHash,
+    ),
     nativeListViews = createKeyIndex<Expression, boolean>(syntaxHash),
     nativeRecordViews = createKeyIndex<
       Expression,
@@ -4743,6 +4768,7 @@ function checkClosureModuleLayout(
     owner: number | undefined,
     signature: Type & { readonly kind: "function" },
     offset: number = 0,
+    general: boolean = false,
   ): number[] {
     const start = signature.parameters.length - 1;
     const list =
@@ -4785,6 +4811,7 @@ function checkClosureModuleLayout(
               argument,
               owner,
               trailing ? element : signature.parameters[position],
+              general,
             ),
           ),
         );
@@ -4829,7 +4856,7 @@ function checkClosureModuleLayout(
     return args;
   }
   function generalCall(
-    node: Expression & { readonly kind: "call" },
+    node: Expression & { readonly kind: "call" | "new" },
     owner: number | undefined,
   ): number {
     if (isOptionalChain(node))
@@ -4840,15 +4867,50 @@ function checkClosureModuleLayout(
       );
     const unknown = primitive("unknown");
     const list = arrayOf(unknown, node);
-    callArguments(node, owner, {
-      kind: "function",
-      parameters: [list],
-      result: unknown,
-      rest: true,
-    });
-    intrinsics.set(node, "general-call");
+    callArguments(
+      node,
+      owner,
+      {
+        kind: "function",
+        parameters: [list],
+        result: unknown,
+        rest: true,
+      },
+      0,
+      options.realmImports !== undefined,
+    );
+    if (options.realmImports !== undefined) {
+      for (const argument of node.arguments) {
+        const value = argument.kind === "spread" ? argument.value : argument;
+        const type = expressions.get(value);
+        if (type === undefined) throw "general call argument invariant";
+        const kind = types[type]?.kind;
+        if (kind !== "dynamic-result" && kind !== "realm-callable")
+          checkDynamicPayload(
+            type,
+            value,
+            unknown,
+            options.realmImports !== undefined,
+          );
+      }
+    }
+    intrinsics.set(
+      node,
+      node.kind === "call" ? "general-call" : "general-construct",
+    );
     invalidateCalls();
     return generalFact("dynamic-result", node);
+  }
+  function realmConstruction(
+    node: Expression & { readonly kind: "new" },
+    target: Expression & { readonly kind: "identifier" },
+    owner: number | undefined,
+  ): number {
+    const constructor = globalConstructor(target.name, target);
+    if (constructor === undefined) throw "realm constructor invariant";
+    intrinsics.set(target, "realm-global");
+    expressions.set(target, constructor);
+    return generalCall(node, owner);
   }
   function requireForInObject(id: number, node: Span): void {
     if (!dynamicObject(presentType(id, true) ?? id))
@@ -5050,7 +5112,8 @@ function checkClosureModuleLayout(
   const realmTypes = new Map<number, number>();
   const convertingRealm = new Set<number>();
   function realmPayload(id: number, node: Span): number {
-    if (!aggregatePayload(types, id)) return id;
+    if (!aggregatePayload(types, id, options.realmImports !== undefined))
+      return id;
     const known = realmTypes.get(id);
     if (known !== undefined) return known;
     if (convertingRealm.has(id))
@@ -5084,6 +5147,17 @@ function checkClosureModuleLayout(
         node,
         "invalid realm record type",
       );
+    } else if (
+      type?.kind === "Uint8Array" ||
+      type?.kind === "Uint16Array" ||
+      type?.kind === "Uint32Array" ||
+      type?.kind === "Float64Array"
+    ) {
+      result = appendType(
+        { kind: type.kind, arrayFlow: true, realmByteView: true },
+        node,
+        "invalid realm byte view type",
+      );
     } else if (type?.kind === "union") {
       const members: number[] = [];
       for (const member of type.members) {
@@ -5101,7 +5175,7 @@ function checkClosureModuleLayout(
   }
   function readDynamicPayload(value: number, node: Expression): number {
     if (realmPlan !== undefined) return realmPayload(value, node);
-    if (aggregatePayload(types, value)) {
+    if (aggregatePayload(types, value, options.realmImports !== undefined)) {
       realmReads.set(node, true);
       replayRealm = true;
     }
@@ -5130,8 +5204,18 @@ function checkClosureModuleLayout(
     value: number,
     node: Expression,
     erased?: number,
+    callbackView: boolean = false,
   ): void {
     generalOperand(node);
+    const carrier = types[value];
+    if (
+      (carrier?.kind === "Uint8Array" ||
+        carrier?.kind === "Uint16Array" ||
+        carrier?.kind === "Uint32Array" ||
+        carrier?.kind === "Float64Array") &&
+      carrier.realmByteView === true
+    )
+      return;
     const unsupported = unsupportedDynamicPayload(types, value);
     if (unsupported === undefined) return;
     const erasing = types[erased ?? -1]?.kind === "unknown";
@@ -5140,6 +5224,55 @@ function checkClosureModuleLayout(
       return;
     }
     const signature = types[value];
+    if (
+      callbackView &&
+      erasing &&
+      signature?.kind === "function" &&
+      signature.rest !== true &&
+      signature.receiver === undefined
+    ) {
+      const parameters: string[] = [];
+      const result = types[signature.result]?.kind;
+      for (const parameter of signature.parameters) {
+        if (parameter === undefined) throw "callback view parameter invariant";
+        const type = types[parameter]?.kind;
+        if (
+          type === undefined ||
+          ![
+            "number",
+            "bigint",
+            "boolean",
+            "string",
+            "unknown",
+            "null",
+            "undefined",
+          ].includes(type)
+        )
+          break;
+        parameters.push(type);
+      }
+      if (
+        result !== undefined &&
+        [
+          "number",
+          "bigint",
+          "boolean",
+          "string",
+          "unknown",
+          "null",
+          "undefined",
+          "void",
+        ].includes(result) &&
+        parameters.length === signature.parameters.length
+      ) {
+        nativeCallbackViews.set(node, {
+          parameters,
+          result,
+          minimumArguments: signature.minimumArguments ?? parameters.length,
+        });
+        return;
+      }
+    }
     if (erasing) {
       const source = ungroup(node);
       const declaration =
@@ -5187,7 +5320,10 @@ function checkClosureModuleLayout(
         }
       }
     }
-    if (realmPlan === undefined && aggregatePayload(types, value)) {
+    if (
+      realmPlan === undefined &&
+      aggregatePayload(types, value, options.realmImports !== undefined)
+    ) {
       realmSinks.set(node, true);
       replayRealm = true;
       return;
@@ -5475,7 +5611,16 @@ function checkClosureModuleLayout(
             return fail(node, "UNSUPPORTED", "unsupported global");
           } else {
             const declared = cell(b, { kind: "read" }, node, owner);
-            result = narrowedType(b.id, declared, present);
+            const imported = options.realmImports?.get(b.name);
+            result =
+              types[declared]?.kind === "unknown" && imported !== undefined
+                ? generalFact(
+                    imported === "callable"
+                      ? "realm-callable"
+                      : "dynamic-result",
+                    node,
+                  )
+                : narrowedType(b.id, declared, present);
           }
           break;
         }
@@ -6132,6 +6277,11 @@ function checkClosureModuleLayout(
                 : string;
             break;
           }
+          if (isOpenRealmValue(types[obj])) {
+            intrinsics.set(node, "dynamic-object-read");
+            result = generalFact("dynamic-result", node);
+            break;
+          }
           const objectType = types[obj];
           if (objectType?.kind === "array" && objectType.realmArray === true) {
             if (node.property !== "length")
@@ -6243,6 +6393,11 @@ function checkClosureModuleLayout(
           const keyType = expression(node.index, owner),
             property = checkedPropertyName(node.index, types[keyType]);
           const objectType = types[object];
+          if (isOpenRealmValue(objectType)) {
+            intrinsics.set(node, "dynamic-object-read");
+            result = generalFact("dynamic-result", node);
+            break;
+          }
           if (
             objectType?.kind === "object" &&
             objectType.realmLibrary !== undefined
@@ -6368,6 +6523,30 @@ function checkClosureModuleLayout(
         }
         case "new": {
           const target = ungroup(node.callee);
+          if (
+            options.realmImports !== undefined &&
+            target.kind === "identifier" &&
+            !references.has(target)
+          ) {
+            if (target.name === "ArrayBuffer" || target.name === "DataView") {
+              result = realmConstruction(node, target, owner);
+              break;
+            }
+            const typed = contracts.names.get(target.name);
+            if (typed !== undefined && nativeByteView(types[typed])) {
+              const first = node.arguments[0];
+              const realmOwner =
+                first !== undefined &&
+                first.kind !== "spread" &&
+                ungroup(first).kind !== "array" &&
+                types[expression(first, owner)]?.kind === "dynamic-result";
+              if (selected || realmOwner) {
+                realmConstruction(node, target, owner);
+                result = realmPayload(typed, node);
+                break;
+              }
+            }
+          }
           if (
             target.kind === "identifier" &&
             isErrorKind(target.name) &&
@@ -6525,6 +6704,13 @@ function checkClosureModuleLayout(
               );
             const callee = expression(node.callee, owner);
             const contract = types[callee];
+            if (
+              options.realmImports !== undefined &&
+              contract?.kind === "dynamic-result"
+            ) {
+              result = generalCall(node, owner);
+              break;
+            }
             if (
               contract?.kind === "object" &&
               contract.realmLibrary !== undefined
@@ -7140,6 +7326,12 @@ function checkClosureModuleLayout(
               node.callee.kind === "member"
                 ? chainReceiver(target.object, target.optional === true)
                 : expression(target.object, owner);
+            if (isOpenRealmValue(types[obj])) {
+              intrinsics.set(target, "dynamic-object-read");
+              expressions.set(target, generalFact("dynamic-result", target));
+              result = generalCall(node, owner);
+              break;
+            }
             const map = types[obj];
             if (map?.kind === "object" && map.realmLibrary !== undefined) {
               if (
@@ -8133,7 +8325,11 @@ function checkClosureModuleLayout(
                 signature.realmLibrary +
                 " requires library overload lowering",
             );
-          if (signature?.kind === "realm-callable") {
+          if (
+            signature?.kind === "realm-callable" ||
+            (options.realmImports !== undefined &&
+              signature?.kind === "dynamic-result")
+          ) {
             result = generalCall(node, owner);
             break;
           }
@@ -8657,6 +8853,19 @@ function checkClosureModuleLayout(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (isOpenRealmValue(receiverType)) {
+              const unknown = primitive("unknown");
+              result = expression(node.value, owner, unknown, true);
+              const valueType = types[result]?.kind;
+              if (
+                valueType !== "dynamic-result" &&
+                valueType !== "realm-callable"
+              )
+                checkDynamicPayload(result, node.value, unknown);
+              intrinsics.set(node, "dynamic-object-write");
+              invalidateCalls();
+              break;
+            }
             if (dynamicObject(receiver)) {
               const fields = dynamicPropertyTargets(
                 receiver,
@@ -9604,7 +9813,10 @@ function checkClosureModuleLayout(
       source: Expression,
       type: number,
     ): void {
-      const general = unchecked && types[type]?.kind === "unknown";
+      const general =
+        (options.realmImports !== undefined &&
+          types[type]?.kind === "dynamic-result") ||
+        (unchecked && types[type]?.kind === "unknown");
       if (
         !general &&
         (system.assignable(undefinedType, type) ||
@@ -10590,6 +10802,7 @@ function checkClosureModuleLayout(
         realmReturnOwners,
         realmSinks,
         realmReads,
+        options.realmImports !== undefined,
       ),
     );
   propagateVoidReturns();
@@ -10621,6 +10834,7 @@ function checkClosureModuleLayout(
       downcasts,
       dynamicEnrollments,
       nativeCallableViews,
+      nativeCallbackViews,
       nativeListViews,
       nativeRecordViews,
       finitePropertyKeys,
@@ -10629,6 +10843,7 @@ function checkClosureModuleLayout(
       intrinsics,
       cViewUses,
       cViews,
+      realmImports: options.realmImports,
       bodies,
     },
   };

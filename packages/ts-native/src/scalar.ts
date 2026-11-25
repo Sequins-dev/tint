@@ -514,6 +514,7 @@ export interface RealmErrorRuntime {
 
 export interface NodeErrorRecords {
   readonly coded?: number | undefined;
+  readonly type?: number | undefined;
   readonly range?: number | undefined;
   readonly system?: number | undefined;
   readonly info?: number | undefined;
@@ -3294,14 +3295,21 @@ export function lowerFunction(
   ): number {
     if (
       nodeErrors === undefined ||
-      error === "TypeError" ||
-      error === "ReferenceError"
+      error === "ReferenceError" ||
+      (error === "TypeError" && nodeErrors.type === undefined)
     )
       return intrinsicErrorTest(value, error, node);
     const candidates: (number | undefined)[] =
-      error === "RangeError"
-        ? [nodeErrors.range]
-        : [nodeErrors.coded, nodeErrors.range, nodeErrors.system];
+      error === "TypeError"
+        ? [nodeErrors.type]
+        : error === "RangeError"
+          ? [nodeErrors.range]
+          : [
+              nodeErrors.coded,
+              nodeErrors.range,
+              nodeErrors.system,
+              nodeErrors.type,
+            ];
     const operand = save(value, "general", node);
     const yes = block(),
       done = block(),
@@ -3856,7 +3864,7 @@ export function lowerFunction(
       range = nodeErrors?.range,
       system = nodeErrors?.system;
     if (property === "code") {
-      for (const record of [coded, range, system]) {
+      for (const record of [coded, range, system, nodeErrors?.type]) {
         if (record === undefined) continue;
         const next = chooseRecord(record);
         answer(
@@ -6696,6 +6704,7 @@ export function lowerFunction(
         const object = value(node.object),
           key = dynamicKey(node);
         const raw = dynamicResult(runtime.read, [object, key], node);
+        if (metadata.downcast !== undefined) return raw;
         const schema = metadata.dynamicContract;
         const type = metadata.type;
         if (schema === undefined || type === "void")
@@ -6827,10 +6836,115 @@ export function lowerFunction(
         throw "dynamic object operation invariant";
     }
   }
-  function generalCall(
+  /** Advance a fixed-arity FFI call only after evaluating the real callee
+   * and arguments. A missed witness reuses those values in ordinary lowering. */
+  function fixedFfiCall(
     node: Expression & { readonly kind: "call" },
+    target: number,
+    assertion?: Expression,
+  ): number {
+    const call = info(node).generalCall;
+    if (call === undefined) throw "fixed FFI fallback invariant";
+    const callee = ungroup(node.callee);
+    const base =
+      callee.kind === "member" || callee.kind === "index"
+        ? callee.object
+        : undefined;
+    const overrides: {
+      readonly expression: Expression;
+      readonly previous: number | undefined;
+    }[] = [];
+    function useValue(expression: Expression, slot: number): void {
+      overrides.push({
+        expression,
+        previous: expressionOverrides.get(expression),
+      });
+      expressionOverrides.set(expression, slot);
+    }
+    const fixedReceiver = base === undefined ? undefined : value(base);
+    const previousBase =
+      base === undefined ? undefined : expressionOverrides.get(base);
+    if (base !== undefined && fixedReceiver !== undefined)
+      expressionOverrides.set(base, fixedReceiver);
+    const bound = value(node.callee);
+    if (base !== undefined) {
+      if (previousBase === undefined) expressionOverrides.delete(base);
+      else expressionOverrides.set(base, previousBase);
+    }
+    const argumentsSlots = node.arguments.map(value);
+    if (base !== undefined && fixedReceiver !== undefined)
+      useValue(base, fixedReceiver);
+    useValue(node.callee, bound);
+    for (let index = 0; index < node.arguments.length; index++) {
+      const argument = node.arguments[index],
+        slot = argumentsSlots[index];
+      if (argument === undefined || slot === undefined)
+        throw "fixed FFI argument invariant";
+      useValue(argument, slot);
+    }
+    const fast = runtimeCall(target, [bound, ...argumentsSlots], node);
+    if (fast === undefined) throw "fixed FFI result invariant";
+    const type = assertion === undefined ? "general" : "number";
+    const output = temporary(type);
+    const hit = block(),
+      miss = block(),
+      done = block();
+    const present = nextValue++;
+    emit({
+      kind: "optional-present",
+      id: present,
+      value: load(fast, node),
+      start: node.start,
+      end: node.end,
+    });
+    choose(present, hit, miss, node);
+    current = hit;
+    const result = nextValue++;
+    emit({
+      kind: "optional-value",
+      id: result,
+      value: load(fast, node),
+      start: node.start,
+      end: node.end,
+    });
+    store(output, coerce(result, type, node), node);
+    jump(done.id, node);
+    current = miss;
+    const generic = generalCall(node, call);
+    const downcast =
+      assertion === undefined ? undefined : info(assertion).downcast;
+    const returned =
+      assertion === undefined || downcast === undefined
+        ? generic
+        : checkedDowncast(generic, assertion, downcast);
+    store(output, load(returned, node), node);
+    jump(done.id, node);
+    for (let index = overrides.length - 1; index >= 0; index--) {
+      const override = overrides[index];
+      if (override === undefined) throw "fixed FFI override invariant";
+      if (override.previous === undefined)
+        expressionOverrides.delete(override.expression);
+      else expressionOverrides.set(override.expression, override.previous);
+    }
+    current = done;
+    return output;
+  }
+
+  function generalCall(
+    node: Expression & { readonly kind: "call" | "new" },
     call: { readonly target: number | undefined },
   ): number {
+    if (node.kind === "new") {
+      const callee = value(node.callee);
+      const rest = info(node).rest;
+      const constructor = call.target;
+      if (rest === undefined || constructor === undefined)
+        throw "general construction invariant";
+      const argumentsList = packCallArguments(node.arguments, rest, node);
+      const result = runtimeCall(constructor, [callee, argumentsList], node);
+      if (result === undefined) throw "general construction result invariant";
+      return result;
+    }
     const target = ungroup(node.callee);
     const base =
       target.kind === "member" || target.kind === "index"
@@ -7448,6 +7562,8 @@ export function lowerFunction(
         return list;
       }
       case "new": {
+        const general = metadata.generalCall;
+        if (general !== undefined) return generalCall(node, general);
         const construction = records?.constructors?.get(node);
         if (construction !== undefined) {
           if (
@@ -8040,6 +8156,18 @@ export function lowerFunction(
       case "satisfies": {
         const downcast = info(node).downcast;
         if (downcast === undefined) return expression(node.expression);
+        const called = ungroup(node.expression);
+        if (
+          called.kind === "call" &&
+          scalarType(node) === "number" &&
+          downcast.tests.length === 1 &&
+          downcast.tests[0] === "number" &&
+          downcast.records.length === 0 &&
+          downcast.errors === undefined
+        ) {
+          const target = info(called).fixedFfiCall;
+          if (target !== undefined) return fixedFfiCall(called, target, node);
+        }
         return checkedDowncast(value(node.expression), node, downcast);
       }
       case "group":
@@ -8601,16 +8729,20 @@ export function lowerFunction(
           else if (
             literal.kind === "string" &&
             compared.kind === "unary" &&
-            compared.operator === "typeof" &&
-            (compared.generalTag === true ||
-              info(compared).realmTypeof === undefined)
+            compared.operator === "typeof"
           ) {
             const name = literal.value;
+            // The realm classifier differs from the value tag only for
+            // values with the object tag: callable and [[IsHTMLDDA]] objects,
+            // symbols and BigInts. Number, boolean and string results are
+            // the tag itself; "undefined" also covers [[IsHTMLDDA]].
             if (
               name === "number" ||
               name === "boolean" ||
               name === "string" ||
-              name === "undefined" ||
+              (name === "undefined" &&
+                (compared.generalTag === true ||
+                  info(compared).realmTypeof === undefined)) ||
               (name === "object" && compared.generalTag === true)
             ) {
               category = name;
@@ -9222,6 +9354,8 @@ export function lowerFunction(
           });
           return save(id, "general", node);
         }
+        if (metadata.fixedFfiCall !== undefined)
+          return fixedFfiCall(node, metadata.fixedFfiCall);
         const general = metadata.generalCall;
         if (general !== undefined) return generalCall(node, general);
         const created = info(node).cView;

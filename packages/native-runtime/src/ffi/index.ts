@@ -265,9 +265,14 @@ export type CallbackDispatcher = (
 ) => number;
 /** How many registered callbacks may exist at once (per mutator). */
 export const registeredCallbacks = 16;
+export interface CallbackActivity {
+  active: boolean;
+}
 interface CallbackRegistry {
   readonly functions: (RegisteredCallback | undefined)[];
   readonly addresses: number[];
+  readonly activity: CallbackActivity;
+  activeCount: number;
   failed: boolean;
   error: unknown;
   dispatcher: CallbackDispatcher | undefined;
@@ -275,6 +280,8 @@ interface CallbackRegistry {
 const registry$: CallbackRegistry = {
   functions: [],
   addresses: [],
+  activity: { active: false },
+  activeCount: 0,
   failed: false,
   error: undefined,
   dispatcher: undefined,
@@ -289,6 +296,8 @@ export function registerCallback(fn: RegisteredCallback): number {
   for (let id = 0; id < registeredCallbacks; id++)
     if (functions[id] === undefined) {
       functions[id] = fn;
+      registry$.activeCount++;
+      registry$.activity.active = true;
       return id;
     }
   throw new RangeError("too many registered callbacks");
@@ -305,9 +314,20 @@ export function releaseCallback(address: number): void {
     if (addresses[id] === address && registry$.functions[id] !== undefined) {
       registry$.functions[id] = undefined;
       addresses[id] = 0;
+      registry$.activeCount--;
+      registry$.activity.active = registry$.activeCount !== 0;
       return;
     }
   throw new TypeError("not a registered callback");
+}
+/** Whether these registered thunks can enter an FFI callee's transition. */
+export function hasRegisteredCallbacks(): boolean {
+  for (const fn of registry$.functions) if (fn !== undefined) return true;
+  return false;
+}
+/** Shared read-only witness for guarded leaf calls. */
+export function registeredCallbackActivity(): CallbackActivity {
+  return registry$.activity;
 }
 /** The dispatcher may-callback calls pass for registered thunks. */
 export function callbackDispatcher(): CallbackDispatcher {

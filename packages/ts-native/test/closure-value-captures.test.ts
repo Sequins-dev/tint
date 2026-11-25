@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createSourceTextView } from "@tint/source/text";
-import { parseModule } from "@tint/typescript/syntax";
+import { parseModule, rewriteModule } from "@tint/typescript/syntax";
 import { checkClosureModule } from "@tint/typescript/checker";
 import { verify } from "@tint/ir/scalar";
 import { lowerModuleEntries } from "../src/closure/lowering/index.ts";
@@ -13,7 +13,7 @@ const target = {
   frameAlignment: 16,
   maxAlignment: 16,
 } as const;
-function lower(text: string, sloppyOwner = false) {
+function lower(text: string, sloppyOwner = false, valueHint?: string) {
   const parsed = parseModule(createSourceTextView(text));
   assert.ok(parsed.ok, JSON.stringify(parsed));
   const module = sloppyOwner
@@ -24,7 +24,26 @@ function lower(text: string, sloppyOwner = false) {
         ),
       }
     : parsed.value;
-  const checked = checkClosureModule(module);
+  const input =
+    valueHint === undefined
+      ? module
+      : rewriteModule(module, {
+          statement(node) {
+            return node.kind !== "variable"
+              ? node
+              : {
+                  ...node,
+                  declarations: node.declarations.map((declaration) =>
+                    declaration.kind !== "object-binding" &&
+                    declaration.kind !== "array-binding" &&
+                    declaration.name === valueHint
+                      ? { ...declaration, capture: "value" }
+                      : declaration,
+                  ),
+                };
+          },
+        });
+  const checked = checkClosureModule(input);
   assert.ok(checked.ok, JSON.stringify(checked));
   const output = lowerModuleEntries(checked.value, [0], target, 4096);
   assert.ok(output.ok, JSON.stringify(output));
@@ -254,4 +273,13 @@ test("lets written after a captor may exist keep their cells", () => {
     const module = lower(text);
     assert.equal(cellAccesses(module), true, text);
   }
+});
+
+test("a by-value hint keeps its cell when the hoisted closure is created before it", () => {
+  const module = lower(
+    "function make():()=>number{try{const value:number=42;function read():number{return value;}return read;}catch(e){return ():number=>0;}}",
+    false,
+    "value",
+  );
+  assert.equal(cellAccesses(module), true);
 });

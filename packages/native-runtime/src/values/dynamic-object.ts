@@ -612,6 +612,7 @@ export function bindingRest(
 }
 export {
   projectUnaryNumber,
+  projectNativeCallback,
   projectNumberList,
   projectNativeRecord,
 } from "../intrinsics/value-views.ts";

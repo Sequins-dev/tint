@@ -513,7 +513,22 @@ function addInitializedCaptures(
       binding.captured &&
       writes.written[binding.id] !== 1
     ) {
-      result[binding.id] = 1;
+      // An explicit hint describes what the value may snapshot once initialized.
+      // A hoisted declaration can still be created before the initializer.
+      const initialized = initializedAt.get(binding.node) ?? Infinity;
+      let ready = true;
+      for (const captor of directCaptors[binding.id] ?? []) {
+        if (captor === undefined) throw "captor invariant";
+        const node = checked.bodies.get(captor)?.node;
+        if (
+          node === undefined ||
+          (hoistedDeclarations.has(node) && creation(node) < initialized)
+        ) {
+          ready = false;
+          break;
+        }
+      }
+      if (ready) result[binding.id] = 1;
       continue;
     }
     // Never-reassigned function declarations: each captor copies the

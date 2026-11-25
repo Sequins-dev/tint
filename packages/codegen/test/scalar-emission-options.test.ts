@@ -59,7 +59,8 @@ test("emission options preserve default and configured byte images", () => {
   // Each record descriptor is preceded by two dispatch family words and its
   // 8-byte record index. Number
   // constants materialize only their nonzero 16-bit parts. The configured
-  // image's inline allocation compares top + size with the limit.
+  // image's inline allocation compares top + size with the limit, and
+  // debugSpans keeps slow paths inline rather than emitting out-of-line stubs.
   for (const [options, length, hash] of [
     [
       {},
@@ -75,8 +76,8 @@ test("emission options preserve default and configured byte images", () => {
         generationalBarriers: true,
         closedRoots: [0],
       },
-      792,
-      "44d93ba17ac0cdf409cd51345ac62ab5d3ce5afe9a9b586821c97babef578a49",
+      776,
+      "5600557866a54a768ecfba5a4194cc91a3fa739ef117ee87e467b45e2659d046",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);

@@ -1,0 +1,46 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "main-check-explicit-binding",
+  "recorded": "2026-11-22T11:38:20.387Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "73b18fe31a1e76547c1939685df71d6f52400d511a6275741c3f330c3ecab977",
+  "summary": {
+    "typed": {
+      "build-failed": 1
+    },
+    "untyped": {
+      "run-failed": 1
+    }
+  },
+  "entries": [
+    {
+      "construct": "explicit-binding-contract",
+      "form": "typed",
+      "path": "none",
+      "outcome": "build-failed",
+      "reason": "{\"stage\":\"link\",\"message\":\"direct eval requires the hosted evaluator and shared binding contracts\",\"module\":\"fixture\"}",
+      "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stage\":\"link\",\"message\":\"direct eval requires the hosted evaluator and shared binding contracts\",\"module\":\"fixture\"}\n    at buildHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/hosted-fixture.ts:638:25)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/hosted-fixture.ts:752:47\n    at buildNativeFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/gate/native-fixture.ts:63:23)\n    at prepareHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/hosted-fixture.ts:752:16)\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/hosted-fixture.ts:761:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: undefined,\n  expected: undefined,\n  operator: 'fail',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "seconds": 5.6
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: direct eval requires the hosted evaluator and shared binding contracts",
+      "error": "lper:untyped.ts (link: direct eval requires the hosted evaluator and shared binding contracts)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stdout\":\"\",\"stderr\":\"\",\"kind\":\"exited\",\"status\":70,\"artifact\":{\"target\":\"linux-aarch64\",\"path\":\"/tmp/tint-hosted-construct-explicit-binding-contract-untyped-8tCvxU/construct-explicit-binding-contract-untyped\",\"imageSha256\":\"d2eaddf25823ffe0039aa9ec0e4fa57ccd348155f4f286882212a2382dc24cfe\",\"buildManifest\":{\"path\":\"/tmp/tint-hosted-construct-explicit-binding-contract-untyped-8tCvxU/construct-explicit-binding-contract-untyped.manifest.json\",\"sha256\":\"6ac8425099d4d990d4b1cc29b20116194620a88761b0229727ed3628ea4d871f\"}},\"executor\":{\"runner\":\"linux-dev\",\"identity\":\"Linux 6.1.176 aarch64\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/hosted-fixture.ts:783:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/ffi-main-check.1795347424/tools/unified-pipeline/verify-construct.ts:96:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "73b18fe31a1e76547c1939685df71d6f52400d511a6275741c3f330c3ecab977",
+      "sourceReplay": {
+        "loads": 33,
+        "modules": 1536,
+        "utf16Units": 35092148
+      },
+      "seconds": 46.5
+    }
+  ]
+}

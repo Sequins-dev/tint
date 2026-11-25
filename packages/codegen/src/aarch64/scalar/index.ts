@@ -236,9 +236,11 @@ import {
   visitTerminatorOperands,
   planTemporarySlots,
   hostReturnType,
+  executableHostOperation,
   foreignCallTypes,
   foreignMemoryTypes,
   dynamicCallFrame,
+  dynamicScalarFrame,
   callbackTransition,
   callbackEntered,
   callbackState,
@@ -4155,6 +4157,7 @@ function emitModuleForms(
     /** Undefined: a universal thunk (dynamic callbacks). */
     readonly signature: CSignature | undefined;
     readonly ordinal: number;
+    readonly runtimePrototype: boolean;
     /** A direct callback's thunk (calls the TypeScript function itself):
      * the parameters delivered as record views and their views' record
      * offsets; undefined for an adapter's. */
@@ -4166,6 +4169,7 @@ function emitModuleForms(
     ordinal: number,
     views: readonly number[] | undefined = undefined,
     viewOffsets: readonly number[] = [],
+    runtimePrototype: boolean = false,
   ): number {
     const names: string[] = [];
     for (const parameter of signature?.parameters ?? []) {
@@ -4178,6 +4182,7 @@ function emitModuleForms(
       (signature === undefined
         ? "universal"
         : cTypeName(signature.result) + "(" + names.join(",") + ")") +
+      (runtimePrototype ? ":runtime" : "") +
       (views === undefined
         ? ""
         : ":direct:" + views.join(",") + "@" + viewOffsets.join(","));
@@ -4187,6 +4192,7 @@ function emitModuleForms(
       key,
       signature,
       ordinal,
+      runtimePrototype,
       views,
       viewOffsets,
     });
@@ -4205,6 +4211,7 @@ function emitModuleForms(
   function emitCallbackThunk(
     signature: CSignature | undefined,
     ordinal: number,
+    runtimePrototype: boolean,
   ): void {
     // A universal thunk (no prototype) passes the callback its frame's
     // address instead: the dynamic layer reads the saved C arguments there
@@ -4218,13 +4225,15 @@ function emitModuleForms(
         ? []
         : classified.value.arguments;
     const registered = ordinal < 0,
+      runtimeRegistered =
+        registered && (signature === undefined || runtimePrototype),
       first = registered ? 1 : 0;
     if (locations.length + first > 8)
       fail("UNSUPPORTED", "callbacks take at most eight arguments");
     const frame = 192;
-    const traps: { at: number; branch: Branch }[] = [];
-    function trapBranch(branch: Branch): void {
-      traps.push({ at: instructions.length, branch });
+    const traps: { at: number; branch: Branch; reason: number }[] = [];
+    function trapBranch(branch: Branch, reason: number = 0): void {
+      traps.push({ at: instructions.length, branch, reason });
       emit({ ...branch, displacement: 0 });
     }
     const t = callbackTransition;
@@ -4246,21 +4255,40 @@ function emitModuleForms(
       shift: 0,
       setFlags: false,
     });
+    if (runtimeRegistered) {
+      emit({ op: "str", width: 64, rt: 16, rn: 29, offset: 56 });
+      emit({ op: "str", width: 64, rt: 15, rn: 29, offset: 40 });
+    }
     saveArgumentRegisters(signature === undefined ? undefined : locations);
+    if (runtimeRegistered) {
+      importCall(host().symbolPrefix + "pthread_self");
+      emit({ op: "ldr", width: 64, rt: 12, rn: 29, offset: 40 });
+      emit({
+        op: "sub-reg",
+        width: 64,
+        rd: "zr",
+        rn: 0,
+        rm: 12,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      });
+      trapBranch({ op: "b.cond", condition: "ne" }, 1);
+    }
     // This thread's callback state block.
     importAddress(9, 17, "tint:callback-key");
     emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
     importCall(host().symbolPrefix + "pthread_getspecific");
-    trapBranch({ op: "cbz", width: 64, rt: 0 });
+    trapBranch({ op: "cbz", width: 64, rt: 0 }, 1);
     // The innermost transition: present, not already running a callback,
     // and entered on this very thread.
     emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
-    trapBranch({ op: "cbz", width: 64, rt: 11 });
+    trapBranch({ op: "cbz", width: 64, rt: 11 }, 2);
     // A callback already running under this record (a leaf call that called
     // back) traps; a failed direct callback's record (2) does not.
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({ op: "ubfm", width: 64, rd: 12, rn: 12, immr: 0, imms: 0 });
-    trapBranch({ op: "cbnz", width: 64, rt: 12 });
+    trapBranch({ op: "cbnz", width: 64, rt: 12 }, 2);
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
     emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
     emit({
@@ -4273,7 +4301,7 @@ function emitModuleForms(
       amount: 0,
       setFlags: true,
     });
-    trapBranch({ op: "b.cond", condition: "ne" });
+    trapBranch({ op: "b.cond", condition: "ne" }, 1);
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({
       op: "add-imm",
@@ -4337,11 +4365,15 @@ function emitModuleForms(
     }
     for (let index = 0; index < locations.length; index++)
       emit({ op: "fmov-d-d", rd: first + index, rn: 16 + index });
-    if (registered) {
+    if (runtimeRegistered) {
+      emit({ op: "ldr", width: 64, rt: 14, rn: 29, offset: 56 });
+      emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
+      if (signature === undefined) emit({ op: "scvtf-d-x", rd: 1, rn: 29 });
+    } else if (registered) {
       imm(14, -1 - ordinal);
       emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
-    }
-    if (signature === undefined) emit({ op: "scvtf-d-x", rd: 0, rn: 29 });
+    } else if (signature === undefined)
+      emit({ op: "scvtf-d-x", rd: 0, rn: 29 });
     // Call the function value with the caller's context.
     emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
     emit({
@@ -4434,12 +4466,49 @@ function emitModuleForms(
     // while a callback already runs (a leaf call that called back): a
     // contract violation, so trap loudly.
     const trap = instructions.length;
-    emit({ op: "brk", immediate: 3 });
+    const reasons: number[] = [];
+    if (runtimeRegistered) {
+      const messages = [
+        "node:ffi callback dispatcher failed\n",
+        "Callbacks can only be invoked on the system thread they were created on\n",
+        "node:ffi callback outside an FFI transition\n",
+      ];
+      for (const message of messages) {
+        if (message === undefined) throw "callback diagnostic invariant";
+        reasons.push(instructions.length);
+        // Reuse the saved arguments as a temporary raw diagnostic buffer.
+        for (let i = 0; i < message.length; i += 4) {
+          let bits = 0;
+          let scale = 1;
+          for (let byte = 0; byte < 4 && i + byte < message.length; byte++) {
+            bits += message.charCodeAt(i + byte) * scale;
+            scale *= 256;
+          }
+          imm(9, bits);
+          emit({ op: "str", width: 32, rt: 9, rn: 29, offset: 64 + i });
+        }
+        imm(0, 2);
+        emit({
+          op: "add-imm",
+          width: 64,
+          rd: 1,
+          rn: 29,
+          immediate: 64,
+          shift: 0,
+          setFlags: false,
+        });
+        imm(2, message.length);
+        importCall(host().symbolPrefix + "write");
+        importCall(host().symbolPrefix + "abort");
+        emit({ op: "brk", immediate: 3 });
+      }
+    } else emit({ op: "brk", immediate: 3 });
     for (const site of traps) {
       if (site === undefined) throw "callback trap invariant";
+      const destination = reasons[site.reason] ?? trap;
       patchInstruction(site.at, {
         ...site.branch,
-        displacement: (trap - site.at) * 4,
+        displacement: (destination - site.at) * 4,
       });
     }
   }
@@ -7544,14 +7613,17 @@ function emitModuleForms(
         const siteReferences = new Map<number, readonly number[]>();
         const siteGeneralArguments = new Map<number, number>();
         let siteIndex = 0;
-        function safepoint(): void {
+        function safepointAt(at: number): void {
           const block = blockId;
           if (block === undefined) throw "safepoint block invariant";
           callSites.push({
-            offset: instructions.length * 4,
+            offset: at * 4,
             block,
             index: siteIndex,
           });
+        }
+        function safepoint(): void {
+          safepointAt(instructions.length);
         }
         forwardSites = [];
         // Single-predecessor continuations follow their block (P7).
@@ -10635,13 +10707,14 @@ function emitModuleForms(
           record: number,
           returnAddressAt: number,
           words: readonly number[],
+          returnPC: number = instructions.length,
         ): void {
           patchInstruction(returnAddressAt, {
             op: "adr",
             rd: 12,
-            displacement: (instructions.length - returnAddressAt) * 4,
+            displacement: (returnPC - returnAddressAt) * 4,
           });
-          safepoint();
+          safepointAt(returnPC);
           siteReferences.set(callSites.length - 1, words);
           dataPointer(state, 14, false, 0);
           emit({
@@ -10962,6 +11035,285 @@ function emitModuleForms(
             rn: 12,
             offset: frame.floats + 16,
           });
+        }
+        /** A fixed prototype has ordinary outgoing space and emitted
+         * register moves, while the binding still owns the exact target. */
+        function fixedScalarCall(
+          call: ForeignCall,
+          frame: number,
+          result: number,
+        ): void {
+          const layout = foreignPlan(call).layout;
+          const shape = dynamicScalarFrame;
+          dataPointer(frame, 12, false, shape.size + layout.stackBytes);
+          for (let offset = 0; offset < layout.stackBytes; offset += 8) {
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 14,
+              rn: 12,
+              offset: shape.size + offset,
+            });
+            rawStore(14, offset);
+          }
+          emit({ op: "ldr", width: 64, rt: 15, rn: 12, offset: shape.target });
+          trapIf({ op: "cbz", width: 64, rt: 15 });
+          for (const location of layout.arguments) {
+            if (location === undefined) throw "fixed FFI argument invariant";
+            if (location.gp >= 0)
+              emit({
+                op: "ldr",
+                width: 64,
+                rt: location.gp,
+                rn: 12,
+                offset: shape.registers + location.gp * 8,
+              });
+            else if (location.fp >= 0)
+              emit({
+                op: "ldr-d",
+                rt: location.fp,
+                rn: 12,
+                offset: shape.floats + location.fp * 8,
+              });
+          }
+          emit({ op: "blr", rn: 15 });
+          if (layout.result.class !== "void") {
+            dataPointer(frame, 12, false, 0);
+            if (layout.result.class === "float")
+              emit({ op: "str-d", rt: 0, rn: 12, offset: shape.floats });
+            else
+              emit({
+                op: "str",
+                width: 64,
+                rt: 0,
+                rn: 12,
+                offset: shape.registers,
+              });
+          }
+          imm(9, 1);
+          saveRaw(9, result);
+        }
+        /** Copy the classified stack image below the managed frame. The
+         * saved transition and its roots stay at their normal frame offsets. */
+        function scalarDynamicCall(
+          call: ForeignCall,
+          operands: readonly number[],
+          result: number,
+        ): void {
+          const layout = dynamicScalarFrame;
+          const mayCallback = call.mayCallback === true;
+          const frame = operands[mayCallback ? 2 : 0];
+          if (frame === undefined) throw "scalar dynamic frame invariant";
+          dataPointer(frame, 12, false, layout.size);
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            immediate: layout.size,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 13,
+            rn: 12,
+            offset: layout.stackBytes,
+          });
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 10,
+            rm: 13,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          trapIf({ op: "b.cond", condition: "cc" });
+          emit({ op: "ubfm", width: 64, rd: 9, rn: 13, immr: 0, imms: 3 });
+          trapIf({ op: "cbnz", width: 64, rt: 9 });
+          address(11, 0);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 11,
+            rn: 11,
+            rm: 13,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          rawLoad(9, contextOffset);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 9,
+            rn: 9,
+            offset: nativeStackLimitOffset,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 10,
+            rn: 11,
+            immediate: nativeCStackReserveBytes / 4096,
+            shift: 12,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 10,
+            rm: 9,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          const exhausted = instructions.length;
+          emit({ op: "b.cond", condition: "cc", displacement: 0 });
+          const words: number[] = [];
+          const state = operands[0];
+          let returnAddressAt = -1;
+          if (mayCallback) {
+            const dispatcher = operands[1];
+            if (state === undefined || dispatcher === undefined)
+              throw "scalar dynamic transition invariant";
+            returnAddressAt = pushTransition(state, dispatcher, [], 0, words);
+            dataPointer(frame, 12, false, 0);
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 13,
+              rn: 12,
+              offset: layout.stackBytes,
+            });
+          }
+          emit({ op: "ldr", width: 64, rt: 15, rn: 12, offset: layout.target });
+          trapIf({ op: "cbz", width: 64, rt: 15 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: "sp",
+            rn: 11,
+            immediate: 0,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 12,
+            immediate: layout.size,
+            shift: 0,
+            setFlags: false,
+          });
+          const copy = instructions.length;
+          emit({ op: "cbz", width: 64, rt: 13, displacement: 0 });
+          emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 0 });
+          emit({ op: "str", width: 64, rt: 14, rn: 11, offset: 0 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 11,
+            rn: 11,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({ op: "b", displacement: (copy - instructions.length) * 4 });
+          patchInstruction(copy, {
+            op: "cbz",
+            width: 64,
+            rt: 13,
+            displacement: (instructions.length - copy) * 4,
+          });
+          for (let register = 0; register < 8; register += 2) {
+            emit({
+              op: "ldp-d",
+              rt: register,
+              rt2: register + 1,
+              rn: 12,
+              offset: layout.floats + register * 8,
+            });
+            emit({
+              op: "ldp",
+              width: 64,
+              rt: register,
+              rt2: register + 1,
+              rn: 12,
+              offset: layout.registers + register * 8,
+              mode: "offset",
+            });
+          }
+          emit({ op: "blr", rn: 15 });
+          const returnPC = instructions.length;
+          imm(10, frameBytes);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 11,
+            rn: 29,
+            rm: 10,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: "sp",
+            rn: 11,
+            immediate: 0,
+            shift: 0,
+            setFlags: false,
+          });
+          if (mayCallback && state !== undefined)
+            popTransition(state, 0, returnAddressAt, words, returnPC);
+          dataPointer(frame, 12, false, 0);
+          emit({
+            op: "str",
+            width: 64,
+            rt: 0,
+            rn: 12,
+            offset: layout.registers,
+          });
+          emit({ op: "str-d", rt: 0, rn: 12, offset: layout.floats });
+          imm(9, 1);
+          const completed = instructions.length;
+          emit({ op: "b", displacement: 0 });
+          patchInstruction(exhausted, {
+            op: "b.cond",
+            condition: "cc",
+            displacement: (instructions.length - exhausted) * 4,
+          });
+          imm(9, 0);
+          patchInstruction(completed, {
+            op: "b",
+            displacement: (instructions.length - completed) * 4,
+          });
+          saveRaw(9, result);
         }
         function numberToInteger(
           id: number,
@@ -22124,6 +22476,27 @@ function emitModuleForms(
                   saveRaw(9, resultId);
                   break;
                 }
+                if (access.operation === "runtime-callback-address") {
+                  if (resultId === undefined)
+                    throw "runtime callback address invariant";
+                  importAddress(
+                    9,
+                    10,
+                    "tint:callback-thunk:" +
+                      String(
+                        callbackThunk(
+                          access.callback,
+                          -1,
+                          undefined,
+                          [],
+                          access.callback !== undefined,
+                        ),
+                      ),
+                  );
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  floatStore(0, resultId);
+                  break;
+                }
                 if (access.operation === "callback-address") {
                   // A registered callback thunk's entry.
                   const prototype = access.callback,
@@ -22235,6 +22608,15 @@ function emitModuleForms(
                   saveRaw(9, resultId);
                   break;
                 }
+                if (access.operation === "address-into") {
+                  const destination = operands[1];
+                  if (destination === undefined)
+                    throw "c-memory address output invariant";
+                  dataPointer(base, 12, false, 0);
+                  dataPointer(destination, 13, false, 8);
+                  emit({ op: "str", width: 64, rt: 12, rn: 13, offset: 0 });
+                  break;
+                }
                 if (access.operation === "address") {
                   // The data address of an external (borrowed) array, or -1:
                   // owned and view storage moves with collections.
@@ -22332,20 +22714,40 @@ function emitModuleForms(
                   });
                   break;
                 }
-                if (access.operation === "adopt") {
+                if (
+                  access.operation === "adopt" ||
+                  access.operation === "adopt-words"
+                ) {
                   // Owned and empty (header exactly the Uint8Array marker,
                   // length 0) becomes an external view: borrowed flag, the
                   // length and the address. The extent is unchanged (both
                   // round to 32 bytes), so collectors see a valid object.
+                  const exact = access.operation === "adopt-words";
                   const address = operands[1],
-                    length = operands[2];
+                    length = operands[exact ? 3 : 2];
                   if (
                     address === undefined ||
                     length === undefined ||
                     resultId === undefined
                   )
                     throw "c-memory adopt invariant";
-                  numberToInteger(address, 12, "usize");
+                  if (exact) {
+                    const high = operands[2];
+                    if (high === undefined)
+                      throw "c-memory adopt high word invariant";
+                    numberToInteger(address, 12, "u32");
+                    numberToInteger(high, 11, "u32");
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 32,
+                      setFlags: false,
+                    });
+                  } else numberToInteger(address, 12, "usize");
                   numberToInteger(length, 13, "u32");
                   rawValue(9, base);
                   emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
@@ -22561,6 +22963,20 @@ function emitModuleForms(
                 break;
               }
               case "c-call": {
+                if (op.call.dynamicScalar === true) {
+                  const result = op.id;
+                  if (result === undefined)
+                    throw "scalar dynamic status invariant";
+                  if (op.call.staticScalar === undefined)
+                    scalarDynamicCall(op.call, op.arguments, result);
+                  else {
+                    const frame = op.arguments[0];
+                    if (frame === undefined)
+                      throw "fixed scalar frame invariant";
+                    fixedScalarCall(op.call, frame, result);
+                  }
+                  break;
+                }
                 if (op.call.dynamic === true) {
                   dynamicCall(op.call, op.arguments);
                   break;
@@ -23214,7 +23630,7 @@ function emitModuleForms(
                   emit({ op: "str-q", qt: 1, rn: 12, offset: 16 });
                 }
                 const foreign = importCall;
-                const operation = op.operation;
+                const operation = executableHostOperation(op.operation);
                 /** Inline control flow with named labels for host
                  * sequences built outside this emitter; `finish` patches
                  * the branches. A label forgets forwarded stack words,
@@ -31537,7 +31953,12 @@ function emitModuleForms(
           thunk.views,
           thunk.viewOffsets,
         );
-      else emitCallbackThunk(thunk.signature, thunk.ordinal);
+      else
+        emitCallbackThunk(
+          thunk.signature,
+          thunk.ordinal,
+          thunk.runtimePrototype,
+        );
     }
     const thunkEnd = instructions.length * 4;
     let codeLength = instructions.length * 4;

@@ -451,6 +451,54 @@ test("a check a direct read relies on through a slot copy stays in the loop", ()
   );
 });
 
+test("loop motion preserves the checked layout used by a direct read", () => {
+  const module = loop([{ kind: "load", id: 40, slot: 4, ...span }], {
+    slots: ["reference", "number", "reference"],
+    records: [
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 16, type: "number", mutable: false },
+          { offset: 24, type: "number", mutable: true },
+        ],
+      },
+    ],
+    bodyTerminator: {
+      kind: "record",
+      object: 40,
+      record: 0,
+      field: 0,
+      operation: "read",
+      slot: 5,
+      consequent: 4,
+      alternate: 5,
+      ...span,
+    },
+    extraBlocks: [
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 41, slot: 4, ...span },
+          { kind: "store", slot: 6, value: 41, ...span },
+          { kind: "load", id: 42, slot: 6, ...span },
+          {
+            kind: "record-read",
+            id: 43,
+            object: 42,
+            record: 0,
+            field: 1,
+            ...span,
+          },
+          { kind: "store", slot: 3, value: 43, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  });
+  hoist(module);
+});
+
 test("a union dispatch's later layout checks stay behind the earlier check", () => {
   // b2 tests layout 0 and, failing that, b6 tests layout 1 then traps. The
   // second check runs only for objects that are not layout 0, so hoisting it

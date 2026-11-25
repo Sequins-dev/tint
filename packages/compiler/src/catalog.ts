@@ -327,6 +327,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/foreign/static-ffi.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/foreign/views.ts",
       packageId: "compiler",
     },
@@ -2815,6 +2819,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/ffi-callbacks.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/ffi-unsafe.d.ts",
       packageId: "native-runtime",
     },
@@ -2855,7 +2863,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/ffi/address-words.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/ffi/c-string.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/callback-stubs.ts",
       packageId: "native-runtime",
     },
     {
@@ -2987,6 +3003,26 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/ffi-callbacks.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-signature.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-static.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/openssl.ts",
       packageId: "native-runtime",
     },
@@ -3000,6 +3036,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/os.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/type-error.ts",
       packageId: "native-runtime",
     },
     {
