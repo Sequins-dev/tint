@@ -347,6 +347,7 @@ export function scalarReplaceRecords(
               field = layout.fields[index];
             if (slot === undefined || field === undefined)
               throw "record initializer invariant";
+            const opInline = op.inline;
             if (stateSlot !== undefined) {
               const initId = nextValue++;
               instructions.push({
@@ -355,6 +356,7 @@ export function scalarReplaceRecords(
                 value: value !== undefined,
                 start: op.start,
                 end: op.end,
+                ...(opInline === undefined ? {} : { inline: opInline }),
               });
               instructions.push({
                 kind: "store",
@@ -362,6 +364,7 @@ export function scalarReplaceRecords(
                 value: initId,
                 start: op.start,
                 end: op.end,
+                ...(opInline === undefined ? {} : { inline: opInline }),
               });
               if (value !== undefined) {
                 instructions.push({
@@ -370,6 +373,7 @@ export function scalarReplaceRecords(
                   value,
                   start: op.start,
                   end: op.end,
+                  ...(opInline === undefined ? {} : { inline: opInline }),
                 });
               } else {
                 const defaultId = nextValue++;
@@ -380,6 +384,7 @@ export function scalarReplaceRecords(
                     value: 0,
                     start: op.start,
                     end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
                   });
                 else if (field.type === "boolean")
                   instructions.push({
@@ -388,6 +393,7 @@ export function scalarReplaceRecords(
                     value: false,
                     start: op.start,
                     end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
                   });
                 else if (field.type === "string")
                   instructions.push({
@@ -396,6 +402,7 @@ export function scalarReplaceRecords(
                     value: "",
                     start: op.start,
                     end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
                   });
                 else if (field.type === "optional-string")
                   instructions.push({
@@ -403,6 +410,7 @@ export function scalarReplaceRecords(
                     id: defaultId,
                     start: op.start,
                     end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
                   });
                 else
                   instructions.push({
@@ -410,6 +418,7 @@ export function scalarReplaceRecords(
                     id: defaultId,
                     start: op.start,
                     end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
                   });
                 instructions.push({
                   kind: "store",
@@ -417,6 +426,7 @@ export function scalarReplaceRecords(
                   value: defaultId,
                   start: op.start,
                   end: op.end,
+                  ...(opInline === undefined ? {} : { inline: opInline }),
                 });
               }
               continue;
@@ -428,6 +438,7 @@ export function scalarReplaceRecords(
               value,
               start: op.start,
               end: op.end,
+              ...(opInline === undefined ? {} : { inline: opInline }),
             });
           }
           continue;
@@ -438,6 +449,7 @@ export function scalarReplaceRecords(
       instructions.push(op);
     }
     let terminator = block.terminator;
+    const termInline = terminator.inline;
     if (terminator.kind === "record") {
       const candidate = active(terminator.object);
       if (candidate !== undefined) {
@@ -452,6 +464,7 @@ export function scalarReplaceRecords(
             slot: terminator.operation === "read" ? fieldSlot : terminator.slot,
             start: terminator.start,
             end: terminator.end,
+            ...(termInline === undefined ? {} : { inline: termInline }),
           });
           instructions.push({
             kind: "store",
@@ -459,6 +472,7 @@ export function scalarReplaceRecords(
             value: id,
             start: terminator.start,
             end: terminator.end,
+            ...(termInline === undefined ? {} : { inline: termInline }),
           });
         }
         const condition = nextValue++;
@@ -468,6 +482,7 @@ export function scalarReplaceRecords(
           value: matches,
           start: terminator.start,
           end: terminator.end,
+          ...(termInline === undefined ? {} : { inline: termInline }),
         });
         // Retain both CFG edges until general unreachable-block cleanup exists.
         terminator = {
@@ -477,6 +492,7 @@ export function scalarReplaceRecords(
           alternate: terminator.alternate,
           start: terminator.start,
           end: terminator.end,
+          ...(termInline === undefined ? {} : { inline: termInline }),
         };
       }
     } else if (terminator.kind === "record-cell") {
@@ -491,6 +507,7 @@ export function scalarReplaceRecords(
             value: false,
             start: terminator.start,
             end: terminator.end,
+            ...(termInline === undefined ? {} : { inline: termInline }),
           });
           terminator = {
             kind: "branch",
@@ -499,9 +516,11 @@ export function scalarReplaceRecords(
             alternate: terminator.alternate,
             start: terminator.start,
             end: terminator.end,
+            ...(termInline === undefined ? {} : { inline: termInline }),
           };
         } else {
           const cellTerm = terminator;
+          const cellInline = cellTerm.inline;
           const field =
               module.records?.[cellTerm.record]?.fields[cellTerm.field],
             fieldSlot = candidate.fields[cellTerm.field],
@@ -522,6 +541,7 @@ export function scalarReplaceRecords(
               slot: fieldSlot,
               start: cellTerm.start,
               end: cellTerm.end,
+              ...(cellInline === undefined ? {} : { inline: cellInline }),
             });
             let value = loaded;
             if (optionalCarrier) {
@@ -532,6 +552,7 @@ export function scalarReplaceRecords(
                 value: loaded,
                 start: cellTerm.start,
                 end: cellTerm.end,
+                ...(cellInline === undefined ? {} : { inline: cellInline }),
               });
             }
             into.push({
@@ -540,6 +561,7 @@ export function scalarReplaceRecords(
               value,
               start: cellTerm.start,
               end: cellTerm.end,
+              ...(cellInline === undefined ? {} : { inline: cellInline }),
             });
           };
           const emitCellWrite = (into: Instruction[]): void => {
@@ -550,6 +572,7 @@ export function scalarReplaceRecords(
               slot: cellTerm.slot,
               start: cellTerm.start,
               end: cellTerm.end,
+              ...(cellInline === undefined ? {} : { inline: cellInline }),
             });
             let value = loaded;
             if (optionalCarrier) {
@@ -560,6 +583,7 @@ export function scalarReplaceRecords(
                 value: loaded,
                 start: cellTerm.start,
                 end: cellTerm.end,
+                ...(cellInline === undefined ? {} : { inline: cellInline }),
               });
             }
             into.push({
@@ -568,6 +592,7 @@ export function scalarReplaceRecords(
               value,
               start: cellTerm.start,
               end: cellTerm.end,
+              ...(cellInline === undefined ? {} : { inline: cellInline }),
             });
           };
           if (terminator.operation === "initialize") {
@@ -581,6 +606,7 @@ export function scalarReplaceRecords(
               slot: stateSlot,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             instructions.push({
               kind: "unary",
@@ -589,6 +615,7 @@ export function scalarReplaceRecords(
               operand: state,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             emitCellWrite(hitInsts);
             const ready = nextValue++;
@@ -598,6 +625,7 @@ export function scalarReplaceRecords(
               value: true,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             hitInsts.push({
               kind: "store",
@@ -605,6 +633,7 @@ export function scalarReplaceRecords(
               value: ready,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             extraBlocks.push({
               id: hitId,
@@ -614,6 +643,7 @@ export function scalarReplaceRecords(
                 target: terminator.consequent,
                 start: terminator.start,
                 end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
               },
             });
             terminator = {
@@ -623,6 +653,7 @@ export function scalarReplaceRecords(
               alternate: terminator.alternate,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             };
           } else if (terminator.operation === "read") {
             if (terminator.initialized === true) {
@@ -634,6 +665,7 @@ export function scalarReplaceRecords(
                 value: true,
                 start: terminator.start,
                 end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
               });
               terminator = {
                 kind: "branch",
@@ -642,6 +674,7 @@ export function scalarReplaceRecords(
                 alternate: terminator.alternate,
                 start: terminator.start,
                 end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
               };
             } else {
               const state = nextValue++,
@@ -653,6 +686,7 @@ export function scalarReplaceRecords(
                 slot: stateSlot,
                 start: terminator.start,
                 end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
               });
               emitCellRead(hitInsts);
               extraBlocks.push({
@@ -663,6 +697,7 @@ export function scalarReplaceRecords(
                   target: terminator.consequent,
                   start: terminator.start,
                   end: terminator.end,
+                  ...(termInline === undefined ? {} : { inline: termInline }),
                 },
               });
               terminator = {
@@ -672,6 +707,7 @@ export function scalarReplaceRecords(
                 alternate: terminator.alternate,
                 start: terminator.start,
                 end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
               };
             }
           } else if (!field.mutable) {
@@ -682,6 +718,7 @@ export function scalarReplaceRecords(
               value: false,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             terminator = {
               kind: "branch",
@@ -690,6 +727,7 @@ export function scalarReplaceRecords(
               alternate: terminator.alternate,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             };
           } else if (terminator.initialized === true) {
             emitCellWrite(instructions);
@@ -700,6 +738,7 @@ export function scalarReplaceRecords(
               value: true,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             terminator = {
               kind: "branch",
@@ -708,6 +747,7 @@ export function scalarReplaceRecords(
               alternate: terminator.alternate,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             };
           } else {
             const state = nextValue++,
@@ -719,6 +759,7 @@ export function scalarReplaceRecords(
               slot: stateSlot,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             });
             emitCellWrite(hitInsts);
             extraBlocks.push({
@@ -729,6 +770,7 @@ export function scalarReplaceRecords(
                 target: terminator.consequent,
                 start: terminator.start,
                 end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
               },
             });
             terminator = {
@@ -738,6 +780,7 @@ export function scalarReplaceRecords(
               alternate: terminator.alternate,
               start: terminator.start,
               end: terminator.end,
+              ...(termInline === undefined ? {} : { inline: termInline }),
             };
           }
         }

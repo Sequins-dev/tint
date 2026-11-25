@@ -367,6 +367,7 @@ function foldFunctionConstants(
               value: result,
               start: op.start,
               end: op.end,
+              ...(op.inline === undefined ? {} : { inline: op.inline }),
             });
             changed = true;
             rewritten++;
@@ -388,6 +389,7 @@ function foldFunctionConstants(
             value: text.value,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           changed = true;
           rewritten++;
@@ -404,6 +406,7 @@ function foldFunctionConstants(
           value: textual.value,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         changed = true;
         rewritten++;
@@ -443,6 +446,7 @@ function foldFunctionConstants(
           value: true,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         changed = true;
         rewritten++;
@@ -471,6 +475,7 @@ function foldFunctionConstants(
             value,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           changed = true;
           rewritten++;
@@ -494,6 +499,7 @@ function foldFunctionConstants(
             value: NaN,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           instructions.push({
             kind: "optional-value-or",
@@ -502,6 +508,7 @@ function foldFunctionConstants(
             fallback: nan,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           instructions.push({ ...op, left: selected, right: payload });
           changed = true;
@@ -552,6 +559,7 @@ function foldFunctionConstants(
           value: folded,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         changed = true;
         rewritten++;

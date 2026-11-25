@@ -188,6 +188,7 @@ export function pruneUnallocatedRecords(
             value: false,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           deadFalseIds.add(deadId);
           rewritten++;
@@ -215,6 +216,9 @@ export function pruneUnallocatedRecords(
           target: terminator.alternate,
           start: terminator.start,
           end: terminator.end,
+          ...(terminator.inline === undefined
+            ? {}
+            : { inline: terminator.inline }),
         };
         rewritten++;
         fnChanged = true;
@@ -243,6 +247,9 @@ export function pruneUnallocatedRecords(
           target: terminator.alternate,
           start: terminator.start,
           end: terminator.end,
+          ...(terminator.inline === undefined
+            ? {}
+            : { inline: terminator.inline }),
         };
         rewritten++;
         fnChanged = true;

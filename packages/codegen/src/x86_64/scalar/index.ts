@@ -376,6 +376,10 @@ export function emitModule(
   workerFunctions?: ReadonlySet<string>,
   /** See trustedExecutableCode in the arm64 emitter's options. */
   trustedExecutableCode: boolean = false,
+  /** Optional hook called once a function's body has been emitted so callers
+   * with a bounded managed heap can drop its IR blocks before assembler
+   * finalization allocates the contiguous output buffer. */
+  releaseFunction?: (id: number) => void,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -5884,7 +5888,8 @@ export function emitModule(
         }
       }
     }
-    for (const fn of module.functions) {
+    for (let index = 0; index < module.functions.length; index++) {
+      const fn = module.functions[index];
       if (fn === undefined) throw "function invariant";
       functionId = fn.id;
       blockId = undefined;
@@ -5899,6 +5904,7 @@ export function emitModule(
             );
         }
       if (fn.import !== true) body(fn);
+      releaseFunction?.(fn.id);
     }
     // A declaration by itself also needs a linker binding.
     for (const fn of module.functions) {

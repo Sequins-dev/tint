@@ -26,6 +26,7 @@ import { projectBuildRequest, projectRoots } from "@tint/compiler/cli";
 import type { NativeHostBinding } from "@tint/compiler/native";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import { functionStorageFromEnvironment } from "./emission-storage.ts";
 import {
   workspaceModules,
   workspaceSources,
@@ -169,14 +170,19 @@ const path = buildNativeFixture("jit-debug", () => {
     },
     { module: diagnostics, name: "processId", operation: "process-id" },
   ];
+  const storage = functionStorageFromEnvironment();
   const built = buildMacOSProgram({
     ...request,
     target,
-    // The debugger assertions cover the JIT output. Optimizing the outer
-    // fixture can exhaust the test budget before LLDB/GDB runs.
+    ...(storage === undefined ? {} : { storage }),
+    // The debugger assertions cover the JIT output and outer backtrace symbol
+    // (`program:fixture:run`). Emit function symbols via `symbols` rather than
+    // full DWARF variable-location tracking across the whole unoptimized
+    // in-image compiler, which otherwise exhausts CI's 5 GiB Node heap limit.
     optimization: "none" as const,
     allowDebugger: true,
-    debugSymbols: true,
+    debugSymbols: false,
+    symbols: true,
     allowJit: true,
     jitDebugInterface: true,
     // Raw code capabilities do not yet have the generational write proof.

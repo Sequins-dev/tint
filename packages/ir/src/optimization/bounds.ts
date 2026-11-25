@@ -1632,6 +1632,7 @@ export function selectArrayAccesses(
           index: op.index,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         selected.set(op.id, element);
         // Keep the optional only for uses the folds below do not absorb.
@@ -1642,6 +1643,7 @@ export function selectArrayAccesses(
             value: element,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
         rewritten++;
         changed = true;
@@ -1658,6 +1660,7 @@ export function selectArrayAccesses(
             inBounds: true,
             start: op.start,
             end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           rewritten++;
           changed = true;
@@ -1672,6 +1675,7 @@ export function selectArrayAccesses(
           value: op.value,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         rewritten++;
         changed = true;
@@ -1691,6 +1695,7 @@ export function selectArrayAccesses(
           value: true,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         continue;
       }

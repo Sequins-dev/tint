@@ -163,7 +163,8 @@ export function lowerProvenRecordReads(
         continue;
       }
       const id = next++,
-        condition = next++;
+        condition = next++,
+        inline = term.inline;
       const instructions: Instruction[] = block.instructions.slice();
       instructions.push({
         kind: "record-read",
@@ -173,6 +174,7 @@ export function lowerProvenRecordReads(
         field: term.field,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       });
       instructions.push({
         kind: "store",
@@ -180,6 +182,7 @@ export function lowerProvenRecordReads(
         value: id,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       });
       instructions.push({
         kind: "constant",
@@ -187,6 +190,7 @@ export function lowerProvenRecordReads(
         value: true,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       });
       blocks.push({
         ...block,
@@ -198,6 +202,7 @@ export function lowerProvenRecordReads(
           alternate: term.alternate,
           start: term.start,
           end: term.end,
+          ...(inline === undefined ? {} : { inline }),
         },
       });
       rewritten++;

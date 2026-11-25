@@ -3607,17 +3607,31 @@ export function compileX64HostedProgram(
       devirtualizeClosures: true,
       inlining: program.workerFunctions === undefined ? "small" : "none",
     });
-  const invocation = program.invocation,
-    optimized = program.ir.module;
+  if (!managed && program.workerFunctions === undefined) {
+    // Prune functions that became unreachable after inlining and release the
+    // superseded module before x86-64 emission (matching the arm64 pipeline).
+    const reachable = pruneModuleReferences(
+      program.ir.module,
+      [program.invocation],
+      unboundedWork,
+    );
+    if (reachable !== undefined) {
+      program.invocation =
+        (reachable.functionIds[program.invocation] ?? program.invocation + 1) -
+        1;
+      program.ir.module = reachable.module;
+    }
+  }
+  const invocation = program.invocation;
   if (reportIR !== undefined && initial !== undefined) {
     reportIR("lowered", initial);
-    reportIR("optimized", optimized);
+    reportIR("optimized", program.ir.module);
   }
   const sourceNames = program.sourceNames;
   if (sourceNames === undefined) throw "x64 foreign source names invariant";
   const signposts: X64SignpostSite[] = [];
   if (request.debugSymbols === true || options.signposts !== undefined)
-    for (const fn of optimized.functions) {
+    for (const fn of program.ir.module.functions) {
       if (fn === undefined) throw "x64 signpost function invariant";
       // Devirtualization gives a closure a direct twin with the same source
       // and the same positional arguments, followed by its environment.
@@ -3640,8 +3654,23 @@ export function compileX64HostedProgram(
     if (fn !== undefined) functionWitnesses.push(fn);
   }
   options.report?.("emit");
+  const emitFunctions: FunctionIR[] | undefined =
+    reportIR === undefined ? program.ir.module.functions.slice() : undefined;
+  const emitInput: ModuleIR =
+    emitFunctions === undefined
+      ? program.ir.module
+      : { ...program.ir.module, functions: emitFunctions };
+  if (emitFunctions !== undefined)
+    program.ir.module = { ...program.ir.module, functions: [] };
+  const releaseFunction =
+    emitFunctions === undefined
+      ? undefined
+      : (id: number): void => {
+          const fn = emitFunctions[id];
+          if (fn !== undefined) emitFunctions[id] = functionHeader(fn);
+        };
   const emitted = emitX64(
-    optimized,
+    emitInput,
     host,
     options.generational === true,
     options.inlineAllocation !== false,
@@ -3664,6 +3693,7 @@ export function compileX64HostedProgram(
     options.jitDebugInterface === true,
     program.workerFunctions,
     options.trustedExecutableCode === true,
+    releaseFunction,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;

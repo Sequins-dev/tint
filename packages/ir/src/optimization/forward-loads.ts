@@ -401,6 +401,9 @@ export function forwardLocalLoads(
           slot: wf.valueSlot,
           start: rewritten.start,
           end: rewritten.end,
+          ...(rewritten.inline === undefined
+            ? {}
+            : { inline: rewritten.inline }),
         });
         slots[wf.valueSlot] = rewritten.id + 1;
         epochs[wf.valueSlot] = epoch;
@@ -462,6 +465,9 @@ export function forwardLocalLoads(
           value: true,
           start: rewritten.start,
           end: rewritten.end,
+          ...(rewritten.inline === undefined
+            ? {}
+            : { inline: rewritten.inline }),
         });
         forwarded++;
         changed = true;

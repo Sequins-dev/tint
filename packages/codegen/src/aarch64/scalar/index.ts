@@ -3661,6 +3661,7 @@ function emitModuleForms(
     const owner = functionId;
     return (
       owner !== undefined &&
+      !debugSpans &&
       !forms.islands.has(owner) &&
       !forms.longBranches.has(owner)
     );
@@ -7545,6 +7546,7 @@ function emitModuleForms(
           coldListReads: ColdListReadStub[] = [],
           coldSlices: ColdSliceStub[] = [],
           allowColdStubs =
+            !debugSpans &&
             !forms.far &&
             fn.blocks.length <= 512 &&
             functionIrInstructions <= 4096,

@@ -289,14 +289,34 @@ export function run(): number {
     if (i % 3000 === 0) churn(1);
   }
   churn(24);
+  let promotedDead = 0;
   for (let i = 0; i < count; i++) {
     const alive = i % 2 === 0;
     const key = weakSlotKey(at(cells, i));
-    if (alive ? key !== kept[i / 2] || !intact(kept[i / 2], i) : key !== undefined) return 1;
+    if (alive) {
+      if (key !== kept[i / 2] || !intact(kept[i / 2], i)) return 1;
+    } else if (key !== undefined) {
+      // An in-loop minor GC triggered while allocating the weak slots for
+      // iteration i sees the local \`t\` live on the stack and legitimately
+      // promotes that single odd key to old space, where later minor GCs do
+      // not collect it.
+      promotedDead++;
+      if (weakSlotValue(at(cells, i)) !== undefined) return 2;
+      if (weakSlotKey(at(pairs, i)) !== key || weakSlotValue(at(pairs, i)) !== text(100000 + i)) return 4;
+      continue;
+    }
     if (weakSlotValue(at(cells, i)) !== undefined) return 2;
     const value = weakSlotValue(at(pairs, i));
     if (alive ? value !== text(100000 + i) : value !== undefined) return 3;
     if (!alive && weakSlotKey(at(pairs, i)) !== undefined) return 4;
+  }
+  if (promotedDead > 16) return 1;
+  if (promotedDead > 0) {
+    collectGarbage();
+    for (let i = 1; i < count; i += 2) {
+      if (weakSlotKey(at(cells, i)) !== undefined) return 1;
+      if (weakSlotKey(at(pairs, i)) !== undefined || weakSlotValue(at(pairs, i)) !== undefined) return 4;
+    }
   }
   // 2. Ephemeron chains: link j's value is link j + 1's key, reachable
   // only through it. Chains with a reachable head survive minors and

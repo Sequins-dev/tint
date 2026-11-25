@@ -82,7 +82,11 @@ export function threadBranches(
   function walk(
     start: number,
     known: Map<number, boolean>,
-    span: { readonly start: number; readonly end: number },
+    span: {
+      readonly start: number;
+      readonly end: number;
+      readonly inline?: number | undefined;
+    },
   ): { instructions: Instruction[]; target: number } | undefined {
     const instructions: Instruction[] = [];
     let target = start,
@@ -114,6 +118,7 @@ export function threadBranches(
             value,
             start: span.start,
             end: span.end,
+            ...(span.inline === undefined ? {} : { inline: span.inline }),
           });
           stores.push({
             kind: "store",
@@ -121,6 +126,7 @@ export function threadBranches(
             value: id,
             start: span.start,
             end: span.end,
+            ...(span.inline === undefined ? {} : { inline: span.inline }),
           });
           stored.set(op.slot, value);
         }
@@ -176,6 +182,7 @@ export function threadBranches(
               slot: op.slot,
               start: op.start,
               end: op.end,
+              ...(op.inline === undefined ? {} : { inline: op.inline }),
             });
           } else if (op.kind === "store") {
             const value = renamed.get(op.value);
@@ -186,6 +193,7 @@ export function threadBranches(
               value,
               start: op.start,
               end: op.end,
+              ...(op.inline === undefined ? {} : { inline: op.inline }),
             });
           }
         }
@@ -201,6 +209,7 @@ export function threadBranches(
             alternate: branch.alternate,
             start: branch.start,
             end: branch.end,
+            ...(branch.inline === undefined ? {} : { inline: branch.inline }),
           },
         };
         rewritten++;
@@ -259,6 +268,7 @@ export function threadBranches(
                 target: threaded.target,
                 start: term.start,
                 end: term.end,
+                ...(term.inline === undefined ? {} : { inline: term.inline }),
               },
             });
           }

@@ -75,6 +75,7 @@ export function simplifyControlFlow(
             target: op.value ? term.consequent : term.alternate,
             start: term.start,
             end: term.end,
+            ...(term.inline === undefined ? {} : { inline: term.inline }),
           };
           rewritten++;
           break;

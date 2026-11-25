@@ -1,4 +1,9 @@
-import type { Block, FunctionIR, Instruction } from "../scalar/index.ts";
+import type {
+  Block,
+  FunctionIR,
+  Instruction,
+  SlotBinding,
+} from "../scalar/index.ts";
 import {
   instructionResult,
   provenRecordReads,
@@ -562,6 +567,12 @@ function propagationRound(
   let chained = false,
     nextValue = maximum + 1;
   const blocks: Block[] = [];
+  const debug = fn.debug;
+  let debugSlots: SlotBinding[] | undefined;
+  const aliasedTo =
+    debug !== undefined && debug.slots.length > 0
+      ? new Int32Array(fn.slots.length).fill(-1)
+      : undefined;
   for (const block of fn.blocks) {
     if (block === undefined) throw "copy block invariant";
     let instructions: Instruction[] | undefined;
@@ -576,11 +587,17 @@ function propagationRound(
       if (instructions === undefined)
         instructions = block.instructions.slice(0, index);
       if (op.kind !== "load") throw "copy rewrite invariant";
-      if (candidate[replacement - 1] === 1) chained = true;
-      if (refinedCopy(op.slot, replacement - 1)) {
+      const sourceSlot = replacement - 1;
+      if (aliasedTo !== undefined) {
+        const previous = aliasedTo[op.slot] ?? -1;
+        if (previous === -1) aliasedTo[op.slot] = sourceSlot;
+        else if (previous !== sourceSlot) aliasedTo[op.slot] = -2;
+      }
+      if (candidate[sourceSlot] === 1) chained = true;
+      if (refinedCopy(op.slot, sourceSlot)) {
         const loaded = nextValue++,
           inline = op.inline;
-        instructions.push({ ...op, id: loaded, slot: replacement - 1 });
+        instructions.push({ ...op, id: loaded, slot: sourceSlot });
         instructions.push({
           kind: "reference-value",
           id: op.id,
@@ -589,11 +606,38 @@ function propagationRound(
           end: op.end,
           ...(inline === undefined ? {} : { inline }),
         });
-      } else instructions.push({ ...op, slot: replacement - 1 });
+      } else instructions.push({ ...op, slot: sourceSlot });
     }
     blocks.push(
       instructions === undefined ? block : { ...block, instructions },
     );
   }
-  return { fn: { ...fn, blocks }, visited, rewritten, chained };
+  if (debug !== undefined && aliasedTo !== undefined)
+    for (const binding of debug.slots) {
+      if (binding === undefined) throw "copy debug slot invariant";
+      const sourceSlot = aliasedTo[binding.slot] ?? -1;
+      if (sourceSlot < 0) continue;
+      if (debugSlots === undefined) debugSlots = debug.slots.slice();
+      let exists = false;
+      for (const entry of debugSlots)
+        if (
+          entry !== undefined &&
+          entry.slot === sourceSlot &&
+          entry.variable === binding.variable
+        ) {
+          exists = true;
+          break;
+        }
+      if (!exists)
+        debugSlots.push({ slot: sourceSlot, variable: binding.variable });
+    }
+  return {
+    fn:
+      debug === undefined || debugSlots === undefined
+        ? { ...fn, blocks }
+        : { ...fn, blocks, debug: { ...debug, slots: debugSlots } },
+    visited,
+    rewritten,
+    chained,
+  };
 }

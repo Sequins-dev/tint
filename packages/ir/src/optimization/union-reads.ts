@@ -280,7 +280,8 @@ export function reuseUnionReads(
       }
     }
     if (source < 0 || source === chain.transfer) continue;
-    const term = block.terminator;
+    const term = block.terminator,
+      inline = term.inline;
     const id = next++;
     const copied: Instruction[] = block.instructions.slice();
     copied.push({
@@ -289,6 +290,7 @@ export function reuseUnionReads(
       slot: source,
       start: term.start,
       end: term.end,
+      ...(inline === undefined ? {} : { inline }),
     });
     copied.push({
       kind: "store",
@@ -296,6 +298,7 @@ export function reuseUnionReads(
       value: id,
       start: term.start,
       end: term.end,
+      ...(inline === undefined ? {} : { inline }),
     });
     candidates[chain.head] = {
       ...block,
@@ -305,6 +308,7 @@ export function reuseUnionReads(
         target: chain.consequent,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       },
     };
     rewritten++;

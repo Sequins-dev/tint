@@ -626,6 +626,63 @@ class EntryChainPrinter(object):
             seen += 1
 
 
+class DenseMapPrinter(object):
+    """Open-addressed insertion-ordered StringKeyMap / NumberKeyMap."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def to_string(self):
+        return "size=%d" % int(_number(self.value["size"]))
+
+    def children(self):
+        length = int(_number(self.value["length"]))
+        if length <= 0:
+            return
+        keys = self.value["keys"]
+        values = self.value["values"]
+        if int(keys) == 0 or int(values) == 0:
+            return
+        inferior = _value_inferior()
+        has_hashes = _has_field(self.value, "hashes")
+        hashes_addr = int(self.value["hashes"]) if has_hashes else 0
+        deleted_addr = int(self.value["deleted"]) if _has_field(self.value, "deleted") else 0
+        live = core.dense_map_live_indices(inferior, hashes_addr, deleted_addr, length)
+        if not live:
+            return
+        val_struct = _entry_record(values)
+        if val_struct is None:
+            return
+        val_fields = _fields(val_struct.type.strip_typedefs())
+        val_map = {}
+        if core.is_number_list_fields(val_fields):
+            for name, child in NumberListPrinter(val_struct).children():
+                val_map[name] = child
+        elif core.is_list_fields(val_fields):
+            for name, child in ListPrinter(val_struct).children():
+                val_map[name] = child
+        if has_hashes:
+            keys_struct = _entry_record(keys)
+            key_root = int(keys_struct["root"]) if keys_struct is not None and _has_field(keys_struct, "root") else 0
+            key_words = {}
+            if key_root and core.is_dense_root(inferior, key_root):
+                for idx, word in core.vector_slots(inferior, key_root, length):
+                    key_words[idx] = word
+            for idx in live:
+                word = key_words.get(idx, 0)
+                label = (core.string_text(inferior, word) if word else None) or str(idx)
+                child = val_map.get("[%d]" % idx)
+                if child is not None:
+                    yield "[%s]" % label, child
+        else:
+            nums = core.float64_array_values(inferior, int(keys), length)
+            for idx in live:
+                label = repr(nums[idx]) if idx < len(nums) else str(idx)
+                child = val_map.get("[%d]" % idx)
+                if child is not None:
+                    yield "[%s]" % label, child
+
+
 def _general_parts(value):
     tag = int(value["tag"])
     payload = value["payload"]
@@ -689,6 +746,8 @@ def _struct_printer(value):
         return NumberListPrinter(value)
     if core.is_entry_chain_fields(fields):
         return EntryChainPrinter(value)
+    if core.is_dense_map_fields(fields):
+        return DenseMapPrinter(value)
     return None
 
 

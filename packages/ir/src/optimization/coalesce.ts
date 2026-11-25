@@ -122,6 +122,7 @@ function rewriteCoalesce(
       fallback,
       start: unwrap.start,
       end: unwrap.end,
+      ...(unwrap.inline === undefined ? {} : { inline: unwrap.inline }),
     },
     { ...presentStore, value: result },
   );
@@ -141,7 +142,13 @@ function rewriteCoalesce(
   return {
     ...p,
     instructions,
-    terminator: { kind: "jump", target: joinId, start: t.start, end: t.end },
+    terminator: {
+      kind: "jump",
+      target: joinId,
+      start: t.start,
+      end: t.end,
+      ...(t.inline === undefined ? {} : { inline: t.inline }),
+    },
   };
 }
 
