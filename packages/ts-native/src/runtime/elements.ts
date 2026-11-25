@@ -1,11 +1,57 @@
 import {
   createTypeSystem,
+  isNativeTypedArrayKind,
   type Result,
   type Type,
   type TypeSystem,
 } from "@tint/typescript/types";
+import type { CollectionElement } from "../scalar.ts";
 export interface ElementMatcher {
   readonly matches: (a: number, b: number, optional: boolean) => boolean;
+}
+/** Whether `value` is a supported list element type, so compact key-specialized
+ * maps (`number-key-map`, `string-key-map`) can store parallel `V[]` values. */
+export function supportsCompactMapValue(
+  types: readonly Type[],
+  value: CollectionElement,
+): boolean {
+  if (typeof value !== "number") return true;
+  function check(id: number, seen: Set<number>): boolean {
+    if (seen.has(id)) return false;
+    const t = types[id];
+    if (t === undefined) return false;
+    if (
+      t.kind === "unknown" ||
+      t.kind === "void-value" ||
+      t.kind === "never" ||
+      t.kind === "number" ||
+      t.kind === "string" ||
+      t.kind === "boolean" ||
+      t.kind === "bigint" ||
+      t.kind === "undefined" ||
+      t.kind === "literal" ||
+      t.kind === "object" ||
+      t.kind === "function" ||
+      isNativeTypedArrayKind(t.kind)
+    )
+      return true;
+    const path = new Set<number>(seen);
+    path.add(id);
+    if (t.kind === "array")
+      return t.realmArray !== true && check(t.element, path);
+    if (t.kind === "set") {
+      const element = types[t.element];
+      return element?.kind === "number" || element?.kind === "string";
+    }
+    if (t.kind === "union") {
+      if (t.members.length === 0) return false;
+      for (const m of t.members)
+        if (m === undefined || !check(m, path)) return false;
+      return true;
+    }
+    return false;
+  }
+  return check(value, new Set<number>());
 }
 /** A supplied system must describe exactly `types` (the checker's own,
  * published in lockstep with its graph); otherwise one is built. */

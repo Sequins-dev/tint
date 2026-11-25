@@ -9,6 +9,7 @@ import {
   type Block,
   type FunctionIR,
   type Instruction,
+  type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
 import type { RemarkSink } from "./observer.ts";
@@ -138,16 +139,37 @@ function same(left: Interval, right: Interval): boolean {
     left.negativeZero === right.negativeZero
   );
 }
+function sameState(left: SparseState, right: SparseState): boolean {
+  if (left.slots.length !== right.slots.length) return false;
+  for (let i = 0; i < left.slots.length; i++) {
+    const ls = left.slots[i],
+      rs = right.slots[i],
+      li = left.intervals[i],
+      ri = right.intervals[i];
+    if (ls !== rs || li === undefined || ri === undefined || !same(li, ri))
+      return false;
+  }
+  return true;
+}
 /** Visits after which any block widens every slot still changing. */
 const widenAnyAfter = 16;
-/** Widening for loop convergence: a bound that moved becomes infinite. */
+/** Widening with int32/uint32 thresholds: stops at 32-bit integer boundaries
+ * before jumping to infinity so forward joins of 0 and array-length keep their
+ * uint32 proof across enclosing loops while still converging in <= 5 steps. */
 function widen(previous: Interval, next: Interval): Interval {
   if (!previous.integer || !next.integer) return top;
-  return integerInterval(
-    next.lo < previous.lo ? -Infinity : previous.lo,
-    next.hi > previous.hi ? Infinity : previous.hi,
-    previous.negativeZero || next.negativeZero,
-  );
+  let lo = previous.lo;
+  if (next.lo < previous.lo)
+    lo = next.lo >= -2147483648 ? -2147483648 : -Infinity;
+  let hi = previous.hi;
+  if (next.hi > previous.hi)
+    hi =
+      next.hi <= 2147483647
+        ? 2147483647
+        : next.hi <= 4294967295
+          ? 4294967295
+          : Infinity;
+  return integerInterval(lo, hi, previous.negativeZero || next.negativeZero);
 }
 
 /** A block-entry state: the integer intervals of tracked slots (by tracked
@@ -209,6 +231,7 @@ interface SequenceIndexAnalysis {
 function analyzeSequenceIndices(
   fn: FunctionIR,
   byId: ReadonlyMap<number, Block>,
+  blockValues: ReadonlyMap<number, ReadonlyMap<number, Interval>>,
   budget: number,
 ): SequenceIndexAnalysis {
   const slots = fn.slots.length;
@@ -236,6 +259,7 @@ function analyzeSequenceIndices(
     visit: (op: Instruction) => void,
   ): SequenceIndexWalk {
     const live = copyFacts(facts),
+      values = blockValues.get(block.id),
       loadSlot = new Map<number, number>(),
       loadAt = new Map<number, number>(),
       lastStore = new Map<number, number>(),
@@ -262,7 +286,10 @@ function analyzeSequenceIndices(
       indexPlus = new Map<
         number,
         { readonly load: number; readonly delta: number }
-      >();
+      >(),
+      // Values masked by a non-negative 31-bit (length - offset) mask, so
+      // `0 <= value <= length - offset` (`value + (offset - 1) < length`).
+      maskedLess = new Map<number, SequenceLength[]>();
     const kill = (slot: number): void => {
       const doomed: number[] = [];
       for (const fact of live) {
@@ -312,15 +339,23 @@ function analyzeSequenceIndices(
     const indexOf = (
       value: number,
     ): { readonly slot: number; readonly delta: number } | undefined => {
+      const direct = current(value);
+      if (direct >= 0) return { slot: direct, delta: 0 };
       const plus = indexPlus.get(value);
-      const slot = current(plus === undefined ? value : plus.load);
-      return slot < 0 ? undefined : { slot, delta: plus?.delta ?? 0 };
+      if (plus === undefined) return undefined;
+      const slot = current(plus.load);
+      return slot < 0 ? undefined : { slot, delta: plus.delta };
     };
     /** `index + delta` below the length of `sequence`, now. */
     const below = (value: number, sequenceValue: number): boolean => {
-      const index = indexOf(value),
-        sequence = current(sequenceValue);
-      if (index === undefined || sequence < 0) return false;
+      const sequence = current(sequenceValue);
+      if (sequence < 0) return false;
+      const masked = maskedLess.get(value);
+      if (masked !== undefined)
+        for (const entry of masked)
+          if (entry !== undefined && entry.sequence === sequence) return true;
+      const index = indexOf(value);
+      if (index === undefined) return false;
       return (
         index.delta <= maximumOffset &&
         live.has(key(1, Math.max(index.delta, 0), index.slot, sequence))
@@ -334,6 +369,21 @@ function analyzeSequenceIndices(
         loadSlot.set(op.id, op.slot);
         loadAt.set(op.id, position);
         slotMinus.set(op.id, { load: op.id, offset: 0 });
+      } else if (op.kind === "reference-value") {
+        // Unwrapping an optional-reference keeps the same underlying object.
+        const slot = loadSlot.get(op.value),
+          at = loadAt.get(op.value);
+        if (slot !== undefined && at !== undefined) {
+          loadSlot.set(op.id, slot);
+          loadAt.set(op.id, at);
+        } else {
+          const stored = storedSlot.get(op.value),
+            storedPosition = storedAt.get(op.value);
+          if (stored !== undefined && storedPosition !== undefined) {
+            storedSlot.set(op.id, stored);
+            storedAt.set(op.id, storedPosition);
+          }
+        }
       } else if (op.kind === "constant") {
         const literal = op.value;
         if (typeof literal === "number") constants.set(op.id, literal);
@@ -403,6 +453,22 @@ function analyzeSequenceIndices(
           loadSlot.has(op.right)
         )
           indexPlus.set(op.id, { load: op.right, delta: left });
+      } else if (op.kind === "binary" && op.operator === "&") {
+        // `x & mask` with a non-negative 31-bit mask holding `S.length - c`
+        // (`c >= 1`) satisfies `0 <= (x & mask) <= S.length - c`, so
+        // `(x & mask) + (c - 1) < S.length`.
+        const derived: SequenceLength[] = [];
+        for (const side of [op.left, op.right]) {
+          if (side === undefined || nonNegativeMaskHi(values?.get(side)) < 0)
+            continue;
+          for (const length of lengthsOf(side))
+            if (length.offset >= 1)
+              derived.push({
+                sequence: length.sequence,
+                offset: length.offset - 1,
+              });
+        }
+        if (derived.length > 0) maskedLess.set(op.id, derived);
       } else if (op.kind === "string-code-unit") {
         if (below(op.index, op.string)) visit(op);
       } else if (op.kind === "array-read" || op.kind === "array-write") {
@@ -412,6 +478,7 @@ function analyzeSequenceIndices(
         // preheaders copy lengths and indices).
         const source = current(op.value);
         const lengths = lengthsOf(op.value);
+        const masked = maskedLess.get(op.value);
         kill(op.slot);
         lastStore.set(op.slot, position);
         if (source >= 0 && source !== op.slot) {
@@ -442,6 +509,13 @@ function analyzeSequenceIndices(
         for (const length of lengths)
           if (length.sequence !== op.slot)
             live.add(key(0, length.offset, op.slot, length.sequence));
+        if (masked !== undefined) {
+          const added: number[] = [];
+          for (const entry of masked)
+            if (entry !== undefined)
+              addLess(added, op.slot, entry.sequence, entry.offset);
+          for (const fact of added) if (fact !== undefined) live.add(fact);
+        }
       }
     }
     const term = block.terminator;
@@ -582,10 +656,39 @@ function constantOf(interval: Interval | undefined): number | undefined {
     ? interval.lo
     : undefined;
 }
-/** A constant `&` mask in [0, 2^31 - 1] (which bounds the result), else -1. */
-function maskOf(interval: Interval | undefined): number {
-  const mask = constantOf(interval);
-  return mask !== undefined && mask >= 0 && mask <= 2147483647 ? mask : -1;
+/** Upper bound of an integer interval within [0, 2^31 - 1], else -1.
+ * Bitwise `&` with any value in [0, hi] clears the sign bit and cannot set
+ * bits above `hi`, so the result lies in [0, hi]. */
+function nonNegativeMaskHi(interval: Interval | undefined): number {
+  return interval !== undefined &&
+    interval.integer &&
+    interval.lo >= 0 &&
+    interval.hi <= 2147483647
+    ? interval.hi
+    : -1;
+}
+/** Exact integer range of an in-bounds element read from an integer typed
+ * array (never NaN, never -0), or undefined for floating-point or non-array
+ * types. */
+function integerArrayRange(type: ScalarType | undefined): Interval | undefined {
+  if (type === undefined) return undefined;
+  switch (type) {
+    case "Uint8Array":
+    case "Uint8ClampedArray":
+      return integerInterval(0, 255, false);
+    case "Int8Array":
+      return integerInterval(-128, 127, false);
+    case "Uint16Array":
+      return integerInterval(0, 65535, false);
+    case "Int16Array":
+      return integerInterval(-32768, 32767, false);
+    case "Uint32Array":
+      return integerInterval(0, 4294967295, false);
+    case "Int32Array":
+      return integerInterval(-2147483648, 2147483647, false);
+    default:
+      return undefined;
+  }
 }
 /** Selects unchecked typed-array accesses (`array-element`, `array-store`)
  * where the index is proven an integer within the array's length. Facts:
@@ -681,14 +784,40 @@ export function selectArrayAccesses(
           dependencies.set(op.id, [op.slot]);
         else if (op.kind === "binary") {
           dependencies.set(op.id, combine(op.left, op.right));
-          // A remainder of safe integers divides as int64s (codegen).
-          if (["<", "<=", ">", ">=", "%"].includes(op.operator)) {
+          // Comparisons, remainders and bitwise ops consume integer/range facts.
+          if (
+            [
+              "<",
+              "<=",
+              ">",
+              ">=",
+              "===",
+              "!==",
+              "%",
+              "&",
+              "|",
+              "^",
+              "<<",
+              ">>",
+              ">>>",
+              "imul",
+            ].includes(op.operator)
+          ) {
             mark(op.left);
             mark(op.right);
           }
         } else if (op.kind === "unary")
           dependencies.set(op.id, combine(op.operand, op.operand));
-        else if (op.kind === "array-read" || op.kind === "array-write")
+        else if (
+          op.kind === "array-read" ||
+          op.kind === "array-write" ||
+          op.kind === "array-element" ||
+          op.kind === "array-store" ||
+          op.kind === "array-valid" ||
+          op.kind === "string-code-unit" ||
+          op.kind === "reference-vector-read" ||
+          op.kind === "reference-vector-write"
+        )
           mark(op.index);
         else if (op.kind === "array-new") mark(op.length);
         else if (op.kind === "store" && relevant[op.slot] === 1) mark(op.value);
@@ -888,6 +1017,8 @@ export function selectArrayAccesses(
     loads: Map<number, number>,
     hull: Interval[] | undefined,
   ): void {
+    const arrayTypes = new Map<number, ScalarType>(),
+      readRanges = new Map<number, Interval>();
     for (const op of block.instructions) {
       if (op === undefined) throw "bounds instruction invariant";
       visited++;
@@ -898,11 +1029,49 @@ export function selectArrayAccesses(
           break;
         }
         case "load": {
+          const slotType = fn.slots[op.slot];
+          if (
+            slotType !== undefined &&
+            integerArrayRange(slotType) !== undefined
+          )
+            arrayTypes.set(op.id, slotType);
           const index = tracked(op.slot);
           if (index >= 0) {
             values.set(op.id, state[index] ?? top);
             loads.set(op.id, index);
           }
+          break;
+        }
+        case "array-new":
+          if (integerArrayRange(op.type) !== undefined)
+            arrayTypes.set(op.id, op.type);
+          break;
+        case "reference-value": {
+          const opType = op.type;
+          if (opType !== undefined && integerArrayRange(opType) !== undefined)
+            arrayTypes.set(op.id, opType);
+          break;
+        }
+        case "array-element": {
+          const range = integerArrayRange(arrayTypes.get(op.array));
+          if (range !== undefined) values.set(op.id, range);
+          break;
+        }
+        case "array-read": {
+          const range = integerArrayRange(arrayTypes.get(op.array));
+          if (range !== undefined) readRanges.set(op.id, range);
+          break;
+        }
+        case "optional-value": {
+          const range = readRanges.get(op.value);
+          if (range !== undefined) values.set(op.id, range);
+          break;
+        }
+        case "optional-value-or": {
+          const range = readRanges.get(op.value),
+            fallback = values.get(op.fallback);
+          if (range !== undefined && fallback !== undefined)
+            values.set(op.id, join(range, fallback));
           break;
         }
         case "store": {
@@ -914,6 +1083,10 @@ export function selectArrayAccesses(
               hull[index] = join(hull[index] ?? top, next);
             for (const [id, slot] of loads)
               if (slot === index) loads.delete(id);
+            // A value stored directly into `slot` (and not overwritten before
+            // the branch) equals `slot` at block exit, so branch comparisons
+            // on that value refine `slot`.
+            if (!loads.has(op.value)) loads.set(op.value, index);
           }
           break;
         }
@@ -974,7 +1147,12 @@ export function selectArrayAccesses(
             break;
           }
           if (op.operator === "&") {
-            const mask = Math.max(maskOf(left), maskOf(right));
+            const leftHi = nonNegativeMaskHi(left),
+              rightHi = nonNegativeMaskHi(right);
+            const mask =
+              leftHi >= 0 && rightHi >= 0
+                ? Math.min(leftHi, rightHi)
+                : Math.max(leftHi, rightHi);
             values.set(
               op.id,
               mask >= 0
@@ -1036,15 +1214,31 @@ export function selectArrayAccesses(
               ? ">"
               : relation === ">"
                 ? "<="
-                : "";
+                : relation === "==="
+                  ? "!=="
+                  : relation === "!=="
+                    ? "==="
+                    : "";
     let lo = current.lo,
-      hi = current.hi;
+      hi = current.hi,
+      negativeZero = current.negativeZero;
     if (relation === "<") hi = Math.min(hi, other.hi - 1);
     else if (relation === "<=") hi = Math.min(hi, other.hi);
     else if (relation === ">") lo = Math.max(lo, other.lo + 1);
     else if (relation === ">=") lo = Math.max(lo, other.lo);
-    else return;
-    state[slot] = integerInterval(lo, hi, current.negativeZero);
+    else if (relation === "===") {
+      lo = Math.max(lo, other.lo);
+      hi = Math.min(hi, other.hi);
+      if (other.lo > 0 || other.hi < 0) negativeZero = false;
+    } else if (relation === "!==") {
+      if (other.lo !== other.hi) return;
+      const point = other.lo;
+      if (lo === point) lo = point + 1;
+      else if (hi === point) hi = point - 1;
+      else return;
+      if (point === 0) negativeZero = false;
+    } else return;
+    state[slot] = integerInterval(lo, hi, negativeZero);
   }
   /** Interprets block `id` from `entry` and sends each successor's state to
    * `send` (branch edges refined, decided edges pruned). */
@@ -1091,7 +1285,7 @@ export function selectArrayAccesses(
       if (
         condition !== undefined &&
         condition.kind === "binary" &&
-        ["<", "<=", ">", ">="].includes(condition.operator)
+        ["<", "<=", ">", ">=", "===", "!=="].includes(condition.operator)
       ) {
         const leftSlot = loads.get(condition.left),
           rightSlot = loads.get(condition.right),
@@ -1149,7 +1343,7 @@ export function selectArrayAccesses(
   // Narrowing: from the widened post-fixpoint, recompute every entry as the
   // join of its predecessors' outputs (no widening). Each round stays sound
   // and recovers bounds that widening at enclosing loops discarded.
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; round < 2; round++) {
     const next = new Map<number, SparseState>();
     next.set(fn.entry, emptyState);
     for (const block of fn.blocks) {
@@ -1167,7 +1361,15 @@ export function selectArrayAccesses(
         if (narrowed !== undefined) next.set(target, narrowed);
       });
     }
-    for (const [id, state] of next) entries.set(id, state);
+    let narrowedAny = false;
+    for (const [id, state] of next) {
+      const prev = entries.get(id);
+      if (prev === undefined || !sameState(prev, state)) {
+        entries.set(id, state);
+        narrowedAny = true;
+      }
+    }
+    if (!narrowedAny) break;
   }
   // Rewrite with the converged entry states.
   let nextValue = 0;
@@ -1291,7 +1493,7 @@ export function selectArrayAccesses(
         sequenceAccesses = true;
   }
   const sequenceIndices = sequenceAccesses
-    ? analyzeSequenceIndices(fn, byId, budget - visited)
+    ? analyzeSequenceIndices(fn, byId, blockValues, budget - visited)
     : undefined;
   if (sequenceIndices !== undefined) {
     visited += sequenceIndices.work;
@@ -1313,9 +1515,10 @@ export function selectArrayAccesses(
         belowLength.add(op);
       });
     // Uses inside the block (values are block-local), and which of them a
-    // fold below absorbs.
+    // fold below absorbs or a 32-bit bitwise op consumes modulo 2^32.
     const uses = new Map<number, number>(),
-      foldable = new Map<number, number>();
+      foldable = new Map<number, number>(),
+      bitwiseUses = new Map<number, number>();
     const count = (id: number): void => {
       uses.set(id, (uses.get(id) ?? 0) + 1);
     };
@@ -1328,6 +1531,15 @@ export function selectArrayAccesses(
         op.kind === "optional-present"
       )
         foldable.set(op.value, (foldable.get(op.value) ?? 0) + 1);
+      if (
+        op.kind === "binary" &&
+        ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(op.operator)
+      ) {
+        bitwiseUses.set(op.left, (bitwiseUses.get(op.left) ?? 0) + 1);
+        bitwiseUses.set(op.right, (bitwiseUses.get(op.right) ?? 0) + 1);
+      } else if (op.kind === "unary" && op.operator === "~") {
+        bitwiseUses.set(op.operand, (bitwiseUses.get(op.operand) ?? 0) + 1);
+      }
     }
     visitTerminatorOperands(block.terminator, count);
     const arrayLoads = new Map<number, number>();
@@ -1468,6 +1680,31 @@ export function selectArrayAccesses(
           end: op.end,
         });
         continue;
+      }
+      // An exact safe-integer product whose every use only observes its low
+      // 32 bits (bitwise ops) equals Math.imul(left, right) modulo 2^32.
+      if (
+        op.kind === "binary" &&
+        op.operator === "*" &&
+        (uses.get(op.id) ?? 0) > 0 &&
+        uses.get(op.id) === bitwiseUses.get(op.id)
+      ) {
+        const left = values.get(op.left),
+          right = values.get(op.right);
+        if (
+          left !== undefined &&
+          right !== undefined &&
+          left.integer &&
+          right.integer &&
+          Math.max(Math.abs(left.lo), Math.abs(left.hi)) *
+            Math.max(Math.abs(right.lo), Math.abs(right.hi)) <=
+            maxSafeInteger
+        ) {
+          instructions.push({ ...op, operator: "imul" });
+          rewritten++;
+          changed = true;
+          continue;
+        }
       }
       instructions.push(op);
     }

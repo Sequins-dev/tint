@@ -50,8 +50,16 @@ test("runtime providers preserve stable namespaces independently of package path
       module: "packages/foundation/src/collections/number-key-map.ts",
     },
     {
+      namespace: "number-number-map",
+      module: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
       namespace: "string-key-map",
       module: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      namespace: "string-number-map",
+      module: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       namespace: "sparse-list",
@@ -60,6 +68,10 @@ test("runtime providers preserve stable namespaces independently of package path
     {
       namespace: "linked-set",
       module: "packages/foundation/src/collections/linked-set.ts",
+    },
+    {
+      namespace: "number-key-set",
+      module: "packages/foundation/src/collections/number-key-set.ts",
     },
     {
       namespace: "primitive-value",

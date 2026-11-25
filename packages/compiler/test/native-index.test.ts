@@ -410,6 +410,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "remove-dead-scalars",
       "coalesce-defaults",
       "scalar-replace-records",
+      "hoist-number-list-loops",
       // The entry wrapper's closure call inlines; the second round finds
       // nothing more.
       "inline-small-functions",

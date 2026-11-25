@@ -23,6 +23,8 @@ import { forwardLocalLoads } from "./forward-loads.ts";
 import { propagateSlotCopies } from "./slot-copies.ts";
 import { cacheListVectors } from "./list-vectors.ts";
 export { cacheListVectors } from "./list-vectors.ts";
+import { hoistNumberListLoops } from "./number-list-loops.ts";
+export { hoistNumberListLoops } from "./number-list-loops.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
@@ -43,6 +45,8 @@ import {
   stableDescriptors,
   summarizeEffects,
   instructionResult,
+  substituteInstructionValues,
+  substituteTerminatorValues,
   visitInstructionOperands,
   visitTerminatorOperands,
   slotVariables,
@@ -220,13 +224,64 @@ function foldFunctionConstants(
         if (blocked[slot] === 1) fnGeneralTags[slot] = undefined;
     }
   }
+  // Whole-function always-present optional-number slots: a local optional-number
+  // slot (never a parameter, receiver, exception target, or record/cell read
+  // destination) whose every reachable store writes an `optional-wrap` is
+  // always present on every load, so `slot !== undefined` and `optional-present`
+  // fold across blocks (notably inlined `pushNumberList(list, number)`).
+  const fnPresentOptional = new Uint8Array(fn.slots.length);
+  let anyOptionalNumber = false;
+  for (let slot = 0; slot < fn.slots.length; slot++)
+    if (fn.slots[slot] === "optional-number") {
+      anyOptionalNumber = true;
+      break;
+    }
+  if (anyOptionalNumber) {
+    const blockedOpt = new Uint8Array(fn.slots.length),
+      hasWrapOpt = new Uint8Array(fn.slots.length);
+    for (const p of fn.parameters) if (p !== undefined) blockedOpt[p] = 1;
+    if (fn.receiverSlot !== undefined) blockedOpt[fn.receiverSlot] = 1;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "optimizer block invariant";
+      if (block.exception !== undefined) blockedOpt[block.exception.slot] = 1;
+      const term = block.terminator;
+      if (
+        (term.kind === "record" ||
+          term.kind === "record-cell" ||
+          term.kind === "cell") &&
+        term.operation !== "write"
+      )
+        blockedOpt[term.slot] = 1;
+      const wrappedInBlock = new Set<number>();
+      for (const op of block.instructions) {
+        if (op === undefined) throw "optimizer block invariant";
+        if (op.kind === "optional-wrap") wrappedInBlock.add(op.id);
+        else if (
+          op.kind === "store" &&
+          fn.slots[op.slot] === "optional-number"
+        ) {
+          if (wrappedInBlock.has(op.value)) hasWrapOpt[op.slot] = 1;
+          else blockedOpt[op.slot] = 1;
+        }
+      }
+    }
+    for (let slot = 0; slot < fn.slots.length; slot++)
+      if (
+        fn.slots[slot] === "optional-number" &&
+        blockedOpt[slot] === 0 &&
+        hasWrapOpt[slot] === 1
+      )
+        fnPresentOptional[slot] = 1;
+  }
   let functionChanged = false;
   for (const block of fn.blocks) {
     if (block === undefined) throw "optimizer block invariant";
     const values: (Constant | undefined)[] = [],
       wraps: (number | undefined)[] = [],
+      present: (number | undefined)[] = [],
       absent: (number | undefined)[] = [],
       texts: (string | undefined)[] = [],
+      unwrapped = new Map<number, number>(),
       instructions: Instruction[] = [];
     if (hasGeneralIs) {
       blockScalarKinds.clear();
@@ -342,9 +397,43 @@ function foldFunctionConstants(
       }
       // Equality of two present optionals is equality of their payloads; a
       // present optional never equals an absent one.
-      if (op.kind === "optional-wrap") wraps[op.id] = op.value;
-      else if (op.kind === "undefined") absent[op.id] = 1;
+      if (op.kind === "load" && fnPresentOptional[op.slot] === 1)
+        present[op.id] = 1;
+      if (op.kind === "optional-wrap") {
+        wraps[op.id] = op.value;
+        present[op.id] = 1;
+      } else if (op.kind === "undefined") absent[op.id] = 1;
       else if (
+        (op.kind === "optional-value" || op.kind === "optional-value-or") &&
+        wraps[op.value] !== undefined
+      ) {
+        const wrapped = wraps[op.value];
+        if (wrapped !== undefined) {
+          let inner: number = wrapped;
+          while (unwrapped.has(inner)) {
+            const next = unwrapped.get(inner);
+            if (next === undefined) break;
+            inner = next;
+          }
+          unwrapped.set(op.id, inner);
+          if (values[inner] !== undefined) values[op.id] = values[inner];
+          changed = true;
+          rewritten++;
+          continue;
+        }
+      } else if (op.kind === "optional-present" && present[op.value] === 1) {
+        values[op.id] = true;
+        instructions.push({
+          kind: "constant",
+          id: op.id,
+          value: true,
+          start: op.start,
+          end: op.end,
+        });
+        changed = true;
+        rewritten++;
+        continue;
+      } else if (
         op.kind === "binary" &&
         (op.operator === "===" || op.operator === "!==")
       ) {
@@ -357,8 +446,8 @@ function foldFunctionConstants(
           continue;
         }
         if (
-          (left !== undefined && absent[op.right] === 1) ||
-          (right !== undefined && absent[op.left] === 1)
+          (present[op.left] === 1 && absent[op.right] === 1) ||
+          (present[op.right] === 1 && absent[op.left] === 1)
         ) {
           const value = op.operator === "!==";
           values[op.id] = value;
@@ -442,7 +531,22 @@ function foldFunctionConstants(
         slotGeneralTags = [];
       }
     }
-    blocks.push(changed ? { ...block, instructions } : block);
+    if (!changed) blocks.push(block);
+    else if (unwrapped.size === 0) blocks.push({ ...block, instructions });
+    else {
+      const substitution = new Uint32Array(fresh);
+      for (const [from, to] of unwrapped) substitution[from] = to + 1;
+      const substituted: Instruction[] = [];
+      for (const op of instructions) {
+        if (op === undefined) throw "optimizer instruction invariant";
+        substituted.push(substituteInstructionValues(op, substitution));
+      }
+      blocks.push({
+        ...block,
+        instructions: substituted,
+        terminator: substituteTerminatorValues(block.terminator, substitution),
+      });
+    }
     if (changed) functionChanged = true;
   }
   return { fn: functionChanged ? { ...fn, blocks } : fn, visited, rewritten };
@@ -1330,6 +1434,30 @@ export function optimizeModuleVersion(
     return true;
   }
   if (!devirtualize()) return devirtualizeResult ?? stop();
+  // Hoist dense NumberList header checks and bounds out of read-only counted
+  // loops before inlining expands `readNumberList` into multi-block branches.
+  const numberLoopBudget =
+    maxInstructions -
+    visited -
+    storeVisited -
+    deadVisited -
+    recordVisited -
+    inlineVisited;
+  const numberLoops = rewriteModuleVersion(
+    version,
+    inlineChanges,
+    (module: ModuleIR): ModuleRewrite | undefined =>
+      hoistNumberListLoops(
+        module,
+        numberLoopBudget,
+        options.closedCalls === true,
+      ),
+  );
+  if (numberLoops.exhausted)
+    return exhausted("hoist-number-list-loops", numberLoopBudget);
+  if (completed("hoist-number-list-loops", numberLoops, false)) return stop();
+  recordVisited += numberLoops.visited;
+  if (numberLoops.replaced) inlinedAny = true;
   const guardedInlining = options.inlining === "guarded";
   // Inlining considers leaf callees only, so a wrapper becomes eligible once
   // its own callees were inlined: repeat while rounds make progress.

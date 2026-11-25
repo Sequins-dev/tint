@@ -595,7 +595,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/collections/number-key-set.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/collections/number-list.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/collections/number-number-map.ts",
       packageId: "foundation",
     },
     {
@@ -604,6 +612,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/foundation/src/collections/string-key-map.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/collections/string-number-map.ts",
       packageId: "foundation",
     },
     {
@@ -944,6 +956,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/loop-records.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/number-list-loops.ts",
       packageId: "ir",
     },
     {
@@ -3450,13 +3466,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "codegen",
@@ -3785,13 +3826,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "compiler",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "compiler",
@@ -4385,13 +4451,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "image",
@@ -4630,13 +4721,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ir",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "ir",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "ir",
@@ -4910,13 +5026,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "js-engine",
@@ -5285,13 +5426,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "js-runtime",
@@ -5530,13 +5696,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "native-runtime",
@@ -5835,13 +6026,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "platform",
@@ -6140,13 +6356,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "ts-native",
@@ -6420,13 +6661,38 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "typescript",
+      specifier: "@tint/foundation/collections/number-key-map",
+      target: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/collections/number-key-set",
+      target: "packages/foundation/src/collections/number-key-set.ts",
+    },
+    {
+      packageId: "typescript",
       specifier: "@tint/foundation/collections/number-list",
       target: "packages/foundation/src/collections/number-list.ts",
     },
     {
       packageId: "typescript",
+      specifier: "@tint/foundation/collections/number-number-map",
+      target: "packages/foundation/src/collections/number-number-map.ts",
+    },
+    {
+      packageId: "typescript",
       specifier: "@tint/foundation/collections/sparse-list",
       target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/collections/string-key-map",
+      target: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/collections/string-number-map",
+      target: "packages/foundation/src/collections/string-number-map.ts",
     },
     {
       packageId: "typescript",

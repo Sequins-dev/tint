@@ -26,7 +26,7 @@ export type {
   RuntimeCollectionNames,
   RuntimeCollectionLookup,
 } from "./context.ts";
-import { createElementMatcher } from "./elements.ts";
+import { createElementMatcher, supportsCompactMapValue } from "./elements.ts";
 import { createPreparedBindingIndex } from "./bindings.ts";
 import {
   collectRuntimeRequirements,
@@ -406,15 +406,25 @@ function prepareCollectionPass(
         ]),
       );
     }
+    const hasNumberKeySet = helpers.has("number-key-set:createSet");
     for (const set of demand.sets) {
       if (set === undefined) throw "set demand invariant";
+      if (set.element === "number" && hasNumberKeySet) continue;
       setStarts.push(
         request("linked-set", setNames, [elementType(set.element)]),
       );
     }
+    const hasNumberNumberMap = helpers.has("number-number-map:createMap");
+    const hasStringNumberMap = helpers.has("string-number-map:createMap");
     const erasedMaps = new Set<string>();
     for (const map of demand.maps) {
       if (map === undefined) throw "map demand invariant";
+      if (
+        map.value === "number" &&
+        ((map.key === "number" && hasNumberNumberMap) ||
+          (map.key === "string" && hasStringNumberMap))
+      )
+        continue;
       const erasure =
         eraseRecordLists && observed !== undefined
           ? mapEncodingClass(observed, map.key, map.value)
@@ -423,10 +433,11 @@ function prepareCollectionPass(
         if (erasedMaps.has(erasure)) continue;
         erasedMaps.add(erasure);
       }
-      // Number and string keys use specializations that hash without boxing
-      // the key (same storage and semantics; see number-key-map).
+      // Number and string keys use compact open-addressed specializations when
+      // their value type fits a parallel list; others use linked-map.
       mapStarts.push(
-        map.key === "number" || map.key === "string"
+        (map.key === "number" || map.key === "string") &&
+          supportsCompactMapValue(types, map.value)
           ? request(
               map.key === "number" ? "number-key-map" : "string-key-map",
               mapNames,
@@ -796,34 +807,86 @@ function prepareCollectionPass(
           : { element: list.element, runtime, erasedRecords: true },
       );
     }
+    const hasNumberKeySet = helpers.has("number-key-set:createSet");
     for (const set of current.sets) {
       if (set === undefined) throw "prepared set invariant";
-      const element = preparedElement(set.element);
-      const start = setStarts.find(
-        (start) =>
-          start !== undefined &&
-          matches(element, parameter(root(start, 2), 1), false),
-      );
-      if (start === undefined)
-        missing("no specialized Set helper matches the checked element");
-      const runtime: SetRuntime = {
-        clone: root(start, 9),
-        create: root(start, 0),
-        has: root(start, 1),
-        add: root(start, 2),
-        delete: root(start, 3),
-        clear: root(start, 4),
-        size: root(start, 5),
-        iterator: {
-          create: root(start, 6),
-          advance: root(start, 7),
-          read: root(start, 8),
-        },
-      };
+      let runtime: SetRuntime;
+      if (set.element === "number" && hasNumberKeySet) {
+        runtime = {
+          clone: functionId(helper("number-key-set", "cloneSet")),
+          create: functionId(helper("number-key-set", "createSet")),
+          has: functionId(helper("number-key-set", "hasSet")),
+          add: functionId(helper("number-key-set", "addSet")),
+          delete: functionId(helper("number-key-set", "deleteSet")),
+          clear: functionId(helper("number-key-set", "clearSet")),
+          size: functionId(helper("number-key-set", "sizeSet")),
+          iterator: {
+            create: functionId(helper("number-key-set", "createSetCursor")),
+            advance: functionId(helper("number-key-set", "advanceSetCursor")),
+            read: functionId(helper("number-key-set", "readSetCursor")),
+          },
+        };
+      } else {
+        const element = preparedElement(set.element);
+        const start = setStarts.find(
+          (start) =>
+            start !== undefined &&
+            matches(element, parameter(root(start, 2), 1), false),
+        );
+        if (start === undefined)
+          missing("no specialized Set helper matches the checked element");
+        runtime = {
+          clone: root(start, 9),
+          create: root(start, 0),
+          has: root(start, 1),
+          add: root(start, 2),
+          delete: root(start, 3),
+          clear: root(start, 4),
+          size: root(start, 5),
+          iterator: {
+            create: root(start, 6),
+            advance: root(start, 7),
+            read: root(start, 8),
+          },
+        };
+      }
       sets.push({ element: set.element, runtime });
     }
+    const hasNumberNumberMap = helpers.has("number-number-map:createMap");
+    const hasStringNumberMap = helpers.has("string-number-map:createMap");
     for (const map of current.maps) {
       if (map === undefined) throw "prepared map invariant";
+      const directNamespace =
+        map.value === "number"
+          ? map.key === "number" && hasNumberNumberMap
+            ? "number-number-map"
+            : map.key === "string" && hasStringNumberMap
+              ? "string-number-map"
+              : undefined
+          : undefined;
+      if (directNamespace !== undefined) {
+        const runtime: MapRuntime = {
+          create: functionId(helper(directNamespace, "createMap")),
+          get: functionId(helper(directNamespace, "getMap")),
+          has: functionId(helper(directNamespace, "hasMap")),
+          set: functionId(helper(directNamespace, "setMap")),
+          delete: functionId(helper(directNamespace, "deleteMap")),
+          clear: functionId(helper(directNamespace, "clearMap")),
+          size: functionId(helper(directNamespace, "sizeMap")),
+          iterator: {
+            create: functionId(helper(directNamespace, "createMapCursor")),
+            advance: functionId(helper(directNamespace, "advanceMapCursor")),
+            key: functionId(helper(directNamespace, "readMapCursorKey")),
+            value: functionId(helper(directNamespace, "readMapCursorValue")),
+          },
+        };
+        maps.push(
+          eraseRecordLists
+            ? { key: map.key, value: map.value, runtime, erasedRecords: true }
+            : { key: map.key, value: map.value, runtime },
+        );
+        continue;
+      }
       const key = preparedElement(map.key),
         value = preparedElement(map.value);
       // An exact instantiation wins; otherwise one of the same encoding

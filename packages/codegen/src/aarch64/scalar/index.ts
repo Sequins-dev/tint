@@ -4056,7 +4056,11 @@ function emitModuleForms(
           rotatedShifts = new Uint8Array(resultBound),
           // `(int32 +/- f64) | 0` or `^ 0` with single-use `+/-` followed only
           // by constants before the bitwise op: maps add/sub id -> bitwise id.
-          pendingFusedAdd = new Map<number, number>();
+          pendingFusedAdd = new Map<number, number>(),
+          // Direct-to-slot register targeting: 0 = none, reg + 1 = target register.
+          directFloatTarget = new Uint8Array(resultBound),
+          directIntTarget = new Uint8Array(resultBound),
+          emittedDirectStore = new Uint8Array(resultBound);
         /** The typed array a fused read (by its result ID) indexed. */
         function arrayOf(read: number): number {
           const array = fusedArrays.get(read);
@@ -9016,6 +9020,96 @@ function emitModuleForms(
               readonly leftIsInt: boolean;
             }
           >();
+          // Direct-to-slot register targeting: when a single-use binary op feeds
+          // a store into a register-homed slot (FP number slot or GP integer
+          // slot) and nothing between them touches that register or throws,
+          // compute directly into the slot register (eliminating 2-cycle FP
+          // fmov on loop-carried sums and redundant GP mov on loop counters).
+          if (tracker === undefined && scalarRegisters !== undefined) {
+            const regs = scalarRegisters;
+            for (let sIdx = 0; sIdx < b.instructions.length; sIdx++) {
+              const sOp = b.instructions[sIdx];
+              if (
+                sOp === undefined ||
+                sOp.kind !== "store" ||
+                fn.slots[sOp.slot] !== "number"
+              )
+                continue;
+              const isIntSlot = integerSlots[sOp.slot] === 1;
+              const destReg = regs[slotOffset(sOp.slot) / 8] ?? 0;
+              if (isIntSlot ? destReg < 32 : destReg === 0 || destReg >= 32)
+                continue;
+              const valIdx = valueIds.intern(sOp.value);
+              if ((valueUses[valIdx] ?? 0) !== 1) continue;
+              let defIdx = -1,
+                safe = true;
+              for (let k = sIdx - 1; k >= 0; k--) {
+                const mid = b.instructions[k];
+                if (mid === undefined) {
+                  safe = false;
+                  break;
+                }
+                if (mid.kind === "binary" && mid.id === sOp.value) {
+                  defIdx = k;
+                  break;
+                }
+                if (
+                  mid.kind !== "load" &&
+                  mid.kind !== "store" &&
+                  mid.kind !== "constant" &&
+                  mid.kind !== "binary" &&
+                  mid.kind !== "unary" &&
+                  mid.kind !== "array-element" &&
+                  mid.kind !== "array-length" &&
+                  mid.kind !== "string-length" &&
+                  mid.kind !== "reference-value" &&
+                  mid.kind !== "optional-wrap"
+                ) {
+                  safe = false;
+                  break;
+                }
+                if (
+                  (mid.kind === "load" || mid.kind === "store") &&
+                  (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                ) {
+                  safe = false;
+                  break;
+                }
+              }
+              if (!safe || defIdx < 0) continue;
+              const ins = b.instructions[defIdx];
+              if (
+                ins === undefined ||
+                ins.kind !== "binary" ||
+                pendingFusedAdd.has(ins.id)
+              )
+                continue;
+              if (isIntSlot) {
+                if (
+                  ins.operator !== "+" &&
+                  ins.operator !== "-" &&
+                  ins.operator !== "*"
+                )
+                  continue;
+              } else if (
+                !["+", "-", "*", "/", "min", "max"].includes(ins.operator)
+              )
+                continue;
+              const checkLiveReg = (id: number): void => {
+                if (homeOf(id) === destReg) safe = false;
+              };
+              for (let k = defIdx + 1; k < b.instructions.length; k++) {
+                if (k === sIdx) continue;
+                const later = b.instructions[k];
+                if (later !== undefined)
+                  visitInstructionOperands(later, checkLiveReg);
+              }
+              visitTerminatorOperands(b.terminator, checkLiveReg);
+              if (!safe) continue;
+              if (isIntSlot) directIntTarget[valIdx] = destReg - 32 + 1;
+              else directFloatTarget[valIdx] = destReg + 1;
+            }
+          }
           const loadFloatSelectArm = (
             arm: SelectArm,
             scratch: number,
@@ -15244,6 +15338,7 @@ function emitModuleForms(
                   tracker.saved(op.id, instructions.length * 4);
                 break;
               case "store":
+                if (emittedDirectStore[valueIds.intern(op.value)] === 1) break;
                 if (integerSlots[op.slot] === 1) {
                   const constant = deferredIntegers.get(op.value);
                   if (constant !== undefined)
@@ -15714,7 +15809,9 @@ function emitModuleForms(
                       immediate === op.right ? op.left : op.right,
                       9,
                     ),
-                    target = intTarget(op.id, 9);
+                    opIdx = valueIds.intern(op.id),
+                    direct = directIntTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : intTarget(op.id, 9);
                   if (op.operator === "*") {
                     const k = multiplierShift(constant);
                     if (k === undefined) throw "multiplier invariant";
@@ -15753,7 +15850,8 @@ function emitModuleForms(
                       setFlags: false,
                     });
                   }
-                  saveRaw(target, op.id);
+                  if (direct === 0) saveRaw(target, op.id);
+                  else emittedDirectStore[opIdx] = 1;
                   markInteger(op.id);
                 } else if (integerArithmetic(op)) {
                   // Bounded below 2^53 (kind 6), so the int64 result is
@@ -15779,7 +15877,9 @@ function emitModuleForms(
                               : 0;
                   const left = intRegister(op.left, 9),
                     right = shift !== 0 ? left : intRegister(op.right, 10),
-                    target = intTarget(op.id, 9);
+                    opIdx = valueIds.intern(op.id),
+                    direct = directIntTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : intTarget(op.id, 9);
                   emit(
                     shift !== 0
                       ? {
@@ -15812,7 +15912,8 @@ function emitModuleForms(
                             setFlags: false,
                           },
                   );
-                  saveRaw(target, op.id);
+                  if (direct === 0) saveRaw(target, op.id);
+                  else emittedDirectStore[opIdx] = 1;
                   markInteger(op.id);
                 } else if (
                   ["+", "-", "*", "/", "min", "max"].includes(op.operator)
@@ -15847,7 +15948,9 @@ function emitModuleForms(
                   }
                   const left = floatOperand(op.left, 0),
                     right = floatOperand(op.right, 1),
-                    target = floatTarget(op.id, 0);
+                    opIdx = valueIds.intern(op.id),
+                    direct = directFloatTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : floatTarget(op.id, 0);
                   emit({
                     op:
                       op.operator === "+"
@@ -15865,7 +15968,8 @@ function emitModuleForms(
                     rn: left,
                     rm: right,
                   });
-                  floatStore(target, op.id);
+                  if (direct === 0) floatStore(target, op.id);
+                  else emittedDirectStore[opIdx] = 1;
                 } else if (
                   op.operator === "%" &&
                   exactInteger(op.left) &&

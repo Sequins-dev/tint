@@ -12,7 +12,11 @@ import {
   createPreparedBindingIndex,
   type PreparedBindingIndex,
 } from "./bindings.ts";
-import { createElementMatcher, type ElementMatcher } from "./elements.ts";
+import {
+  createElementMatcher,
+  supportsCompactMapValue,
+  type ElementMatcher,
+} from "./elements.ts";
 export interface RuntimeBindingSubject {
   readonly function: string;
   readonly parameter: number;
@@ -50,6 +54,31 @@ const numberHelpers = [
   "hasNumberList",
   "deleteNumberList",
   "resizeNumberList",
+];
+const numberSetHelpers = [
+  "createSet",
+  "hasSet",
+  "addSet",
+  "deleteSet",
+  "clearSet",
+  "sizeSet",
+  "createSetCursor",
+  "advanceSetCursor",
+  "readSetCursor",
+  "cloneSet",
+];
+const directMapHelpers = [
+  "createMap",
+  "getMap",
+  "hasMap",
+  "setMap",
+  "deleteMap",
+  "clearMap",
+  "sizeMap",
+  "createMapCursor",
+  "advanceMapCursor",
+  "readMapCursorKey",
+  "readMapCursorValue",
 ];
 export interface RuntimeBindingRecord {
   readonly subject: RuntimeBindingSubject;
@@ -151,8 +180,9 @@ export function createRuntimeBindingContext(input: {
         // Number and string keyed maps use key-specialized providers whose
         // only type argument is the value (see the collection pass).
         if (second === undefined) {
-          const provider =
-            map.key === "number"
+          const provider = !supportsCompactMapValue(input.types, map.value)
+            ? undefined
+            : map.key === "number"
               ? "number-key-map"
               : map.key === "string"
                 ? "string-key-map"
@@ -197,7 +227,26 @@ export function createRuntimeBindingContext(input: {
             })
           : undefined;
       const selected = start ?? shared;
-      if (!(kind === "list" && list === "number") && selected === undefined)
+      const directNumberSet =
+        kind === "set" &&
+        set === "number" &&
+        input.helpers.has("number-key-set:createSet");
+      const directMapNamespace =
+        kind === "map" && map !== undefined && map.value === "number"
+          ? map.key === "number" &&
+            input.helpers.has("number-number-map:createMap")
+            ? "number-number-map"
+            : map.key === "string" &&
+                input.helpers.has("string-number-map:createMap")
+              ? "string-number-map"
+              : undefined
+          : undefined;
+      if (
+        !(kind === "list" && list === "number") &&
+        !directNumberSet &&
+        directMapNamespace === undefined &&
+        selected === undefined
+      )
         return failure(
           "runtime binding subject has no " +
             kind +
@@ -208,15 +257,23 @@ export function createRuntimeBindingContext(input: {
       for (let i = 0; i < operations.length; i++) {
         const operation = operations[i];
         const numberHelper = numberHelpers[i];
+        const numberSetHelper = numberSetHelpers[i];
+        const directMapHelper = directMapHelpers[i];
         if (
           operation === undefined ||
-          (list === "number" && numberHelper === undefined)
+          (list === "number" && numberHelper === undefined) ||
+          (directNumberSet && numberSetHelper === undefined) ||
+          (directMapNamespace !== undefined && directMapHelper === undefined)
         )
           throw "runtime operation invariant";
         const name =
           list === "number"
             ? helper("number-list", numberHelper ?? "")
-            : input.roots[(selected ?? 0) + i];
+            : directNumberSet
+              ? helper("number-key-set", numberSetHelper ?? "")
+              : directMapNamespace !== undefined
+                ? helper(directMapNamespace, directMapHelper ?? "")
+                : input.roots[(selected ?? 0) + i];
         if (name === undefined) throw "runtime root invariant";
         names.set(operation, name);
       }
