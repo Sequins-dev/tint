@@ -35,7 +35,7 @@ const bindings: readonly NativeHostBinding[] = [
 ];
 verifyHostedFixture(
   `
-import {createObject,createErrorRealm,createDataProperty,createArrayObject,getOwnProperty,viewObjectValue,callObjectValue,bigIntFromString,bigIntToString,viewBigIntValue,serializeWorkerValue,deserializeWorkerValue,type ScriptPropertyKey,type ObjectHooks,type WorkerCloneSink,type WorkerCloneSource} from 'object';
+import {createObject,createErrorRealm,createDataProperty,createArrayObject,exoticSlots,getOwnProperty,viewObjectValue,callObjectValue,bigIntFromString,bigIntToString,viewBigIntValue,serializeWorkerValue,deserializeWorkerValue,type ScriptPropertyKey,type ObjectHooks,type WorkerCloneSink,type WorkerCloneSource} from 'object';
 import {byteStorageData} from 'bytes';
 import {mapMemory,unmapMemory} from 'memory';
 import {nativePacketMemory} from 'packets';
@@ -128,9 +128,9 @@ export function run():number {
   };
   const realmView=viewObjectValue(deserializeWorkerValue(viewSource,0,viewEnd,to),second);
   if(unmapMemory(packet,4096)!==0)return 13;
-  const data=realmView===undefined?undefined:realmView.internalTypedArrayData;
+  const data=realmView===undefined?undefined:exoticSlots(realmView).internalTypedArrayData;
   if(data===undefined||data.kind!=="Uint16"||data.byteOffset!==4||data.length!==3)return 14;
-  const copied=data.buffer.internalArrayBufferData;
+  const copied=exoticSlots(data.buffer).internalArrayBufferData;
   const copiedBytes=copied===undefined?undefined:byteStorageData(copied);
   if(copiedBytes===undefined||copiedBytes.length!==12||copiedBytes[11]!==11||copiedBytes[4]!==4)return 15;
   // A typed array, then an object named twice, in one message: the decoder
@@ -167,7 +167,7 @@ export function run():number {
   if(firstCopy===undefined||firstCopy!==getOwnProperty<ScriptPropertyKey,unknown>(received,"second")?.value)return 19;
   if(getOwnProperty<ScriptPropertyKey,unknown>(firstCopy,"mark")?.value!==7)return 20;
   const viewCopy=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(received,"view")?.value,second);
-  if(viewCopy===undefined||viewCopy.internalTypedArrayData?.length!==3)return 21;
+  if(viewCopy===undefined||exoticSlots(viewCopy).internalTypedArrayData?.length!==3)return 21;
   return 42;
 }
 `,
