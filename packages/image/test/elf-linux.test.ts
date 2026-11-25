@@ -120,7 +120,7 @@ test(
       // From write (libc) through main's .eh_frame FDE into glibc's startup.
       assert.match(
         out.stdout,
-        /#0 .* in write \(\)[^]*#1 .* in main \(\) at hello\.ts[^]*__libc_start_main[^]*_start \(\)/,
+        /#0 .*(?:in )?(?:__GI___libc_)?write \([^]*#1 .* in main \(\) at hello\.ts[^]*__libc_start_main[^]*_start \(\)/,
       );
     });
   },

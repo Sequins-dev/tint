@@ -9,9 +9,10 @@ import type {
   NativeManagedPointerImport,
 } from "@tint/codegen/aarch64/scalar";
 import { encodeLayout, patchRelative } from "@tint/codegen/x86_64/isa";
-import type {
-  X64Module,
-  X64ManagedReference,
+import {
+  x64ModulePatcher,
+  type X64Module,
+  type X64ManagedReference,
 } from "@tint/codegen/x86_64/scalar";
 import type { ScalarType } from "@tint/ir/scalar";
 import {
@@ -685,6 +686,7 @@ export function planX64ServiceModules(
       patches.push({ offset: site, bytes });
     }
     data.set(native.data, dataOffset);
+    const modulePatcher = x64ModulePatcher(native);
     for (let at = 0; at < native.addressFixups.length; at++) {
       const reference = native.addressFixups[at];
       if (reference === undefined) throw "service image reference invariant";
@@ -697,7 +699,7 @@ export function planX64ServiceModules(
             ? { kind: "data", offset: dataOffset + target.offset }
             : target,
       });
-      patchers.push({ patch: native.patchAddress, index: at });
+      patchers.push({ patch: modulePatcher, index: at });
     }
     if (index === 0) continue;
     const functionBase = functions.length;

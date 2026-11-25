@@ -4,16 +4,16 @@ import { buildNativeFixture } from "./gate/native-fixture.ts";
 // pause, console output, unsupported methods and process exit, all through
 // the CDP calls Chrome DevTools makes (tools/devtools, lldb-dap backend).
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { get } from "node:http";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { testNativeLaunch } from "./gate/native-launch-test.ts";
-import { compileC, findLlvmTool } from "./host-tools.ts";
+import { compileDebugProgram, findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
 import { CdpTestClient } from "./devtools/test-client.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 const source = `#include <stdio.h>
 struct point { int x; int y; const char *label; };
@@ -64,12 +64,12 @@ testNativeLaunch(
   "DevTools bridge debugs a clang -g C program",
   { skip: !available && "needs clang and lldb-dap", timeout: 180000 },
   async (onAdmitted) => {
-    const dir = mkdtempSync(join(tmpdir(), "tint-devtools-c-"));
+    const dir = stableScratchDirectory("devtools-c");
     const file = join(dir, "prog.c"),
       program = join(dir, "prog");
     writeFileSync(file, source);
     buildNativeFixture(program, () => {
-      const built = compileC(["-g", "-O0", file, "-o", program]);
+      const built = compileDebugProgram(file, program);
       assert.equal(built.status, 0, built.stderr);
       return program;
     });

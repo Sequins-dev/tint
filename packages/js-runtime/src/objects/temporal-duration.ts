@@ -24,6 +24,8 @@ import {
   type Duration,
 } from "@tint/foundation/chrono/temporal-duration";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -42,7 +44,10 @@ import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 
 function requireDuration(value: unknown, realm: ErrorRealm): Duration {
   const object = viewObjectValue(value, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalTemporalDuration;
+    data =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalTemporalDuration;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -57,7 +62,7 @@ export function installTemporalDuration(
     parent: OrdinaryObject<ScriptPropertyKey, unknown>,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(parent);
-    object.internalTemporalDuration = data;
+    ensureExoticSlots(object).internalTemporalDuration = data;
     return object;
   }
   const constructor = createConstructorObject<ScriptPropertyKey, unknown>(

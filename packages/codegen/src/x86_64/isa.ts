@@ -150,13 +150,6 @@ type Encodable =
       readonly dst: Xmm;
       readonly src: XmmRm<128>;
     }
-  | {
-      readonly op: "movdqu" | "pcmpeqw" | "packuswb";
-      readonly dst: Xmm;
-      readonly src: XmmRm<128>;
-    }
-  | { readonly op: "psrlw"; readonly dst: Xmm; readonly count: number }
-  | { readonly op: "pmovmskb"; readonly dst: Gpr<32>; readonly src: Xmm }
   | { readonly op: "cvtss2sd"; readonly dst: Xmm; readonly src: XmmRm<32> }
   | {
       readonly op: "cvtsi2sd";
@@ -371,10 +364,6 @@ function describeInstruction(insn: Encodable): string {
     case "movzx":
     case "movsx":
     case "movsd":
-    case "movdqu":
-    case "pcmpeqw":
-    case "packuswb":
-    case "pmovmskb":
     case "addsd":
     case "subsd":
     case "mulsd":
@@ -397,8 +386,6 @@ function describeInstruction(insn: Encodable): string {
       return (
         opcode + describeOperand(insn.dst) + ", " + describeOperand(insn.src)
       );
-    case "psrlw":
-      return opcode + describeOperand(insn.dst) + ", " + String(insn.count);
     default:
       return insn.op;
   }
@@ -1169,26 +1156,6 @@ function emit(out: Encoding, insn: Encodable): void {
     case "cvtsd2ss":
       sseSource(insn.src, 64);
       return modRm(out, 0xf2, false, 0x0f5a, insn.dst, insn.src);
-    case "movdqu":
-    case "pcmpeqw":
-    case "packuswb":
-      sseSource(insn.src, 128);
-      return modRm(
-        out,
-        insn.op === "movdqu" ? 0xf3 : 0x66,
-        false,
-        insn.op === "movdqu" ? 0x0f6f : insn.op === "pcmpeqw" ? 0x0f75 : 0x0f67,
-        insn.dst,
-        insn.src,
-      );
-    case "psrlw":
-      if (!fits(insn.count, 0, 255)) return invalid("invalid psrlw count");
-      modRm(out, 0x66, false, 0x0f71, 2, insn.dst);
-      append(out.bytes, insn.count);
-      return;
-    case "pmovmskb":
-      requireWidth(insn.dst.width, 32);
-      return modRm(out, 0x66, false, 0x0fd7, insn.dst, insn.src);
     case "cvtss2sd":
       sseSource(insn.src, 32);
       return modRm(out, 0xf3, false, 0x0f5a, insn.dst, insn.src);
@@ -1263,6 +1230,8 @@ export interface Assembler {
   readonly labels: ReadonlyMap<string, number>;
   readonly byteLength: () => number;
   readonly instruction: (insn: Instruction) => void;
+  readonly beginScope: () => void;
+  readonly endScope: (keep: (name: string) => boolean) => void;
   readonly finish: (
     isExternal?: (label: string) => boolean,
     byteLength?: number,
@@ -1274,12 +1243,16 @@ export interface Assembler {
 export function createAssembler(far: boolean = false): Assembler {
   const out: Encoding = { bytes: byteBuffer(), fixups: [], far };
   const labels = new Map<string, number>();
+  const scopeLabels: string[] = [];
+  const scratch = new Uint8Array(8);
+  let scopeFixupStart = -1;
   let finished = false;
   function instruction(insn: Instruction): void {
     if (finished) invalid("assembler already finalized");
     if (insn.op === "label") {
       if (labels.has(insn.name)) invalid("duplicate label: " + insn.name);
       labels.set(insn.name, out.bytes.length);
+      if (scopeFixupStart >= 0) scopeLabels.push(insn.name);
     } else if (insn.op === "align-entry") {
       while (out.bytes.length % 4 !== 0) append(out.bytes, 0x90);
     } else {
@@ -1298,6 +1271,34 @@ export function createAssembler(far: boolean = false): Assembler {
     }
   }
 
+  function beginScope(): void {
+    if (finished) invalid("assembler already finalized");
+    scopeLabels.length = 0;
+    scopeFixupStart = out.fixups.length;
+  }
+
+  function endScope(keep: (name: string) => boolean): void {
+    if (finished) invalid("assembler already finalized");
+    if (scopeFixupStart < 0) return;
+    let kept = scopeFixupStart;
+    for (let i = scopeFixupStart; i < out.fixups.length; i++) {
+      const fixup = out.fixups[i];
+      if (fixup === undefined) throw "rel32 fixup invariant";
+      const target = labels.get(fixup.ref.label);
+      if (target !== undefined) {
+        patchChunkRelative(out.bytes, fixup, target, scratch);
+      } else {
+        out.fixups[kept++] = fixup;
+      }
+    }
+    out.fixups.length = kept;
+    for (const name of scopeLabels) {
+      if (name !== undefined && !keep(name)) labels.delete(name);
+    }
+    scopeLabels.length = 0;
+    scopeFixupStart = -1;
+  }
+
   function finish(
     isExternal?: (label: string) => boolean,
     byteLength: number = out.bytes.length,
@@ -1307,7 +1308,6 @@ export function createAssembler(far: boolean = false): Assembler {
       invalid("assembly output is smaller than instruction bytes or invalid");
     finished = true;
     const externalFixups: RelativeFixup[] = [];
-    const scratch = new Uint8Array(8);
     for (const fixup of out.fixups) {
       if (fixup === undefined) throw "rel32 fixup invariant";
       const target = labels.get(fixup.ref.label);
@@ -1331,6 +1331,8 @@ export function createAssembler(far: boolean = false): Assembler {
     labels,
     byteLength: (): number => out.bytes.length,
     instruction,
+    beginScope,
+    endScope,
     finish,
   };
 }

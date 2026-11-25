@@ -1339,6 +1339,14 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       : { ok: true, value: { type: best, fields, stable: false } };
   }
 
+  /** Checks a write of `value` to `object.name` and returns the declared
+   * field type (for a union receiver, the union's read type). A union
+   * receiver stores into whichever member the object is at run time, and
+   * each member's declared field type is a contract, so the write is checked
+   * against every member: a readonly member makes it IMMUTABLE, and a value
+   * outside any member's declared type is a TYPE_MISMATCH. TypeScript only
+   * requires the union's read type there; callers that must accept what it
+   * accepts tell the two apart. */
   function writeProperty(
     object: number,
     name: string,
@@ -1347,14 +1355,39 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     const result = property(object, name);
     if (!result.ok) return result;
     if (!valid(value)) return { ok: false, error: "INVALID_TYPE" };
-    const t = types[object];
-    if (t?.kind !== "object") return { ok: false, error: "TYPE_MISMATCH" };
-    const p = findProperty(t.properties, name) ?? t.stringIndex;
-    if (p === undefined) throw "property invariant";
-    if (p.readonly) return { ok: false, error: "IMMUTABLE" };
-    return relates(value, p.type)
-      ? { ok: true, value: p.type }
-      : { ok: false, error: "TYPE_MISMATCH" };
+    let error: ErrorCode | undefined, declared: number | undefined;
+    const pending: number[] = [object],
+      visited = new Set<number>();
+    while (pending.length > 0) {
+      const id = pending.pop();
+      if (id === undefined) throw "union write member invariant";
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const t = types[id];
+      if (t?.kind === "union") {
+        for (const member of t.members) {
+          if (member === undefined) throw "union write member invariant";
+          pending.push(member);
+        }
+        continue;
+      }
+      if (t?.kind !== "object") {
+        if (error === undefined) error = "TYPE_MISMATCH";
+        continue;
+      }
+      const p = findProperty(t.properties, name) ?? t.stringIndex;
+      if (p === undefined) throw "property invariant";
+      declared = p.type;
+      if (p.readonly) error = "IMMUTABLE";
+      else if (error === undefined && !relates(value, p.type))
+        error = "TYPE_MISMATCH";
+    }
+    if (error !== undefined) return { ok: false, error };
+    if (declared === undefined) throw "property invariant";
+    return {
+      ok: true,
+      value: types[object]?.kind === "union" ? result.value : declared,
+    };
   }
   function object(
     target: number,

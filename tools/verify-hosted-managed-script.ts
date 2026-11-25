@@ -31,7 +31,7 @@ const directCases = {
 };
 const script =
   "var v=40;let y=2;function f(a){nativeActive();return a+v;}nativeCount();f(y);";
-const fixture = createManagedScriptFixture();
+const fixture = createManagedScriptFixture(true);
 const parsed = parseScript(createSourceTextView(script));
 assert.ok(parsed.ok);
 const lowered = lowerScript(parsed.value, script);
@@ -40,6 +40,7 @@ const expected = prepareManagedSurfaceEntry({
   ...fixture,
   module: lowered.value,
   entry: "execute",
+  generationalBarriers: true,
 });
 assert.ok(expected.ok, JSON.stringify(expected));
 let checksum = 2166136261;
@@ -82,7 +83,7 @@ import {prepareManagedSurfaceEntry,type ManagedSurfaceEntryRequest} from "contra
 import {createScriptEvaluator,createIndirectEvaluator,createDirectEvaluator,type ScriptEvaluationHost} from "evaluator";
 import {createScriptEntryCompiler} from "script-compile";
 import {readManagedSurfaceDirectory,linkManagedSurfaceModule,type RuntimeSource,type ManagedSurfaceLayoutRuntime,type ManagedIdentityBinding,type ManagedSurfaceDirectoryRead} from "contracts";
-import {createEngineCodeStorage,type EngineCodeStorage} from "storage";
+import {createEngineCodeStorage,type EngineCodeFunction,type EngineCodeStorage} from "storage";
 import type {SourceModule} from "module-model";
 import {nativeValueFunctionDescriptor,nativeValueFunctionSignature,currentContextDomain,readMemoryWord,mapExecutableMemory,registerExternalMemory,registerStackMaps,writeExecutableMemory,currentRootHead} from "memory";
 import {argumentCount,argumentByteLength,copyArgument} from "process";
@@ -109,7 +110,7 @@ function sameABI(left:ManagedIdentityBinding,right:ManagedIdentityBinding):boole
 function churn():void{for(let i=0;i<1024;i++){const words=new Uint32Array(8192);words[0]=i;if(words[0]!==i)throw "CHURN";}}
 function verifyEvaluator(read:ManagedSurfaceDirectoryRead,table:unknown,runtime:ManagedSurfaceLayoutRuntime,storage:EngineCodeStorage):number{
  const state:{publishes:number;invokes:number;bad:boolean;last:ScriptRecord|undefined;fault:string;stage:string}={publishes:0,invokes:0,bad:false,last:undefined,fault:"",stage:""};
- const counted:EngineCodeStorage={domain:storage.domain,publish:(bytes:Uint8Array):number|undefined=>{state.publishes++;return storage.publish(bytes);}};
+ const counted:EngineCodeStorage={domain:storage.domain,publish:(bytes:Uint8Array,functions?:readonly EngineCodeFunction[]):number|undefined=>{state.publishes++;return storage.publish(bytes,functions);}};
  const compile=createScriptEntryCompiler({read,runtime},{domain:():number=>currentContextDomain(),storage:counted,readWord:(address:number,length:number,offset:number):number=>readMemoryWord(address,length,offset)},{maxScriptCodeBytes:262144});
  const a=make(),head=currentRootHead();
  const evaluate=createScriptEvaluator({realm:a.realm,global:a.global},{domain:():number=>currentContextDomain(),storage:counted,table:():unknown=>table,compile:(module,shape)=>{const result=compile(module);state.stage=result.ok?"":result.stage;return result;},invoke:(address,frame):unknown=>{const previous=state.last;if(previous===frame.$argument1||frame.$argument0!==a.global||frame.$imports!==table)state.bad=true;state.last=frame.$argument1;state.invokes++;return invoke(address,frame);},completion:(value):ScriptCompletionRecord|undefined=>completion(value),fault:(reason):void=>{state.fault=reason;}});
@@ -133,7 +134,7 @@ function verifyEvaluator(read:ManagedSurfaceDirectoryRead,table:unknown,runtime:
 }
 function verifyIndirect(read:ManagedSurfaceDirectoryRead,table:unknown,runtime:ManagedSurfaceLayoutRuntime,storage:EngineCodeStorage):number{
  const state:{publishes:number;invokes:number;last:ScriptRecord|undefined;bad:boolean;fault:string;stage:string}={publishes:0,invokes:0,last:undefined,bad:false,fault:"",stage:""};
- const counted:EngineCodeStorage={domain:storage.domain,publish:(bytes:Uint8Array):number|undefined=>{state.publishes++;return storage.publish(bytes);}};
+ const counted:EngineCodeStorage={domain:storage.domain,publish:(bytes:Uint8Array,functions?:readonly EngineCodeFunction[]):number|undefined=>{state.publishes++;return storage.publish(bytes,functions);}};
  const compile=createScriptEntryCompiler({read,runtime},{domain:():number=>currentContextDomain(),storage:counted,readWord:(address:number,length:number,offset:number):number=>readMemoryWord(address,length,offset)},{maxScriptCodeBytes:262144});
  const a=make(),b=make(a.realm),c=make(a.realm),rA=createScriptRecord(a.realm,undefined),head=currentRootHead();
  const host:ScriptEvaluationHost={domain:():number=>currentContextDomain(),storage:counted,table:():unknown=>table,compile:(module,shape)=>{const result=compile(module);state.stage=result.ok?"":result.stage;return result;},invoke:(address,frame):unknown=>{if(state.last===frame.$argument1||frame.$argument0!==b.global||frame.$imports!==table)state.bad=true;state.last=frame.$argument1;state.invokes++;return invoke(address,frame);},completion:(value):ScriptCompletionRecord|undefined=>completion(value),fault:(reason):void=>{state.fault=reason;}};
@@ -197,7 +198,7 @@ function verifyDynamicCarrier(read:ManagedSurfaceDirectoryRead,table:unknown,run
 }
 function verifyDirect(read:ManagedSurfaceDirectoryRead,table:unknown,runtime:ManagedSurfaceLayoutRuntime,storage:EngineCodeStorage,part:number):number{
  const state={publishes:0,invokes:0,stage:"",fault:""};
- const counted:EngineCodeStorage={domain:storage.domain,publish:(bytes:Uint8Array):number|undefined=>{state.publishes++;return storage.publish(bytes);}};
+ const counted:EngineCodeStorage={domain:storage.domain,publish:(bytes:Uint8Array,functions?:readonly EngineCodeFunction[]):number|undefined=>{state.publishes++;return storage.publish(bytes,functions);}};
  const compile=createScriptEntryCompiler({read,runtime},{domain:():number=>currentContextDomain(),storage:counted,readWord:(address:number,length:number,offset:number):number=>readMemoryWord(address,length,offset)},{maxScriptCodeBytes:262144});
  const a=make(),head=currentRootHead();let phase=180;
  function hostFor(target:State):ScriptEvaluationHost{return {domain:():number=>currentContextDomain(),storage:counted,table:():unknown=>table,compile:(module,shape)=>{const result=compile(module);state.stage=result.ok?"":result.stage;return result;},invoke:(address,frame):unknown=>{state.invokes++;if(frame.$argument0!==target.global)throw "DIRECT_FRAME_GLOBAL";return invoke(address,frame);},completion:(value):ScriptCompletionRecord|undefined=>completion(value),fault:(reason):void=>{state.fault=reason;}};}
@@ -250,7 +251,7 @@ export function run():number{try{
  if(selected===5)return verifyIndirect(read.value,exported.table,runtime,storage);
  if(selected===6)return verifyDynamicCarrier(read.value,exported.table,runtime,storage);
  if(selected===7||selected===8)return verifyDirect(read.value,exported.table,runtime,storage,selected);
- const approvedSpecifiers:ReadonlySet<string>=specifiers;const approvedInstantiations:ReadonlyMap<string,readonly string[]>=instantiations;const request:ManagedSurfaceEntryRequest={module:lowered.value,entry:"execute",specifiers:approvedSpecifiers,instantiations:approvedInstantiations,read:read.value,runtime};const prepared=prepareManagedSurfaceEntry(request);
+ const approvedSpecifiers:ReadonlySet<string>=specifiers;const approvedInstantiations:ReadonlyMap<string,readonly string[]>=instantiations;const request:ManagedSurfaceEntryRequest={module:lowered.value,entry:"execute",specifiers:approvedSpecifiers,instantiations:approvedInstantiations,read:read.value,runtime,generationalBarriers:read.value.directory.abi.generationalBarriers};const prepared=prepareManagedSurfaceEntry(request);
  if(!prepared.ok){const stage=prepared.error.stage;return stage==="profile"?64:stage==="prepare"?65:stage==="lower"?66:stage==="emit"?67:68;}
  const built=prepared.value,native=built.native;
  if(native.imports.length!==0||native.managedImports.length!==${expected.value.native.managedImports.length})return 69;
@@ -350,7 +351,8 @@ verifyHostedFixture(
   ],
   {
     allowJit: true,
-    runtimeEntry: "initializeCopyingRuntime",
+    trustedExecutableCode: true,
+    runtimeEntry: "initializeGenerationalRuntime",
     // Like Test262 images, this links the complete Script runtime surface and
     // the in-image compiler, which outgrew the compiler project's 16K
     // instantiation budget when the decorator surface landed (0b64a176).

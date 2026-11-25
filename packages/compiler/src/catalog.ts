@@ -191,10 +191,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
-      id: "packages/codegen/src/aarch64/scalar/utf8.ts",
-      packageId: "codegen",
-    },
-    {
       id: "packages/codegen/src/aarch64/startup.ts",
       packageId: "codegen",
     },
@@ -211,6 +207,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/scalar/property-fusion.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/scalar/signature.ts",
       packageId: "codegen",
     },
@@ -219,7 +219,7 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
-      id: "packages/codegen/src/utf8-window.ts",
+      id: "packages/codegen/src/scalar/string-text.ts",
       packageId: "codegen",
     },
     {
@@ -264,10 +264,6 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/scalar/stack-maps.ts",
-      packageId: "codegen",
-    },
-    {
-      id: "packages/codegen/src/x86_64/scalar/utf8.ts",
       packageId: "codegen",
     },
     {
@@ -647,6 +643,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/numeric/number-string-cache.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/numeric/number-text/decimal-format.ts",
       packageId: "foundation",
     },
@@ -739,6 +739,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/text/latin1.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/text/string-builder.ts",
       packageId: "foundation",
     },
@@ -760,6 +764,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/foundation/src/text/text-scanner.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/text/utf8.ts",
       packageId: "foundation",
     },
     {
@@ -879,6 +887,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/ir/src/optimization/block-layout.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/bounds.ts",
       packageId: "ir",
     },
@@ -923,11 +935,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/element-cache.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/forward-loads.ts",
       packageId: "ir",
     },
     {
       id: "packages/ir/src/optimization/function-builder.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/general-numbers.ts",
       packageId: "ir",
     },
     {
@@ -952,6 +972,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/optional-split.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/property-cache.ts",
       packageId: "ir",
     },
     {
@@ -991,6 +1015,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/sink-environment-loads.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/slot-copies.ts",
       packageId: "ir",
     },
@@ -1003,7 +1031,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/string-builders.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/string-dispatch.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/string-loops.ts",
       packageId: "ir",
     },
     {
@@ -1163,6 +1199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/lowering/arguments-forwarding.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/lowering/direct-eval-flags.ts",
       packageId: "js-engine",
     },
@@ -1180,6 +1220,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-engine/src/lowering/module-shape.ts",
+      packageId: "js-engine",
+    },
+    {
+      id: "packages/js-engine/src/lowering/numeric-loop-spec.ts",
       packageId: "js-engine",
     },
     {
@@ -1375,11 +1419,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/activations.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/arguments.ts",
       packageId: "js-runtime",
     },
     {
       id: "packages/js-runtime/src/objects/arithmetic.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/array-append.ts",
       packageId: "js-runtime",
     },
     {
@@ -1607,6 +1659,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/collection-data.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/collection-keys.ts",
       packageId: "js-runtime",
     },
@@ -1775,6 +1831,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/element-access.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/entry-iteration.ts",
       packageId: "js-runtime",
     },
@@ -1900,6 +1960,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/intl.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/intrinsic-functions.ts",
       packageId: "js-runtime",
     },
     {
@@ -2739,10 +2803,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
-      id: "packages/native-runtime/src/copying.ts",
-      packageId: "native-runtime",
-    },
-    {
       id: "packages/native-runtime/src/event-loop-reactor.ts",
       packageId: "native-runtime",
     },
@@ -3531,6 +3591,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -3543,6 +3608,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "codegen",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "codegen",
@@ -3861,6 +3931,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -3873,6 +3948,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "compiler",
@@ -4456,6 +4536,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -4468,6 +4553,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "image",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "image",
@@ -4696,6 +4786,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ir",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -4708,6 +4803,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "ir",
@@ -4971,6 +5071,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -4983,6 +5088,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "js-engine",
@@ -5346,6 +5456,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -5358,6 +5473,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-runtime",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "js-runtime",
@@ -5586,6 +5706,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -5598,6 +5723,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "native-runtime",
@@ -5886,6 +6016,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -5898,6 +6033,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "platform",
@@ -6191,6 +6331,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -6203,6 +6348,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ts-native",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "ts-native",
@@ -6471,6 +6621,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "typescript",
+      specifier: "@tint/foundation/text/latin1",
+      target: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      packageId: "typescript",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
     },
@@ -6483,6 +6638,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/text/text-scanner",
       target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/text/utf8",
+      target: "packages/foundation/src/text/utf8.ts",
     },
     {
       packageId: "typescript",

@@ -6,6 +6,7 @@ import type {
 } from "../src/objects/index.ts";
 import assert from "node:assert/strict";
 import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
+import { ensureExoticSlots, exoticSlots } from "../src/objects/operations.ts";
 
 const hostViews = bindHostRecordViews();
 
@@ -41,8 +42,9 @@ function fixture() {
     true,
   );
   const instance = objects.createObject<ScriptPropertyKey, unknown>(prototype);
-  instance.internalErrorData = true;
-  const branded = (object: ObjectValue): boolean => object.internalErrorData;
+  ensureExoticSlots(instance).internalErrorData = true;
+  const branded = (object: ObjectValue): boolean =>
+    exoticSlots(object).internalErrorData;
   const chain = (receiver: unknown) =>
     legacy.chainIntlLegacy(receiver, instance, constructor, realm, hooks);
   const unwrap = (receiver: unknown) =>

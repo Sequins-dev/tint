@@ -8,6 +8,7 @@ import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import type { ErrorRealm } from "./errors.ts";
 import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
+import { ensureExoticSlots, exoticSlots } from "./operations.ts";
 interface DateSetterControls {
   readonly requireDate: (
     receiver: unknown,
@@ -60,11 +61,11 @@ export function installDateSetters(
         count,
         (receiver, args): unknown => {
           const object = controls.requireDate(receiver);
-          const saved = object.internalDateValue;
+          const saved = exoticSlots(object).internalDateValue;
           if (saved === undefined) throw "DATE_SLOT_INVARIANT";
           const first = controls.number(args[0]);
           if (field === "Year" && Number.isNaN(first)) {
-            object.internalDateValue = NaN;
+            ensureExoticSlots(object).internalDateValue = NaN;
             return NaN;
           }
           // Year setters convert the initial argument before local conversion, but
@@ -130,7 +131,7 @@ export function installDateSetters(
             millisecond,
           );
           const result = clipDateTime(utc ? value : controls.utcTime(value));
-          object.internalDateValue = result;
+          ensureExoticSlots(object).internalDateValue = result;
           return result;
         },
         hooks,
@@ -150,7 +151,7 @@ export function installDateSetters(
       (receiver, args): unknown => {
         const object = controls.requireDate(receiver);
         const time = clipDateTime(controls.number(args[0]));
-        object.internalDateValue = time;
+        ensureExoticSlots(object).internalDateValue = time;
         return time;
       },
       hooks,

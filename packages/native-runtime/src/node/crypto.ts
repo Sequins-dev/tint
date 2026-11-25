@@ -1,9 +1,11 @@
 /** Node crypto over the system OpenSSL 3 default provider. */
 import {
-  encodeUTF8,
-  encodeUTF8Into,
-  utf8WindowBytes,
-} from "@tint/foundation/text/text-encoding";
+  asciiEndOfText,
+  asciiLowercase,
+  copyLatin1,
+} from "@tint/foundation/text/latin1";
+import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
+import { utf8ByteLength, writeUTF8 } from "@tint/foundation/text/utf8";
 import {
   ERR_clear_error,
   EVP_get_digestbyname,
@@ -68,7 +70,7 @@ let recentAlgorithm: string | undefined = undefined;
 let recentDigest = 0;
 const encodedDigest = new Uint8Array(64);
 const finalizedSize = new Uint8Array(4);
-const updateScratch = new Uint8Array(utf8WindowBytes);
+const updateScratch = new Uint8Array(4096);
 let spareHash = 0;
 let spareHashDigest = 0;
 let spareHmac = 0;
@@ -209,14 +211,28 @@ function updateString(
       ? "utf8"
       : (bufferEncoding(encoding) ?? "utf8");
   if (name === "utf8") {
-    // The encoder splits only between scalars. OpenSSL consumes the scratch
-    // window synchronously and cannot reenter JavaScript.
+    // OpenSSL consumes the scratch window synchronously and cannot reenter
+    // JavaScript. ASCII strings fitting in scratch move in one bulk copy.
+    const length = data.length;
+    if (length === 0) {
+      updateBytes(address, hmac, updateScratch, 0);
+      return;
+    }
+    if (
+      length <= updateScratch.length &&
+      asciiEndOfText(data, 0, length) === length
+    ) {
+      copyLatin1(data, 0, length, updateScratch, 0);
+      updateBytes(address, hmac, updateScratch, length);
+      return;
+    }
     let read = 0;
-    do {
-      const result = encodeUTF8Into(data, updateScratch, read);
-      updateBytes(address, hmac, updateScratch, result.written);
-      read += result.read;
-    } while (read < data.length);
+    while (read < length) {
+      const next = writeUTF8(data, read, length, updateScratch, 0);
+      const written = utf8ByteLength(data, read, next);
+      updateBytes(address, hmac, updateScratch, written);
+      read = next;
+    }
     return;
   }
   if (name === "hex" && data.length % 2 !== 0)
@@ -455,20 +471,11 @@ function finishDigest(lifetime: DigestLifetime, bytes: Uint8Array): number {
   }
 }
 
-function asciiLower(name: string): string {
-  let lower = "";
-  for (let index = 0; index < name.length; index++) {
-    const code = name.charCodeAt(index);
-    lower += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);
-  }
-  return lower;
-}
-
 function resolveDigest(algorithm: string, hmac: boolean): number {
   if (algorithm === recentAlgorithm) return recentDigest;
   let digest = digests.get(algorithm);
   if (digest === undefined) {
-    const name = asciiLower(digestName(algorithm));
+    const name = asciiLowercase(digestName(algorithm));
     digest = digests.get(name);
     if (digest === undefined) {
       digest = loadDigest(algorithm, name, hmac);

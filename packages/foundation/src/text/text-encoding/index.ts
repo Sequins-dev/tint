@@ -6,83 +6,21 @@ export {
 } from "./uri.ts";
 export { isWellFormedUTF16, toWellFormedUTF16 } from "./well-formed.ts";
 import {
-  createStringBuilder,
-  appendString,
-  finishString,
-} from "../string-builder.ts";
+  asciiEndOfBytes,
+  asciiEndOfText,
+  copyLatin1,
+  latin1Text,
+} from "../latin1.ts";
+import { utf8ByteLength, utf8Text, utf8WholeText, writeUTF8 } from "../utf8.ts";
 /** Native implementations behind standard encoding globals. Node hosts keep their
- * built-in TextEncoder/TextDecoder; these functions are the native runtime core. */
-function scalarAt(value: string, index: number, first: number): number {
-  if (first < 0xd800 || first > 0xdfff) return first;
-  if (first < 0xdc00 && index + 1 < value.length) {
-    const second = value.charCodeAt((index + 1) >>> 0) & 0xffff;
-    if (second >= 0xdc00 && second <= 0xdfff)
-      return 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
-  }
-  return 0xfffd;
-}
-function width(point: number): number {
-  if (point < 0x80) return 1;
-  if (point < 0x800) return 2;
-  if (point < 0x10000) return 3;
-  return 4;
-}
+ * built-in TextEncoder/TextDecoder; these functions are the native runtime core.
+ * ASCII moves as one scan and one copy through the Latin-1 primitives
+ * (../latin1.ts), other strings and valid input in bulk through the UTF-8
+ * primitives (../utf8.ts); only what follows an invalid or split sequence
+ * takes the byte state machine. */
 export interface EncodeResult {
   readonly read: number;
   readonly written: number;
-}
-
-export const utf8WindowBytes = 4096;
-export const utf8WindowCountBits = 13;
-
-/** Portable implementation of the native utf8-window operation. Each window
- * writes at most 4 KiB. The packed result contains two exact integer counts. */
-export function encodeUTF8Window(
-  value: string,
-  destination: Uint8Array,
-  start: number,
-  offset: number,
-): number {
-  const end = value.length;
-  if (
-    !Number.isInteger(start) ||
-    start < 0 ||
-    start >= end ||
-    !Number.isInteger(offset) ||
-    offset < 0 ||
-    offset >= destination.length
-  )
-    return 0;
-  const limit = Math.min(destination.length, offset + utf8WindowBytes);
-  let read = start;
-  let written = offset;
-  for (; read < end && written < limit; read++) {
-    const first = value.charCodeAt(read >>> 0) & 0xffff;
-    if (first < 0x80) {
-      destination[written] = first;
-      written++;
-      continue;
-    }
-    const point = scalarAt(value, read, first);
-    const bytes = width(point);
-    if (bytes > limit - written) break;
-    if (bytes === 2) {
-      destination[written] = 0xc0 | (point >>> 6);
-      destination[written + 1] = 0x80 | (point & 63);
-    } else if (bytes === 3) {
-      destination[written] = 0xe0 | (point >>> 12);
-      destination[written + 1] = 0x80 | ((point >>> 6) & 63);
-      destination[written + 2] = 0x80 | (point & 63);
-    } else {
-      destination[written] = 0xf0 | (point >>> 18);
-      destination[written + 1] = 0x80 | ((point >>> 12) & 63);
-      destination[written + 2] = 0x80 | ((point >>> 6) & 63);
-      destination[written + 3] = 0x80 | (point & 63);
-    }
-    if (point > 0xffff) read++;
-    written += bytes;
-  }
-  return ((read - start) << utf8WindowCountBits) | (written - offset);
 }
 
 /** Start at a UTF-16 offset within the input. Counts are relative to that
@@ -92,34 +30,22 @@ export function encodeUTF8Into(
   destination: Uint8Array,
   start: number = 0,
 ): EncodeResult {
-  const windowCountMask = (1 << utf8WindowCountBits) - 1;
-  let read = start;
-  let written = 0;
-  while (read < value.length && written < destination.length) {
-    const finalWindow = destination.length - written <= utf8WindowBytes;
-    const result = encodeUTF8Window(value, destination, read, written);
-    if (result === 0) break;
-    read += result >>> utf8WindowCountBits;
-    written += result & windowCountMask;
-    if (finalWindow) break;
-  }
-  return { read: read - start, written };
+  const length = value.length;
+  if (!Number.isInteger(start) || start < 0 || start >= length)
+    return { read: 0, written: 0 };
+  const next = writeUTF8(value, start, length, destination, 0);
+  return { read: next - start, written: utf8ByteLength(value, start, next) };
 }
 export function encodeUTF8(value: string): Uint8Array {
-  let bytes = 0;
-  let highSurrogate = false;
-  for (let index = 0; index < value.length; index++) {
-    const unit = value.charCodeAt(index) & 0xffff;
-    if (unit < 0x80) bytes++;
-    else if (unit < 0x800) bytes += 2;
-    // The high surrogate already contributed three bytes. A matching low
-    // surrogate brings the pair to four instead of encoding a replacement.
-    else if (highSurrogate && unit >= 0xdc00 && unit <= 0xdfff) bytes++;
-    else bytes += 3;
-    highSurrogate = unit >= 0xd800 && unit < 0xdc00;
+  const length = value.length;
+  // ASCII text is its own encoding: one scan and one copy.
+  if (asciiEndOfText(value, 0, length) === length) {
+    const ascii = new Uint8Array(length);
+    copyLatin1(value, 0, length, ascii, 0);
+    return ascii;
   }
-  const output = new Uint8Array(bytes);
-  encodeUTF8Into(value, output);
+  const output = new Uint8Array(utf8ByteLength(value, 0, length));
+  writeUTF8(value, 0, length, output, 0);
   return output;
 }
 
@@ -169,26 +95,72 @@ export function decodeUTF8(
     state.bomSeen = false;
   }
   state.streaming = stream;
-  let bomSeen = state.bomSeen,
-    chunk = "";
-  const chunks = createStringBuilder();
+  if (state.needed !== 0) return decodeSequences(state, input, 0, "", stream);
+  // Outside a sequence, the valid run from the start (after a dropped byte
+  // order mark) decodes in bulk; only what follows it needs the state
+  // machine.
+  const length = input.length;
+  let begin = 0;
+  if (
+    !state.bomSeen &&
+    !state.ignoreBOM &&
+    length >= 3 &&
+    input[0] === 0xef &&
+    input[1] === 0xbb &&
+    input[2] === 0xbf
+  )
+    begin = 3;
+  // ASCII input is its own text: one scan and one copy.
+  if (asciiEndOfBytes(input, begin, length) === length) {
+    if (length > 0) state.bomSeen = true;
+    return latin1Text(input, begin, length);
+  }
+  // Other valid input decodes in one bulk call ("" otherwise, which a
+  // nonempty valid range never decodes to).
+  const whole = utf8WholeText(input, begin, length);
+  if (whole.length > 0 || begin === length) {
+    if (length > 0) state.bomSeen = true;
+    return whole;
+  }
+  const text = utf8Text(input, begin, length),
+    // One unit per byte only when every byte was ASCII.
+    end =
+      text.length === length - begin
+        ? length
+        : begin + utf8ByteLength(text, 0, text.length);
+  if (end > 0) state.bomSeen = true;
+  return decodeSequences(state, input, end, text, stream);
+}
+/** Decodes input from `index` with the byte state machine (continuing
+ * `state`'s pending sequence), after the already decoded `prefix`. */
+function decodeSequences(
+  state: UTF8Decoder,
+  input: Uint8Array,
+  index: number,
+  prefix: string,
+  stream: boolean,
+): string | undefined {
+  const length = input.length;
+  // The decoded pieces, joined once: one copy of each unit.
+  let bomSeen = state.bomSeen;
+  const parts: string[] = prefix === "" ? [] : [prefix];
   function append(point: number): void {
     if (!bomSeen) {
       bomSeen = true;
       if (!state.ignoreBOM && point === 0xfeff) return;
     }
-    chunk += String.fromCodePoint(point);
-    if (chunk.length >= 32) {
-      appendString(chunks, chunk);
-      chunk = "";
-    }
+    parts.push(String.fromCodePoint(point));
   }
-  for (let index = 0; index < input.length; index++) {
+  for (; index < length; index++) {
     const byte = input[index];
     if (byte === undefined) throw "UTF8_INPUT_INVARIANT";
     if (state.needed === 0) {
       if (byte <= 0x7f) {
-        append(byte);
+        // The ASCII run from here, in bulk.
+        const end = asciiEndOfBytes(input, index + 1, length);
+        bomSeen = true;
+        parts.push(latin1Text(input, index, end));
+        index = end - 1;
         continue;
       }
       if (byte >= 0xc2 && byte <= 0xdf) {
@@ -233,8 +205,7 @@ export function decodeUTF8(
     append(0xfffd);
   }
   state.bomSeen = bomSeen;
-  appendString(chunks, chunk);
-  return finishString(chunks);
+  return parts.join("");
 }
 
 export interface NativeTextEncoder {

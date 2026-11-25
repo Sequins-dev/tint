@@ -16,6 +16,7 @@ import { join, resolve } from "node:path";
 import type { NativeTarget } from "@tint/platform/target";
 import { runNativeFixture } from "./gate/native-fixture.ts";
 import { admitUnderLldb } from "./native-admission.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 type TargetName = NativeTarget["name"] | "linux-x86_64";
 export type NativeRunnerName =
@@ -140,10 +141,7 @@ function localDarwinRun(
       "--batch",
       "-o",
       "settings set target.disable-aslr false",
-      "-o",
-      "process launch --stop-at-entry",
-      "-o",
-      "script assert lldb.process.GetState() == lldb.eStateStopped",
+      ...lldbStartCommands(),
       "-o",
       "continue",
       "-o",

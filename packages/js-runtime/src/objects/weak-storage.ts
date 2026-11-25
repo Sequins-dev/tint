@@ -2,6 +2,7 @@ import {
   createKeyIndex,
   type KeyIndex,
 } from "@tint/foundation/collections/key-index";
+import { ensureExoticSlots, exoticSlots } from "./operations.ts";
 import { viewObjectValue } from "./values.ts";
 import { viewSymbolValue, registeredSymbolKey } from "./symbols.ts";
 import type { ErrorRealm } from "./errors.ts";
@@ -56,7 +57,7 @@ export function findWeakCell(
 ): unknown {
   const object = viewObjectValue(key, realm.objectPrototype);
   if (object !== undefined) {
-    const identity = object.internalIdentity;
+    const identity = exoticSlots(object).internalIdentity;
     if (identity === 0) return undefined;
     const cell = data.objects.get(identity);
     return cell !== undefined && data.storage.key(cell) === key
@@ -80,11 +81,11 @@ export function addWeakCell(
     data.symbols.push(cell);
     return;
   }
-  let identity = object.internalIdentity;
+  let identity = exoticSlots(object).internalIdentity;
   if (identity === 0) {
     identity = realm.agent.nextObjectIdentity;
     realm.agent.nextObjectIdentity = identity + 1;
-    object.internalIdentity = identity;
+    ensureExoticSlots(object).internalIdentity = identity;
   }
   data.objects.set(identity, cell);
   data.identities.push(identity);
@@ -99,7 +100,8 @@ export function deleteWeakCell(
 ): void {
   data.storage.clear(cell);
   const object = viewObjectValue(key, realm.objectPrototype);
-  if (object !== undefined) data.objects.delete(object.internalIdentity);
+  if (object !== undefined)
+    data.objects.delete(exoticSlots(object).internalIdentity);
   else purgeSymbolCells(data);
 }
 function purgeSymbolCells(data: WeakCollectionData): void {

@@ -91,6 +91,51 @@ test("UTF-8 encodes exact output around SIMD and scratch window boundaries", () 
     assert.deepEqual(encodeUTF8(text), expected);
   }
 });
+test("ASCII runs of any length move in bulk around other scalars", () => {
+  const encoder = new TextEncoder(),
+    decoder = new TextDecoder();
+  for (const other of ["\u00e9", "\u2603", "\ud83d\ude00", "\ud800"])
+    for (let run = 0; run <= 40; run++) {
+      const ascii = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGH".slice(
+        0,
+        run,
+      );
+      const value = ascii + other + ascii + "x" + other;
+      const bytes = encoder.encode(value);
+      assert.deepEqual(encodeUTF8(value), bytes);
+      assert.equal(
+        decodeUTF8(createUTF8Decoder(), bytes),
+        decoder.decode(bytes),
+      );
+      for (let size = 0; size <= bytes.length; size += 3) {
+        const actual = new Uint8Array(size).fill(0xcc),
+          expected = new Uint8Array(size).fill(0xcc);
+        assert.deepEqual(
+          encodeUTF8Into(value, actual),
+          encoder.encodeInto(value, expected),
+        );
+        assert.deepEqual(actual, expected);
+      }
+    }
+});
+test("streamed ASCII keeps chunk boundaries and a later U+FEFF as text", () => {
+  const actual = createUTF8Decoder(),
+    expected = new TextDecoder();
+  for (const part of [
+    [0x61, 0x62],
+    [0x63],
+    [0xef, 0xbb, 0xbf],
+    [0x64, 0xe2, 0x98],
+    [0x83, 0x65],
+  ]) {
+    const bytes = Uint8Array.from(part);
+    assert.equal(
+      decodeUTF8(actual, bytes, true),
+      expected.decode(bytes, { stream: true }),
+    );
+  }
+  assert.equal(decodeUTF8(actual, new Uint8Array(0)), expected.decode());
+});
 test("decoder follows UTF-8 error recovery and stream boundaries", () => {
   const cases = [
     [0xef, 0xbb, 0xbf, 65],
@@ -128,6 +173,46 @@ test("decoder follows UTF-8 error recovery and stream boundaries", () => {
               want,
               JSON.stringify({ fatal, ignoreBOM, values, split, stream }),
             );
+          }
+        }
+});
+test("bulk and state machine decoding agree with TextDecoder on mixed input", () => {
+  // Valid runs (decoded in bulk) around invalid and truncated sequences
+  // (the state machine), a leading byte order mark, a later U+FEFF and
+  // every scalar width, in chunks of every size.
+  const encoder = new TextEncoder(),
+    valid = encoder.encode("\ufeffA\u00e9\u4e16\ud83d\ude00z\ufeff"),
+    inputs = [
+      valid,
+      Uint8Array.from([...valid, 0xe2, 0x82]),
+      Uint8Array.from([...valid.subarray(0, 6), 0xff, ...valid.subarray(6)]),
+      Uint8Array.from([0xef, 0xbb, 0xbf]),
+      Uint8Array.from([0xef, 0xbb, 0xbf, 0x80, 0x41]),
+      Uint8Array.from([0xef, 0xbb]),
+      Uint8Array.from([0x41, 0xc3, 0xa9, 0xed, 0xa0, 0x80, 0xc3]),
+    ];
+  for (const fatal of [false, true])
+    for (const ignoreBOM of [false, true])
+      for (const input of inputs)
+        for (let size = 1; size <= input.length; size++) {
+          const actual = createUTF8Decoder(fatal, ignoreBOM),
+            expected = new TextDecoder("utf-8", { fatal, ignoreBOM });
+          for (let at = 0; at <= input.length; at += size) {
+            const part = input.subarray(at, at + size),
+              stream = at + size < input.length;
+            let want: string | undefined;
+            try {
+              want = expected.decode(part, { stream });
+            } catch (error) {
+              assert.ok(error instanceof TypeError);
+            }
+            const got = decodeUTF8(actual, part, stream);
+            assert.equal(
+              got,
+              want,
+              JSON.stringify({ fatal, ignoreBOM, input: [...input], size, at }),
+            );
+            if (want === undefined) break;
           }
         }
 });

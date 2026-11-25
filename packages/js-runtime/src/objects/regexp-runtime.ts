@@ -9,6 +9,8 @@ import {
 } from "@tint/foundation/regexp/engine";
 import { parseRegExpFlags } from "@tint/foundation/regexp/syntax";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createDataProperty,
   getProperty,
@@ -57,7 +59,7 @@ export function initializeRegExpObject(
   }
   const parsedFlags = parseRegExpFlags(text);
   if (!parsedFlags.ok) throw "REGEXP_FLAGS_INVARIANT";
-  object.internalRegExpData = {
+  ensureExoticSlots(object).internalRegExpData = {
     legacyState: realm.regexpLegacyState,
     legacyEnabled,
     originalSource: source,
@@ -231,7 +233,7 @@ export function executeRegExpObject(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | null {
-  if (object.internalRegExpData === undefined)
+  if (exoticSlots(object).internalRegExpData === undefined)
     throw createRuntimeError(realm, "type");
   const index = numberValue(
     getProperty<ScriptPropertyKey, unknown>(object, "lastIndex", object, hooks),
@@ -243,7 +245,7 @@ export function executeRegExpObject(
   // [[OriginalFlags]] and [[RegExpMatcher]] are read after ToLength(lastIndex):
   // a lastIndex valueOf may recompile this RegExp (Annex B compile), which
   // replaces its internal data.
-  const data = object.internalRegExpData;
+  const data = exoticSlots(object).internalRegExpData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   const updates = data.flags.global || data.flags.sticky;
   const start =

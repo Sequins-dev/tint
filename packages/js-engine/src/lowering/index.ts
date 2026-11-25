@@ -1,5 +1,7 @@
 import { forwardSingleUseTemporaries } from "./forward-temporaries.ts";
+import { specializeNumericForLoop } from "./numeric-loop-spec.ts";
 import { collectTailCalls } from "./tail-position.ts";
+import { argumentsForwardingSites } from "./arguments-forwarding.ts";
 import { sourceModuleShape } from "./module-shape.ts";
 import {
   directEvalStrict,
@@ -80,6 +82,207 @@ export type ScriptLoweringResult =
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
   readonly nativeScriptCalls?: boolean;
+  /** The Annex B [[IsHTMLDDA]] host capability (B.3.6). Defaults to true,
+   * which is correct for every host. False declares that the host creates no
+   * such objects: inline loose equality with null omits their brand check,
+   * and the lowered code excludes them when it initializes, so a host that
+   * marks one (markHTMLDDAObject) fails loudly instead of changing `==`. */
+  readonly htmlDDAObjects?: boolean;
+}
+/** How a native entry's `f.apply(x, arguments)` calls forward its actuals
+ * (argumentsForwardingSites): the calls (their `arguments` operand's
+ * start), the actual count and operand `index`, the parameters mapped to
+ * the object (sloppy simple parameters, else none) and how to create the
+ * object for any other use. */
+interface ArgumentsForwarding {
+  readonly sites: ReadonlySet<number>;
+  readonly count: () => Expression;
+  readonly actual: (index: number) => Expression;
+  readonly mapped: readonly string[];
+  readonly materialize: () => void;
+}
+/** Actual operands a native script entry receives in registers (codegen's
+ * scriptActualRegisterPairs): tail calls pass no stack actuals. */
+const scriptRegisterActuals = 3;
+/** In-place value slots of an ordinary object (js-runtime propertySlots). */
+export const propertySlots = 8;
+/** Inline own and inherited read entries per site (js-runtime
+ * propertyCacheEntries). */
+export const propertyCacheEntries = 4;
+/** The runtime functions generated property caches read and store values
+ * with, and the slot accessors their portable bodies share. */
+export const propertyCacheNames: readonly string[] = [
+  "cachedOwnPropertyValue",
+  "cachedInheritedPropertyValue",
+  "absentPropertyValue",
+  "cachedPropertyStore",
+  "propertySlotWord",
+  "readPropertyValueSlot",
+  "writePropertyValueSlot",
+  // Packed number element access (js-runtime objects/element-access.ts).
+  "packedNumberElement",
+  "absentElementValue",
+  "storePackedNumberElement",
+  "readFloat64Element",
+  "writeFloat64Element",
+  "isOrdinaryObject",
+  "packedArrayLength",
+];
+export interface PropertyCacheBinding {
+  readonly module: string;
+  readonly name: string;
+  readonly operation:
+    | "field-word"
+    | "property-load"
+    | "inherited-property-load"
+    | "absent-test"
+    | "property-store"
+    | "element-load"
+    | "element-store"
+    | "array-element"
+    | "array-store"
+    | "test"
+    | "element-length"
+    | "activation-top"
+    | "activation-previous"
+    | "activation-kind"
+    | "activation-callee"
+    | "activation-count"
+    | "activation-argument"
+    | "script-call-entry"
+    | "script-construct-entry"
+    | "global-cell";
+  readonly field?: string;
+  readonly count?: number;
+  readonly siteField?: string;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number;
+}
+/** Native record bindings of the property cache functions in the runtime's
+ * objects module: inline shape compares with value loads (IR property-load)
+ * and stores (IR property-store), the miss test, and the constant word
+ * index of the first in-place value; and of the element access functions:
+ * packed number element loads (IR element-load) and overwrites (IR
+ * element-store). */
+export function propertyCacheBindings(
+  module: string,
+): readonly PropertyCacheBinding[] {
+  return [
+    {
+      module,
+      name: "propertySlotWord",
+      operation: "field-word",
+      field: "internalValue0",
+    },
+    {
+      module,
+      name: "cachedOwnPropertyValue",
+      operation: "property-load",
+      field: "internalValue0",
+      count: propertySlots,
+      siteField: "ownShape",
+      entries: propertyCacheEntries,
+    },
+    {
+      module,
+      name: "cachedInheritedPropertyValue",
+      operation: "inherited-property-load",
+      field: "internalValue0",
+      count: propertySlots,
+      siteField: "inheritedShape",
+      entries: propertyCacheEntries,
+    },
+    { module, name: "absentPropertyValue", operation: "absent-test" },
+    {
+      module,
+      name: "cachedPropertyStore",
+      operation: "property-store",
+      field: "internalValue0",
+      count: propertySlots,
+      siteField: "storeShape",
+    },
+    // Packed number elements: `field` names the object's elements and
+    // `siteField` their count, which the binary64 storage field follows.
+    {
+      module,
+      name: "packedNumberElement",
+      operation: "element-load",
+      field: "internalArrayElements",
+      siteField: "numberCount",
+    },
+    { module, name: "absentElementValue", operation: "absent-test" },
+    {
+      module,
+      name: "storePackedNumberElement",
+      operation: "element-store",
+      field: "internalArrayElements",
+      siteField: "numberCount",
+    },
+    { module, name: "readFloat64Element", operation: "array-element" },
+    { module, name: "writeFloat64Element", operation: "array-store" },
+    { module, name: "isOrdinaryObject", operation: "test" },
+    {
+      module,
+      name: "packedArrayLength",
+      operation: "element-length",
+      field: "internalArrayElements",
+      siteField: "length",
+    },
+  ];
+}
+/** The runtime objects module's activation chain reads (js-runtime
+ * activations.ts), retained for their native bindings. */
+export const activationNames: readonly string[] = [
+  "activationTop",
+  "activationPrevious",
+  "activationKind",
+  "activationCallee",
+  "activationArgumentCount",
+  "activationArgument",
+  "resolveScriptCallEntry",
+  "resolveScriptConstructEntry",
+];
+/** Native bindings of the activation chain reads (IR activation-read) and
+ * native script entry dispatch (IR script-entry): native script entries link
+ * activation records into their frames instead of heap bookkeeping. */
+export function activationBindings(
+  module: string,
+): readonly PropertyCacheBinding[] {
+  return [
+    { module, name: "activationTop", operation: "activation-top" },
+    { module, name: "activationPrevious", operation: "activation-previous" },
+    { module, name: "activationKind", operation: "activation-kind" },
+    { module, name: "activationCallee", operation: "activation-callee" },
+    {
+      module,
+      name: "activationArgumentCount",
+      operation: "activation-count",
+    },
+    { module, name: "activationArgument", operation: "activation-argument" },
+    {
+      module,
+      name: "resolveScriptCallEntry",
+      operation: "script-call-entry",
+    },
+    {
+      module,
+      name: "resolveScriptConstructEntry",
+      operation: "script-construct-entry",
+    },
+  ];
+}
+/** The runtime global-environment module's cached global cell lookup, retained
+ * for its native binding (IR global-cell). */
+export const globalCellNames: readonly string[] = [
+  "cachedGlobalIdentifierCell",
+];
+/** Native binding of cachedGlobalIdentifierCell (IR global-cell). */
+export function globalCellBindings(
+  module: string,
+): readonly PropertyCacheBinding[] {
+  return [
+    { module, name: "cachedGlobalIdentifierCell", operation: "global-cell" },
+  ];
 }
 /** Immutable numeric imports proved by the hosted function planner. */
 export interface NumericCallSite extends Span {
@@ -177,8 +380,9 @@ function numericLeafExpression(
       return numericLeafExpression(node.expression, bindings);
     case "member":
       return numericMember(node, bindings);
-    case "index":
-      return numericArrayRead(node, bindings);
+    // A bare read of a numeric literal stays general: the typed checker reads
+    // `number[]` elements as `number | undefined`, so only `read ?? number`
+    // (below) is a number to it.
     case "unary":
       return (
         (node.operator === "+" || node.operator === "-") &&
@@ -377,6 +581,12 @@ interface AssignmentReference extends Span {
   readonly invalid?: boolean;
   readonly local?: boolean;
   readonly fixedBinding?: number;
+  readonly globalCell?: {
+    readonly start: Expression;
+    readonly cache: Expression;
+    readonly cell: Expression;
+    readonly name: string;
+  };
   readonly base: Expression;
   readonly property: Expression | undefined;
   /** Read-modify-write references keep a computed key in a mutable temporary.
@@ -424,6 +634,7 @@ export function lowerScript(
     false,
     undefined,
     options.nativeScriptCalls === true,
+    options.htmlDDAObjects !== false,
   );
 }
 /** Lower source-module bodies through the shared execution lowering. */
@@ -435,6 +646,7 @@ export function lowerSourceTextModule(
   checkMethodCalls: boolean = false,
   sourceTypes?: Module,
   nativeScriptCalls: boolean = false,
+  htmlDDAObjects: boolean = true,
 ): ScriptLoweringResult {
   return lowerScriptEntry(
     module,
@@ -448,6 +660,7 @@ export function lowerSourceTextModule(
     checkMethodCalls,
     sourceTypes,
     nativeScriptCalls,
+    htmlDDAObjects,
   );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
@@ -506,6 +719,7 @@ function lowerScriptEntry(
   checkMethodCalls: boolean = false,
   sourceTypes?: Module,
   nativeScriptCalls: boolean = false,
+  htmlDDAObjects: boolean = true,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -669,6 +883,7 @@ function lowerScriptEntry(
     variableDeclarationBindings.set(target.node.start, target.binding);
   }
   const localBindingReferences = new Map<number, number>();
+  const capturedFunctionReadBindings = new Map<number, number>();
   const writtenSlots = new Set<number>();
   for (const target of bound.value.varInitializerTargets ?? []) {
     if (target === undefined) throw "SCRIPT_BINDING_ALIAS_INVARIANT";
@@ -806,6 +1021,14 @@ function lowerScriptEntry(
       reference.binding === undefined
         ? undefined
         : boundBindings[reference.binding];
+    if (
+      binding !== undefined &&
+      reference.access === "read" &&
+      !namedScopes.has(binding.scope) &&
+      bound.value.scopes[binding.scope]?.kind !== "script" &&
+      (binding.kind === "var" || binding.kind === "parameter")
+    )
+      capturedFunctionReadBindings.set(node.start, binding.id);
     const reachesGlobal =
       binding === undefined ||
       (bound.value.scopes[binding.scope]?.kind === "script" &&
@@ -818,6 +1041,7 @@ function lowerScriptEntry(
   const globalIdentifierCaches = new Map<string, number>();
   const globalCacheInitializers: Expression[] = [];
   const propertyCacheInitializers: Expression[] = [];
+  const objectLiteralSiteInitializers: Expression[] = [];
   // Fixed record fields work in AOT and managed entries. Each closure
   // captures the groups it uses, and one large host harness cannot exceed a
   // native record's field limit.
@@ -879,12 +1103,37 @@ function lowerScriptEntry(
   function globalCacheDeclarations(): Statement[] {
     const tables = slotTable("$gc", globalCacheInitializers);
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
+    appendStatements(tables, slotTable("$oc", objectLiteralSiteInitializers));
     return tables;
   }
-  function propertyCache(name: string, span: Span): Expression {
+  /** A site record for an object literal of static-key data definitions. */
+  function objectLiteralSite(keys: readonly string[], span: Span): Expression {
+    const index = objectLiteralSiteInitializers.length;
+    const names: Expression[] = [];
+    for (const key of keys) names.push(text(key, generated));
+    objectLiteralSiteInitializers.push(
+      runtimeCall(
+        "createObjectLiteralSite",
+        [{ ...generated, kind: "array", elements: names }],
+        generated,
+      ),
+    );
+    return slotField("$oc", index, span);
+  }
+  /** A site's property cache; a method site (`o.m()`) caches the
+   * receiver's own properties among its inherited entries. */
+  function propertyCache(
+    name: string,
+    span: Span,
+    method: boolean = false,
+  ): Expression {
     const index = propertyCacheInitializers.length;
     propertyCacheInitializers.push(
-      runtimeCall("createScriptPropertyCache", [text(name)], generated),
+      runtimeCall(
+        "createScriptPropertyCache",
+        [text(name), { ...at(generated), kind: "boolean", value: method }],
+        generated,
+      ),
     );
     return slotField("$pc", index, span);
   }
@@ -908,6 +1157,8 @@ function lowerScriptEntry(
       !dynamicBindings
     )
       extended[0] = id("$scope");
+    else if (entryKind === "module" && !dynamicBindings)
+      extended[0] = id("$globalScope");
     extended.push(slotField("$gc", index, span));
     return extended;
   }
@@ -990,6 +1241,9 @@ function lowerScriptEntry(
         : id("$scope");
   let inFunction =
     entryKind === "direct-eval" && (directFlags & directEvalInFunction) !== 0;
+  let tryDepth = 0;
+  let withDepth = 0;
+  let functionHasDirectEval = false;
   let catchRecords: Expression[] = [];
   let inheritedCatches: Expression =
     entryKind === "direct-eval"
@@ -1036,13 +1290,42 @@ function lowerScriptEntry(
     : id("undefined");
   const externalPrivate = new Map<string, Expression>();
   const templateSites: Statement[] = [];
+  const specLoopHelpers: Statement[] = [];
   let functionDepth = 0;
+  let suppressingNumericLoopSpec = false;
+  let loopIntrinsics: Expression | undefined = undefined;
+  let loopIntrinsicFields = new Map<string, Expression>();
+  let loopCollections = new Map<
+    string,
+    {
+      readonly mapData: Expression | undefined;
+      readonly setData: Expression | undefined;
+    }
+  >();
+  function copyIdentifier(expr: Expression, span: Span): Expression {
+    if (expr.kind !== "identifier") throw "SCRIPT_IDENTIFIER_INVARIANT";
+    return id(expr.name, span);
+  }
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
+  /** In a native entry's body, the parameter holding its materialized
+   * argument list (undefined when called with actual operands). */
+  let nativeListName: string | undefined = undefined;
+  /** In a native entry whose `arguments` only feed `f.apply(x, arguments)`
+   * (argumentsForwardingSites), how those calls forward its actuals. */
+  let argumentsForwarding: ArgumentsForwarding | undefined = undefined;
   let usesTailCalls = false;
   let usesRegisterCalls = false;
   let usesWideRegisterCalls = false;
   let usesNativeScriptCalls = false;
   let usesIndexedWrites = false;
+  let usesElementAccess = false;
+  let usesIntrinsicCalls = false;
+  let usesObjectLiterals = false;
+  let usesSmallArrays = false;
+  let usesNullishEquality = false;
+  let excludesHTMLDDAObjects = false;
+  let usesRelationalFallback = false;
+  let usesLooseEqualityFallback = false;
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
@@ -1265,6 +1548,26 @@ function lowerScriptEntry(
     });
     return id(name, value);
   }
+  /** An uninitialized mutable `unknown` temporary, used when every branch of
+   * an immediately following `if`/`else` assigns it before any read. */
+  function uninitializedGeneralTemporary(span: Span): Expression {
+    const name = "$value" + serial++;
+    statements.push({
+      ...at(span),
+      kind: "variable",
+      mode: "let",
+      exported: false,
+      declarations: [
+        {
+          ...at(span),
+          name,
+          type: named("unknown"),
+          initializer: undefined,
+        },
+      ],
+    });
+    return id(name, span);
+  }
   function resetCompletion(
     span: Span,
     result: Expression = id("undefined"),
@@ -1436,21 +1739,34 @@ function lowerScriptEntry(
       checkBindingInitialized(member(cell, "initialized", span), span);
       return temporary(member(cell, "value", span), true);
     }
+    const args = withGlobalIdentifierCache(
+      [
+        scope,
+        text(name, span),
+        { ...at(span), kind: "boolean", value: strict },
+        id("$errors"),
+        { ...at(span), kind: "boolean", value: forTypeof },
+      ],
+      span,
+    );
+    const lookup = call("getIdentifierValue", args, span);
+    const start = args[0],
+      cache = args[5];
+    // Runtime-compiled entries keep one fused lookup per site.
+    if (start === undefined || cache === undefined || compactResults)
+      return temporary(lookup);
+    // A warm cached global binding reads its cell inline.
+    const cell = temporary(
+      call("cachedGlobalIdentifierCell", [start, cache], span),
+    );
     return temporary(
-      call(
-        "getIdentifierValue",
-        withGlobalIdentifierCache(
-          [
-            scope,
-            text(name, span),
-            { ...at(span), kind: "boolean", value: strict },
-            id("$errors"),
-            { ...at(span), kind: "boolean", value: forTypeof },
-          ],
-          span,
-        ),
+      scalarBranch(
+        scalarBinary("!==", cell, id("undefined", span), span),
+        member(cell, "value", span),
+        lookup,
         span,
       ),
+      true,
     );
   }
   function localSlot(
@@ -2761,148 +3077,39 @@ function lowerScriptEntry(
     const key = convertedKey(base, property, span);
     return readProperty(base, key, span);
   }
-  function inlineCachedPropertyCell(
-    base: Expression,
+  /** `if (absentPropertyValue(value, cache)) fallback` */
+  function ifAbsent(
+    value: string,
     cache: Expression,
-    own: boolean,
+    fallback: Statement,
     span: Span,
-  ): Expression {
-    const without = id("undefined", span);
-    const object = temporary(
-      runtimeCall(
-        "viewObjectValue",
-        [base, member(id("$errors"), "objectPrototype", span)],
-        span,
-      ),
-    );
-    const first = temporary(member(cache, "first", span));
-    const layout = temporary(
-      optionalMember(object, "internalPropertyLayout", span),
-    );
-    const holder = own ? layout : temporary(layout, false, true);
-    if (!own) {
-      const expected = temporary(member(first, "holder", span));
-      const start = statements.length;
-      const prototype = temporary(optionalMember(object, "prototype", span));
-      const inherited = temporary(
-        optionalMember(prototype, "internalPropertyLayout", span),
-      );
-      const matches: Expression = {
-        ...at(span),
-        kind: "binary",
-        operator: "&&",
-        left: {
-          ...at(span),
-          kind: "binary",
-          operator: "!==",
-          left: inherited,
-          right: without,
-        },
-        right: {
-          ...at(span),
-          kind: "binary",
-          operator: "===",
-          left: member(inherited, "shape", span),
-          right: expected,
-        },
-      };
-      expression({
-        ...at(span),
-        kind: "assignment",
-        target: holder,
-        value: scalarBranch(matches, inherited, without, span),
-      });
-      const consequent: BlockStatement = {
-        ...at(span),
-        kind: "block",
-        statements: statements.splice(start),
-      };
-      statements.push({
-        ...at(span),
-        kind: "if",
-        test: {
-          ...at(span),
-          kind: "binary",
-          operator: "!==",
-          left: expected,
-          right: without,
-        },
-        consequent,
-        alternate: undefined,
-      });
-    }
-    const matchingShape: Expression = {
-      ...at(span),
-      kind: "binary",
-      operator: "&&",
-      left: {
-        ...at(span),
-        kind: "binary",
-        operator: "!==",
-        left: layout,
-        right: without,
-      },
-      right: {
-        ...at(span),
-        kind: "binary",
-        operator: "===",
-        left: member(layout, "shape", span),
-        right: member(cache, "inlineReceiver", span),
-      },
-    };
-    const present: Expression = own
-      ? matchingShape
-      : {
-          ...at(span),
-          kind: "binary",
-          operator: "&&",
-          left: matchingShape,
-          right: {
-            ...at(span),
-            kind: "binary",
-            operator: "!==",
-            left: holder,
-            right: without,
-          },
-        };
-    return temporary(
-      scalarBranch(
-        present,
-        {
-          ...at(span),
-          kind: "index",
-          object: member(holder, "cells", span),
-          index: member(first, "offset", span),
-        },
-        without,
-        span,
-      ),
-    );
-  }
-  function dataCacheHit(cell: Expression, span: Span): Expression {
+  ): Statement {
     return {
       ...at(span),
-      kind: "binary",
-      operator: "&&",
-      left: {
+      kind: "if",
+      test: runtimeCall("absentPropertyValue", [id(value, span), cache], span),
+      consequent: fallback,
+      alternate: undefined,
+    };
+  }
+  function assignTo(name: string, value: Expression, span: Span): Statement {
+    return {
+      ...at(span),
+      kind: "expression",
+      expression: {
         ...at(span),
-        kind: "binary",
-        operator: "!==",
-        left: cell,
-        right: id("undefined", span),
-      },
-      right: {
-        ...at(span),
-        kind: "unary",
-        operator: "!",
-        operand: member(cell, "accessor", span),
+        kind: "assignment",
+        target: id(name, span),
+        value,
       },
     };
   }
+  /** `method` reads a callee (`o.m()`), served from the prototype. */
   function readProperty(
     base: Expression,
     key: Expression,
     span: Span,
+    method: boolean = false,
   ): Expression {
     const cached = key.kind === "string" && !compactResults;
     const object =
@@ -2917,7 +3124,7 @@ function lowerScriptEntry(
     ];
     const cache =
       cached && key.kind === "string"
-        ? propertyCache(key.value, span)
+        ? propertyCache(key.value, span, method)
         : undefined;
     if (cache !== undefined) args.push(cache);
     const read = runtimeCall(
@@ -2925,85 +3132,328 @@ function lowerScriptEntry(
       args,
       span,
     );
-    if (cached && key.kind === "string" && key.value === "length")
-      return temporary(
-        scalarBranch(
-          categoryOperand(base, "string", span),
-          member(base, "length", span),
-          read,
-          span,
-        ),
-        true,
-      );
+    if (cached && key.kind === "string" && key.value === "length") {
+      // A String's length; for other values, inline packed array length (IR
+      // element-length, zero FP registers) with fused miss to the cached read.
+      usesElementAccess = true;
+      const result = temporary(id("undefined", span), true, true);
+      if (result.kind !== "identifier")
+        throw "element length temporary invariant";
+      const name = result.name;
+      const fallback = nestedStatements(() => {
+        statements.push(
+          assignTo(
+            name,
+            runtimeCall("packedArrayLength", [id("$errors"), object], span),
+            span,
+          ),
+        );
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: runtimeCall(
+            "absentElementValue",
+            [id(name, span), id("$errors")],
+            span,
+          ),
+          consequent: assignTo(name, read, span),
+          alternate: undefined,
+        });
+      });
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: categoryOperand(base, "string", span),
+        consequent: assignTo(name, member(base, "length", span), span),
+        alternate: block(fallback, span),
+      });
+      return id(name, span);
+    }
     if (cache === undefined) return temporary(read, true);
-    const cell = inlineCachedPropertyCell(object, cache, false, span);
-    return temporary(
-      scalarBranch(
-        dataCacheHit(cell, span),
-        member(cell, "value", span),
-        read,
+    // The site's inline value (IR property-load natively); a miss takes the
+    // runtime read, which refills the site. A method call (`o.m()`) reads
+    // the inherited entries, which hold the receiver's own methods too.
+    const result = temporary(
+      runtimeCall(
+        method ? "cachedInheritedPropertyValue" : "cachedOwnPropertyValue",
+        [object, cache],
         span,
       ),
       true,
+      true,
+    );
+    if (result.kind !== "identifier")
+      throw "property cache temporary invariant";
+    const name = result.name;
+    if (method) {
+      statements.push(ifAbsent(name, cache, assignTo(name, read, span), span));
+    } else {
+      // On own-entry miss, also probe the site's direct inherited entries
+      // inline before falling back to the runtime: own hits pay zero overhead
+      // (both property-loads fuse cleanly with their miss tests), while
+      // inherited data and method reads hit inline.
+      const inheritedProbe = block(
+        [
+          assignTo(
+            name,
+            runtimeCall("cachedInheritedPropertyValue", [object, cache], span),
+            span,
+          ),
+          ifAbsent(name, cache, assignTo(name, read, span), span),
+        ],
+        span,
+      );
+      statements.push(ifAbsent(name, cache, inheritedProbe, span));
+    }
+    return id(name, span);
+  }
+  /** The statements `build` emits, removed from the current list so the
+   * caller can nest them. Temporaries they declare are block scoped. */
+  function nestedStatements(build: () => void): Statement[] {
+    const mark = statements.length;
+    build();
+    return statements.splice(mark);
+  }
+  function block(nested: Statement[], span: Span): Statement {
+    return { ...at(span), kind: "block", statements: nested };
+  }
+  /** The element index of a computed key: the key when it is a Number,
+   * else -1, which no element has. */
+  function elementIndex(key: Expression, span: Span): Expression {
+    return scalarBranch(
+      numberOperand(key, span),
+      { ...key },
+      scalarNumber(-1, span),
+      span,
     );
   }
-  function readComputedProperty(
+  /** `name = ` the packed number element (IR element-load natively), else
+   * `fallback()`. */
+  function readNumberElement(
+    name: string,
+    base: Expression,
+    key: Expression,
+    fallback: () => void,
+    span: Span,
+  ): void {
+    usesElementAccess = true;
+    statements.push(
+      assignTo(
+        name,
+        runtimeCall(
+          "packedNumberElement",
+          [id("$errors"), base, elementIndex(key, span)],
+          span,
+        ),
+        span,
+      ),
+    );
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: runtimeCall(
+        "absentElementValue",
+        [id(name, span), id("$errors")],
+        span,
+      ),
+      consequent: block(nestedStatements(fallback), span),
+      alternate: undefined,
+    });
+  }
+  /** The array index of a computed key (else -1) and, when it names a packed
+   * general element, that element's cell (else undefined): only the standard
+   * Array exotic owns packed elements, and the count check excludes holes. */
+  function packedGeneralCell(
     base: Expression,
     key: Expression,
     span: Span,
-  ): Expression {
-    const slow = runtimeCall(
-      "readObjectValuePropertyKey",
-      [base, key, member(id("$global"), "hooks", span), id("$errors")],
-      span,
-    );
-    if (compactResults) return temporary(slow, true);
-    const zero = scalarNumber(0, span);
+  ): {
+    readonly index: Expression;
+    readonly valid: Expression;
+    readonly cell: Expression;
+  } {
     const index = temporary(
       scalarBranch(
         numberOperand(key, span),
-        scalarBinary(">>>", key, zero, span),
+        scalarBinary(">>>", key, scalarNumber(0, span), span),
         scalarNumber(-1, span),
         span,
       ),
     );
-    const object = temporary(
+    // Guard with typeof key === "number" so TypeScript narrows `key` to number
+    // and emits a typed numeric comparison instead of dynamic `===`.
+    const valid = temporary(
+      scalarBinary(
+        "&&",
+        numberOperand(key, span),
+        scalarBinary("===", { ...key }, index, span),
+        span,
+      ),
+    );
+    const values = temporary(
       scalarBranch(
-        scalarBinary(
-          "&&",
-          scalarBinary(">=", index, zero, span),
-          scalarBinary("===", key, index, span),
-          span,
-        ),
-        runtimeCall(
-          "viewObjectValue",
-          [base, member(id("$errors"), "objectPrototype", span)],
+        valid,
+        optionalMember(
+          optionalMember(
+            runtimeCall("viewTypeofObject", [base], span),
+            "internalArrayElements",
+            span,
+          ),
+          "values",
           span,
         ),
         id("undefined", span),
         span,
       ),
     );
-    const elements = temporary(
-      optionalMember(object, "internalArrayElements", span),
-    );
-    // Only the standard Array exotic owns packed elements. The length check
-    // excludes holes so the ordinary path can still observe inherited accessors.
-    const packed = (list: Expression, fallback: Expression): Expression =>
+    const cell = temporary(
       scalarBranch(
         scalarBinary(
           "&&",
-          scalarBinary("!==", list, id("undefined", span), span),
-          scalarBinary("<", index, member(list, "length", span), span),
+          scalarBinary("!==", values, id("undefined", span), span),
+          scalarBinary("<", index, member(values, "length", span), span),
           span,
         ),
-        { ...at(span), kind: "index", object: list, index },
-        fallback,
+        { ...at(span), kind: "index", object: values, index },
+        id("undefined", span),
+        span,
+      ),
+    );
+    return { index, valid, cell };
+  }
+  /** Overwrite the packed number element (IR element-store natively) or a
+   * packed general element's cell, else PutValue through the runtime (which
+   * also appends at the count in place when nothing can observe it). A key
+   * that is not a Number never reaches the store; ToPropertyKey of a Number,
+   * String or Symbol calls no user code, so a retained key converted by
+   * GetValue converts again unobservably. */
+  function writeElement(
+    base: Expression,
+    key: Expression,
+    value: Expression,
+    span: Span,
+  ): void {
+    usesElementAccess = true;
+    usesIndexedWrites = true;
+    // A packed general element is a writable data property below the count.
+    const general = nestedStatements(() => {
+      const cell = packedGeneralCell(base, key, span).cell;
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: scalarBinary("!==", cell, id("undefined", span), span),
+        consequent: {
+          ...at(span),
+          kind: "expression",
+          expression: {
+            ...at(span),
+            kind: "assignment",
+            target: member(cell, "value", span),
+            value: { ...value },
+          },
+        },
+        alternate: {
+          ...at(span),
+          kind: "expression",
+          expression: runtimeCall(
+            "writeObjectValuePropertyKey",
+            [
+              { ...base },
+              { ...key },
+              { ...value },
+              { ...at(span), kind: "boolean", value: strict },
+              member(id("$global"), "hooks", span),
+              id("$errors"),
+            ],
+            span,
+          ),
+        },
+      });
+    });
+    // The store's own result selects the branch, so a miss jumps straight to
+    // the general path natively (as for cached property stores).
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: runtimeCall(
+        "storePackedNumberElement",
+        [id("$errors"), base, elementIndex(key, span), value],
+        span,
+      ),
+      consequent: block([], span),
+      alternate: block(general, span),
+    });
+  }
+  function readComputedProperty(
+    base: Expression,
+    key: Expression,
+    span: Span,
+  ): Expression {
+    const slow = (): Expression =>
+      runtimeCall(
+        "readObjectValuePropertyKey",
+        [
+          { ...base },
+          { ...key },
+          member(id("$global"), "hooks", span),
+          id("$errors"),
+        ],
         span,
       );
-    const numbers = temporary(optionalMember(elements, "numbers", span));
-    const values = temporary(optionalMember(elements, "values", span));
-    return temporary(packed(numbers, packed(values, slow)), true);
+    if (compactResults) return temporary(slow(), true);
+    const result = temporary(id("undefined", span), true, true);
+    if (result.kind !== "identifier") throw "element read temporary invariant";
+    const name = result.name;
+    // Else a String's code unit (an own property of the String object below
+    // its length), or a packed general element's cell. Holes and indices past
+    // the length take the ordinary path, which observes inherited properties.
+    readNumberElement(
+      name,
+      base,
+      key,
+      () => {
+        const general = packedGeneralCell(base, key, span);
+        const index = general.index,
+          valid = general.valid,
+          cell = general.cell;
+        const element = scalarBranch(
+          scalarBinary("!==", cell, id("undefined", span), span),
+          member(cell, "value", span),
+          slow(),
+          span,
+        );
+        const text = base.kind === "identifier" ? base : temporary(base, true);
+        statements.push(
+          assignTo(
+            name,
+            scalarBranch(
+              scalarBinary(
+                "&&",
+                categoryOperand(text, "string", span),
+                scalarBinary(
+                  "&&",
+                  { ...valid },
+                  scalarBinary("<", index, member(text, "length", span), span),
+                  span,
+                ),
+                span,
+              ),
+              {
+                ...at(span),
+                kind: "call",
+                callee: member({ ...text }, "charAt", span),
+                arguments: [{ ...index }],
+              },
+              element,
+              span,
+            ),
+            span,
+          ),
+        );
+      },
+      span,
+    );
+    return id(name, span);
   }
   function typedList(elementType: string, span: Span): Expression {
     return temporary(
@@ -3053,6 +3503,37 @@ function lowerScriptEntry(
           property: undefined,
           fixedBinding,
         };
+      if (!compactResults && !hasBindingContract(target)) {
+        const args = withGlobalIdentifierCache(
+          [
+            scope,
+            text(target.name, target),
+            { ...at(target), kind: "boolean", value: strict },
+          ],
+          target,
+        );
+        const start = args[0],
+          cache = args[3];
+        if (start !== undefined && cache !== undefined) {
+          const cell = temporary(
+            call("cachedGlobalIdentifierCell", [start, cache], target),
+          );
+          const ref = temporary(
+            scalarBranch(
+              scalarBinary("!==", cell, id("undefined", target), target),
+              id("undefined", target),
+              call("resolveBinding", args, target),
+              target,
+            ),
+          );
+          return {
+            ...at(target),
+            base: ref,
+            property: undefined,
+            globalCell: { start, cache, cell, name: target.name },
+          };
+        }
+      }
       return {
         ...at(target),
         base: reference(target.name, target),
@@ -3157,7 +3638,11 @@ function lowerScriptEntry(
       });
     return key;
   }
-  function readAssignment(target: AssignmentReference): Expression {
+  /** `method` reads a callee (`o.m()`), see readProperty. */
+  function readAssignment(
+    target: AssignmentReference,
+    method: boolean = false,
+  ): Expression {
     if (target.invalid) return id("undefined");
     if (target.local) {
       checkSlotInitialized(target);
@@ -3169,6 +3654,47 @@ function lowerScriptEntry(
         target,
       );
       return temporary(member(target.base, "value", target), true);
+    }
+    const gc = target.globalCell;
+    if (gc !== undefined) {
+      const result = temporary(id("undefined", target), true, true);
+      if (result.kind !== "identifier")
+        throw "global cell read temporary invariant";
+      statements.push({
+        ...at(target),
+        kind: "if",
+        test: scalarBinary("!==", gc.cell, id("undefined", target), target),
+        consequent: assignTo(
+          result.name,
+          member(gc.cell, "value", target),
+          target,
+        ),
+        alternate: block(
+          nestedStatements(() => {
+            statements.push({
+              ...at(target),
+              kind: "if",
+              test: scalarBinary(
+                "!==",
+                target.base,
+                id("undefined", target),
+                target,
+              ),
+              consequent: block(
+                nestedStatements(() => {
+                  statements.push(
+                    assignTo(result.name, read(target.base, target), target),
+                  );
+                }),
+                target,
+              ),
+              alternate: undefined,
+            });
+          }),
+          target,
+        ),
+      });
+      return result;
     }
     const property = target.property;
     const superReceiver = target.superReceiver;
@@ -3187,9 +3713,61 @@ function lowerScriptEntry(
       target.retainedKey !== true
     )
       return readComputedProperty(target.base, property, target);
+    if (
+      superReceiver === undefined &&
+      property.kind !== "string" &&
+      !compactResults
+    ) {
+      // A retained Number key needs no conversion record: ToPropertyKey of
+      // a Number calls no user code, so PutValue converts it again.
+      const result = temporary(id("undefined", target), true, true);
+      if (result.kind !== "identifier")
+        throw "element read temporary invariant";
+      const name = result.name;
+      readNumberElement(
+        name,
+        target.base,
+        property,
+        () =>
+          statements.push({
+            ...at(target),
+            kind: "if",
+            test: numberOperand(property, target),
+            consequent: assignTo(
+              name,
+              runtimeCall(
+                "readObjectValuePropertyKey",
+                [
+                  target.base,
+                  property,
+                  member(id("$global"), "hooks", target),
+                  id("$errors"),
+                ],
+                target,
+              ),
+              target,
+            ),
+            alternate: block(
+              nestedStatements(() => {
+                const key = referenceKey(target, property, target, true);
+                statements.push(
+                  assignTo(
+                    name,
+                    readProperty(target.base, key, target, method),
+                    target,
+                  ),
+                );
+              }),
+              target,
+            ),
+          }),
+        target,
+      );
+      return id(name, target);
+    }
     const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
-      return readProperty(target.base, key, target);
+      return readProperty(target.base, key, target, method);
     return checkedRuntimeValue(
       "getObjectValuePropertyWithReceiver",
       [
@@ -3239,6 +3817,100 @@ function lowerScriptEntry(
         );
       return;
     }
+    const gc = target.globalCell;
+    if (gc !== undefined) {
+      const assignedValue = temporary(assigned, true);
+      const slowHit = nestedStatements(() => {
+        check(
+          temporary(
+            call(
+              "setGlobalBinding",
+              [
+                member(gc.start, "global", target),
+                text(gc.name, target),
+                assignedValue,
+                { ...at(target), kind: "boolean", value: strict },
+              ],
+              target,
+            ),
+          ),
+          target,
+        );
+      });
+      const hitBranch = nestedStatements(() => {
+        const live = temporary(
+          call(
+            "cachedGlobalIdentifierCell",
+            [{ ...gc.start }, { ...gc.cache }],
+            target,
+          ),
+        );
+        statements.push({
+          ...at(target),
+          kind: "if",
+          test: scalarBinary(
+            "&&",
+            scalarBinary("!==", live, id("undefined", target), target),
+            scalarBinary(
+              "&&",
+              member(live, "writable", target),
+              negate(
+                member(
+                  member(member(gc.start, "global", target), "object", target),
+                  "internalUsedAsPrototype",
+                  target,
+                ),
+                target,
+              ),
+              target,
+            ),
+            target,
+          ),
+          consequent: {
+            ...at(target),
+            kind: "expression",
+            expression: {
+              ...at(target),
+              kind: "assignment",
+              target: member(live, "value", target),
+              value: assignedValue,
+            },
+          },
+          alternate: block(slowHit, target),
+        });
+      });
+      const missBranch = nestedStatements(() => {
+        statements.push({
+          ...at(target),
+          kind: "if",
+          test: scalarBinary(
+            "!==",
+            target.base,
+            id("undefined", target),
+            target,
+          ),
+          consequent: block(
+            nestedStatements(() => {
+              checkedRuntimeCompletion(
+                "putBindingReference",
+                [target.base, assignedValue],
+                target,
+              );
+            }),
+            target,
+          ),
+          alternate: undefined,
+        });
+      });
+      statements.push({
+        ...at(target),
+        kind: "if",
+        test: scalarBinary("!==", gc.cell, id("undefined", target), target),
+        consequent: block(hitBranch, target),
+        alternate: block(missBranch, target),
+      });
+      return;
+    }
     const property = target.property;
     const superReceiver = target.superReceiver;
     const privateKey = target.privateName;
@@ -3268,24 +3940,9 @@ function lowerScriptEntry(
     if (
       superReceiver === undefined &&
       property.kind !== "string" &&
-      target.retainedKey !== true &&
       !compactResults
     ) {
-      usesIndexedWrites = true;
-      expression(
-        runtimeCall(
-          "writeObjectValuePropertyKey",
-          [
-            target.base,
-            property,
-            assigned,
-            { ...at(target), kind: "boolean", value: strict },
-            member(id("$global"), "hooks", target),
-            id("$errors"),
-          ],
-          target,
-        ),
-      );
+      writeElement(target.base, property, temporary(assigned, true), target);
       return;
     }
     const key = referenceKey(target, property, target, false);
@@ -3305,28 +3962,18 @@ function lowerScriptEntry(
       const value = temporary(assigned, true);
       args[2] = value;
       args.push(cache);
-      const cell = inlineCachedPropertyCell(target.base, cache, true, target);
-      const fast: Expression = {
-        ...at(target),
-        kind: "binary",
-        operator: "&&",
-        left: dataCacheHit(cell, target),
-        right: member(cell, "writable", target),
-      };
+      // The site's store cache (IR property-store natively): a cached
+      // writable property or transition; otherwise the runtime write,
+      // which refills the site.
       statements.push({
         ...at(target),
         kind: "if",
-        test: fast,
-        consequent: {
-          ...at(target),
-          kind: "expression",
-          expression: {
-            ...at(target),
-            kind: "assignment",
-            target: member(cell, "value", target),
-            value,
-          },
-        },
+        test: runtimeCall(
+          "cachedPropertyStore",
+          [target.base, value, cache],
+          target,
+        ),
+        consequent: { ...at(target), kind: "block", statements: [] },
         alternate: {
           ...at(target),
           kind: "expression",
@@ -3409,6 +4056,44 @@ function lowerScriptEntry(
       };
     }
     if (node.kind === "member" || node.kind === "index") {
+      // For `obj.m.apply(...)` / `obj.m.call(...)`, `obj.m` is a method lookup
+      // so probe its inherited entries directly rather than own entries first.
+      if (
+        !checkMethod &&
+        node.kind === "member" &&
+        !node.optional &&
+        !node.private &&
+        (node.property === "apply" || node.property === "call")
+      ) {
+        const forwardingReceiver = ungroup(node.object);
+        if (
+          forwardingReceiver.kind === "member" &&
+          !forwardingReceiver.optional &&
+          !forwardingReceiver.private &&
+          forwardingReceiver.object.kind !== "super"
+        ) {
+          const receiverBase = temporary(
+            value(forwardingReceiver.object),
+            true,
+          );
+          const targetMethod = readProperty(
+            receiverBase,
+            text(forwardingReceiver.property, forwardingReceiver),
+            forwardingReceiver,
+            true,
+          );
+          return {
+            value: readProperty(
+              targetMethod,
+              text(node.property, node),
+              node,
+              true,
+            ),
+            receiver: targetMethod,
+            contract: undefined,
+          };
+        }
+      }
       const reference = captureAssignment(node);
       const property = reference.property;
       if (checkMethod && property !== undefined) {
@@ -3442,7 +4127,7 @@ function lowerScriptEntry(
         };
       }
       return {
-        value: readAssignment(reference),
+        value: readAssignment(reference, true),
         receiver: reference.superReceiver ?? reference.base,
         contract: undefined,
       };
@@ -3535,30 +4220,469 @@ function lowerScriptEntry(
         named("DirectEvalSite"),
       );
     }
-    const result = temporary(
+    const candidate = (tail: boolean): Expression => {
+      const result = temporary(
+        runtimeCall(
+          tail ? "callEvalTailCandidate" : "callEvalCandidate",
+          [
+            callee,
+            callReceiver,
+            list,
+            member(id("$global"), "object", span),
+            id("$errors"),
+            { ...at(span), kind: "number", value: flags, raw: String(flags) },
+            site,
+          ],
+          span,
+        ),
+      );
+      check(member(result, "error", span), span);
+      return member(result, "value", span);
+    };
+    if (!isTailCall(span)) return candidate(false);
+    // A native entry called with actual operands has no trampoline.
+    const listName = nativeListName;
+    if (listName === undefined) return candidate(true);
+    return selectByInvocation(
+      listName,
+      (): Expression => candidate(true),
+      (): Expression => candidate(false),
+      span,
+    );
+  }
+  /** The native script entry of an evaluated callee and the test that
+   * selects it: an entry exists, the callee runs in the caller's execution
+   * context and, to construct, it is an ordinary constructor. Functions
+   * share the context record they were created in
+   * (functionExecutionContext), so an identity check usually proves the
+   * realm and Script or module match. */
+  function scriptEntryGuard(
+    target: Expression,
+    construct: boolean,
+    span: Span,
+  ): {
+    readonly entry: Expression;
+    readonly accepts: Expression;
+  } {
+    const entry = temporary(
       runtimeCall(
-        isTailCall(span) ? "callEvalTailCandidate" : "callEvalCandidate",
+        construct ? "resolveScriptConstructEntry" : "resolveScriptCallEntry",
+        [target, id("$errors", span)],
+        span,
+      ),
+    );
+    const accepts: Expression = {
+      ...at(span),
+      kind: "binary",
+      operator: "!==",
+      left: entry,
+      right: id("undefined", span),
+    };
+    return { entry, accepts };
+  }
+  /** `new` of an evaluated callee with evaluated actuals. An ordinary
+   * constructor in the caller's context runs its native entry directly:
+   * OrdinaryCreateFromConstructor, then the body with the new object as its
+   * receiver and the callee as new.target; an object result replaces the
+   * new object. Any other target takes the general [[Construct]]. */
+  function constructNative(
+    target: Expression,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const actuals = args.map((argument) => {
+      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return temporary(value(argument), true);
+    });
+    const { entry, accepts } = scriptEntryGuard(target, true, span);
+    const result = uninitializedGeneralTemporary(span);
+    const general = statements.length;
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: checkedRuntimeValue(
+        "constructObjectValue",
         [
-          callee,
-          callReceiver,
-          list,
+          target,
+          { ...at(span), kind: "array", elements: actuals },
           member(id("$global"), "object", span),
-          id("$errors"),
-          { ...at(span), kind: "number", value: flags, raw: String(flags) },
-          site,
+        ],
+        span,
+      ),
+    });
+    const alternate: BlockStatement = {
+      ...at(span),
+      kind: "block",
+      statements: statements.splice(general),
+    };
+    const direct = statements.length;
+    // An ordinary constructor's "prototype" is a non-configurable data
+    // property: the site's cached read is its Get.
+    const instance = temporary(
+      runtimeCall(
+        "createSourceInstance",
+        [
+          readProperty(target, text("prototype", span), span),
+          id("$errors", span),
         ],
         span,
       ),
     );
-    check(member(result, "error", span), span);
-    return member(result, "value", span);
+    const operands: Expression[] = [
+      target,
+      instance,
+      target,
+      id("undefined", span),
+    ];
+    for (const actual of actuals) {
+      if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      operands.push(actual);
+    }
+    const returned = temporary({
+      ...at(span),
+      kind: "call",
+      scriptCall: true,
+      callee: entry,
+      arguments: operands,
+    });
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: {
+        ...at(span),
+        kind: "conditional",
+        test: negate(
+          runtimeCall(
+            "isOrdinaryObject",
+            [returned, member(id("$errors", span), "objectPrototype", span)],
+            span,
+          ),
+          span,
+        ),
+        consequent: instance,
+        alternate: returned,
+      },
+    });
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: accepts,
+      consequent: {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(direct),
+      },
+      alternate,
+    });
+    return result;
   }
+  /** `f.apply(thisArg, arguments)` in a forwarding entry. When `apply` is
+   * the intrinsic and `f` a native entry in the caller's context, the call
+   * passes the arguments object's elements (mapped parameters' current
+   * values, then the remaining actuals) as actual operands, one call per
+   * count up to the register actuals, without creating the object. Any
+   * other case creates it and calls `apply` as written. In tail position
+   * the general call keeps the trampoline's bounded stack. */
+  function invokeForwardedApply(
+    apply: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    forwarding: ArgumentsForwarding,
+    span: Span,
+  ): Expression {
+    const target = temporary(receiver, true);
+    const first = args[0],
+      second = args[1];
+    if (first === undefined || second === undefined)
+      throw "FORWARDING_OPERAND_INVARIANT";
+    const thisArg = temporary(value(first), true);
+    const result = temporary(id("undefined", span), true, true);
+    const general = (): BlockStatement => {
+      const begin = statements.length;
+      forwarding.materialize();
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: invokeList(
+          apply,
+          target,
+          { ...at(span), kind: "array", elements: [thisArg, value(second)] },
+          span,
+        ),
+      });
+      return {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(begin),
+      };
+    };
+    if (isTailCall(span) || !nativeScriptCalls || compactResults) {
+      const block = general();
+      for (const statement of block.statements) {
+        if (statement === undefined) throw "FORWARDING_STATEMENT_INVARIANT";
+        statements.push(statement);
+      }
+      return result;
+    }
+    usesNativeScriptCalls = true;
+    const { entry, accepts } = scriptEntryGuard(target, false, span);
+    const count = temporary(forwarding.count());
+    const forwardedValue = (index: number): Expression => {
+      const parameter = forwarding.mapped[index];
+      return parameter === undefined
+        ? forwarding.actual(index)
+        : identifierValue(parameter, span);
+    };
+    // Counts above the register actuals take the general call.
+    let chain: Statement = general();
+    for (let size: number = scriptRegisterActuals; size >= 0; size--) {
+      const begin = statements.length;
+      const operands: Expression[] = [
+        target,
+        thisArg,
+        id("undefined", span),
+        id("undefined", span),
+      ];
+      for (let index = 0; index < size; index++)
+        operands.push(temporary(forwardedValue(index), true));
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: {
+          ...at(span),
+          kind: "call",
+          scriptCall: true,
+          callee: entry,
+          arguments: operands,
+        },
+      });
+      chain = {
+        ...at(span),
+        kind: "if",
+        test: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: count,
+          right: scalarNumber(size, span),
+        },
+        consequent: {
+          ...at(span),
+          kind: "block",
+          statements: statements.splice(begin),
+        },
+        alternate: chain,
+      };
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: apply,
+          right: member(id("$errors", span), "functionApply", span),
+        },
+        right: accepts,
+      },
+      consequent: chain,
+      alternate: general(),
+    });
+    return result;
+  }
+  /** A direct call of `f.call(thisArg, ...args)` when the callee is the
+   * realm's %Function.prototype.call% and `f` has a native script entry in the
+   * current context. Avoids the builtin wrapper and argument-slice allocation;
+   * any other callee or target takes the ordinary call with the same evaluated
+   * operands. */
+  function invokeForwardedCall(
+    callMethod: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const target = temporary(receiver, true);
+    const actuals = args.map((argument) => {
+      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return temporary(value(argument), true);
+    });
+    const { entry, accepts } = scriptEntryGuard(target, false, span);
+    const result = uninitializedGeneralTemporary(span);
+    const start = statements.length;
+    const slow = invoke(callMethod, target, args, span, actuals);
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: slow,
+    });
+    const alternate: BlockStatement = {
+      ...at(span),
+      kind: "block",
+      statements: statements.splice(start),
+    };
+    const thisArg = actuals[0] ?? id("undefined", span);
+    const operands: Expression[] = [
+      target,
+      thisArg,
+      id("undefined", span),
+      id("undefined", span),
+    ];
+    for (let index = 1; index < actuals.length; index++) {
+      const actual = actuals[index];
+      if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      operands.push(actual);
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: callMethod,
+          right: member(id("$errors", span), "functionCall", span),
+        },
+        right: accepts,
+      },
+      consequent: {
+        ...at(span),
+        kind: "expression",
+        expression: {
+          ...at(span),
+          kind: "assignment",
+          target: result,
+          value: {
+            ...at(span),
+            kind: "call",
+            scriptCall: true,
+            callee: entry,
+            arguments: operands,
+          },
+        },
+      },
+      alternate,
+    });
+    return result;
+  }
+  /** A tail call in a native entry's body. Called with actual operands, a
+   * native callee in the caller's context replaces this entry's frame (a
+   * proper tail call); any other case takes invokeList's tail call. An
+   * entry called with a list always requests from its trampoline, so frames
+   * left by ordinary fallback calls never alternate with jumps. */
+  function invokeNativeTail(
+    callee: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    listName: string,
+    span: Span,
+    evaluated: readonly Expression[] | undefined = undefined,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const target = temporary(callee, true);
+    const thisValue = temporary(receiver, true);
+    const actuals = args.map((argument, index) => {
+      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      if (evaluated === undefined) return temporary(value(argument), true);
+      const known = evaluated[index];
+      if (known === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return known;
+    });
+    const { entry, accepts } = scriptEntryGuard(target, false, span);
+    const operands: Expression[] = [
+      target,
+      thisValue,
+      id("undefined", span),
+      id("undefined", span),
+    ];
+    for (const actual of actuals) {
+      if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      operands.push(actual);
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: id(listName, span),
+          right: id("undefined", span),
+        },
+        right: accepts,
+      },
+      consequent: {
+        ...at(span),
+        kind: "return",
+        expression: {
+          ...at(span),
+          kind: "call",
+          scriptCall: true,
+          scriptTail: true,
+          callee: entry,
+          arguments: operands,
+        },
+      },
+      alternate: undefined,
+    });
+    return invokeList(
+      target,
+      thisValue,
+      { ...at(span), kind: "array", elements: actuals },
+      span,
+    );
+  }
+  /** `evaluated`, when given, holds `args` already evaluated in order (no
+   * spread), as an inline builtin call's fallback passes them. */
   function invoke(
     callee: Expression,
     receiver: Expression,
     args: readonly Expression[],
     span: Span,
+    evaluated: readonly Expression[] | undefined = undefined,
   ): Expression {
+    const argumentValue = (argument: Expression, index: number): Expression => {
+      if (evaluated === undefined) return temporary(value(argument), true);
+      const known = evaluated[index];
+      if (known === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return known;
+    };
+    const listName = nativeListName;
+    if (
+      nativeScriptCalls &&
+      !compactResults &&
+      listName !== undefined &&
+      isTailCall(span) &&
+      args.length <= scriptRegisterActuals &&
+      !args.some((argument) => argument?.kind === "spread")
+    )
+      return invokeNativeTail(
+        callee,
+        receiver,
+        args,
+        listName,
+        span,
+        evaluated,
+      );
     if (
       nativeScriptCalls &&
       !compactResults &&
@@ -3568,77 +4692,12 @@ function lowerScriptEntry(
       usesNativeScriptCalls = true;
       const target = temporary(callee, true);
       const thisValue = temporary(receiver, true);
-      const actuals = args.map((argument) => {
+      const actuals = args.map((argument, index) => {
         if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-        return temporary(value(argument), true);
+        return argumentValue(argument, index);
       });
-      const errors = id("$errors", span);
-      const object = temporary(
-        runtimeCall(
-          "viewObjectValue",
-          [target, member(errors, "objectPrototype", span)],
-          span,
-        ),
-      );
-      const slot = temporary({
-        ...at(span),
-        kind: "member",
-        object,
-        property: "internalRegisterCall",
-        optional: true,
-      });
-      const entry = temporary({
-        ...at(span),
-        kind: "member",
-        object: slot,
-        property: "scriptInvoke",
-        optional: true,
-      });
-      const active = temporary(
-        member(member(errors, "agent", span), "activeContext", span),
-      );
-      const context = member(slot, "context", span);
-      let accepts: Expression = {
-        ...at(span),
-        kind: "binary",
-        operator: "!==",
-        left: entry,
-        right: id("undefined", span),
-      };
-      for (const left of [slot, active]) {
-        if (left === undefined) throw "SCRIPT_NATIVE_GUARD_INVARIANT";
-        accepts = {
-          ...at(span),
-          kind: "binary",
-          operator: "&&",
-          left: accepts,
-          right: {
-            ...at(span),
-            kind: "binary",
-            operator: "!==",
-            left,
-            right: id("undefined", span),
-          },
-        };
-      }
-      for (const property of ["realm", "scriptOrModule"]) {
-        if (property === undefined) throw "SCRIPT_CONTEXT_FIELD_INVARIANT";
-        const test: Expression = {
-          ...at(span),
-          kind: "binary",
-          operator: "===",
-          left: member(active, property, span),
-          right: member(context, property, span),
-        };
-        accepts = {
-          ...at(span),
-          kind: "binary",
-          operator: "&&",
-          left: accepts,
-          right: test,
-        };
-      }
-      const result = temporary(id("undefined", span), true, true);
+      const { entry, accepts } = scriptEntryGuard(target, false, span);
+      const result = uninitializedGeneralTemporary(span);
       const start = statements.length;
       const slow = invokeList(
         target,
@@ -3710,9 +4769,10 @@ function lowerScriptEntry(
         callee,
         receiver,
       ];
-      for (const argument of args) {
+      for (let index = 0; index < args.length; index++) {
+        const argument = args[index];
         if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-        operands.push(temporary(value(argument), true));
+        operands.push(argumentValue(argument, index));
       }
       const width = wide ? 6 : 2;
       while (operands.length < 4 + width) operands.push(id("undefined", span));
@@ -3725,6 +4785,8 @@ function lowerScriptEntry(
         true,
       );
     }
+    if (evaluated !== undefined)
+      return invokePrepared(callee, receiver, evaluated, span);
     return invokeList(callee, receiver, argumentList(args, span), span);
   }
   function invokeNumericLeaf(
@@ -3801,6 +4863,541 @@ function lowerScriptEntry(
     });
     return result;
   }
+  /** A call of a builtin performed inline (see js-runtime
+   * intrinsic-functions.ts): when the callee is the realm's own function and
+   * the evaluated operands have the inline form's types, the typed operation
+   * the builtin itself performs; otherwise the ordinary call with the same
+   * operands. The callee's syntax only selects which builtin to compare with;
+   * the identity compare decides. In tail position the ordinary call stays a
+   * tail call (as for invokeNumericLeaf). */
+  function invokeIntrinsic(
+    target: Expression,
+    callee: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression | undefined {
+    if (
+      compactResults ||
+      args.some((arg) => arg === undefined || arg.kind === "spread")
+    )
+      return undefined;
+    let name: string;
+    if (target.kind === "identifier") name = target.name;
+    else if (target.kind === "member" && !target.private && !target.optional)
+      name = target.property;
+    else return undefined;
+    const count = args.length;
+    let field: string | undefined = undefined;
+    let shape:
+      | "math"
+      | "number"
+      | "string"
+      | "map"
+      | "set"
+      | "has"
+      | "push"
+      | "pop"
+      | undefined = undefined;
+    let arity = 1;
+    if (target.kind === "identifier") {
+      if (name === "Number") {
+        field = "number";
+        shape = "number";
+      }
+    } else if (name === "abs") {
+      field = "mathAbs";
+      shape = "math";
+    } else if (name === "ceil") {
+      field = "mathCeil";
+      shape = "math";
+    } else if (name === "floor") {
+      field = "mathFloor";
+      shape = "math";
+    } else if (name === "trunc") {
+      field = "mathTrunc";
+      shape = "math";
+    } else if (name === "round") {
+      field = "mathRound";
+      shape = "math";
+    } else if (name === "sign") {
+      field = "mathSign";
+      shape = "math";
+    } else if (name === "sqrt") {
+      field = "mathSqrt";
+      shape = "math";
+    } else if (name === "clz32") {
+      field = "mathClz32";
+      shape = "math";
+    } else if (name === "min" || name === "max") {
+      field = name === "min" ? "mathMin" : "mathMax";
+      shape = "math";
+      arity = count >= 1 && count <= 4 ? count : 0;
+    } else if (name === "imul") {
+      field = "mathImul";
+      shape = "math";
+      arity = 2;
+    } else if (name === "charCodeAt" || name === "charAt") {
+      field = name === "charAt" ? "stringCharAt" : "stringCharCodeAt";
+      shape = "string";
+    } else if (name === "get") {
+      field = "mapGet";
+      shape = "map";
+    } else if (name === "set") {
+      field = "mapSet";
+      shape = "map";
+      arity = 2;
+    } else if (name === "has") shape = "has";
+    // push appends every argument; the inline form takes exactly one.
+    else if (name === "push" && count === 1) shape = "push";
+    else if (name === "pop" && count === 0) {
+      shape = "pop";
+      arity = 0;
+    } else if (name === "add") {
+      field = "setAdd";
+      shape = "set";
+    }
+    if (
+      shape === undefined ||
+      (shape !== "pop" && arity === 0) ||
+      count < arity
+    )
+      return undefined;
+    usesIntrinsicCalls = true;
+    const evaluated: Expression[] = [];
+    for (const arg of args) {
+      if (arg === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      evaluated.push(temporary(value(arg), true));
+    }
+    const intrinsics =
+      loopIntrinsics !== undefined
+        ? copyIdentifier(loopIntrinsics, span)
+        : member(id("$errors"), "intrinsicFunctions", span);
+    const and = (left: Expression, right: Expression): Expression =>
+      scalarBinary("&&", left, right, span);
+    // Compare the general callee directly against the realm's intrinsic
+    // reference: `target` is already an OrdinaryObject | undefined, so a tag-5
+    // pointer match avoids viewTypeofObject's descriptor check. A realm that
+    // never installed the builtin leaves its field undefined, which must miss.
+    const calleeValue =
+      callee.kind === "identifier" ? callee : temporary(callee, true);
+    const is = (property: string): Expression => {
+      const hoisted = loopIntrinsicFields.get(property);
+      const target =
+        hoisted !== undefined
+          ? copyIdentifier(hoisted, span)
+          : temporary(member(intrinsics, property, span));
+      return and(
+        scalarBinary("!==", target, id("undefined", span), span),
+        scalarBinary("===", copyIdentifier(calleeValue, span), target, span),
+      );
+    };
+    const operand = (index: number): Expression => {
+      const found = evaluated[index];
+      if (found === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return found;
+    };
+    const numbers = (test: Expression, through: number): Expression => {
+      for (let index = 0; index < through; index++)
+        test = and(test, numberOperand(operand(index), span));
+      return test;
+    };
+    const base =
+      receiver.kind === "identifier" ? receiver : temporary(receiver, true);
+    let test: Expression;
+    let inline: Expression | undefined = undefined;
+    let effect: Expression | undefined = undefined;
+    let consequentFn: ((resultName: string) => void) | undefined = undefined;
+    if (shape === "math") {
+      if (field === undefined) throw "intrinsic field invariant";
+      test = numbers(is(field), arity);
+      const operands: Expression[] = [];
+      for (let index = 0; index < arity; index++)
+        operands.push(copyIdentifier(operand(index), span));
+      inline = {
+        ...at(span),
+        kind: "call",
+        callee: member(id("Math", span), name, span),
+        arguments: operands,
+      };
+    } else if (shape === "push") {
+      // A packed append's new length, or -1 for the ordinary call.
+      // Try the zero-capture inlineable fast path first, falling back to
+      // scriptArrayPush for capacity growth, epoch validation, or non-numbers.
+      const length = temporary(scalarNumber(-1, span), false, true);
+      if (length.kind !== "identifier") throw "push temporary invariant";
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: is("arrayPush"),
+        consequent: block(
+          nestedStatements(() => {
+            const fast = temporary(
+              scalarBranch(
+                numberOperand(operand(0), span),
+                runtimeCall(
+                  "scriptArrayPushFast",
+                  [
+                    runtimeCall(
+                      "viewTypeofObject",
+                      [copyIdentifier(base, span)],
+                      span,
+                    ),
+                    copyIdentifier(operand(0), span),
+                    id("$errors"),
+                  ],
+                  span,
+                ),
+                scalarNumber(-1, span),
+                span,
+              ),
+            );
+            statements.push(
+              assignTo(
+                length.name,
+                scalarBranch(
+                  scalarBinary(">=", fast, scalarNumber(0, span), span),
+                  copyIdentifier(fast, span),
+                  runtimeCall(
+                    "scriptArrayPush",
+                    [
+                      copyIdentifier(base, span),
+                      copyIdentifier(operand(0), span),
+                      id("$errors"),
+                    ],
+                    span,
+                  ),
+                  span,
+                ),
+                span,
+              ),
+            );
+          }),
+          span,
+        ),
+        alternate: undefined,
+      });
+      test = scalarBinary(
+        ">=",
+        copyIdentifier(length, span),
+        scalarNumber(0, span),
+        span,
+      );
+      inline = copyIdentifier(length, span);
+    } else if (shape === "pop") {
+      // A dense packed pop's value, or the private miss sentinel for the
+      // ordinary call.
+      const miss = member(id("$errors"), "arrayPopMiss", span);
+      const popped = temporary(
+        scalarBranch(
+          is("arrayPop"),
+          runtimeCall(
+            "scriptArrayPop",
+            [copyIdentifier(base, span), id("$errors")],
+            span,
+          ),
+          miss,
+          span,
+        ),
+        true,
+      );
+      test = scalarBinary(
+        "!==",
+        popped,
+        member(id("$errors"), "arrayPopMiss", span),
+        span,
+      );
+      inline = copyIdentifier(popped, span);
+    } else if (shape === "number") {
+      test = numbers(is("number"), 1);
+      inline = copyIdentifier(operand(0), span);
+    } else if (shape === "string") {
+      if (field === undefined) throw "intrinsic field invariant";
+      test = numbers(and(is(field), categoryOperand(base, "string", span)), 1);
+      if (name === "charCodeAt") {
+        // For in-range indices (0 <= idx < 2^31), `idx | 0` matches
+        // ToIntegerOrInfinity(idx) and lets codegen emit inline UTF-16 ldrh.
+        const idx = operand(0);
+        inline = scalarBranch(
+          and(
+            scalarBinary(
+              ">=",
+              copyIdentifier(idx, span),
+              scalarNumber(0, span),
+              span,
+            ),
+            scalarBinary(
+              "<",
+              copyIdentifier(idx, span),
+              scalarNumber(2147483648, span),
+              span,
+            ),
+          ),
+          {
+            ...at(span),
+            kind: "call",
+            callee: member(copyIdentifier(base, span), name, span),
+            arguments: [
+              scalarBinary(
+                "|",
+                copyIdentifier(idx, span),
+                scalarNumber(0, span),
+                span,
+              ),
+            ],
+          },
+          {
+            ...at(span),
+            kind: "call",
+            callee: member(copyIdentifier(base, span), name, span),
+            arguments: [copyIdentifier(idx, span)],
+          },
+          span,
+        );
+      } else {
+        inline = {
+          ...at(span),
+          kind: "call",
+          callee: member(copyIdentifier(base, span), name, span),
+          arguments: [copyIdentifier(operand(0), span)],
+        };
+      }
+    } else {
+      // A collection method: the receiver's storage when the callee is the
+      // builtin and the receiver has that storage. When the enclosing loop
+      // preheader already hoisted the loop-invariant receiver's internal map/set
+      // storage (which is immutable once created), read it directly.
+      let hoistedCollection:
+        | {
+            readonly mapData: Expression | undefined;
+            readonly setData: Expression | undefined;
+          }
+        | undefined =
+        base.kind === "identifier" ? loopCollections.get(base.name) : undefined;
+      if (hoistedCollection === undefined && target.kind === "member") {
+        const targetObject = target.object;
+        if (targetObject.kind === "identifier") {
+          const binding = localBindingReferences.get(targetObject.start);
+          if (binding !== undefined) {
+            const slot = localSlots.get(binding);
+            if (slot !== undefined && slot.kind === "identifier")
+              hoistedCollection = loopCollections.get(slot.name);
+          }
+        }
+      }
+      let dataExpr: Expression;
+      let useFastCollection = false;
+      if (shape === "has") {
+        const isMap = temporary(is("mapHas"));
+        const isSet = temporary(
+          scalarBranch(
+            isMap,
+            { ...at(span), kind: "boolean", value: false },
+            is("setHas"),
+            span,
+          ),
+        );
+        const hoistedMap =
+          hoistedCollection !== undefined
+            ? hoistedCollection.mapData
+            : undefined;
+        const hoistedSet =
+          hoistedCollection !== undefined
+            ? hoistedCollection.setData
+            : undefined;
+        if (hoistedMap !== undefined && hoistedSet !== undefined) {
+          useFastCollection = true;
+          dataExpr = scalarBranch(
+            isMap,
+            copyIdentifier(hoistedMap, span),
+            scalarBranch(
+              isSet,
+              copyIdentifier(hoistedSet, span),
+              id("undefined", span),
+              span,
+            ),
+            span,
+          );
+        } else {
+          const view = runtimeCall("viewTypeofObject", [base], span);
+          const slots = temporary(
+            scalarBranch(
+              scalarBinary("||", isMap, isSet, span),
+              optionalMember(view, "internalExoticSlots", span),
+              id("undefined", span),
+              span,
+            ),
+          );
+          dataExpr = scalarBranch(
+            isMap,
+            optionalMember(slots, "internalMapData", span),
+            optionalMember(slots, "internalSetData", span),
+            span,
+          );
+        }
+      } else {
+        const hoistedSlot =
+          hoistedCollection === undefined
+            ? undefined
+            : shape === "set"
+              ? hoistedCollection.setData
+              : hoistedCollection.mapData;
+        if (hoistedSlot !== undefined) {
+          useFastCollection = true;
+          dataExpr = scalarBranch(
+            is(field ?? ""),
+            copyIdentifier(hoistedSlot, span),
+            id("undefined", span),
+            span,
+          );
+        } else {
+          const view = runtimeCall("viewTypeofObject", [base], span);
+          dataExpr = scalarBranch(
+            is(field ?? ""),
+            optionalMember(
+              optionalMember(view, "internalExoticSlots", span),
+              shape === "set" ? "internalSetData" : "internalMapData",
+              span,
+            ),
+            id("undefined", span),
+            span,
+          );
+        }
+      }
+      const data = temporary(dataExpr);
+      test = scalarBinary("!==", data, id("undefined", span), span);
+      const operation =
+        shape === "has"
+          ? "scriptMapHas"
+          : shape === "set"
+            ? "scriptSetAdd"
+            : name === "get"
+              ? "scriptMapGet"
+              : "scriptMapSet";
+      const operands: Expression[] = [copyIdentifier(data, span)];
+      for (let index = 0; index < arity; index++)
+        operands.push(copyIdentifier(operand(index), span));
+      const copyOperands = (): Expression[] =>
+        operands.map((arg) => copyIdentifier(arg, span));
+      if (useFastCollection && operation === "scriptMapHas") {
+        consequentFn = (resultName) => {
+          const fast = temporary(
+            scalarBranch(
+              numberOperand(operand(0), span),
+              runtimeCall("scriptMapHasFast", operands, span),
+              scalarNumber(-1, span),
+              span,
+            ),
+          );
+          statements.push(
+            assignTo(
+              resultName,
+              scalarBranch(
+                scalarBinary(">=", fast, scalarNumber(0, span), span),
+                scalarBinary(
+                  "===",
+                  copyIdentifier(fast, span),
+                  scalarNumber(1, span),
+                  span,
+                ),
+                runtimeCall("scriptMapHas", copyOperands(), span),
+                span,
+              ),
+              span,
+            ),
+          );
+        };
+      } else if (useFastCollection && operation === "scriptMapGet") {
+        consequentFn = (resultName) => {
+          const fast = temporary(
+            scalarBranch(
+              numberOperand(operand(0), span),
+              runtimeCall("scriptMapGetFast", operands, span),
+              id("undefined", span),
+              span,
+            ),
+          );
+          statements.push(
+            assignTo(
+              resultName,
+              scalarBranch(
+                scalarBinary("!==", fast, id("undefined", span), span),
+                copyIdentifier(fast, span),
+                runtimeCall("scriptMapGet", copyOperands(), span),
+                span,
+              ),
+              span,
+            ),
+          );
+        };
+      } else if (useFastCollection && operation === "scriptMapSet") {
+        effect = scalarBranch(
+          and(
+            and(
+              numberOperand(operand(0), span),
+              numberOperand(operand(1), span),
+            ),
+            runtimeCall("scriptMapSetFast", operands, span),
+          ),
+          { ...at(span), kind: "boolean", value: false },
+          runtimeCall("scriptMapSet", copyOperands(), span),
+          span,
+        );
+        inline = copyIdentifier(base, span);
+      } else if (useFastCollection && operation === "scriptSetAdd") {
+        effect = scalarBranch(
+          and(
+            numberOperand(operand(0), span),
+            runtimeCall("scriptSetAddFast", operands, span),
+          ),
+          id("undefined", span),
+          runtimeCall("scriptSetAdd", copyOperands(), span),
+          span,
+        );
+        inline = copyIdentifier(base, span);
+      } else if (operation === "scriptMapHas" || operation === "scriptMapGet") {
+        inline = runtimeCall(operation, operands, span);
+      } else {
+        effect = runtimeCall(operation, operands, span);
+        inline = copyIdentifier(base, span);
+      }
+    }
+    const result = temporary(id("undefined", span), true, true);
+    if (result.kind !== "identifier") throw "intrinsic temporary invariant";
+    const fallback = nestedStatements(() =>
+      statements.push(
+        assignTo(
+          result.name,
+          invoke(callee, base, args, span, evaluated),
+          span,
+        ),
+      ),
+    );
+    const emitConsequent = consequentFn;
+    let consequent: Statement[];
+    if (emitConsequent !== undefined) {
+      consequent = nestedStatements(() => emitConsequent(result.name));
+    } else {
+      if (inline === undefined) throw "intrinsic inline invariant";
+      consequent = [];
+      if (effect !== undefined) {
+        consequent.push({
+          ...at(span),
+          kind: "expression",
+          expression: effect,
+        });
+      }
+      consequent.push(assignTo(result.name, inline, span));
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test,
+      consequent: block(consequent, span),
+      alternate: block(fallback, span),
+    });
+    return result;
+  }
   function argumentList(args: readonly Expression[], span: Span): Expression {
     if (!args.some((argument) => argument?.kind === "spread")) {
       const elements: Expression[] = [];
@@ -3843,6 +5440,46 @@ function lowerScriptEntry(
     }
     return list;
   }
+  /** In a native entry's body, a value computed by `listed` when the entry
+   * was called with a materialized list, else by `actual`. */
+  function selectByInvocation(
+    listName: string,
+    listed: () => Expression,
+    actual: () => Expression,
+    span: Span,
+  ): Expression {
+    const result = temporary(id("undefined", span), true, true);
+    const branch = (compute: () => Expression): BlockStatement => {
+      const start = statements.length;
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: compute(),
+      });
+      return {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(start),
+      };
+    };
+    const consequent = branch(listed);
+    const alternate = branch(actual);
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "!==",
+        left: id(listName, span),
+        right: id("undefined", span),
+      },
+      consequent,
+      alternate,
+    });
+    return result;
+  }
   function invokePrepared(
     callee: Expression,
     receiver: Expression,
@@ -3866,21 +5503,44 @@ function lowerScriptEntry(
     span: Span,
   ): Expression {
     if (isTailCall(span)) {
-      const result = temporary(
-        runtimeCall(
-          "requestSourceTailCall",
-          [
-            callee,
-            receiver,
-            arguments_,
-            member(id("$global"), "object", span),
-            id("$errors"),
-          ],
-          span,
-        ),
+      const request = (): Expression => {
+        const result = temporary(
+          runtimeCall(
+            "requestSourceTailCall",
+            [
+              callee,
+              receiver,
+              arguments_,
+              member(id("$global"), "object", span),
+              id("$errors"),
+            ],
+            span,
+          ),
+        );
+        check(member(result, "error", span), span);
+        return member(result, "value", span);
+      };
+      // In a native entry's body only a list invocation has a trampoline
+      // to request from; one with actual operands calls ordinarily (the
+      // callee's own tail calls then trampoline in its list entry).
+      const listName = nativeListName;
+      if (listName === undefined) return request();
+      return selectByInvocation(
+        listName,
+        request,
+        (): Expression =>
+          checkedRuntimeValue(
+            "callObjectValue",
+            [
+              callee,
+              receiver,
+              arguments_,
+              member(id("$global"), "object", span),
+            ],
+            span,
+          ),
+        span,
       );
-      check(member(result, "error", span), span);
-      return member(result, "value", span);
     }
     return checkedRuntimeValue(
       "callObjectValue",
@@ -3926,7 +5586,7 @@ function lowerScriptEntry(
       const step = steps[i];
       if (step === undefined) throw "CHAIN_STEP_INVARIANT";
       if (reference !== undefined) {
-        current = readAssignment(reference);
+        current = readAssignment(reference, step.kind === "call");
         receiver = reference.superReceiver ?? reference.base;
       }
       const previous = temporary(current, true);
@@ -4085,12 +5745,14 @@ function lowerScriptEntry(
     category: string,
     span: Span,
   ): Expression {
-    return scalarBinary(
-      "===",
-      { ...at(span), kind: "unary", operator: "typeof", operand: value },
-      text(category, span),
-      span,
-    );
+    const tested: Expression = {
+      ...at(span),
+      kind: "unary",
+      operator: "typeof",
+      operand: value,
+      generalTag: category === "object" ? true : undefined,
+    };
+    return scalarBinary("===", tested, text(category, span), span);
   }
   function numberOperand(value: Expression, span: Span): Expression {
     return categoryOperand(value, "number", span);
@@ -4103,6 +5765,128 @@ function lowerScriptEntry(
   }
   function undefinedOperand(value: Expression, span: Span): Expression {
     return scalarBinary("===", value, id("undefined", span), span);
+  }
+  function ungroup(node: Expression): Expression {
+    let inner = node;
+    while (inner.kind === "group") inner = inner.expression;
+    return inner;
+  }
+  function isNullishLiteral(expression: Expression): boolean {
+    const node = ungroup(expression);
+    return (
+      node.kind === "null" ||
+      (node.kind === "unary" && node.operator === "void")
+    );
+  }
+  function nullishEquality(subject: Expression, span: Span): Expression {
+    const nullish = scalarBinary(
+      "||",
+      nullOperand(subject, span),
+      undefinedOperand(subject, span),
+      span,
+    );
+    if (!htmlDDAObjects) {
+      excludesHTMLDDAObjects = true;
+      return nullish;
+    }
+    usesNullishEquality = true;
+    return scalarBranch(
+      nullish,
+      { ...at(span), kind: "boolean", value: true },
+      scalarBinary(
+        "&&",
+        categoryOperand(subject, "object", span),
+        objectRuntime("scriptIsHTMLDDA", [subject], span),
+        span,
+      ),
+      span,
+    );
+  }
+  function negate(value: Expression, span: Span): Expression {
+    return { ...at(span), kind: "unary", operator: "!", operand: value };
+  }
+  function looseEquality(
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    usesLooseEqualityFallback = true;
+    return runtimeCall(
+      "looselyEqualOrThrow",
+      [left, right, member(id("$global"), "hooks", span), id("$errors")],
+      span,
+    );
+  }
+  function literalComparison(
+    node: Expression & { readonly kind: "binary" },
+  ): Expression | undefined {
+    const equal = node.operator === "===" || node.operator === "==";
+    const strict = node.operator === "===" || node.operator === "!==";
+    const left = ungroup(node.left),
+      right = ungroup(node.right);
+    if (strict) {
+      const literal = left.kind === "string" ? left : right;
+      const tested = literal === left ? right : left;
+      if (
+        literal.kind === "string" &&
+        tested.kind === "unary" &&
+        tested.operator === "typeof" &&
+        (literal.value === "number" ||
+          literal.value === "boolean" ||
+          literal.value === "string")
+      ) {
+        const operand = ungroup(tested.operand);
+        const subject =
+          operand.kind === "identifier"
+            ? identifierValue(operand.name, operand, true)
+            : value(operand);
+        const matches = categoryOperand(subject, literal.value, node);
+        return equal ? matches : negate(matches, node);
+      }
+    }
+    const leftLiteral = isNullishLiteral(left);
+    const rightLiteral = isNullishLiteral(right);
+    if (leftLiteral || rightLiteral) {
+      // Evaluating void still evaluates its operand in source order.
+      const first = left.kind === "null" ? left : temporary(value(left), true);
+      const second =
+        right.kind === "null" ? right : temporary(value(right), true);
+      const subject = leftLiteral ? second : first;
+      const literal = leftLiteral ? left : right;
+      const matches = strict
+        ? literal.kind === "null"
+          ? nullOperand(subject, node)
+          : undefinedOperand(subject, node)
+        : nullishEquality(subject, node);
+      return equal ? matches : negate(matches, node);
+    }
+    if (strict) return undefined;
+    const leftUndefined =
+      left.kind === "identifier" && left.name === "undefined";
+    const rightUndefined =
+      right.kind === "identifier" && right.name === "undefined";
+    if (!leftUndefined && !rightUndefined) return undefined;
+    const first = temporary(value(left), true);
+    const second = temporary(value(right), true);
+    const matches = scalarBranch(
+      undefinedOperand(leftUndefined ? first : second, node),
+      nullishEquality(leftUndefined ? second : first, node),
+      looseEquality(first, second, node),
+      node,
+    );
+    return equal ? matches : negate(matches, node);
+  }
+  function bothNumbers(
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    return scalarBinary(
+      "&&",
+      numberOperand(left, span),
+      numberOperand(right, span),
+      span,
+    );
   }
   function immediateNumberOperand(value: Expression, span: Span): Expression {
     return scalarBinary(
@@ -4144,6 +5928,20 @@ function lowerScriptEntry(
     const fallback = objectRuntime("scriptBoolean", [value], span);
     if (compactResults) return fallback;
     const falsy: Expression = { ...at(span), kind: "boolean", value: false };
+    let nonNullish = fallback;
+    if (!htmlDDAObjects) {
+      excludesHTMLDDAObjects = true;
+      nonNullish = scalarBranch(
+        runtimeCall(
+          "isOrdinaryObject",
+          [value, member(id("$errors"), "objectPrototype", span)],
+          span,
+        ),
+        { ...at(span), kind: "boolean", value: true },
+        fallback,
+        span,
+      );
+    }
     return scalarBranch(
       categoryOperand(value, "boolean", span),
       value,
@@ -4163,13 +5961,36 @@ function lowerScriptEntry(
             span,
           ),
           falsy,
-          fallback,
+          nonNullish,
           span,
         ),
         span,
       ),
       span,
     );
+  }
+  function conditionValue(input: Expression, span: Span): Expression {
+    const node = ungroup(input);
+    if (
+      !compactResults &&
+      (node.kind === "boolean" ||
+        (node.kind === "unary" && node.operator === "!") ||
+        (node.kind === "binary" &&
+          [
+            "==",
+            "!=",
+            "===",
+            "!==",
+            "<",
+            "<=",
+            ">",
+            ">=",
+            "in",
+            "instanceof",
+          ].includes(node.operator)))
+    )
+      return value(node);
+    return truthy(temporary(value(input), true), span);
   }
   function strictEqual(
     left: Expression,
@@ -4222,6 +6043,52 @@ function lowerScriptEntry(
     const args = [text(operator, span), left, right];
     if (compactResults || operator === "**")
       return checkedOperatorValue("binaryObjectValueOperation", args, span);
+    if (
+      operator === "<" ||
+      operator === "<=" ||
+      operator === ">" ||
+      operator === ">="
+    ) {
+      usesRelationalFallback = true;
+      const immediatePair = scalarBinary(
+        "&&",
+        primitiveNumberOperand(left, span),
+        primitiveNumberOperand(right, span),
+        span,
+      );
+      const fallback = scalarBinary(
+        "===",
+        runtimeCall(
+          "binaryObjectValueOperationOrThrow",
+          [
+            text(operator, span),
+            left,
+            right,
+            member(id("$global"), "hooks", span),
+            id("$errors"),
+          ],
+          span,
+        ),
+        { ...at(span), kind: "boolean", value: true },
+        span,
+      );
+      return scalarBranch(
+        bothNumbers(left, right, span),
+        scalarBinary(operator, left, right, span),
+        scalarBranch(
+          immediatePair,
+          scalarBinary(
+            operator,
+            primitiveNumber(left, span),
+            primitiveNumber(right, span),
+            span,
+          ),
+          fallback,
+          span,
+        ),
+        span,
+      );
+    }
     const result = temporary(id("undefined", span), true, true);
     function assigned(value: Expression): Statement {
       return {
@@ -4590,6 +6457,22 @@ function lowerScriptEntry(
           [text("union", span), array(members)],
           span,
         );
+      } else if (type.kind === "literal") {
+        // A literal type (a discriminant such as `kind: "one"`) admits
+        // exactly its value; without this rule the record had no contract.
+        const literal = type.value;
+        entry = object(
+          ["kind", "value"],
+          [
+            text("literal", span),
+            typeof literal === "string"
+              ? text(literal, span)
+              : typeof literal === "number"
+                ? index(literal)
+                : flag(literal),
+          ],
+          span,
+        );
       } else if (
         type.kind === "named" &&
         (type.arguments?.length ?? 0) === 0 &&
@@ -4717,10 +6600,14 @@ function lowerScriptEntry(
       !derived &&
       !suspending &&
       !options.packed &&
-      !tailEnabled &&
       resultContract === 0;
-    const legacyNativeEntry = nativeEntry && !codeStrict && !arrow && !method;
-    const materializesArguments = nativeEntry && (hasArguments || hasRest);
+    const forwardingSites =
+      nativeEntry && hasArguments && !arrow && body.kind === "block"
+        ? argumentsForwardingSites(parameters, body)
+        : undefined;
+    const materializesArguments =
+      nativeEntry &&
+      ((hasArguments && forwardingSites === undefined) || hasRest);
     const nativeName = nativeEntry
       ? temporary(
           runtimeCall(
@@ -4730,29 +6617,6 @@ function lowerScriptEntry(
           ),
         )
       : undefined;
-    let nativeArgumentReader: Expression | undefined;
-    if (legacyNativeEntry) {
-      const readerParameters: Parameter[] = [];
-      const readerArguments: Expression[] = [];
-      for (const name of ["$index", "$count", "$registers", "$overflow"]) {
-        if (name === undefined) throw "SCRIPT_ARGUMENT_READER_INVARIANT";
-        readerParameters.push({ ...at(span), name, type: named("number") });
-        readerArguments.push(id(name, span));
-      }
-      nativeArgumentReader = temporary({
-        ...at(span),
-        kind: "arrow",
-        parameters: readerParameters,
-        returnType: named("unknown"),
-        body: {
-          ...at(span),
-          kind: "call",
-          scriptArgument: "load-frame",
-          callee: id("sourceArgumentFromFrame", span),
-          arguments: readerArguments,
-        },
-      });
-    }
     if (nativeEntry) usesNativeScriptCalls = true;
     const wideRegister = codeStrict && parameters.length > 2;
     const register =
@@ -4807,16 +6671,34 @@ function lowerScriptEntry(
     const outerStrict = strict;
     const outerHome = home;
     const outerInFunction = inFunction;
+    const outerTryDepth = tryDepth;
+    const outerWithDepth = withDepth;
+    const outerFunctionHasDirectEval = functionHasDirectEval;
     const outerFieldInitializer = inClassFieldInitializer;
     if (!arrow)
       inClassFieldInitializer = options.classFieldInitializer ?? false;
     if (!arrow) inFunction = true;
+    tryDepth = 0;
+    withDepth = 0;
+    functionHasDirectEval = evalBody || evalParameters;
     const outerNewTarget = newTarget;
     const outerDerivedContext = derivedContext,
       outerConstructor = activeConstructor;
     if (!arrow) home = homeObject;
     strict = codeStrict;
     functionDepth++;
+    const outerLoopIntrinsics = loopIntrinsics;
+    const outerLoopIntrinsicFields = loopIntrinsicFields;
+    const outerLoopCollections = loopCollections;
+    loopIntrinsics = undefined;
+    loopIntrinsicFields = new Map<string, Expression>();
+    loopCollections = new Map<
+      string,
+      {
+        readonly mapData: Expression | undefined;
+        readonly setData: Expression | undefined;
+      }
+    >();
     const receiverName = "$receiver" + serial++,
       argsName = "$args" + serial++,
       calleeName = "$callee" + serial++,
@@ -4824,6 +6706,10 @@ function lowerScriptEntry(
       incomingArguments = materializesArguments
         ? "$incoming" + serial++
         : argsName;
+    const outerNativeListName = nativeListName;
+    nativeListName = nativeEntry ? incomingArguments : undefined;
+    const outerArgumentsForwarding = argumentsForwarding;
+    argumentsForwarding = undefined;
     const list: TypeNode = {
       ...at(span),
       kind: "array",
@@ -4835,6 +6721,15 @@ function lowerScriptEntry(
         ...at(span),
         kind: "binary",
         operator: "!==",
+        left: id(incomingArguments, span),
+        right: id("undefined", span),
+      };
+    }
+    function noList(): Expression {
+      return {
+        ...at(span),
+        kind: "binary",
+        operator: "===",
         left: id(incomingArguments, span),
         right: id("undefined", span),
       };
@@ -4868,20 +6763,22 @@ function lowerScriptEntry(
         ? {
             ...at(site),
             kind: "conditional",
-            test: hasList(),
-            consequent: fromList,
-            alternate: nativeArgument(index, site),
+            test: noList(),
+            consequent: nativeArgument(index, site),
+            alternate: fromList,
           }
         : fromList;
     }
-    if (materializesArguments) {
+    /** Declare `target` and assign it this entry's argument list: its
+     * materialized list, or one collected from its actual operands. */
+    function materializeList(target: string): void {
       statements.push({
         ...at(span),
         kind: "variable",
         mode: "let",
         exported: false,
         declarations: [
-          { ...at(span), name: argsName, type: list, initializer: undefined },
+          { ...at(span), name: target, type: list, initializer: undefined },
         ],
       });
       const begin = statements.length;
@@ -4932,7 +6829,7 @@ function lowerScriptEntry(
       expression({
         ...at(span),
         kind: "assignment",
-        target: id(argsName, span),
+        target: id(target, span),
         value: actual,
       });
       const collect: BlockStatement = {
@@ -4950,13 +6847,14 @@ function lowerScriptEntry(
           expression: {
             ...at(span),
             kind: "assignment",
-            target: id(argsName, span),
+            target: id(target, span),
             value: id(incomingArguments, span),
           },
         },
         alternate: collect,
       });
     }
+    if (materializesArguments) materializeList(argsName);
     if (numericImplementation !== undefined) {
       const operands: Expression[] = [];
       let guard: Expression | undefined;
@@ -5183,20 +7081,71 @@ function lowerScriptEntry(
       // arrows, parameters or body) to the receiver-owning function: a
       // second, conservative guard; extra `arguments` uses only keep it.
       !observesArguments(span);
-    if (!arrow)
-      receiver =
-        strict || unobservedReceiver
-          ? id(receiverName, span)
-          : checkedRuntimeValue(
+    if (!arrow) {
+      if (strict || unobservedReceiver) receiver = id(receiverName, span);
+      else {
+        // An ordinary object receiver is its own ToObject; nullish receivers
+        // bind to the realm's global thisValue; only primitives box via the
+        // cold sloppyCallReceiver helper.
+        const boundReceiver = temporary(id(receiverName, span), true, true);
+        const rawReceiver = id(receiverName, span);
+        const slow = nestedStatements(() => {
+          expression({
+            ...at(span),
+            kind: "assignment",
+            target: boundReceiver,
+            value: checkedRuntimeValue(
               "sloppyCallReceiver",
               [
-                id(receiverName, span),
+                { ...rawReceiver },
                 member(id("$global"), "thisValue", span),
                 member(id("$global"), "hooks", span),
                 id("$errors"),
               ],
               span,
-            );
+            ),
+          });
+        });
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: negate(
+            runtimeCall(
+              "isOrdinaryObject",
+              [
+                { ...rawReceiver },
+                member(id("$errors"), "objectPrototype", span),
+              ],
+              span,
+            ),
+            span,
+          ),
+          consequent: {
+            ...at(span),
+            kind: "if",
+            test: scalarBinary(
+              "||",
+              nullOperand({ ...rawReceiver }, span),
+              undefinedOperand({ ...rawReceiver }, span),
+              span,
+            ),
+            consequent: {
+              ...at(span),
+              kind: "expression",
+              expression: {
+                ...at(span),
+                kind: "assignment",
+                target: boundReceiver,
+                value: member(id("$global"), "thisValue", span),
+              },
+            },
+            alternate: block(slow, span),
+          },
+          alternate: undefined,
+        });
+        receiver = boundReceiver;
+      }
+    }
 
     const parameterEval =
       !strict &&
@@ -5215,17 +7164,17 @@ function lowerScriptEntry(
     // object or direct eval binds nothing in its own environments, so
     // identifier resolution and every closure it creates see the captured
     // scope unchanged; AOT and runtime-compiled entries skip creating them.
-    const bindsNothing =
+    // A zero-parameter forwarding entry only needs a declarative scope if its
+    // cold fallback materializes `arguments`, so it allocates the scope lazily.
+    const noDeclarations =
       !raw &&
       !options.packed &&
       !suspending &&
       !derived &&
       !options.classFieldInitializer &&
       !options.baseConstructor &&
-      (parameters.length === 0 || directParameters) &&
       !evalBody &&
       !evalParameters &&
-      !hasArguments &&
       functionDeclarations.variables.every((name) => hoistedNames.has(name)) &&
       functionDeclarations.functions.every(
         (declaration) =>
@@ -5241,20 +7190,32 @@ function lowerScriptEntry(
           !hoistedNames.has(copy.name)
         );
       });
-    const parameterRecord = bindsNothing
+    const bindsNothing =
+      noDeclarations &&
+      (parameters.length === 0 || directParameters) &&
+      !hasArguments;
+    const lazyForwardingScope =
+      noDeclarations &&
+      parameters.length === 0 &&
+      hasArguments &&
+      forwardingSites !== undefined;
+    const noEagerScope = bindsNothing || lazyForwardingScope;
+    const parameterRecord = noEagerScope
       ? id("undefined")
       : temporary(
           call("createDeclarativeEnvironment", [id("undefined")], span),
         );
-    scope = bindsNothing
-      ? capturedScope
-      : temporary(
-          call(
-            "createDeclarativeScope",
-            [parameterParent, parameterRecord],
-            span,
-          ),
-        );
+    scope = lazyForwardingScope
+      ? temporary(capturedScope, false, true)
+      : bindsNothing
+        ? capturedScope
+        : temporary(
+            call(
+              "createDeclarativeScope",
+              [parameterParent, parameterRecord],
+              span,
+            ),
+          );
     lexical = parameterRecord;
     variableScope = parameterEval ? parameterParent : scope;
     let separate = false;
@@ -5346,20 +7307,112 @@ function lowerScriptEntry(
         ],
         span,
       );
-      expression(
-        runtimeCall(
-          "instantiateScriptArguments",
-          [
-            parameterRecord,
-            id(argsName, span),
-            raw ? id("undefined") : id(calleeName, span),
-            argumentPlan,
-            id("$errors"),
-            member(id("$global"), "hooks", span),
+      const instantiate = (
+        listName: string,
+        record: Expression = parameterRecord,
+      ): void => {
+        expression(
+          runtimeCall(
+            "instantiateScriptArguments",
+            [
+              record,
+              id(listName, span),
+              raw ? id("undefined") : id(calleeName, span),
+              argumentPlan,
+              id("$errors"),
+              member(id("$global"), "hooks", span),
+            ],
+            span,
+          ),
+        );
+      };
+      if (forwardingSites === undefined) instantiate(argsName);
+      else {
+        // Forwarding calls read the actuals directly; any other use of the
+        // object creates it first, once per invocation.
+        const ready = "$argumentsReady" + serial++;
+        statements.push({
+          ...at(span),
+          kind: "variable",
+          mode: "let",
+          exported: false,
+          declarations: [
+            {
+              ...at(span),
+              name: ready,
+              type: named("boolean"),
+              initializer: { ...at(span), kind: "boolean", value: false },
+            },
           ],
-          span,
-        ),
-      );
+        });
+        const mapped: string[] = [];
+        if (!strict && simple)
+          for (const parameter of parameters) {
+            if (
+              parameter === undefined ||
+              parameter.kind === "pattern-parameter"
+            )
+              throw "FORWARDING_PARAMETER_INVARIANT";
+            mapped.push(parameter.name);
+          }
+        argumentsForwarding = {
+          sites: forwardingSites,
+          count: (): Expression => ({
+            ...at(span),
+            kind: "conditional",
+            test: hasList(),
+            consequent: member(id(incomingArguments, span), "length", span),
+            alternate: nativeArgumentCount(span),
+          }),
+          actual: (index: number): Expression =>
+            argumentAt(scalarNumber(index, span), span),
+          mapped,
+          materialize: (): void => {
+            const begin = statements.length;
+            expression({
+              ...at(span),
+              kind: "assignment",
+              target: id(ready, span),
+              value: { ...at(span), kind: "boolean", value: true },
+            });
+            const lazy = "$arguments" + serial++;
+            materializeList(lazy);
+            if (lazyForwardingScope) {
+              const lazyRecord = temporary(
+                call("createDeclarativeEnvironment", [id("undefined")], span),
+              );
+              expression({
+                ...at(span),
+                kind: "assignment",
+                target: { ...scope },
+                value: call(
+                  "createDeclarativeScope",
+                  [{ ...capturedScope }, lazyRecord],
+                  span,
+                ),
+              });
+              instantiate(lazy, lazyRecord);
+            } else instantiate(lazy);
+            const body: BlockStatement = {
+              ...at(span),
+              kind: "block",
+              statements: statements.splice(begin),
+            };
+            statements.push({
+              ...at(span),
+              kind: "if",
+              test: {
+                ...at(span),
+                kind: "unary",
+                operator: "!",
+                operand: id(ready, span),
+              },
+              consequent: body,
+              alternate: undefined,
+            });
+          },
+        };
+      }
     }
     for (let i = 0; i < parameters.length; i++) {
       const parameter = parameters[i];
@@ -5529,7 +7582,7 @@ function lowerScriptEntry(
       // Without declarations or a separate var environment, the body shares
       // the parameter scope; skip allocating a plan on every invocation.
       const declares =
-        (separate && !bindsNothing) ||
+        (separate && !noEagerScope) ||
         variables.length > 0 ||
         lexicalDeclarations.length > 0;
       const bodyPlan = (): Expression =>
@@ -5556,17 +7609,18 @@ function lowerScriptEntry(
           ],
           body,
         );
-      scope = temporary(
-        declares
-          ? call("instantiateFunctionBody", [scope, bodyPlan()], body)
-          : { ...scope, ...at(body) },
-      );
+      if (!lazyForwardingScope)
+        scope = temporary(
+          declares
+            ? call("instantiateFunctionBody", [scope, bodyPlan()], body)
+            : { ...scope, ...at(body) },
+        );
       variableScope = scope;
       // This operation always establishes a declarative body scope. Bodies
       // that bind nothing never read it (and may share an object scope).
       lexical = member(scope, "declarative", body);
-      const record = bindsNothing ? id("undefined") : temporary(lexical);
-      if (!bindsNothing)
+      const record = noEagerScope ? id("undefined") : temporary(lexical);
+      if (!noEagerScope)
         statements.push({
           ...at(body),
           kind: "if",
@@ -5795,12 +7849,20 @@ function lowerScriptEntry(
     inheritedCatches = outerInheritedCatches;
     home = outerHome;
     inFunction = outerInFunction;
+    tryDepth = outerTryDepth;
+    withDepth = outerWithDepth;
+    functionHasDirectEval = outerFunctionHasDirectEval;
     inClassFieldInitializer = outerFieldInitializer;
     derivedContext = outerDerivedContext;
     activeConstructor = outerConstructor;
     newTarget = outerNewTarget;
     strict = outerStrict;
     tailEnds = outerTailEnds;
+    nativeListName = outerNativeListName;
+    argumentsForwarding = outerArgumentsForwarding;
+    loopIntrinsics = outerLoopIntrinsics;
+    loopIntrinsicFields = outerLoopIntrinsicFields;
+    loopCollections = outerLoopCollections;
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
@@ -5951,84 +8013,11 @@ function lowerScriptEntry(
       };
       const args = [calleeName, receiverName, newTargetName, incomingArguments];
       const begin = statements.length;
-      const agent = member(id("$errors"), "agent", span);
-      const trace = temporary({
-        ...at(span),
-        kind: "conditional",
-        test: hasList(),
-        consequent: id("undefined", span),
-        alternate: runtimeCall("enterExecutionName", [agent, nativeName], span),
-      });
-      const depth = temporary({
-        ...at(span),
-        kind: "conditional",
-        test: hasList(),
-        consequent: scalarNumber(-1, span),
-        alternate:
-          nativeArgumentReader === undefined
-            ? runtimeCall(
-                "enterSourceCall",
-                [agent, id(codeStrict ? "undefined" : calleeName, span)],
-                span,
-              )
-            : runtimeCall(
-                "enterNativeSourceCall",
-                [
-                  agent,
-                  id(calleeName, span),
-                  nativeArgumentCount(span),
-                  {
-                    ...at(span),
-                    kind: "call",
-                    scriptArgument: "registers",
-                    callee: id("sourceArgumentArea", span),
-                    arguments: [],
-                  },
-                  {
-                    ...at(span),
-                    kind: "call",
-                    scriptArgument: "stack",
-                    callee: id("sourceArgumentArea", span),
-                    arguments: [],
-                  },
-                  nativeArgumentReader,
-                ],
-                span,
-              ),
-      });
-      const cleanup = statements.length;
-      expression(runtimeCall("exitSourceCall", [agent, depth], span));
-      expression(runtimeCall("leaveExecutionName", [agent, trace], span));
-      const cleanupBody = statements.splice(cleanup);
-      statements.push({
-        ...at(span),
-        kind: "try",
-        body: callbackBody,
-        handler: undefined,
-        finalizer: {
-          ...at(span),
-          kind: "block",
-          statements: [
-            {
-              ...at(span),
-              kind: "if",
-              test: {
-                ...at(span),
-                kind: "binary",
-                operator: "!==",
-                left: trace,
-                right: id("undefined", span),
-              },
-              consequent: {
-                ...at(span),
-                kind: "block",
-                statements: cleanupBody,
-              },
-              alternate: undefined,
-            },
-          ],
-        },
-      });
+      // Called with actual operands, the entry links an activation record
+      // into its frame (codegen), which names its callee for stack traces
+      // and caller reflection. Called with a list, the source function's
+      // heap bookkeeping describes it (sourceFunction).
+      statements.push(callbackBody);
       const nativeParameters: Parameter[] = [];
       const bridgeParameters: Parameter[] = [];
       const bridgeArguments: Expression[] = [];
@@ -6083,6 +8072,7 @@ function lowerScriptEntry(
           [
             bridge,
             nativeBody,
+            { ...at(span), kind: "boolean", value: tailEnabled },
             constructible,
             id("$errors"),
             member(id("$global"), "hooks", span),
@@ -7162,6 +9152,49 @@ function lowerScriptEntry(
         return result;
       }
       case "array": {
+        if (node.elements.length === 0) {
+          usesSmallArrays = true;
+          return temporary(
+            runtimeCall("createArray0", [id("$errors", node)], node),
+          );
+        }
+        let dense = true;
+        for (const element of node.elements)
+          if (element.kind === "spread" || element.kind === "elision")
+            dense = false;
+        if (dense) {
+          // Without spreads or holes the literal is CreateArrayFromList of its
+          // element values. They are evaluated in order first; creating the
+          // array observes nothing, so creating it after them is equivalent.
+          const values: Expression[] = [];
+          for (const element of node.elements) {
+            if (element.kind === "spread" || element.kind === "elision")
+              throw "SCRIPT_ARRAY_ELEMENT_INVARIANT";
+            values.push(temporary(value(element), true));
+          }
+          if (values.length <= 4) {
+            usesSmallArrays = true;
+            const args: Expression[] = [];
+            for (const item of values) args.push(item);
+            args.push(id("$errors", node));
+            return temporary(
+              runtimeCall(`createArray${values.length}`, args, node),
+            );
+          }
+          return temporary(
+            runtimeCall(
+              "createArrayFromList",
+              [
+                { ...at(node), kind: "array", elements: values },
+                { ...at(node), kind: "number", value: 0, raw: "0" },
+                member(id("$errors"), "arrayPrototype", node),
+                id("$errors"),
+                member(id("$global"), "hooks", node),
+              ],
+              node,
+            ),
+          );
+        }
         // Track the next index across spreads and elisions, then finalize trailing holes.
         const result = temporary(
           call(
@@ -7248,6 +9281,65 @@ function lowerScriptEntry(
         return result;
       }
       case "object": {
+        // Only `key: value` definitions with static keys: their values
+        // cannot observe the object (no methods, accessors, spreads or
+        // computed keys), so evaluating them before creating it is
+        // equivalent, and the site can remember the shape they reach.
+        const literalKeys: string[] = [];
+        let staticData = node.properties.length !== 0;
+        for (const property of node.properties) {
+          if (property === undefined) throw "SCRIPT_PROPERTY_INVARIANT";
+          if (property.kind === "spread") {
+            staticData = false;
+            continue;
+          }
+          if (
+            property.keyExpression !== undefined ||
+            property.computed === true ||
+            property.accessor !== undefined ||
+            property.prototypeSetter === true ||
+            property.method === true
+          )
+            staticData = false;
+          else literalKeys.push(property.name);
+        }
+        if (staticData) {
+          usesObjectLiterals = true;
+          const values: Expression[] = [];
+          for (const property of node.properties) {
+            if (property === undefined || property.kind === "spread")
+              throw "SCRIPT_PROPERTY_INVARIANT";
+            values.push(
+              temporary(
+                value(property.value, text(property.name, property)),
+                true,
+              ),
+            );
+          }
+          if (values.length <= 4) {
+            const args: Expression[] = [
+              member(id("$errors"), "objectPrototype", node),
+              objectLiteralSite(literalKeys, node),
+            ];
+            for (const item of values) args.push(item);
+            args.push(member(id("$global"), "hooks", node));
+            return temporary(
+              runtimeCall(`createLiteralObject${values.length}`, args, node),
+            );
+          }
+          return temporary(
+            runtimeCall(
+              "createLiteralObject",
+              [
+                member(id("$errors"), "objectPrototype", node),
+                objectLiteralSite(literalKeys, node),
+                { ...at(node), kind: "array", elements: values },
+                member(id("$global"), "hooks", node),
+              ],
+              node,
+            ),
+          );
+        }
         const result = temporary(
           call(
             "createObject",
@@ -7437,6 +9529,12 @@ function lowerScriptEntry(
       }
       case "new": {
         const target = temporary(value(node.callee), true);
+        if (
+          nativeScriptCalls &&
+          !compactResults &&
+          !node.arguments.some((argument) => argument?.kind === "spread")
+        )
+          return constructNative(target, node.arguments, node);
         const args = argumentList(node.arguments, node);
         return checkedRuntimeValue(
           "constructObjectValue",
@@ -7495,6 +9593,37 @@ function lowerScriptEntry(
             ],
             node,
           );
+        const forwarding = argumentsForwarding;
+        const forwarded = node.arguments[1];
+        if (
+          forwarding !== undefined &&
+          forwarded !== undefined &&
+          forwarded.kind === "identifier" &&
+          forwarding.sites.has(forwarded.start)
+        )
+          return invokeForwardedApply(
+            callee,
+            evaluated.receiver,
+            node.arguments,
+            forwarding,
+            node,
+          );
+        if (
+          nativeScriptCalls &&
+          !compactResults &&
+          !isTailCall(node) &&
+          target.kind === "member" &&
+          !target.private &&
+          !target.optional &&
+          target.property === "call" &&
+          !node.arguments.some((argument) => argument?.kind === "spread")
+        )
+          return invokeForwardedCall(
+            callee,
+            evaluated.receiver,
+            node.arguments,
+            node,
+          );
         if (isDirectEvalCandidate(node))
           return invokeEvalCandidate(
             callee,
@@ -7518,10 +9647,18 @@ function lowerScriptEntry(
           );
           if (direct !== undefined) return direct;
         }
+        const intrinsic = invokeIntrinsic(
+          target,
+          callee,
+          evaluated.receiver,
+          node.arguments,
+          node,
+        );
+        if (intrinsic !== undefined) return intrinsic;
         return invoke(callee, evaluated.receiver, node.arguments, node);
       }
       case "conditional": {
-        const test = truthy(temporary(value(node.test), true), node);
+        const test = conditionValue(node.test, node);
         const result = temporary(id("undefined", node), true, true);
         const consequent = branchValue(result, node.consequent);
         const alternate = branchValue(result, node.alternate);
@@ -7567,7 +9704,7 @@ function lowerScriptEntry(
             ...at(node),
             kind: "unary",
             operator: "!",
-            operand: truthy(temporary(value(node.operand), true), node),
+            operand: conditionValue(node.operand, node),
           };
         if (node.operator === "typeof") {
           let operand = node.operand;
@@ -7591,6 +9728,16 @@ function lowerScriptEntry(
         return id("undefined", node);
       }
       case "binary": {
+        if (
+          !compactResults &&
+          (node.operator === "==" ||
+            node.operator === "!=" ||
+            node.operator === "===" ||
+            node.operator === "!==")
+        ) {
+          const comparison = literalComparison(node);
+          if (comparison !== undefined) return comparison;
+        }
         if (
           node.operator === "&&" ||
           node.operator === "||" ||
@@ -7620,6 +9767,33 @@ function lowerScriptEntry(
         ) {
           const left = temporary(value(node.left), true);
           const right = temporary(value(node.right), true);
+          if (
+            !compactResults &&
+            (node.operator === "==" || node.operator === "!=")
+          ) {
+            const witness = member(id("$errors"), "objectPrototype", node);
+            const matches = scalarBranch(
+              bothNumbers(left, right, node),
+              scalarBinary("===", left, right, node),
+              scalarBranch(
+                scalarBinary(
+                  "&&",
+                  runtimeCall("isOrdinaryObject", [left, witness], node),
+                  runtimeCall(
+                    "isOrdinaryObject",
+                    [right, { ...witness }],
+                    node,
+                  ),
+                  node,
+                ),
+                scalarBinary("===", left, right, node),
+                looseEquality(left, right, node),
+                node,
+              ),
+              node,
+            );
+            return node.operator === "==" ? matches : negate(matches, node);
+          }
           const result = temporary(
             objectRuntime(
               node.operator === "==" || node.operator === "!="
@@ -8163,7 +10337,7 @@ function lowerScriptEntry(
     };
   }
   function loopTest(test: Expression): void {
-    const tested = temporary(value(test), true);
+    const tested = conditionValue(test, test);
     statements.push({
       ...at(test),
       kind: "if",
@@ -8171,7 +10345,7 @@ function lowerScriptEntry(
         ...at(test),
         kind: "unary",
         operator: "!",
-        operand: truthy(tested, test),
+        operand: tested,
       },
       consequent: { ...at(test), kind: "break" },
       alternate: undefined,
@@ -8721,7 +10895,9 @@ function lowerScriptEntry(
         true,
       );
       resetCompletion(node);
+      withDepth++;
       statement(node.body);
+      withDepth--;
       scope = outerScope;
       return;
     }
@@ -9000,11 +11176,540 @@ function lowerScriptEntry(
       // pointer is updated before the increment, including after continue.
       const fixed = iterationContext(initializedSlots, node);
       resetCompletion(node);
-      const first = temporary(
-        { ...at(node), kind: "boolean", value: true },
-        false,
-        true,
-      );
+      const specialized =
+        node.kind === "for" &&
+        !suppressingNumericLoopSpec &&
+        !compactResults &&
+        functionDepth > 0 &&
+        tryDepth === 0 &&
+        withDepth === 0 &&
+        !functionHasDirectEval &&
+        labels.length === 0 &&
+        fixed === undefined &&
+        iterationNames.length === 0 &&
+        resources === undefined
+          ? specializeNumericForLoop(node, {
+              freshName: (prefix) => prefix + serial++,
+              resolveLocalSlot: (span, forWrite) => {
+                const binding = localBindingReferences.get(span.start);
+                if (binding === undefined || slotInitialization.has(binding))
+                  return undefined;
+                const boundEntry = boundBindings[binding];
+                if (boundEntry === undefined) return undefined;
+                if (
+                  bindingContracts.has(boundEntry.node.start) ||
+                  bindingRecordContracts.has(boundEntry.node.start)
+                )
+                  return undefined;
+                const slot = localSlot(span, forWrite);
+                if (slot === undefined) return undefined;
+                return { binding, slot };
+              },
+              resolveVarDeclarationSlot: (span) => {
+                const binding = variableDeclarationBindings.get(span.start);
+                if (binding === undefined || slotInitialization.has(binding))
+                  return undefined;
+                const boundEntry = boundBindings[binding];
+                if (boundEntry === undefined) return undefined;
+                if (
+                  bindingContracts.has(boundEntry.node.start) ||
+                  bindingRecordContracts.has(boundEntry.node.start)
+                )
+                  return undefined;
+                const slot = localSlots.get(binding);
+                if (slot === undefined) return undefined;
+                return { binding, slot };
+              },
+              resolveCapturedReadOnlyBinding: (span) =>
+                capturedFunctionReadBindings.get(span.start),
+              evaluateGeneralIdentifier: (identNode) =>
+                temporary(value(identNode), true),
+              viewObjectValueCall: (target, span) =>
+                runtimeCall(
+                  "viewObjectValue",
+                  [target, member(id("$errors"), "objectPrototype", span)],
+                  span,
+                ),
+              readFloat64ElementCall: (array, index, span) =>
+                runtimeCall("readFloat64Element", [array, index], span),
+              writeFloat64ElementCall: (array, index, val, span) =>
+                runtimeCall("writeFloat64Element", [array, index, val], span),
+              addHelperFunction: (fn) => {
+                specLoopHelpers.push(fn);
+              },
+              lowerGeneralLoopTail: (innerFor, outerUpdate) => {
+                const prev = suppressingNumericLoopSpec;
+                suppressingNumericLoopSpec = true;
+                const tailStart = statements.length;
+                statement({ ...innerFor, initializer: undefined });
+                if (outerUpdate !== undefined) expression(value(outerUpdate));
+                suppressingNumericLoopSpec = prev;
+                return statements.splice(tailStart);
+              },
+              markElementAccess: () => {
+                usesElementAccess = true;
+              },
+            })
+          : undefined;
+      if (specialized !== undefined) {
+        for (const stmt of specialized.statements) statements.push(stmt);
+      }
+      const prevSuppressGeneralBody = suppressingNumericLoopSpec;
+      if (specialized !== undefined && specialized.nested)
+        suppressingNumericLoopSpec = true;
+      const generalLoopStart = statements.length;
+      function hasContinueTargetingLoop(
+        stmt: Statement,
+        insideInnerLoop: boolean,
+      ): boolean {
+        switch (stmt.kind) {
+          case "continue":
+            return stmt.label === undefined
+              ? !insideInnerLoop
+              : labels.includes(stmt.label);
+          case "block":
+            for (const item of stmt.statements)
+              if (
+                item !== undefined &&
+                hasContinueTargetingLoop(item, insideInnerLoop)
+              )
+                return true;
+            return false;
+          case "if":
+            return (
+              hasContinueTargetingLoop(stmt.consequent, insideInnerLoop) ||
+              (stmt.alternate !== undefined &&
+                hasContinueTargetingLoop(stmt.alternate, insideInnerLoop))
+            );
+          case "try":
+            return (
+              hasContinueTargetingLoop(stmt.body, insideInnerLoop) ||
+              (stmt.handler !== undefined &&
+                hasContinueTargetingLoop(stmt.handler.body, insideInnerLoop)) ||
+              (stmt.finalizer !== undefined &&
+                hasContinueTargetingLoop(stmt.finalizer, insideInnerLoop))
+            );
+          case "switch":
+            for (const clause of stmt.clauses) {
+              if (clause === undefined) continue;
+              for (const item of clause.statements)
+                if (
+                  item !== undefined &&
+                  hasContinueTargetingLoop(item, insideInnerLoop)
+                )
+                  return true;
+            }
+            return false;
+          case "with":
+          case "label":
+            return hasContinueTargetingLoop(stmt.body, insideInnerLoop);
+          case "for":
+          case "while":
+          case "do-while":
+          case "for-of":
+          case "for-in":
+          case "for-of-assignment":
+          case "for-in-assignment":
+            return hasContinueTargetingLoop(stmt.body, true);
+          case "expression":
+          case "variable":
+          case "empty":
+          case "debugger":
+          case "break":
+          case "return":
+          case "throw":
+          case "function":
+          case "class":
+          case "interface":
+          case "type-alias":
+          case "import":
+          case "export":
+          case "export-default":
+            return false;
+        }
+        return true;
+      }
+      const directLoop =
+        fixed === undefined &&
+        iterationNames.length === 0 &&
+        (node.kind === "while" ||
+          (node.kind === "for" && !hasContinueTargetingLoop(node.body, false)));
+      const outerLoopIntrinsics = loopIntrinsics;
+      const outerLoopIntrinsicFields = loopIntrinsicFields;
+      const outerLoopCollections = loopCollections;
+      if (
+        functionDepth > 0 &&
+        withDepth === 0 &&
+        !functionHasDirectEval &&
+        !compactResults &&
+        fixed === undefined &&
+        iterationNames.length === 0
+      ) {
+        const neededIntrinsicFields = new Set<string>();
+        let bailCollections = false;
+        const writtenBindings = new Set<number>();
+        const collectionUses = new Map<
+          number,
+          { needMap: boolean; needSet: boolean }
+        >();
+        function scanExpr(expr: Expression | undefined): void {
+          if (expr === undefined) return;
+          switch (expr.kind) {
+            case "function-expression":
+            case "arrow":
+            case "class-expression":
+              return;
+            case "call": {
+              const callee = expr.callee;
+              if (callee.kind === "identifier" && callee.name === "Number") {
+                neededIntrinsicFields.add("number");
+              } else if (
+                callee.kind === "member" &&
+                !callee.private &&
+                !callee.optional
+              ) {
+                const prop = callee.property;
+                if (prop === "abs") neededIntrinsicFields.add("mathAbs");
+                else if (prop === "ceil") neededIntrinsicFields.add("mathCeil");
+                else if (prop === "floor")
+                  neededIntrinsicFields.add("mathFloor");
+                else if (prop === "trunc")
+                  neededIntrinsicFields.add("mathTrunc");
+                else if (prop === "round")
+                  neededIntrinsicFields.add("mathRound");
+                else if (prop === "sign") neededIntrinsicFields.add("mathSign");
+                else if (prop === "sqrt") neededIntrinsicFields.add("mathSqrt");
+                else if (prop === "clz32")
+                  neededIntrinsicFields.add("mathClz32");
+                else if (prop === "min") neededIntrinsicFields.add("mathMin");
+                else if (prop === "max") neededIntrinsicFields.add("mathMax");
+                else if (prop === "imul") neededIntrinsicFields.add("mathImul");
+                else if (prop === "charCodeAt")
+                  neededIntrinsicFields.add("stringCharCodeAt");
+                else if (prop === "charAt")
+                  neededIntrinsicFields.add("stringCharAt");
+                else if (prop === "push")
+                  neededIntrinsicFields.add("arrayPush");
+                else if (prop === "pop") neededIntrinsicFields.add("arrayPop");
+                else if (prop === "get") neededIntrinsicFields.add("mapGet");
+                else if (prop === "set") neededIntrinsicFields.add("mapSet");
+                else if (prop === "has") {
+                  neededIntrinsicFields.add("mapHas");
+                  neededIntrinsicFields.add("setHas");
+                } else if (prop === "add") neededIntrinsicFields.add("setAdd");
+                const calleeObject = callee.object;
+                if (
+                  (prop === "get" ||
+                    prop === "set" ||
+                    prop === "has" ||
+                    prop === "add") &&
+                  calleeObject.kind === "identifier"
+                ) {
+                  const binding = localBindingReferences.get(
+                    calleeObject.start,
+                  );
+                  if (
+                    binding !== undefined &&
+                    !slotInitialization.has(binding)
+                  ) {
+                    const slot = localSlots.get(binding);
+                    if (slot !== undefined && slot.kind === "identifier") {
+                      let use = collectionUses.get(binding);
+                      if (use === undefined) {
+                        use = { needMap: false, needSet: false };
+                        collectionUses.set(binding, use);
+                      }
+                      if (prop === "get" || prop === "set" || prop === "has")
+                        use.needMap = true;
+                      if (prop === "add" || prop === "has") use.needSet = true;
+                    }
+                  }
+                }
+              }
+              scanExpr(callee);
+              for (const arg of expr.arguments) scanExpr(arg);
+              return;
+            }
+            case "assignment":
+            case "compound": {
+              let target = expr.target;
+              while (target.kind === "group" || target.kind === "satisfies")
+                target = target.expression;
+              if (target.kind === "identifier") {
+                const binding = localBindingReferences.get(target.start);
+                if (binding !== undefined) writtenBindings.add(binding);
+              } else if (target.kind !== "member" && target.kind !== "index") {
+                bailCollections = true;
+              } else {
+                scanExpr(target);
+              }
+              scanExpr(expr.value);
+              return;
+            }
+            case "update": {
+              let target = expr.target;
+              while (target.kind === "group" || target.kind === "satisfies")
+                target = target.expression;
+              if (target.kind === "identifier") {
+                const binding = localBindingReferences.get(target.start);
+                if (binding !== undefined) writtenBindings.add(binding);
+              } else {
+                scanExpr(target);
+              }
+              return;
+            }
+            case "group":
+            case "satisfies":
+            case "await":
+            case "yield":
+              scanExpr(expr.expression);
+              return;
+            case "unary":
+              scanExpr(expr.operand);
+              return;
+            case "spread":
+              scanExpr(expr.value);
+              return;
+            case "binary":
+              scanExpr(expr.left);
+              scanExpr(expr.right);
+              return;
+            case "conditional":
+              scanExpr(expr.test);
+              scanExpr(expr.consequent);
+              scanExpr(expr.alternate);
+              return;
+            case "member":
+              scanExpr(expr.object);
+              return;
+            case "index":
+              scanExpr(expr.object);
+              scanExpr(expr.index);
+              return;
+            case "new":
+              scanExpr(expr.callee);
+              for (const arg of expr.arguments) scanExpr(arg);
+              return;
+            case "array":
+              for (const item of expr.elements)
+                if (item !== undefined) scanExpr(item);
+              return;
+            case "object":
+              for (const prop of expr.properties) {
+                if (prop === undefined) continue;
+                if (prop.kind === "spread") scanExpr(prop.value);
+                else {
+                  if (prop.keyExpression !== undefined)
+                    scanExpr(prop.keyExpression);
+                  scanExpr(prop.value);
+                }
+              }
+              return;
+            case "template-expression":
+              for (const item of expr.substitutions) scanExpr(item);
+              return;
+            case "tagged-template":
+              scanExpr(expr.tag);
+              for (const item of expr.template.substitutions) scanExpr(item);
+              return;
+            case "private-in":
+              scanExpr(expr.object);
+              return;
+            case "import-call":
+              scanExpr(expr.specifier);
+              scanExpr(expr.options);
+              return;
+            default:
+              return;
+          }
+        }
+        function scanStmt(stmt: Statement | undefined): void {
+          if (stmt === undefined) return;
+          switch (stmt.kind) {
+            case "function":
+            case "class":
+              return;
+            case "block":
+              for (const child of stmt.statements) scanStmt(child);
+              return;
+            case "expression":
+              scanExpr(stmt.expression);
+              return;
+            case "variable":
+              for (const decl of stmt.declarations) {
+                if (decl === undefined) continue;
+                const binding = variableDeclarationBindings.get(decl.start);
+                if (binding !== undefined) writtenBindings.add(binding);
+                if (decl.initializer !== undefined) scanExpr(decl.initializer);
+              }
+              return;
+            case "if":
+              scanExpr(stmt.test);
+              scanStmt(stmt.consequent);
+              scanStmt(stmt.alternate);
+              return;
+            case "for": {
+              const init = stmt.initializer;
+              if (init !== undefined) {
+                if (init.kind === "variable") scanStmt(init);
+                else if (init.kind === "expression") scanExpr(init.expression);
+                else bailCollections = true;
+              }
+              scanExpr(stmt.test);
+              scanExpr(stmt.update);
+              scanStmt(stmt.body);
+              return;
+            }
+            case "while":
+            case "do-while":
+              scanExpr(stmt.test);
+              scanStmt(stmt.body);
+              return;
+            case "switch":
+              scanExpr(stmt.expression);
+              for (const clause of stmt.clauses) {
+                if (clause === undefined) continue;
+                scanExpr(clause.test);
+                for (const child of clause.statements) scanStmt(child);
+              }
+              return;
+            case "try": {
+              scanStmt(stmt.body);
+              const handler = stmt.handler;
+              if (handler !== undefined) scanStmt(handler.body);
+              scanStmt(stmt.finalizer);
+              return;
+            }
+            case "with":
+              bailCollections = true;
+              return;
+            case "label":
+              scanStmt(stmt.body);
+              return;
+            case "return":
+            case "throw":
+              scanExpr(stmt.expression);
+              return;
+            case "for-of":
+            case "for-in":
+            case "for-of-assignment":
+            case "for-in-assignment":
+              bailCollections = true;
+              scanStmt(stmt.body);
+              return;
+            default:
+              return;
+          }
+        }
+        if (node.kind === "for") {
+          scanExpr(node.test);
+          scanExpr(node.update);
+        } else {
+          scanExpr(node.test);
+        }
+        scanStmt(node.body);
+        if (neededIntrinsicFields.size > 0) {
+          let intrinsicsRef = loopIntrinsics;
+          if (intrinsicsRef === undefined) {
+            intrinsicsRef = temporary(
+              member(id("$errors"), "intrinsicFunctions", node),
+            );
+            loopIntrinsics = intrinsicsRef;
+          }
+          let nextFields: Map<string, Expression> | undefined;
+          let addedFields = 0;
+          for (const fieldName of neededIntrinsicFields) {
+            if (addedFields >= 6) break;
+            if (loopIntrinsicFields.has(fieldName)) continue;
+            const fieldTemp = temporary(
+              member(copyIdentifier(intrinsicsRef, node), fieldName, node),
+            );
+            if (nextFields === undefined) {
+              nextFields = new Map<string, Expression>();
+              for (const [k, v] of loopIntrinsicFields) nextFields.set(k, v);
+            }
+            nextFields.set(fieldName, fieldTemp);
+            addedFields++;
+          }
+          if (nextFields !== undefined) loopIntrinsicFields = nextFields;
+        }
+        if (!bailCollections && collectionUses.size > 0) {
+          let nextCollections:
+            | Map<
+                string,
+                {
+                  readonly mapData: Expression | undefined;
+                  readonly setData: Expression | undefined;
+                }
+              >
+            | undefined;
+          let addedCount = 0;
+          for (const [binding, need] of collectionUses) {
+            if (addedCount >= 4) break;
+            if (writtenBindings.has(binding)) continue;
+            const slot = localSlots.get(binding);
+            if (slot === undefined || slot.kind !== "identifier") continue;
+            const existing = loopCollections.get(slot.name);
+            const existingMap =
+              existing !== undefined ? existing.mapData : undefined;
+            const existingSet =
+              existing !== undefined ? existing.setData : undefined;
+            const needMap = need.needMap && existingMap === undefined;
+            const needSet = need.needSet && existingSet === undefined;
+            if (!needMap && !needSet) continue;
+            const slotsTemp = temporary(
+              optionalMember(
+                runtimeCall(
+                  "viewTypeofObject",
+                  [copyIdentifier(slot, node)],
+                  node,
+                ),
+                "internalExoticSlots",
+                node,
+              ),
+            );
+            const mapTemp = needMap
+              ? temporary(
+                  optionalMember(
+                    copyIdentifier(slotsTemp, node),
+                    "internalMapData",
+                    node,
+                  ),
+                )
+              : undefined;
+            const setTemp = needSet
+              ? temporary(
+                  optionalMember(
+                    copyIdentifier(slotsTemp, node),
+                    "internalSetData",
+                    node,
+                  ),
+                )
+              : undefined;
+            if (nextCollections === undefined) {
+              nextCollections = new Map<
+                string,
+                {
+                  readonly mapData: Expression | undefined;
+                  readonly setData: Expression | undefined;
+                }
+              >();
+              for (const [k, v] of loopCollections) nextCollections.set(k, v);
+            }
+            const mergedMap = mapTemp !== undefined ? mapTemp : existingMap;
+            const mergedSet = setTemp !== undefined ? setTemp : existingSet;
+            nextCollections.set(slot.name, {
+              mapData: mergedMap,
+              setData: mergedSet,
+            });
+            addedCount++;
+          }
+          if (nextCollections !== undefined) loopCollections = nextCollections;
+        }
+      }
+      const first = directLoop
+        ? undefined
+        : temporary({ ...at(node), kind: "boolean", value: true }, false, true);
       const start = statements.length;
       if (fixed !== undefined) {
         const record = fixed.record;
@@ -9069,38 +11774,48 @@ function lowerScriptEntry(
           value: call("createDeclarativeScope", [outerScope, next], node),
         });
       }
-      // Put the increment (and do-while test) at the next loop entry. Native
-      // continue, including one unwinding finally, then reaches it naturally.
-      const laterStart = statements.length;
-      if (node.kind === "for") {
-        const update = node.update;
-        if (update !== undefined) expression(value(update));
-      } else if (node.kind === "do-while") {
-        loopTest(node.test);
+      if (first !== undefined) {
+        // Put the increment (and do-while test) at the next loop entry. Native
+        // continue, including one unwinding finally, then reaches it naturally.
+        const laterStart = statements.length;
+        if (node.kind === "for") {
+          const update = node.update;
+          if (update !== undefined) expression(value(update));
+        } else if (node.kind === "do-while") {
+          loopTest(node.test);
+        }
+        const later: BlockStatement = {
+          ...at(node),
+          kind: "block",
+          statements: statements.splice(laterStart),
+        };
+        statements.push({
+          ...at(node),
+          kind: "if",
+          test: { ...at(node), kind: "unary", operator: "!", operand: first },
+          consequent: later,
+          alternate: undefined,
+        });
+        expression({
+          ...at(node),
+          kind: "assignment",
+          target: first,
+          value: { ...at(node), kind: "boolean", value: false },
+        });
       }
-      const later: BlockStatement = {
-        ...at(node),
-        kind: "block",
-        statements: statements.splice(laterStart),
-      };
-      statements.push({
-        ...at(node),
-        kind: "if",
-        test: { ...at(node), kind: "unary", operator: "!", operand: first },
-        consequent: later,
-        alternate: undefined,
-      });
-      expression({
-        ...at(node),
-        kind: "assignment",
-        target: first,
-        value: { ...at(node), kind: "boolean", value: false },
-      });
       if (node.kind !== "do-while") {
         const test = node.test;
         if (test !== undefined) loopTest(test);
       }
       statement(node.body);
+      if (first === undefined && node.kind === "for") {
+        const update = node.update;
+        if (update !== undefined) expression(value(update));
+      }
+      suppressingNumericLoopSpec = prevSuppressGeneralBody;
+      loopIntrinsics = outerLoopIntrinsics;
+      loopIntrinsicFields = outerLoopIntrinsicFields;
+      loopCollections = outerLoopCollections;
       const body: BlockStatement = {
         ...at(node),
         kind: "block",
@@ -9117,6 +11832,25 @@ function lowerScriptEntry(
           labels,
         ),
       );
+      if (specialized !== undefined) {
+        const generalLoopStatements = statements.splice(generalLoopStart);
+        statements.push({
+          ...at(node),
+          kind: "if",
+          test: {
+            ...at(node),
+            kind: "unary",
+            operator: "!",
+            operand: specialized.doneFlag,
+          },
+          consequent: {
+            ...at(node),
+            kind: "block",
+            statements: generalLoopStatements,
+          },
+          alternate: undefined,
+        });
+      }
       finishResources(resources, node);
       releaseLocalSlots(initializedSlots);
       scope = outerScope;
@@ -9324,7 +12058,9 @@ function lowerScriptEntry(
     }
     if (node.kind === "try") {
       resetCompletion(node);
+      tryDepth++;
       const body = branchStatement(node.body);
+      tryDepth--;
       let handler: CatchClause | undefined;
       if (node.handler !== undefined) {
         const clause = node.handler;
@@ -9430,7 +12166,7 @@ function lowerScriptEntry(
       return;
     }
     if (node.kind === "if") {
-      const test = truthy(temporary(value(node.test), true), node);
+      const test = conditionValue(node.test, node);
       // IfStatement applies UpdateEmpty(undefined), so an empty selected arm
       // must not retain a preceding statement-list completion value.
       expression({
@@ -10035,12 +12771,31 @@ function lowerScriptEntry(
     usesWideRegisterCalls,
     usesNativeScriptCalls,
     usesIndexedWrites,
+    usesNullishEquality,
+    usesRelationalFallback,
+    usesLooseEqualityFallback,
+    excludesHTMLDDAObjects,
+    usesElementAccess,
+    usesIntrinsicCalls,
+    usesObjectLiterals,
+    usesSmallArrays,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
     kind: "import",
     declaration,
   }));
+  // Inline checks above assumed no [[IsHTMLDDA]] objects: the Script or
+  // module holds its host to that before any of its code runs.
+  const htmlDDAExclusion: Statement[] = excludesHTMLDDAObjects
+    ? [
+        {
+          ...generated,
+          kind: "expression",
+          expression: call("excludeHTMLDDAObjects", [], generated),
+        },
+      ]
+    : [];
   const execution: BlockStatement = {
     ...at(script),
     kind: "block",
@@ -10257,7 +13012,26 @@ function lowerScriptEntry(
       ),
       body: moduleContinuation ?? body,
     };
-    const factoryStatements = globalCacheDeclarations();
+    const factoryStatements: Statement[] = [];
+    appendStatements(factoryStatements, htmlDDAExclusion);
+    if (globalCacheInitializers.length !== 0 && !dynamicBindings) {
+      immutableTemporaries.add("$globalScope");
+      factoryStatements.push({
+        ...generated,
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            ...generated,
+            name: "$globalScope",
+            type: undefined,
+            initializer: call("createGlobalScope", [id("$global")], generated),
+          },
+        ],
+      });
+    }
+    appendStatements(factoryStatements, globalCacheDeclarations());
     appendStatements(factoryStatements, fixedCellTable());
     // Each Module Record owns its parsed template sites even when the host
     // reuses a compiled factory for equal source text at different specifiers.
@@ -10337,6 +13111,9 @@ function lowerScriptEntry(
       returnType: named("ModuleRecord"),
       body: factoryBody,
     });
+    for (const helper of specLoopHelpers) {
+      if (helper !== undefined) output.push(helper);
+    }
     // The two callbacks have independent lexical parameters. Materialize fresh
     // syntax per occurrence before identity-based binding and import renaming.
     const moduleOutput: Module = { ...at(script), imports, statements: output };
@@ -10344,6 +13121,9 @@ function lowerScriptEntry(
   }
   for (const site of templateSites) {
     if (site !== undefined) output.push(site);
+  }
+  for (const helper of specLoopHelpers) {
+    if (helper !== undefined) output.push(helper);
   }
   const contextArguments = instantiation("runScriptContext");
   const resultType = contextArguments[0];
@@ -10440,6 +13220,7 @@ function lowerScriptEntry(
     contextArrowBody = { ...body, statements: caches };
   }
   const contextualStatements: Statement[] = [];
+  appendStatements(contextualStatements, htmlDDAExclusion);
   contextualStatements.push({
     ...generated,
     kind: "variable",

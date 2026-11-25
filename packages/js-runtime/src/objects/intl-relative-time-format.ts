@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -101,7 +103,10 @@ function requireFormatter(
   realm: ErrorRealm,
 ): RelativeTimeFormatter {
   const object = viewObjectValue(receiver, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalRelativeTimeData;
+    data =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalRelativeTimeData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -158,7 +163,7 @@ export function installRelativeTimeFormatIntrinsic(
         ),
         formatter = createRelativeTimeFormatter(number, style, numeric);
       if (formatter === undefined) throw "RELATIVE_TIME_LOCALE_INVARIANT";
-      object.internalRelativeTimeData = formatter;
+      ensureExoticSlots(object).internalRelativeTimeData = formatter;
       return object;
     },
   );

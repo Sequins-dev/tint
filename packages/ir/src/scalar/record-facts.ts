@@ -1,5 +1,9 @@
 import { instructionResult } from "./operands.ts";
-import { analyzeLiveSlots } from "./liveness.ts";
+import {
+  analyzeLiveSlotRows,
+  analyzeLiveSlots,
+  fitsLiveRows,
+} from "./liveness.ts";
 import type {
   FunctionBodySource,
   FunctionIR,
@@ -16,7 +20,6 @@ function closedWorldHostOperation(operation: string): boolean {
     case "collect-garbage":
     case "cpu-pause":
     case "sha256-rounds":
-    case "utf8-window":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":
@@ -52,18 +55,45 @@ function closedWorldHostOperation(operation: string): boolean {
     case "jit-debug-register":
       return true;
     default:
+      return isolateHostOperation(operation);
+  }
+}
+/** Isolate (Worker and agent) operations (docs/design-worker-runtime.md).
+ * The only entry a hosted thread can start is the image's own hosted entry
+ * (`hosted-thread-entry`), which builds a fresh context with its own heap and
+ * module instances and reaches the program through the same closed root.
+ * Isolates exchange no managed pointers: messages are copied or transferred
+ * bytes, and shared memory, parking words and the mappings `memory-unmap`
+ * releases are outside every managed heap. None of these operations writes a
+ * managed object or creates a function value, so the program's interprocedural
+ * facts and generational write tracking hold in every isolate. */
+function isolateHostOperation(operation: string): boolean {
+  switch (operation) {
+    case "thread-start":
+    case "thread-join":
+    case "hosted-thread-entry":
+    case "memory-unmap":
+    case "word-park":
+    case "word-wake":
+    case "shared-read-unsigned":
+    case "shared-write-unsigned":
+    case "shared-read-word64":
+    case "shared-write-word64":
+    case "shared-compare-exchange-unsigned":
+    case "shared-compare-exchange-word64":
+      return true;
+    default:
       return false;
   }
 }
 /** Additional Test262/JIT image capabilities that cannot replace a managed
  * object's descriptor, although they leave the closed world. Executable
- * writes and shared-memory atomics target non-heap mappings; unmapping
- * releases such mappings (agent registries, shared blocks, messages), never a
- * running agent's managed heap; executable calls enter code compiled from
+ * writes target non-heap mappings; executable calls enter code compiled from
  * verified IR, whose writes are managed field writes; collection preserves
- * layouts; descriptor/signature queries only read; threads own separate
- * heaps. memory-write-word and memory-move can overwrite any header, and
- * collector configuration belongs to collector units, so neither qualifies. */
+ * layouts; descriptor/signature queries only read; collector helper threads
+ * belong to collector units. memory-write-word and memory-move can overwrite
+ * any header, and collector configuration belongs to collector units, so
+ * neither qualifies. */
 function descriptorPreservingHostOperation(operation: string): boolean {
   if (closedWorldHostOperation(operation)) return true;
   switch (operation) {
@@ -73,26 +103,14 @@ function descriptorPreservingHostOperation(operation: string): boolean {
     case "executable-call-value":
     case "executable-call-managed":
     case "executable-unmap":
-    case "memory-unmap":
     case "external-memory-register":
     case "stack-maps-register":
     case "native-function-descriptor":
     case "native-value-function-descriptor":
     case "native-value-function-signature":
-    case "thread-start":
-    case "thread-join":
-    case "hosted-thread-entry":
     case "collector-worker-entry":
     case "permanent-function-address":
     case "permanent-array-address":
-    case "word-park":
-    case "word-wake":
-    case "shared-read-unsigned":
-    case "shared-write-unsigned":
-    case "shared-read-word64":
-    case "shared-write-word64":
-    case "shared-compare-exchange-unsigned":
-    case "shared-compare-exchange-word64":
       return true;
     default:
       return false;
@@ -112,6 +130,10 @@ function everyHostOperation(
         for (const op of block.instructions) {
           if (op === undefined) throw "layout effect instruction invariant";
           if (op.kind === "host-call" && !allowed(op.operation)) return false;
+          // A bound raw-window write that is an IR instruction: like
+          // memory-write-bytes, its window may be any writable memory.
+          if (op.kind === "string-flatten-into" && !allowed(op.kind))
+            return false;
         }
       }
     } finally {
@@ -134,6 +156,36 @@ export function stableRecordLayouts(
   bodies?: FunctionBodySource,
 ): boolean {
   return everyHostOperation(module, closedWorldHostOperation, bodies);
+}
+/** Calls into code published at run time (executable memory). */
+function executableCallOperation(operation: string): boolean {
+  return (
+    operation === "executable-call-number" ||
+    operation === "executable-call-value" ||
+    operation === "executable-call-managed"
+  );
+}
+/** The generational mutator's write proof: every managed write carries a
+ * barrier. Every reachable host operation must preserve descriptors (a raw
+ * word write or move could store an unbarriered reference, so those are
+ * rejected). Writing code bytes into executable memory is not a managed
+ * write, but the code a call enters is opaque here, so executable calls are
+ * accepted only under the image's `trustedExecutableCode` contract: every
+ * entry it calls was produced by its own unit linker, which rejects units
+ * compiled with a different barrier policy (docs/native-code-loading.md,
+ * "Trusted executable code"). */
+export function trackedManagedWrites(
+  module: ModuleIR,
+  bodies: FunctionBodySource | undefined,
+  trustedExecutableCode: boolean,
+): boolean {
+  return everyHostOperation(
+    module,
+    (operation) =>
+      descriptorPreservingHostOperation(operation) &&
+      (trustedExecutableCode || !executableCallOperation(operation)),
+    bodies,
+  );
 }
 /** Descriptor stability alone: no reachable operation can replace a managed
  * object's descriptor, so a descriptor proven for an object held in a slot
@@ -264,9 +316,20 @@ export function analyzeRecordAccesses(
         return -op.record - 1;
       if (instructionResult(op) !== value) continue;
       if (op.kind === "record-new") return -op.record - 1;
+      if (
+        op.kind === "closure-environment" &&
+        !fn.exported &&
+        fn.closureEnvironment !== undefined
+      )
+        return -fn.closureEnvironment - 1;
       if (op.kind === "load") return slotOrigin(block, op.slot, i, depth + 1);
       if (op.kind === "reference-value" || op.kind === "reference-wrap")
         return valueOrigin(block, op.value, i, depth + 1);
+      // Block-local SSA identity for a direct field load: lets a check in this
+      // block prove a slot holding the same loaded reference at block exit,
+      // without crossing to predecessors or interfering with LICM on
+      // function-environment reads.
+      if (op.kind === "record-read") return fn.slots.length + 1 + value;
       return 0;
     }
     return 0;
@@ -291,6 +354,7 @@ export function analyzeRecordAccesses(
         if (-origin - 1 === record) matched = true;
         break;
       }
+      if (origin > fn.slots.length) break;
       const previous = predecessors[cursor];
       if (previous === undefined || previous === 0 || previous === 0xffffffff)
         break;
@@ -397,6 +461,8 @@ export function dataflowRecordGuards(
   fn: FunctionIR,
   maxWork: number = 2000000,
   stableLayouts: boolean = false,
+  /** Dense live-in table limit in words (tests force the list form). */
+  denseRowWords?: number,
 ): Uint8Array | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   const blockCount = fn.blocks.length,
@@ -424,10 +490,17 @@ export function dataflowRecordGuards(
     }
   }
   if (work > maxWork) return undefined;
-  const liveness = analyzeLiveSlots(fn, maxWork - work, trackedSlots);
-  if (liveness === undefined) return undefined;
-  work += liveness.work;
-  const liveSlots = liveness.slots;
+  // Live-in sets as dense rows when they fit (same sets and work).
+  const dense = fitsLiveRows(fn, trackedSlots.length, denseRowWords),
+    rowLiveness = dense
+      ? analyzeLiveSlotRows(fn, maxWork - work, trackedSlots)
+      : undefined,
+    listLiveness = dense
+      ? undefined
+      : analyzeLiveSlots(fn, maxWork - work, trackedSlots);
+  if (rowLiveness === undefined && listLiveness === undefined) return undefined;
+  work += rowLiveness?.work ?? listLiveness?.work ?? 0;
+  const liveSlots = listLiveness?.slots;
   // Value facts are block-local; a generation stamp discards stale entries.
   const layouts = new Uint32Array(maximum),
     sources = new Uint32Array(maximum),
@@ -498,11 +571,27 @@ export function dataflowRecordGuards(
       let kept = 0;
       if (!empty) {
         liveGeneration++;
-        const live = liveSlots[target] ?? [];
-        for (const slot of live)
-          if (slot !== undefined)
-            liveStamps[slotIndex[slot] ?? 0] = liveGeneration;
-        work += live.length;
+        if (rowLiveness !== undefined) {
+          // Row bit `index` is tracked slot `index`, stamped as index + 1.
+          const rows = rowLiveness.rows,
+            base = target * rowLiveness.rowWords,
+            end = rowLiveness.ends[target] ?? 0;
+          for (let word = rowLiveness.starts[target] ?? 0; word < end; word++) {
+            let bits = rows[base + word] ?? 0;
+            while (bits !== 0) {
+              const low = (bits & -bits) >>> 0;
+              bits = (bits ^ low) >>> 0;
+              liveStamps[word * 32 + 32 - Math.clz32(low)] = liveGeneration;
+              work++;
+            }
+          }
+        } else {
+          const live = liveSlots?.[target] ?? [];
+          for (const slot of live)
+            if (slot !== undefined)
+              liveStamps[slotIndex[slot] ?? 0] = liveGeneration;
+          work += live.length;
+        }
         for (let position = 0; position < factCount; position += 2) {
           const index = facts[position] ?? 0;
           if (liveStamps[index] !== liveGeneration) continue;
@@ -595,6 +684,12 @@ export function dataflowRecordGuards(
           set(index, layoutOf(op.value));
         }
       } else if (op.kind === "record-new") define(op.id, op.record + 1, 0, 0);
+      else if (
+        op.kind === "closure-environment" &&
+        !fn.exported &&
+        fn.closureEnvironment !== undefined
+      )
+        define(op.id, fn.closureEnvironment + 1, 0, 0);
       else if (op.kind === "reference-value" || op.kind === "reference-wrap") {
         if (stamps[op.value] === generation)
           define(

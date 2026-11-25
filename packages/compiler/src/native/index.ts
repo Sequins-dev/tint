@@ -217,6 +217,14 @@ export interface NativeRecordBinding {
   readonly module: string;
   readonly name: string;
   readonly operation: RecordOperation;
+  /** slot-read and the property cache operations: the first slot field's
+   * name and the slot count; field-word: the field's name. */
+  readonly field?: string;
+  readonly count?: number;
+  /** Property cache operations: the site's first cache field. */
+  readonly siteField?: string;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number;
 }
 /** Opaque managed weak storage is available only to declared runtime exports. */
 export interface NativeWeakBinding {
@@ -245,11 +253,17 @@ export interface CompileRequest extends ModuleRequest {
   /** The target's host policy (NativeTarget.hostABI). Builds pass their
    * target's; direct callers (tests and tools) default to darwin-aarch64. */
   readonly hostABI?: PosixHostABI;
+  /** The target implements FEAT_JSCVT (Darwin arm64 targets: all Apple
+   * silicon), so codegen may convert to ToInt32 with FJCVTZS. */
+  readonly jsConvert?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   /** Require the hosted context's optional linear-allocation state at byte 56. */
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
+  /** BuildRequest.trustedExecutableCode: the image's trust boundary for code
+   * it publishes and calls at run time. */
+  readonly trustedExecutableCode?: boolean;
   /** One-shot executable entry; no external calls may enter another native function. */
   readonly closedProgram?: boolean;
   /** Experimental: authorize bundled SparseList semantics for representation
@@ -458,21 +472,33 @@ export interface SourceLineRange {
   readonly line: number;
   readonly column: number;
 }
+export interface PublishedManagedSurface {
+  readonly name: string;
+  readonly digest: string;
+  /** The published directory, for compiling separately linked units
+   * against this program's surface. */
+  readonly directory: SerializedManagedSurfaceDirectory;
+  readonly signatures: number;
+  readonly records: number;
+  readonly runtimeSlots: number;
+  readonly runtimeTargets: number;
+  readonly runtimeSignatures: number;
+}
+export interface CompiledX64HostedProgram {
+  readonly ok: true;
+  readonly native: X64Module;
+  readonly lines: readonly SourceLineRange[];
+  readonly functionNames: ReadonlyMap<string, string>;
+  readonly parameterNames: ReadonlyMap<string, string>;
+  readonly serviceIdentities: readonly NativeServiceBinding[];
+  readonly managedSurfaces?: readonly PublishedManagedSurface[];
+  readonly invocation: number;
+  readonly returnType: "number" | "boolean" | "void" | "reference" | "general";
+}
 export interface CompiledProgram {
   /** Compiler-issued semantic identities in this program's permanent metadata. */
   readonly serviceIdentities?: readonly NativeServiceBinding[];
-  readonly managedSurfaces?: readonly {
-    readonly name: string;
-    readonly digest: string;
-    /** The published directory, for compiling separately linked units
-     * against this program's surface. */
-    readonly directory: SerializedManagedSurfaceDirectory;
-    readonly signatures: number;
-    readonly records: number;
-    readonly runtimeSlots: number;
-    readonly runtimeTargets: number;
-    readonly runtimeSignatures: number;
-  }[];
+  readonly managedSurfaces?: readonly PublishedManagedSurface[];
   readonly optimization: readonly PassStatistics[];
   readonly lines: readonly SourceLineRange[];
   /** Debug builds: source variables and inline scopes by function. */
@@ -696,17 +722,17 @@ export function compileNativeProgram(
 ): Compilation {
   const backend = selectNativeBackend(target);
   if (!backend.ok) return { ok: false, error: backend.error };
-  return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
+  return compileArm64Program({
+    ...request,
+    hostABI: backend.target.hostABI,
+    jsConvert: backend.target.os === "darwin",
+  });
 }
 
-function compileTypedWithProgramRealm<T>(
-  request: CompileRequest,
-  compile: (
-    request: CompileRequest,
-    realmTypeofModules: ReadonlySet<string> | undefined,
-  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
-  realmTypeofModules?: ReadonlySet<string>,
-): { readonly ok: true; readonly value: T } | CompilationFailure {
+function withoutDynamicObjectRuntime(request: CompileRequest): {
+  readonly explicit: RuntimeSource | undefined;
+  readonly without: CompileRequest;
+} {
   const explicit = request.runtimes.find(
     (source) => source?.namespace === "dynamic-object",
   );
@@ -717,31 +743,49 @@ function compileTypedWithProgramRealm<T>(
           ...request,
           runtimes: request.runtimes.filter((source) => source !== explicit),
         };
-  const initial = compile(without, realmTypeofModules);
-  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
-  const projections = initial.error.nativeProjections ?? [];
+  return { explicit, without };
+}
+
+function expandDynamicObjectRealm(
+  request: CompileRequest,
+  without: CompileRequest,
+  explicit: RuntimeSource | undefined,
+  error: CompilationFailure["error"],
+  realmTypeofModules?: ReadonlySet<string>,
+):
+  | {
+      readonly ok: true;
+      readonly request: CompileRequest;
+      readonly realmModules: ReadonlySet<string> | undefined;
+    }
+  | { readonly ok: false; readonly failure: CompilationFailure } {
+  const projections = error.nativeProjections ?? [];
   const callableViews = projections.includes("projectUnaryNumber");
   const runtime =
-    initial.error.needsBindingRealm === true || projections.length !== 0
-      ? dynamicObjectRuntimeSource(initial.error.needsBindingRealm, projections)
+    error.needsBindingRealm === true || projections.length !== 0
+      ? dynamicObjectRuntimeSource(error.needsBindingRealm, projections)
       : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
   let expandedRequest = request;
   if (loader === undefined) {
     if (!request.modules.some((source) => source?.id === module))
-      return initial;
+      return { ok: false, failure: { ok: false, error } };
   } else if (!loader.ids.includes(module)) {
     const loadWithRoot = loader.loadWithRoot;
     const expanded =
       loadWithRoot === undefined ? undefined : loadWithRoot(module);
-    if (expanded === undefined) return initial;
+    if (expanded === undefined)
+      return { ok: false, failure: { ok: false, error } };
     if (!expanded.ok)
-      return stageFailure(
-        expanded.error.stage,
-        expanded.error.message,
-        expanded.error.module,
-      );
+      return {
+        ok: false,
+        failure: stageFailure(
+          expanded.error.stage,
+          expanded.error.message,
+          expanded.error.module,
+        ),
+      };
     expandedRequest = {
       ...request,
       modules: expanded.value,
@@ -858,9 +902,60 @@ function compileTypedWithProgramRealm<T>(
     )
       bindings.push({ module: objects, name, operation: "view" });
   }
-  return compile(
-    { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
+  return {
+    ok: true,
+    request: {
+      ...expandedRequest,
+      runtimes,
+      recordBindings: bindings,
+      weakBindings,
+    },
     realmModules,
+  };
+}
+
+function compileTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): Compilation {
+  const { explicit, without } = withoutDynamicObjectRuntime(request);
+  const initial = compileTypedProgram(without, realmTypeofModules);
+  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const expanded = expandDynamicObjectRealm(
+    request,
+    without,
+    explicit,
+    initial.error,
+    realmTypeofModules,
+  );
+  if (!expanded.ok) return expanded.failure;
+  return compileTypedProgram(expanded.request, expanded.realmModules);
+}
+
+function lowerTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+  invokeDirectly: boolean = false,
+): TypedLowering {
+  const { explicit, without } = withoutDynamicObjectRuntime(request);
+  const initial = lowerTypedProgram(
+    without,
+    realmTypeofModules,
+    invokeDirectly,
+  );
+  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const expanded = expandDynamicObjectRealm(
+    request,
+    without,
+    explicit,
+    initial.error,
+    realmTypeofModules,
+  );
+  if (!expanded.ok) return expanded.failure;
+  return lowerTypedProgram(
+    expanded.request,
+    expanded.realmModules,
+    invokeDirectly,
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
@@ -892,11 +987,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const request = withForeignRuntimes(original);
   const typed = compileWithTypedWorkerEntry<CompiledProgram>(
     request,
-    (source): Compilation =>
-      compileTypedWithProgramRealm<CompiledProgram>(
-        source,
-        compileTypedProgram,
-      ),
+    (source): Compilation => compileTypedWithProgramRealm(source),
   );
   const lowering = request.generalLowering;
   if (
@@ -910,11 +1001,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     lowering,
     typed.error,
     (source, realmTypeofModules): Compilation =>
-      compileTypedWithProgramRealm<CompiledProgram>(
-        source,
-        compileTypedProgram,
-        realmTypeofModules,
-      ),
+      compileTypedWithProgramRealm(source, realmTypeofModules),
   );
   if (!general.ok) return general;
   return {
@@ -1711,6 +1798,7 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     retainedRuntimeModules,
     globals,
     request.maxSpecializations ?? 8192,
+    request.generationalBarriers === true,
   );
   if (!surfaces.ok) return stageFailure("surface", surfaces.error);
   const surfacePlans = surfaces.value.plans;
@@ -2372,6 +2460,10 @@ function lowerTypedProgram(
   const recordBindings: {
     function: number;
     operation: RecordOperation;
+    field?: string | undefined;
+    count?: number | undefined;
+    siteField?: string | undefined;
+    entries?: number | undefined;
   }[] = [];
   for (const plan of surfacePlans) {
     if (plan === undefined) throw "surface plan invariant";
@@ -2429,7 +2521,14 @@ function lowerTypedProgram(
         "record-binding",
         "record binding requires a module function: " + name,
       );
-    recordBindings.push({ function: fn.id, operation: binding.operation });
+    recordBindings.push({
+      function: fn.id,
+      operation: binding.operation,
+      field: binding.field,
+      count: binding.count,
+      siteField: binding.siteField,
+      entries: binding.entries,
+    });
   }
   const serviceSources: {
     readonly function: number;
@@ -3353,6 +3452,7 @@ export function compileX64HostedProgram(
     readonly forceFarReach?: boolean;
     readonly jitDebugInterface?: boolean;
     readonly generational?: boolean;
+    readonly trustedExecutableCode?: boolean;
     readonly inlineAllocation?: boolean;
     readonly threaded?: boolean;
     readonly nodeWorkerLibrary?: boolean;
@@ -3364,24 +3464,15 @@ export function compileX64HostedProgram(
       reason: string,
     ) => void;
   } = {},
-):
-  | CompilationFailure
-  | {
-      readonly ok: true;
-      readonly native: X64Module;
-      readonly lines: readonly SourceLineRange[];
-      readonly functionNames: ReadonlyMap<string, string>;
-      readonly parameterNames: ReadonlyMap<string, string>;
-      readonly serviceIdentities: readonly NativeServiceBinding[];
-      readonly invocation: number;
-      readonly returnType:
-        "number" | "boolean" | "void" | "reference" | "general";
-    } {
+): CompilationFailure | CompiledX64HostedProgram {
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
   const source = withForeignRuntimes({
     ...request,
+    // Recorded in managed-surface directories (the x86-64 emitter takes the
+    // policy from options.generational).
+    generationalBarriers: options.generational === true,
     moduleLoader: selected.moduleLoader,
     modules: selected.modules,
     symbols: true,
@@ -3391,11 +3482,7 @@ export function compileX64HostedProgram(
     const typed = compileWithTypedWorkerEntry<TypedProgram>(
       source,
       (prepared): TypedLowering =>
-        compileTypedWithProgramRealm<TypedProgram>(
-          prepared,
-          (program, realmTypeofModules): TypedLowering =>
-            lowerTypedProgram(program, realmTypeofModules, invokeDirectly),
-        ),
+        lowerTypedWithProgramRealm(prepared, undefined, invokeDirectly),
     );
     const lowering = source.generalLowering;
     if (
@@ -3409,12 +3496,7 @@ export function compileX64HostedProgram(
       lowering,
       typed.error,
       (program, realmTypeofModules): TypedLowering =>
-        compileTypedWithProgramRealm<TypedProgram>(
-          program,
-          (prepared, realmModules): TypedLowering =>
-            lowerTypedProgram(prepared, realmModules),
-          realmTypeofModules,
-        ),
+        lowerTypedWithProgramRealm(program, realmTypeofModules),
     );
     if (!general.ok) return general;
     const report = options.onGeneralFallback;
@@ -3564,6 +3646,7 @@ export function compileX64HostedProgram(
       : undefined,
     options.jitDebugInterface === true,
     program.workerFunctions,
+    options.trustedExecutableCode === true,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -3645,6 +3728,10 @@ export function compileX64HostedProgram(
       column: position.column,
     });
   }
+  const managedSurfaces = publishedManagedSurfaces(
+    program.surfacePlans,
+    program.surfaceRuntimes,
+  );
   return {
     ok: true,
     native: emitted.value,
@@ -3654,7 +3741,32 @@ export function compileX64HostedProgram(
     functionNames: sourceNames.names,
     parameterNames,
     serviceIdentities,
+    ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
   };
+}
+function publishedManagedSurfaces(
+  surfacePlans: readonly ManagedSurfaceAOTPlan[],
+  surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[],
+): readonly PublishedManagedSurface[] | undefined {
+  if (surfacePlans.length === 0) return undefined;
+  const published: PublishedManagedSurface[] = [];
+  for (let index = 0; index < surfacePlans.length; index++) {
+    const plan = surfacePlans[index];
+    if (plan === undefined) throw "published surface invariant";
+    const stubs = surfaceRuntimes[index]?.entries.stubs;
+    published.push({
+      name: plan.directory.name,
+      digest: plan.directory.digest,
+      directory: plan.directory,
+      signatures: plan.directory.signatures.length,
+      records: plan.directory.records.length,
+      runtimeSlots: surfaceRuntimes[index]?.entries.slots.length ?? 0,
+      runtimeTargets: stubs?.entries.length ?? 0,
+      runtimeSignatures:
+        (stubs?.declarations.length ?? 0) - (stubs?.entries.length ?? 0),
+    });
+  }
+  return published;
 }
 
 function compileTypedProgram(
@@ -3917,11 +4029,13 @@ function compileTypedProgram(
         });
     },
     hostABI: request.hostABI ?? darwinAArch64Target.hostABI,
+    jsConvert: request.jsConvert === true,
     debugSpans: request.debugSymbols === true || request.stackTraces === true,
     throwTraces: request.stackTraces ?? false,
     operationRanges: request.operationRanges ?? false,
     linearAllocation: request.linearAllocation ?? false,
     generationalBarriers: request.generationalBarriers ?? false,
+    trustedExecutableCode: request.trustedExecutableCode === true,
     managedABI:
       serviceImports.length === 0
         ? undefined
@@ -4087,6 +4201,10 @@ function compileTypedProgram(
       },
     );
   }
+  const managedSurfaces = publishedManagedSurfaces(
+    surfacePlans,
+    surfaceRuntimes,
+  );
   return {
     ok: true,
     value: {
@@ -4100,24 +4218,7 @@ function compileTypedProgram(
       entry: invocation < 0 ? undefined : invocation,
       exports: request.exports.slice(),
       ...(serviceIdentities.length === 0 ? {} : { serviceIdentities }),
-      ...(surfacePlans.length === 0
-        ? {}
-        : {
-            managedSurfaces: surfacePlans.map((plan, index) => ({
-              name: plan.directory.name,
-              digest: plan.directory.digest,
-              directory: plan.directory,
-              signatures: plan.directory.signatures.length,
-              records: plan.directory.records.length,
-              runtimeSlots: surfaceRuntimes[index]?.entries.slots.length ?? 0,
-              runtimeTargets:
-                surfaceRuntimes[index]?.entries.stubs.entries.length ?? 0,
-              runtimeSignatures:
-                (surfaceRuntimes[index]?.entries.stubs.declarations.length ??
-                  0) -
-                (surfaceRuntimes[index]?.entries.stubs.entries.length ?? 0),
-            })),
-          }),
+      ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
     },
   };
 }

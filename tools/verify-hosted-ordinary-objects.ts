@@ -52,7 +52,7 @@ export function run():number{
  if(!setProperty<string,number>(captured,"accessor",14,{value:15,object:undefined},hooks)||observed!==15||argument!==14)return 26;
  if(!setPrototype<string,number>(home,undefined))return 27;
  if(getSuperBase<string,number>(method)!==undefined||captured!==parent)return 28;
- if(method.internalHomeObject!==home)return 29;
+ if(method.internalRareSlots?.internalHomeObject!==home)return 29;
  return 42;
 }`,
   "ordinary-objects",

@@ -59,6 +59,10 @@ export function runtimeSources(): RuntimeSource[] {
       namespace: "bigint",
     },
     {
+      module: "packages/foundation/src/numeric/number-string-cache.ts",
+      namespace: "number-string-cache",
+    },
+    {
       module: "packages/foundation/src/numeric/number-text/index.ts",
       namespace: "number-text",
     },
@@ -73,6 +77,14 @@ export function runtimeSources(): RuntimeSource[] {
     {
       module: "packages/foundation/src/collections/list-sort.ts",
       namespace: "list-sort",
+    },
+    {
+      module: "packages/foundation/src/text/latin1.ts",
+      namespace: "latin1",
+    },
+    {
+      module: "packages/foundation/src/text/utf8.ts",
+      namespace: "utf8",
     },
     {
       module: "packages/foundation/src/text/text-encoding/index.ts",
@@ -155,7 +167,10 @@ export function projectBuildRequest(
   moduleLoader?: SourceModuleLoader,
 ): BuildRequest {
   const fs = "packages/native-runtime/src/intrinsics/fs.ts",
-    process = "packages/native-runtime/src/intrinsics/process.ts";
+    process = "packages/native-runtime/src/intrinsics/process.ts",
+    latin1 = "packages/foundation/src/text/latin1.ts",
+    utf8 = "packages/foundation/src/text/utf8.ts",
+    numberStrings = "packages/foundation/src/numeric/number-string-cache.ts";
   const bindings: NativeHostBinding[] = [
     { module: fs, name: "openRead", operation: "open-read" },
     { module: fs, name: "openExclusive", operation: "open-exclusive" },
@@ -191,7 +206,6 @@ export function projectBuildRequest(
   // Additional host services follow the supplied facade, including frozen source
   // graphs. Mandatory compiler I/O bindings remain unconditional and fail closed.
   const sourceRequest: ModuleRequest = { modules, moduleLoader };
-  const textEncoding = "packages/foundation/src/text/text-encoding/index.ts";
   // Hand-tuned intrinsics and build facts replace portable bodies where the
   // source defines the bound function (frozen snapshots may predate it;
   // their single compressSha256Rounds assumed the SHA-256 instructions).
@@ -211,23 +225,70 @@ export function projectBuildRequest(
       name: "sha256InstructionsAvailable",
       operation: "cpu-sha256",
     },
-    {
-      module: textEncoding,
-      name: "encodeUTF8Window",
-      operation: "utf8-window",
-    },
     { module: process, name: "targetOperatingSystem", operation: "target-os" },
     {
       module: process,
       name: "targetArchitecture",
       operation: "target-architecture",
     },
+    { module: latin1, name: "latin1Text", operation: "string-from-latin1" },
+    { module: latin1, name: "copyLatin1", operation: "string-copy-latin1" },
+    {
+      module: latin1,
+      name: "asciiEndOfText",
+      operation: "string-ascii-prefix",
+    },
+    {
+      module: latin1,
+      name: "asciiEndOfBytes",
+      operation: "bytes-ascii-prefix",
+    },
+    {
+      module: latin1,
+      name: "asciiUppercase",
+      operation: "string-ascii-upper",
+    },
+    {
+      module: latin1,
+      name: "asciiLowercase",
+      operation: "string-ascii-lower",
+    },
+    { module: utf8, name: "utf8ByteLength", operation: "string-utf8-length" },
+    { module: utf8, name: "writeUTF8", operation: "string-write-utf8" },
+    { module: utf8, name: "utf8Text", operation: "string-from-utf8" },
+    {
+      module: utf8,
+      name: "utf8WholeText",
+      operation: "string-from-utf8-whole",
+    },
+    {
+      module: numberStrings,
+      name: "numberStringCached",
+      operation: "number-string-cached",
+    },
+    {
+      module: numberStrings,
+      name: "cacheNumberString",
+      operation: "number-string-cache",
+    },
+    {
+      module: numberStrings,
+      name: "cachedArrayIndex",
+      operation: "string-index-cached",
+    },
+    {
+      module: numberStrings,
+      name: "cacheArrayIndex",
+      operation: "string-index-cache",
+    },
   ];
   const selected = requestModules(sourceRequest, [
     fs,
     process,
     "packages/foundation/src/binary/sha256-rounds.ts",
-    textEncoding,
+    latin1,
+    utf8,
+    numberStrings,
   ]);
   for (const intrinsic of intrinsics) {
     if (intrinsic === undefined) throw "intrinsic binding invariant";

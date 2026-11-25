@@ -29,7 +29,7 @@ import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,startNativeThread,j
 import {readSharedUnsigned,writeSharedUnsigned} from 'shared';
 import {monotonicMilliseconds} from 'clock';
 import {nativeSharedMemoryHost,nativeSharedAtomicMemoryHost,nativeWaiterParkingHost,createNativeSharedBlockService,attachNativeSharedBlockService} from 'service';
-import {createObject,createErrorRealm,createScriptAgent,installArrayIntrinsics,installAtomicsIntrinsics,installTypedArrayIntrinsics,installSharedArrayBufferIntrinsics,installArrayBufferIntrinsics,viewObjectValue,callObjectValue,constructObject,getProperty,type OrdinaryObject,type ScriptPropertyKey,type ObjectHooks} from 'object';
+import {createObject,createErrorRealm,createScriptAgent,installArrayIntrinsics,installAtomicsIntrinsics,installTypedArrayIntrinsics,installSharedArrayBufferIntrinsics,installArrayBufferIntrinsics,viewObjectValue,callObjectValue,constructObject,getProperty,exoticSlots,type OrdinaryObject,type ScriptPropertyKey,type ObjectHooks} from 'object';
 export function run(argument:number):number {
  const host=nativeSharedMemoryHost(),atomic=nativeSharedAtomicMemoryHost(),parking=nativeWaiterParkingHost();
  if(argument!==0){
@@ -68,7 +68,7 @@ export function run(argument:number):number {
  const atomics=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(global,"Atomics",global,hooks),global);if(atomics===undefined)return 4;
  writeMemoryWord(mailbox,128,0,backing.registry.base);writeMemoryWord(mailbox,128,8,backing.registry.byteLength);writeMemoryWord(mailbox,128,16,backing.registry.engineId);
  writeMemoryWord(mailbox,128,24,waitDescriptor.base);writeMemoryWord(mailbox,128,32,waitDescriptor.byteLength);
- const data=buffer.internalSharedArrayBufferData;if(data===undefined)return 5;
+ const data=exoticSlots(buffer).internalSharedArrayBufferData;if(data===undefined)return 5;
  writeMemoryWord(mailbox,128,40,data.handle);
  const worker=startNativeThread(hostedThreadEntry(),mailbox);if(worker<=0)return 6;
  requested=true;
@@ -117,7 +117,7 @@ export function run(argument:number):number {
     threaded: true,
     managedBytes: 16777216,
     allocationCapacity: 262144,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeRuntime",
     hostBindings: bindings.map(([module, name, operation]) => ({
       module,
       name,

@@ -1,0 +1,114 @@
+{
+  "kind": "tint-warm-call-traces",
+  "tool": "tools/general-call-bench/count_call.py",
+  "call": 501,
+  "cpu": "Apple M5 Max",
+  "note": "Instruction counts are one warm call (entry to return, callees included) on the neon probe.",
+  "probes": {
+    "neon": "var STATE_HELD = 4;\nvar STATE_SUSPENDED = 2;\nfunction Box(v) { this.v = v; }\nBox.prototype.get = function () { return this.v; };\nfunction method(o) { const r = o.get(); return r; }\nfunction make(v) { const b = new Box(v); return b; }\nfunction Vec(x, y, z) { this.x = x; this.y = y; this.z = z; }\nVec.prototype.dot = function (other) { return this.x * other.x + this.y * other.y + this.z * other.z; };\nfunction dot(a, b) { return a.dot(b); }\nfunction Base() {}\nBase.prototype.deepGet = function () { return 7; };\nfunction Mid() {}\nMid.prototype = Object.create(Base.prototype);\nfunction Sub() {}\nSub.prototype = Object.create(Mid.prototype);\nfunction callDeep(s) { return s.deepGet(); }\nfunction Task(state, next) { this.state = state; this.next = next; }\nTask.prototype.isHeldOrSuspended = function () {\n  return (this.state & STATE_HELD) != 0 || this.state == STATE_SUSPENDED;\n};\nfunction walk(t) {\n  let n = 0;\n  for (let cur = t; cur != null; cur = cur.next) if (cur.isHeldOrSuspended()) n++;\n  return n;\n}\nfunction setState(t, v) { t.state = v; return v; }\nexport function run() {\n  let s = 0;\n  const o = new Box(1);\n  const a = new Vec(1, 2, 3), b = new Vec(4, 5, 6);\n  const sub = new Sub();\n  const t = new Task(0, new Task(4, new Task(2, null)));\n  for (let i = 0; i < 1000; i++) {\n    s += method(o) + make(i).v + dot(a, b) + callDeep(sub) + walk(t) + setState(t, i & 1);\n  }\n  return s > 0 ? 42 : 1;\n}\n"
+  },
+  "variants": {
+    "a2Head": {
+      "revision": "d58dffa2f",
+      "traces": {
+        "neon:method": {
+          "instructions": 338,
+          "bytes": 3344
+        },
+        "neon:make": {
+          "instructions": 906,
+          "bytes": 3956
+        },
+        "neon:dot": {
+          "instructions": 643,
+          "bytes": 4912
+        },
+        "neon:callDeep": {
+          "instructions": 283,
+          "bytes": 4740
+        },
+        "neon:walk": {
+          "instructions": 1578,
+          "bytes": 4936
+        },
+        "neon:setState": {
+          "instructions": 119,
+          "bytes": 976
+        },
+        "neon:Box.prototype.get": {
+          "instructions": 90,
+          "bytes": 716
+        },
+        "neon:Vec.prototype.dot": {
+          "instructions": 396,
+          "bytes": 14112
+        }
+      }
+    },
+    "a3": {
+      "revision": "7ae641170",
+      "images": {
+        "neon": {
+          "sha256": "e1010db293722ed50a3bb06fb398e10d160e0a4e43060a0c1c43164c109686b3"
+        }
+      },
+      "traces": {
+        "neon:method": {
+          "instructions": 338,
+          "bySymbol": {
+            "program:$general:fixture:closure@129 [closure_3026]": 248,
+            "program:$general:fixture:closure@97 [closure_3052]": 90
+          }
+        },
+        "neon:make": {
+          "instructions": 646,
+          "bySymbol": {
+            "program:$general:fixture:closure@181 [closure_3027]": 320,
+            "program:@90:value:34$1016$direct": 105,
+            "program:packages/js-runtime/src/objects/operations.ts:createObject [__tint_specialized_195$3079]": 105,
+            "program:$general:fixture:closure@45 [closure_3025]": 116
+          }
+        },
+        "neon:dot": {
+          "instructions": 643,
+          "bySymbol": {
+            "program:$general:fixture:closure@401 [closure_3029]": 247,
+            "program:$general:fixture:closure@316 [closure_3054]": 396
+          }
+        },
+        "neon:callDeep": {
+          "instructions": 283,
+          "bySymbol": {
+            "program:$general:fixture:closure@641 [closure_3033]": 237,
+            "program:$general:fixture:closure@485 [closure_3056]": 46
+          }
+        },
+        "neon:walk": {
+          "instructions": 1584,
+          "bySymbol": {
+            "program:$general:fixture:closure@881 [closure_3035]": 750,
+            "program:$general:fixture:closure@790 [closure_3058]": 834
+          }
+        },
+        "neon:setState": {
+          "instructions": 119,
+          "bySymbol": {
+            "program:$general:fixture:closure@1010 [closure_3036]": 119
+          }
+        },
+        "neon:Box.prototype.get": {
+          "instructions": 90,
+          "bySymbol": {
+            "program:$general:fixture:closure@97 [closure_3052]": 90
+          }
+        },
+        "neon:Vec.prototype.dot": {
+          "instructions": 396,
+          "bySymbol": {
+            "program:$general:fixture:closure@316 [closure_3054]": 396
+          }
+        }
+      }
+    }
+  }
+}

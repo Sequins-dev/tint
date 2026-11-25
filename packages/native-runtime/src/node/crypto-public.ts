@@ -11,6 +11,7 @@ import {
   createObject,
   createPrivateName,
   createRuntimeError,
+  exoticSlots,
   findPrivateElement,
   getProperty,
   isArrayValue,
@@ -135,7 +136,7 @@ function unavailableDigest(
  * synchronous step without projecting a range record. Other views (DataView,
  * shared, length-tracking, detached or out of bounds) return undefined. */
 function typedArrayBytes(object: RealmObject): Uint8Array | undefined {
-  const data = object.internalTypedArrayData;
+  const data = exoticSlots(object).internalTypedArrayData;
   if (data === undefined) return undefined;
   const storage = data.storage;
   const length = data.length;
@@ -173,8 +174,8 @@ function inputBytes(
       );
     }
   }
-  if (allowArrayBuffer) {
-    const storage = view?.internalArrayBufferData;
+  if (allowArrayBuffer && view !== undefined) {
+    const storage = exoticSlots(view).internalArrayBufferData;
     if (storage !== undefined) {
       const bytes = byteStorageData(storage);
       if (bytes !== undefined) return bytes;

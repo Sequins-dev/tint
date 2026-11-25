@@ -12,7 +12,8 @@ import { pathToFileURL } from "node:url";
 import { startDevTools, type DevToolsSession } from "./devtools/cli.ts";
 import type { BridgePlugin } from "./devtools/plugin.ts";
 import { CdpTestClient } from "./devtools/test-client.ts";
-import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { sharedFixtureImage, verifyHostedFixture } from "./hosted-fixture.ts";
+import { admitDarwinFixture } from "./native-admission.ts";
 
 /** Lines referenced by the tests (1-based, in the `fixture` source). */
 export const fixtureLines = {
@@ -83,20 +84,41 @@ export function run(): number {
 }
 `;
 
-/** Builds the fixture as a debug image (heap introspection on). */
-export function buildDevToolsFixture(name: string): string {
+/** Builds the fixture as a debug image (heap introspection on), once per
+ * native batch: every session gets its own copy of the same image. */
+export function buildDevToolsFixture(): string {
   const saved = {
     debug: process.env.TINT_DEBUG_SYMBOLS,
     only: process.env.TINT_BUILD_ONLY,
   };
+  const mode = nativeFixtureBuildOnlyMode();
   process.env.TINT_DEBUG_SYMBOLS = "1";
-  process.env.TINT_BUILD_ONLY = nativeFixtureBuildOnlyMode();
+  process.env.TINT_BUILD_ONLY = mode;
+  const options = {
+    managedBytes: 67108864,
+    allocationCapacity: 4194304,
+    runtimeEntry: "initializeGenerationalRuntime",
+  } as const;
   try {
-    return verifyHostedFixture(devtoolsFixtureSource, name, [], [], [], [], {
-      managedBytes: 67108864,
-      allocationCapacity: 4194304,
-      runtimeEntry: "initializeGenerationalRuntime",
-    });
+    const image = sharedFixtureImage(
+      "devtools-fixture",
+      [devtoolsFixtureSource, options],
+      () =>
+        verifyHostedFixture(
+          devtoolsFixtureSource,
+          "devtools-fixture",
+          [],
+          [],
+          [],
+          [],
+          options,
+        ),
+    );
+    // Outside the gate a build-only image is admitted here; the gate's
+    // DevTools launch admits each copy itself.
+    if (mode === "1" && process.platform === "darwin")
+      admitDarwinFixture(image);
+    return image;
   } finally {
     for (const [key, value] of [
       ["TINT_DEBUG_SYMBOLS", saved.debug],
@@ -129,7 +151,6 @@ export interface Property {
 /** A fixture session: the image, its source on disk and a connected,
  * enabled client (the program waits for runIfWaitingForDebugger). */
 export async function tintSession(
-  name: string,
   plugins: readonly BridgePlugin[],
   onAdmitted: () => void,
 ): Promise<{
@@ -138,7 +159,7 @@ export async function tintSession(
   url: string;
   close: () => Promise<void>;
 }> {
-  const image = buildDevToolsFixture(name);
+  const image = buildDevToolsFixture();
   const dir = mkdtempSync(join(tmpdir(), "tint-devtools-tint-"));
   const sourceFile = join(dir, "fixture.ts");
   writeFileSync(sourceFile, devtoolsFixtureSource);

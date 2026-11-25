@@ -1,6 +1,11 @@
 import {
+  analyzeLiveSlotRows,
+  analyzeLiveSlotRowsPrecisely,
   analyzeLiveSlots,
   analyzeLiveSlotsPrecisely,
+  fitsLiveRows,
+  liveRowWords,
+  type SlotLiveRows,
 } from "../src/scalar/liveness.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -561,4 +566,121 @@ test("precise liveness keeps a guarded read's slot live into an exception handle
     ],
   };
   assert.deepEqual(analyzeLiveSlotsPrecisely(fn, 1000)?.slots[0], [0, 1]);
+});
+
+/** Per block, the tracked slots of each set row bit in ascending order; also
+ * checks that no bit lies outside the block's recorded word span. */
+function rowLists(live: SlotLiveRows, blockCount: number): number[][] {
+  const lists: number[][] = [];
+  for (let block = 0; block < blockCount; block++) {
+    const list: number[] = [];
+    for (let word = 0; word < live.rowWords; word++) {
+      const bits = live.rows[block * live.rowWords + word] ?? 0;
+      if (word < live.starts[block]! || word >= live.ends[block]!)
+        assert.equal(bits, 0, `bits outside the span of block ${block}`);
+      for (let bit = 0; bit < 32; bit++)
+        if (((bits >>> bit) & 1) === 1)
+          list.push(live.tracked[word * 32 + bit]!);
+    }
+    lists.push(list);
+  }
+  return lists;
+}
+test("dense live rows hold the list form's sets, order and work", () => {
+  let seed = 11;
+  const random = (limit: number): number => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed % limit;
+  };
+  for (let round = 0; round < 400; round++) {
+    const blockCount = 1 + random(12),
+      slotCount = 1 + random(70);
+    let value = 0;
+    const blocks = Array.from({ length: blockCount }, (_, id) => {
+      const instructions = Array.from({ length: random(8) }, () =>
+        random(2) === 0
+          ? {
+              kind: "load" as const,
+              id: value++,
+              slot: random(slotCount),
+              ...span,
+            }
+          : {
+              kind: "store" as const,
+              slot: random(slotCount),
+              value: 0,
+              ...span,
+            },
+      );
+      const shape = random(5),
+        target = (): number => random(blockCount);
+      const terminator =
+        shape === 0
+          ? { kind: "return" as const, ...span }
+          : shape === 1
+            ? {
+                kind: "record" as const,
+                operation: random(2) === 0 ? "read" : "write",
+                slot: random(slotCount),
+                value: 0,
+                consequent: target(),
+                alternate: target(),
+                ...span,
+              }
+            : shape === 2
+              ? {
+                  kind: "branch" as const,
+                  condition: 0,
+                  consequent: target(),
+                  alternate: target(),
+                  ...span,
+                }
+              : { kind: "jump" as const, target: target(), ...span };
+      return {
+        id,
+        instructions,
+        terminator,
+        ...(random(4) === 0
+          ? { exception: { target: target(), slot: random(slotCount) } }
+          : {}),
+      };
+    });
+    const fn = {
+      id: 0,
+      name: "rows",
+      exported: true,
+      parameters: random(2) === 0 ? [] : [random(slotCount)],
+      slots: Array.from({ length: slotCount }, () => "string" as const),
+      returnType: "void",
+      entry: 0,
+      blocks,
+    } as unknown as FunctionIR;
+    // A shuffled subset: lists follow the tracked order, as rows enumerate.
+    const tracked: number[] = [];
+    for (let slot = 0; slot < slotCount; slot++)
+      if (random(3) !== 0) tracked.splice(random(tracked.length + 1), 0, slot);
+    for (const subset of [undefined, tracked]) {
+      const lists = analyzeLiveSlots(fn, 1000000, subset),
+        rows = analyzeLiveSlotRows(fn, 1000000, subset),
+        preciseLists = analyzeLiveSlotsPrecisely(fn, 1000000, subset),
+        preciseRows = analyzeLiveSlotRowsPrecisely(fn, 1000000, subset);
+      assert.ok(lists && rows && preciseLists && preciseRows);
+      assert.equal(rows.rowWords, liveRowWords(subset?.length ?? slotCount));
+      assert.deepEqual(rowLists(rows, blockCount), lists.slots);
+      assert.equal(rows.work, lists.work);
+      assert.deepEqual(rowLists(preciseRows, blockCount), preciseLists.slots);
+      assert.equal(preciseRows.work, preciseLists.work);
+      // Exhausted budgets fail identically.
+      const limit = Math.max(0, lists.work - 1);
+      assert.equal(analyzeLiveSlotRows(fn, limit, subset), undefined);
+      assert.equal(analyzeLiveSlots(fn, limit, subset), undefined);
+    }
+  }
+});
+test("dense live rows are limited to a bounded table", () => {
+  const fn = {
+    blocks: { length: 65536 },
+  } as unknown as FunctionIR;
+  assert.equal(fitsLiveRows(fn, 8192), true);
+  assert.equal(fitsLiveRows(fn, 8193), false);
 });

@@ -40,7 +40,6 @@ export type HostOperation =
    * the heap's capacity), so a JavaScript boundary turns it into a RangeError
    * exactly as it does an overflow. Allocates nothing. */
   | "engine-range-error"
-  | "allocation-state"
   | "generational-state"
   | "external-memory-configure"
   | "external-memory-register"
@@ -117,9 +116,35 @@ export type HostOperation =
    * exactly as foundation's compressSha256RoundsPortable: schedule words 16-63 are
    * written and the block is added into state. Short views trap. */
   | "sha256-rounds"
-  /** Encode the next bounded UTF-16 window into a Uint8Array. The packed
-   * read/written counts and bounds match foundation's encodeUTF8Window. */
-  | "utf8-window";
+  /** Latin-1 and ASCII bulk text primitives (foundation's text/latin1.ts).
+   * Binding replaces the function body with the IR instruction of the same
+   * name (hostInstruction), never a host call; see the instructions'
+   * contracts in model.ts. */
+  | "string-from-latin1"
+  | "string-copy-latin1"
+  | "string-ascii-prefix"
+  | "bytes-ascii-prefix"
+  | "string-ascii-upper"
+  | "string-ascii-lower"
+  /** UTF-8 bulk text primitives (foundation's text/utf8.ts), bound the same
+   * way to the IR instructions of the same names (string-from-utf8-whole:
+   * string-from-utf8 with `whole`). */
+  | "string-utf8-length"
+  | "string-write-utf8"
+  | "string-from-utf8"
+  | "string-from-utf8-whole"
+  /** The number-string cache (foundation's numeric/number-string-cache.ts),
+   * bound the same way to the IR instructions of the same names. */
+  | "number-string-cached"
+  | "number-string-cache"
+  /** Strings' cached array indices (the same module), likewise bound. */
+  | "string-index-cached"
+  | "string-index-cache"
+  /** String transfer primitives (the IR instructions of the same names):
+   * whether a string is flat, and its flat image written into a raw
+   * window. */
+  | "string-flat"
+  | "string-flatten-into";
 /** Internal filesystem ABI: failures return -errno captured immediately. Paths
  * are NUL-terminated UTF-8 byte arrays; read/write cover the supplied view. */
 export function hostParameters(
@@ -175,10 +200,6 @@ export function hostParameters(
       return ["Uint32Array"];
     case "sha256-rounds":
       return ["Uint32Array", "Uint32Array", "Uint32Array"];
-    case "utf8-window":
-      return ["string", "Uint8Array", "number", "number"];
-    case "allocation-state":
-      return ["Uint32Array", "Uint32Array"];
     case "argument-length":
       return ["number"];
     case "argument-copy":
@@ -245,16 +266,207 @@ export function hostParameters(
     case "read-link":
     case "rename":
       return ["Uint8Array", "Uint8Array"];
+    case "string-from-latin1":
+    case "bytes-ascii-prefix":
+    case "string-from-utf8":
+    case "string-from-utf8-whole":
+      return ["Uint8Array", "number", "number"];
+    case "string-copy-latin1":
+    case "string-write-utf8":
+      return ["string", "number", "number", "Uint8Array", "number"];
+    case "string-ascii-prefix":
+    case "string-utf8-length":
+      return ["string", "number", "number"];
+    case "number-string-cached":
+      return ["number"];
+    case "number-string-cache":
+      return ["number", "string"];
+    case "string-index-cached":
+      return ["string"];
+    case "string-index-cache":
+      return ["string", "number"];
+    case "string-ascii-upper":
+    case "string-ascii-lower":
+    case "string-flat":
+      return ["string"];
+    case "string-flatten-into":
+      return ["number", "number", "string"];
+  }
+}
+/** The instruction a binding of `operation` lowers to, for the operations
+ * that are IR instructions rather than host calls; `id` is its result and
+ * `args` hold the bound function's parameters in order. */
+export function hostInstruction(
+  operation: HostOperation,
+  id: number,
+  args: readonly number[],
+): Instruction | undefined {
+  const first = args[0] ?? 0,
+    second = args[1] ?? 0,
+    third = args[2] ?? 0;
+  switch (operation) {
+    case "string-from-latin1":
+      return {
+        kind: "string-from-latin1",
+        id,
+        bytes: first,
+        begin: second,
+        limit: third,
+        start: 0,
+        end: 0,
+      };
+    case "string-copy-latin1":
+      return {
+        kind: "string-copy-latin1",
+        id,
+        string: first,
+        begin: second,
+        limit: third,
+        bytes: args[3] ?? 0,
+        offset: args[4] ?? 0,
+        start: 0,
+        end: 0,
+      };
+    case "string-ascii-prefix":
+      return {
+        kind: "string-ascii-prefix",
+        id,
+        string: first,
+        begin: second,
+        limit: third,
+        start: 0,
+        end: 0,
+      };
+    case "string-ascii-upper":
+    case "string-ascii-lower":
+      return {
+        kind: "string-ascii-case",
+        id,
+        string: first,
+        upper: operation === "string-ascii-upper",
+        start: 0,
+        end: 0,
+      };
+    case "bytes-ascii-prefix":
+      return {
+        kind: "bytes-ascii-prefix",
+        id,
+        bytes: first,
+        begin: second,
+        limit: third,
+        start: 0,
+        end: 0,
+      };
+    case "string-utf8-length":
+      return {
+        kind: "string-utf8-length",
+        id,
+        string: first,
+        begin: second,
+        limit: third,
+        start: 0,
+        end: 0,
+      };
+    case "string-write-utf8":
+      return {
+        kind: "string-write-utf8",
+        id,
+        string: first,
+        begin: second,
+        limit: third,
+        bytes: args[3] ?? 0,
+        offset: args[4] ?? 0,
+        start: 0,
+        end: 0,
+      };
+    case "string-from-utf8":
+      return {
+        kind: "string-from-utf8",
+        id,
+        bytes: first,
+        begin: second,
+        limit: third,
+        start: 0,
+        end: 0,
+      };
+    case "string-from-utf8-whole":
+      return {
+        kind: "string-from-utf8",
+        id,
+        bytes: first,
+        begin: second,
+        limit: third,
+        whole: true,
+        start: 0,
+        end: 0,
+      };
+    case "number-string-cached":
+      return {
+        kind: "number-string-cached",
+        id,
+        value: first,
+        start: 0,
+        end: 0,
+      };
+    case "number-string-cache":
+      return {
+        kind: "number-string-cache",
+        value: first,
+        string: second,
+        start: 0,
+        end: 0,
+      };
+    case "string-index-cached":
+      return {
+        kind: "string-index-cached",
+        id,
+        string: first,
+        start: 0,
+        end: 0,
+      };
+    case "string-index-cache":
+      return {
+        kind: "string-index-cache",
+        string: first,
+        value: second,
+        start: 0,
+        end: 0,
+      };
+    case "string-flat":
+      return { kind: "string-flat", id, string: first, start: 0, end: 0 };
+    case "string-flatten-into":
+      return {
+        kind: "string-flatten-into",
+        id,
+        address: first,
+        byteLength: second,
+        string: third,
+        start: 0,
+        end: 0,
+      };
+    default:
+      return undefined;
   }
 }
 /** The result encoding is part of the capability's checked ABI. */
 export function hostReturnType(
   operation: HostOperation,
-): "number" | "general" | "void" | undefined {
+): "number" | "general" | "string" | "void" | undefined {
   if (hostParameters(operation) === undefined) return undefined;
+  if (
+    operation === "string-from-latin1" ||
+    operation === "string-from-utf8" ||
+    operation === "string-from-utf8-whole" ||
+    operation === "number-string-cached" ||
+    operation === "string-ascii-upper" ||
+    operation === "string-ascii-lower"
+  )
+    return "string";
   if (
     operation === "cpu-pause" ||
     operation === "collect-garbage" ||
+    operation === "number-string-cache" ||
+    operation === "string-index-cache" ||
     operation === "sha256-rounds" ||
     operation === "jit-debug-register"
   )
@@ -307,15 +519,18 @@ export function bindHostOperations(
       args.push(index);
     }
     const result =
-      hostReturnType(binding.operation) === "void" ? undefined : args.length;
-    instructions.push({
-      kind: "host-call",
-      operation: binding.operation,
-      id: result,
-      arguments: args,
-      start: 0,
-      end: 0,
-    });
+        hostReturnType(binding.operation) === "void" ? undefined : args.length,
+      bound = hostInstruction(binding.operation, args.length, args);
+    instructions.push(
+      bound ?? {
+        kind: "host-call",
+        operation: binding.operation,
+        id: result,
+        arguments: args,
+        start: 0,
+        end: 0,
+      },
+    );
     const replacement: FunctionIR = {
       ...fn,
       entry: 0,

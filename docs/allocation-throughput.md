@@ -177,8 +177,19 @@ are reserved. Both arrays live in permanent control storage. The context extensi
 at byte 56 is initially null and points at this state only after validation.
 
 Allocation producers already establish positive, aligned uint32 extents. The fast
-sequence compares size with capacity minus cursor, advances the cursor, sets the
-object-start bit, and forms the managed pointer. It neither calls the allocator
+sequence compares cursor + size with the limit, advances the cursor, sets the
+object-start bit, and forms the managed pointer.
+
+The limit may be lowered at any time, even below the cursor of an allocation in
+flight between its check and its store: a debugger arming allocation sampling
+writes it wherever the program is stopped. The fast path must then send the next
+allocation to the slow path. Both backends therefore add the cursor and the size,
+uint32 offsets zero-extended into 64-bit registers that cannot wrap, and compare
+the sum with the limit; `size > limit - cursor` would wrap instead and let every
+later allocation bump past its space (`tools/native-heap-arm-inflight.test.ts`).
+The in-flight allocation still stores a cursor its old limit allowed, so the
+cursor never passes the capacity. The slow paths reject requests of 2^31 bytes or
+more. It neither calls the allocator
 nor crosses a safepoint. Object initialization and root publication still precede
 any subsequent safepoint. Absence of published state or exhaustion branches to the
 existing checked allocation callback. Collection reads the same cursor and
@@ -230,11 +241,18 @@ is allowed in the barrier or collection callbacks. Minor collection promotes all
 survivors initially, so successful repair leaves no old-to-young edges and permits
 clearing the remembered set. More nuanced aging can follow measurement.
 
-The implemented generational publication extends the allocation state to sixteen
+The implemented generational publication extends the allocation state to nineteen
 uint32 words, retaining the existing context pointer and young allocation fields:
 young top/limit/base at words 0/1/2, old top at 3, native young-start pointer at 4/5,
 generation flag and old-prefix capacity at 6/7, native dirty-bitmap pointer at 8/9,
-native dirty-queue pointer at 10/11, queue count/capacity at 12/13, and overflow at 14. Word 15 is reserved. Publication must validate buffer sizes and initial state
+native dirty-queue pointer at 10/11, queue count/capacity at 12/13, and overflow at 14. Word 15 is reserved.
+Words 16/17 hold the nursery's absolute address (managed base plus old-prefix
+capacity), written by the runtime before publication; the inline fast path adds
+the young top to it instead of loading the base offset and the context's managed
+base. The nursery keeps no object-start bits. Word 18 holds the large-object
+threshold, max(128, nursery capacity / 4), also written before publication: the
+allocator sends requests of at least that size directly to old space, and the
+x86-64 fast path compares against it instead of deriving it per allocation. Publication must validate buffer sizes and initial state
 before enabling either the fast allocator or write barrier. The existing copying
 runtime remains available and must keep generation flags disabled. The ABI, emitted leaf barrier and opt-in
 `initializeGenerationalRuntime` now pass native fixtures. Minor collections promote

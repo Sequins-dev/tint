@@ -93,8 +93,10 @@ test("generated module loaders widen only with explicit dynamic import capabilit
   );
   assert.equal(process.env.TZ, undefined);
   assert.equal(
-    createHash("sha256").update(old).digest("hex"),
-    "08bb9bfce1a77c8c18b72c373153d244ef579486e6d08e1fe23eff8e12912f7f",
+    createHash("sha256")
+      .update(old.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
+    "22ba2e059730df928ec54ff8b46c3752c4709360eb4fb93a958317887e0c6e1e",
   );
   assert.match(
     old,
@@ -296,8 +298,10 @@ test("Script-root runtime text is enabled only for batches that need it", () => 
     true,
   );
   assert.equal(
-    createHash("sha256").update(moduleOnly).digest("hex"),
-    "e0635368f958779317efded2232f841a486ea706a6b766985652ce21f038b177",
+    createHash("sha256")
+      .update(moduleOnly.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
+    "40e90aad28574574cadd20268f65de6bf44fcefb1173b34e502de2439adbc08f",
   );
   const roots = native.nativeTestRuntimeSource(
     evaluation,
@@ -629,6 +633,49 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "createScriptPropertyCache",
     "readCachedObjectValueProperty",
     "writeCachedObjectValueProperty",
+    "scriptIsHTMLDDA",
+    "looselyEqualOrThrow",
+    "excludeHTMLDDAObjects",
+    "cachedOwnPropertyValue",
+    "cachedInheritedPropertyValue",
+    "absentPropertyValue",
+    "cachedPropertyStore",
+    "createNativeSourceFunction",
+    "createSourceInstance",
+    "sourceArgumentCount",
+    "sourceArgument",
+    "resolveScriptCallEntry",
+    "resolveScriptConstructEntry",
+    "packedNumberElement",
+    "absentElementValue",
+    "storePackedNumberElement",
+    "packedArrayLength",
+    "readCachedLengthValue",
+    "readFloat64Element",
+    "writeFloat64Element",
+    "isOrdinaryObject",
+    "scriptMapGet",
+    "scriptMapGetFast",
+    "scriptMapHas",
+    "scriptMapHasFast",
+    "scriptMapSet",
+    "scriptMapSetFast",
+    "scriptSetAdd",
+    "scriptSetAddFast",
+    "scriptArrayPush",
+    "scriptArrayPushFast",
+    "scriptArrayPop",
+    "createObjectLiteralSite",
+    "createLiteralObject",
+    "createLiteralObject1",
+    "createLiteralObject2",
+    "createLiteralObject3",
+    "createLiteralObject4",
+    "createArray0",
+    "createArray1",
+    "createArray2",
+    "createArray3",
+    "createArray4",
   ];
   const old = {
     ...snapshot,
@@ -636,7 +683,16 @@ test("historical captures keep their managed vocabulary and adapter", async () =
       if (input.id === "packages/js-runtime/src/objects/index.ts") {
         let source = new TextDecoder().decode(input.bytes);
         for (const name of fastPaths)
-          source = source.replace(`  ${name},\n`, "");
+          source = source
+            .replace(`  ${name},\n`, "")
+            .replace(`, ${name} }`, " }")
+            .replace(`export { ${name} } from "./array-append.ts";\n`, "");
+        return { ...input, bytes: new TextEncoder().encode(source) };
+      }
+      if (input.id === "packages/js-runtime/src/environments/global/index.ts") {
+        const source = new TextDecoder()
+          .decode(input.bytes)
+          .replace("  cachedGlobalIdentifierCell,\n", "");
         return { ...input, bytes: new TextEncoder().encode(source) };
       }
       if (input.id !== "packages/js-engine/src/lowering/index.ts") return input;
@@ -660,8 +716,15 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const bind = { module: "fixture-host", name: "bindScript" };
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
-  assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 147);
+  assert.equal(previous.values.length, 137);
+  // The inline property caches import two value readers (own and
+  // inherited), their miss test and the cached store where they imported
+  // one slot reader; native script entries add six helpers; step 5a adds
+  // eleven helpers for element access, builtin intrinsics and object literals;
+  // step 5a-3 adds ten helpers for packed length and fixed-arity literals;
+  // step 5a-6 adds five direct collection/push fast-path helpers; A7 adds
+  // viewObjectValue, isOrdinaryObject, readFloat64Element and writeFloat64Element.
+  assert.equal(current.values.length, 192);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

@@ -1,5 +1,6 @@
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureExoticSlots,
   createCallableObject,
   defineOwnProperty,
   type OrdinaryObject,
@@ -51,7 +52,7 @@ export function builtinFunctionMetadata(
   length: number,
   hooks: ObjectHooks<unknown>,
 ): void {
-  object.internalInitialName = name;
+  ensureExoticSlots(object).internalInitialName = name;
   functionMetadata(object, name, length, hooks);
 }
 export function builtinFunction(

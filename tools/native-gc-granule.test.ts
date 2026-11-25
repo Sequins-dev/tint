@@ -16,7 +16,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { verifyHostedFixture } from "./hosted-fixture.ts";
+
+// The fixtures must compile on the typed path, not the general fallback.
+process.env.TINT_GENERAL_FALLBACK = "0";
+const { verifyHostedFixture } = await import("./hosted-fixture.ts");
 
 const churn = `interface One {
   readonly kind: "one";
@@ -245,7 +248,7 @@ test("weak slots and ephemerons among odd-word objects move and clear exactly", 
           operation: "collect-garbage",
         },
       ],
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry: "initializeGenerationalRuntime",
       weakBindings: [
         { module: weak, name: "createWeakSlot", operation: "new" },
         { module: weak, name: "weakSlotKey", operation: "key" },

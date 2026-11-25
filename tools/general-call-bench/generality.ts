@@ -282,3 +282,26 @@ export function mixedCall(iterations: number): number {
   }
   return sum;
 }
+
+// Untyped calls of builtins: a constructor called as a function, a static
+// method of a builtin namespace object, and a method of a builtin-created
+// object (realm objects and their prototypes).
+export function numberCall(iterations: number): number {
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) sum += Number(i & 7);
+  return sum;
+}
+
+export function mathMax(iterations: number): number {
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) sum += Math.max(i & 7, 3);
+  return sum;
+}
+
+export function builtinMethod(iterations: number): number {
+  const map = new Map<number, number>();
+  for (let key = 0; key < 4; key++) map.set(key, key * 2);
+  let sum = 0;
+  for (let i = 0; i < iterations; i++) sum += map.get(i & 3)!;
+  return sum;
+}

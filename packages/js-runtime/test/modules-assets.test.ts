@@ -51,9 +51,11 @@ test("bytes modules copy raw bytes into immutable Uint8Array backing", () => {
   assert.ok(completion.ok);
   const value = evaluate(completion.module),
     object = objects.viewObjectValue(value, realm.objectPrototype);
-  assert.ok(object?.internalTypedArrayData);
+  assert.ok(object !== undefined);
+  const data = objects.exoticSlots(object).internalTypedArrayData;
+  assert.ok(data !== undefined);
   assert.equal(object.prototype, realm.typedArrayPrototypes.get("Uint8"));
-  const storage = object.internalTypedArrayData.storage;
+  const storage = data.storage;
   assert.equal(storage.kind, "ordinary");
   if (storage.kind !== "ordinary") assert.fail("ordinary backing required");
   assert.equal(storage.immutable, true);
@@ -75,9 +77,13 @@ test("bytes modules accept empty input and reject the embedding allocation limit
     undefined,
   );
   assert.ok(empty.ok);
+  const emptyObject = objects.viewObjectValue(
+    evaluate(empty.module),
+    realm.objectPrototype,
+  );
+  assert.ok(emptyObject !== undefined);
   assert.equal(
-    objects.viewObjectValue(evaluate(empty.module), realm.objectPrototype)
-      ?.internalTypedArrayData?.length,
+    objects.exoticSlots(emptyObject).internalTypedArrayData?.length,
     0,
   );
   realm.bufferMaxBytes = 1;

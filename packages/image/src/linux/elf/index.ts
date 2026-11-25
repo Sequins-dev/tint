@@ -723,9 +723,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     debugRanges = debug.value.ranges;
   }
 
-  // Static symbols: all local, after the null symbol.
+  // Static symbols: locals first, then any global interface symbols (such as
+  // the GDB/LLDB JIT registration hooks), after the null symbol.
   const symbolCount = codeSymbols.length + dataSymbols.length;
   const strings = stringTable();
+  const localSymbolIndices: number[] = [];
+  const globalSymbolIndices: number[] = [];
   const symbolNames: number[] = [];
   for (let i = 0; i < symbolCount; i++) {
     const symbol =
@@ -734,6 +737,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
         : dataSymbols[i - codeSymbols.length];
     if (symbol === undefined) throw "ELF symbol invariant";
     symbolNames.push(intern(strings, symbol.name));
+    if (
+      symbol.name === "__jit_debug_register_code" ||
+      symbol.name === "__jit_debug_descriptor"
+    )
+      globalSymbolIndices.push(i);
+    else localSymbolIndices.push(i);
   }
   const strtab = tableBytes(strings);
   const symtab = new Uint8Array(
@@ -1258,7 +1267,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       symtabAt,
       0,
       strtabIndex,
-      symbolCount + 1,
+      localSymbolIndices.length + 1,
       8,
       SYMBOL_SIZE,
     );
@@ -1339,7 +1348,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       for (const range of unwound)
         if (range !== undefined)
           codeExtents.set(range.offset, range.byteLength);
-    for (let i = 0; i < symbolCount; i++) {
+    const orderedSymbolIndices: number[] = [];
+    for (const index of localSymbolIndices) orderedSymbolIndices.push(index);
+    for (const index of globalSymbolIndices) orderedSymbolIndices.push(index);
+    for (let slot = 0; slot < orderedSymbolIndices.length; slot++) {
+      const i = orderedSymbolIndices[slot];
+      if (i === undefined) throw "ELF symbol order invariant";
       const isCode = i < codeSymbols.length;
       const symbol = isCode
         ? codeSymbols[i]
@@ -1348,11 +1362,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       const name = symbolNames[i];
       if (symbol === undefined || size === undefined || name === undefined)
         throw "ELF symbol invariant";
+      const binding = slot < localSymbolIndices.length ? STB_LOCAL : STB_GLOBAL;
       writeSymbol(
         bytes,
-        symtabAt.fileOffset + (i + 1) * SYMBOL_SIZE,
+        symtabAt.fileOffset + (slot + 1) * SYMBOL_SIZE,
         name,
-        STB_LOCAL * 16 + (isCode ? STT_FUNC : STT_OBJECT),
+        binding * 16 + (isCode ? STT_FUNC : STT_OBJECT),
         isCode ? textIndex : dataIndex,
         (isCode ? codeAddress : dataAddress) + symbol.offset,
         isCode ? (codeExtents.get(symbol.offset) ?? size) : size,

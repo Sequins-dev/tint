@@ -73,6 +73,23 @@ function skipping(value: string): number {
   }
   return total;
 }
+function low32CodeUnits(value: string, index: number): number {
+  let h = 0;
+  h = (Math.imul(h, 31) + (value.length + value.charCodeAt(index))) | 0;
+  h = (Math.imul(h - 1000000, 31) + (value.length + value.charCodeAt(index))) | 0;
+  h = (h ^ ((100 - value.charCodeAt(index)) | 0)) | 0;
+  h = (h ^ ((value.charCodeAt(index) - 100) | 0)) | 0;
+  h = (h + ((value.charCodeAt(index) + value.charCodeAt(index)) | 0)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) & 0xff)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) ^ 0x55)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) | 0x55)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) >>> 1)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) << 2)) | 0;
+  h = (h + Math.imul(value.charCodeAt(index) + 3, 31)) | 0;
+  h = (h + ~((value.length + value.charCodeAt(index)) | 0)) | 0;
+  h = (h + ((9007199254740990 + value.charCodeAt(index)) | 0)) | 0;
+  return h;
+}
 export function checksum(): number {
   const inputs: string[] = [
     "",
@@ -96,6 +113,13 @@ export function checksum(): number {
     total = (total * 31 + other(text, next)) % 1000003;
     total = (total * 31 + shrinking(text)) % 1000003;
     total = (total * 31 + skipping(text)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, 0) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, 3) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, 99) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, -1) & 0xffff)) % 1000003;
+    const sliced = text.slice(2);
+    total = (total * 31 + (low32CodeUnits(sliced, 3) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(sliced, 99) & 0xffff)) % 1000003;
   }
   return total;
 }
@@ -204,7 +228,7 @@ test("typed native UTF-8 encoding resumes without splitting a surrogate pair", (
   const suffix = "😀\ud800x\udc00" + "b".repeat(17);
   const suffixBytes = new TextEncoder().encode(suffix);
   verifyHostedFixture(
-    `import { encodeUTF8, encodeUTF8Into, encodeUTF8Window } from "text-encoding";
+    `import { encodeUTF8, encodeUTF8Into } from "text-encoding";
      export function run(): number {
        const text = ${JSON.stringify(text)};
        const expected = new Uint8Array([${expected.join(",")}]);
@@ -226,10 +250,9 @@ test("typed native UTF-8 encoding resumes without splitting a surrogate pair", (
          }
          if (written !== expected.length ||
              storage[0] !== 204 || storage[size + 1] !== 204) return 3;
-         if (encodeUTF8Window(text, scratch, -1, 0) !== 0 ||
-             encodeUTF8Window(text, scratch, 0.5, 0) !== 0 ||
-             encodeUTF8Window(text, scratch, 0, size) !== 0 ||
-             encodeUTF8Window(text, scratch, 0, 0.5) !== 0) return 4;
+         if (encodeUTF8Into(text, scratch, -1).read !== 0 ||
+             encodeUTF8Into(text, scratch, 0.5).read !== 0 ||
+             encodeUTF8Into(text, scratch, text.length).read !== 0) return 4;
        }
        const ascii = "abcdefghijklmnopq";
        for (let length = 0; length <= 17; length++) {

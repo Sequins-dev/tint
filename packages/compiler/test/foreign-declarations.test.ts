@@ -1,5 +1,3 @@
-import { buildNativeFixture } from "../../../tools/gate/native-fixture.ts";
-import { runDarwinFixture } from "../../../tools/native-admission.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -463,6 +461,83 @@ test("only .d.ts modules declaring tint:c/ bindings are expanded", () => {
 });
 
 const clang = spawnSync("clang", ["--version"], { encoding: "utf8" });
+/** Clang's layout oracle, compile-only: static assertions that each C
+ * record's size, alignment and member offsets equal Tint's layout. Nothing is
+ * executed; a mismatch fails the compile, naming the expression and both
+ * values. */
+function assertClangLayouts(
+  name: string,
+  includes: readonly string[],
+  records: readonly {
+    readonly c: string;
+    readonly fields: readonly string[];
+    readonly layout: {
+      readonly size: number;
+      readonly alignment: number;
+      readonly offsets: readonly number[];
+    };
+  }[],
+): void {
+  const checks: string[] = [];
+  for (const { c, fields, layout } of records) {
+    checks.push(
+      `sizeof(${c}) == ${layout.size}`,
+      `_Alignof(${c}) == ${layout.alignment}`,
+      ...fields.map(
+        (field, index) =>
+          `offsetof(${c}, ${field}) == ${layout.offsets[index]}`,
+      ),
+    );
+  }
+  const directory = mkdtempSync(join(tmpdir(), "tint-" + name + "-"));
+  try {
+    const source = join(directory, "layout.c");
+    writeFileSync(
+      source,
+      [
+        "#include <stddef.h>",
+        ...includes.map((include) => `#include <${include}>`),
+      ]
+        .concat(checks.map((check) => `_Static_assert(${check}, "${check}");`))
+        .join("\n") + "\n",
+    );
+    const compiled = spawnSync("clang", ["-fsyntax-only", source], {
+      encoding: "utf8",
+    });
+    assert.equal(compiled.status, 0, compiled.stderr);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+test(
+  "the compile-only layout oracle rejects a wrong size, alignment or offset",
+  {
+    skip:
+      clang.status !== 0 && "clang is not installed (test-only layout oracle)",
+  },
+  () => {
+    const div = { c: "div_t", fields: ["quot", "rem"] };
+    assertClangLayouts(
+      "layout-oracle",
+      ["stdlib.h"],
+      [{ ...div, layout: { size: 8, alignment: 4, offsets: [0, 4] } }],
+    );
+    for (const layout of [
+      { size: 16, alignment: 4, offsets: [0, 4] },
+      { size: 8, alignment: 8, offsets: [0, 4] },
+      { size: 8, alignment: 4, offsets: [0, 8] },
+    ])
+      assert.throws(
+        () =>
+          assertClangLayouts(
+            "layout-oracle",
+            ["stdlib.h"],
+            [{ ...div, layout }],
+          ),
+        /static assertion failed/,
+      );
+  },
+);
 test(
   "the CC_SHA256_CTX declaration matches the system header's layout (clang oracle)",
   {
@@ -474,47 +549,21 @@ test(
           : false,
   },
   () => {
-    const directory = mkdtempSync(join(tmpdir(), "tint-commoncrypto-layout-"));
-    try {
-      const source = join(directory, "layout.c"),
-        binary = join(directory, "layout");
-      writeFileSync(
-        source,
-        `#include <stdio.h>
-#include <stddef.h>
-#include <CommonCrypto/CommonDigest.h>
-int main(void) {
-  printf("%zu %zu %zu %zu %zu", sizeof(CC_SHA256_CTX), _Alignof(CC_SHA256_CTX),
-    offsetof(CC_SHA256_CTX, count), offsetof(CC_SHA256_CTX, hash), offsetof(CC_SHA256_CTX, wbuf));
-  return 0;
-}
-`,
-      );
-      buildNativeFixture(binary, () => {
-        const compiled = spawnSync("clang", ["-o", binary, source], {
-          encoding: "utf8",
-        });
-        assert.equal(compiled.status, 0, compiled.stderr);
-        return binary;
-      });
-      const run = runDarwinFixture(binary, () =>
-        spawnSync(binary, [], { encoding: "utf8" }),
-      );
-      assert.equal(run.status, 0, run.stderr);
-      const record = parsed(commonCrypto).records[0]!;
-      const layout = cLayout(record.type, darwinArm64CTarget);
-      if (!layout.ok) assert.fail(layout.error);
-      assert.equal(
-        run.stdout,
-        [
-          layout.value.size,
-          layout.value.alignment,
-          ...layout.value.offsets,
-        ].join(" "),
-      );
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+    const record = parsed(commonCrypto).records[0]!;
+    assert.ok(record.type.kind === "record");
+    const layout = cLayout(record.type, darwinArm64CTarget);
+    if (!layout.ok) assert.fail(layout.error);
+    assertClangLayouts(
+      "commoncrypto-layout",
+      ["CommonCrypto/CommonDigest.h"],
+      [
+        {
+          c: "CC_SHA256_CTX",
+          fields: record.type.fields.map((field) => field.name),
+          layout: layout.value,
+        },
+      ],
+    );
   },
 );
 
@@ -809,46 +858,13 @@ test(
     );
     assert.ok(record !== undefined && record.type.kind === "record");
     const fields = record.type.fields.map((field) => field.name);
-    const directory = mkdtempSync(join(tmpdir(), "tint-zlib-layout-"));
-    try {
-      const source = join(directory, "layout.c"),
-        binary = join(directory, "layout");
-      writeFileSync(
-        source,
-        `#include <stdio.h>
-#include <stddef.h>
-#include <zlib.h>
-int main(void) {
-  printf("%zu %zu", sizeof(z_stream), _Alignof(z_stream));
-${fields.map((name) => `  printf(" %zu", offsetof(z_stream, ${name}));`).join("\n")}
-  return 0;
-}
-`,
-      );
-      buildNativeFixture(binary, () => {
-        const compiled = spawnSync("clang", ["-o", binary, source], {
-          encoding: "utf8",
-        });
-        assert.equal(compiled.status, 0, compiled.stderr);
-        return binary;
-      });
-      const run = runDarwinFixture(binary, () =>
-        spawnSync(binary, [], { encoding: "utf8" }),
-      );
-      assert.equal(run.status, 0, run.stderr);
-      const layout = cLayout(record.type, target);
-      if (!layout.ok) assert.fail(layout.error);
-      assert.equal(
-        run.stdout,
-        [
-          layout.value.size,
-          layout.value.alignment,
-          ...layout.value.offsets,
-        ].join(" "),
-      );
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+    const layout = cLayout(record.type, target);
+    if (!layout.ok) assert.fail(layout.error);
+    assertClangLayouts(
+      "zlib-layout",
+      ["zlib.h"],
+      [{ c: "z_stream", fields, layout: layout.value }],
+    );
   },
 );
 
@@ -874,64 +890,22 @@ test(
       "sockaddr_dl",
       "ifaddrs",
     ];
-    const lines: string[] = [],
-      expected: string[] = [];
-    for (const name of names) {
+    const records = names.map((name) => {
       const record = darwinOs.records.find((item) => item.name === name);
       assert.ok(record !== undefined && record.type.kind === "record", name);
       const layout = cLayout(record.type, darwinArm64CTarget);
       if (!layout.ok) assert.fail(layout.error);
-      expected.push(
-        [
-          name,
-          layout.value.size,
-          layout.value.alignment,
-          ...layout.value.offsets,
-        ].join(" "),
-      );
-      lines.push(
-        `  printf("${name} %zu %zu", sizeof(struct ${name}), _Alignof(struct ${name}));`,
-        ...record.type.fields.map(
-          (field) =>
-            `  printf(" %zu", offsetof(struct ${name}, ${field.name}));`,
-        ),
-        '  printf("\\n");',
-      );
-    }
-    const directory = mkdtempSync(join(tmpdir(), "tint-darwin-os-layout-"));
-    try {
-      const source = join(directory, "layout.c"),
-        binary = join(directory, "layout");
-      writeFileSync(
-        source,
-        `#include <stdio.h>
-#include <stddef.h>
-#include <pwd.h>
-#include <ifaddrs.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if_dl.h>
-int main(void) {
-${lines.join("\n")}
-  return 0;
-}
-`,
-      );
-      buildNativeFixture(binary, () => {
-        const compiled = spawnSync("clang", ["-o", binary, source], {
-          encoding: "utf8",
-        });
-        assert.equal(compiled.status, 0, compiled.stderr);
-        return binary;
-      });
-      const run = runDarwinFixture(binary, () =>
-        spawnSync(binary, [], { encoding: "utf8" }),
-      );
-      assert.equal(run.status, 0, run.stderr);
-      assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+      return {
+        c: "struct " + name,
+        fields: record.type.fields.map((field) => field.name),
+        layout: layout.value,
+      };
+    });
+    assertClangLayouts(
+      "darwin-os-layout",
+      ["pwd.h", "ifaddrs.h", "sys/socket.h", "netinet/in.h", "net/if_dl.h"],
+      records,
+    );
   },
 );
 test(
@@ -945,7 +919,7 @@ test(
           : false,
   },
   () => {
-    const darwinOs = parsed(
+    const linuxOs = parsed(
       readFileSync(new URL("linux-os.d.ts", root), "utf8"),
     );
     const names = [
@@ -956,64 +930,28 @@ test(
       "sockaddr_ll",
       "ifaddrs",
     ];
-    const lines: string[] = [],
-      expected: string[] = [];
-    for (const name of names) {
-      const record = darwinOs.records.find((item) => item.name === name);
+    const records = names.map((name) => {
+      const record = linuxOs.records.find((item) => item.name === name);
       assert.ok(record !== undefined && record.type.kind === "record", name);
       const layout = cLayout(record.type, linuxArm64CTarget);
       if (!layout.ok) assert.fail(layout.error);
-      expected.push(
-        [
-          name,
-          layout.value.size,
-          layout.value.alignment,
-          ...layout.value.offsets,
-        ].join(" "),
-      );
-      lines.push(
-        `  printf("${name} %zu %zu", sizeof(struct ${name}), _Alignof(struct ${name}));`,
-        ...record.type.fields.map(
-          (field) =>
-            `  printf(" %zu", offsetof(struct ${name}, ${field.name}));`,
-        ),
-        '  printf("\\n");',
-      );
-    }
-    const directory = mkdtempSync(join(tmpdir(), "tint-linux-os-layout-"));
-    try {
-      const source = join(directory, "layout.c"),
-        binary = join(directory, "layout");
-      writeFileSync(
-        source,
-        `#include <stdio.h>
-#include <stddef.h>
-#include <pwd.h>
-#include <ifaddrs.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <linux/if_packet.h>
-int main(void) {
-${lines.join("\n")}
-  return 0;
-}
-`,
-      );
-      buildNativeFixture(binary, () => {
-        const compiled = spawnSync("clang", ["-o", binary, source], {
-          encoding: "utf8",
-        });
-        assert.equal(compiled.status, 0, compiled.stderr);
-        return binary;
-      });
-      const run = runDarwinFixture(binary, () =>
-        spawnSync(binary, [], { encoding: "utf8" }),
-      );
-      assert.equal(run.status, 0, run.stderr);
-      assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+      return {
+        c: "struct " + name,
+        fields: record.type.fields.map((field) => field.name),
+        layout: layout.value,
+      };
+    });
+    assertClangLayouts(
+      "linux-os-layout",
+      [
+        "pwd.h",
+        "ifaddrs.h",
+        "sys/socket.h",
+        "netinet/in.h",
+        "linux/if_packet.h",
+      ],
+      records,
+    );
   },
 );
 

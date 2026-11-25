@@ -1,0 +1,284 @@
+diff --git a/packages/compiler/src/build.ts b/packages/compiler/src/build.ts
+index c4e847f27..94d1999c5 100644
+--- a/packages/compiler/src/build.ts
++++ b/packages/compiler/src/build.ts
+@@ -1082,6 +1082,12 @@ export function compileMacOSProgram(
+   request.report("runtime");
+   const collectorBindings = parallelCollectorBindings(request);
+   const runtimeBindings: NativeHostBinding[] = [
++    // SCRATCH TIMING (not for landing).
++    {
++      module: "packages/native-runtime/src/intrinsics/clock.ts",
++      name: "monotonicMilliseconds",
++      operation: "monotonic-time",
++    },
+     {
+       module: request.memoryModule,
+       name: "configureExternalMemory",
+@@ -1140,7 +1146,14 @@ export function compileMacOSProgram(
+       entry: request.runtimeModule,
+       exports: [request.runtimeEntry ?? "initializeRuntime"],
+       start: request.runtimeEntry ?? "initializeRuntime",
+-      runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
++      runtimes: [
++        { module: request.memoryModule, namespace: "native-memory" },
++        // SCRATCH TIMING (not for landing).
++        {
++          module: "packages/native-runtime/src/intrinsics/clock.ts",
++          namespace: "native-collector-clock",
++        },
++      ],
+       hostBindings: runtimeBindings,
+     },
+     target,
+diff --git a/packages/native-runtime/src/generational.ts b/packages/native-runtime/src/generational.ts
+index 00a047b55..3e415d5c5 100644
+--- a/packages/native-runtime/src/generational.ts
++++ b/packages/native-runtime/src/generational.ts
+@@ -7,8 +7,19 @@ import {
+   createCheneyCollector,
+   createCompactor,
+   noSharedStrings,
++  cheneyTimes,
++  compactTimes,
+ } from "./tracing/cheney.ts";
+-import { createParallelEvacuator } from "./tracing/parallel.ts";
++import {
++  createParallelEvacuator,
++  parallelTimes,
++} from "./tracing/parallel.ts";
++import { monotonicMilliseconds } from "./intrinsics/clock.ts";
++import {
++  mapMemory,
++  writeMemoryWord,
++  currentContextDomain,
++} from "./intrinsics/memory.ts";
+ import { cgroupProcessorLimit } from "./processors.ts";
+ import {
+   currentRootHead,
+@@ -234,14 +245,39 @@ export function initializeGenerationalRuntime(
+     configureGenerationalAllocation(allocation, youngBits, dirty, roots) !== 0
+   )
+     throw "INVALID_GENERATIONAL_STATE";
++  // SCRATCH TIMING (not for landing): per-collection records of 24 words
++  // (nanoseconds), published at identity page words 5 (log) and 6 (count).
++  const logRecords = 512,
++    logBytes = logRecords * 24 * 8,
++    log = mapMemory(logBytes),
++    identity = currentContextDomain();
++  let logged = 0;
++  if (log > 0 && identity > 0) writeMemoryWord(identity, 56, 40, log);
++  const stamp = new Float64Array(8);
++  function ns(from: number, to: number): number {
++    return Math.max(0, Math.round((to - from) * 1000000));
++  }
++  function record(fields: Float64Array, count: number): void {
++    if (log <= 0 || identity <= 0 || logged >= logRecords) return;
++    for (let index = 0; index < count; index++)
++      writeMemoryWord(log, logBytes, (logged * 24 + index) * 8, fields[index] ?? 0);
++    logged++;
++    writeMemoryWord(identity, 56, 48, logged);
++  }
++  const fields = new Float64Array(24);
+   function collect(forceMajor: boolean): boolean {
+     if (exhausted) return false;
+     const youngTop = allocation[0] ?? 0,
+       oldTop = allocation[3] ?? 0;
+     const minor =
+       !forceMajor && youngTop > 0 && youngTop <= oldCapacity - oldTop;
++    const rememberedCount =
++      (allocation[14] ?? 0) !== 0 ? -1 : (allocation[12] ?? 0);
++    stamp[0] = monotonicMilliseconds();
+     collecting = true;
+     holds?.begin();
++    stamp[1] = monotonicMilliseconds();
++    let usedParallel = false;
+     const base = activeBase();
+     if (minor) {
+       // The nursery is evacuated into the old prefix, which has room for all
+@@ -262,6 +298,7 @@ export function initializeGenerationalRuntime(
+               oldTop,
+             )
+           : -1;
++      usedParallel = top >= 0;
+       const bytes =
+         top >= 0
+           ? top - oldTop
+@@ -276,8 +313,10 @@ export function initializeGenerationalRuntime(
+               base,
+               rememberedObjects,
+             );
++      stamp[2] = monotonicMilliseconds();
+       youngBits.fill(0, 0, Math.ceil(youngTop / 256));
+       allocation[3] = oldTop + bytes;
++      stamp[3] = monotonicMilliseconds();
+     } else {
+       // The whole active space compacts in place: live old and young
+       // objects slide down into a packed old prefix (survivors that no
+@@ -293,6 +332,7 @@ export function initializeGenerationalRuntime(
+           chunkOffsets,
+           pending,
+         );
++      stamp[2] = monotonicMilliseconds();
+       allocation[3] = bytes;
+       if (bytes > oldCapacity) exhausted = true;
+       // Nothing above the packed prefix is live: return those pages. The
+@@ -301,10 +341,37 @@ export function initializeGenerationalRuntime(
+         end = Math.floor((base + used) / releasePage) * releasePage;
+       if (end > start && releaseMemory(start, end - start) !== 0)
+         throw "GENERATIONAL_RELEASE";
++      stamp[3] = monotonicMilliseconds();
+     }
+     holds?.finish(minor);
++    stamp[4] = monotonicMilliseconds();
+     allocation[0] = exhausted ? youngCapacity : 0;
+     clearRemembered();
++    stamp[5] = monotonicMilliseconds();
++    fields.fill(0);
++    fields[0] = minor ? (usedParallel ? 1 : 0) : (compactTimes[9] ?? 0) + 2;
++    fields[1] = youngTop;
++    fields[2] = oldTop;
++    fields[3] = allocation[3] ?? 0;
++    fields[4] = rememberedCount < 0 ? 999999999 : rememberedCount;
++    fields[5] = ns(stamp[0] ?? 0, stamp[5] ?? 0);
++    fields[6] = ns(stamp[0] ?? 0, stamp[1] ?? 0);
++    fields[7] = ns(stamp[1] ?? 0, stamp[2] ?? 0);
++    fields[8] = ns(stamp[2] ?? 0, stamp[3] ?? 0);
++    fields[9] = ns(stamp[3] ?? 0, stamp[4] ?? 0);
++    fields[10] = ns(stamp[4] ?? 0, stamp[5] ?? 0);
++    if (minor && !usedParallel)
++      for (let index = 0; index < 4; index++)
++        fields[11 + index] = ns(cheneyTimes[index] ?? 0, cheneyTimes[index + 1] ?? 0);
++    else if (minor) {
++      fields[11] = ns(parallelTimes[0] ?? 0, parallelTimes[1] ?? 0);
++      fields[12] = ns(parallelTimes[1] ?? 0, parallelTimes[2] ?? 0);
++    } else {
++      for (let index = 0; index < 8; index++)
++        fields[11 + index] = ns(compactTimes[index] ?? 0, compactTimes[index + 1] ?? 0);
++      fields[19] = compactTimes[10] ?? 0;
++    }
++    record(fields, 20);
+     collecting = false;
+     return !exhausted;
+   }
+diff --git a/packages/native-runtime/src/tracing/cheney.ts b/packages/native-runtime/src/tracing/cheney.ts
+index 539c71af2..cd562b064 100644
+--- a/packages/native-runtime/src/tracing/cheney.ts
++++ b/packages/native-runtime/src/tracing/cheney.ts
+@@ -31,6 +31,10 @@ import {
+   headerFlags,
+   type ReadWord,
+ } from "./scan.ts";
++import { monotonicMilliseconds } from "../intrinsics/clock.ts";
++// SCRATCH TIMING (not for landing): phase stamps in milliseconds.
++export const cheneyTimes = new Float64Array(8);
++export const compactTimes = new Float64Array(12);
+ 
+ /** Scratch kind flag on a destination weak slot whose ephemeron value was
+  * traced (live weak slots use flags 0 and 1). */
+@@ -505,6 +509,7 @@ export function createCheneyCollector(
+       state.sharedShift = shared.shift;
+       currentStarts = startBits;
+       const start = destinationStart;
++      cheneyTimes[0] = monotonicMilliseconds();
+       if (
+         walkNativeStack(
+           readWord,
+@@ -515,12 +520,16 @@ export function createCheneyCollector(
+         ) !== "complete"
+       )
+         throw "CHENEY_ROOT";
++      cheneyTimes[1] = monotonicMilliseconds();
+       if (remembered !== undefined) remembered(scanRemembered);
++      cheneyTimes[2] = monotonicMilliseconds();
+       let scanned = drain(state, startBits, start);
++      cheneyTimes[3] = monotonicMilliseconds();
+       if (state.weakCopied !== 0) {
+         scanned = traceEphemerons(state, startBits, start, scanned);
+         finishWeakSlots(state, start);
+       }
++      cheneyTimes[4] = monotonicMilliseconds();
+       return state.free - start;
+     },
+   };
+@@ -984,7 +993,9 @@ export function createCompactor(
+       state.liveBytes = 0;
+       state.sawView = false;
+       state.sawWeak = false;
++      compactTimes[0] = monotonicMilliseconds();
+       live.fill(0, 0, words);
++      compactTimes[1] = monotonicMilliseconds();
+       // 1. Mark (in parallel for large regions).
+       const delegate = used >= parallelMinimum ? helpers : undefined;
+       let parallel = false;
+@@ -1013,6 +1024,7 @@ export function createCompactor(
+       )
+         throw "COMPACT_ROOT";
+       closeMarks(state);
++      compactTimes[2] = monotonicMilliseconds();
+       if (state.sawWeak) {
+         // Ephemerons whose keys are live keep their values, to a fixpoint
+         // (re-marking is idempotent: a pass that marks nothing ends it);
+@@ -1025,6 +1037,7 @@ export function createCompactor(
+         }
+         forEachLive(state, finishCompactWeak);
+       }
++      compactTimes[3] = monotonicMilliseconds();
+       // 2. Offsets: live granules before each chunk.
+       let granules = 0;
+       for (let word = 0; word < words; word++) {
+@@ -1032,8 +1045,10 @@ export function createCompactor(
+         granules += popcount(live[word] ?? 0);
+       }
+       if (granules * 8 !== state.liveBytes) throw "COMPACT_LIVE";
++      compactTimes[4] = monotonicMilliseconds();
+       // 3. Views' data pointers against their unmodified owner chains.
+       if (state.sawView) forEachLive(state, relocateView);
++      compactTimes[5] = monotonicMilliseconds();
+       // 4 and 5. Roots, then every live object's fields and position.
+       if (
+         walkNativeStack(
+@@ -1045,8 +1060,13 @@ export function createCompactor(
+         ) !== "complete"
+       )
+         throw "COMPACT_ROOT";
++      compactTimes[6] = monotonicMilliseconds();
+       if (delegate !== undefined && parallel) delegate.forward(state, words);
++      compactTimes[7] = monotonicMilliseconds();
+       const liveBytes = compactLive(state, words, !parallel);
++      compactTimes[8] = monotonicMilliseconds();
++      compactTimes[9] = parallel ? 1 : 0;
++      compactTimes[10] = words;
+       if (liveBytes !== state.liveBytes) throw "COMPACT_PACK";
+       return liveBytes;
+     },
+diff --git a/packages/native-runtime/src/tracing/parallel.ts b/packages/native-runtime/src/tracing/parallel.ts
+index f0423fd09..970dbbd8f 100644
+--- a/packages/native-runtime/src/tracing/parallel.ts
++++ b/packages/native-runtime/src/tracing/parallel.ts
+@@ -52,6 +52,9 @@ import {
+   type ReadWord,
+   type VisitWord,
+ } from "./scan.ts";
++import { monotonicMilliseconds } from "../intrinsics/clock.ts";
++// SCRATCH TIMING (not for landing).
++export const parallelTimes = new Float64Array(4);
+ 
+ /** Parallel stop-the-world evacuation (see docs/parallel-gc.md).
+  *
+@@ -1419,12 +1422,15 @@ export function createParallelEvacuator(
+         state.sharedEnd = sharedStrings.end;
+         state.sharedShift = sharedStrings.shift;
+       }
++      parallelTimes[0] = monotonicMilliseconds();
+       shared.rootHead = rootHead;
+       shared.rememberedCount = rememberedObjects ? rememberedCount : -2;
+       shared.oldBase = toBase;
+       shared.oldTop = oldTop;
+       runCommand(commandEvacuate, first, rootHead);
++      parallelTimes[1] = monotonicMilliseconds();
+       finishCopiedWeak();
++      parallelTimes[2] = monotonicMilliseconds();
+       return read(record + recordCursor);
+     },
+   };

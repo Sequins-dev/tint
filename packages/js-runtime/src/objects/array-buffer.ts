@@ -25,6 +25,8 @@ import {
 } from "./intrinsics.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   getProperty,
@@ -50,7 +52,9 @@ export function requireArrayBuffer(
 ): ByteStorage {
   const object = viewObjectValue(value, realm.objectPrototype);
   const storage =
-    object === undefined ? undefined : object.internalArrayBufferData;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalArrayBufferData;
   if (storage === undefined) throw createRuntimeError(realm, "type");
   return storage;
 }
@@ -82,7 +86,7 @@ export function adoptArrayBuffer(
     realm.bufferAllocator,
   );
   if (!storage.ok) return storageFailure(storage.error, realm);
-  object.internalArrayBufferData = storage.value;
+  ensureExoticSlots(object).internalArrayBufferData = storage.value;
   return object;
 }
 export function installArrayBufferIntrinsics(
@@ -96,7 +100,7 @@ export function installArrayBufferIntrinsics(
     parent: OrdinaryObject<ScriptPropertyKey, unknown>,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(parent);
-    object.internalArrayBufferData = storage;
+    ensureExoticSlots(object).internalArrayBufferData = storage;
     return object;
   }
   const constructor = createConstructorObject<ScriptPropertyKey, unknown>(
@@ -207,7 +211,9 @@ export function installArrayBufferIntrinsics(
       1,
       (receiver, args): unknown => {
         const object = viewObjectValue(args[0], realm.objectPrototype);
-        return object !== undefined && object.internalArrayBufferView;
+        return (
+          object !== undefined && exoticSlots(object).internalArrayBufferView
+        );
       },
       hooks,
     ),

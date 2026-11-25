@@ -17,11 +17,11 @@ import {
 import {
   verifyCallbackFixture,
   verifyCallbackTrap,
+  verifyMayCallbackOnlyFixture,
   verifyZlibCallbackFixture,
   withCallbackLibrary,
 } from "./native-callback-fixtures.ts";
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
-import { verifyOsFixture } from "./native-os-fixtures.ts";
 import {
   verifyDynamicFixture,
   withDynamicLibrary,
@@ -40,10 +40,22 @@ const optionalLibraries =
     : {
         skip: "the probe checks Mach-O weak dylib binding; ELF images dlopen optional libraries",
       };
+/** ARM64 ABI probes (Apple packed stack and AAPCS64 register/stack);
+ * x86-64 SysV ABI call shapes are covered by native-x64-ffi.test.ts. */
+const arm64Abi =
+  nativeFixtureTarget().arch === "aarch64"
+    ? {}
+    : {
+        skip: "ARM64 ABI probes (x86-64 SysV ABI is covered by native-x64-ffi.test.ts)",
+      };
 
-test("C library ABI probes observe every C call shape natively", () => {
-  verifyAbiProbeFixture();
-});
+test(
+  "C library ABI probes observe every C call shape natively",
+  arm64Abi,
+  () => {
+    verifyAbiProbeFixture();
+  },
+);
 test("node:crypto hashes, HMAC and random bytes use system OpenSSL", () => {
   verifyCryptoFixture();
 });
@@ -60,106 +72,37 @@ test(
     verifyDylibProbe();
   },
 );
-test("node:zlib sync codecs match the system zlib and Node under GC (generational)", () => {
+test("node:zlib sync codecs match the system zlib and Node under GC", () => {
   verifyZlibFixture();
-});
-test("node:zlib sync codecs match the system zlib and Node under GC (copying)", () => {
-  verifyZlibFixture("initializeCopyingRuntime");
 });
 test("optional libraries: availability and calls for absent and present ones", () => {
   verifyAvailabilityFixture();
 });
-test("external storage and raw addresses work natively (generational)", () => {
+test("external storage and raw addresses work natively", () => {
   verifyStorageFixture();
 });
-test("external storage and raw addresses work natively (copying)", () => {
-  verifyStorageFixture("initializeCopyingRuntime");
-});
-test("C views read and write records as properties under GC (generational)", () => {
+test("C views read and write records as properties under GC", () => {
   verifyViewFixture();
 });
-test("C views read and write records as properties under GC (copying)", () => {
-  verifyViewFixture("initializeCopyingRuntime");
-});
-test("tint:ffi/unsafe views read C-owned memory across collections (generational)", () => {
+test("tint:ffi/unsafe views read C-owned memory across collections", () => {
   verifyForeignFixture();
-});
-test("tint:ffi/unsafe views read C-owned memory across collections (copying)", () => {
-  verifyForeignFixture("initializeCopyingRuntime");
-});
-test("node:os userInfo, networkInterfaces and loadavg match Node (generational)", () => {
-  verifyOsFixture();
-});
-test("node:os userInfo, networkInterfaces and loadavg match Node (copying)", () => {
-  verifyOsFixture("initializeCopyingRuntime");
-});
-/** Build `module` as node:os for `target` in a child process (the fixture
- * target is fixed when hosted-fixture.ts loads). */
-function buildOsFor(module: string, target: string) {
-  const script = `import { osFixtureDependencies, osFixtureSource } from ${JSON.stringify(
-    new URL("./native-os-fixtures.ts", import.meta.url).href,
-  )};
-import { verifyHostedFixture } from ${JSON.stringify(
-    new URL("./hosted-fixture.ts", import.meta.url).href,
-  )};
-verifyHostedFixture(osFixtureSource(), "node-os-other", osFixtureDependencies(${JSON.stringify(module)}));`;
-  return spawnSync(process.execPath, ["--input-type=module", "-e", script], {
-    encoding: "utf8",
-    env: { ...process.env, TINT_NATIVE_TARGET: target, TINT_BUILD_ONLY: "1" },
-  });
-}
-test("each target's node:os fails explicitly on the other target", () => {
-  // No silent misreading of the other C library's records: resolution
-  // rejects the binding import.
-  for (const [module, target, binding] of [
-    ["os-darwin.ts", "linux-aarch64", "darwin-os"],
-    ["os-linux.ts", "darwin-aarch64", "linux-os"],
-  ] as const) {
-    const result = buildOsFor(
-      "packages/native-runtime/src/node/" + module,
-      target,
-    );
-    assert.notEqual(result.status, 0, result.stdout);
-    assert.ok(
-      result.stderr.includes(
-        `"stage":"resolve","module":"packages/native-runtime/src/node/${module}","message":"UNDECLARED_IMPORT: tint:c/${binding}"`,
-      ),
-      result.stderr.slice(-2000),
-    );
-  }
 });
 /** Dynamic calls load a C library clang builds at test time. */
 const clang =
   spawnSync("clang", ["--version"], { encoding: "utf8" }).status === 0
     ? {}
     : { skip: "clang is not installed (the test library is compiled)" };
-test(
-  "dynamic calls reach every C argument and result class (generational)",
-  clang,
-  () => {
-    withDynamicLibrary((library) => verifyDynamicFixture(library));
-  },
-);
-test(
-  "dynamic calls reach every C argument and result class (copying)",
-  clang,
-  () => {
-    withDynamicLibrary((library) =>
-      verifyDynamicFixture(library, "initializeCopyingRuntime"),
-    );
-  },
-);
-test("callbacks: qsort over records, nesting, GC inside and exceptions (generational)", () => {
+test("dynamic calls reach every C argument and result class", clang, () => {
+  withDynamicLibrary((library) => verifyDynamicFixture(library));
+});
+test("callbacks: qsort over records, nesting, GC inside and exceptions", () => {
   verifyCallbackFixture();
 });
-test("callbacks: qsort over records, nesting, GC inside and exceptions (copying)", () => {
-  verifyCallbackFixture("initializeCopyingRuntime");
+test("a may-callback call in a program without callbacks finds its callback state", () => {
+  verifyMayCallbackOnlyFixture();
 });
-test("registered callbacks: zlib's allocator round trip under GC (generational)", () => {
+test("registered callbacks: zlib's allocator round trip under GC", () => {
   verifyZlibCallbackFixture();
-});
-test("registered callbacks: zlib's allocator round trip under GC (copying)", () => {
-  verifyZlibCallbackFixture("initializeCopyingRuntime");
 });
 for (const scenario of [
   "ok",

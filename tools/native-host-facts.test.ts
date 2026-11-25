@@ -23,7 +23,9 @@ import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import { cgroupProcessorLimitFrom } from "../packages/native-runtime/src/processors.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts",
   rounds = "packages/foundation/src/binary/sha256-rounds.ts",
@@ -35,6 +37,7 @@ const factBindings = [
     operation: "memory-page-bytes",
   },
   { module: memory, name: "processorCount", operation: "processor-count" },
+  { module: memory, name: "runtimeTargetOS", operation: "target-os" },
   { module: memory, name: "openRuntimeFile", operation: "open-read" },
   { module: memory, name: "readRuntimeFile", operation: "read" },
   { module: memory, name: "closeRuntimeFile", operation: "close" },
@@ -76,6 +79,7 @@ function hostPageBytes(): number {
 }
 /** Whether this CPU implements the SHA-256 instructions, per the OS. */
 function hostSha256(): boolean {
+  if (nativeFixtureTarget().arch === "x86_64") return false;
   if (platform() === "darwin") return true;
   const features = /^Features\s*:(.*)$/m.exec(
     readFileSync("/proc/cpuinfo", "utf8"),
@@ -278,7 +282,7 @@ const cgroupCases: readonly {
 ];
 
 test("cgroup v1, v2 and hybrid limits parse natively from fixture files", () => {
-  const directory = mkdtempSync(join(tmpdir(), "tint-cgroups-"));
+  const directory = stableScratchDirectory("cgroups");
   try {
     const roots = cgroupCases.map((item, index) => {
       const root = join(directory, String(index));

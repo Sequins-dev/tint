@@ -13,8 +13,10 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { functionStorageFromEnvironment } from "./emission-storage.ts";
-import { nativeFixtureTarget } from "./native-host-target.ts";
-import { darwinAArch64Target } from "@tint/platform/target";
+import {
+  nativeFixtureTarget,
+  nativeScriptCallsEnabled,
+} from "./native-host-target.ts";
 import {
   nativeSyntaxVerdictSource,
   nativeSyntaxDependencies,
@@ -26,7 +28,16 @@ import {
 } from "./captured-module-exports.ts";
 import { createSourceText } from "@tint/source/text";
 import { parseModule, parseScript } from "@tint/typescript/syntax";
-import { lowerScript, lowerSourceTextModule } from "@tint/js-engine/lowering";
+import {
+  lowerScript,
+  lowerSourceTextModule,
+  propertyCacheBindings,
+  propertyCacheNames,
+  activationBindings,
+  activationNames,
+  globalCellBindings,
+  globalCellNames,
+} from "@tint/js-engine/lowering";
 import { createSourceTextView } from "@tint/source/text";
 import {
   discoverModuleGraph,
@@ -35,12 +46,19 @@ import {
 import {
   buildMacOSProgram,
   compileMacOSProgram,
+  compileX64Program,
   linkMacOSProgram,
+  linkX64Program,
   type CompiledMacOSProgram,
   type CompiledMacOSProgramResult,
+  type CompiledX64Program,
+  type CompiledX64ProgramResult,
 } from "@tint/compiler/build";
 import { deserialize, serialize } from "node:v8";
-import type { NativeServiceUnit } from "@tint/compiler/native";
+import type {
+  NativeServiceUnit,
+  X64NativeServiceUnit,
+} from "@tint/compiler/native";
 import {
   createScriptUnitCompiler,
   nativeSyntaxKey,
@@ -87,7 +105,9 @@ const objectModule = "packages/js-runtime/src/objects/index.ts";
 const clockModule = "packages/native-runtime/src/intrinsics/clock.ts";
 const randomModule = "packages/native-runtime/src/intrinsics/random.ts";
 const globalModule = "packages/js-runtime/src/environments/global/index.ts";
-const nativeFSModule = "packages/platform/src/darwin/fs.ts";
+export const nativeTestTarget = nativeFixtureTarget();
+const nativeFSModule =
+  "packages/platform/src/" + nativeTestTarget.os + "/fs.ts";
 const fileServiceModule = "packages/platform/src/files/service.ts";
 const timeZoneModule = "packages/foundation/src/chrono/tzif/index.ts";
 const timeZoneIdentifiersModule =
@@ -136,16 +156,11 @@ export function nativeAdmissionTimeout(requested: string | undefined): number {
   return runBudget(requested, 1800000, "admission");
 }
 /** Uniform execution budgets, recorded in reports rather than tailored to tests.
- * The copying collector reserves half the heap as evacuation space; large
- * generated Unicode inputs cannot fit in the former 4 MiB managed window. */
+ * The collector uses half the managed window; large generated Unicode inputs
+ * cannot fit in the former 4 MiB managed window. */
 export const nativeDebuggerEntitlement = "com.apple.security.get-task-allow";
-// Preserve the library's default Mach-O build profile on arm64 hosts.
-export const nativeTestTarget =
-  process.env.TINT_NATIVE_TARGET === undefined && process.arch === "arm64"
-    ? darwinAArch64Target
-    : nativeFixtureTarget();
 export const nativeTestResources = Object.freeze({
-  collector: nativeTestTarget.arch === "x86_64" ? "generational" : "copying",
+  collector: "generational",
   // The complete module/agent host plus the decorator runtime surface exceeds
   // the project compiler's 16K specialization budget even for a small batch.
   maxSpecializations: 32768,
@@ -161,16 +176,14 @@ export const nativeTestResources = Object.freeze({
   maxScriptCodeBytes: 2097152,
   // Entries that differ only in abstracted string-literal values share code.
   maxSharedScriptEntries: 256,
-  // The copying runtime collects the whole managed graph on every cycle, so
-  // its cost scales with the number of collections: a 256 MiB semispace
-  // halves them against 128 MiB (3M Script calls -11.8% instructions; see
-  // docs/results/native-test262-heap-512m-v1.json). The managed region is a
-  // reservation; resident memory grows only as both semispaces are used.
-  // 1 GiB is refused by the copying runtime's allocation metadata.
+  // A reservation: the generational runtime uses half of it, a 64 MiB nursery
+  // and a 192 MiB old prefix, and resident memory grows only as they are used
+  // (the former copying runtime's sizing is in
+  // docs/results/native-test262-heap-512m-v1.json).
   managedBytes: 536870912,
   // Per-buffer cap: 32 MiB covers staging/sm/extensions/dataview.js (20 MiB),
-  // the largest pinned allocation that must succeed, and stays within an
-  // eighth of a 256 MiB copying semispace of the 512 MiB managed heap.
+  // the largest pinned allocation that must succeed; buffers that large go
+  // directly to the 192 MiB old prefix.
   arrayBufferBytes: 33554432,
   // Shared mappings remain live through engine shutdown. The conversion matrix
   // alone needs 1,120 tiny blocks, or 17.5 MiB after native page rounding.
@@ -307,6 +320,7 @@ const sourceRecipes = new WeakMap<
 function loweredScriptRecipe(
   source: string,
   nativeScriptCalls: boolean,
+  htmlDDAObjects: boolean,
 ): NativeModuleRecipe["load"] {
   return () => {
     const bytes = new TextEncoder().encode(source);
@@ -314,7 +328,10 @@ function loweredScriptRecipe(
     if (!decoded.ok) throw Error("native Script source failed");
     const parsed = parseScript(decoded.value);
     if (!parsed.ok) throw Error(JSON.stringify(parsed.error));
-    const lowered = lowerScript(parsed.value, source, { nativeScriptCalls });
+    const lowered = lowerScript(parsed.value, source, {
+      nativeScriptCalls,
+      htmlDDAObjects,
+    });
     if (!lowered.ok) throw Error(JSON.stringify(lowered.error));
     return lowered.value;
   };
@@ -363,10 +380,39 @@ export function deferNativeCase(
   };
 }
 
+/** The capabilities a native Script host declares to the Script lowering.
+ * `htmlDDAObjects` is the Annex B [[IsHTMLDDA]] capability
+ * (ScriptLoweringOptions.htmlDDAObjects): Scripts lowered without it skip the
+ * brand check in `== null` and refuse, at evaluation, to run beside a host
+ * that marked such an object. */
+export interface NativeScriptHost {
+  readonly htmlDDAObjects: boolean;
+  /** Whether compiled functions get native script entries
+   * (ScriptLoweringOptions.nativeScriptCalls); unset follows the target
+   * (nativeScriptCallsEnabled). */
+  readonly nativeScriptCalls?: boolean;
+}
+/** The Test262 host creates `$262.IsHTMLDDA`. */
+export const test262ScriptHost: NativeScriptHost = { htmlDDAObjects: true };
+/** The benchmark host (`benchmarkHost`) creates no [[IsHTMLDDA]] object. */
+export const benchmarkScriptHost: NativeScriptHost = { htmlDDAObjects: false };
+/** The Test262 host for linked Script units (createNativeUnitBatchBuilder).
+ * A unit's indirect calls must each name a signature class the host's
+ * Script surface publishes, and native script entries have none (their
+ * entry ABI is not a checked callback type), so unit Scripts call through
+ * register entries; program and suite linking keep native entries. */
+export const test262UnitScriptHost: NativeScriptHost = {
+  htmlDDAObjects: true,
+  nativeScriptCalls: false,
+};
+
+/** Lower a plan's harness and test Scripts for a host with `host`'s
+ * capabilities. */
 export function prepareNativeScripts(
   plan: ExecutionPlan,
   variant: SyntaxVariant,
   harness: readonly { readonly filename: string; readonly source: string }[],
+  host: NativeScriptHost = test262ScriptHost,
 ):
   | { readonly ok: true; readonly modules: readonly SourceModule[] }
   | { readonly ok: false; readonly outcome: ExecutionOutcome } {
@@ -378,15 +424,19 @@ export function prepareNativeScripts(
     return unsupported("native module execution is not implemented");
   if (plan.harness.length !== harness.length)
     return unsupported("harness inputs do not match the execution plan");
-  return prepareNativeScriptInputs([
-    ...harness,
-    { filename: "test", source: plan.source },
-  ]);
+  return prepareNativeScriptInputs(
+    [...harness, { filename: "test", source: plan.source }],
+    undefined,
+    host.htmlDDAObjects,
+    host.nativeScriptCalls ?? nativeScriptCallsEnabled(),
+  );
 }
 
 function prepareNativeScriptInputs(
   inputs: readonly { readonly filename: string; readonly source: string }[],
   dynamicRootIndex?: number,
+  htmlDDAObjects: boolean = true,
+  nativeScriptCalls: boolean = nativeScriptCallsEnabled(),
 ):
   | { readonly ok: true; readonly modules: readonly SourceModule[] }
   | { readonly ok: false; readonly outcome: ExecutionOutcome } {
@@ -395,8 +445,6 @@ function prepareNativeScriptInputs(
     outcome: { kind: "unsupported" as const, reason },
   });
   const modules: SourceModule[] = [];
-  const nativeScriptCalls =
-    process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1";
   for (const [index, input] of inputs.entries()) {
     const bytes = new TextEncoder().encode(input.source);
     const source = createSourceText(bytes, bytes.length);
@@ -408,6 +456,7 @@ function prepareNativeScriptInputs(
       return unsupported(input.filename + ": " + JSON.stringify(parsed.error));
     const lowered = lowerScript(parsed.value, input.source, {
       nativeScriptCalls,
+      htmlDDAObjects,
     });
     if (!lowered.ok)
       return unsupported(input.filename + ": " + JSON.stringify(lowered.error));
@@ -424,7 +473,7 @@ function prepareNativeScriptInputs(
       );
     sourceRecipes.set(
       lowered.value,
-      loweredScriptRecipe(input.source, nativeScriptCalls),
+      loweredScriptRecipe(input.source, nativeScriptCalls, htmlDDAObjects),
     );
     modules.push({
       id: "test262-script-" + index,
@@ -1151,7 +1200,7 @@ import {createNativeFileHost,readlinkSync} from "native-fs";
 import {readFile} from "files";
 import {createTzifZone,type TzifZone} from "tzif";
 import {readTimeZoneIdentifiers} from "zone-identifiers";
-import {${shadowRealm ? "installShadowRealmIntrinsics," : ""}${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks} from "object";
+import {${shadowRealm ? "installShadowRealmIntrinsics," : ""}${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks${benchmarkHost ? "" : ",markHTMLDDAObject"}} from "object";
 ${
   sharedBuffers
     ? `let sharedBlocks:NativeSharedBlockService|undefined=undefined;
@@ -1350,10 +1399,16 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
  createDataProperty<ScriptPropertyKey,unknown>(host.object,"tintBenchmarkReport",report,hooks);`
      : ""
  }
- const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
+ const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);${
+   // Only the Test262 host declares the [[IsHTMLDDA]] capability
+   // (test262ScriptHost); benchmark Scripts lower without it.
+   benchmarkHost
+     ? ""
+     : `
  const htmlDDA=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>null);
- htmlDDA.internalIsHTMLDDA=true;
- createDataProperty<ScriptPropertyKey,unknown>(api,"IsHTMLDDA",htmlDDA,hooks);
+ markHTMLDDAObject(htmlDDA);
+ createDataProperty<ScriptPropertyKey,unknown>(api,"IsHTMLDDA",htmlDDA,hooks);`
+ }
  const create=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    const child=createRealmHost(realm,realms);
    ${shadowRealm ? "const initializeModuleHost=host.moduleHost;if(initializeModuleHost!==undefined)initializeModuleHost(child);\n   " : ""}return installRealmHost(child,realms);
@@ -2681,43 +2736,82 @@ export function createNativeBatchBuilder(
     return { ok: true, bytes: built.value };
   };
 }
+/** The entry key a unit host cache records for a host, and its file. */
+export function unitHostCacheEntry(
+  cache: NativeUnitHostCache,
+  slotCount: number = nativeUnitSlotCount,
+): { readonly key: string; readonly path: string } {
+  const key = createHash("sha256")
+    .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
+    .digest("hex");
+  return { key, path: join(cache.directory, key + ".v8") };
+}
+/** A directory of compiled unit hosts. `key` must cover every input of the
+ * host: frozen toolchain, sources and configuration. With `required`, a
+ * missing or foreign entry fails instead of compiling the host. */
+export interface NativeUnitHostCache {
+  readonly directory: string;
+  readonly key: string;
+  readonly required?: boolean;
+}
+type CompiledUnitHost = CompiledMacOSProgram | CompiledX64Program;
+type CompiledUnitHostResult =
+  CompiledMacOSProgramResult | CompiledX64ProgramResult;
+function isCompiledX64Host(
+  host: CompiledUnitHost | Omit<CompiledMacOSProgram, "allocatorSource">,
+): host is CompiledX64Program {
+  return "arch" in host && host.arch === "x86_64";
+}
 /** Compile a unit host, or restore one compiled for the same cache key. An
  * entry records its key, so a damaged or foreign file is recompiled. */
 function cachedUnitHost(
-  cache: { readonly directory: string; readonly key: string } | undefined,
+  cache: NativeUnitHostCache | undefined,
   slotCount: number,
-  compile: () => CompiledMacOSProgramResult,
+  compile: () => CompiledUnitHostResult,
   allocatorSource: SourceModule | undefined,
-): CompiledMacOSProgramResult {
+): CompiledUnitHostResult {
   if (cache === undefined) return compile();
-  const key = createHash("sha256")
-      .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
-      .digest("hex"),
-    path = join(cache.directory, key + ".v8");
+  const { key, path } = unitHostCacheEntry(cache, slotCount);
   if (existsSync(path)) {
     try {
       const entry = deserialize(readFileSync(path)) as {
         readonly key: string;
-        readonly compiled: Omit<CompiledMacOSProgram, "allocatorSource">;
+        readonly compiled:
+          Omit<CompiledMacOSProgram, "allocatorSource"> | CompiledX64Program;
       };
-      if (entry.key === key && allocatorSource !== undefined)
-        return { ok: true, value: { ...entry.compiled, allocatorSource } };
+      if (entry.key === key) {
+        if (isCompiledX64Host(entry.compiled))
+          return { ok: true, value: entry.compiled };
+        if (allocatorSource !== undefined)
+          return { ok: true, value: { ...entry.compiled, allocatorSource } };
+      }
     } catch {
       // Recompile below; the rename replaces the unreadable entry.
     }
   }
+  if (cache.required)
+    throw Error("no precompiled unit host for this toolchain at " + path);
   const compiled = compile();
   if (compiled.ok) {
     mkdirSync(cache.directory, { recursive: true });
     const staging = path + "." + process.pid + ".tmp";
     // The allocator source is not cloneable (it may hold position
     // callbacks); a restore takes it from the same frozen sources.
-    const { allocatorSource: _source, ...stored } = compiled.value;
+    let stored:
+      Omit<CompiledMacOSProgram, "allocatorSource"> | CompiledX64Program;
+    if (isCompiledX64Host(compiled.value)) {
+      stored = compiled.value;
+    } else {
+      const { allocatorSource: _source, ...rest } = compiled.value;
+      stored = rest;
+    }
     writeFileSync(staging, serialize({ key, compiled: stored }));
     renameSync(staging, path);
   }
   return compiled;
 }
+/** Script unit slots in a linked-unit host. */
+export const nativeUnitSlotCount = 1024;
 /** Whether a case runs as linked Script units (see
  * createNativeUnitBatchBuilder); module and Script-root cases need their
  * whole-program host. */
@@ -2747,12 +2841,11 @@ export function createNativeUnitBatchBuilder(
   serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
   options: {
     readonly slotCount?: number;
-    /** Reuse the compiled host across runner processes. The key must cover
-     * every input of the host: frozen toolchain, sources and configuration. */
-    readonly hostCache?: { readonly directory: string; readonly key: string };
+    /** Reuse the compiled host across runner processes. */
+    readonly hostCache?: NativeUnitHostCache;
   } = {},
 ) {
-  const slotCount = options.slotCount ?? 1024;
+  const slotCount = options.slotCount ?? nativeUnitSlotCount;
   const config = nativeBatchConfiguration(snapshot, moduleExecution);
   if (config.scriptEvaluation === undefined)
     throw Error("linked Script units require the Script evaluation host");
@@ -2774,7 +2867,7 @@ export function createNativeUnitBatchBuilder(
     }));
   let compiledHost:
     | {
-        readonly compiled: CompiledMacOSProgram;
+        readonly compiled: CompiledUnitHost;
         readonly request: Parameters<typeof linkMacOSProgram>[1];
         readonly compile: ReturnType<typeof createScriptUnitCompiler>;
         readonly surface: { readonly name: string; readonly digest: string };
@@ -2820,11 +2913,14 @@ export function createNativeUnitBatchBuilder(
         },
       ],
     };
+    const x64 = nativeTestTarget.arch === "x86_64";
     const compiled = cachedUnitHost(
       options.hostCache,
       slotCount,
-      () => compileMacOSProgram(request),
-      request.moduleLoader?.load([request.allocatorModule])[0],
+      () => (x64 ? compileX64Program(request) : compileMacOSProgram(request)),
+      x64
+        ? undefined
+        : request.moduleLoader?.load([request.allocatorModule])[0],
     );
     if (!compiled.ok)
       throw Error("unit host compilation: " + JSON.stringify(compiled.error));
@@ -2833,14 +2929,23 @@ export function createNativeUnitBatchBuilder(
     );
     if (published === undefined)
       throw Error("unit host does not publish the Script surface");
-    const native = compiled.value.program.native;
+    const policy = isCompiledX64Host(compiled.value)
+      ? {
+          linearAllocation: true,
+          generationalBarriers: true,
+          arch: "x86_64" as const,
+        }
+      : {
+          linearAllocation:
+            compiled.value.program.native.linearAllocation === true,
+          generationalBarriers:
+            compiled.value.program.native.generationalBarriers === true,
+          arch: "aarch64" as const,
+        };
     return {
       compiled: compiled.value,
       request,
-      compile: createScriptUnitCompiler(published.directory, snapshot, {
-        linearAllocation: native.linearAllocation === true,
-        generationalBarriers: native.generationalBarriers === true,
-      }),
+      compile: createScriptUnitCompiler(published.directory, snapshot, policy),
       surface: { name: published.name, digest: published.digest },
     };
   }
@@ -2867,8 +2972,8 @@ export function createNativeUnitBatchBuilder(
     cases: readonly NativeTestCase<NativeModuleInput>[],
   ): NativeBatchBuild {
     const host = preparedHost();
-    const units: NativeServiceUnit[] = [],
-      indexes = new Map<NativeServiceUnit, number>(),
+    const units: (NativeServiceUnit | X64NativeServiceUnit)[] = [],
+      indexes = new Map<NativeServiceUnit | X64NativeServiceUnit, number>(),
       selectors: string[] = [];
     for (const item of cases) {
       if (!nativeUnitEligible(item))
@@ -2923,7 +3028,7 @@ export function createNativeUnitBatchBuilder(
     const first = units[0];
     if (first === undefined) throw Error("empty linked-unit batch");
     // The host's own services stay bound; the batch fills its unit slots.
-    const built = linkMacOSProgram(host.compiled, {
+    const linkRequest = {
       ...host.request,
       nativeServices: [
         ...(host.request.nativeServices ?? []),
@@ -2932,7 +3037,10 @@ export function createNativeUnitBatchBuilder(
           bind: slot.bind,
         })),
       ],
-    });
+    };
+    const built = isCompiledX64Host(host.compiled)
+      ? linkX64Program(host.compiled, linkRequest)
+      : linkMacOSProgram(host.compiled, linkRequest);
     if (!built.ok) return nativeCompilationFailure(built.error);
     return { ok: true, bytes: built.value, selectors };
   }
@@ -3031,6 +3139,10 @@ function createNativeImageRequest(
   const storage = functionStorageFromEnvironment();
   const target = nativeTestTarget;
   const x64 = target.arch === "x86_64";
+  const hasGlobalCell =
+    capturedModuleExports(workspaceModules([globalModule], snapshot))
+      .get(globalModule)
+      ?.has("cachedGlobalIdentifierCell") === true;
   let emissionForms: Parameters<
     typeof buildMacOSProgram
   >[0]["emissionFormHints"];
@@ -3117,9 +3229,10 @@ function createNativeImageRequest(
       debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
       threaded: agentProvider !== undefined,
       allowJit: true,
-      runtimeEntry: x64
-        ? ("initializeGenerationalRuntime" as const)
-        : ("initializeCopyingRuntime" as const),
+      // Every entry the host publishes comes from its unit linker, which
+      // rejects a unit whose barrier policy differs from the host's.
+      trustedExecutableCode: true,
+      runtimeEntry: "initializeGenerationalRuntime" as const,
       denseReferenceLists: false,
       maxSpecializations: nativeTestResources.maxSpecializations,
       managedBytes: nativeTestResources.managedBytes,
@@ -3324,7 +3437,26 @@ function createNativeImageRequest(
       ],
       runtimes: [
         ...(serviceImage?.runtimes ?? []),
-        ...directEvalSiteImageContract(directEvalSiteView).runtimes,
+        ...(directEvalSiteView
+          ? [
+              {
+                module: globalModule,
+                namespace: "global-environment",
+                retainedExports: [
+                  "viewDirectEvalSite",
+                  ...(hasGlobalCell ? globalCellNames : []),
+                ],
+              },
+            ]
+          : hasGlobalCell
+            ? [
+                {
+                  module: globalModule,
+                  namespace: "global-cell",
+                  retainedExports: [...globalCellNames],
+                },
+              ]
+            : []),
         ...moduleReferrerImageContract(
           dynamicImport || scriptEvaluation?.dynamicImport === true,
           capturedPublicEntry(
@@ -3392,6 +3524,9 @@ function createNativeImageRequest(
             "viewObjectValue",
             "viewSymbolValue",
             "viewBigIntValue",
+            "viewTypeofObject",
+            ...propertyCacheNames,
+            ...activationNames,
             ...intlFormatViewNames,
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
@@ -3445,6 +3580,13 @@ function createNativeImageRequest(
         { module: objectModule, name: "viewObjectValue", operation: "view" },
         { module: objectModule, name: "viewSymbolValue", operation: "view" },
         { module: objectModule, name: "viewBigIntValue", operation: "view" },
+        { module: objectModule, name: "viewTypeofObject", operation: "view" },
+        // Generated property caches compare shapes and load and store
+        // values inline.
+        ...propertyCacheBindings(objectModule),
+        // Native script entries keep activation records in their frames.
+        ...activationBindings(objectModule),
+        ...(hasGlobalCell ? globalCellBindings(globalModule) : []),
         ...intlFormatRecordBindings(objectModule),
         ...(finalizationRegistry
           ? [

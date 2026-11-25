@@ -291,8 +291,9 @@ speculative assumptions or change the intended emitted instruction sequence.
 
 Measure the full native self-build separately from Node bootstrap time, stage
 latencies, and smoke compilation. A superseded or unfinished native run provides
-only a lower bound, never a completed build-time result. Same-source stage2 and
-stage3 artifact comparisons remain the correctness gate for self-hosting.
+only a lower bound, never a completed build-time result. The same-source
+stage1 and stage2 artifact comparison remains the correctness gate for
+self-hosting (see [the validation gate](validation-gate.md)).
 
 GC-local liveness can project its bit vectors onto an explicit unique set of slot
 IDs. The backend supplies managed/reference and general-value locals; unrelated

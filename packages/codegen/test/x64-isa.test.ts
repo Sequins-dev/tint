@@ -27,21 +27,6 @@ test("the assembler reserves the final image tail without changing byte labels",
   assert.equal(hex(laidOut.bytes), "90" + "00".repeat(15));
 });
 
-test("SSE2 ASCII validation and narrowing match LLVM MC encodings", () => {
-  const sequence: Instruction[] = [
-    { op: "movdqu", dst: xmm(0), src: mem(128, 6) },
-    { op: "movdqu", dst: xmm(1), src: xmm(0) },
-    { op: "psrlw", dst: xmm(1), count: 7 },
-    { op: "pcmpeqw", dst: xmm(1), src: xmm(2) },
-    { op: "pmovmskb", dst: reg(32, 0), src: xmm(1) },
-    { op: "packuswb", dst: xmm(0), src: xmm(0) },
-  ];
-  assert.equal(
-    hex(encode(sequence)),
-    "f30f6f06f30f6fc8660f71d107660f75ca660fd7c1660f67c0",
-  );
-});
-
 test("streamed rel32 fields patch across byte chunks", () => {
   const assembler = createAssembler();
   for (let index = 0; index < 65534; index++)
@@ -75,6 +60,35 @@ test("streamed rel64 fields patch across byte chunks", () => {
     hex(layout.bytes.subarray(65524)),
     "4c8d350000000049bf12000000000000004f8d343e41ffd690c3",
   );
+});
+
+test("scoped assembly resolves local branches and drops local labels", () => {
+  const baseline = createAssembler();
+  const scoped = createAssembler();
+  for (const target of [baseline, scoped]) {
+    if (target === scoped) target.beginScope();
+    target.instruction({ op: "label", name: "fn0" });
+    target.instruction({
+      op: "jmp",
+      target: { kind: "label", label: "fn0:b1" },
+    });
+    target.instruction({ op: "nop" });
+    target.instruction({ op: "label", name: "fn0:b1" });
+    target.instruction({ op: "call", target: { kind: "label", label: "fn1" } });
+    target.instruction({ op: "ret" });
+    if (target === scoped) target.endScope((name) => name === "fn0");
+    if (target === scoped) target.beginScope();
+    target.instruction({ op: "label", name: "fn1" });
+    target.instruction({ op: "call", target: { kind: "label", label: "fn0" } });
+    target.instruction({ op: "ret" });
+    if (target === scoped) target.endScope((name) => name === "fn1");
+  }
+  const expected = baseline.finish();
+  const actual = scoped.finish();
+  assert.deepEqual(actual.bytes, expected.bytes);
+  assert.equal(actual.labels.get("fn0"), expected.labels.get("fn0"));
+  assert.equal(actual.labels.get("fn1"), expected.labels.get("fn1"));
+  assert.equal(actual.labels.has("fn0:b1"), false);
 });
 
 test("encoding failures identify the instruction and its operands", () => {

@@ -19,6 +19,7 @@ import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
 import { viewObjectValue } from "./values.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
+import { exoticSlots } from "./operations.ts";
 export type TemporalRelativeTo =
   | { readonly kind: "none" }
   | {
@@ -37,18 +38,18 @@ export function readTemporalRelativeTo(
   if (value === undefined) return { kind: "none" };
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object !== undefined) {
-    const zoned = object.internalTemporalZonedDateTime;
+    const zoned = exoticSlots(object).internalTemporalZonedDateTime;
     if (zoned !== undefined) {
       return { kind: "zoned", value: zoned };
     }
-    const date = object.internalTemporalPlainDate;
+    const date = exoticSlots(object).internalTemporalPlainDate;
     if (date !== undefined)
       return {
         kind: "plain",
         date,
         calendar: temporalCalendarSlot(value, realm),
       };
-    const dateTime = object.internalTemporalPlainDateTime;
+    const dateTime = exoticSlots(object).internalTemporalPlainDateTime;
     if (dateTime !== undefined)
       return {
         kind: "plain",

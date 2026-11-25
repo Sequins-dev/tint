@@ -25,7 +25,10 @@ test("DisposableStack has realm-local metadata, a non-branded prototype and one 
     "DisposableStack",
   );
   const prototype = realm.disposableStackPrototype;
-  assert.equal(prototype.internalDisposableStack, undefined);
+  assert.equal(
+    objects.exoticSlots(prototype).internalDisposableStack,
+    undefined,
+  );
   assert.equal(prototype.prototype, realm.objectPrototype);
   assert.equal(
     objects.getOwnProperty(prototype, "dispose")?.value,

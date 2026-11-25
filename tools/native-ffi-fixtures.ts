@@ -166,9 +166,6 @@ export function verifyCryptoFixture(): string {
     {
       managedBytes: 8388608,
       allocationCapacity: 131072,
-      ...(nativeFixtureTarget().arch === "x86_64"
-        ? { runtimeEntry: "initializeGenerationalRuntime" }
-        : {}),
     },
   );
 }
@@ -365,9 +362,7 @@ export const storageDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyStorageFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyStorageFixture(): string {
   const source = `import { allocate, release, address, external } from "tint:ffi";
 import { cStringAt } from "tint:ffi/unsafe";
 import { externalBytes } from "ffi-internal";
@@ -466,7 +461,7 @@ export function run(): number {
 `;
   return verifyHostedFixture(
     source,
-    runtimeEntry === undefined ? "ffi-storage" : "ffi-storage-copying",
+    "ffi-storage",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
@@ -477,7 +472,6 @@ export function run(): number {
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 8388608,
       allocationCapacity: 131072,
       foreignDeclarations: [storageDeclarations],
@@ -515,12 +509,7 @@ export const viewDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyViewFixture(
-  runtimeEntry?: Exclude<
-    Parameters<typeof verifyHostedFixture>[6],
-    undefined
-  >["runtimeEntry"],
-): string {
+export function verifyViewFixture(): string {
   const source = `import { type View } from "tint:ffi";
 import { Outer, Point, memcpy$outer, memset$point } from "views";
 let sink: number[][] = [];
@@ -654,7 +643,7 @@ export function run(): number {
 `;
   return verifyHostedFixture(
     source,
-    "ffi-views" + (runtimeEntry === undefined ? "" : "-" + runtimeEntry),
+    "ffi-views",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["views", viewDeclarations.id],
@@ -663,7 +652,6 @@ export function run(): number {
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [viewDeclarations],
@@ -690,9 +678,7 @@ export const foreignDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyForeignFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyForeignFixture(): string {
   const source = `import { allocate, release, address, type View } from "tint:ffi";
 import { viewAt, arrayAt, bytesAt, cStringAt } from "tint:ffi/unsafe";
 import { Node, Pair, strerror, strchr, memcpy$node } from "foreign";
@@ -795,7 +781,7 @@ export function run(): number {
 `;
   return verifyHostedFixture(
     source,
-    runtimeEntry === undefined ? "ffi-foreign" : "ffi-foreign-copying",
+    "ffi-foreign",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
@@ -805,7 +791,6 @@ export function run(): number {
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [foreignDeclarations],

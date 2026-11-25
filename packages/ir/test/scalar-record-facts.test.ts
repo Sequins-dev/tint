@@ -7,6 +7,7 @@ import {
   dataflowRecordGuards,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
   analyzeRecordAccesses,
   provenRecordReads,
 } from "../src/scalar/record-facts.ts";
@@ -225,11 +226,71 @@ test("closed modules preserve descriptor proofs across calls", () => {
     1,
   );
 });
+test("isolate operations keep closed-module layout proofs", () => {
+  // Worker threads re-enter the image's own hosted entry with a fresh heap,
+  // and shared memory, parking words and unmapped mappings are outside every
+  // managed heap (docs/design-worker-runtime.md).
+  for (const operation of [
+    "thread-start",
+    "thread-join",
+    "hosted-thread-entry",
+    "memory-unmap",
+    "word-park",
+    "word-wake",
+    "shared-read-unsigned",
+    "shared-write-unsigned",
+    "shared-read-word64",
+    "shared-write-word64",
+    "shared-compare-exchange-unsigned",
+    "shared-compare-exchange-word64",
+  ] as const) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...block,
+              instructions: [
+                { kind: "host-call", operation, id: 4, arguments: [], ...span },
+                ...block.instructions,
+              ],
+            },
+      ),
+    };
+    assert.equal(stableRecordLayouts({ functions: [fn] }), true, operation);
+    assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
+  }
+  // Code entry outside the image's own entry still leaves the closed world.
+  for (const operation of [
+    "collector-worker-entry",
+    "permanent-function-address",
+    "executable-call-value",
+  ] as const) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...block,
+              instructions: [
+                { kind: "host-call", operation, id: 4, arguments: [], ...span },
+                ...block.instructions,
+              ],
+            },
+      ),
+    };
+    assert.equal(stableRecordLayouts({ functions: [fn] }), false, operation);
+    assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
+  }
+});
 test("raw host memory effects prevent closed-module layout proofs", () => {
   for (const operation of [
     "memory-write-word",
     "memory-move",
-    "allocation-state",
     "generational-state",
     "external-memory-configure",
   ] as const) {
@@ -252,6 +313,99 @@ test("raw host memory effects prevent closed-module layout proofs", () => {
     assert.equal(stableRecordLayouts({ functions: [fn] }), false);
     assert.equal(stableDescriptors({ functions: [fn] }), false, operation);
   }
+});
+test("the generational write proof admits executable calls only under the trusted-code contract", () => {
+  const withHost = (operation: string): ModuleIR => {
+    const base = fixture();
+    return {
+      functions: [
+        {
+          ...base,
+          blocks: base.blocks.map((block) =>
+            block.id !== 1
+              ? block
+              : {
+                  ...block,
+                  instructions: [
+                    {
+                      kind: "host-call",
+                      operation: operation as "executable-call-value",
+                      id: 4,
+                      arguments: [],
+                      ...span,
+                    },
+                    ...block.instructions,
+                  ],
+                },
+          ),
+        },
+      ],
+    };
+  };
+  // Publishing code bytes is not a managed write.
+  for (const operation of [
+    "executable-map",
+    "executable-write",
+    "executable-unmap",
+  ])
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, false),
+      true,
+      operation,
+    );
+  // The code a call enters is opaque: only the image's unit linker, which
+  // rejects a differing barrier policy, can vouch for it.
+  for (const operation of [
+    "executable-call-number",
+    "executable-call-value",
+    "executable-call-managed",
+  ]) {
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, false),
+      false,
+      operation,
+    );
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, true),
+      true,
+      operation,
+    );
+  }
+  // A raw word write or move could store an unbarriered reference.
+  for (const operation of ["memory-write-word", "memory-move"])
+    assert.equal(
+      trackedManagedWrites(withHost(operation), undefined, true),
+      false,
+      operation,
+    );
+});
+test("raw-window string images prevent closed-module layout proofs", () => {
+  // string-flatten-into is an IR instruction, not a host call, but its
+  // window may be any writable memory, like memory-write-bytes.
+  const base = fixture();
+  const fn: FunctionIR = {
+    ...base,
+    blocks: base.blocks.map((block) =>
+      block.id !== 1
+        ? block
+        : {
+            ...block,
+            instructions: [
+              {
+                kind: "string-flatten-into",
+                id: 4,
+                address: 1,
+                byteLength: 1,
+                string: 0,
+                ...span,
+              },
+              ...block.instructions,
+            ],
+          },
+    ),
+  };
+  assert.equal(stableRecordLayouts({ functions: [fn] }), false);
+  assert.equal(stableDescriptors({ functions: [fn] }), false);
 });
 function fixture(): FunctionIR {
   return {
@@ -735,6 +889,12 @@ test("join-crossing descriptor facts need the check on every incoming path", () 
   ]);
   checked(constructed);
   assert.equal(dataflowRecordGuards(constructed)?.[5], 1);
+  // The sparse live lists of tables above the dense limit prove the same.
+  for (const fn of [plain, copied, reassigned, constructed])
+    assert.deepEqual(
+      dataflowRecordGuards(fn, 2000000, false, 0),
+      dataflowRecordGuards(fn),
+    );
 });
 test("join-crossing facts respect opaque calls, exception entries and budgets", () => {
   const called = diamond([
@@ -746,6 +906,7 @@ test("join-crossing facts respect opaque calls, exception entries and budgets", 
   checked(called);
   assert.equal(dataflowRecordGuards(called)?.[5], 0);
   assert.equal(dataflowRecordGuards(called, 100000, true)?.[5], 1);
+  assert.equal(dataflowRecordGuards(called, 100000, true, 0)?.[5], 1);
   const base = diamond([]);
   const exceptional: FunctionIR = {
     ...base,
@@ -894,9 +1055,13 @@ test("Test262 and JIT host operations preserve descriptors", () => {
             },
       ),
     };
+    // Signature queries and isolate operations also keep the closed world.
     assert.equal(
       stableRecordLayouts({ functions: [fn] }),
-      operation === "native-function-signature",
+      operation === "native-function-signature" ||
+        (!operation.startsWith("executable-") &&
+          !operation.startsWith("native-") &&
+          operation !== "external-memory-register"),
       operation,
     );
     assert.equal(stableDescriptors({ functions: [fn] }), true, operation);

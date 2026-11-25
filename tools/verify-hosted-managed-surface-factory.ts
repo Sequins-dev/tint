@@ -243,7 +243,7 @@ export function run():number{
         operation: "native-function-signature" as const,
       })),
     ],
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 8388608,
     allocationCapacity: 262144,
     rootCapacity: 4096,

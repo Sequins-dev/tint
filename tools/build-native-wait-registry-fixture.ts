@@ -87,7 +87,7 @@ export function run(argument:number):number {
     threaded: true,
     managedBytes: 4194304,
     allocationCapacity: 65536,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeRuntime",
     hostBindings: bindings.map(([module, name, operation]) => ({
       module,
       name,

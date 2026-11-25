@@ -80,7 +80,10 @@ async function setup() {
 test("SAB intrinsics use an explicit service and preserve metadata and distinct brands", async () => {
   const f = await setup();
   const prototype = f.realm.sharedArrayBufferPrototype;
-  assert.equal(prototype.internalSharedArrayBufferData, undefined);
+  assert.equal(
+    o.exoticSlots(prototype).internalSharedArrayBufferData,
+    undefined,
+  );
   assert.equal(prototype.prototype, f.realm.objectPrototype);
   assert.equal(f.get(f.constructor, "name"), "SharedArrayBuffer");
   assert.equal(f.get(f.constructor, "length"), 1);
@@ -93,7 +96,7 @@ test("SAB intrinsics use an explicit service and preserve metadata and distinct 
   assert.equal(f.get(fixed, "byteLength"), 4);
   assert.equal(f.get(fixed, "maxByteLength"), 4);
   assert.equal(f.get(fixed, "growable"), false);
-  assert.equal(fixed.internalArrayBufferData, undefined);
+  assert.equal(o.exoticSlots(fixed).internalArrayBufferData, undefined);
   f.throwsKind(() => o.detachArrayBuffer(fixed, f.realm), "type");
   f.throwsKind(
     () => o.callObject(f.constructor, undefined, [], undefined),
@@ -175,7 +178,7 @@ test("SAB slice copies into a distinct block and rejects a distinct wrapper alia
   const wrapper = o.createObject<objects.ScriptPropertyKey, unknown>(
     f.realm.sharedArrayBufferPrototype,
   );
-  wrapper.internalSharedArrayBufferData = alias.value;
+  o.ensureExoticSlots(wrapper).internalSharedArrayBufferData = alias.value;
   const species = o.createConstructorObject<objects.ScriptPropertyKey, unknown>(
     f.realm.functionPrototype,
     () => undefined,

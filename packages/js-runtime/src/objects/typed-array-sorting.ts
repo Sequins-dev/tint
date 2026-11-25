@@ -28,6 +28,7 @@ import {
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "./errors.ts";
+import { exoticSlots } from "./operations.ts";
 
 /** Value count of an 8- or 16-bit integer element kind; 0 for other kinds. */
 function integerElementRange(kind: TypedArrayElementKind): number {
@@ -77,7 +78,7 @@ export function installTypedArraySorting(
             target = copying
               ? constructTypedArrayResult(constructor, [length], realm, "write")
               : source;
-          const targetData = target.internalTypedArrayData;
+          const targetData = exoticSlots(target).internalTypedArrayData;
           if (targetData === undefined) throw "TYPED_ARRAY_SORT_INVARIANT";
           // SortIndexedProperties reads every element before any comparison,
           // and nothing observable runs between the window capture and here.

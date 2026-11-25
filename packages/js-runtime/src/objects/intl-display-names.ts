@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -89,7 +91,7 @@ function requireDisplayNames(
     data =
       object === undefined
         ? undefined
-        : viewDisplayNames(object.internalIntlFormatData);
+        : viewDisplayNames(exoticSlots(object).internalIntlFormatData);
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -159,7 +161,7 @@ export function installDisplayNamesIntrinsic(
           hooks,
         ),
       );
-      object.internalIntlFormatData = createDisplayNamesData(
+      ensureExoticSlots(object).internalIntlFormatData = createDisplayNamesData(
         requested,
         style,
         type,

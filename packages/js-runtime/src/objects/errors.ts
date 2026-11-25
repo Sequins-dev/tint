@@ -1,4 +1,8 @@
 import type { RealmReferrer } from "../modules/referrer.ts";
+import {
+  createIntrinsicFunctions,
+  type IntrinsicFunctions,
+} from "./intrinsic-functions.ts";
 import type { ByteAllocator } from "../bytes/index.ts";
 import type { ModuleLoader } from "../modules/loading.ts";
 import { installModuleSourceIntrinsic } from "./module-source.ts";
@@ -11,6 +15,7 @@ import { getFunctionRealm } from "./function-realms.ts";
 import type { PromiseRecord } from "../promises/index.ts";
 import { getScriptIterator, collectScriptIterator } from "./iteration.ts";
 import {
+  activeExecutionNames,
   createScriptAgent,
   runScriptContext,
   type ScriptAgent,
@@ -28,6 +33,9 @@ import {
 } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureArrayChildShape,
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createCallableObject,
   createConstructorObject,
@@ -37,12 +45,15 @@ import {
   setProperty,
   hasProperty,
   preventExtensions,
+  markPrototype,
   makePrototypeImmutable,
   defineOwnProperty,
+  propertyEpoch,
   type OrdinaryObject,
+  type OrdinaryPropertyShape,
   type ObjectHooks,
-  type ObjectExecutionContext,
   type ObjectInternalMethods,
+  type ObjectExecutionContext,
 } from "./operations.ts";
 import { viewObjectValue, viewTypeofObject } from "./values.ts";
 import { instanceOfValue } from "./functions.ts";
@@ -100,6 +111,12 @@ export interface ErrorRealm {
   readonly supportedImportAttributes: readonly string[];
   /** The realm-owned %eval% identity; ordinary global writes cannot replace it. */
   evalFunction: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** %Function.prototype.apply%, which forwarding call sites compare. */
+  functionApply: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** %Function.prototype.call%, which forwarding call sites compare. */
+  functionCall: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** Private sentinel returned by scriptArrayPop when the fast path misses. */
+  readonly arrayPopMiss: OrdinaryObject<ScriptPropertyKey, unknown>;
   evalCompiler: EvalCompiler | undefined;
   directEvalCompiler: DirectEvalCompiler | undefined;
   dynamicFunctionCompiler: DynamicFunctionCompiler | undefined;
@@ -231,6 +248,8 @@ export interface ErrorRealm {
   readonly arrayIteratorPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly stringIteratorPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   arrayValues: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** Builtins generated calls may perform inline (see intrinsic-functions.ts). */
+  readonly intrinsicFunctions: IntrinsicFunctions;
   readonly symbolRegistry: SymbolRegistry;
   readonly intlFallbackSymbol: SymbolValue;
   readonly symbolPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -241,6 +260,16 @@ export interface ErrorRealm {
   readonly stringPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly arrayPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly arrayHooks: ArrayObjectHooks<ScriptPropertyKey, unknown>;
+  /** Pre-initialized empty shape for dense arrays inheriting from arrayPrototype. */
+  readonly arrayChildShape: OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
+  /** Pre-initialized exotic methods shared by arrays in this realm. */
+  readonly arrayMethods: ObjectInternalMethods<ScriptPropertyKey, unknown>;
+  /** Last propertyEpoch at which arrayPrototype/objectPrototype satisfied the
+   * fast packed-append prototype-chain invariant (-1 when unverified). */
+  cleanArrayPushEpoch: number;
+  /** Shared property structure epoch cell, exposed on the realm so inlineable
+   * fast helpers can validate epochs without capturing module globals. */
+  readonly propertyEpoch: { value: number };
   readonly throwTypeError: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly functionPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   ordinaryHasInstanceMethod: unknown;
@@ -357,15 +386,19 @@ export function createErrorRealm(
   prototypes.set("suppressed", prototype("SuppressedError", error));
   const executionContext: ObjectExecutionContext<unknown> = {
     getRealm: (): ErrorRealm => realm,
+    // Built-ins keep the caller's Script or module: a caller in this realm
+    // already has that context record.
     run: (action): unknown => {
       const active = agent.activeContext;
       return runScriptContext<unknown>(
         agent,
-        {
-          realm,
-          scriptOrModule:
-            active === undefined ? undefined : active.scriptOrModule,
-        },
+        active !== undefined && active.realm === realm
+          ? active
+          : {
+              realm,
+              scriptOrModule:
+                active === undefined ? undefined : active.scriptOrModule,
+            },
         action,
       );
     },
@@ -382,7 +415,7 @@ export function createErrorRealm(
       throw errorFromPrototype(typePrototype, agent, "TypeError");
     },
   );
-  throwTypeError.internalInitialName = "";
+  ensureExoticSlots(throwTypeError).internalInitialName = "";
   builtinProperty(throwTypeError, "length", 0, false, false, hooks);
   builtinProperty(throwTypeError, "name", "", false, false, hooks);
   preventExtensions<ScriptPropertyKey, unknown>(throwTypeError);
@@ -427,6 +460,7 @@ export function createErrorRealm(
       return result.value;
     },
     rangeError: (): unknown => createRuntimeError(activeArrayRealm(), "range"),
+    internalMethods: undefined,
   };
   const arrayPrototype = createArrayObject<ScriptPropertyKey, unknown>(
     0,
@@ -434,6 +468,10 @@ export function createErrorRealm(
     arrayHooks,
     hooks,
   );
+  markPrototype<ScriptPropertyKey, unknown>(arrayPrototype);
+  const arrayChildShape = ensureArrayChildShape(arrayPrototype);
+  const arrayMethods = arrayHooks.internalMethods;
+  if (arrayMethods === undefined) throw "ARRAY_METHODS_INVARIANT";
   const iteratorPrototype = createObject<ScriptPropertyKey, unknown>(
     objectPrototype,
   );
@@ -459,6 +497,9 @@ export function createErrorRealm(
     supportedImportAttributes: importAttributes,
     dynamicFunctionCompiler: undefined,
     evalFunction: undefined,
+    functionApply: undefined,
+    functionCall: undefined,
+    arrayPopMiss: createObject<ScriptPropertyKey, unknown>(undefined),
     evalCompiler: undefined,
     directEvalCompiler: undefined,
     namedTimeZones: undefined,
@@ -583,6 +624,7 @@ export function createErrorRealm(
       iteratorPrototype,
     ),
     arrayValues: undefined,
+    intrinsicFunctions: createIntrinsicFunctions(),
     symbolRegistry,
     intlFallbackSymbol: createSymbolValue("IntlLegacyConstructedSymbol"),
     symbolPrototype: createObject<ScriptPropertyKey, unknown>(objectPrototype),
@@ -628,6 +670,10 @@ export function createErrorRealm(
     ),
     arrayPrototype,
     arrayHooks,
+    arrayChildShape,
+    arrayMethods,
+    cleanArrayPushEpoch: -1,
+    propertyEpoch,
     throwTypeError,
     prototypes,
     constructors: new Map<string, OrdinaryObject<ScriptPropertyKey, unknown>>(),
@@ -652,14 +698,15 @@ export function createErrorRealm(
       const fn = viewObjectValue(receiver, realm.objectPrototype);
       if (fn === undefined || fn.internalCall === undefined)
         throw createRuntimeError(realm, "type");
-      const source = fn.internalSourceText;
+      const source = exoticSlots(fn).internalSourceText;
       if (source !== undefined) return source;
-      const name = fn.internalInitialName;
+      const name = exoticSlots(fn).internalInitialName;
       if (name !== undefined)
         return "function " + nativeFunctionName(name) + "() { [native code] }";
+      const rare = fn.internalRareSlots;
       if (
-        fn.internalBoundTarget !== undefined ||
-        fn.internalProxyData !== undefined
+        (rare !== undefined && rare.internalBoundTarget !== undefined) ||
+        exoticSlots(fn).internalProxyData !== undefined
       )
         return "function () { [native code] }";
       return rejectUnsupportedExecution(realm);
@@ -698,10 +745,13 @@ export function createRuntimeError(
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const prototype = realm.prototypes.get(kind);
   if (prototype === undefined) throw "UNKNOWN_RUNTIME_ERROR_KIND";
+  const constructor = realm.constructors.get(kind);
   return errorFromPrototype(
     prototype,
     realm.agent,
-    realm.constructors.get(kind)?.internalInitialName ?? "Error",
+    (constructor === undefined
+      ? undefined
+      : exoticSlots(constructor).internalInitialName) ?? "Error",
   );
 }
 
@@ -711,7 +761,12 @@ export function realmErrorOperation(
   value: unknown,
   operation: string,
 ): unknown {
-  const access = viewTypeofObject(value)?.internalTypedErrorAccess;
+  // Retained: it reads the exotic slot directly instead of calling
+  // exoticSlots in another module.
+  const object = viewTypeofObject(value);
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  const access =
+    exotic === undefined ? undefined : exotic.internalTypedErrorAccess;
   return access === undefined ? undefined : access(operation);
 }
 
@@ -726,7 +781,9 @@ function attachTypedErrorAccess(
   function get(key: string): unknown {
     return getProperty<ScriptPropertyKey, unknown>(object, key, value, hooks);
   }
-  object.internalTypedErrorAccess = (operation: string): unknown => {
+  ensureExoticSlots(object).internalTypedErrorAccess = (
+    operation: string,
+  ): unknown => {
     if (operation.startsWith("has:"))
       return hasProperty<ScriptPropertyKey, unknown>(
         object,
@@ -786,7 +843,7 @@ export function prepareRealmErrorArgument(
 ): unknown {
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object === undefined) return value;
-  const access = object.internalTypedErrorAccess;
+  const access = exoticSlots(object).internalTypedErrorAccess;
   if (access !== undefined) return access("identity");
   attachTypedErrorAccess(object, value, value, realm, hooks, global);
   return value;
@@ -984,26 +1041,19 @@ function errorFromPrototype(
   name: string,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const error = createObject<ScriptPropertyKey, unknown>(prototype);
-  error.internalErrorData = true;
+  ensureExoticSlots(error).internalErrorData = true;
   let trace = name;
-  let sourceFrames = 0;
-  for (let frame = agent.executionNameTop; ;) {
-    const previous = frame.previous;
-    if (previous === undefined) break;
-    const frameName = frame.name;
-    if (frameName !== undefined) {
-      trace += "\n    at " + (frameName || "<anonymous>");
-      sourceFrames++;
-    }
-    frame = previous;
-  }
+  const frames = activeExecutionNames(agent, prototype);
+  for (const frameName of frames)
+    trace += "\n    at " + (frameName || "<anonymous>");
+  const sourceFrames = frames.length;
   const active = agent.activeContext;
   if (sourceFrames === 0 && active !== undefined)
     trace +=
       active.scriptOrModule === undefined
         ? "\n    at <runtime>"
         : "\n    at <script>";
-  error.internalErrorStack = trace;
+  ensureExoticSlots(error).internalErrorStack = trace;
   return error;
 }
 
@@ -1170,7 +1220,7 @@ export function installErrorIntrinsics(
         return initialize(args, fallback);
       },
     );
-    constructor.internalInitialName = name;
+    ensureExoticSlots(constructor).internalInitialName = name;
     realm.constructors.set(kind, constructor);
     builtinProperty(
       constructor,
@@ -1197,7 +1247,7 @@ export function installErrorIntrinsics(
       1,
       (receiver, args): unknown => {
         const object = viewObjectValue(args[0], realm.objectPrototype);
-        return object !== undefined && object.internalErrorData;
+        return object !== undefined && exoticSlots(object).internalErrorData;
       },
       hooks,
     ),
@@ -1260,7 +1310,9 @@ export function installErrorIntrinsics(
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype);
         if (object === undefined) throw createRuntimeError(realm, "type");
-        return object.internalErrorData ? object.internalErrorStack : undefined;
+        return exoticSlots(object).internalErrorData
+          ? exoticSlots(object).internalErrorStack
+          : undefined;
       },
       hooks,
     ),

@@ -144,10 +144,7 @@ const fixtureModules: [string, string][] = [
     { module: weak, namespace: "weak-storage" },
     { module: memory, namespace: "native-memory" },
   ];
-function fixtureOptions(
-  runtimeEntry: "initializeGenerationalRuntime" | "initializeCopyingRuntime",
-  managedBytes: number,
-) {
+function fixtureOptions(managedBytes: number) {
   return {
     managedBytes,
     allocationCapacity: managedBytes / 16,
@@ -160,7 +157,7 @@ function fixtureOptions(
         operation: "collect-garbage" as const,
       },
     ],
-    runtimeEntry,
+    runtimeEntry: "initializeGenerationalRuntime" as const,
     weakBindings: [
       { module: weak, name: "createWeakSlot", operation: "new" as const },
       { module: weak, name: "weakSlotKey", operation: "key" as const },
@@ -176,7 +173,6 @@ function fixtureOptions(
 }
 function verify(
   name: string,
-  runtimeEntry: "initializeGenerationalRuntime" | "initializeCopyingRuntime",
   managedBytes: number = 8388608,
   churnScale: number = 1,
 ): void {
@@ -194,7 +190,7 @@ function verify(
     [],
     [],
     fixtureNamespaces,
-    fixtureOptions(runtimeEntry, managedBytes),
+    fixtureOptions(managedBytes),
   );
 }
 
@@ -386,7 +382,7 @@ function functionHits(
   for (const name of functions)
     args.push(
       "-o",
-      "breakpoint set -G true -r '" + name.replaceAll(".", "\\.") + " '",
+      "breakpoint set -G true -r '" + name.replaceAll(".", "\\.") + "( |$)'",
     );
   args.push(
     "-o",
@@ -418,20 +414,12 @@ function functionHits(
   return hits;
 }
 test("weak cells clear and survive exactly under the generational collector", () => {
-  verify("weak-cells-generational", "initializeGenerationalRuntime");
+  verify("weak-cells-generational");
 });
 test("weak cells take the parallel collector paths in a large generational heap", () => {
   // A 64 MiB heap has an 8 MiB nursery and majors above the 4 MiB parallel
   // threshold.
-  verify(
-    "weak-cells-generational-large",
-    "initializeGenerationalRuntime",
-    67108864,
-    8,
-  );
-});
-test("weak cells clear and survive exactly under the copying collector", () => {
-  verify("weak-cells-copying", "initializeCopyingRuntime");
+  verify("weak-cells-generational-large", 67108864, 8);
 });
 test("weak slots, chains and cycles across parallel workers", () => {
   verifyHostedFixture(
@@ -441,7 +429,7 @@ test("weak slots, chains and cycles across parallel workers", () => {
     [],
     [],
     fixtureNamespaces,
-    fixtureOptions("initializeGenerationalRuntime", 134217728),
+    fixtureOptions(134217728),
   );
   // A debug build of the same program, run with its weak paths counted:
   // parallel minors and majors met weak slots and ran ephemeron rounds.
@@ -460,7 +448,7 @@ test("weak slots, chains and cycles across parallel workers", () => {
       [],
       [],
       fixtureNamespaces,
-      fixtureOptions("initializeGenerationalRuntime", 134217728),
+      fixtureOptions(134217728),
     );
   } finally {
     if (saved.build === undefined) delete process.env.TINT_BUILD_ONLY;

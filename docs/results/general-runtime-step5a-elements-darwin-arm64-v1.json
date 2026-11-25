@@ -1,0 +1,2540 @@
+{
+  "prepared": {
+    "head": "6875080451080a8408ae3d035d588657ef29ed72",
+    "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node": "/opt/homebrew/bin/node",
+    "nodeSha256": "119fc1d81312ba4839aefc45399c4afdb87d4879e743004a4f976694f678f910",
+    "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-TDIifG/benchmark.mjs",
+    "scriptSha256": "c971da1d0728ffa04c5b52a9eeae95e2a6dbdbd9e541d090ba6a971c99cefbb5",
+    "native": {
+      "untyped": {
+        "target": "darwin-aarch64",
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-3j8A71/general-call-bench-untyped",
+        "imageSha256": "c1c04bb5b850431b33462c3ec9441959b89737faf934ed4516e4266259f002e9",
+        "buildManifest": {
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-3j8A71/general-call-bench-untyped.manifest.json",
+          "sha256": "15ed68460cc5bfd938d8df010f8ca7875a0571c57cef75cdc2f242ad4e18167a"
+        }
+      }
+    },
+    "checksums": {
+      "charCodeAt": {
+        "sum": 10450000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "mapSetHas": {
+        "sum": 50080,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "mathFloor": {
+        "sum": 1249950000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "mathSqrt": {
+        "sum": 74814,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "numberElementRead": {
+        "sum": 25515864,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "numberElementUpdate": {
+        "sum": 361888,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "numberElementWrite": {
+        "sum": 3584,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "objectElementRead": {
+        "sum": 3149488,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "setAddHas": {
+        "sum": 50080,
+        "iterations": 100000,
+        "warm": 20000
+      }
+    }
+  },
+  "candidates": [
+    {
+      "head": "7adf28aa071070ed323903857a95dd4a18a9153f",
+      "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "node": "/opt/homebrew/bin/node",
+      "nodeSha256": "119fc1d81312ba4839aefc45399c4afdb87d4879e743004a4f976694f678f910",
+      "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-1zSTx8/benchmark.mjs",
+      "scriptSha256": "c971da1d0728ffa04c5b52a9eeae95e2a6dbdbd9e541d090ba6a971c99cefbb5",
+      "native": {
+        "untyped": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-g8PHNJ/general-call-bench-untyped",
+          "imageSha256": "625dbe317ced451430752665395a6ca8292892b30691591d1fb054395169d996",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-g8PHNJ/general-call-bench-untyped.manifest.json",
+            "sha256": "6141e22858beb9d7698cb2f2d47767f9c87d981b9075ebaed243c4a4767770a5"
+          }
+        }
+      },
+      "checksums": {
+        "charCodeAt": {
+          "sum": 10450000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mapSetHas": {
+          "sum": 50080,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mathFloor": {
+          "sum": 1249950000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mathSqrt": {
+          "sum": 74814,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberElementRead": {
+          "sum": 25515864,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberElementUpdate": {
+          "sum": 361888,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberElementWrite": {
+          "sum": 3584,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "objectElementRead": {
+          "sum": 3149488,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "setAddHas": {
+          "sum": 50080,
+          "iterations": 100000,
+          "warm": 20000
+        }
+      }
+    },
+    {
+      "head": "465cd30b828830b6b735e76fe4eb75e3aa6faf9d",
+      "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "node": "/opt/homebrew/bin/node",
+      "nodeSha256": "119fc1d81312ba4839aefc45399c4afdb87d4879e743004a4f976694f678f910",
+      "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-swaBQt/benchmark.mjs",
+      "scriptSha256": "c971da1d0728ffa04c5b52a9eeae95e2a6dbdbd9e541d090ba6a971c99cefbb5",
+      "native": {
+        "untyped": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-A5IrmU/general-call-bench-untyped",
+          "imageSha256": "684b212bab56659dc70aaf5d8a02e51096d7152cc2a7b55f49caa899ddf04ee4",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-A5IrmU/general-call-bench-untyped.manifest.json",
+            "sha256": "a5eb47df858b10693b6bfc6d1173f7c6d8b67fc3b80c429d2ca17163f1dbfe4b"
+          }
+        }
+      },
+      "checksums": {
+        "charCodeAt": {
+          "sum": 10450000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mapSetHas": {
+          "sum": 50080,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mathFloor": {
+          "sum": 1249950000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mathSqrt": {
+          "sum": 74814,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberElementRead": {
+          "sum": 25515864,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberElementUpdate": {
+          "sum": 361888,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberElementWrite": {
+          "sum": 3584,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "objectElementRead": {
+          "sum": 3149488,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "setAddHas": {
+          "sum": 50080,
+          "iterations": 100000,
+          "warm": 20000
+        }
+      }
+    }
+  ],
+  "cpu": "Apple M5 Max",
+  "rounds": 16,
+  "summary": {
+    "charCodeAt": {
+      "node": {
+        "ns": {
+          "median": 2.0485401153564453,
+          "q1": 2.0245832204818726,
+          "q3": 2.084161639213562
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 135.51916480064392,
+          "q1": 134.43020641803741,
+          "q3": 136.78229570388794
+        },
+        "deltaFromNodeNs": {
+          "median": 133.45853447914124,
+          "q1": 132.39874362945557,
+          "q3": 134.77396309375763
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 29.97145414352417,
+          "q1": 29.630526304244995,
+          "q3": 30.35020649433136
+        },
+        "deltaFromNodeNs": {
+          "median": 27.914578914642334,
+          "q1": 27.494052052497864,
+          "q3": 28.12177062034607
+        },
+        "deltaFromPreviousNs": {
+          "median": -105.63270568847656,
+          "q1": -107.18531847000122,
+          "q3": -104.24854338169098
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 29.856045246124268,
+          "q1": 29.47781264781952,
+          "q3": 30.21187663078308
+        },
+        "deltaFromNodeNs": {
+          "median": 27.807505130767822,
+          "q1": 27.44207739830017,
+          "q3": 28.151143789291382
+        },
+        "deltaFromPreviousNs": {
+          "median": -0.16582965850830078,
+          "q1": -0.6672871112823486,
+          "q3": 0.24176418781280518
+        }
+      }
+    },
+    "mapSetHas": {
+      "node": {
+        "ns": {
+          "median": 8.12729001045227,
+          "q1": 8.011769652366638,
+          "q3": 8.263435363769531
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 215.07874965667725,
+          "q1": 214.55302298069,
+          "q3": 217.33489751815796
+        },
+        "deltaFromNodeNs": {
+          "median": 207.03354001045227,
+          "q1": 206.45937502384186,
+          "q3": 209.3463546037674
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 75.88958978652954,
+          "q1": 74.90958333015442,
+          "q3": 77.16521084308624
+        },
+        "deltaFromNodeNs": {
+          "median": 67.69688010215759,
+          "q1": 66.93999886512756,
+          "q3": 69.00426745414734
+        },
+        "deltaFromPreviousNs": {
+          "median": -139.72437024116516,
+          "q1": -142.84551739692688,
+          "q3": -138.17541778087616
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 75.3600013256073,
+          "q1": 75.01916825771332,
+          "q3": 76.19093477725983
+        },
+        "deltaFromNodeNs": {
+          "median": 67.43583083152771,
+          "q1": 66.83791756629944,
+          "q3": 68.09219062328339
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.3462505340576172,
+          "q1": -1.3554126024246216,
+          "q3": 0.7108354568481445
+        }
+      }
+    },
+    "mathFloor": {
+      "node": {
+        "ns": {
+          "median": 2.1512508392333984,
+          "q1": 2.0476025342941284,
+          "q3": 2.2547900676727295
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 121.28958582878113,
+          "q1": 120.76749980449677,
+          "q3": 122.70614504814148
+        },
+        "deltaFromNodeNs": {
+          "median": 119.22458529472351,
+          "q1": 118.61854076385498,
+          "q3": 120.35645663738251
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 44.72020864486694,
+          "q1": 44.653332233428955,
+          "q3": 44.839380383491516
+        },
+        "deltaFromNodeNs": {
+          "median": 42.566670179367065,
+          "q1": 42.49333739280701,
+          "q3": 42.726147174835205
+        },
+        "deltaFromPreviousNs": {
+          "median": -76.6072952747345,
+          "q1": -77.93000340461731,
+          "q3": -75.96134960651398
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 44.58042025566101,
+          "q1": 44.39593732357025,
+          "q3": 45.41583478450775
+        },
+        "deltaFromNodeNs": {
+          "median": 42.459784746170044,
+          "q1": 42.21000552177429,
+          "q3": 43.366771936416626
+        },
+        "deltaFromPreviousNs": {
+          "median": -0.1654207706451416,
+          "q1": -0.33396661281585693,
+          "q3": 0.5482357740402222
+        }
+      }
+    },
+    "mathSqrt": {
+      "node": {
+        "ns": {
+          "median": 2.1729159355163574,
+          "q1": 2.138018012046814,
+          "q3": 2.287604808807373
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 122.25187420845032,
+          "q1": 121.800936460495,
+          "q3": 123.5441642999649
+        },
+        "deltaFromNodeNs": {
+          "median": 120.03562927246094,
+          "q1": 119.47082936763763,
+          "q3": 121.27895474433899
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 46.13749980926514,
+          "q1": 45.805630683898926,
+          "q3": 46.45697891712189
+        },
+        "deltaFromNodeNs": {
+          "median": 43.95499587059021,
+          "q1": 43.69448721408844,
+          "q3": 44.29218888282776
+        },
+        "deltaFromPreviousNs": {
+          "median": -76.09000325202942,
+          "q1": -77.11551606655121,
+          "q3": -75.39583504199982
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 45.633544921875,
+          "q1": 45.42718768119812,
+          "q3": 46.2241667509079
+        },
+        "deltaFromNodeNs": {
+          "median": 43.404589891433716,
+          "q1": 43.193328976631165,
+          "q3": 43.99333357810974
+        },
+        "deltaFromPreviousNs": {
+          "median": -0.49021005630493164,
+          "q1": -0.9024941921234131,
+          "q3": -0.06312131881713867
+        }
+      }
+    },
+    "numberElementRead": {
+      "node": {
+        "ns": {
+          "median": 1.9787490367889404,
+          "q1": 1.9620782136917114,
+          "q3": 1.990417242050171
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 16.014585494995117,
+          "q1": 15.911668539047241,
+          "q3": 16.318127512931824
+        },
+        "deltaFromNodeNs": {
+          "median": 14.026460647583008,
+          "q1": 13.958537578582764,
+          "q3": 14.346463680267334
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 14.581464529037476,
+          "q1": 14.514373540878296,
+          "q3": 14.65750277042389
+        },
+        "deltaFromNodeNs": {
+          "median": 12.590833902359009,
+          "q1": 12.532087564468384,
+          "q3": 12.720105648040771
+        },
+        "deltaFromPreviousNs": {
+          "median": -1.4924991130828857,
+          "q1": -1.8721908330917358,
+          "q3": -1.3128077983856201
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 7.412914037704468,
+          "q1": 7.35896110534668,
+          "q3": 7.499997019767761
+        },
+        "deltaFromNodeNs": {
+          "median": 5.4476988315582275,
+          "q1": 5.376258492469788,
+          "q3": 5.5049967765808105
+        },
+        "deltaFromPreviousNs": {
+          "median": -7.1391761302948,
+          "q1": -7.229069471359253,
+          "q3": -7.051564455032349
+        }
+      }
+    },
+    "numberElementUpdate": {
+      "node": {
+        "ns": {
+          "median": 1.6581237316131592,
+          "q1": 1.626143455505371,
+          "q3": 1.7820847034454346
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 136.61770462989807,
+          "q1": 136.33354663848877,
+          "q3": 138.31999719142914
+        },
+        "deltaFromNodeNs": {
+          "median": 134.8827064037323,
+          "q1": 134.17562782764435,
+          "q3": 136.52353405952454
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 16.044164896011353,
+          "q1": 15.983644723892212,
+          "q3": 16.09854817390442
+        },
+        "deltaFromNodeNs": {
+          "median": 14.363541603088379,
+          "q1": 14.184889793395996,
+          "q3": 14.443235993385315
+        },
+        "deltaFromPreviousNs": {
+          "median": -120.55062055587769,
+          "q1": -122.338747382164,
+          "q3": -119.64052617549896
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 9.069584608078003,
+          "q1": 9.024168848991394,
+          "q3": 9.229689836502075
+        },
+        "deltaFromNodeNs": {
+          "median": 7.411041259765625,
+          "q1": 7.32052206993103,
+          "q3": 7.658757567405701
+        },
+        "deltaFromPreviousNs": {
+          "median": -6.90374493598938,
+          "q1": -7.052299976348877,
+          "q3": -6.63573145866394
+        }
+      }
+    },
+    "numberElementWrite": {
+      "node": {
+        "ns": {
+          "median": 1.8174993991851807,
+          "q1": 1.6883373260498047,
+          "q3": 1.8665605783462524
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 24.55437421798706,
+          "q1": 24.484373331069946,
+          "q3": 24.704792499542236
+        },
+        "deltaFromNodeNs": {
+          "median": 22.83957600593567,
+          "q1": 22.61489450931549,
+          "q3": 22.956138849258423
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 15.133339166641235,
+          "q1": 15.036873817443848,
+          "q3": 15.37687599658966
+        },
+        "deltaFromNodeNs": {
+          "median": 13.433117866516113,
+          "q1": 13.233437538146973,
+          "q3": 13.631672263145447
+        },
+        "deltaFromPreviousNs": {
+          "median": -9.379794597625732,
+          "q1": -9.549989700317383,
+          "q3": -9.190722107887268
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 6.924375295639038,
+          "q1": 6.889381408691406,
+          "q3": 7.060727477073669
+        },
+        "deltaFromNodeNs": {
+          "median": 5.131666660308838,
+          "q1": 5.047401785850525,
+          "q3": 5.309588313102722
+        },
+        "deltaFromPreviousNs": {
+          "median": -8.158953189849854,
+          "q1": -8.357397317886353,
+          "q3": -8.063132166862488
+        }
+      }
+    },
+    "objectElementRead": {
+      "node": {
+        "ns": {
+          "median": 1.6314542293548584,
+          "q1": 1.5720820426940918,
+          "q3": 1.6654175519943237
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 14.921659231185913,
+          "q1": 14.836352467536926,
+          "q3": 15.049582123756409
+        },
+        "deltaFromNodeNs": {
+          "median": 13.281456232070923,
+          "q1": 13.176977038383484,
+          "q3": 13.351768851280212
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 13.474171161651611,
+          "q1": 13.240002989768982,
+          "q3": 13.548856973648071
+        },
+        "deltaFromNodeNs": {
+          "median": 11.864795684814453,
+          "q1": 11.576557159423828,
+          "q3": 11.969791650772095
+        },
+        "deltaFromPreviousNs": {
+          "median": -1.5170800685882568,
+          "q1": -1.571563482284546,
+          "q3": -1.3835328817367554
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 11.924165487289429,
+          "q1": 11.836355924606323,
+          "q3": 11.97447955608368
+        },
+        "deltaFromNodeNs": {
+          "median": 10.275204181671143,
+          "q1": 10.169370770454407,
+          "q3": 10.36583125591278
+        },
+        "deltaFromPreviousNs": {
+          "median": -1.466670036315918,
+          "q1": -1.6932296752929688,
+          "q3": -1.281048059463501
+        }
+      }
+    },
+    "setAddHas": {
+      "node": {
+        "ns": {
+          "median": 7.079794406890869,
+          "q1": 6.8212515115737915,
+          "q3": 7.221769094467163
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 202.79103994369507,
+          "q1": 202.52208471298218,
+          "q3": 204.03136074543
+        },
+        "deltaFromNodeNs": {
+          "median": 196.04937434196472,
+          "q1": 195.35947978496552,
+          "q3": 196.87646806240082
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 75.42750120162964,
+          "q1": 75.05760490894318,
+          "q3": 76.3148945569992
+        },
+        "deltaFromNodeNs": {
+          "median": 68.57542037963867,
+          "q1": 67.99499809741974,
+          "q3": 69.26031053066254
+        },
+        "deltaFromPreviousNs": {
+          "median": -127.36353874206543,
+          "q1": -129.34751093387604,
+          "q3": -126.91739857196808
+        }
+      },
+      "candidate2Untyped": {
+        "ns": {
+          "median": 75.55062413215637,
+          "q1": 74.92093801498413,
+          "q3": 76.57697677612305
+        },
+        "deltaFromNodeNs": {
+          "median": 68.61937403678894,
+          "q1": 67.87187218666077,
+          "q3": 69.62406277656555
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.5395841598510742,
+          "q1": -1.2652134895324707,
+          "q3": 1.7367738485336304
+        }
+      }
+    }
+  },
+  "samples": [
+    {
+      "round": 0,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "charCodeAt": 13.74957799911499,
+        "mapSetHas": 9.193751811981201,
+        "mathFloor": 2.379169464111328,
+        "mathSqrt": 2.896249294281006,
+        "numberElementRead": 2.4849987030029297,
+        "numberElementUpdate": 1.670839786529541,
+        "numberElementWrite": 1.8087506294250488,
+        "objectElementRead": 2.267920970916748,
+        "setAddHas": 7.810420989990234
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.3271484375,
+        3.87890625,
+        3.83447265625
+      ],
+      "loadAfter": [
+        4.3271484375,
+        3.87890625,
+        3.83447265625
+      ],
+      "idlePercent": 80.8955223880597
+    },
+    {
+      "round": 0,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 151.92957878112793,
+        "mapSetHas": 288.20416927337646,
+        "mathFloor": 133.91167163848877,
+        "mathSqrt": 132.4887490272522,
+        "numberElementRead": 16.06208086013794,
+        "numberElementUpdate": 136.58833026885986,
+        "numberElementWrite": 24.428749084472656,
+        "objectElementRead": 15.163750648498535,
+        "setAddHas": 229.81916904449463
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.3271484375,
+        3.87890625,
+        3.83447265625
+      ],
+      "loadAfter": [
+        4.3271484375,
+        3.87890625,
+        3.83447265625
+      ],
+      "idlePercent": 81.25435540069687
+    },
+    {
+      "round": 0,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 31.77790880203247,
+        "mapSetHas": 78.85625123977661,
+        "mathFloor": 47.196669578552246,
+        "mathSqrt": 47.42208003997803,
+        "numberElementRead": 15.479590892791748,
+        "numberElementUpdate": 16.963748931884766,
+        "numberElementWrite": 16.95791006088257,
+        "objectElementRead": 14.456250667572021,
+        "setAddHas": 82.31250047683716
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.3271484375,
+        3.87890625,
+        3.83447265625
+      ],
+      "loadAfter": [
+        4.140625,
+        3.84765625,
+        3.8232421875
+      ],
+      "idlePercent": 88.67362146050671
+    },
+    {
+      "round": 0,
+      "engine": "candidate2Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 29.05208110809326,
+        "mapSetHas": 75.02792119979858,
+        "mathFloor": 45.823750495910645,
+        "mathSqrt": 45.64374923706055,
+        "numberElementRead": 7.339589595794678,
+        "numberElementUpdate": 10.61042070388794,
+        "numberElementWrite": 7.048330307006836,
+        "objectElementRead": 11.830408573150635,
+        "setAddHas": 76.42499923706055
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.140625,
+        3.84765625,
+        3.8232421875
+      ],
+      "loadAfter": [
+        4.140625,
+        3.84765625,
+        3.8232421875
+      ],
+      "idlePercent": 86.37948207171314
+    },
+    {
+      "round": 1,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 135.4116702079773,
+        "mapSetHas": 217.17875003814697,
+        "mathFloor": 119.94499921798706,
+        "mathSqrt": 123.16874980926514,
+        "numberElementRead": 17.23750114440918,
+        "numberElementUpdate": 141.78333044052124,
+        "numberElementWrite": 24.797918796539307,
+        "objectElementRead": 14.815418720245361,
+        "setAddHas": 202.5349998474121
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.140625,
+        3.84765625,
+        3.8232421875
+      ],
+      "loadAfter": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "idlePercent": 87.59894459102902
+    },
+    {
+      "round": 1,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 29.447917938232422,
+        "mapSetHas": 73.83583068847656,
+        "mathFloor": 45.27374982833862,
+        "mathSqrt": 50.22208213806152,
+        "numberElementRead": 15.057499408721924,
+        "numberElementUpdate": 16.04707956314087,
+        "numberElementWrite": 15.616250038146973,
+        "objectElementRead": 13.519999980926514,
+        "setAddHas": 76.34833097457886
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "loadAfter": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "idlePercent": 83.75748502994011
+    },
+    {
+      "round": 1,
+      "engine": "candidate2Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 29.869999885559082,
+        "mapSetHas": 74.96582984924316,
+        "mathFloor": 44.25416946411133,
+        "mathSqrt": 46.6379189491272,
+        "numberElementRead": 7.372500896453857,
+        "numberElementUpdate": 9.103748798370361,
+        "numberElementWrite": 6.910421848297119,
+        "objectElementRead": 11.648750305175781,
+        "setAddHas": 73.50499868392944
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "loadAfter": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "idlePercent": 88.50174216027875
+    },
+    {
+      "round": 1,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "charCodeAt": 2.0425009727478027,
+        "mapSetHas": 8.02375078201294,
+        "mathFloor": 2.0641589164733887,
+        "mathSqrt": 2.0795798301696777,
+        "numberElementRead": 1.9558286666870117,
+        "numberElementUpdate": 1.6591691970825195,
+        "numberElementWrite": 1.8570804595947266,
+        "objectElementRead": 1.6424989700317383,
+        "setAddHas": 7.173750400543213
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "loadAfter": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "idlePercent": 86.04651162790698
+    },
+    {
+      "round": 2,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 33.05375099182129,
+        "mapSetHas": 77.3233413696289,
+        "mathFloor": 45.44500112533569,
+        "mathSqrt": 46.31791114807129,
+        "numberElementRead": 14.76207971572876,
+        "numberElementUpdate": 16.03749990463257,
+        "numberElementWrite": 15.587499141693115,
+        "objectElementRead": 13.630421161651611,
+        "setAddHas": 76.7941689491272
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.048828125,
+        3.83349609375,
+        3.818359375
+      ],
+      "loadAfter": [
+        3.88427734375,
+        3.802734375,
+        3.8076171875
+      ],
+      "idlePercent": 82.73022211130521
+    },
+    {
+      "round": 2,
+      "engine": "candidate2Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 30.16291856765747,
+        "mapSetHas": 80.20584106445312,
+        "mathFloor": 47.65249967575073,
+        "mathSqrt": 49.17750120162964,
+        "numberElementRead": 8.334169387817383,
+        "numberElementUpdate": 9.87333059310913,
+        "numberElementWrite": 7.541248798370361,
+        "objectElementRead": 13.175828456878662,
+        "setAddHas": 85.25915861129761
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.88427734375,
+        3.802734375,
+        3.8076171875
+      ],
+      "loadAfter": [
+        3.88427734375,
+        3.802734375,
+        3.8076171875
+      ],
+      "idlePercent": 82.0366699702676
+    },
+    {
+      "round": 2,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "charCodeAt": 2.055840492248535,
+        "mapSetHas": 8.408329486846924,
+        "mathFloor": 2.1708297729492188,
+        "mathSqrt": 2.1433305740356445,
+        "numberElementRead": 1.8737506866455078,
+        "numberElementUpdate": 1.8520903587341309,
+        "numberElementWrite": 1.7004203796386719,
+        "objectElementRead": 1.5600013732910156,
+        "setAddHas": 7.1929192543029785
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.88427734375,
+        3.802734375,
+        3.8076171875
+      ],
+      "loadAfter": [
+        3.88427734375,
+        3.802734375,
+        3.8076171875
+      ],
+      "idlePercent": 78.72340425531915
+    },
+    {
+      "round": 2,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 135.59499979019165,
+        "mapSetHas": 214.30792093276978,
+        "mathFloor": 120.72624921798706,
+        "mathSqrt": 122.40749835968018,
+        "numberElementRead": 16.64707899093628,
+        "numberElementUpdate": 138.31707954406738,
+        "numberElementWrite": 24.673750400543213,
+        "objectElementRead": 14.949579238891602,
+        "setAddHas": 212.1620798110962
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.88427734375,
+        3.802734375,
+        3.8076171875
+      ],
+      "loadAfter": [
+        3.73291015625,
+        3.7724609375,
+        3.796875
+      ],
+      "idlePercent": 83.79541108986615
+    },
+    {
+      "round": 3,
+      "engine": "candidate2Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 29.84375,
+        "mapSetHas": 77.05790996551514,
+        "mathFloor": 44.42166090011597,
+        "mathSqrt": 45.48792123794556,
+        "numberElementRead": 7.454578876495361,
+        "numberElementUpdate": 9.024171829223633,
+        "numberElementWrite": 6.920828819274902,
+        "objectElementRead": 11.966249942779541,
+        "setAddHas": 76.35624885559082
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.73291015625,
+        3.7724609375,
+        3.796875
+      ],
+      "loadAfter": [
+        3.73291015625,
+        3.7724609375,
+        3.796875
+      ],
+      "idlePercent": 89.49862808680469
+    },
+    {
+      "round": 3,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "charCodeAt": 2.1066689491271973,
+        "mapSetHas": 8.511669635772705,
+        "mathFloor": 2.019169330596924,
+        "mathSqrt": 2.147090435028076,
+        "numberElementRead": 1.994171142578125,
+        "numberElementUpdate": 2.2316694259643555,
+        "numberElementWrite": 1.89500093460083,
+        "objectElementRead": 1.7708396911621094,
+        "setAddHas": 6.924161911010742
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.73291015625,
+        3.7724609375,
+        3.796875
+      ],
+      "loadAfter": [
+        3.73291015625,
+        3.7724609375,
+        3.796875
+      ],
+      "idlePercent": 82.95454545454545
+    },
+    {
+      "round": 3,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 147.10790872573853,
+        "mapSetHas": 219.17500019073486,
+        "mathFloor": 127.03833103179932,
+        "mathSqrt": 125.73667049407959,
+        "numberElementRead": 16.510000228881836,
+        "numberElementUpdate": 139.59583044052124,
+        "numberElementWrite": 24.845409393310547,
+        "objectElementRead": 15.013329982757568,
+        "setAddHas": 202.73375034332275
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.73291015625,
+        3.7724609375,
+        3.796875
+      ],
+      "loadAfter": [
+        3.59375,
+        3.74267578125,
+        3.7861328125
+      ],
+      "idlePercent": 87.32360679263334
+    },
+    {
+      "round": 3,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 29.662091732025146,
+        "mapSetHas": 76.33208990097046,
+        "mathFloor": 44.74041938781738,
+        "mathSqrt": 45.703749656677246,
+        "numberElementRead": 14.570839405059814,
+        "numberElementUpdate": 16.583330631256104,
+        "numberElementWrite": 15.6516695022583,
+        "objectElementRead": 13.240420818328857,
+        "setAddHas": 75.778329372406
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.59375,
+        3.74267578125,
+        3.7861328125
+      ],
+      "loadAfter": [
+        3.59375,
+        3.74267578125,
+        3.7861328125
+      ],
+      "idlePercent": 88.07701802024192
+    },
+    {
+      "round": 4,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "charCodeAt": 2.0766592025756836,
+        "mapSetHas": 8.135409355163574,
+        "mathFloor": 2.411670684814453,
+        "mathSqrt": 2.3975014686584473,
+        "numberElementRead": 1.994161605834961,
+        "numberElementUpdate": 1.725001335144043,
+        "numberElementWrite": 1.9083404541015625,
+        "objectElementRead": 1.6204094886779785,
+        "setAddHas": 6.996660232543945
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.59375,
+        3.74267578125,
+        3.7861328125
+      ],
+      "loadAfter": [
+        3.59375,
+        3.74267578125,
+        3.7861328125
+      ],
+      "idlePercent": 73.40425531914893
+    },
+    {
+      "round": 4,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 136.67500019073486,
+        "mapSetHas": 216.47833824157715,
+        "mathFloor": 122.56124973297119,
+        "mathSqrt": 121.88832998275757,
+        "numberElementRead": 16.174159049987793,
+        "numberElementUpdate": 136.00417137145996,
+        "numberElementWrite": 25.216670036315918,
+        "objectElementRead": 15.267078876495361,
+        "setAddHas": 204.36874866485596
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.59375,
+        3.74267578125,
+        3.7861328125
+      ],
+      "loadAfter": [
+        3.4658203125,
+        3.71337890625,
+        3.775390625
+      ],
+      "idlePercent": 87.70708283313326
+    },
+    {
+      "round": 4,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 30.86833953857422,
+        "mapSetHas": 78.18833827972412,
+        "mathFloor": 44.7333288192749,
+        "mathSqrt": 46.734580993652344,
+        "numberElementRead": 14.528751373291016,
+        "numberElementUpdate": 16.51750087738037,
+        "numberElementWrite": 15.306668281555176,
+        "objectElementRead": 13.68333101272583,
+        "setAddHas": 75.535409450531
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.4658203125,
+        3.71337890625,
+        3.775390625
+      ],
+      "loadAfter": [
+        3.4658203125,
+        3.71337890625,
+        3.775390625
+      ],
+      "idlePercent": 85.3204172876304
+    },
+    {
+      "round": 4,
+      "engine": "candidate2Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 30.360000133514404,
+        "mapSetHas": 76.07625007629395,
+        "mathFloor": 44.9287486076355,
+        "mathSqrt": 46.086249351501465,
+        "numberElementRead": 7.366659641265869,
+        "numberElementUpdate": 8.989579677581787,
+        "numberElementWrite": 6.874580383300781,
+        "objectElementRead": 11.838338375091553,
+        "setAddHas": 75.62083005905151
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.4658203125,
+        3.71337890625,
+        3.775390625
+      ],
+      "loadAfter": [
+        3.34814453125,
+        3.6845703125,
+        3.7646484375
+      ],
+      "idlePercent": 86.88198757763975
+    },
+    {
+      "round": 5,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 136.9379210472107,
+        "mapSetHas": 214.61958169937134,
+        "mathFloor": 120.79833030700684,
+        "mathSqrt": 121.69875144958496,
+        "numberElementRead": 15.748751163482666,
+        "numberElementUpdate": 135.47125101089478,
+        "numberElementWrite": 24.573328495025635,
+        "objectElementRead": 14.786250591278076,
+        "setAddHas": 203.1345820426941
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.34814453125,
+        3.6845703125,
+        3.7646484375
+      ],
+      "loadAfter": [
+        3.34814453125,
+        3.6845703125,
+        3.7646484375
+      ],
+      "idlePercent": 90.83674945743911
+    },
+    {
+      "round": 5,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 28.64665985107422,
+        "mapSetHas": 76.5416693687439,
+        "mathFloor": 44.7295880317688,
+        "mathSqrt": 46.37916088104248,
+        "numberElementRead": 14.45500135421753,
+        "numberElementUpdate": 15.825409889221191,
+        "numberElementWrite": 14.967091083526611,
+        "objectElementRead": 13.218748569488525,
+        "setAddHas": 73.42582941055298
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.34814453125,
+        3.6845703125,
+        3.7646484375
+      ],
+      "loadAfter": [
+        3.34814453125,
+        3.6845703125,
+        3.7646484375
+      ],
+      "idlePercent": 91.17135041034568
+    },
+    {
+      "round": 5,
+      "engine": "candidate2Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 30.494160652160645,
+        "mapSetHas": 76.53249979019165,
+        "mathFloor": 45.58333873748779,
+        "mathSqrt": 47.29249954223633,
+        "numberElementRead": 7.823748588562012,
+        "numberElementUpdate": 9.36999797821045,
+        "numberElementWrite": 7.09791898727417,
+        "objectElementRead": 11.757500171661377,
+        "setAddHas": 77.03290939331055
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.34814453125,
+        3.6845703125,
+        3.7646484375
+      ],
+      "loadAfter": [
+        3.31982421875,
+        3.6728515625,
+        3.759765625
+      ],
+      "idlePercent": 87.95602198900549
+    },
+    {
+      "round": 5,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "charCodeAt": 2.1695804595947266,
+        "mapSetHas": 7.915830612182617,
+        "mathFloor": 2.1587491035461426,
+        "mathSqrt": 2.287919521331787,
+        "numberElementRead": 1.9691705703735352,
+        "numberElementUpdate": 1.6062498092651367,
+        "numberElementWrite": 1.7958307266235352,
+        "objectElementRead": 1.5566706657409668,
+        "setAddHas": 6.832919120788574
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.31982421875,
+        3.6728515625,
+        3.759765625
+      ],
+      "loadAfter": [
+        3.31982421875,
+        3.6728515625,
+        3.759765625
+      ],
+      "idlePercent": 83.14606741573034
+    },
+    {
+      "round": 6,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 30.323328971862793,
+        "mapSetHas": 77.75749921798706,
+        "mathFloor": 44.71082925796509,
+        "mathSqrt": 46.00583076477051,
+        "numberElementRead": 14.52458143234253,
+        "numberElementUpdate": 15.837078094482422,
+        "numberElementWrite": 15.132088661193848,
+        "objectElementRead": 13.474171161651611,
+        "setAddHas": 73.51457834243774
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.31982421875,
+        3.6728515625,
+        3.759765625
+      ],
+      "loadAfter": [
+        3.31982421875,
+        3.6728515625,
+        3.759765625
+      ],
+      "idlePercent": 88.48218643240605
+    },
+    {
+      "round": 6,
+      "engine": "candidate2Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 30.358750820159912,
+        "mapSetHas": 76.07707977294922,
+        "mathFloor": 44.47000026702881,
+        "mathSqrt": 45.1104211807251,
+        "numberElementRead": 7.472078800201416,
+        "numberElementUpdate": 9.101669788360596,
+        "numberElementWrite": 6.874170303344727,
+        "objectElementRead": 11.917500495910645,
+        "setAddHas": 74.1870903968811
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.31982421875,
+        3.6728515625,
+        3.759765625
+      ],
+      "loadAfter": [
+        3.2138671875,
+        3.64501953125,
+        3.7490234375
+      ],
+      "idlePercent": 86.97165589259075
+    },
+    {
+      "round": 6,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "charCodeAt": 2.025001049041748,
+        "mapSetHas": 8.21415901184082,
+        "mathFloor": 2.2533297538757324,
+        "mathSqrt": 2.1870803833007812,
+        "numberElementRead": 2.000000476837158,
+        "numberElementUpdate": 3.552088737487793,
+        "numberElementWrite": 1.5420818328857422,
+        "objectElementRead": 1.5708303451538086,
+        "setAddHas": 7.24207878112793
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.2138671875,
+        3.64501953125,
+        3.7490234375
+      ],
+      "loadAfter": [
+        3.2138671875,
+        3.64501953125,
+        3.7490234375
+      ],
+      "idlePercent": 83.51648351648352
+    },
+    {
+      "round": 6,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 134.24875020980835,
+        "mapSetHas": 214.1337513923645,
+        "mathFloor": 122.2979187965393,
+        "mathSqrt": 122.09625005722046,
+        "numberElementRead": 16.03917121887207,
+        "numberElementUpdate": 137.04415798187256,
+        "numberElementWrite": 24.663329124450684,
+        "objectElementRead": 14.916658401489258,
+        "setAddHas": 202.32791900634766
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2138671875,
+        3.64501953125,
+        3.7490234375
+      ],
+      "loadAfter": [
+        3.2138671875,
+        3.64501953125,
+        3.7490234375
+      ],
+      "idlePercent": 92.81437125748504
+    },
+    {
+      "round": 7,
+      "engine": "candidate2Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 29.867091178894043,
+        "mapSetHas": 75.13750076293945,
+        "mathFloor": 44.46125030517578,
+        "mathSqrt": 45.49000024795532,
+        "numberElementRead": 7.434999942779541,
+        "numberElementUpdate": 9.02583122253418,
+        "numberElementWrite": 6.889591217041016,
+        "objectElementRead": 11.930830478668213,
+        "setAddHas": 75.1766586303711
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2138671875,
+        3.64501953125,
+        3.7490234375
+      ],
+      "loadAfter": [
+        3.4365234375,
+        3.68408203125,
+        3.76220703125
+      ],
+      "idlePercent": 86.8611318873099
+    },
+    {
+      "round": 7,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "charCodeAt": 2.0487499237060547,
+        "mapSetHas": 8.22957992553711,
+        "mathFloor": 2.1512508392333984,
+        "mathSqrt": 2.1220803260803223,
+        "numberElementRead": 1.967909336090088,
+        "numberElementUpdate": 1.6141700744628906,
+        "numberElementWrite": 1.7849993705749512,
+        "objectElementRead": 1.5724992752075195,
+        "setAddHas": 7.284579277038574
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.4365234375,
+        3.68408203125,
+        3.76220703125
+      ],
+      "loadAfter": [
+        3.4365234375,
+        3.68408203125,
+        3.76220703125
+      ],
+      "idlePercent": 79.06976744186046
+    },
+    {
+      "round": 7,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 145.18416166305542,
+        "mapSetHas": 214.86000061035156,
+        "mathFloor": 121.94999933242798,
+        "mathSqrt": 121.83499813079834,
+        "numberElementRead": 15.981659889221191,
+        "numberElementUpdate": 135.08583068847656,
+        "numberElementWrite": 25.22125005722046,
+        "objectElementRead": 14.843330383300781,
+        "setAddHas": 203.995840549469
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.4365234375,
+        3.68408203125,
+        3.76220703125
+      ],
+      "loadAfter": [
+        3.4365234375,
+        3.68408203125,
+        3.76220703125
+      ],
+      "idlePercent": 87.36816874400768
+    },
+    {
+      "round": 7,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 30.43083906173706,
+        "mapSetHas": 74.78832960128784,
+        "mathFloor": 44.62334156036377,
+        "mathSqrt": 46.413748264312744,
+        "numberElementRead": 14.483749866485596,
+        "numberElementUpdate": 16.1554217338562,
+        "numberElementWrite": 15.023748874664307,
+        "objectElementRead": 13.660001754760742,
+        "setAddHas": 74.67540979385376
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.4365234375,
+        3.68408203125,
+        3.76220703125
+      ],
+      "loadAfter": [
+        3.2412109375,
+        3.63916015625,
+        3.74560546875
+      ],
+      "idlePercent": 84.2775143498877
+    },
+    {
+      "round": 8,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "charCodeAt": 2.128751277923584,
+        "mapSetHas": 7.8829193115234375,
+        "mathFloor": 2.0570802688598633,
+        "mathSqrt": 2.1820807456970215,
+        "numberElementRead": 1.9870901107788086,
+        "numberElementUpdate": 1.6158294677734375,
+        "numberElementWrite": 1.8262481689453125,
+        "objectElementRead": 1.6608381271362305,
+        "setAddHas": 7.214999198913574
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.2412109375,
+        3.63916015625,
+        3.74560546875
+      ],
+      "loadAfter": [
+        3.2412109375,
+        3.63916015625,
+        3.74560546875
+      ],
+      "idlePercent": 91.39784946236558
+    },
+    {
+      "round": 8,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 133.82333040237427,
+        "mapSetHas": 217.80333995819092,
+        "mathFloor": 120.99208116531372,
+        "mathSqrt": 123.66666793823242,
+        "numberElementRead": 16.58792018890381,
+        "numberElementUpdate": 138.53874921798706,
+        "numberElementWrite": 24.325830936431885,
+        "objectElementRead": 14.770829677581787,
+        "setAddHas": 202.48333930969238
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2412109375,
+        3.63916015625,
+        3.74560546875
+      ],
+      "loadAfter": [
+        3.2412109375,
+        3.63916015625,
+        3.74560546875
+      ],
+      "idlePercent": 93.94743187846636
+    },
+    {
+      "round": 8,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 30.12166976928711,
+        "mapSetHas": 74.95000123977661,
+        "mathFloor": 44.55749988555908,
+        "mathSqrt": 45.954580307006836,
+        "numberElementRead": 14.592089653015137,
+        "numberElementUpdate": 15.722088813781738,
+        "numberElementWrite": 15.008339881896973,
+        "objectElementRead": 13.22167158126831,
+        "setAddHas": 75.17374992370605
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2412109375,
+        3.63916015625,
+        3.74560546875
+      ],
+      "loadAfter": [
+        3.2216796875,
+        3.62841796875,
+        3.7412109375
+      ],
+      "idlePercent": 94.46467589220684
+    },
+    {
+      "round": 8,
+      "engine": "candidate2Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 29.116671085357666,
+        "mapSetHas": 75.57875156402588,
+        "mathFloor": 45.06334066390991,
+        "mathSqrt": 45.62334060668945,
+        "numberElementRead": 7.401669025421143,
+        "numberElementUpdate": 9.026250839233398,
+        "numberElementWrite": 6.93958044052124,
+        "objectElementRead": 11.752090454101562,
+        "setAddHas": 76.28708839416504
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2216796875,
+        3.62841796875,
+        3.7412109375
+      ],
+      "loadAfter": [
+        3.2216796875,
+        3.62841796875,
+        3.7412109375
+      ],
+      "idlePercent": 92.3
+    },
+    {
+      "round": 9,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 136.21832847595215,
+        "mapSetHas": 218.56040954589844,
+        "mathFloor": 123.25124979019165,
+        "mathSqrt": 123.50332975387573,
+        "numberElementRead": 15.815417766571045,
+        "numberElementUpdate": 134.7004199028015,
+        "numberElementWrite": 24.479999542236328,
+        "objectElementRead": 14.864590167999268,
+        "setAddHas": 204.137921333313
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2216796875,
+        3.62841796875,
+        3.7412109375
+      ],
+      "loadAfter": [
+        3.2216796875,
+        3.62841796875,
+        3.7412109375
+      ],
+      "idlePercent": 92.28171731789676
+    },
+    {
+      "round": 9,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 29.81333017349243,
+        "mapSetHas": 74.6495795249939,
+        "mathFloor": 45.01499891281128,
+        "mathSqrt": 46.586670875549316,
+        "numberElementRead": 14.634997844696045,
+        "numberElementUpdate": 16.041250228881836,
+        "numberElementWrite": 15.134589672088623,
+        "objectElementRead": 13.405420780181885,
+        "setAddHas": 74.70916986465454
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.2216796875,
+        3.62841796875,
+        3.7412109375
+      ],
+      "loadAfter": [
+        3.12353515625,
+        3.60107421875,
+        3.73095703125
+      ],
+      "idlePercent": 92.27521112767015
+    },
+    {
+      "round": 9,
+      "engine": "candidate2Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 29.595000743865967,
+        "mapSetHas": 74.99290943145752,
+        "mathFloor": 43.84583234786987,
+        "mathSqrt": 45.771660804748535,
+        "numberElementRead": 7.298338413238525,
+        "numberElementUpdate": 9.013750553131104,
+        "numberElementWrite": 6.802089214324951,
+        "objectElementRead": 11.941661834716797,
+        "setAddHas": 75.48041820526123
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.12353515625,
+        3.60107421875,
+        3.73095703125
+      ],
+      "loadAfter": [
+        3.12353515625,
+        3.60107421875,
+        3.73095703125
+      ],
+      "idlePercent": 94.35564435564436
+    },
+    {
+      "round": 9,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "charCodeAt": 2.012500762939453,
+        "mapSetHas": 8.365001678466797,
+        "mathFloor": 2.274160385131836,
+        "mathSqrt": 2.292919158935547,
+        "numberElementRead": 1.8283319473266602,
+        "numberElementUpdate": 1.6316699981689453,
+        "numberElementWrite": 1.6520881652832031,
+        "objectElementRead": 1.553330421447754,
+        "setAddHas": 6.6979193687438965
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.12353515625,
+        3.60107421875,
+        3.73095703125
+      ],
+      "loadAfter": [
+        3.12353515625,
+        3.60107421875,
+        3.73095703125
+      ],
+      "idlePercent": 90.9090909090909
+    },
+    {
+      "round": 10,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 29.43958044052124,
+        "mapSetHas": 75.44708967208862,
+        "mathFloor": 44.684579372406006,
+        "mathSqrt": 45.904579162597656,
+        "numberElementRead": 14.54833984375,
+        "numberElementUpdate": 16.079590320587158,
+        "numberElementWrite": 15.041248798370361,
+        "objectElementRead": 13.238749504089355,
+        "setAddHas": 76.30374908447266
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.12353515625,
+        3.60107421875,
+        3.73095703125
+      ],
+      "loadAfter": [
+        3.033203125,
+        3.57421875,
+        3.720703125
+      ],
+      "idlePercent": 92.54473161033798
+    },
+    {
+      "round": 10,
+      "engine": "candidate2Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 30.04791021347046,
+        "mapSetHas": 75.04957914352417,
+        "mathFloor": 45.360000133514404,
+        "mathSqrt": 45.3125,
+        "numberElementRead": 7.347080707550049,
+        "numberElementUpdate": 8.990418910980225,
+        "numberElementWrite": 6.888751983642578,
+        "objectElementRead": 11.955409049987793,
+        "setAddHas": 80.37207841873169
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.033203125,
+        3.57421875,
+        3.720703125
+      ],
+      "loadAfter": [
+        3.033203125,
+        3.57421875,
+        3.720703125
+      ],
+      "idlePercent": 93.89179755671903
+    },
+    {
+      "round": 10,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "charCodeAt": 1.9933414459228516,
+        "mapSetHas": 7.873749732971191,
+        "mathFloor": 2.012500762939453,
+        "mathSqrt": 2.111670970916748,
+        "numberElementRead": 1.9774985313415527,
+        "numberElementUpdate": 1.6512489318847656,
+        "numberElementWrite": 1.5549993515014648,
+        "objectElementRead": 1.6624999046325684,
+        "setAddHas": 6.786248683929443
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.033203125,
+        3.57421875,
+        3.720703125
+      ],
+      "loadAfter": [
+        3.033203125,
+        3.57421875,
+        3.720703125
+      ],
+      "idlePercent": 91.01123595505618
+    },
+    {
+      "round": 10,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 134.58416938781738,
+        "mapSetHas": 215.17499923706055,
+        "mathFloor": 121.28750085830688,
+        "mathSqrt": 124.57417011260986,
+        "numberElementRead": 15.922918319702148,
+        "numberElementUpdate": 136.5229082107544,
+        "numberElementWrite": 24.497079849243164,
+        "objectElementRead": 14.806251525878906,
+        "setAddHas": 203.10708045959473
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.033203125,
+        3.57421875,
+        3.720703125
+      ],
+      "loadAfter": [
+        2.9501953125,
+        3.5478515625,
+        3.71044921875
+      ],
+      "idlePercent": 94.42441720740207
+    },
+    {
+      "round": 11,
+      "engine": "candidate2Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 42.12874889373779,
+        "mapSetHas": 95.28083086013794,
+        "mathFloor": 55.225830078125,
+        "mathSqrt": 54.489171504974365,
+        "numberElementRead": 8.915419578552246,
+        "numberElementUpdate": 10.392498970031738,
+        "numberElementWrite": 8.147499561309814,
+        "objectElementRead": 13.389999866485596,
+        "setAddHas": 82.16290950775146
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.9501953125,
+        3.5478515625,
+        3.71044921875
+      ],
+      "loadAfter": [
+        2.9501953125,
+        3.5478515625,
+        3.71044921875
+      ],
+      "idlePercent": 94.38146870379498
+    },
+    {
+      "round": 11,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "charCodeAt": 2.023329734802246,
+        "mapSetHas": 8.119170665740967,
+        "mathFloor": 2.1175003051757812,
+        "mathSqrt": 2.235419750213623,
+        "numberElementRead": 1.8312501907348633,
+        "numberElementUpdate": 1.7587494850158691,
+        "numberElementWrite": 1.6345906257629395,
+        "objectElementRead": 1.601250171661377,
+        "setAddHas": 7.037918567657471
+      },
+      "exit": 0,
+      "loadBefore": [
+        2.9501953125,
+        3.5478515625,
+        3.71044921875
+      ],
+      "loadAfter": [
+        2.9501953125,
+        3.5478515625,
+        3.71044921875
+      ],
+      "idlePercent": 90.80459770114942
+    },
+    {
+      "round": 11,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 133.99249792099,
+        "mapSetHas": 214.61250066757202,
+        "mathFloor": 121.29167079925537,
+        "mathSqrt": 121.15290880203247,
+        "numberElementRead": 15.87791919708252,
+        "numberElementUpdate": 136.44333839416504,
+        "numberElementWrite": 24.485831260681152,
+        "objectElementRead": 14.970841407775879,
+        "setAddHas": 202.79500007629395
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.9501953125,
+        3.5478515625,
+        3.71044921875
+      ],
+      "loadAfter": [
+        2.7939453125,
+        3.50537109375,
+        3.6943359375
+      ],
+      "idlePercent": 94.5073476270778
+    },
+    {
+      "round": 11,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 30.08624792098999,
+        "mapSetHas": 77.11250066757202,
+        "mathFloor": 44.680001735687256,
+        "mathSqrt": 45.627498626708984,
+        "numberElementRead": 14.390830993652344,
+        "numberElementUpdate": 16.036248207092285,
+        "numberElementWrite": 15.074999332427979,
+        "objectElementRead": 13.485839366912842,
+        "setAddHas": 75.44583082199097
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.7939453125,
+        3.50537109375,
+        3.6943359375
+      ],
+      "loadAfter": [
+        2.7939453125,
+        3.50537109375,
+        3.6943359375
+      ],
+      "idlePercent": 93.75932371954252
+    },
+    {
+      "round": 12,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "charCodeAt": 1.9395899772644043,
+        "mapSetHas": 7.9958391189575195,
+        "mathFloor": 2.0058298110961914,
+        "mathSqrt": 2.099161148071289,
+        "numberElementRead": 1.9641613960266113,
+        "numberElementUpdate": 1.8808388710021973,
+        "numberElementWrite": 1.8358302116394043,
+        "objectElementRead": 1.9045805931091309,
+        "setAddHas": 6.49791955947876
+      },
+      "exit": 0,
+      "loadBefore": [
+        2.7939453125,
+        3.50537109375,
+        3.6943359375
+      ],
+      "loadAfter": [
+        2.7939453125,
+        3.50537109375,
+        3.6943359375
+      ],
+      "idlePercent": 89.88764044943821
+    },
+    {
+      "round": 12,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 136.73042058944702,
+        "mapSetHas": 214.18165922164917,
+        "mathFloor": 123.14083099365234,
+        "mathSqrt": 121.32999897003174,
+        "numberElementRead": 16.254169940948486,
+        "numberElementUpdate": 136.64707899093628,
+        "numberElementWrite": 24.242498874664307,
+        "objectElementRead": 15.196661949157715,
+        "setAddHas": 202.7870798110962
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.7939453125,
+        3.50537109375,
+        3.6943359375
+      ],
+      "loadAfter": [
+        2.72998046875,
+        3.47998046875,
+        3.68408203125
+      ],
+      "idlePercent": 94.538424359594
+    },
+    {
+      "round": 12,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 29.91374969482422,
+        "mapSetHas": 74.44707870483398,
+        "mathFloor": 44.663329124450684,
+        "mathSqrt": 45.83959102630615,
+        "numberElementRead": 14.386248588562012,
+        "numberElementUpdate": 16.06416940689087,
+        "numberElementWrite": 15.101659297943115,
+        "objectElementRead": 13.474171161651611,
+        "setAddHas": 75.40917158126831
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.72998046875,
+        3.47998046875,
+        3.68408203125
+      ],
+      "loadAfter": [
+        2.72998046875,
+        3.47998046875,
+        3.68408203125
+      ],
+      "idlePercent": 91.38102334823647
+    },
+    {
+      "round": 12,
+      "engine": "candidate2Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 29.0433406829834,
+        "mapSetHas": 75.14125108718872,
+        "mathFloor": 44.37999963760376,
+        "mathSqrt": 45.451250076293945,
+        "numberElementRead": 7.303340435028076,
+        "numberElementUpdate": 9.024159908294678,
+        "numberElementWrite": 6.936249732971191,
+        "objectElementRead": 11.895411014556885,
+        "setAddHas": 74.41375017166138
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.72998046875,
+        3.47998046875,
+        3.68408203125
+      ],
+      "loadAfter": [
+        2.67138671875,
+        3.455078125,
+        3.673828125
+      ],
+      "idlePercent": 94.08224674022067
+    },
+    {
+      "round": 13,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 134.46874856948853,
+        "mapSetHas": 214.37458992004395,
+        "mathFloor": 120.36582946777344,
+        "mathSqrt": 122.44958877563477,
+        "numberElementRead": 15.989999771118164,
+        "numberElementUpdate": 138.3287501335144,
+        "numberElementWrite": 24.497921466827393,
+        "objectElementRead": 14.926660060882568,
+        "setAddHas": 202.66417026519775
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.67138671875,
+        3.455078125,
+        3.673828125
+      ],
+      "loadAfter": [
+        2.67138671875,
+        3.455078125,
+        3.673828125
+      ],
+      "idlePercent": 94.57513202112338
+    },
+    {
+      "round": 13,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 29.53583002090454,
+        "mapSetHas": 75.2116584777832,
+        "mathFloor": 44.78084087371826,
+        "mathSqrt": 45.68042039871216,
+        "numberElementRead": 14.65291976928711,
+        "numberElementUpdate": 15.812499523162842,
+        "numberElementWrite": 14.86875057220459,
+        "objectElementRead": 13.521668910980225,
+        "setAddHas": 78.36709022521973
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.67138671875,
+        3.455078125,
+        3.673828125
+      ],
+      "loadAfter": [
+        2.67138671875,
+        3.455078125,
+        3.673828125
+      ],
+      "idlePercent": 89.07375217283338
+    },
+    {
+      "round": 13,
+      "engine": "candidate2Untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 29.508750438690186,
+        "mapSetHas": 75.91749906539917,
+        "mathFloor": 44.40124988555908,
+        "mathSqrt": 45.355000495910645,
+        "numberElementRead": 7.362921237945557,
+        "numberElementUpdate": 9.088749885559082,
+        "numberElementWrite": 6.927921772003174,
+        "objectElementRead": 11.84041976928711,
+        "setAddHas": 75.27374982833862
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.67138671875,
+        3.455078125,
+        3.673828125
+      ],
+      "loadAfter": [
+        2.537109375,
+        3.4140625,
+        3.65771484375
+      ],
+      "idlePercent": 93.50162459385153
+    },
+    {
+      "round": 13,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "charCodeAt": 2.0258402824401855,
+        "mapSetHas": 8.017079830169678,
+        "mathFloor": 2.2591710090637207,
+        "mathSqrt": 2.2874999046325684,
+        "numberElementRead": 1.9854092597961426,
+        "numberElementUpdate": 1.6295814514160156,
+        "numberElementWrite": 1.898338794708252,
+        "objectElementRead": 1.5829205513000488,
+        "setAddHas": 7.121670246124268
+      },
+      "exit": 0,
+      "loadBefore": [
+        2.537109375,
+        3.4140625,
+        3.65771484375
+      ],
+      "loadAfter": [
+        2.537109375,
+        3.4140625,
+        3.65771484375
+      ],
+      "idlePercent": 88.0952380952381
+    },
+    {
+      "round": 14,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 29.98457908630371,
+        "mapSetHas": 75.26166915893555,
+        "mathFloor": 44.53999996185303,
+        "mathSqrt": 46.269168853759766,
+        "numberElementRead": 14.63291883468628,
+        "numberElementUpdate": 16.03250026702881,
+        "numberElementWrite": 15.174579620361328,
+        "objectElementRead": 13.292920589447021,
+        "setAddHas": 75.2858304977417
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.537109375,
+        3.4140625,
+        3.65771484375
+      ],
+      "loadAfter": [
+        2.537109375,
+        3.4140625,
+        3.65771484375
+      ],
+      "idlePercent": 94.09429280397022
+    },
+    {
+      "round": 14,
+      "engine": "candidate2Untyped",
+      "position": 1,
+      "values": {
+        "charCodeAt": 29.38499927520752,
+        "mapSetHas": 74.01459217071533,
+        "mathFloor": 44.69084024429321,
+        "mathSqrt": 45.32291889190674,
+        "numberElementRead": 7.424159049987793,
+        "numberElementUpdate": 9.050419330596924,
+        "numberElementWrite": 6.893749237060547,
+        "objectElementRead": 11.999168395996094,
+        "setAddHas": 75.09000062942505
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.537109375,
+        3.4140625,
+        3.65771484375
+      ],
+      "loadAfter": [
+        2.41357421875,
+        3.37353515625,
+        3.64208984375
+      ],
+      "idlePercent": 93.94317048853439
+    },
+    {
+      "round": 14,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "charCodeAt": 2.065420150756836,
+        "mapSetHas": 8.160419464111328,
+        "mathFloor": 2.0041608810424805,
+        "mathSqrt": 2.152090072631836,
+        "numberElementRead": 1.9891691207885742,
+        "numberElementUpdate": 1.6570782661437988,
+        "numberElementWrite": 1.957077980041504,
+        "objectElementRead": 1.6741704940795898,
+        "setAddHas": 7.278749942779541
+      },
+      "exit": 0,
+      "loadBefore": [
+        2.41357421875,
+        3.37353515625,
+        3.64208984375
+      ],
+      "loadAfter": [
+        2.41357421875,
+        3.37353515625,
+        3.64208984375
+      ],
+      "idlePercent": 91.01123595505618
+    },
+    {
+      "round": 14,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 135.4433298110962,
+        "mapSetHas": 214.98250007629395,
+        "mathFloor": 120.78125,
+        "mathSqrt": 121.36667013168335,
+        "numberElementRead": 15.95207929611206,
+        "numberElementUpdate": 136.55083179473877,
+        "numberElementWrite": 24.535419940948486,
+        "objectElementRead": 14.852499961853027,
+        "setAddHas": 202.337908744812
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.41357421875,
+        3.37353515625,
+        3.64208984375
+      ],
+      "loadAfter": [
+        2.41357421875,
+        3.37353515625,
+        3.64208984375
+      ],
+      "idlePercent": 87.97801147227534
+    },
+    {
+      "round": 15,
+      "engine": "candidate2Untyped",
+      "position": 0,
+      "values": {
+        "charCodeAt": 29.844999313354492,
+        "mapSetHas": 73.85999917984009,
+        "mathFloor": 44.29666996002197,
+        "mathSqrt": 45.96874952316284,
+        "numberElementRead": 7.583751678466797,
+        "numberElementUpdate": 9.182920455932617,
+        "numberElementWrite": 7.133750915527344,
+        "objectElementRead": 12.103328704833984,
+        "setAddHas": 73.2279109954834
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.41357421875,
+        3.37353515625,
+        3.64208984375
+      ],
+      "loadAfter": [
+        2.30029296875,
+        3.333984375,
+        3.62646484375
+      ],
+      "idlePercent": 93.99465110624848
+    },
+    {
+      "round": 15,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "charCodeAt": 2.048330307006836,
+        "mapSetHas": 8.017919063568115,
+        "mathFloor": 2.1512508392333984,
+        "mathSqrt": 2.1637511253356934,
+        "numberElementRead": 1.9799995422363281,
+        "numberElementUpdate": 1.559159755706787,
+        "numberElementWrite": 1.8458318710327148,
+        "objectElementRead": 1.6433382034301758,
+        "setAddHas": 6.690409183502197
+      },
+      "exit": 0,
+      "loadBefore": [
+        2.30029296875,
+        3.333984375,
+        3.62646484375
+      ],
+      "loadAfter": [
+        2.30029296875,
+        3.333984375,
+        3.62646484375
+      ],
+      "idlePercent": 91.95402298850574
+    },
+    {
+      "round": 15,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "charCodeAt": 134.31457996368408,
+        "mapSetHas": 215.26291847229004,
+        "mathFloor": 120.10459184646606,
+        "mathSqrt": 121.86166048049927,
+        "numberElementRead": 15.872499942779541,
+        "numberElementUpdate": 136.90083026885986,
+        "numberElementWrite": 24.67040777206421,
+        "objectElementRead": 15.15833854675293,
+        "setAddHas": 202.04457998275757
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.30029296875,
+        3.333984375,
+        3.62646484375
+      ],
+      "loadAfter": [
+        2.30029296875,
+        3.333984375,
+        3.62646484375
+      ],
+      "idlePercent": 93.58108108108108
+    },
+    {
+      "round": 15,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "charCodeAt": 29.95832920074463,
+        "mapSetHas": 77.0549988746643,
+        "mathFloor": 44.46542024612427,
+        "mathSqrt": 45.57374954223633,
+        "numberElementRead": 14.671251773834229,
+        "numberElementUpdate": 16.04707956314087,
+        "numberElementWrite": 15.271658897399902,
+        "objectElementRead": 13.219997882843018,
+        "setAddHas": 75.30250072479248
+      },
+      "exit": 42,
+      "loadBefore": [
+        2.30029296875,
+        3.333984375,
+        3.62646484375
+      ],
+      "loadAfter": [
+        2.35595703125,
+        3.328125,
+        3.62255859375
+      ],
+      "idlePercent": 92.01501877346684
+    }
+  ]
+}

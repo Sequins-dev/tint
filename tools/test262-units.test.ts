@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { deserialize, serialize } from "node:v8";
 import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import {
@@ -11,7 +12,12 @@ import {
   compileX64NativeServiceUnit,
   type CompileRequest,
 } from "@tint/compiler/native";
-import { buildMacOSProgram, type BuildRequest } from "@tint/compiler/build";
+import {
+  buildMacOSProgram,
+  compileX64Program,
+  linkX64Program,
+  type BuildRequest,
+} from "@tint/compiler/build";
 import { linuxX86_64Target } from "@tint/platform/target";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { runtimeSources } from "@tint/compiler/cli";
@@ -22,7 +28,12 @@ import {
   nativeUnitEligible,
   prepareNativeUnitHost,
   nativeUnitSlotsModule,
+  prepareNativeScripts,
+  test262ScriptHost,
+  test262UnitScriptHost,
 } from "./test262-native.ts";
+import { executionPlan } from "./test262-execution.ts";
+import { scriptRuntimeSurface } from "@tint/js-engine/lowering";
 import { executeNativeFile } from "./test262-native-process.ts";
 import { workspaceModules, workspaceSources } from "./workspace-sources.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
@@ -181,7 +192,12 @@ test("a published directory is read only while it stays canonical", () => {
 });
 
 test("x86-64 links a managed service, collects through its frames and rejects a changed fixup", () => {
-  const host = compileCounterHost();
+  // The generational x86-64 host publishes a barriered surface, so the unit
+  // must compile against a directory with the same policy.
+  const host = compileArm64Program({
+    ...counterHostRequest(),
+    generationalBarriers: true,
+  });
   assert.ok(host.ok, JSON.stringify(host));
   const published = host.value.managedSurfaces?.[0];
   assert.ok(published);
@@ -214,6 +230,66 @@ test("x86-64 links a managed service, collects through its frames and rejects a 
   };
   const image = buildMacOSProgram(request);
   assert.ok(image.ok, image.ok ? undefined : JSON.stringify(image.error));
+  const compiledHost = compileX64Program({
+    ...request,
+    nativeServices: [],
+    serviceSlots: [{ bind, surface: "counter" }],
+  });
+  assert.ok(
+    compiledHost.ok,
+    compiledHost.ok ? undefined : JSON.stringify(compiledHost.error),
+  );
+  assert.equal(compiledHost.value.forceFarReach, true);
+  const restoredHost = deserialize(serialize(compiledHost.value));
+  const x64Published = restoredHost.program.managedSurfaces?.find(
+    (surface: { readonly name: string }) => surface.name === "counter",
+  );
+  assert.ok(x64Published);
+  const x64Unit = compileX64NativeServiceUnit({
+    ...nativeServiceFixtureRequest(),
+    read: readPublishedSurface(x64Published.directory),
+    linearAllocation: true,
+    generationalBarriers: true,
+  });
+  assert.ok(x64Unit.ok, JSON.stringify(x64Unit));
+  verifyUnitSurface(x64Unit.value, x64Published);
+  const linkPhases: string[] = [];
+  const relinked = linkX64Program(restoredHost, {
+    ...request,
+    nativeServices: [{ bind, unit: x64Unit.value }],
+    report: (phase) => linkPhases.push(phase),
+  });
+  assert.ok(
+    relinked.ok,
+    relinked.ok ? undefined : JSON.stringify(relinked.error),
+  );
+  assert.deepEqual(linkPhases, ["startup"]);
+  assert.deepEqual(relinked.value, image.value);
+  // Service units have no ELF GOT, so byte operations (memmove/memcmp for
+  // string concat/equality) must inline instead of emitting platform imports.
+  const stringUnitSource = parseModule(
+    createSourceTextView(
+      'import {seed,type Counter} from "host";let count:number=seed();function next():number{const prefix:string=count===1?"ti":"xx";const joined:string=prefix+"nt";return joined==="tint"?++count:0;}export function factory():Counter{return {next};}',
+    ),
+  );
+  assert.ok(stringUnitSource.ok);
+  const stringUnit = compileX64NativeServiceUnit({
+    ...nativeServiceFixtureRequest(),
+    module: stringUnitSource.value,
+    read: readPublishedSurface(x64Published.directory),
+    linearAllocation: true,
+    generationalBarriers: true,
+  });
+  assert.ok(stringUnit.ok, JSON.stringify(stringUnit));
+  assert.deepEqual(stringUnit.value.native.imports, []);
+  const stringLinked = linkX64Program(restoredHost, {
+    ...request,
+    nativeServices: [{ bind, unit: stringUnit.value }],
+  });
+  assert.ok(
+    stringLinked.ok,
+    stringLinked.ok ? undefined : JSON.stringify(stringLinked.error),
+  );
   const { native } = unit.value;
   const reference = native.managedFixups[0];
   assert.ok(reference);
@@ -238,13 +314,22 @@ test("x86-64 links a managed service, collects through its frames and rejects a 
   try {
     const path = join(directory, "counter");
     writeFileSync(path, image.value, { mode: 0o755 });
-    const artifact = nativeArtifact(linuxX86_64Target.name, path);
-    const result = runNativeBatch([{ artifact }], {
-      ...process.env,
-      TINT_NATIVE_RUNNER: runner,
-    })[0];
-    assert.equal(result?.kind, "exited", JSON.stringify(result));
-    assert.equal(result.status, 42, JSON.stringify(result));
+    const stringPath = join(directory, "counter-string");
+    writeFileSync(stringPath, stringLinked.value, { mode: 0o755 });
+    const results = runNativeBatch(
+      [
+        { artifact: nativeArtifact(linuxX86_64Target.name, path) },
+        { artifact: nativeArtifact(linuxX86_64Target.name, stringPath) },
+      ],
+      {
+        ...process.env,
+        TINT_NATIVE_RUNNER: runner,
+      },
+    );
+    for (const result of results) {
+      assert.equal(result?.kind, "exited", JSON.stringify(result));
+      assert.equal(result.status, 42, JSON.stringify(result));
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -328,6 +413,53 @@ test("only Script cases without module graphs run as linked units", () => {
   assert.equal(
     nativeUnitEligible({ scripts: [script], asynchronous: false, modules: [] }),
     false,
+  );
+});
+
+test("lowered Test262 Scripts import only the published Script surface", () => {
+  // A linked unit compiles against that surface: an import outside it fails
+  // the unit and silently costs a whole-program batch.
+  const published = new Set(
+    scriptRuntimeSurface().map((entry) => entry.specifier + ":" + entry.name),
+  );
+  const source =
+    "function add(a, b) { return a + b; }\n" +
+    "function Box(v) { this.v = v; }\n" +
+    "if (add(1, 2) !== new Box(3).v) throw 1;";
+  const plan = executionPlan(source, "raw", {
+    flags: ["raw"],
+    features: [],
+    includes: [],
+  });
+  const imported = (host: typeof test262ScriptHost): string[] => {
+    const prepared = prepareNativeScripts(plan, "raw", [], host);
+    assert.ok(prepared.ok, JSON.stringify(prepared));
+    const names: string[] = [];
+    for (const script of prepared.modules)
+      for (const statement of script.module.statements)
+        if (statement.kind === "import")
+          for (const binding of statement.declaration.bindings)
+            names.push(
+              statement.declaration.specifier + ":" + binding.imported,
+            );
+    return names;
+  };
+  for (const host of [
+    test262ScriptHost,
+    test262UnitScriptHost,
+    { ...test262ScriptHost, nativeScriptCalls: true },
+  ])
+    for (const name of imported(host)) assert.ok(published.has(name), name);
+  // Unit Scripts call through register entries (their indirect calls need
+  // a published signature class); program-linked ones may use native entries.
+  const unitImports = imported(test262UnitScriptHost);
+  assert.ok(
+    !unitImports.some((name) => name.endsWith(":createNativeSourceFunction")),
+  );
+  assert.ok(
+    imported({ ...test262ScriptHost, nativeScriptCalls: true }).some((name) =>
+      name.endsWith(":createNativeSourceFunction"),
+    ),
   );
 });
 

@@ -12,6 +12,7 @@ import {
 } from "../bytes/shared.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
+import { exoticSlots } from "./operations.ts";
 
 /** Views accept either backing kind. Lifecycle methods retain their own brands. */
 export type BufferStorage = ByteStorage | SharedBlockStorage;
@@ -21,9 +22,9 @@ export function requireBufferStorage(
 ): BufferStorage {
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object !== undefined) {
-    const ordinary = object.internalArrayBufferData;
+    const ordinary = exoticSlots(object).internalArrayBufferData;
     if (ordinary !== undefined) return ordinary;
-    const shared = object.internalSharedArrayBufferData;
+    const shared = exoticSlots(object).internalSharedArrayBufferData;
     if (shared !== undefined) return shared;
   }
   throw createRuntimeError(realm, "type");

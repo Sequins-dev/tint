@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 /** Recursion keeps the frames from being inlined. `outer` rethrows, which
  * keeps the original origin; `other` throws the same literal first and is
@@ -51,10 +52,7 @@ export function runCapturingStandardError(image: string): {
         [
           "--no-lldbinit",
           "--batch",
-          "-o",
-          `process launch --stop-at-entry --stderr ${capture}`,
-          "-o",
-          "script assert lldb.process.GetState() == lldb.eStateStopped",
+          ...lldbStartCommands({ stderr: capture }),
           "-o",
           "continue",
           "-o",

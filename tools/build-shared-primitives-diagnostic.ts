@@ -130,7 +130,7 @@ const built = buildMacOSProgram({
   debugSymbols: true,
   entry: "fixture",
   start: "run",
-  runtimeEntry: "initializeCopyingRuntime",
+  runtimeEntry: "initializeGenerationalRuntime",
   managedBytes: 4194304,
   allocationCapacity: 65536,
   rootCapacity: 4096,
@@ -184,7 +184,7 @@ writeFileSync(
         allocationCapacity: 65536,
         rootCapacity: 4096,
         stackBytes: 1048576,
-        runtimeEntry: "initializeCopyingRuntime",
+        runtimeEntry: "initializeGenerationalRuntime",
       },
       markers:
         mode === "entry"

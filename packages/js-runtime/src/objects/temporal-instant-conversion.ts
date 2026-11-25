@@ -9,6 +9,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
+import { exoticSlots } from "./operations.ts";
 function parseInstantString(value: unknown, realm: ErrorRealm): BigIntValue {
   if (typeof value !== "string") throw createRuntimeError(realm, "type");
   const parsed = parseISODateTime(value),
@@ -34,9 +35,9 @@ export function instantFrom(
 ): BigIntValue {
   const object = viewObjectValue(item, realm.objectPrototype);
   if (object !== undefined) {
-    const epoch = object.internalTemporalInstant;
+    const epoch = exoticSlots(object).internalTemporalInstant;
     if (epoch !== undefined) return epoch;
-    const zoned = object.internalTemporalZonedDateTime;
+    const zoned = exoticSlots(object).internalTemporalZonedDateTime;
     if (zoned !== undefined) return zoned.epoch;
     const primitive = primitiveValue(item, "string", hooks, realm);
     if (primitive.error === "unsupported")

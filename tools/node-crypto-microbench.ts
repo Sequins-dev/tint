@@ -176,7 +176,7 @@ function randomBuffer(size:number):OrdinaryObject<ScriptPropertyKey,unknown> {
 function bufferLength(buffer:OrdinaryObject<ScriptPropertyKey,unknown>):number {
   const length=${
     typedLength
-      ? "buffer.internalTypedArrayData?.length"
+      ? "buffer.internalExoticSlots?.internalTypedArrayData?.length"
       : 'getProperty<ScriptPropertyKey,unknown>(buffer,"length",buffer,core.hooks)'
   };
   if(typeof length!=="number")throw "BUFFER_LENGTH";

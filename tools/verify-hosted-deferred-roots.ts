@@ -15,7 +15,7 @@ export function run():number{const object={value:42},array=new Uint32Array(4);ar
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 524288,
     allocationCapacity: 32768,
     rootCapacity: 4096,

@@ -1,0 +1,239 @@
+{
+ "kind": "tint-octane-profile-attribution",
+ "tool": "pprofessor run --main-thread --freq 997; pprofessor analyze --view stacks --limit 800",
+ "note": "Shares of main-thread samples by the first runtime function below the innermost generated-JS frame, per program image (each image runs one Octane program: warm-up and measured iterations). Startup samples have no generated frame. Richards, DeltaBlue and NavierStokes images are built from d6e4162d9; RayTrace from aad4fe035 plus the inherited-writable-data transition change (patchSha256 in its prepared image), committed unchanged as 3163021b0.",
+ "programs": {
+  "Richards": {
+   "image": "5b2b533c3d22a804c7a9242d3d8e5f357e04ddbf04f57231401352cba5888807",
+   "head": "d6e4162d9d37d296c20ba7fd834d43eea3528f6c",
+   "sampledMs": 290.1,
+   "shares": [
+    {
+     "entry": "objects/values.ts:callRegisterObjectValue",
+     "percent": 31.4
+    },
+    {
+     "entry": "(generated code itself)",
+     "percent": 30.3
+    },
+    {
+     "entry": "objects/values.ts:sloppyCallReceiver",
+     "percent": 14.8
+    },
+    {
+     "entry": "objects/values.ts:readCachedObjectValueProperty",
+     "percent": 10.7
+    },
+    {
+     "entry": "(startup, no generated frame)",
+     "percent": 6.5
+    },
+    {
+     "entry": "environments/global/scope.ts:cachedGlobalIdentifierCell",
+     "percent": 2.1
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:readList",
+     "percent": 2.1
+    },
+    {
+     "entry": "environments/global/declarations.ts:instantiateGlobalDeclarations",
+     "percent": 0.3
+    },
+    {
+     "entry": "objects/functions.ts:createRegisterSourceFunction",
+     "percent": 0.3
+    },
+    {
+     "entry": "native-runtime/src/values/index.ts:kindOf",
+     "percent": 0.3
+    },
+    {
+     "entry": "objects/boxing.ts:toObjectValue",
+     "percent": 0.3
+    },
+    {
+     "entry": "native-runtime/src/values/index.ts:fromNull",
+     "percent": 0.3
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:createList",
+     "percent": 0.3
+    }
+   ]
+  },
+  "DeltaBlue": {
+   "image": "d9ab08e3ec2ee7f9876e9afbc0f981053ca64711841052514075d7f5c9a25b51",
+   "head": "d6e4162d9d37d296c20ba7fd834d43eea3528f6c",
+   "sampledMs": 617.2,
+   "shares": [
+    {
+     "entry": "objects/values.ts:callRegisterObjectValue",
+     "percent": 35.0
+    },
+    {
+     "entry": "objects/values.ts:readCachedObjectValueProperty",
+     "percent": 24.5
+    },
+    {
+     "entry": "(generated code itself)",
+     "percent": 16.4
+    },
+    {
+     "entry": "objects/values.ts:sloppyCallReceiver",
+     "percent": 10.4
+    },
+    {
+     "entry": "objects/functions.ts:constructObjectValue",
+     "percent": 5.7
+    },
+    {
+     "entry": "(startup, no generated frame)",
+     "percent": 2.9
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:readList",
+     "percent": 2.3
+    },
+    {
+     "entry": "objects/values.ts:writeCachedObjectValueProperty",
+     "percent": 1.1
+    },
+    {
+     "entry": "environments/global/scope.ts:cachedGlobalIdentifierCell",
+     "percent": 0.5
+    },
+    {
+     "entry": "objects/values.ts:callWideRegisterObjectValue",
+     "percent": 0.5
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:pushList",
+     "percent": 0.3
+    },
+    {
+     "entry": "environments/global/scope.ts:getIdentifierValue",
+     "percent": 0.2
+    },
+    {
+     "entry": "objects/arithmetic.ts:binaryObjectValueOperation",
+     "percent": 0.2
+    },
+    {
+     "entry": "objects/equality.ts:looselyEqualOrThrow",
+     "percent": 0.2
+    }
+   ]
+  },
+  "NavierStokes": {
+   "image": "d75dd6deaf5e2c1523bc1d95aa295f01f907cff948f6052aff0a3f463d0a5c1b",
+   "head": "d6e4162d9d37d296c20ba7fd834d43eea3528f6c",
+   "sampledMs": 1040.6,
+   "shares": [
+    {
+     "entry": "(generated code itself)",
+     "percent": 50.5
+    },
+    {
+     "entry": "objects/coercion.ts:writeObjectValuePropertyKey",
+     "percent": 24.3
+    },
+    {
+     "entry": "objects/coercion.ts:objectPropertyKey",
+     "percent": 11.7
+    },
+    {
+     "entry": "objects/values.ts:setObjectValueProperty",
+     "percent": 7.3
+    },
+    {
+     "entry": "objects/values.ts:readObjectValueProperty",
+     "percent": 3.9
+    },
+    {
+     "entry": "foundation/src/collections/number-list.ts:readNumberList",
+     "percent": 1.2
+    },
+    {
+     "entry": "(startup, no generated frame)",
+     "percent": 0.8
+    },
+    {
+     "entry": "objects/values.ts:callWideRegisterObjectValue",
+     "percent": 0.2
+    },
+    {
+     "entry": "objects/values.ts:viewObjectValue",
+     "percent": 0.1
+    }
+   ]
+  },
+  "RayTrace": {
+   "image": "0a681707b1607230396e6a073f749a6900842624ce22d73dd600857830201454",
+   "head": "aad4fe0352b18b496d7d641e812b00f4d12c012b",
+   "sampledMs": 815.1,
+   "shares": [
+    {
+     "entry": "environments/global/arguments.ts:instantiateScriptArguments",
+     "percent": 39.9
+    },
+    {
+     "entry": "objects/values.ts:callRegisterObjectValue",
+     "percent": 25.8
+    },
+    {
+     "entry": "objects/functions.ts:constructObjectValue",
+     "percent": 9.3
+    },
+    {
+     "entry": "(generated code itself)",
+     "percent": 7.9
+    },
+    {
+     "entry": "objects/values.ts:readCachedObjectValueProperty",
+     "percent": 7.2
+    },
+    {
+     "entry": "(startup, no generated frame)",
+     "percent": 2.2
+    },
+    {
+     "entry": "objects/values.ts:sloppyCallReceiver",
+     "percent": 2.1
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:pushList",
+     "percent": 1.0
+    },
+    {
+     "entry": "objects/values.ts:callWideRegisterObjectValue",
+     "percent": 0.9
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:createList",
+     "percent": 0.7
+    },
+    {
+     "entry": "foundation/src/collections/sparse-list.ts:readList",
+     "percent": 0.7
+    },
+    {
+     "entry": "environments/global/scope.ts:getIdentifierValue",
+     "percent": 0.5
+    },
+    {
+     "entry": "objects/call.ts:constructObject",
+     "percent": 0.4
+    },
+    {
+     "entry": "objects/equality.ts:looselyEqualOrThrow",
+     "percent": 0.4
+    },
+    {
+     "entry": "objects/values.ts:cachedOwnPropertyValue",
+     "percent": 0.4
+    }
+   ]
+  }
+ }
+}

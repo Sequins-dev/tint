@@ -145,12 +145,6 @@ test("process argument capabilities have finite explicit signatures", () => {
     "Uint8Array",
   ]);
 });
-test("linear allocation publication requires two typed control buffers", () => {
-  assert.deepEqual(hostParameters("allocation-state" as never), [
-    "Uint32Array",
-    "Uint32Array",
-  ]);
-});
 test("generational publication requires state, starts, dirty bits and a bounded queue", () => {
   assert.deepEqual(hostParameters("generational-state" as never), [
     "Uint32Array",

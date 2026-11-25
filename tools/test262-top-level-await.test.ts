@@ -93,6 +93,17 @@ test("historical hosts retain their ABI text after quota normalization when the 
             .replaceAll(
               "\n stackMaps:(code:number,bytes:number,table:number):number=>registerStackMaps(code,bytes,table),",
               "",
+            )
+            .replaceAll('architecture:"x86_64",\n ', "")
+            // IsHTMLDDA objects are marked through the runtime since the
+            // htmlDDAObjects lowering option.
+            .replaceAll(
+              "type ObjectHooks,markHTMLDDAObject}",
+              "type ObjectHooks}",
+            )
+            .replaceAll(
+              " markHTMLDDAObject(htmlDDA);",
+              " htmlDDA.internalIsHTMLDDA=true;",
             ),
         )
         .digest("hex"),

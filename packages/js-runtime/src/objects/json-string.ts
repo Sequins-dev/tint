@@ -6,11 +6,26 @@ import {
 
 /** JSON's well-formed string quoting preserves paired UTF16 and escapes lone surrogates. */
 export function quoteJSONString(value: string): string {
+  // A string with no unit to escape (and no surrogate to check) is quoted
+  // whole, in one allocation.
+  let first = 0;
+  const length = value.length;
+  for (; first < length; first++) {
+    const unit = value.charCodeAt(first);
+    if (
+      unit < 32 ||
+      unit === 34 ||
+      unit === 92 ||
+      (unit >= 0xd800 && unit <= 0xdfff)
+    )
+      break;
+  }
+  if (first === length) return '"' + value + '"';
   const output = createStringBuilder(),
     hex = "0123456789abcdef";
   appendString(output, '"');
   let start = 0;
-  for (let i = 0; i < value.length; i++) {
+  for (let i = first; i < value.length; i++) {
     const unit = value.charCodeAt(i);
     let escape = "";
     if (unit === 34) escape = '\\"';

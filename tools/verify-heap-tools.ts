@@ -5,7 +5,9 @@
  * adapters of the debugger-neutral tools/debugger/tint_heap.py:
  *
  *   descriptor   `tint-heap info` against the collector's own locals at a
- *                collection, and a complete start-bit walk of both spaces
+ *                collection, and a complete walk of both spaces: the old
+ *                prefix through its start bits, the bump-allocated nursery
+ *                (which keeps none) by object extents
  *   formatters   strings, lists, number lists, maps, sets, general values
  *                and records retyped from opaque object pointers
  *   snapshot     a dump at the fixture's allocation in `inspect` (a precise
@@ -117,15 +119,23 @@ function stopInInspect(): string[] {
 
 try {
   if (run("descriptor")) {
-    // A line inside the collector where youngTop and oldTop are live (one
-    // with its own line-table entry), found rather than hard-coded.
-    const collectLine =
-      readFileSync("packages/native-runtime/src/generational.ts", "utf8")
-        .split("\n")
-        .findIndex((line) => line.trim() === "if (minor) {") + 1;
-    assert.ok(collectLine > 0, "collector line");
-    const inCollect = debug.python(
-      "assert 'native-runtime/src/generational.ts:collect ' in " +
+    // A line in the nursery evacuation where youngTop and oldTop are homed
+    // (live across its first call) and nothing has moved yet, found rather
+    // than hard-coded. It has its own line-table entry. (In collect itself
+    // they are dead after the evacuation call, so they stay in registers
+    // the debug information does not describe.)
+    const evacuatorText =
+        "parallel !== undefined && youngTop >= parallelMinimum",
+      evacuatorFunction = "native-runtime/src/generational.ts:evacuateNursery ",
+      evacuatorLine =
+        readFileSync("packages/native-runtime/src/generational.ts", "utf8")
+          .split("\n")
+          .findIndex((line) => line.trim() === evacuatorText) + 1;
+    assert.ok(evacuatorLine > 0, "evacuator line");
+    const inEvacuator = debug.python(
+      "assert '" +
+        evacuatorFunction +
+        "' in " +
         debug.functionExpression +
         ", " +
         debug.functionExpression,
@@ -141,24 +151,26 @@ try {
     const output = debug.run(image, [
       debug.breakAtLine(
         "packages/native-runtime/src/generational.ts",
-        collectLine,
+        evacuatorLine,
       ),
       ...(debug.name === "lldb"
         ? [
-            // The line must resolve inside the collector function (found
+            // The line must resolve inside the evacuation function (found
             // by its symbol), never silently into a neighbour after an
             // edit. (Under GDB each stop's frame is checked instead.)
-            "script bp = lldb.target.GetBreakpointAtIndex(0); names = [bp.GetLocationAtIndex(i).GetAddress().GetFunction().GetName() or '' for i in range(bp.GetNumLocations())]; assert len(names) == 1 and 'native-runtime/src/generational.ts:collect ' in names[0], names",
+            "script bp = lldb.target.GetBreakpointAtIndex(0); names = [bp.GetLocationAtIndex(i).GetAddress().GetFunction().GetName() or '' for i in range(bp.GetNumLocations())]; assert len(names) == 1 and '" +
+              evacuatorFunction +
+              "' in names[0], names",
           ]
         : []),
       debug.launch,
-      inCollect,
+      inEvacuator,
       locals,
       "tint-heap info --json",
       "tint-heap verify --json",
       debug.resume,
       debug.resume,
-      inCollect,
+      inEvacuator,
       locals,
       "tint-heap info --json",
       "tint-heap verify --json",
@@ -184,8 +196,9 @@ try {
         string,
         { objects: number; bytes: number; top?: number }
       >;
-      // Small collections are serial and leave no gaps: the start bits
-      // cover every allocated byte of both spaces.
+      // Small collections are serial and leave no gaps: the old prefix's
+      // start bits cover every allocated byte, and the nursery's extents
+      // chain from its base exactly to its top.
       assert.equal(walk.old?.bytes, seen.oldTop, "old walk");
       assert.equal(walk.young?.bytes, seen.youngTop, "young walk");
       assert.ok((walk.young?.objects ?? 0) > 1000);
@@ -197,9 +210,11 @@ try {
     };
     assert.deepEqual(
       [first.version, first.headerBytes, first.granule],
-      [2, 8, 8],
+      [3, 8, 8],
     );
-    console.log("descriptor: state and start-bit walks match the collector");
+    console.log(
+      "descriptor: the old start-bit walk and the young extent walk match the collector",
+    );
   }
 
   if (run("formatters")) {

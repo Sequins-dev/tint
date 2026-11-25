@@ -15,8 +15,21 @@ import { rejectEngineAbort, type ErrorRealm } from "./errors.ts";
 import {
   createScriptPropertyStubCache,
   type ObjectExecutionContext,
+  type ObjectRegisterEntry,
+  type OrdinaryObject,
   type ScriptPropertyStubCache,
 } from "./operations.ts";
+import {
+  activationArgument,
+  activationArgumentCount,
+  activationCallee,
+  activationKind,
+  activationPrevious,
+  activationTop,
+  youngerThanActivation,
+} from "./activations.ts";
+import type { ScriptPropertyKey } from "./symbols.ts";
+import { viewObjectValue } from "./values.ts";
 
 /** Host identity for one successfully parsed Script, independent of compiled
  * code identity. Eval and dynamic functions inherit the active record. */
@@ -86,7 +99,8 @@ export interface ScriptAgent {
   readonly registries: WeakRegistryEntry[];
   activeContext: ScriptExecutionContext | undefined;
   /** Trace names of the active source execution contexts, innermost at the
-   * top of a chain of reusable frames (see SourceCallFrame). */
+   * top of a chain of reusable frames (see SourceCallFrame). Native
+   * activation records interleave with them (see activations.ts). */
   readonly executionNameBase: ExecutionNameFrame;
   executionNameTop: ExecutionNameFrame;
   executionContextDepth: number;
@@ -95,7 +109,8 @@ export interface ScriptAgent {
    * top. A visible invocation stores its callee; strict callees and
    * realm/raw-context barriers store undefined, which no caller lookup can
    * match or reveal. Legacy (sloppy ordinary) invocations also store their
-   * argument list for the legacy own "arguments" accessor. */
+   * argument list for the legacy own "arguments" accessor. Native
+   * activation records interleave with them (see activations.ts). */
   readonly sourceCallBase: SourceCallFrame;
   sourceCallTop: SourceCallFrame;
   sourceCallDepth: number;
@@ -115,21 +130,15 @@ export interface SourceCallFrame {
   argumentCount: number;
   firstArgument: unknown;
   secondArgument: unknown;
-  argumentRegisters: number;
-  argumentStack: number;
-  argumentReader: SourceArgumentReader | undefined;
+  /** The innermost native activation record when this frame was pushed. */
+  nativeTop: number;
   readonly previous: SourceCallFrame | undefined;
   next: SourceCallFrame | undefined;
 }
-export type SourceArgumentReader = (
-  index: number,
-  count: number,
-  registers: number,
-  stack: number,
-) => unknown;
 /** Reusable execution-context trace-name frame, chained like SourceCallFrame. */
 export interface ExecutionNameFrame {
   name: string | undefined;
+  nativeTop: number;
   readonly previous: ExecutionNameFrame | undefined;
   next: ExecutionNameFrame | undefined;
 }
@@ -142,9 +151,7 @@ function sourceCallFrame(
     argumentCount: -1,
     firstArgument: undefined,
     secondArgument: undefined,
-    argumentRegisters: 0,
-    argumentStack: 0,
-    argumentReader: undefined,
+    nativeTop: 0,
     previous,
     next: undefined,
   };
@@ -152,7 +159,7 @@ function sourceCallFrame(
 function executionNameFrame(
   previous: ExecutionNameFrame | undefined,
 ): ExecutionNameFrame {
-  return { name: undefined, previous, next: undefined };
+  return { name: undefined, nativeTop: 0, previous, next: undefined };
 }
 export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
   const sourceCallBase = sourceCallFrame(undefined),
@@ -188,10 +195,13 @@ export function enterSourceCall(
 ): number {
   const top = agent.sourceCallTop;
   const depth = agent.sourceCallDepth;
+  const nativeTop = activationTop();
+  // A hidden frame directly inside another hides nothing more.
   if (
     visibleCallee === undefined &&
     legacyArguments === undefined &&
-    top.callee === undefined
+    top.callee === undefined &&
+    top.nativeTop === nativeTop
   )
     return depth;
   const reused = top.next,
@@ -199,6 +209,7 @@ export function enterSourceCall(
   if (reused === undefined) top.next = frame;
   frame.callee = visibleCallee;
   frame.legacyArguments = legacyArguments;
+  frame.nativeTop = nativeTop;
   agent.sourceCallTop = frame;
   agent.sourceCallDepth = depth + 1;
   return depth;
@@ -219,24 +230,6 @@ export function enterRegisterSourceCall(
   }
   return depth;
 }
-/** The addresses are valid only while this compiled source frame is active.
- * Its maps keep the values at both addresses current across collections. */
-export function enterNativeSourceCall(
-  agent: ScriptAgent,
-  callee: unknown,
-  count: number,
-  registers: number,
-  stack: number,
-  reader: SourceArgumentReader,
-): number {
-  const depth = enterSourceCall(agent, callee);
-  const frame = agent.sourceCallTop;
-  frame.argumentCount = count;
-  frame.argumentRegisters = registers;
-  frame.argumentStack = stack;
-  frame.argumentReader = reader;
-  return depth;
-}
 export function exitSourceCall(agent: ScriptAgent, depth: number): void {
   // Clearing keeps returned callees collectable once their invocation ends.
   while (agent.sourceCallDepth > depth) {
@@ -249,57 +242,141 @@ export function exitSourceCall(agent: ScriptAgent, depth: number): void {
       frame.argumentCount = -1;
       frame.firstArgument = undefined;
       frame.secondArgument = undefined;
-      frame.argumentRegisters = 0;
-      frame.argumentStack = 0;
-      frame.argumentReader = undefined;
     }
     agent.sourceCallTop = previous;
     agent.sourceCallDepth = agent.sourceCallDepth - 1;
   }
 }
+/** A position in the source-call chain: heap frames and native activation
+ * records of entries called with actual operands, innermost first. */
+interface SourceCallCursor {
+  frame: SourceCallFrame;
+  record: number;
+  /** The current entry: a native record, else 0 and a heap frame. */
+  native: number;
+  heap: SourceCallFrame | undefined;
+}
+function sourceCallCursor(agent: ScriptAgent): SourceCallCursor {
+  return {
+    frame: agent.sourceCallTop,
+    record: activationTop(),
+    native: 0,
+    heap: undefined,
+  };
+}
+/** Move to the next older entry; false past the outermost. */
+function nextSourceCall(cursor: SourceCallCursor): boolean {
+  let record = cursor.record;
+  while (record !== 0 && activationKind(record) === 0)
+    record = activationPrevious(record);
+  const frame = cursor.frame,
+    previous = frame.previous;
+  if (previous === undefined && record === 0) return false;
+  if (
+    previous !== undefined &&
+    (record === 0 || youngerThanActivation(frame.nativeTop, record))
+  ) {
+    cursor.native = 0;
+    cursor.heap = frame;
+    cursor.frame = previous;
+    cursor.record = record;
+  } else {
+    cursor.native = record;
+    cursor.heap = undefined;
+    cursor.record = activationPrevious(record);
+  }
+  return true;
+}
+/** The register entry of a native record's callee (an object identity
+ * witness supplies the realm-independent object view). */
+function activationEntry(
+  record: number,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): ObjectRegisterEntry<unknown> | undefined {
+  const callee = viewObjectValue(activationCallee(record), witness);
+  return callee === undefined ? undefined : callee.internalRegisterCall;
+}
+/** The identity the current entry exposes to caller reflection: a visible
+ * callee, or undefined for strict callees and barriers. */
+function visibleEntryCallee(
+  cursor: SourceCallCursor,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): unknown {
+  const heap = cursor.heap;
+  if (heap !== undefined) return heap.callee;
+  const record = cursor.native;
+  const entry = activationEntry(record, witness);
+  return entry === undefined || entry.callerPolicy === "opaque"
+    ? undefined
+    : activationCallee(record);
+}
 /** The visible source function that invoked the innermost active `callee`,
  * or undefined when it was not invoked or its caller is hidden. */
 export function visibleSourceCaller(
   agent: ScriptAgent,
-  callee: unknown,
+  callee: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): unknown {
-  // The outermost frame has no caller; the base frame is not a call.
-  let frame = agent.sourceCallTop;
+  // The outermost entry has no caller.
+  const cursor = sourceCallCursor(agent);
+  if (!nextSourceCall(cursor)) return undefined;
   for (;;) {
-    const previous = frame.previous;
-    if (previous === undefined || previous.previous === undefined)
-      return undefined;
-    if (frame.callee === callee) return previous.callee;
-    frame = previous;
+    const current = visibleEntryCallee(cursor, callee);
+    if (!nextSourceCall(cursor)) return undefined;
+    if (current === callee) return visibleEntryCallee(cursor, callee);
   }
 }
 /** The argument list of the innermost active legacy invocation of `callee`,
  * or undefined when it is not executing. */
 export function activeSourceArguments(
   agent: ScriptAgent,
-  callee: unknown,
+  callee: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): readonly unknown[] | undefined {
-  let frame = agent.sourceCallTop;
-  for (;;) {
-    const previous = frame.previous;
-    if (previous === undefined) return undefined;
-    if (frame.callee === callee) {
-      if (frame.argumentCount < 0) return frame.legacyArguments;
-      const reader = frame.argumentReader;
-      if (reader !== undefined) {
-        const actuals: unknown[] = [];
-        const count = frame.argumentCount;
-        for (let index = 0; index < count; index++)
-          actuals.push(
-            reader(index, count, frame.argumentRegisters, frame.argumentStack),
-          );
-        return actuals;
-      }
-      if (frame.argumentCount === 0) return [];
-      if (frame.argumentCount === 1) return [frame.firstArgument];
-      return [frame.firstArgument, frame.secondArgument];
+  const cursor = sourceCallCursor(agent);
+  while (nextSourceCall(cursor)) {
+    if (visibleEntryCallee(cursor, callee) !== callee) continue;
+    const frame = cursor.heap;
+    if (frame === undefined) {
+      const record = cursor.native,
+        count = activationArgumentCount(record);
+      const actuals: unknown[] = [];
+      for (let index = 0; index < count; index++)
+        actuals.push(activationArgument(record, index));
+      return actuals;
     }
-    frame = previous;
+    if (frame.argumentCount < 0) return frame.legacyArguments;
+    if (frame.argumentCount === 0) return [];
+    if (frame.argumentCount === 1) return [frame.firstArgument];
+    return [frame.firstArgument, frame.secondArgument];
+  }
+  return undefined;
+}
+/** Trace names of the active source execution contexts, innermost first:
+ * heap name frames merged with native records of entries called with
+ * actual operands (named by their callee's register entry). */
+export function activeExecutionNames(
+  agent: ScriptAgent,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): string[] {
+  const names: string[] = [];
+  let frame = agent.executionNameTop,
+    record = activationTop();
+  for (;;) {
+    while (record !== 0 && activationKind(record) === 0)
+      record = activationPrevious(record);
+    const previous = frame.previous;
+    if (previous === undefined && record === 0) return names;
+    if (
+      previous !== undefined &&
+      (record === 0 || youngerThanActivation(frame.nativeTop, record))
+    ) {
+      const name = frame.name;
+      if (name !== undefined) names.push(name);
+      frame = previous;
+    } else {
+      const entry = activationEntry(record, witness);
+      if (entry !== undefined) names.push(entry.traceName);
+      record = activationPrevious(record);
+    }
   }
 }
 
@@ -313,6 +390,7 @@ export function enterExecutionName(
   const frame = reused === undefined ? executionNameFrame(top) : reused;
   if (reused === undefined) top.next = frame;
   frame.name = name;
+  frame.nativeTop = activationTop();
   agent.executionNameTop = frame;
   return top;
 }
@@ -440,6 +518,21 @@ export function drainScriptJobs(
   });
 }
 
+/** The execution context of a source function created now: the active
+ * context when it belongs to `realm`, shared so that native call sites
+ * compare one identity (an equal record of another identity only misses
+ * that fast path), else a new record for the realm and the active Script or
+ * module. */
+export function functionExecutionContext(
+  realm: ErrorRealm,
+): ScriptExecutionContext {
+  const active = realm.agent.activeContext;
+  if (active !== undefined && active.realm === realm) return active;
+  return {
+    realm,
+    scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
+  };
+}
 /** Source functions retain their definition-time Script/module; built-ins use
  * the realm context, which preserves the caller's active Script/module. */
 export function createSourceExecutionContext(
@@ -448,11 +541,7 @@ export function createSourceExecutionContext(
   callerBarrier: boolean = true,
 ): ObjectExecutionContext<unknown> {
   const agent = realm.agent;
-  const active = agent.activeContext;
-  const context: ScriptExecutionContext = {
-    realm,
-    scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
-  };
+  const context = functionExecutionContext(realm);
   return {
     getRealm: (): ErrorRealm => realm,
     run: (action): unknown => {
@@ -461,6 +550,7 @@ export function createSourceExecutionContext(
         named = reused === undefined ? executionNameFrame(top) : reused;
       if (reused === undefined) top.next = named;
       named.name = traceName;
+      named.nativeTop = activationTop();
       agent.executionNameTop = named;
       // Raw class and suspended-body drivers form a caller privacy barrier.
       const barrier = callerBarrier ? enterSourceCall(agent, undefined) : -1;

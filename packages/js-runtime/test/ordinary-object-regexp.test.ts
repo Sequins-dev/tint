@@ -50,7 +50,10 @@ test("RegExp constructor and accessors have standard descriptors without invokin
     assert.equal(descriptor.enumerable, false);
     assert.equal(descriptor.configurable, true);
   }
-  assert.equal(realm.regexpPrototype.internalRegExpData, undefined);
+  assert.equal(
+    objects.exoticSlots(realm.regexpPrototype).internalRegExpData,
+    undefined,
+  );
 });
 
 test("RegExp source spelling preserves escaped delimiters and line terminators", async () => {

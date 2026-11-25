@@ -268,7 +268,7 @@ test("a dead value in a guarded read's slot is collected at the next full collec
       { module: memory, namespace: "native-memory" },
     ],
     {
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry: "initializeGenerationalRuntime",
       managedBytes: 4194304,
       allocationCapacity: 65536,
       rootCapacity: 8192,
