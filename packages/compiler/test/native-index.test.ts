@@ -428,6 +428,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "propagate-slot-copies",
       "remove-unread-stores",
       "remove-dead-scalars",
+      "scalarize-loop-records",
       "reuse-union-reads",
       "prove-cell-states",
       "promote-loop-cells",

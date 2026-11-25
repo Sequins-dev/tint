@@ -55,6 +55,10 @@ import {
   type ValueBinding,
 } from "../scalar/index.ts";
 import { scalarReplaceRecords } from "./records.ts";
+import { pruneUnallocatedRecords } from "./unallocated-records.ts";
+export { pruneUnallocatedRecords } from "./unallocated-records.ts";
+import { scalarizeLoopRecords } from "./loop-records.ts";
+export { scalarizeLoopRecords } from "./loop-records.ts";
 import { dispatchStringChains } from "./string-dispatch.ts";
 import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
@@ -121,6 +125,101 @@ function foldFunctionConstants(
     }
   }
   const blocks: Block[] = [];
+  // Whole-function single-tag general slots: a local `general` slot that is
+  // never a parameter, exception target, or guarded read destination, and whose
+  // every store writes a `general-wrap` / `general-none` / `general-null` of
+  // the same tag, always carries that tag on every load across blocks.
+  // Only scan when the function actually contains a `general-is` instruction.
+  let hasGeneralIs = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "optimizer block invariant";
+    for (const op of block.instructions)
+      if (op !== undefined && op.kind === "general-is") {
+        hasGeneralIs = true;
+        break;
+      }
+    if (hasGeneralIs) break;
+  }
+  const fnGeneralTags: (string | undefined)[] = [];
+  const blockScalarKinds = new Map<number, string>(),
+    blockGeneralTags = new Map<number, string>();
+  if (hasGeneralIs) {
+    let hasGeneralSlot = false;
+    for (let slot = 0; slot < fn.slots.length; slot++)
+      if (fn.slots[slot] === "general") {
+        hasGeneralSlot = true;
+        break;
+      }
+    if (hasGeneralSlot) {
+      const blocked = new Uint8Array(fn.slots.length);
+      for (const p of fn.parameters) if (p !== undefined) blocked[p] = 1;
+      if (fn.receiverSlot !== undefined) blocked[fn.receiverSlot] = 1;
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "optimizer block invariant";
+        const blockEx = block.exception;
+        if (blockEx !== undefined) blocked[blockEx.slot] = 1;
+        const term = block.terminator;
+        if (
+          (term.kind === "record" ||
+            term.kind === "record-cell" ||
+            term.kind === "cell") &&
+          term.operation !== "write"
+        )
+          blocked[term.slot] = 1;
+        blockScalarKinds.clear();
+        blockGeneralTags.clear();
+        for (const op of block.instructions) {
+          if (op === undefined) throw "optimizer instruction invariant";
+          if (op.kind === "load") {
+            const st = fn.slots[op.slot];
+            if (st !== undefined) blockScalarKinds.set(op.id, st);
+          } else if (op.kind === "constant") {
+            const literal = op.value;
+            blockScalarKinds.set(
+              op.id,
+              typeof literal === "number" ? "number" : "boolean",
+            );
+          } else if (
+            op.kind === "record-new" ||
+            op.kind === "function-new" ||
+            op.kind === "error-new"
+          )
+            blockScalarKinds.set(op.id, "reference");
+          else if (op.kind === "reference-value")
+            blockScalarKinds.set(op.id, op.type ?? "reference");
+          else if (op.kind === "general-value")
+            blockScalarKinds.set(op.id, op.type);
+          else if (
+            op.kind === "string-literal" ||
+            op.kind === "string-concat" ||
+            op.kind === "string-slice" ||
+            op.kind === "string-value"
+          )
+            blockScalarKinds.set(op.id, "string");
+          else if (op.kind === "general-none")
+            blockGeneralTags.set(op.id, "undefined");
+          else if (op.kind === "general-null")
+            blockGeneralTags.set(op.id, "null");
+          else if (op.kind === "general-wrap") {
+            const k = blockScalarKinds.get(op.value);
+            if (k === "reference") blockGeneralTags.set(op.id, "object");
+            else if (k === "number" || k === "boolean" || k === "string")
+              blockGeneralTags.set(op.id, k);
+          } else if (op.kind === "store" && fn.slots[op.slot] === "general") {
+            const t = blockGeneralTags.get(op.value);
+            if (t === undefined) blocked[op.slot] = 1;
+            else if (blocked[op.slot] === 0) {
+              const prev = fnGeneralTags[op.slot];
+              if (prev === undefined) fnGeneralTags[op.slot] = t;
+              else if (prev !== t) blocked[op.slot] = 1;
+            }
+          }
+        }
+      }
+      for (let slot = 0; slot < fn.slots.length; slot++)
+        if (blocked[slot] === 1) fnGeneralTags[slot] = undefined;
+    }
+  }
   let functionChanged = false;
   for (const block of fn.blocks) {
     if (block === undefined) throw "optimizer block invariant";
@@ -129,13 +228,85 @@ function foldFunctionConstants(
       absent: (number | undefined)[] = [],
       texts: (string | undefined)[] = [],
       instructions: Instruction[] = [];
+    if (hasGeneralIs) {
+      blockScalarKinds.clear();
+      blockGeneralTags.clear();
+    }
     let slots: (Constant | undefined)[] = [],
       slotTexts: (string | undefined)[] = [],
+      slotGeneralTags: (string | undefined)[] = [],
       changed = false;
     for (const op of block.instructions) {
       if (op === undefined) throw "optimizer instruction invariant";
       if (visited >= budget) return undefined;
       visited++;
+      if (hasGeneralIs) {
+        if (op.kind === "load") {
+          const slotType = fn.slots[op.slot];
+          if (slotType !== undefined) blockScalarKinds.set(op.id, slotType);
+          const knownTag = slotGeneralTags[op.slot] ?? fnGeneralTags[op.slot];
+          if (knownTag !== undefined) blockGeneralTags.set(op.id, knownTag);
+        } else if (op.kind === "constant") {
+          const literal = op.value;
+          blockScalarKinds.set(
+            op.id,
+            typeof literal === "number" ? "number" : "boolean",
+          );
+        } else if (
+          op.kind === "record-new" ||
+          op.kind === "function-new" ||
+          op.kind === "error-new"
+        )
+          blockScalarKinds.set(op.id, "reference");
+        else if (op.kind === "reference-value")
+          blockScalarKinds.set(op.id, op.type ?? "reference");
+        else if (op.kind === "general-value")
+          blockScalarKinds.set(op.id, op.type);
+        else if (
+          op.kind === "string-literal" ||
+          op.kind === "string-concat" ||
+          op.kind === "string-slice" ||
+          op.kind === "string-value"
+        )
+          blockScalarKinds.set(op.id, "string");
+        else if (op.kind === "general-none")
+          blockGeneralTags.set(op.id, "undefined");
+        else if (op.kind === "general-null")
+          blockGeneralTags.set(op.id, "null");
+        else if (op.kind === "general-wrap") {
+          const k = blockScalarKinds.get(op.value);
+          if (k === "reference") blockGeneralTags.set(op.id, "object");
+          else if (k === "number" || k === "boolean" || k === "string")
+            blockGeneralTags.set(op.id, k);
+        } else if (
+          op.kind === "general-is" &&
+          (op.type === "undefined" ||
+            op.type === "number" ||
+            op.type === "boolean" ||
+            op.type === "string" ||
+            op.type === "null" ||
+            op.type === "object")
+        ) {
+          const known = blockGeneralTags.get(op.value);
+          if (known !== undefined) {
+            const result = known === op.type;
+            values[op.id] = result;
+            blockScalarKinds.set(op.id, "boolean");
+            instructions.push({
+              kind: "constant",
+              id: op.id,
+              value: result,
+              start: op.start,
+              end: op.end,
+            });
+            changed = true;
+            rewritten++;
+            continue;
+          }
+        }
+        if (op.kind === "store")
+          slotGeneralTags[op.slot] = blockGeneralTags.get(op.value);
+      }
       // String constants: literals, their concatenations (bounded, as they
       // become image data), lengths and equality.
       const text = foldedText(op, texts, slotTexts);
@@ -268,6 +439,7 @@ function foldFunctionConstants(
       if (op.kind === "host-call" || instructionMayThrow(op)) {
         slots = [];
         slotTexts = [];
+        slotGeneralTags = [];
       }
     }
     blocks.push(changed ? { ...block, instructions } : block);
@@ -1162,7 +1334,7 @@ export function optimizeModuleVersion(
   // Inlining considers leaf callees only, so a wrapper becomes eligible once
   // its own callees were inlined: repeat while rounds make progress.
   const inlineRounds =
-    options.inlining === "none" ? 0 : guardedInlining ? 2 : 3;
+    options.inlining === "none" ? 0 : guardedInlining ? 2 : 4;
   for (let round = 0; round < inlineRounds; round++) {
     const remaining =
       maxInstructions -
@@ -1266,82 +1438,106 @@ export function optimizeModuleVersion(
     // Replacement resolves record guards to constant branches: fold them,
     // merge the straight-line blocks, propagate constants and copies across
     // inlined parameters and replaced fields, then forward and clean up.
-    for (let phase = 0; phase < 8; phase++) {
-      const pass: PassStatistics["pass"] =
-        phase === 0
-          ? "scalar-replace-records"
-          : phase === 1
-            ? "simplify-control-flow"
-            : phase === 2
-              ? "ssa-constants"
-              : phase === 3
-                ? "coalesce-defaults"
-                : phase === 4
-                  ? "forward-local-loads"
-                  : phase === 5
-                    ? "propagate-slot-copies"
-                    : phase === 6
-                      ? "remove-unread-stores"
-                      : "remove-dead-scalars";
-      if (phase === 2) {
-        const ssaAfter = foldModuleSSAConstants(
+    // Repeat once on the functions where scalar replacement succeeded so
+    // nested allocations (such as a closure cell held inside a replaced
+    // environment) scalarize without re-running cleanup on unchanged functions.
+    let roundTargets: Uint8Array | undefined = changed;
+    for (let recordRound = 0; recordRound < 2; recordRound++) {
+      let recordsReplaced = 0;
+      const replacedChanges: number[] = [];
+      let phaseTargets: Uint8Array | undefined = roundTargets;
+      for (let phase = 0; phase < 8; phase++) {
+        const pass: PassStatistics["pass"] =
+          phase === 0
+            ? "scalar-replace-records"
+            : phase === 1
+              ? "simplify-control-flow"
+              : phase === 2
+                ? "ssa-constants"
+                : phase === 3
+                  ? "coalesce-defaults"
+                  : phase === 4
+                    ? "forward-local-loads"
+                    : phase === 5
+                      ? "propagate-slot-copies"
+                      : phase === 6
+                        ? "remove-unread-stores"
+                        : "remove-dead-scalars";
+        if (phase === 2) {
+          const ssaAfter = foldModuleSSAConstants(
+            version,
+            maxInstructions,
+            spent,
+            phaseTargets,
+          );
+          if (ssaAfter.exhausted)
+            return exhausted("ssa-constants", maxInstructions - spent);
+          if (completed("ssa-constants", ssaAfter, true)) return stop();
+          spent += ssaAfter.visited;
+          continue;
+        }
+        const copyLayoutsPost =
+          phase === 5 ? stableDescriptors(version.module) : false;
+        const cleaned = rewriteFunctions(
           version,
-          maxInstructions,
-          spent,
-          changed,
-        );
-        if (ssaAfter.exhausted)
-          return exhausted("ssa-constants", maxInstructions - spent);
-        if (completed("ssa-constants", ssaAfter, true)) return stop();
-        spent += ssaAfter.visited;
-        continue;
-      }
-      const copyLayoutsPost =
-        phase === 5 ? stableDescriptors(version.module) : false;
-      const cleaned = rewriteFunctions(
-        version,
-        maxInstructions - spent,
-        changed,
-        undefined,
-        phase === 0
-          ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
-              recordReplacementRewrite(fn, version.module, budget, remarks)
-          : phase === 1
-            ? controlFlowRewrite
-            : phase === 3
-              ? coalesceRewrite
-              : phase === 4
-                ? (
-                    fn: FunctionIR,
-                    budget: number,
-                  ): FunctionRewrite | undefined =>
-                    forwardLoadsRewrite(fn, budget, undefined)
-                : phase === 5
+          maxInstructions - spent,
+          phaseTargets,
+          phase === 0 ? replacedChanges : undefined,
+          phase === 0
+            ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+                recordReplacementRewrite(fn, version.module, budget, remarks)
+            : phase === 1
+              ? controlFlowRewrite
+              : phase === 3
+                ? coalesceRewrite
+                : phase === 4
                   ? (
                       fn: FunctionIR,
                       budget: number,
-                    ): FunctionRewrite | undefined => {
-                      const result = propagateSlotCopies(
-                        fn,
-                        budget,
-                        copyLayoutsPost,
-                      );
-                      return result === undefined
-                        ? undefined
-                        : {
-                            fn: result.fn,
-                            visited: result.visited,
-                            rewritten: result.rewritten,
-                            refused: result.refused,
-                          };
-                    }
-                  : phase === 6
-                    ? unreadStoresRewrite
-                    : deadScalarsRewrite,
+                    ): FunctionRewrite | undefined =>
+                      forwardLoadsRewrite(fn, budget, undefined)
+                  : phase === 5
+                    ? (
+                        fn: FunctionIR,
+                        budget: number,
+                      ): FunctionRewrite | undefined => {
+                        const result = propagateSlotCopies(
+                          fn,
+                          budget,
+                          copyLayoutsPost,
+                        );
+                        return result === undefined
+                          ? undefined
+                          : {
+                              fn: result.fn,
+                              visited: result.visited,
+                              rewritten: result.rewritten,
+                              refused: result.refused,
+                            };
+                      }
+                    : phase === 6
+                      ? unreadStoresRewrite
+                      : deadScalarsRewrite,
+        );
+        if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
+        if (completed(pass, cleaned, phase === 5)) return stop();
+        spent += cleaned.visited;
+        if (phase === 0) {
+          recordsReplaced = cleaned.rewritten;
+          if (recordRound > 0) {
+            if (recordsReplaced === 0) break;
+            phaseTargets = changedFunctions(
+              replacedChanges,
+              version.module.functions.length,
+            );
+          }
+        }
+      }
+      if (recordsReplaced === 0) break;
+      roundTargets = changedFunctions(
+        replacedChanges,
+        version.module.functions.length,
       );
-      if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
-      if (completed(pass, cleaned, phase === 5)) return stop();
-      spent += cleaned.visited;
     }
   }
   let used = 0;
@@ -1352,6 +1548,105 @@ export function optimizeModuleVersion(
   // Functions record-read lowering, hoisting and access selection change
   // (from here to the sweep below); the sweep cleans up only those.
   const sweepChanges: number[] = [];
+  if (options.closedRecords === true) {
+    const pruneBudget = maxInstructions - used;
+    const pruned = rewriteModuleVersion(
+      version,
+      sweepChanges,
+      (module: ModuleIR): ModuleRewrite | undefined =>
+        pruneUnallocatedRecords(module, pruneBudget, remarks),
+    );
+    if (pruned.exhausted)
+      return exhausted("prune-unallocated-records", pruneBudget);
+    used += pruned.visited;
+    if (completed("prune-unallocated-records", pruned, false)) return stop();
+    if (pruned.rewritten > 0) {
+      // Pruning dead `record-has` branches leaves constant slot-carried
+      // booleans (e.g. class method override guards): thread them now so
+      // loop-carried record scalarization sees the dead slow paths gone.
+      const prunedFunctions = changedFunctions(
+        sweepChanges,
+        version.module.functions.length,
+      );
+      const threadedAfterPrune = rewriteFunctions(
+        version,
+        maxInstructions - used,
+        prunedFunctions,
+        sweepChanges,
+        (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+          const result = threadBranches(fn, budget, remarks);
+          return result === undefined
+            ? undefined
+            : {
+                fn: result.fn,
+                visited: result.visited,
+                rewritten: result.rewritten,
+                refused: false,
+              };
+        },
+      );
+      if (threadedAfterPrune.exhausted)
+        return exhausted("thread-branches", maxInstructions - used);
+      used += threadedAfterPrune.visited;
+      if (completed("thread-branches", threadedAfterPrune, false))
+        return stop();
+      if (threadedAfterPrune.rewritten > 0) {
+        const foldedAfterPrune = rewriteFunctions(
+          version,
+          maxInstructions - used,
+          prunedFunctions,
+          sweepChanges,
+          foldConstantsRewrite,
+        );
+        if (foldedAfterPrune.exhausted)
+          return exhausted("fold-constants", maxInstructions - used);
+        used += foldedAfterPrune.visited;
+        if (completed("fold-constants", foldedAfterPrune, false)) return stop();
+        const cfgAfterPrune = rewriteFunctions(
+          version,
+          maxInstructions - used,
+          prunedFunctions,
+          sweepChanges,
+          controlFlowRewrite,
+        );
+        if (cfgAfterPrune.exhausted)
+          return exhausted("simplify-control-flow", maxInstructions - used);
+        used += cfgAfterPrune.visited;
+        if (completed("simplify-control-flow", cfgAfterPrune, false))
+          return stop();
+      }
+    }
+  }
+  // Loop-carried fixed records that do not escape inside the loop become
+  // scalar field slots with conditional exit materialization.
+  const loopRecordStable = stableDescriptors(version.module);
+  const loopRecords = rewriteFunctions(
+    version,
+    maxInstructions - used,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = scalarizeLoopRecords(
+        fn,
+        version.module,
+        budget,
+        remarks,
+        loopRecordStable,
+      );
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.scalarized,
+            refused: false,
+          };
+    },
+  );
+  if (loopRecords.exhausted)
+    return exhausted("scalarize-loop-records", maxInstructions - used);
+  used += loopRecords.visited;
+  if (completed("scalarize-loop-records", loopRecords, false)) return stop();
   // Repeated reads of one field of an unchanged object reuse the first.
   const reused = rewriteFunctions(
     version,

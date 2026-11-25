@@ -19,6 +19,8 @@ interface Candidate {
   returned: boolean;
   accesses: number;
   fields: number[];
+  stateFields: (number | undefined)[];
+  optionalCarriers: boolean[];
 }
 /** Local allocations with uniquely assigned local aliases. Unknown uses escape.
  * Scalar fields need neither object identity nor a managed allocation. */
@@ -129,9 +131,9 @@ export function scalarReplaceRecords(
             field.type !== "optional-reference" &&
             field.type !== "string" &&
             field.type !== "optional-string") ||
-          field.stateOffset !== undefined ||
           field.presenceOffset !== undefined ||
-          op.arguments[index] === undefined ||
+          (field.stateOffset === undefined &&
+            op.arguments[index] === undefined) ||
           op.presence?.[index] !== undefined
         )
           supported = false;
@@ -143,6 +145,8 @@ export function scalarReplaceRecords(
         returned: false,
         accesses: 0,
         fields: [],
+        stateFields: [],
+        optionalCarriers: [],
       };
       candidates.push(candidate);
       aliases[op.id] = candidate;
@@ -239,7 +243,10 @@ export function scalarReplaceRecords(
       visitInstructionOperands(op, escape);
     }
     const term = block.terminator;
-    if (term.kind === "record" && aliases[term.object] !== undefined) {
+    if (
+      (term.kind === "record" || term.kind === "record-cell") &&
+      aliases[term.object] !== undefined
+    ) {
       const candidate = aliases[term.object];
       if (candidate === undefined) throw "record alias invariant";
       candidate.accesses = candidate.accesses + 1;
@@ -278,10 +285,24 @@ export function scalarReplaceRecords(
     }
     const layout = module.records?.[candidate.instruction.record];
     if (layout === undefined) throw "record layout invariant";
-    for (const field of layout.fields) {
+    for (let index = 0; index < layout.fields.length; index++) {
+      const field = layout.fields[index];
       if (field === undefined) throw "record field invariant";
-      candidate.fields.push(slots.length);
-      slots.push(field.type);
+      if (field.stateOffset !== undefined) {
+        const optionalCarrier =
+          field.type === "reference" &&
+          candidate.instruction.arguments[index] === undefined;
+        candidate.optionalCarriers.push(optionalCarrier);
+        candidate.fields.push(slots.length);
+        slots.push(optionalCarrier ? "optional-reference" : field.type);
+        candidate.stateFields.push(slots.length);
+        slots.push("boolean");
+      } else {
+        candidate.optionalCarriers.push(false);
+        candidate.fields.push(slots.length);
+        slots.push(field.type);
+        candidate.stateFields.push(undefined);
+      }
     }
     replaced++;
     if (remarks !== undefined)
@@ -306,7 +327,8 @@ export function scalarReplaceRecords(
       ? candidate
       : undefined;
   }
-  const blocks: Block[] = [];
+  const blocks: Block[] = [],
+    extraBlocks: Block[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "record block invariant";
     const instructions: Instruction[] = [];
@@ -316,11 +338,90 @@ export function scalarReplaceRecords(
       if (op.kind === "record-new") {
         const candidate = active(op.id);
         if (candidate !== undefined) {
+          const layout = module.records?.[op.record];
+          if (layout === undefined) throw "record layout invariant";
           for (let index = 0; index < candidate.fields.length; index++) {
             const slot = candidate.fields[index],
-              value = op.arguments[index];
-            if (slot === undefined || value === undefined)
+              stateSlot = candidate.stateFields[index],
+              value = op.arguments[index],
+              field = layout.fields[index];
+            if (slot === undefined || field === undefined)
               throw "record initializer invariant";
+            if (stateSlot !== undefined) {
+              const initId = nextValue++;
+              instructions.push({
+                kind: "constant",
+                id: initId,
+                value: value !== undefined,
+                start: op.start,
+                end: op.end,
+              });
+              instructions.push({
+                kind: "store",
+                slot: stateSlot,
+                value: initId,
+                start: op.start,
+                end: op.end,
+              });
+              if (value !== undefined) {
+                instructions.push({
+                  kind: "store",
+                  slot,
+                  value,
+                  start: op.start,
+                  end: op.end,
+                });
+              } else {
+                const defaultId = nextValue++;
+                if (field.type === "number")
+                  instructions.push({
+                    kind: "constant",
+                    id: defaultId,
+                    value: 0,
+                    start: op.start,
+                    end: op.end,
+                  });
+                else if (field.type === "boolean")
+                  instructions.push({
+                    kind: "constant",
+                    id: defaultId,
+                    value: false,
+                    start: op.start,
+                    end: op.end,
+                  });
+                else if (field.type === "string")
+                  instructions.push({
+                    kind: "string-literal",
+                    id: defaultId,
+                    value: "",
+                    start: op.start,
+                    end: op.end,
+                  });
+                else if (field.type === "optional-string")
+                  instructions.push({
+                    kind: "string-none",
+                    id: defaultId,
+                    start: op.start,
+                    end: op.end,
+                  });
+                else
+                  instructions.push({
+                    kind: "reference-none",
+                    id: defaultId,
+                    start: op.start,
+                    end: op.end,
+                  });
+                instructions.push({
+                  kind: "store",
+                  slot,
+                  value: defaultId,
+                  start: op.start,
+                  end: op.end,
+                });
+              }
+              continue;
+            }
+            if (value === undefined) throw "record initializer invariant";
             instructions.push({
               kind: "store",
               slot,
@@ -378,8 +479,275 @@ export function scalarReplaceRecords(
           end: terminator.end,
         };
       }
+    } else if (terminator.kind === "record-cell") {
+      const candidate = active(terminator.object);
+      if (candidate !== undefined) {
+        const matches = candidate.instruction.record === terminator.record;
+        if (!matches) {
+          const condition = nextValue++;
+          instructions.push({
+            kind: "constant",
+            id: condition,
+            value: false,
+            start: terminator.start,
+            end: terminator.end,
+          });
+          terminator = {
+            kind: "branch",
+            condition,
+            consequent: terminator.consequent,
+            alternate: terminator.alternate,
+            start: terminator.start,
+            end: terminator.end,
+          };
+        } else {
+          const cellTerm = terminator;
+          const field =
+              module.records?.[cellTerm.record]?.fields[cellTerm.field],
+            fieldSlot = candidate.fields[cellTerm.field],
+            stateSlot = candidate.stateFields[cellTerm.field],
+            optionalCarrier =
+              candidate.optionalCarriers[cellTerm.field] === true;
+          if (
+            field === undefined ||
+            fieldSlot === undefined ||
+            stateSlot === undefined
+          )
+            throw "record cell field slot invariant";
+          const emitCellRead = (into: Instruction[]): void => {
+            const loaded = nextValue++;
+            into.push({
+              kind: "load",
+              id: loaded,
+              slot: fieldSlot,
+              start: cellTerm.start,
+              end: cellTerm.end,
+            });
+            let value = loaded;
+            if (optionalCarrier) {
+              value = nextValue++;
+              into.push({
+                kind: "reference-value",
+                id: value,
+                value: loaded,
+                start: cellTerm.start,
+                end: cellTerm.end,
+              });
+            }
+            into.push({
+              kind: "store",
+              slot: cellTerm.slot,
+              value,
+              start: cellTerm.start,
+              end: cellTerm.end,
+            });
+          };
+          const emitCellWrite = (into: Instruction[]): void => {
+            const loaded = nextValue++;
+            into.push({
+              kind: "load",
+              id: loaded,
+              slot: cellTerm.slot,
+              start: cellTerm.start,
+              end: cellTerm.end,
+            });
+            let value = loaded;
+            if (optionalCarrier) {
+              value = nextValue++;
+              into.push({
+                kind: "reference-wrap",
+                id: value,
+                value: loaded,
+                start: cellTerm.start,
+                end: cellTerm.end,
+              });
+            }
+            into.push({
+              kind: "store",
+              slot: fieldSlot,
+              value,
+              start: cellTerm.start,
+              end: cellTerm.end,
+            });
+          };
+          if (terminator.operation === "initialize") {
+            const state = nextValue++,
+              uninitialized = nextValue++,
+              hitId = fn.blocks.length + extraBlocks.length,
+              hitInsts: Instruction[] = [];
+            instructions.push({
+              kind: "load",
+              id: state,
+              slot: stateSlot,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            instructions.push({
+              kind: "unary",
+              id: uninitialized,
+              operator: "!",
+              operand: state,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            emitCellWrite(hitInsts);
+            const ready = nextValue++;
+            hitInsts.push({
+              kind: "constant",
+              id: ready,
+              value: true,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            hitInsts.push({
+              kind: "store",
+              slot: stateSlot,
+              value: ready,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            extraBlocks.push({
+              id: hitId,
+              instructions: hitInsts,
+              terminator: {
+                kind: "jump",
+                target: terminator.consequent,
+                start: terminator.start,
+                end: terminator.end,
+              },
+            });
+            terminator = {
+              kind: "branch",
+              condition: uninitialized,
+              consequent: hitId,
+              alternate: terminator.alternate,
+              start: terminator.start,
+              end: terminator.end,
+            };
+          } else if (terminator.operation === "read") {
+            if (terminator.initialized === true) {
+              emitCellRead(instructions);
+              const condition = nextValue++;
+              instructions.push({
+                kind: "constant",
+                id: condition,
+                value: true,
+                start: terminator.start,
+                end: terminator.end,
+              });
+              terminator = {
+                kind: "branch",
+                condition,
+                consequent: terminator.consequent,
+                alternate: terminator.alternate,
+                start: terminator.start,
+                end: terminator.end,
+              };
+            } else {
+              const state = nextValue++,
+                hitId = fn.blocks.length + extraBlocks.length,
+                hitInsts: Instruction[] = [];
+              instructions.push({
+                kind: "load",
+                id: state,
+                slot: stateSlot,
+                start: terminator.start,
+                end: terminator.end,
+              });
+              emitCellRead(hitInsts);
+              extraBlocks.push({
+                id: hitId,
+                instructions: hitInsts,
+                terminator: {
+                  kind: "jump",
+                  target: terminator.consequent,
+                  start: terminator.start,
+                  end: terminator.end,
+                },
+              });
+              terminator = {
+                kind: "branch",
+                condition: state,
+                consequent: hitId,
+                alternate: terminator.alternate,
+                start: terminator.start,
+                end: terminator.end,
+              };
+            }
+          } else if (!field.mutable) {
+            const condition = nextValue++;
+            instructions.push({
+              kind: "constant",
+              id: condition,
+              value: false,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            terminator = {
+              kind: "branch",
+              condition,
+              consequent: terminator.consequent,
+              alternate: terminator.alternate,
+              start: terminator.start,
+              end: terminator.end,
+            };
+          } else if (terminator.initialized === true) {
+            emitCellWrite(instructions);
+            const condition = nextValue++;
+            instructions.push({
+              kind: "constant",
+              id: condition,
+              value: true,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            terminator = {
+              kind: "branch",
+              condition,
+              consequent: terminator.consequent,
+              alternate: terminator.alternate,
+              start: terminator.start,
+              end: terminator.end,
+            };
+          } else {
+            const state = nextValue++,
+              hitId = fn.blocks.length + extraBlocks.length,
+              hitInsts: Instruction[] = [];
+            instructions.push({
+              kind: "load",
+              id: state,
+              slot: stateSlot,
+              start: terminator.start,
+              end: terminator.end,
+            });
+            emitCellWrite(hitInsts);
+            extraBlocks.push({
+              id: hitId,
+              instructions: hitInsts,
+              terminator: {
+                kind: "jump",
+                target: terminator.consequent,
+                start: terminator.start,
+                end: terminator.end,
+              },
+            });
+            terminator = {
+              kind: "branch",
+              condition: state,
+              consequent: hitId,
+              alternate: terminator.alternate,
+              start: terminator.start,
+              end: terminator.end,
+            };
+          }
+        }
+      }
     }
     blocks.push({ ...block, instructions, terminator });
+  }
+  for (const extra of extraBlocks) {
+    if (extra === undefined) throw "record extra block invariant";
+    blocks.push(extra);
   }
   const transformed: FunctionIR = { ...fn, slots, blocks };
   return { fn: transformed, visited, replaced };

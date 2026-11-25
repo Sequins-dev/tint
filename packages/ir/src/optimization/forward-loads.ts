@@ -11,6 +11,7 @@ import {
   type FunctionIR,
   type Block,
   type Instruction,
+  type ScalarType,
 } from "../scalar/index.ts";
 export interface ForwardedLoads {
   readonly fn: FunctionIR;
@@ -32,7 +33,8 @@ export function forwardLocalLoads(
   let visited = 0,
     maximum = -1,
     count = 0,
-    loads = 0;
+    candidates = 0,
+    hasWrap = false;
   for (const block of fn.blocks) {
     if (block === undefined) throw "forward block invariant";
     for (const op of block.instructions) {
@@ -43,12 +45,19 @@ export function forwardLocalLoads(
         maximum = Math.max(maximum, id);
         count++;
       }
-      if (op.kind === "load") loads++;
+      if (
+        op.kind === "load" ||
+        op.kind === "reference-value" ||
+        op.kind === "general-value"
+      )
+        candidates++;
+      if (op.kind === "reference-wrap" || op.kind === "general-wrap")
+        hasWrap = true;
     }
   }
   // The alias table is indexed by value ID: bound it by the instruction
   // count, with slack for the sparse IDs later passes leave behind.
-  if (loads === 0 || maximum > count * 16 + 4096)
+  if (candidates === 0 || maximum > count * 16 + 4096)
     return { fn, visited, forwarded: 0 };
   visited += maximum + 1 + fn.slots.length * 2;
   if (visited > budget) return undefined;
@@ -61,10 +70,49 @@ export function forwardLocalLoads(
   function operand(_id: number): void {
     visited++;
   }
+  function knownScalarType(
+    op: Instruction,
+    types: ReadonlyMap<number, ScalarType>,
+  ): ScalarType | undefined {
+    if (op.kind === "load") return fn.slots[op.slot];
+    if (op.kind === "constant") {
+      const literal = op.value;
+      return typeof literal === "number" ? "number" : "boolean";
+    }
+    if (
+      op.kind === "record-new" ||
+      op.kind === "function-new" ||
+      op.kind === "error-new"
+    )
+      return "reference";
+    if (op.kind === "reference-value") return op.type ?? "reference";
+    if (op.kind === "general-value") return op.type;
+    if (
+      op.kind === "string-literal" ||
+      op.kind === "string-concat" ||
+      op.kind === "string-slice" ||
+      op.kind === "string-value"
+    )
+      return "string";
+    if (op.kind === "optional-value" || op.kind === "optional-value-or")
+      return "number";
+    return types.get(instructionResult(op) ?? -1);
+  }
+  const valueTypes = new Map<number, ScalarType>(),
+    wrappedReference = new Map<number, number>(),
+    wrappedGeneral = new Map<
+      number,
+      { readonly value: number; readonly type: ScalarType }
+    >();
   for (const block of fn.blocks) {
     if (block === undefined) throw "forward block invariant";
     epoch++;
     const instructions: Instruction[] = [];
+    if (hasWrap) {
+      valueTypes.clear();
+      wrappedReference.clear();
+      wrappedGeneral.clear();
+    }
     let changed = false;
     for (const op of block.instructions) {
       if (op === undefined) throw "forward instruction invariant";
@@ -83,8 +131,59 @@ export function forwardLocalLoads(
         epochs[op.slot] = epoch;
       }
       const rewritten = substituteInstructionValues(op, aliases);
+      if (
+        hasWrap &&
+        rewritten.kind === "reference-value" &&
+        rewritten.type === undefined
+      ) {
+        const unwrapped = wrappedReference.get(rewritten.value);
+        if (unwrapped !== undefined) {
+          aliases[rewritten.id] = unwrapped + 1;
+          forwarded++;
+          changed = true;
+          continue;
+        }
+      }
+      if (
+        hasWrap &&
+        rewritten.kind === "general-value" &&
+        (rewritten.type === "reference" ||
+          rewritten.type === "number" ||
+          rewritten.type === "boolean" ||
+          rewritten.type === "string")
+      ) {
+        const wrapped = wrappedGeneral.get(rewritten.value);
+        if (wrapped !== undefined && wrapped.type === rewritten.type) {
+          aliases[rewritten.id] = wrapped.value + 1;
+          forwarded++;
+          changed = true;
+          continue;
+        }
+      }
       instructions.push(rewritten);
       if (rewritten !== op) changed = true;
+      if (hasWrap) {
+        const resultId = instructionResult(rewritten);
+        if (resultId !== undefined) {
+          const t = knownScalarType(rewritten, valueTypes);
+          if (t !== undefined) valueTypes.set(resultId, t);
+        }
+        if (rewritten.kind === "reference-wrap")
+          wrappedReference.set(rewritten.id, rewritten.value);
+        else if (rewritten.kind === "general-wrap") {
+          const t = valueTypes.get(rewritten.value);
+          if (
+            t === "reference" ||
+            t === "number" ||
+            t === "boolean" ||
+            t === "string"
+          )
+            wrappedGeneral.set(rewritten.id, {
+              value: rewritten.value,
+              type: t,
+            });
+        }
+      }
       if (rewritten.kind === "store") {
         slots[rewritten.slot] = rewritten.value + 1;
         epochs[rewritten.slot] = epoch;

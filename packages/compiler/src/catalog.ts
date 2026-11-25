@@ -943,6 +943,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/loop-records.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/observer.ts",
       packageId: "ir",
     },
@@ -1000,6 +1004,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/string-dispatch.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/unallocated-records.ts",
       packageId: "ir",
     },
     {

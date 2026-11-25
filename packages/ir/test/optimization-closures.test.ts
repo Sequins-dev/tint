@@ -1040,13 +1040,16 @@ test("closure environment with a reference cell field is scalar replaced and pro
     ),
     "closure environment with reference field must be scalar-replaced",
   );
-  // The cell read/write in the loop is promoted out (one read before, one write
-  // after; no record-cell terminator inside the loop back-edge cycle).
-  const promoted = optimized.passes.find(
-    (p) => p.pass === "promote-loop-cells",
+  // Both the closure environment (record 1) and the non-escaping count cell
+  // (record 0) are scalar-replaced, leaving zero record-cell terminators.
+  assert.ok(
+    !out.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-new" && op.record === 0),
+    ),
+    "non-escaping record-cell must be scalar-replaced",
   );
   assert.ok(
-    (promoted?.rewritten ?? 0) >= 1,
-    "cell must be promoted out of loop",
+    !out.blocks.some((b) => b.terminator.kind === "record-cell"),
+    "scalar-replaced record-cell leaves no record-cell terminators",
   );
 });

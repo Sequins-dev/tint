@@ -34,6 +34,8 @@ export interface PassStatistics {
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"
+    | "prune-unallocated-records"
+    | "scalarize-loop-records"
     | "devirtualize-closures"
     | "select-array-access"
     | "hoist-loop-invariants"

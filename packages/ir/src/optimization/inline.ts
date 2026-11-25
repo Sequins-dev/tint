@@ -339,6 +339,7 @@ export function inlineSmallFunctions(
         type !== "optional-reference" &&
         type !== "string" &&
         type !== "optional-string" &&
+        type !== "general" &&
         !isNativeTypedArray(type) &&
         !fn.parameters.includes(slot)
       )
