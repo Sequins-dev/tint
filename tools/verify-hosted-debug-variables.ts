@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { dirname } from "node:path";
 import { rmSync } from "node:fs";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { gdbModule, lldbModule } from "./heap-snapshot/debuggers.ts";
 
 function commandExists(name: string): boolean {
   return (
@@ -33,6 +34,10 @@ function verifyGdb(image: string): void {
     "delete 1 2",
     "continue",
     "info locals",
+    "print greeting->length",
+    // Tint's pretty-printers decode either string kind.
+    "source " + gdbModule,
+    "print greeting",
     "bt",
     "delete",
     "continue",
@@ -59,7 +64,10 @@ function verifyGdb(image: string): void {
     ["record fields", /= \{__header = \d+, x = 3, y = 4, label = 0x[0-9a-f]+/],
     ["number local", /\nsx = 3\n/],
     ["locals at a later line", /\nsx = 3\nsy = 9\n/],
-    ["string contents", /greeting = u"hi hello"\ntotal = 87\n/],
+    // A string is a pointer to its object; the length is in code units.
+    ["string pointer", /greeting = 0x[0-9a-f]+\ntotal = 87\n/],
+    ["string length", /= 8\n/],
+    ["string contents", /= 0x[0-9a-f]+ "hi hello"\n/],
     ["normal exit", /exited with code 052\]/],
   ];
   for (const [name, pattern] of expectations)
@@ -121,6 +129,10 @@ try {
     "continue",
     // Line 16 of run, after the loop.
     "frame variable total greeting",
+    "frame variable greeting->length",
+    // Tint's data formatters decode either string kind.
+    "command script import " + lldbModule,
+    "frame variable greeting",
     "breakpoint disable",
     "continue",
     "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
@@ -159,10 +171,10 @@ try {
     ["loop variable before the first call", /\(double\) total = 0\n/],
     ["locals at a later line", /\(double\) sx = 3\n\(double\) sy = 9\n/],
     ["loop result", /\(double\) total = 87\n/],
-    [
-      "string contents",
-      /\(char16_t\[\]\) greeting = \(\[0\] = U\+0068 u'h', \[1\] = U\+0069 u'i', \[2\] = U\+0020 u' ', \[3\] = U\+0068 u'h', \[4\] = U\+0065 u'e', \[5\] = U\+006c u'l', \[6\] = U\+006c u'l', \[7\] = U\+006f u'o'\)/,
-    ],
+    // A string is a pointer to its object; the length is in code units.
+    ["string pointer", /\(string \*\) greeting = 0x[0-9a-f]+\n/],
+    ["string length", /greeting->length = 8\n/],
+    ["string contents", /\(string \*\) greeting = 0x[0-9a-f]+ "hi hello"\n/],
     ["normal exit", /exited with status = 42 /],
   ];
   for (const [name, pattern] of expectations)

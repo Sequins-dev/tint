@@ -526,10 +526,16 @@ export function selectArrayAccesses(
           }
         } else if (op.kind === "unary")
           dependencies.set(op.id, combine(op.operand, op.operand));
+        else if (op.kind === "optional-wrap")
+          dependencies.set(op.id, combine(op.value, op.value));
         else if (op.kind === "array-read" || op.kind === "array-write")
           mark(op.index);
         else if (op.kind === "array-new") mark(op.length);
-        else if (op.kind === "store" && relevant[op.slot] === 1) mark(op.value);
+        else if (op.kind === "string-slice") {
+          mark(op.begin);
+          mark(op.limit);
+        } else if (op.kind === "store" && relevant[op.slot] === 1)
+          mark(op.value);
       }
     }
   }

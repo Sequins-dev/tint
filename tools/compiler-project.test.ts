@@ -70,6 +70,10 @@ test("runtime providers preserve stable namespaces independently of package path
       module: "packages/native-runtime/src/values/bigint.ts",
     },
     {
+      namespace: "number-string-cache",
+      module: "packages/foundation/src/numeric/number-string-cache.ts",
+    },
+    {
       namespace: "number-text",
       module: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -84,6 +88,14 @@ test("runtime providers preserve stable namespaces independently of package path
     {
       namespace: "list-sort",
       module: "packages/foundation/src/collections/list-sort.ts",
+    },
+    {
+      namespace: "latin1",
+      module: "packages/foundation/src/text/latin1.ts",
+    },
+    {
+      namespace: "utf8",
+      module: "packages/foundation/src/text/utf8.ts",
     },
     {
       namespace: "text-encoding",

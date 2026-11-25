@@ -230,6 +230,28 @@ export function registerStackMaps(
   throw "HOST_UNAVAILABLE";
 }
 
+/** Binds `string-flat`: 1 when `text` is a flat string, which owns its
+ * units and can be copied verbatim (nativeStringIsFlat), else 0 (a slice,
+ * which shares a parent's units and must be flattened to leave its isolate). */
+export function isFlatString(text: string): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Binds `string-flatten-into`: writes a flat image of `text` (its flat
+ * header, length and units, zero-padded: a position-independent,
+ * pointer-free string object without per-isolate state) at the start of a
+ * caller-owned raw writable window, and returns its byte extent
+ * (nativeFlatStringExtent). A flat string is copied verbatim; a slice's
+ * units are copied from its parent. Returns -1 without writing when the
+ * window is too small or its bounds are not exact integers with a nonzero
+ * 8-byte-aligned address and an end below 2^53. */
+export function flattenStringInto(
+  address: number,
+  byteLength: number,
+  text: string,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+
 /** Move raw bytes inside one caller-owned normal-memory window. Overlap is valid.
  * Exact nonnegative integer bounds are checked before writes. Returns 0 or -1;
  * the caller grants mapping/lifetime and must exclude concurrent mutation. */

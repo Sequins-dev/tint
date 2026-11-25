@@ -24,8 +24,11 @@ export function instructionEffects(op: Instruction): number {
     case "general-is":
     case "general-record-descriptor":
     case "string-length":
+    case "string-two-byte":
+    case "string-flat":
     case "string-code-unit":
     case "string-starts-with":
+    case "string-index-of":
     case "error-message":
     case "error-is":
     case "reference-vector-length":
@@ -42,9 +45,22 @@ export function instructionEffects(op: Instruction): number {
     case "weak-slot-key":
     case "weak-slot-value":
     case "reference-vector-read":
+    case "string-ascii-prefix":
+    case "bytes-ascii-prefix":
+    case "string-utf8-length":
+    // The cache lives outside the managed heap, but its entries change.
+    case "number-string-cached":
+    case "string-split-cached":
+    // A string's index field changes once, from unset to its index.
+    case "string-index-cached":
       return effectReadHeap;
+    case "string-index-cache":
+      return effectReadHeap | effectWriteHeap;
     case "array-copy":
     case "reference-vector-copy":
+    case "string-copy-latin1":
+    case "string-write-utf8":
+    case "string-flatten-into":
       return effectReadHeap | effectWriteHeap;
     case "array-write":
     case "array-store":
@@ -91,9 +107,16 @@ export function instructionEffects(op: Instruction): number {
     case "string-slice":
     case "string-from-code-units":
     case "string-allocate":
+    case "string-from-latin1":
+    case "string-from-utf8":
+    case "string-ascii-case":
       return effectThrow | effectAllocate | effectReadHeap;
     case "string-write":
       return effectReadHeap | effectWriteHeap;
+    // The first store after a collection allocates the table.
+    case "number-string-cache":
+    case "string-split-cache":
+      return effectThrow | effectAllocate | effectReadHeap | effectWriteHeap;
     case "function-address":
     case "record-descriptor-address":
     case "general-kind":

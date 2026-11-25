@@ -16,6 +16,9 @@ import {
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeStringSlicedFlag,
+  nativeStringParentOffset,
+  nativeStringSlicedByteLength,
 } from "@tint/abi/host";
 /** Layout marker (or descriptor address) of a live header. */
 export function headerMarker(header: number): number {
@@ -188,26 +191,41 @@ function scanObject(
     return "complete";
   }
   if (marker >= 1 && marker <= 5) {
-    // Strings and arrays share the length offset.
-    const length = read(address + nativeStringLengthOffset),
+    // Strings and arrays share the length offset; a string's length is the
+    // word's low 32 bits (its high bits hold the index field).
+    const word = read(address + nativeStringLengthOffset),
       payload = marker === 1 ? nativeStringDataOffset : nativeArrayInlineOffset;
-    if (length === undefined) return "read";
+    if (word === undefined) return "read";
+    const length = marker === 1 ? word % 4294967296 : word;
     if (!bounded(length) || byteLength < payload) return "invalid";
     if (flags === 2 && marker !== 1) {
       if (byteLength < nativeArrayViewByteLength) return "invalid";
       if (maxReferences === 0) return "limit";
       return reference(read, address + nativeArrayOwnerOffset, visit);
     }
+    if (marker === 1 && flags >= nativeStringSlicedFlag) {
+      // A sliced string references its flat parent.
+      if (flags > nativeStringSlicedFlag + 1) return "invalid";
+      if (byteLength < nativeStringSlicedByteLength) return "invalid";
+      if (maxReferences === 0) return "limit";
+      return reference(read, address + nativeStringParentOffset, visit);
+    }
     if (flags !== 0 && flags !== 1) return "invalid";
-    if (flags === 0) {
+    // Inline data: strings (two-byte, or one-byte with flag 1) and owned
+    // arrays. Borrowed arrays (flag 1) hold no inline elements.
+    if (flags === 0 || marker === 1) {
       const width =
-        marker === 1 || marker === 3
-          ? 2
-          : marker === 2
-            ? 1
-            : marker === 4
-              ? 4
-              : 8;
+        marker === 1
+          ? flags === 0
+            ? 2
+            : 1
+          : marker === 3
+            ? 2
+            : marker === 2
+              ? 1
+              : marker === 4
+                ? 4
+                : 8;
       if (length * width > byteLength - payload) return "invalid";
     }
     return "complete";

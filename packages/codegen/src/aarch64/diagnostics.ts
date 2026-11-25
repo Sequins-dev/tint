@@ -1,5 +1,9 @@
 import {
   nativeStringLengthOffset,
+  nativeStringOneByteHeader,
+  nativeStringTwoByteHeader,
+  nativeStringSlicedStartOffset,
+  nativeStringParentOffset,
   nativeStringDataOffset,
   type HostSignpostFacility,
 } from "@tint/abi/host";
@@ -780,11 +784,57 @@ export function emitDiagnostics(
     compare(25, "zr");
     jump("report-object", "eq");
     load(9, 25, 0);
-    compareImmediate(9, 1);
+    load32(26, 25, nativeStringLengthOffset);
+    // A sliced string (kind flag 2) is read through its parent: x25
+    // becomes the parent plus the start offset, and the header the flat
+    // header of its kind.
+    emit({ op: "ubfm", width: 64, rd: 10, rn: 9, immr: 49, imms: 49 });
+    compareImmediate(10, 0);
+    jump("report-flat", "eq");
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 9,
+      rn: 9,
+      rm: 10,
+      shift: "lsl",
+      amount: 49,
+      setFlags: false,
+    });
+    load(10, 25, nativeStringSlicedStartOffset);
+    load(25, 25, nativeStringParentOffset);
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 25,
+      rn: 25,
+      rm: 10,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    label("report-flat");
+    compareImmediate(9, nativeStringTwoByteHeader);
+    jump("report-two-byte", "eq");
+    imm(10, nativeStringOneByteHeader);
+    compare(9, 10);
     jump("report-object", "ne");
+    // One-byte (Latin-1) units, at most 160, encoded as UTF-8.
+    imm(27, 0);
+    label("report-byte");
+    compare(27, 26);
+    jump("report-units-done", "cs");
+    compareImmediate(27, 160);
+    jump("report-units-done", "cs");
+    addRegister(9, 25, 27, 0);
+    emit({ op: "ldrb", rt: 10, rn: 9, offset: nativeStringDataOffset });
+    add(27, 27, 1);
+    move(0, 10);
+    call("append-utf8");
+    jump("report-byte");
+    label("report-two-byte");
     // UTF-16 units, at most 160, encoded as UTF-8 (unpaired surrogates as
     // three-byte sequences).
-    load32(26, 25, nativeStringLengthOffset);
     imm(27, 0);
     label("report-unit");
     compare(27, 26);
