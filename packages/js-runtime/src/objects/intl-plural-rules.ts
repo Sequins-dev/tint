@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -105,7 +107,9 @@ function resolveLocale(requested: readonly string[]): string {
 function requireFormatter(value: unknown, realm: ErrorRealm): PluralFormatter {
   const object = viewObjectValue(value, realm.objectPrototype);
   const data =
-    object === undefined ? undefined : object.internalPluralRulesData;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalPluralRulesData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -167,7 +171,7 @@ export function installPluralRulesIntrinsic(
       const digits = resolveNumberFormatDigitOptions(access, 0, 3, notation);
       const rules = createPluralRuleSet(locale, type);
       if (rules === undefined) throw "PLURAL_RULES_REGISTRY_INVARIANT";
-      object.internalPluralRulesData = {
+      ensureExoticSlots(object).internalPluralRulesData = {
         locale,
         type,
         notation,

@@ -1,0 +1,2833 @@
+{
+  "prepared": {
+    "head": "307630b8613ff94ccca93b8919946d3309ddcfcf",
+    "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+    "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+    "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-McOhiX/benchmark.mjs",
+    "scriptSha256": "73b9d02cb23c9b53a2b66e717a3391a8eb3b150eafc93ae933d54b687825559c",
+    "native": {
+      "untyped": {
+        "target": "darwin-aarch64",
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-JRMLy2/general-call-bench-untyped",
+        "imageSha256": "349b41a7e3ee4265c12a56ec22fbe31f1904d6d90bb558b01cfe07f80d71a715",
+        "buildManifest": {
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-JRMLy2/general-call-bench-untyped.manifest.json",
+          "sha256": "713ce89bce2b9dbd737898530129154a56b48f7b884de19cf88b6d8c537d7689"
+        }
+      }
+    },
+    "checksums": {
+      "allocateObjects": {
+        "sum": 1600008,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "arguments3": {
+        "sum": 750000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "arguments4": {
+        "sum": 1150000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "arguments5": {
+        "sum": 1650000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "arguments6": {
+        "sum": 2250000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "buildString": {
+        "sum": 156250,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "builtinMethod": {
+        "sum": 300000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "catchInLoop": {
+        "sum": 357815,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "concatenateStrings": {
+        "sum": 550000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "mathMax": {
+        "sum": 425000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "mixedCall": {
+        "sum": 283334,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "mutableCapture": {
+        "sum": 349999,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "numberCall": {
+        "sum": 350000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "objectArray": {
+        "sum": 1800000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "objectRoundTrip": {
+        "sum": 550000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "receivers2": {
+        "sum": 500000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "receivers4": {
+        "sum": 600000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "receivers8": {
+        "sum": 800000,
+        "iterations": 100000,
+        "warm": 20000
+      }
+    }
+  },
+  "candidates": [
+    {
+      "head": "c81f9df7deda1fcbf58469fa690b23bcf3342b17",
+      "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+      "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+      "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-06g8Mk/benchmark.mjs",
+      "scriptSha256": "73b9d02cb23c9b53a2b66e717a3391a8eb3b150eafc93ae933d54b687825559c",
+      "native": {
+        "untyped": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-kWkAlq/general-call-bench-untyped",
+          "imageSha256": "3b645bd3f94ca56f7f70e23a13dd598995ecdb29551811b7a589457dcbcc0779",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-kWkAlq/general-call-bench-untyped.manifest.json",
+            "sha256": "9e72e315fa81bfd840bd2711ad8505ff2913bb31a367d63ab35bf85487fe1e87"
+          }
+        }
+      },
+      "checksums": {
+        "allocateObjects": {
+          "sum": 1600008,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "arguments3": {
+          "sum": 750000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "arguments4": {
+          "sum": 1150000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "arguments5": {
+          "sum": 1650000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "arguments6": {
+          "sum": 2250000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "buildString": {
+          "sum": 156250,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "builtinMethod": {
+          "sum": 300000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "catchInLoop": {
+          "sum": 357815,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "concatenateStrings": {
+          "sum": 550000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mathMax": {
+          "sum": 425000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mixedCall": {
+          "sum": 283334,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "mutableCapture": {
+          "sum": 349999,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "numberCall": {
+          "sum": 350000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "objectArray": {
+          "sum": 1800000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "objectRoundTrip": {
+          "sum": 550000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "receivers2": {
+          "sum": 500000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "receivers4": {
+          "sum": 600000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "receivers8": {
+          "sum": 800000,
+          "iterations": 100000,
+          "warm": 20000
+        }
+      }
+    }
+  ],
+  "cpu": "Apple M5 Max",
+  "rounds": 21,
+  "summary": {
+    "allocateObjects": {
+      "node": {
+        "ns": {
+          "median": 6.070840358734131,
+          "q1": 5.770828723907471,
+          "q3": 6.452920436859131
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 140.2733278274536,
+          "q1": 139.464590549469,
+          "q3": 142.190420627594
+        },
+        "deltaFromNodeNs": {
+          "median": 134.22541856765747,
+          "q1": 133.04417848587036,
+          "q3": 135.16791820526123
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 142.43750095367432,
+          "q1": 140.8008313179016,
+          "q3": 143.9312505722046
+        },
+        "deltaFromNodeNs": {
+          "median": 135.66833019256592,
+          "q1": 134.34791088104248,
+          "q3": 137.8504204750061
+        },
+        "deltaFromPreviousNs": {
+          "median": 1.5008282661437988,
+          "q1": -1.3324999809265137,
+          "q3": 3.625001907348633
+        }
+      }
+    },
+    "arguments3": {
+      "node": {
+        "ns": {
+          "median": 2.246670722961426,
+          "q1": 2.1233391761779785,
+          "q3": 2.3479199409484863
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 23.46165895462036,
+          "q1": 23.23291778564453,
+          "q3": 23.684589862823486
+        },
+        "deltaFromNodeNs": {
+          "median": 21.147499084472656,
+          "q1": 20.987918376922607,
+          "q3": 21.57291889190674
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 23.559999465942383,
+          "q1": 23.380420207977295,
+          "q3": 23.991248607635498
+        },
+        "deltaFromNodeNs": {
+          "median": 21.2408185005188,
+          "q1": 21.059579849243164,
+          "q3": 21.737077236175537
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.24749040603637695,
+          "q1": -0.17999649047851562,
+          "q3": 0.4541611671447754
+        }
+      }
+    },
+    "arguments4": {
+      "node": {
+        "ns": {
+          "median": 2.2900009155273438,
+          "q1": 2.1770811080932617,
+          "q3": 2.351670265197754
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 29.04292106628418,
+          "q1": 28.621251583099365,
+          "q3": 29.345409870147705
+        },
+        "deltaFromNodeNs": {
+          "median": 26.687088012695312,
+          "q1": 26.363751888275146,
+          "q3": 26.883761882781982
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 29.0024995803833,
+          "q1": 28.581669330596924,
+          "q3": 29.75374937057495
+        },
+        "deltaFromNodeNs": {
+          "median": 26.659159660339355,
+          "q1": 26.15293025970459,
+          "q3": 27.416250705718994
+        },
+        "deltaFromPreviousNs": {
+          "median": -0.07917165756225586,
+          "q1": -0.48417091369628906,
+          "q3": 0.6366682052612305
+        }
+      }
+    },
+    "arguments5": {
+      "node": {
+        "ns": {
+          "median": 2.331249713897705,
+          "q1": 2.2658395767211914,
+          "q3": 2.481248378753662
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 34.635000228881836,
+          "q1": 34.136250019073486,
+          "q3": 34.86583948135376
+        },
+        "deltaFromNodeNs": {
+          "median": 32.290000915527344,
+          "q1": 31.89375877380371,
+          "q3": 32.48333930969238
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 34.783339500427246,
+          "q1": 34.40458059310913,
+          "q3": 36.06707811355591
+        },
+        "deltaFromNodeNs": {
+          "median": 32.51873970031738,
+          "q1": 32.091660499572754,
+          "q3": 33.54832887649536
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.4925084114074707,
+          "q1": -0.26582956314086914,
+          "q3": 1.5266680717468262
+        }
+      }
+    },
+    "arguments6": {
+      "node": {
+        "ns": {
+          "median": 2.4454092979431152,
+          "q1": 2.37166166305542,
+          "q3": 2.5083303451538086
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 43.169591426849365,
+          "q1": 42.916250228881836,
+          "q3": 43.45083951950073
+        },
+        "deltaFromNodeNs": {
+          "median": 40.738749504089355,
+          "q1": 40.27749061584473,
+          "q3": 41.103341579437256
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 43.85125160217285,
+          "q1": 43.08333158493042,
+          "q3": 44.40999984741211
+        },
+        "deltaFromNodeNs": {
+          "median": 41.57293081283569,
+          "q1": 40.90958118438721,
+          "q3": 41.97458028793335
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.5679178237915039,
+          "q1": 0.04333972930908203,
+          "q3": 0.6920719146728516
+        }
+      }
+    },
+    "buildString": {
+      "node": {
+        "ns": {
+          "median": 9.8533296585083,
+          "q1": 9.554169178009033,
+          "q3": 10.165419578552246
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 18.05875062942505,
+          "q1": 17.9325008392334,
+          "q3": 18.238749504089355
+        },
+        "deltaFromNodeNs": {
+          "median": 8.32625150680542,
+          "q1": 7.880411148071289,
+          "q3": 8.503749370574951
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 18.22624921798706,
+          "q1": 18.141660690307617,
+          "q3": 18.887500762939453
+        },
+        "deltaFromNodeNs": {
+          "median": 8.78542184829712,
+          "q1": 8.37291955947876,
+          "q3": 9.069581031799316
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.2745819091796875,
+          "q1": -0.1966691017150879,
+          "q3": 0.6487512588500977
+        }
+      }
+    },
+    "builtinMethod": {
+      "node": {
+        "ns": {
+          "median": 4.6666693687438965,
+          "q1": 4.2737507820129395,
+          "q3": 4.840841293334961
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 84.00749921798706,
+          "q1": 83.35624933242798,
+          "q3": 85.20334005355835
+        },
+        "deltaFromNodeNs": {
+          "median": 79.15957927703857,
+          "q1": 78.63083124160767,
+          "q3": 80.67543029785156
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 84.98542070388794,
+          "q1": 84.4320797920227,
+          "q3": 87.3562502861023
+        },
+        "deltaFromNodeNs": {
+          "median": 80.33124923706055,
+          "q1": 79.81958150863647,
+          "q3": 82.68916845321655
+        },
+        "deltaFromPreviousNs": {
+          "median": 1.0758304595947266,
+          "q1": -0.30124902725219727,
+          "q3": 2.7841711044311523
+        }
+      }
+    },
+    "catchInLoop": {
+      "node": {
+        "ns": {
+          "median": 3.3533406257629395,
+          "q1": 3.1570911407470703,
+          "q3": 3.6129093170166016
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 20.873751640319824,
+          "q1": 20.768749713897705,
+          "q3": 21.013329029083252
+        },
+        "deltaFromNodeNs": {
+          "median": 17.46833086013794,
+          "q1": 17.152080535888672,
+          "q3": 17.824580669403076
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 20.923750400543213,
+          "q1": 20.792090892791748,
+          "q3": 21.60792112350464
+        },
+        "deltaFromNodeNs": {
+          "median": 17.723753452301025,
+          "q1": 17.14625120162964,
+          "q3": 18.06042194366455
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.13209104537963867,
+          "q1": -0.08166074752807617,
+          "q3": 0.5920910835266113
+        }
+      }
+    },
+    "concatenateStrings": {
+      "node": {
+        "ns": {
+          "median": 6.749579906463623,
+          "q1": 6.543748378753662,
+          "q3": 7.168331146240234
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 13.489160537719727,
+          "q1": 13.395838737487793,
+          "q3": 13.60874891281128
+        },
+        "deltaFromNodeNs": {
+          "median": 6.706252098083496,
+          "q1": 6.208333969116211,
+          "q3": 7.1062493324279785
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 13.544578552246094,
+          "q1": 13.4641695022583,
+          "q3": 13.763749599456787
+        },
+        "deltaFromNodeNs": {
+          "median": 6.730830669403076,
+          "q1": 6.594581604003906,
+          "q3": 6.953747272491455
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.09416818618774414,
+          "q1": -0.13998985290527344,
+          "q3": 0.28042078018188477
+        }
+      }
+    },
+    "mathMax": {
+      "node": {
+        "ns": {
+          "median": 2.1033310890197754,
+          "q1": 2.0354104042053223,
+          "q3": 2.2175002098083496
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 130.93667030334473,
+          "q1": 128.19707870483398,
+          "q3": 135.93958854675293
+        },
+        "deltaFromNodeNs": {
+          "median": 128.86125087738037,
+          "q1": 126.17125034332275,
+          "q3": 133.80374670028687
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 138.1991696357727,
+          "q1": 131.97084188461304,
+          "q3": 140.01457929611206
+        },
+        "deltaFromNodeNs": {
+          "median": 135.8720898628235,
+          "q1": 129.80334043502808,
+          "q3": 137.9391598701477
+        },
+        "deltaFromPreviousNs": {
+          "median": 2.5995802879333496,
+          "q1": -1.222081184387207,
+          "q3": 10.12666940689087
+        }
+      }
+    },
+    "mixedCall": {
+      "node": {
+        "ns": {
+          "median": 3.5620808601379395,
+          "q1": 3.4999990463256836,
+          "q3": 3.7570786476135254
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 21.030828952789307,
+          "q1": 20.92292070388794,
+          "q3": 21.28209114074707
+        },
+        "deltaFromNodeNs": {
+          "median": 17.488737106323242,
+          "q1": 17.225828170776367,
+          "q3": 17.655410766601562
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 21.27958059310913,
+          "q1": 20.898749828338623,
+          "q3": 22.618751525878906
+        },
+        "deltaFromNodeNs": {
+          "median": 17.775421142578125,
+          "q1": 17.23416805267334,
+          "q3": 19.29333209991455
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.15041828155517578,
+          "q1": -0.0916600227355957,
+          "q3": 1.2233424186706543
+        }
+      }
+    },
+    "mutableCapture": {
+      "node": {
+        "ns": {
+          "median": 5.427501201629639,
+          "q1": 5.071251392364502,
+          "q3": 6.139171123504639
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 15.675411224365234,
+          "q1": 15.583329200744629,
+          "q3": 15.82124948501587
+        },
+        "deltaFromNodeNs": {
+          "median": 10.237081050872803,
+          "q1": 9.539170265197754,
+          "q3": 10.679159164428711
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 15.805408954620361,
+          "q1": 15.576250553131104,
+          "q3": 16.79332971572876
+        },
+        "deltaFromNodeNs": {
+          "median": 10.324161052703857,
+          "q1": 9.977500438690186,
+          "q3": 11.315839290618896
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.21832942962646484,
+          "q1": -0.1862502098083496,
+          "q3": 1.117088794708252
+        }
+      }
+    },
+    "numberCall": {
+      "node": {
+        "ns": {
+          "median": 2.0733284950256348,
+          "q1": 1.8591690063476562,
+          "q3": 2.4587488174438477
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 100.12083768844604,
+          "q1": 99.26374912261963,
+          "q3": 100.92083930969238
+        },
+        "deltaFromNodeNs": {
+          "median": 98.10708045959473,
+          "q1": 97.40082740783691,
+          "q3": 98.84458065032959
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 100.10209083557129,
+          "q1": 99.41624879837036,
+          "q3": 101.33792161941528
+        },
+        "deltaFromNodeNs": {
+          "median": 97.91708946228027,
+          "q1": 97.3370885848999,
+          "q3": 98.90416860580444
+        },
+        "deltaFromPreviousNs": {
+          "median": -0.04333019256591797,
+          "q1": -1.1329197883605957,
+          "q3": 0.8058285713195801
+        }
+      }
+    },
+    "objectArray": {
+      "node": {
+        "ns": {
+          "median": 2.2316598892211914,
+          "q1": 2.121250629425049,
+          "q3": 2.2829198837280273
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 15.417089462280273,
+          "q1": 15.361249446868896,
+          "q3": 15.525829792022705
+        },
+        "deltaFromNodeNs": {
+          "median": 13.247499465942383,
+          "q1": 13.103740215301514,
+          "q3": 13.340418338775635
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 15.666658878326416,
+          "q1": 15.422921180725098,
+          "q3": 16.070830821990967
+        },
+        "deltaFromNodeNs": {
+          "median": 13.490829467773438,
+          "q1": 13.17708969116211,
+          "q3": 13.746252059936523
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.28874874114990234,
+          "q1": 0.07209062576293945,
+          "q3": 0.634160041809082
+        }
+      }
+    },
+    "objectRoundTrip": {
+      "node": {
+        "ns": {
+          "median": 2.1012496948242188,
+          "q1": 2.0766687393188477,
+          "q3": 2.190420627593994
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 18.321661949157715,
+          "q1": 18.193750381469727,
+          "q3": 18.879170417785645
+        },
+        "deltaFromNodeNs": {
+          "median": 16.246659755706787,
+          "q1": 16.055829524993896,
+          "q3": 16.741669178009033
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 18.458340167999268,
+          "q1": 18.212919235229492,
+          "q3": 18.823750019073486
+        },
+        "deltaFromNodeNs": {
+          "median": 16.35709047317505,
+          "q1": 16.140828132629395,
+          "q3": 16.72374963760376
+        },
+        "deltaFromPreviousNs": {
+          "median": 0.12333154678344727,
+          "q1": -0.297088623046875,
+          "q3": 0.5412602424621582
+        }
+      }
+    },
+    "receivers2": {
+      "node": {
+        "ns": {
+          "median": 4.735000133514404,
+          "q1": 4.379160404205322,
+          "q3": 5.074169635772705
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 32.547080516815186,
+          "q1": 31.907918453216553,
+          "q3": 33.03166151046753
+        },
+        "deltaFromNodeNs": {
+          "median": 27.730841636657715,
+          "q1": 27.159581184387207,
+          "q3": 28.153748512268066
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 24.236669540405273,
+          "q1": 23.69709014892578,
+          "q3": 24.6875
+        },
+        "deltaFromNodeNs": {
+          "median": 19.447081089019775,
+          "q1": 18.689591884613037,
+          "q3": 20.00499963760376
+        },
+        "deltaFromPreviousNs": {
+          "median": -8.229172229766846,
+          "q1": -8.914999961853027,
+          "q3": -7.736661434173584
+        }
+      }
+    },
+    "receivers4": {
+      "node": {
+        "ns": {
+          "median": 4.845001697540283,
+          "q1": 4.4654107093811035,
+          "q3": 5.199577808380127
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 38.836669921875,
+          "q1": 38.45124959945679,
+          "q3": 39.7083306312561
+        },
+        "deltaFromNodeNs": {
+          "median": 34.307918548583984,
+          "q1": 33.39666128158569,
+          "q3": 34.79874849319458
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 24.460830688476562,
+          "q1": 23.86457920074463,
+          "q3": 24.555838108062744
+        },
+        "deltaFromNodeNs": {
+          "median": 19.404170513153076,
+          "q1": 18.760409355163574,
+          "q3": 19.9750018119812
+        },
+        "deltaFromPreviousNs": {
+          "median": -14.547080993652344,
+          "q1": -15.74833869934082,
+          "q3": -14.103338718414307
+        }
+      }
+    },
+    "receivers8": {
+      "node": {
+        "ns": {
+          "median": 5.68166971206665,
+          "q1": 5.496249198913574,
+          "q3": 5.9274983406066895
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 45.8583402633667,
+          "q1": 45.0724983215332,
+          "q3": 46.22457981109619
+        },
+        "deltaFromNodeNs": {
+          "median": 39.77041959762573,
+          "q1": 39.31416988372803,
+          "q3": 40.588340759277344
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 49.82583045959473,
+          "q1": 48.752501010894775,
+          "q3": 51.31332874298096
+        },
+        "deltaFromNodeNs": {
+          "median": 43.77625226974487,
+          "q1": 42.479591369628906,
+          "q3": 45.84457874298096
+        },
+        "deltaFromPreviousNs": {
+          "median": 4.462082386016846,
+          "q1": 2.238340377807617,
+          "q3": 5.522089004516602
+        }
+      }
+    }
+  },
+  "samples": [
+    {
+      "round": 0,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 7.318329811096191,
+        "arguments3": 2.254171371459961,
+        "arguments4": 2.337498664855957,
+        "arguments5": 2.501249313354492,
+        "arguments6": 2.4454092979431152,
+        "buildString": 9.965829849243164,
+        "builtinMethod": 4.667081832885742,
+        "catchInLoop": 3.5004210472106934,
+        "concatenateStrings": 6.749579906463623,
+        "mathMax": 2.167501449584961,
+        "mixedCall": 3.667919635772705,
+        "mutableCapture": 5.071251392364502,
+        "numberCall": 1.7504215240478516,
+        "objectArray": 2.532501220703125,
+        "objectRoundTrip": 2.028341293334961,
+        "receivers2": 4.997920989990234,
+        "receivers4": 4.617919921875,
+        "receivers8": 5.855419635772705
+      },
+      "exit": 0,
+      "loadBefore": [5.57568359375, 6.11962890625, 7.44384765625],
+      "loadAfter": [5.57568359375, 6.11962890625, 7.44384765625],
+      "idlePercent": 75
+    },
+    {
+      "round": 0,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 140.2733278274536,
+        "arguments3": 23.672499656677246,
+        "arguments4": 29.758331775665283,
+        "arguments5": 33.91957998275757,
+        "arguments6": 44.03625011444092,
+        "buildString": 18.31083059310913,
+        "builtinMethod": 84.00749921798706,
+        "catchInLoop": 20.539169311523438,
+        "concatenateStrings": 14.158339500427246,
+        "mathMax": 133.2729196548462,
+        "mixedCall": 20.670828819274902,
+        "mutableCapture": 15.114998817443848,
+        "numberCall": 99.42208051681519,
+        "objectArray": 15.38917064666748,
+        "objectRoundTrip": 18.193750381469727,
+        "receivers2": 33.1516695022583,
+        "receivers4": 38.01458120346069,
+        "receivers8": 45.228750705718994
+      },
+      "exit": 42,
+      "loadBefore": [5.57568359375, 6.11962890625, 7.44384765625],
+      "loadAfter": [5.57568359375, 6.11962890625, 7.44384765625],
+      "idlePercent": 84.41527446300717
+    },
+    {
+      "round": 0,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 141.72874927520752,
+        "arguments3": 23.991248607635498,
+        "arguments4": 29.75374937057495,
+        "arguments5": 36.33167028427124,
+        "arguments6": 44.01834011077881,
+        "buildString": 17.901670932769775,
+        "builtinMethod": 87.3562502861023,
+        "catchInLoop": 20.81333875656128,
+        "concatenateStrings": 13.601250648498535,
+        "mathMax": 131.97084188461304,
+        "mixedCall": 21.894171237945557,
+        "mutableCapture": 15.805408954620361,
+        "numberCall": 98.35875034332275,
+        "objectArray": 16.023330688476562,
+        "objectRoundTrip": 18.614168167114258,
+        "receivers2": 24.312920570373535,
+        "receivers4": 24.555838108062744,
+        "receivers8": 53.00584077835083
+      },
+      "exit": 42,
+      "loadBefore": [5.57568359375, 6.11962890625, 7.44384765625],
+      "loadAfter": [5.689453125, 6.1337890625, 7.44091796875],
+      "idlePercent": 81.40207178993013
+    },
+    {
+      "round": 1,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 140.30916929244995,
+        "arguments3": 23.062500953674316,
+        "arguments4": 28.33625078201294,
+        "arguments5": 34.29708957672119,
+        "arguments6": 42.43957996368408,
+        "buildString": 18.189589977264404,
+        "builtinMethod": 83.30167055130005,
+        "catchInLoop": 20.680830478668213,
+        "concatenateStrings": 13.530418872833252,
+        "mathMax": 128.27583074569702,
+        "mixedCall": 21.147501468658447,
+        "mutableCapture": 15.82124948501587,
+        "numberCall": 98.75124931335449,
+        "objectArray": 15.417089462280273,
+        "objectRoundTrip": 18.834998607635498,
+        "receivers2": 32.088751792907715,
+        "receivers4": 38.645827770233154,
+        "receivers8": 44.64083909988403
+      },
+      "exit": 42,
+      "loadBefore": [5.689453125, 6.1337890625, 7.44091796875],
+      "loadAfter": [5.689453125, 6.1337890625, 7.44091796875],
+      "idlePercent": 79.34861278648975
+    },
+    {
+      "round": 1,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 143.93417119979858,
+        "arguments3": 23.380420207977295,
+        "arguments4": 29.082918167114258,
+        "arguments5": 102.06416130065918,
+        "arguments6": 43.08333158493042,
+        "buildString": 21.283750534057617,
+        "builtinMethod": 85.62541007995605,
+        "catchInLoop": 21.05959177017212,
+        "concatenateStrings": 13.537909984588623,
+        "mathMax": 132.80457973480225,
+        "mixedCall": 21.05584144592285,
+        "mutableCapture": 16.21042013168335,
+        "numberCall": 99.36332941055298,
+        "objectArray": 19.129581451416016,
+        "objectRoundTrip": 18.233330249786377,
+        "receivers2": 25.660419464111328,
+        "receivers4": 24.574589729309082,
+        "receivers8": 49.952919483184814
+      },
+      "exit": 42,
+      "loadBefore": [5.689453125, 6.1337890625, 7.44091796875],
+      "loadAfter": [5.689453125, 6.1337890625, 7.44091796875],
+      "idlePercent": 84.68945594607607
+    },
+    {
+      "round": 1,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 6.0837507247924805,
+        "arguments3": 2.320840358734131,
+        "arguments4": 2.1895790100097656,
+        "arguments5": 2.4033308029174805,
+        "arguments6": 2.189168930053711,
+        "buildString": 9.959168434143066,
+        "builtinMethod": 4.840841293334961,
+        "catchInLoop": 3.225829601287842,
+        "concatenateStrings": 6.683750152587891,
+        "mathMax": 1.9674992561340332,
+        "mixedCall": 3.4920907020568848,
+        "mutableCapture": 4.894580841064453,
+        "numberCall": 2.149169445037842,
+        "objectArray": 2.024998664855957,
+        "objectRoundTrip": 2.093329429626465,
+        "receivers2": 4.35791015625,
+        "receivers4": 4.337499141693115,
+        "receivers8": 5.445840358734131
+      },
+      "exit": 0,
+      "loadBefore": [5.689453125, 6.1337890625, 7.44091796875],
+      "loadAfter": [5.689453125, 6.1337890625, 7.44091796875],
+      "idlePercent": 73.4375
+    },
+    {
+      "round": 2,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 141.4187502861023,
+        "arguments3": 23.405840396881104,
+        "arguments4": 28.109159469604492,
+        "arguments5": 34.783339500427246,
+        "arguments6": 43.41875076293945,
+        "buildString": 18.19999933242798,
+        "builtinMethod": 83.8604187965393,
+        "catchInLoop": 20.869159698486328,
+        "concatenateStrings": 13.453750610351562,
+        "mathMax": 132.7120804786682,
+        "mixedCall": 20.837090015411377,
+        "mutableCapture": 15.677080154418945,
+        "numberCall": 99.46875095367432,
+        "objectArray": 15.352921485900879,
+        "objectRoundTrip": 18.138339519500732,
+        "receivers2": 25.290000438690186,
+        "receivers4": 23.86457920074463,
+        "receivers8": 47.87333011627197
+      },
+      "exit": 42,
+      "loadBefore": [5.689453125, 6.1337890625, 7.44091796875],
+      "loadAfter": [5.4736328125, 6.08154296875, 7.41455078125],
+      "idlePercent": 78.06592341250605
+    },
+    {
+      "round": 2,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 5.900828838348389,
+        "arguments3": 1.9995784759521484,
+        "arguments4": 2.182908058166504,
+        "arguments5": 2.408750057220459,
+        "arguments6": 2.479579448699951,
+        "buildString": 9.171249866485596,
+        "builtinMethod": 4.170827865600586,
+        "catchInLoop": 3.0162501335144043,
+        "concatenateStrings": 6.502499580383301,
+        "mathMax": 2.1120786666870117,
+        "mixedCall": 3.386662006378174,
+        "mutableCapture": 4.7516679763793945,
+        "numberCall": 1.7954206466674805,
+        "objectArray": 2.1045804023742676,
+        "objectRoundTrip": 2.150418758392334,
+        "receivers2": 4.261670112609863,
+        "receivers4": 4.377501010894775,
+        "receivers8": 5.681250095367432
+      },
+      "exit": 0,
+      "loadBefore": [5.4736328125, 6.08154296875, 7.41455078125],
+      "loadAfter": [5.4736328125, 6.08154296875, 7.41455078125],
+      "idlePercent": 73.97260273972603
+    },
+    {
+      "round": 2,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 139.8029088973999,
+        "arguments3": 23.292500972747803,
+        "arguments4": 28.35624933242798,
+        "arguments5": 34.6987509727478,
+        "arguments6": 43.0270791053772,
+        "buildString": 18.396668434143066,
+        "builtinMethod": 86.05375051498413,
+        "catchInLoop": 21.23500108718872,
+        "concatenateStrings": 13.60874891281128,
+        "mathMax": 136.49749994277954,
+        "mixedCall": 21.64958953857422,
+        "mutableCapture": 15.916659832000732,
+        "numberCall": 99.9025011062622,
+        "objectArray": 15.536670684814453,
+        "objectRoundTrip": 18.98082971572876,
+        "receivers2": 33.02666187286377,
+        "receivers4": 41.38291835784912,
+        "receivers8": 50.942912101745605
+      },
+      "exit": 42,
+      "loadBefore": [5.4736328125, 6.08154296875, 7.41455078125],
+      "loadAfter": [5.4736328125, 6.08154296875, 7.41455078125],
+      "idlePercent": 78.18532818532819
+    },
+    {
+      "round": 3,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 6.452920436859131,
+        "arguments3": 2.3479199409484863,
+        "arguments4": 2.1670889854431152,
+        "arguments5": 2.481248378753662,
+        "arguments6": 2.8120899200439453,
+        "buildString": 10.704162120819092,
+        "builtinMethod": 4.713330268859863,
+        "catchInLoop": 3.527498245239258,
+        "concatenateStrings": 7.168331146240234,
+        "mathMax": 2.0258283615112305,
+        "mixedCall": 4.048750400543213,
+        "mutableCapture": 6.139171123504639,
+        "numberCall": 2.0733284950256348,
+        "objectArray": 2.1329092979431152,
+        "objectRoundTrip": 2.1000003814697266,
+        "receivers2": 5.6241679191589355,
+        "receivers4": 5.700421333312988,
+        "receivers8": 6.833341121673584
+      },
+      "exit": 0,
+      "loadBefore": [5.4736328125, 6.08154296875, 7.41455078125],
+      "loadAfter": [5.4736328125, 6.08154296875, 7.41455078125],
+      "idlePercent": 57.35294117647059
+    },
+    {
+      "round": 3,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 142.3704195022583,
+        "arguments3": 23.335838317871094,
+        "arguments4": 30.341668128967285,
+        "arguments5": 34.81750011444092,
+        "arguments6": 43.08958053588867,
+        "buildString": 18.194169998168945,
+        "builtinMethod": 83.79500150680542,
+        "catchInLoop": 20.762078762054443,
+        "concatenateStrings": 13.344590663909912,
+        "mathMax": 128.19707870483398,
+        "mixedCall": 20.779168605804443,
+        "mutableCapture": 15.63166856765747,
+        "numberCall": 100.2745795249939,
+        "objectArray": 15.360419750213623,
+        "objectRoundTrip": 18.44292163848877,
+        "receivers2": 33.83291959762573,
+        "receivers4": 40.20916938781738,
+        "receivers8": 45.613341331481934
+      },
+      "exit": 42,
+      "loadBefore": [5.4736328125, 6.08154296875, 7.41455078125],
+      "loadAfter": [5.515625, 6.080078125, 7.40625],
+      "idlePercent": 76.86943976917529
+    },
+    {
+      "round": 3,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 140.8008313179016,
+        "arguments3": 23.155841827392578,
+        "arguments4": 28.76624822616577,
+        "arguments5": 33.97374868392944,
+        "arguments6": 43.72167110443115,
+        "buildString": 19.638330936431885,
+        "builtinMethod": 84.53834056854248,
+        "catchInLoop": 20.894169807434082,
+        "concatenateStrings": 13.636670112609863,
+        "mathMax": 130.75417041778564,
+        "mixedCall": 20.81082820892334,
+        "mutableCapture": 15.572078227996826,
+        "numberCall": 100.23124933242798,
+        "objectArray": 15.557081699371338,
+        "objectRoundTrip": 18.823750019073486,
+        "receivers2": 23.79999876022339,
+        "receivers4": 24.460830688476562,
+        "receivers8": 48.752501010894775
+      },
+      "exit": 42,
+      "loadBefore": [5.515625, 6.080078125, 7.40625],
+      "loadAfter": [5.515625, 6.080078125, 7.40625],
+      "idlePercent": 74.0231548480463
+    },
+    {
+      "round": 4,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 139.53707933425903,
+        "arguments3": 22.984580993652344,
+        "arguments4": 28.90834093093872,
+        "arguments5": 34.282920360565186,
+        "arguments6": 42.142088413238525,
+        "buildString": 17.919580936431885,
+        "builtinMethod": 82.79083013534546,
+        "catchInLoop": 20.768749713897705,
+        "concatenateStrings": 13.394169807434082,
+        "mathMax": 128.07250022888184,
+        "mixedCall": 20.946660041809082,
+        "mutableCapture": 15.549590587615967,
+        "numberCall": 98.80792140960693,
+        "objectArray": 15.361249446868896,
+        "objectRoundTrip": 18.058748245239258,
+        "receivers2": 31.48958921432495,
+        "receivers4": 38.836669921875,
+        "receivers8": 45.8583402633667
+      },
+      "exit": 42,
+      "loadBefore": [5.515625, 6.080078125, 7.40625],
+      "loadAfter": [5.47412109375, 6.06201171875, 7.39208984375],
+      "idlePercent": 83.49771469809959
+    },
+    {
+      "round": 4,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 140.4129195213318,
+        "arguments3": 23.609168529510498,
+        "arguments4": 27.818748950958252,
+        "arguments5": 34.40458059310913,
+        "arguments6": 42.83416032791138,
+        "buildString": 18.368749618530273,
+        "builtinMethod": 84.59250211715698,
+        "catchInLoop": 20.923750400543213,
+        "concatenateStrings": 13.550829887390137,
+        "mathMax": 138.1991696357727,
+        "mixedCall": 21.074578762054443,
+        "mutableCapture": 15.04000186920166,
+        "numberCall": 97.79709100723267,
+        "objectArray": 15.537500381469727,
+        "objectRoundTrip": 18.637080192565918,
+        "receivers2": 23.59333038330078,
+        "receivers4": 24.129998683929443,
+        "receivers8": 49.82583045959473
+      },
+      "exit": 42,
+      "loadBefore": [5.47412109375, 6.06201171875, 7.39208984375],
+      "loadAfter": [5.47412109375, 6.06201171875, 7.39208984375],
+      "idlePercent": 85.17174649250121
+    },
+    {
+      "round": 4,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 7.1974992752075195,
+        "arguments3": 2.2891688346862793,
+        "arguments4": 2.509589195251465,
+        "arguments5": 2.312920093536377,
+        "arguments6": 2.5083303451538086,
+        "buildString": 9.583327770233154,
+        "builtinMethod": 4.192497730255127,
+        "catchInLoop": 3.1570911407470703,
+        "concatenateStrings": 6.948750019073486,
+        "mathMax": 2.3270797729492188,
+        "mixedCall": 3.894169330596924,
+        "mutableCapture": 7.430830001831055,
+        "numberCall": 2.9537487030029297,
+        "objectArray": 2.3087501525878906,
+        "objectRoundTrip": 2.018749713897705,
+        "receivers2": 5.249171257019043,
+        "receivers4": 5.137920379638672,
+        "receivers8": 6.087920665740967
+      },
+      "exit": 0,
+      "loadBefore": [5.47412109375, 6.06201171875, 7.39208984375],
+      "loadAfter": [5.47412109375, 6.06201171875, 7.39208984375],
+      "idlePercent": 67.6923076923077
+    },
+    {
+      "round": 5,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 138.76624822616577,
+        "arguments3": 23.22957992553711,
+        "arguments4": 28.111250400543213,
+        "arguments5": 34.360830783843994,
+        "arguments6": 44.21917200088501,
+        "buildString": 18.205831050872803,
+        "builtinMethod": 84.78167057037354,
+        "catchInLoop": 20.67458152770996,
+        "concatenateStrings": 13.31624984741211,
+        "mathMax": 127.63000011444092,
+        "mixedCall": 20.540001392364502,
+        "mutableCapture": 15.380828380584717,
+        "numberCall": 99.41624879837036,
+        "objectArray": 15.666658878326416,
+        "objectRoundTrip": 18.454580307006836,
+        "receivers2": 23.581671714782715,
+        "receivers4": 24.307498931884766,
+        "receivers8": 50.25791883468628
+      },
+      "exit": 42,
+      "loadBefore": [5.47412109375, 6.06201171875, 7.39208984375],
+      "loadAfter": [5.27587890625, 6.0107421875, 7.3662109375],
+      "idlePercent": 86.08695652173913
+    },
+    {
+      "round": 5,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 5.459578037261963,
+        "arguments3": 2.030000686645508,
+        "arguments4": 2.111661434173584,
+        "arguments5": 2.693328857421875,
+        "arguments6": 2.4650001525878906,
+        "buildString": 9.759581089019775,
+        "builtinMethod": 4.219999313354492,
+        "catchInLoop": 2.9508280754089355,
+        "concatenateStrings": 6.543748378753662,
+        "mathMax": 2.0983409881591797,
+        "mixedCall": 3.5420918464660645,
+        "mutableCapture": 5.427501201629639,
+        "numberCall": 2.079160213470459,
+        "objectArray": 2.104170322418213,
+        "objectRoundTrip": 2.2483396530151367,
+        "receivers2": 5.315420627593994,
+        "receivers4": 4.9033284187316895,
+        "receivers8": 5.496249198913574
+      },
+      "exit": 0,
+      "loadBefore": [5.27587890625, 6.0107421875, 7.3662109375],
+      "loadAfter": [5.27587890625, 6.0107421875, 7.3662109375],
+      "idlePercent": 70.17543859649123
+    },
+    {
+      "round": 5,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 138.6537480354309,
+        "arguments3": 23.602919578552246,
+        "arguments4": 28.798749446868896,
+        "arguments5": 32.55124807357788,
+        "arguments6": 43.54959011077881,
+        "buildString": 17.931249141693115,
+        "builtinMethod": 81.99749946594238,
+        "catchInLoop": 20.740420818328857,
+        "concatenateStrings": 13.250000476837158,
+        "mathMax": 125.03041982650757,
+        "mixedCall": 21.030828952789307,
+        "mutableCapture": 15.792081356048584,
+        "numberCall": 98.61042022705078,
+        "objectArray": 15.353329181671143,
+        "objectRoundTrip": 18.11208963394165,
+        "receivers2": 33.03166151046753,
+        "receivers4": 38.565001487731934,
+        "receivers8": 44.58209037780762
+      },
+      "exit": 42,
+      "loadBefore": [5.27587890625, 6.0107421875, 7.3662109375],
+      "loadAfter": [5.27587890625, 6.0107421875, 7.3662109375],
+      "idlePercent": 83.97312859884836
+    },
+    {
+      "round": 6,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 5.904169082641602,
+        "arguments3": 2.1729207038879395,
+        "arguments4": 2.0954108238220215,
+        "arguments5": 2.518749237060547,
+        "arguments6": 2.8316712379455566,
+        "buildString": 10.29583215713501,
+        "builtinMethod": 5.077078342437744,
+        "catchInLoop": 4.206249713897705,
+        "concatenateStrings": 6.862919330596924,
+        "mathMax": 2.2191715240478516,
+        "mixedCall": 3.7662506103515625,
+        "mutableCapture": 5.252089500427246,
+        "numberCall": 2.0208311080932617,
+        "objectArray": 2.2829198837280273,
+        "objectRoundTrip": 2.1066689491271973,
+        "receivers2": 4.433751106262207,
+        "receivers4": 4.475419521331787,
+        "receivers8": 5.46875
+      },
+      "exit": 0,
+      "loadBefore": [5.27587890625, 6.0107421875, 7.3662109375],
+      "loadAfter": [5.27587890625, 6.0107421875, 7.3662109375],
+      "idlePercent": 71.1864406779661
+    },
+    {
+      "round": 6,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 137.41708040237427,
+        "arguments3": 23.984580039978027,
+        "arguments4": 28.794169425964355,
+        "arguments5": 33.88499975204468,
+        "arguments6": 43.047499656677246,
+        "buildString": 17.934157848358154,
+        "builtinMethod": 82.63792037963867,
+        "catchInLoop": 20.608749389648438,
+        "concatenateStrings": 13.196249008178711,
+        "mathMax": 128.17041873931885,
+        "mixedCall": 20.92292070388794,
+        "mutableCapture": 15.840420722961426,
+        "numberCall": 97.728750705719,
+        "objectArray": 15.386660099029541,
+        "objectRoundTrip": 18.353328704833984,
+        "receivers2": 33.34000110626221,
+        "receivers4": 38.78666877746582,
+        "receivers8": 44.48458909988403
+      },
+      "exit": 42,
+      "loadBefore": [5.27587890625, 6.0107421875, 7.3662109375],
+      "loadAfter": [5.09326171875, 5.96044921875, 7.34033203125],
+      "idlePercent": 86.70534203529128
+    },
+    {
+      "round": 6,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 163.67000102996826,
+        "arguments3": 25.120420455932617,
+        "arguments4": 32.67499923706055,
+        "arguments5": 36.06707811355591,
+        "arguments6": 45.27000188827515,
+        "buildString": 19.959590435028076,
+        "builtinMethod": 88.77542018890381,
+        "catchInLoop": 21.692497730255127,
+        "concatenateStrings": 14.37999963760376,
+        "mathMax": 141.07332944869995,
+        "mixedCall": 21.96416139602661,
+        "mutableCapture": 15.576250553131104,
+        "numberCall": 104.12707805633545,
+        "objectArray": 16.217498779296875,
+        "objectRoundTrip": 19.356658458709717,
+        "receivers2": 25.11082887649536,
+        "receivers4": 24.45042133331299,
+        "receivers8": 51.31332874298096
+      },
+      "exit": 42,
+      "loadBefore": [5.09326171875, 5.96044921875, 7.34033203125],
+      "loadAfter": [5.09326171875, 5.96044921875, 7.34033203125],
+      "idlePercent": 80.28880866425993
+    },
+    {
+      "round": 7,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 138.52999925613403,
+        "arguments3": 23.684589862823486,
+        "arguments4": 28.535408973693848,
+        "arguments5": 35.71249961853027,
+        "arguments6": 43.27040910720825,
+        "buildString": 18.229999542236328,
+        "builtinMethod": 84.92332935333252,
+        "catchInLoop": 20.824170112609863,
+        "concatenateStrings": 13.50583791732788,
+        "mathMax": 126.11833095550537,
+        "mixedCall": 21.265830993652344,
+        "mutableCapture": 15.675411224365234,
+        "numberCall": 99.87207889556885,
+        "objectArray": 15.532910823822021,
+        "objectRoundTrip": 18.182499408721924,
+        "receivers2": 32.643330097198486,
+        "receivers4": 37.99957990646362,
+        "receivers8": 46.16874933242798
+      },
+      "exit": 42,
+      "loadBefore": [5.09326171875, 5.96044921875, 7.34033203125],
+      "loadAfter": [4.92529296875, 5.9111328125, 7.314453125],
+      "idlePercent": 86.24849215922798
+    },
+    {
+      "round": 7,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 151.32167100906372,
+        "arguments3": 23.13209056854248,
+        "arguments4": 29.250831604003906,
+        "arguments5": 34.42583084106445,
+        "arguments6": 43.80125045776367,
+        "buildString": 17.9608416557312,
+        "builtinMethod": 83.77958059310913,
+        "catchInLoop": 21.01958990097046,
+        "concatenateStrings": 13.431251049041748,
+        "mathMax": 138.8825011253357,
+        "mixedCall": 29.414589405059814,
+        "mutableCapture": 23.163330554962158,
+        "numberCall": 100.79416990280151,
+        "objectArray": 15.968329906463623,
+        "objectRoundTrip": 19.489169120788574,
+        "receivers2": 24.37958002090454,
+        "receivers4": 24.759161472320557,
+        "receivers8": 48.407089710235596
+      },
+      "exit": 42,
+      "loadBefore": [4.92529296875, 5.9111328125, 7.314453125],
+      "loadAfter": [4.92529296875, 5.9111328125, 7.314453125],
+      "idlePercent": 78.76234047676378
+    },
+    {
+      "round": 7,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 6.070840358734131,
+        "arguments3": 2.0612502098083496,
+        "arguments4": 2.3508310317993164,
+        "arguments5": 2.297089099884033,
+        "arguments6": 2.151660919189453,
+        "buildString": 10.107500553131104,
+        "builtinMethod": 5.148329734802246,
+        "catchInLoop": 4.862911701202393,
+        "concatenateStrings": 6.700420379638672,
+        "mathMax": 2.1033310890197754,
+        "mixedCall": 3.7712502479553223,
+        "mutableCapture": 5.438330173492432,
+        "numberCall": 1.8900012969970703,
+        "objectArray": 2.1529197692871094,
+        "objectRoundTrip": 2.1266698837280273,
+        "receivers2": 4.735000133514404,
+        "receivers4": 5.73915958404541,
+        "receivers8": 5.9274983406066895
+      },
+      "exit": 0,
+      "loadBefore": [4.92529296875, 5.9111328125, 7.314453125],
+      "loadAfter": [4.92529296875, 5.9111328125, 7.314453125],
+      "idlePercent": 32.926829268292686
+    },
+    {
+      "round": 8,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 143.6912488937378,
+        "arguments3": 23.631248474121094,
+        "arguments4": 29.365830421447754,
+        "arguments5": 36.75999879837036,
+        "arguments6": 42.91332960128784,
+        "buildString": 21.41083002090454,
+        "builtinMethod": 84.98542070388794,
+        "catchInLoop": 23.57707977294922,
+        "concatenateStrings": 13.763749599456787,
+        "mathMax": 145.6362509727478,
+        "mixedCall": 23.19000005722046,
+        "mutableCapture": 16.24500036239624,
+        "numberCall": 100.9850001335144,
+        "objectArray": 16.070830821990967,
+        "objectRoundTrip": 18.19667100906372,
+        "receivers2": 23.52959156036377,
+        "receivers4": 23.4975004196167,
+        "receivers8": 49.17125225067139
+      },
+      "exit": 42,
+      "loadBefore": [4.92529296875, 5.9111328125, 7.314453125],
+      "loadAfter": [4.77099609375, 5.86279296875, 7.2890625],
+      "idlePercent": 55.90570122684628
+    },
+    {
+      "round": 8,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 8.832089900970459,
+        "arguments3": 2.6150012016296387,
+        "arguments4": 2.7066707611083984,
+        "arguments5": 2.8675007820129395,
+        "arguments6": 2.8783297538757324,
+        "buildString": 11.385419368743896,
+        "builtinMethod": 4.684159755706787,
+        "catchInLoop": 3.2554197311401367,
+        "concatenateStrings": 7.872920036315918,
+        "mathMax": 2.0199990272521973,
+        "mixedCall": 3.514580726623535,
+        "mutableCapture": 6.267499923706055,
+        "numberCall": 3.067910671234131,
+        "objectArray": 2.512500286102295,
+        "objectRoundTrip": 2.2375011444091797,
+        "receivers2": 4.839999675750732,
+        "receivers4": 5.492908954620361,
+        "receivers8": 5.394999980926514
+      },
+      "exit": 0,
+      "loadBefore": [4.77099609375, 5.86279296875, 7.2890625],
+      "loadAfter": [4.77099609375, 5.86279296875, 7.2890625],
+      "idlePercent": 66.66666666666667
+    },
+    {
+      "round": 8,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 142.190420627594,
+        "arguments3": 23.762500286102295,
+        "arguments4": 29.363341331481934,
+        "arguments5": 35.233330726623535,
+        "arguments6": 43.80291938781738,
+        "buildString": 18.05875062942505,
+        "builtinMethod": 85.35959005355835,
+        "catchInLoop": 20.877091884613037,
+        "concatenateStrings": 13.483328819274902,
+        "mathMax": 137.67750024795532,
+        "mixedCall": 20.93708038330078,
+        "mutableCapture": 15.806670188903809,
+        "numberCall": 100.92083930969238,
+        "objectArray": 15.594580173492432,
+        "objectRoundTrip": 19.078340530395508,
+        "receivers2": 32.641658782958984,
+        "receivers4": 38.04458141326904,
+        "receivers8": 44.70916986465454
+      },
+      "exit": 42,
+      "loadBefore": [4.77099609375, 5.86279296875, 7.2890625],
+      "loadAfter": [4.77099609375, 5.86279296875, 7.2890625],
+      "idlePercent": 69.57569913211186
+    },
+    {
+      "round": 9,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 5.520830154418945,
+        "arguments3": 2.598750591278076,
+        "arguments4": 2.351250648498535,
+        "arguments5": 2.264580726623535,
+        "arguments6": 2.800421714782715,
+        "buildString": 9.8787522315979,
+        "builtinMethod": 4.6666693687438965,
+        "catchInLoop": 3.4999990463256836,
+        "concatenateStrings": 7.272918224334717,
+        "mathMax": 2.0754194259643555,
+        "mixedCall": 3.5199999809265137,
+        "mutableCapture": 5.347919464111328,
+        "numberCall": 2.3150014877319336,
+        "objectArray": 2.3137497901916504,
+        "objectRoundTrip": 2.2191715240478516,
+        "receivers2": 4.632918834686279,
+        "receivers4": 5.122919082641602,
+        "receivers8": 5.722920894622803
+      },
+      "exit": 0,
+      "loadBefore": [4.77099609375, 5.86279296875, 7.2890625],
+      "loadAfter": [4.77099609375, 5.86279296875, 7.2890625],
+      "idlePercent": 72.3076923076923
+    },
+    {
+      "round": 9,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 143.11625003814697,
+        "arguments3": 23.46165895462036,
+        "arguments4": 28.232910633087158,
+        "arguments5": 34.86583948135376,
+        "arguments6": 43.45083951950073,
+        "buildString": 17.9325008392334,
+        "builtinMethod": 83.71958017349243,
+        "catchInLoop": 20.922081470489502,
+        "concatenateStrings": 13.481252193450928,
+        "mathMax": 130.93667030334473,
+        "mixedCall": 20.989580154418945,
+        "mutableCapture": 15.638749599456787,
+        "numberCall": 102.58542060852051,
+        "objectArray": 15.525829792022705,
+        "objectRoundTrip": 18.27625036239624,
+        "receivers2": 32.430830001831055,
+        "receivers4": 43.89458179473877,
+        "receivers8": 46.88417196273804
+      },
+      "exit": 42,
+      "loadBefore": [4.77099609375, 5.86279296875, 7.2890625],
+      "loadAfter": [4.77099609375, 5.86279296875, 7.2890625],
+      "idlePercent": 80.42747358309317
+    },
+    {
+      "round": 9,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 147.5362491607666,
+        "arguments3": 24.86332893371582,
+        "arguments4": 30.267088413238525,
+        "arguments5": 35.74583053588867,
+        "arguments6": 45.90459108352661,
+        "buildString": 18.800840377807617,
+        "builtinMethod": 88.80332946777344,
+        "catchInLoop": 21.60792112350464,
+        "concatenateStrings": 13.867499828338623,
+        "mathMax": 140.01457929611206,
+        "mixedCall": 24.331660270690918,
+        "mutableCapture": 17.21583127975464,
+        "numberCall": 101.33792161941528,
+        "objectArray": 15.814578533172607,
+        "objectRoundTrip": 18.632500171661377,
+        "receivers2": 24.079999923706055,
+        "receivers4": 24.579169750213623,
+        "receivers8": 49.19749975204468
+      },
+      "exit": 42,
+      "loadBefore": [4.77099609375, 5.86279296875, 7.2890625],
+      "loadAfter": [4.7890625, 5.84814453125, 7.275390625],
+      "idlePercent": 75.50728097397948
+    },
+    {
+      "round": 10,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 142.0991587638855,
+        "arguments3": 23.35624933242798,
+        "arguments4": 29.04292106628418,
+        "arguments5": 34.63583946228027,
+        "arguments6": 41.60583019256592,
+        "buildString": 18.045830726623535,
+        "builtinMethod": 86.49625062942505,
+        "catchInLoop": 25.568339824676514,
+        "concatenateStrings": 14.050829410552979,
+        "mathMax": 129.4574999809265,
+        "mixedCall": 21.09332799911499,
+        "mutableCapture": 15.597920417785645,
+        "numberCall": 100.58374881744385,
+        "objectArray": 15.318329334259033,
+        "objectRoundTrip": 18.937909603118896,
+        "receivers2": 32.23375082015991,
+        "receivers4": 37.97499895095825,
+        "receivers8": 45.91624975204468
+      },
+      "exit": 42,
+      "loadBefore": [4.7890625, 5.84814453125, 7.275390625],
+      "loadAfter": [4.7890625, 5.84814453125, 7.275390625],
+      "idlePercent": 76.74867342016401
+    },
+    {
+      "round": 10,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 138.87375116348267,
+        "arguments3": 23.80833148956299,
+        "arguments4": 28.882911205291748,
+        "arguments5": 34.58166837692261,
+        "arguments6": 41.649169921875,
+        "buildString": 18.021249771118164,
+        "builtinMethod": 86.82874917984009,
+        "catchInLoop": 20.651671886444092,
+        "concatenateStrings": 13.4641695022583,
+        "mathMax": 152.93040990829468,
+        "mixedCall": 21.640000343322754,
+        "mutableCapture": 16.79332971572876,
+        "numberCall": 107.3058295249939,
+        "objectArray": 16.243751049041748,
+        "objectRoundTrip": 19.750828742980957,
+        "receivers2": 26.778748035430908,
+        "receivers4": 24.533331394195557,
+        "receivers8": 51.14000082015991
+      },
+      "exit": 42,
+      "loadBefore": [4.7890625, 5.84814453125, 7.275390625],
+      "loadAfter": [4.8857421875, 5.8505859375, 7.267578125],
+      "idlePercent": 78.84615384615384
+    },
+    {
+      "round": 10,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 7.294580936431885,
+        "arguments3": 5.130000114440918,
+        "arguments4": 2.6125001907348633,
+        "arguments5": 2.331249713897705,
+        "arguments6": 2.6399993896484375,
+        "buildString": 10.165419578552246,
+        "builtinMethod": 4.686250686645508,
+        "catchInLoop": 3.0841708183288574,
+        "concatenateStrings": 6.879580020904541,
+        "mathMax": 3.215000629425049,
+        "mixedCall": 3.864579200744629,
+        "mutableCapture": 6.59207820892334,
+        "numberCall": 2.2287487983703613,
+        "objectArray": 2.6524996757507324,
+        "objectRoundTrip": 2.147500514984131,
+        "receivers2": 5.074169635772705,
+        "receivers4": 5.199577808380127,
+        "receivers8": 5.91749906539917
+      },
+      "exit": 0,
+      "loadBefore": [4.8857421875, 5.8505859375, 7.267578125],
+      "loadAfter": [4.8857421875, 5.8505859375, 7.267578125],
+      "idlePercent": 63.888888888888886
+    },
+    {
+      "round": 11,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 143.27374935150146,
+        "arguments3": 24.481658935546875,
+        "arguments4": 30.398340225219727,
+        "arguments5": 35.5049991607666,
+        "arguments6": 46.217918395996094,
+        "buildString": 18.887500762939453,
+        "builtinMethod": 88.60666990280151,
+        "catchInLoop": 21.876661777496338,
+        "concatenateStrings": 14.18666124343872,
+        "mathMax": 139.20665979385376,
+        "mixedCall": 23.0458402633667,
+        "mutableCapture": 17.093751430511475,
+        "numberCall": 103.63708972930908,
+        "objectArray": 16.395840644836426,
+        "objectRoundTrip": 19.142909049987793,
+        "receivers2": 24.6875,
+        "receivers4": 26.49792194366455,
+        "receivers8": 51.711668968200684
+      },
+      "exit": 42,
+      "loadBefore": [4.8857421875, 5.8505859375, 7.267578125],
+      "loadAfter": [4.8857421875, 5.8505859375, 7.267578125],
+      "idlePercent": 76.50024003840615
+    },
+    {
+      "round": 11,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 5.9908318519592285,
+        "arguments3": 2.1233391761779785,
+        "arguments4": 2.2574996948242188,
+        "arguments5": 2.3987507820129395,
+        "arguments6": 2.4958300590515137,
+        "buildString": 9.817919731140137,
+        "builtinMethod": 4.2737507820129395,
+        "catchInLoop": 3.209998607635498,
+        "concatenateStrings": 7.4574995040893555,
+        "mathMax": 2.235419750213623,
+        "mixedCall": 3.558330535888672,
+        "mutableCapture": 5.134580135345459,
+        "numberCall": 1.8591690063476562,
+        "objectArray": 2.0629191398620605,
+        "objectRoundTrip": 2.0191597938537598,
+        "receivers2": 4.55333948135376,
+        "receivers4": 4.845001697540283,
+        "receivers8": 5.675418376922607
+      },
+      "exit": 0,
+      "loadBefore": [4.8857421875, 5.8505859375, 7.267578125],
+      "loadAfter": [4.8857421875, 5.8505859375, 7.267578125],
+      "idlePercent": 75.38461538461539
+    },
+    {
+      "round": 11,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 141.15875005722046,
+        "arguments3": 23.23291778564453,
+        "arguments4": 28.621251583099365,
+        "arguments5": 34.51291084289551,
+        "arguments6": 43.23457956314087,
+        "buildString": 18.238749504089355,
+        "builtinMethod": 85.20334005355835,
+        "catchInLoop": 21.034579277038574,
+        "concatenateStrings": 13.489160537719727,
+        "mathMax": 140.13332843780518,
+        "mixedCall": 22.541251182556152,
+        "mutableCapture": 15.886671543121338,
+        "numberCall": 103.22916984558105,
+        "objectArray": 15.551252365112305,
+        "objectRoundTrip": 18.207077980041504,
+        "receivers2": 32.547080516815186,
+        "receivers4": 39.15292024612427,
+        "receivers8": 46.18957996368408
+      },
+      "exit": 42,
+      "loadBefore": [4.8857421875, 5.8505859375, 7.267578125],
+      "loadAfter": [4.654296875, 5.78662109375, 7.236328125],
+      "idlePercent": 81.8071998067166
+    },
+    {
+      "round": 12,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 5.770828723907471,
+        "arguments3": 2.040829658508301,
+        "arguments4": 2.1770811080932617,
+        "arguments5": 2.2658395767211914,
+        "arguments6": 2.390000820159912,
+        "buildString": 9.554169178009033,
+        "builtinMethod": 4.336249828338623,
+        "catchInLoop": 3.598339557647705,
+        "concatenateStrings": 6.590831279754639,
+        "mathMax": 2.2175002098083496,
+        "mixedCall": 3.634171485900879,
+        "mutableCapture": 5.523331165313721,
+        "numberCall": 2.4587488174438477,
+        "objectArray": 2.264590263366699,
+        "objectRoundTrip": 2.425839900970459,
+        "receivers2": 5.6070780754089355,
+        "receivers4": 4.862921237945557,
+        "receivers8": 6.285829544067383
+      },
+      "exit": 0,
+      "loadBefore": [4.654296875, 5.78662109375, 7.236328125],
+      "loadAfter": [4.654296875, 5.78662109375, 7.236328125],
+      "idlePercent": 67.16417910447761
+    },
+    {
+      "round": 12,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 140.19165992736816,
+        "arguments3": 23.13667058944702,
+        "arguments4": 29.432919025421143,
+        "arguments5": 35.234999656677246,
+        "arguments6": 43.22125196456909,
+        "buildString": 19.28333044052124,
+        "builtinMethod": 84.98291969299316,
+        "catchInLoop": 21.48750066757202,
+        "concatenateStrings": 14.185841083526611,
+        "mathMax": 132.57707834243774,
+        "mixedCall": 20.749590396881104,
+        "mutableCapture": 15.482499599456787,
+        "numberCall": 99.24000024795532,
+        "objectArray": 15.547921657562256,
+        "objectRoundTrip": 18.23958158493042,
+        "receivers2": 31.907918453216553,
+        "receivers4": 39.66166973114014,
+        "receivers8": 47.80083894729614
+      },
+      "exit": 42,
+      "loadBefore": [4.654296875, 5.78662109375, 7.236328125],
+      "loadAfter": [4.654296875, 5.78662109375, 7.236328125],
+      "idlePercent": 79.73589435774309
+    },
+    {
+      "round": 12,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 142.84584045410156,
+        "arguments3": 23.3841609954834,
+        "arguments4": 30.049588680267334,
+        "arguments5": 34.96917009353638,
+        "arguments6": 43.85125160217285,
+        "buildString": 18.142919540405273,
+        "builtinMethod": 83.5558295249939,
+        "catchInLoop": 20.677921772003174,
+        "concatenateStrings": 13.544578552246094,
+        "mathMax": 130.1045799255371,
+        "mixedCall": 20.86833953857422,
+        "mutableCapture": 15.54542064666748,
+        "numberCall": 100.10209083557129,
+        "objectArray": 15.267908573150635,
+        "objectRoundTrip": 18.046669960021973,
+        "receivers2": 23.053340911865234,
+        "receivers4": 25.192501544952393,
+        "receivers8": 49.789161682128906
+      },
+      "exit": 42,
+      "loadBefore": [4.654296875, 5.78662109375, 7.236328125],
+      "loadAfter": [4.681640625, 5.7734375, 7.22314453125],
+      "idlePercent": 79.44511459589867
+    },
+    {
+      "round": 13,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 140.68707942962646,
+        "arguments3": 23.212919235229492,
+        "arguments4": 29.086251258850098,
+        "arguments5": 33.25083017349243,
+        "arguments6": 49.60165977478027,
+        "buildString": 18.03375005722046,
+        "builtinMethod": 83.84665966033936,
+        "catchInLoop": 20.873751640319824,
+        "concatenateStrings": 13.498749732971191,
+        "mathMax": 142.87166118621826,
+        "mixedCall": 21.287920475006104,
+        "mutableCapture": 15.583329200744629,
+        "numberCall": 100.80583095550537,
+        "objectArray": 15.515830516815186,
+        "objectRoundTrip": 18.321661949157715,
+        "receivers2": 32.976250648498535,
+        "receivers4": 42.281250953674316,
+        "receivers8": 46.22457981109619
+      },
+      "exit": 42,
+      "loadBefore": [4.681640625, 5.7734375, 7.22314453125],
+      "loadAfter": [4.681640625, 5.7734375, 7.22314453125],
+      "idlePercent": 77.21244272968411
+    },
+    {
+      "round": 13,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 139.16958093643188,
+        "arguments3": 23.667080402374268,
+        "arguments4": 29.007079601287842,
+        "arguments5": 38.817081451416016,
+        "arguments6": 46.95542097091675,
+        "buildString": 18.21624994277954,
+        "builtinMethod": 84.67375040054321,
+        "catchInLoop": 20.792090892791748,
+        "concatenateStrings": 13.686251640319824,
+        "mathMax": 139.13874864578247,
+        "mixedCall": 20.898749828338623,
+        "mutableCapture": 15.717918872833252,
+        "numberCall": 99.42832946777344,
+        "objectArray": 15.32249927520752,
+        "objectRoundTrip": 18.142080307006836,
+        "receivers2": 23.51083993911743,
+        "receivers4": 24.483749866485596,
+        "receivers8": 48.360421657562256
+      },
+      "exit": 42,
+      "loadBefore": [4.681640625, 5.7734375, 7.22314453125],
+      "loadAfter": [4.787109375, 5.77685546875, 7.2158203125],
+      "idlePercent": 79.12855079441502
+    },
+    {
+      "round": 13,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 5.960841178894043,
+        "arguments3": 2.1499991416931152,
+        "arguments4": 2.2179102897644043,
+        "arguments5": 2.775418758392334,
+        "arguments6": 2.4508285522460938,
+        "buildString": 9.066669940948486,
+        "builtinMethod": 4.342501163482666,
+        "catchInLoop": 3.7216711044311523,
+        "concatenateStrings": 7.090408802032471,
+        "mathMax": 1.997079849243164,
+        "mixedCall": 3.7570786476135254,
+        "mutableCapture": 5.447499752044678,
+        "numberCall": 1.9612503051757812,
+        "objectArray": 2.1637487411499023,
+        "objectRoundTrip": 1.9654083251953125,
+        "receivers2": 4.337499141693115,
+        "receivers4": 4.393329620361328,
+        "receivers8": 6.191251277923584
+      },
+      "exit": 0,
+      "loadBefore": [4.787109375, 5.77685546875, 7.2158203125],
+      "loadAfter": [4.787109375, 5.77685546875, 7.2158203125],
+      "idlePercent": 74.19354838709677
+    },
+    {
+      "round": 14,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 142.43750095367432,
+        "arguments3": 23.177499771118164,
+        "arguments4": 29.0024995803833,
+        "arguments5": 34.30666923522949,
+        "arguments6": 44.40999984741211,
+        "buildString": 17.9087495803833,
+        "builtinMethod": 84.31375026702881,
+        "catchInLoop": 20.68958044052124,
+        "concatenateStrings": 13.460841178894043,
+        "mathMax": 131.81416988372803,
+        "mixedCall": 21.1995792388916,
+        "mutableCapture": 15.763750076293945,
+        "numberCall": 99.91832971572876,
+        "objectArray": 15.422921180725098,
+        "objectRoundTrip": 17.87874937057495,
+        "receivers2": 25.015408992767334,
+        "receivers4": 23.567919731140137,
+        "receivers8": 47.75166988372803
+      },
+      "exit": 42,
+      "loadBefore": [4.787109375, 5.77685546875, 7.2158203125],
+      "loadAfter": [4.787109375, 5.77685546875, 7.2158203125],
+      "idlePercent": 78.19893771125061
+    },
+    {
+      "round": 14,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 6.4224982261657715,
+        "arguments3": 2.246670722961426,
+        "arguments4": 2.4695801734924316,
+        "arguments5": 2.3183298110961914,
+        "arguments6": 2.4354195594787598,
+        "buildString": 10.779588222503662,
+        "builtinMethod": 5.98416805267334,
+        "catchInLoop": 4.321250915527344,
+        "concatenateStrings": 7.440829277038574,
+        "mathMax": 2.1358418464660645,
+        "mixedCall": 3.5620808601379395,
+        "mutableCapture": 6.5770792961120605,
+        "numberCall": 2.4883294105529785,
+        "objectArray": 2.2779202461242676,
+        "objectRoundTrip": 2.4495792388916016,
+        "receivers2": 6.766250133514404,
+        "receivers4": 6.585841178894043,
+        "receivers8": 9.505829811096191
+      },
+      "exit": 0,
+      "loadBefore": [4.787109375, 5.77685546875, 7.2158203125],
+      "loadAfter": [4.787109375, 5.77685546875, 7.2158203125],
+      "idlePercent": 55.38461538461539
+    },
+    {
+      "round": 14,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 143.77000093460083,
+        "arguments3": 22.792091369628906,
+        "arguments4": 29.532082080841064,
+        "arguments5": 33.81416082382202,
+        "arguments6": 42.42833852767944,
+        "buildString": 17.92375087738037,
+        "builtinMethod": 84.614999294281,
+        "catchInLoop": 20.973329544067383,
+        "concatenateStrings": 13.600831031799316,
+        "mathMax": 135.93958854675293,
+        "mixedCall": 21.28209114074707,
+        "mutableCapture": 15.509998798370361,
+        "numberCall": 102.33083963394165,
+        "objectArray": 15.350830554962158,
+        "objectRoundTrip": 18.994579315185547,
+        "receivers2": 34.21875,
+        "receivers4": 39.09208059310913,
+        "receivers8": 44.635419845581055
+      },
+      "exit": 42,
+      "loadBefore": [4.787109375, 5.77685546875, 7.2158203125],
+      "loadAfter": [4.8837890625, 5.7802734375, 7.20849609375],
+      "idlePercent": 78.65546218487395
+    },
+    {
+      "round": 15,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 5.509588718414307,
+        "arguments3": 2.090420722961426,
+        "arguments4": 2.1604084968566895,
+        "arguments5": 2.2366690635681152,
+        "arguments6": 2.37166166305542,
+        "buildString": 9.759581089019775,
+        "builtinMethod": 5.434999465942383,
+        "catchInLoop": 3.6129093170166016,
+        "concatenateStrings": 6.735827922821045,
+        "mathMax": 2.2266602516174316,
+        "mixedCall": 3.6874985694885254,
+        "mutableCapture": 5.35707950592041,
+        "numberCall": 1.8429207801818848,
+        "objectArray": 2.234170436859131,
+        "objectRoundTrip": 2.1012496948242188,
+        "receivers2": 4.853329658508301,
+        "receivers4": 4.482080936431885,
+        "receivers8": 5.559577941894531
+      },
+      "exit": 0,
+      "loadBefore": [4.8837890625, 5.7802734375, 7.20849609375],
+      "loadAfter": [4.8837890625, 5.7802734375, 7.20849609375],
+      "idlePercent": 74.60317460317461
+    },
+    {
+      "round": 15,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 142.22749948501587,
+        "arguments3": 23.568339347839355,
+        "arguments4": 29.044170379638672,
+        "arguments5": 34.61957931518555,
+        "arguments6": 42.916250228881836,
+        "buildString": 18.146250247955322,
+        "builtinMethod": 84.24124956130981,
+        "catchInLoop": 20.777080059051514,
+        "concatenateStrings": 13.364582061767578,
+        "mathMax": 132.31167078018188,
+        "mixedCall": 21.390411853790283,
+        "mutableCapture": 15.76667070388794,
+        "numberCall": 99.26374912261963,
+        "objectArray": 15.343751907348633,
+        "objectRoundTrip": 18.879170417785645,
+        "receivers2": 32.200422286987305,
+        "receivers4": 38.45124959945679,
+        "receivers8": 45.233330726623535
+      },
+      "exit": 42,
+      "loadBefore": [4.8837890625, 5.7802734375, 7.20849609375],
+      "loadAfter": [4.8837890625, 5.7802734375, 7.20849609375],
+      "idlePercent": 81.19266055045871
+    },
+    {
+      "round": 15,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 139.56375122070312,
+        "arguments3": 23.11958074569702,
+        "arguments4": 27.94832944869995,
+        "arguments5": 34.7554087638855,
+        "arguments6": 43.99957895278931,
+        "buildString": 18.551251888275146,
+        "builtinMethod": 85.25458097457886,
+        "catchInLoop": 20.757081508636475,
+        "concatenateStrings": 13.46207857131958,
+        "mathMax": 131.08958959579468,
+        "mixedCall": 20.758330821990967,
+        "mutableCapture": 15.985000133514404,
+        "numberCall": 99.927499294281,
+        "objectArray": 15.269999504089355,
+        "objectRoundTrip": 18.458340167999268,
+        "receivers2": 24.236669540405273,
+        "receivers4": 23.787500858306885,
+        "receivers8": 56.81290864944458
+      },
+      "exit": 42,
+      "loadBefore": [4.8837890625, 5.7802734375, 7.20849609375],
+      "loadAfter": [4.89306640625, 5.76708984375, 7.1953125],
+      "idlePercent": 76.80984555984556
+    },
+    {
+      "round": 16,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 139.30707931518555,
+        "arguments3": 24.70082998275757,
+        "arguments4": 28.985841274261475,
+        "arguments5": 34.78416919708252,
+        "arguments6": 43.169591426849365,
+        "buildString": 17.78707981109619,
+        "builtinMethod": 83.35624933242798,
+        "catchInLoop": 20.78583002090454,
+        "concatenateStrings": 13.395838737487793,
+        "mathMax": 131.99417114257812,
+        "mixedCall": 21.077921390533447,
+        "mutableCapture": 16.085410118103027,
+        "numberCall": 100.12083768844604,
+        "objectArray": 15.426249504089355,
+        "objectRoundTrip": 18.123748302459717,
+        "receivers2": 31.6225004196167,
+        "receivers4": 44.43124771118164,
+        "receivers8": 52.346670627593994
+      },
+      "exit": 42,
+      "loadBefore": [4.89306640625, 5.76708984375, 7.1953125],
+      "loadAfter": [4.89306640625, 5.76708984375, 7.1953125],
+      "idlePercent": 71.9391451340256
+    },
+    {
+      "round": 16,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 143.9312505722046,
+        "arguments3": 23.449158668518066,
+        "arguments4": 28.798329830169678,
+        "arguments5": 33.76542091369629,
+        "arguments6": 42.1370792388916,
+        "buildString": 18.141660690307617,
+        "builtinMethod": 84.4320797920227,
+        "catchInLoop": 21.377921104431152,
+        "concatenateStrings": 13.469171524047852,
+        "mathMax": 133.35166931152344,
+        "mixedCall": 21.27958059310913,
+        "mutableCapture": 15.019171237945557,
+        "numberCall": 98.14749956130981,
+        "objectArray": 15.925002098083496,
+        "objectRoundTrip": 18.212919235229492,
+        "receivers2": 24.50083017349243,
+        "receivers4": 22.617080211639404,
+        "receivers8": 48.15582990646362
+      },
+      "exit": 42,
+      "loadBefore": [4.89306640625, 5.76708984375, 7.1953125],
+      "loadAfter": [4.89306640625, 5.76708984375, 7.1953125],
+      "idlePercent": 75.98453732785697
+    },
+    {
+      "round": 16,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 5.160830020904541,
+        "arguments3": 2.2083401679992676,
+        "arguments4": 2.1391677856445312,
+        "arguments5": 2.3008298873901367,
+        "arguments6": 2.3754191398620605,
+        "buildString": 9.460828304290771,
+        "builtinMethod": 4.41709041595459,
+        "catchInLoop": 3.3174991607666016,
+        "concatenateStrings": 6.455419063568115,
+        "mathMax": 2.082500457763672,
+        "mixedCall": 3.4999990463256836,
+        "mutableCapture": 5.0270795822143555,
+        "numberCall": 1.8195891380310059,
+        "objectArray": 2.1787500381469727,
+        "objectRoundTrip": 2.0720911026000977,
+        "receivers2": 4.495830535888672,
+        "receivers4": 4.302079677581787,
+        "receivers8": 5.68166971206665
+      },
+      "exit": 0,
+      "loadBefore": [4.89306640625, 5.76708984375, 7.1953125],
+      "loadAfter": [4.89306640625, 5.76708984375, 7.1953125],
+      "idlePercent": 76.19047619047619
+    },
+    {
+      "round": 17,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 143.30833196640015,
+        "arguments3": 27.19749927520752,
+        "arguments4": 29.982078075408936,
+        "arguments5": 36.377079486846924,
+        "arguments6": 45.60499906539917,
+        "buildString": 19.036669731140137,
+        "builtinMethod": 88.22167158126831,
+        "catchInLoop": 21.74790859222412,
+        "concatenateStrings": 14.126660823822021,
+        "mathMax": 139.8454189300537,
+        "mixedCall": 22.072081565856934,
+        "mutableCapture": 16.38458013534546,
+        "numberCall": 103.69791030883789,
+        "objectArray": 16.07208013534546,
+        "objectRoundTrip": 19.274580478668213,
+        "receivers2": 24.27290916442871,
+        "receivers4": 24.487500190734863,
+        "receivers8": 51.4645791053772
+      },
+      "exit": 42,
+      "loadBefore": [4.89306640625, 5.76708984375, 7.1953125],
+      "loadAfter": [4.8212890625, 5.7373046875, 7.17626953125],
+      "idlePercent": 82.21954161640531
+    },
+    {
+      "round": 17,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 6.208751201629639,
+        "arguments3": 2.1250009536743164,
+        "arguments4": 2.351670265197754,
+        "arguments5": 2.223339080810547,
+        "arguments6": 2.38375186920166,
+        "buildString": 9.52582836151123,
+        "builtinMethod": 4.0570902824401855,
+        "catchInLoop": 3.034999370574951,
+        "concatenateStrings": 6.477921009063721,
+        "mathMax": 2.0354104042053223,
+        "mixedCall": 3.4766697883605957,
+        "mutableCapture": 4.92542028427124,
+        "numberCall": 1.885828971862793,
+        "objectArray": 2.0895814895629883,
+        "objectRoundTrip": 2.09334135055542,
+        "receivers2": 4.379160404205322,
+        "receivers4": 4.304168224334717,
+        "receivers8": 5.455410480499268
+      },
+      "exit": 0,
+      "loadBefore": [4.8212890625, 5.7373046875, 7.17626953125],
+      "loadAfter": [4.8212890625, 5.7373046875, 7.17626953125],
+      "idlePercent": 75.75757575757575
+    },
+    {
+      "round": 17,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 154.2787504196167,
+        "arguments3": 31.03250026702881,
+        "arguments4": 29.345409870147705,
+        "arguments5": 35.82124948501587,
+        "arguments6": 45.36417007446289,
+        "buildString": 19.40458059310913,
+        "builtinMethod": 95.00166893005371,
+        "catchInLoop": 22.50499963760376,
+        "concatenateStrings": 14.494998455047607,
+        "mathMax": 138.16875219345093,
+        "mixedCall": 22.76749849319458,
+        "mutableCapture": 16.57083034515381,
+        "numberCall": 104.83083009719849,
+        "objectArray": 15.429999828338623,
+        "objectRoundTrip": 19.571669101715088,
+        "receivers2": 30.656251907348633,
+        "receivers4": 39.7083306312561,
+        "receivers8": 46.04375123977661
+      },
+      "exit": 42,
+      "loadBefore": [4.8212890625, 5.7373046875, 7.17626953125],
+      "loadAfter": [4.8212890625, 5.7373046875, 7.17626953125],
+      "idlePercent": 75.24061597690087
+    },
+    {
+      "round": 18,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "allocateObjects": 6.420412063598633,
+        "arguments3": 2.4466609954833984,
+        "arguments4": 2.6341700553894043,
+        "arguments5": 2.4779200553894043,
+        "arguments6": 2.349579334259033,
+        "buildString": 10.61000108718872,
+        "builtinMethod": 5.8949995040893555,
+        "catchInLoop": 3.70790958404541,
+        "concatenateStrings": 7.795000076293945,
+        "mathMax": 2.0099997520446777,
+        "mixedCall": 3.497920036315918,
+        "mutableCapture": 6.972079277038574,
+        "numberCall": 2.6766610145568848,
+        "objectArray": 2.2829103469848633,
+        "objectRoundTrip": 2.190420627593994,
+        "receivers2": 4.914159774780273,
+        "receivers4": 6.240420341491699,
+        "receivers8": 5.852079391479492
+      },
+      "exit": 0,
+      "loadBefore": [4.8212890625, 5.7373046875, 7.17626953125],
+      "loadAfter": [4.8212890625, 5.7373046875, 7.17626953125],
+      "idlePercent": 62.666666666666664
+    },
+    {
+      "round": 18,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 139.464590549469,
+        "arguments3": 23.6187481880188,
+        "arguments4": 29.065840244293213,
+        "arguments5": 34.635000228881836,
+        "arguments6": 42.88917064666748,
+        "buildString": 17.972500324249268,
+        "builtinMethod": 83.50625038146973,
+        "catchInLoop": 20.84541082382202,
+        "concatenateStrings": 13.424580097198486,
+        "mathMax": 127.65749931335449,
+        "mixedCall": 20.86125135421753,
+        "mutableCapture": 15.64000129699707,
+        "numberCall": 103.63083124160767,
+        "objectArray": 15.387499332427979,
+        "objectRoundTrip": 18.139159679412842,
+        "receivers2": 31.900417804718018,
+        "receivers4": 38.622920513153076,
+        "receivers8": 48.85167121887207
+      },
+      "exit": 42,
+      "loadBefore": [4.8212890625, 5.7373046875, 7.17626953125],
+      "loadAfter": [4.99560546875, 5.7578125, 7.1748046875],
+      "idlePercent": 79.66265060240964
+    },
+    {
+      "round": 18,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 141.8137502670288,
+        "arguments3": 23.559999465942383,
+        "arguments4": 28.581669330596924,
+        "arguments5": 34.22250032424927,
+        "arguments6": 43.29416036605835,
+        "buildString": 18.369579315185547,
+        "builtinMethod": 85.29624938964844,
+        "catchInLoop": 20.85416078567505,
+        "concatenateStrings": 13.51874828338623,
+        "mathMax": 132.3716688156128,
+        "mixedCall": 21.011669635772705,
+        "mutableCapture": 15.737080574035645,
+        "numberCall": 98.47125053405762,
+        "objectArray": 15.460000038146973,
+        "objectRoundTrip": 18.680419921875,
+        "receivers2": 23.69709014892578,
+        "receivers4": 24.465420246124268,
+        "receivers8": 49.37833070755005
+      },
+      "exit": 42,
+      "loadBefore": [4.99560546875, 5.7578125, 7.1748046875],
+      "loadAfter": [4.99560546875, 5.7578125, 7.1748046875],
+      "idlePercent": 77.62744624305388
+    },
+    {
+      "round": 19,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 139.97541904449463,
+        "arguments3": 24.21833038330078,
+        "arguments4": 29.14707899093628,
+        "arguments5": 35.04374980926514,
+        "arguments6": 43.38750123977661,
+        "buildString": 18.554580211639404,
+        "builtinMethod": 86.69457912445068,
+        "catchInLoop": 20.940001010894775,
+        "concatenateStrings": 13.435420989990234,
+        "mathMax": 129.48291063308716,
+        "mixedCall": 20.955829620361328,
+        "mutableCapture": 15.725831985473633,
+        "numberCall": 100.36542177200317,
+        "objectArray": 15.48875093460083,
+        "objectRoundTrip": 18.34249973297119,
+        "receivers2": 31.5987491607666,
+        "receivers4": 38.124167919158936,
+        "receivers8": 45.32625198364258
+      },
+      "exit": 42,
+      "loadBefore": [4.99560546875, 5.7578125, 7.1748046875],
+      "loadAfter": [4.75537109375, 5.6953125, 7.14404296875],
+      "idlePercent": 81.87303886072894
+    },
+    {
+      "round": 19,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "allocateObjects": 141.21833086013794,
+        "arguments3": 24.713749885559082,
+        "arguments4": 28.719158172607422,
+        "arguments5": 34.40875053405762,
+        "arguments6": 43.955419063568115,
+        "buildString": 18.22624921798706,
+        "builtinMethod": 91.7454195022583,
+        "catchInLoop": 22.105841636657715,
+        "concatenateStrings": 13.532919883728027,
+        "mathMax": 148.44541788101196,
+        "mixedCall": 25.572080612182617,
+        "mutableCapture": 16.842920780181885,
+        "numberCall": 100.19207954406738,
+        "objectArray": 15.294158458709717,
+        "objectRoundTrip": 18.29749822616577,
+        "receivers2": 23.945419788360596,
+        "receivers4": 24.02082920074463,
+        "receivers8": 50.40292024612427
+      },
+      "exit": 42,
+      "loadBefore": [4.75537109375, 5.6953125, 7.14404296875],
+      "loadAfter": [4.75537109375, 5.6953125, 7.14404296875],
+      "idlePercent": 79.69653179190752
+    },
+    {
+      "round": 19,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "allocateObjects": 5.5500006675720215,
+        "arguments3": 2.4870800971984863,
+        "arguments4": 2.2900009155273438,
+        "arguments5": 2.2624993324279785,
+        "arguments6": 2.1541690826416016,
+        "buildString": 9.8533296585083,
+        "builtinMethod": 4.599161148071289,
+        "catchInLoop": 3.3533406257629395,
+        "concatenateStrings": 6.484999656677246,
+        "mathMax": 2.1341609954833984,
+        "mixedCall": 3.730001449584961,
+        "mutableCapture": 5.55333137512207,
+        "numberCall": 1.847078800201416,
+        "objectArray": 2.2316598892211914,
+        "objectRoundTrip": 2.0924997329711914,
+        "receivers2": 4.28541898727417,
+        "receivers4": 4.584159851074219,
+        "receivers8": 5.6675004959106445
+      },
+      "exit": 0,
+      "loadBefore": [4.75537109375, 5.6953125, 7.14404296875],
+      "loadAfter": [4.75537109375, 5.6953125, 7.14404296875],
+      "idlePercent": 67.6923076923077
+    },
+    {
+      "round": 20,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "allocateObjects": 146.34291887283325,
+        "arguments3": 23.530418872833252,
+        "arguments4": 28.460838794708252,
+        "arguments5": 35.228331089019775,
+        "arguments6": 42.86665916442871,
+        "buildString": 18.123328685760498,
+        "builtinMethod": 84.42791938781738,
+        "catchInLoop": 21.02874994277954,
+        "concatenateStrings": 17.46999979019165,
+        "mathMax": 143.18833112716675,
+        "mixedCall": 22.618751525878906,
+        "mutableCapture": 17.043750286102295,
+        "numberCall": 101.38458967208862,
+        "objectArray": 15.495409965515137,
+        "objectRoundTrip": 18.409581184387207,
+        "receivers2": 24.142918586730957,
+        "receivers4": 23.224170207977295,
+        "receivers8": 52.85792112350464
+      },
+      "exit": 42,
+      "loadBefore": [4.75537109375, 5.6953125, 7.14404296875],
+      "loadAfter": [4.61474609375, 5.650390625, 7.11962890625],
+      "idlePercent": 81.91463708705088
+    },
+    {
+      "round": 20,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "allocateObjects": 6.929588317871094,
+        "arguments3": 2.3150014877319336,
+        "arguments4": 2.307908535003662,
+        "arguments5": 2.1375012397766113,
+        "arguments6": 1.890408992767334,
+        "buildString": 9.411249160766602,
+        "builtinMethod": 4.162919521331787,
+        "catchInLoop": 3.0687522888183594,
+        "concatenateStrings": 6.529581546783447,
+        "mathMax": 2.09291934967041,
+        "mixedCall": 3.3254194259643555,
+        "mutableCapture": 4.86375093460083,
+        "numberCall": 2.487502098083496,
+        "objectArray": 2.121250629425049,
+        "objectRoundTrip": 2.0766687393188477,
+        "receivers2": 4.365839958190918,
+        "receivers4": 4.4654107093811035,
+        "receivers8": 5.46375036239624
+      },
+      "exit": 0,
+      "loadBefore": [4.61474609375, 5.650390625, 7.11962890625],
+      "loadAfter": [4.61474609375, 5.650390625, 7.11962890625],
+      "idlePercent": 75.80645161290323
+    },
+    {
+      "round": 20,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "allocateObjects": 139.13958072662354,
+        "arguments3": 23.44583034515381,
+        "arguments4": 28.273329734802246,
+        "arguments5": 34.136250019073486,
+        "arguments6": 42.99375057220459,
+        "buildString": 17.914998531341553,
+        "builtinMethod": 83.32249879837036,
+        "catchInLoop": 21.013329029083252,
+        "concatenateStrings": 13.637080192565918,
+        "mathMax": 129.87749814987183,
+        "mixedCall": 20.828750133514404,
+        "mutableCapture": 15.542910099029541,
+        "numberCall": 99.88832950592041,
+        "objectArray": 15.379998683929443,
+        "objectRoundTrip": 18.28624963760376,
+        "receivers2": 33.057918548583984,
+        "receivers4": 39.13834095001221,
+        "receivers8": 45.0724983215332
+      },
+      "exit": 42,
+      "loadBefore": [4.61474609375, 5.650390625, 7.11962890625],
+      "loadAfter": [4.61474609375, 5.650390625, 7.11962890625],
+      "idlePercent": 82.9391891891892
+    }
+  ]
+}

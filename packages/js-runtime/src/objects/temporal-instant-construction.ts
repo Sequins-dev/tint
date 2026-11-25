@@ -1,4 +1,8 @@
-import { createObject, type OrdinaryObject } from "./operations.ts";
+import {
+  ensureExoticSlots,
+  createObject,
+  type OrdinaryObject,
+} from "./operations.ts";
 import type { BigIntValue } from "./bigints.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 
@@ -8,6 +12,6 @@ export function createTemporalInstantObject(
   parent: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = createObject<ScriptPropertyKey, unknown>(parent);
-  object.internalTemporalInstant = epoch;
+  ensureExoticSlots(object).internalTemporalInstant = epoch;
   return object;
 }

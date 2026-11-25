@@ -16,6 +16,19 @@ function transparent(op: Instruction): boolean {
     op.kind === "reference-string" ||
     op.kind === "reference-value" ||
     op.kind === "record-read" ||
+    // A slot read uses x9, x10, x12 and d0/d1 only.
+    op.kind === "record-slot-read" ||
+    // An own cached property load uses x9..x13 only (an inherited one
+    // also x14), none of them a temporary home.
+    (op.kind === "property-load" && !op.inherited) ||
+    // Element loads, stores, length reads, and cache probes use x9..x13, d0 and d1 only.
+    op.kind === "element-load" ||
+    op.kind === "element-store" ||
+    op.kind === "element-length" ||
+    op.kind === "element-storage" ||
+    op.kind === "element-count" ||
+    // A cached global cell check uses x9..x13 only.
+    op.kind === "global-cell" ||
     op.kind === "record-has" ||
     op.kind === "reference-vector-is" ||
     op.kind === "reference-vector-length" ||
@@ -34,6 +47,12 @@ function transparent(op: Instruction): boolean {
     op.kind === "array-element" ||
     op.kind === "array-write" ||
     op.kind === "array-store" ||
+    // General tags and payloads move through x9..x12 only.
+    op.kind === "general-is" ||
+    op.kind === "general-value" ||
+    op.kind === "general-wrap" ||
+    op.kind === "general-none" ||
+    op.kind === "general-null" ||
     op.kind === "optional-wrap" ||
     op.kind === "optional-value" ||
     op.kind === "optional-value-or" ||

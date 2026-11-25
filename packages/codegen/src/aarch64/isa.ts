@@ -59,6 +59,14 @@ export type Instruction =
     }
   | { readonly op: "brk"; readonly immediate: number }
   | {
+      readonly op: "ccmp-imm";
+      readonly width: RegisterWidth;
+      readonly rn: DataRegister;
+      readonly immediate: number;
+      readonly condition: Condition;
+      readonly nzcv: number;
+    }
+  | {
       readonly op: "ldrb" | "strb" | "ldrh" | "strh";
       readonly rt: DataRegister;
       readonly rn: BaseRegister;
@@ -222,6 +230,13 @@ export type Instruction =
     }
   | {
       readonly op: "fcvtzs-w-d" | "fcvtzs-x-d" | "fcvtzu-w-d" | "fcvtzu-x-d";
+      readonly rd: DataRegister;
+      readonly rn: number;
+    }
+  | {
+      /** FEAT_JSCVT: Wd = ToInt32(Dn) (truncation modulo 2^32, NaN and
+       * infinities to 0), zero-extended. */
+      readonly op: "fjcvtzs";
       readonly rd: DataRegister;
       readonly rn: number;
     }
@@ -505,6 +520,20 @@ export function encode(instruction: Instruction): EncodingResult<number> {
               ? 0x089ffc00
               : 0x085ffc00;
       return word(base + size * 0x40000000 + rn * 32 + rt);
+    }
+    case "ccmp-imm": {
+      const rn = register(i.rn, "zr");
+      if (rn < 0) return fail("INVALID_REGISTER");
+      if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
+      if (!integer(i.immediate, 0, 31) || !integer(i.nzcv, 0, 15))
+        return fail("INVALID_IMMEDIATE");
+      return word(
+        (i.width === 64 ? 0xfa400800 : 0x7a400800) +
+          i.immediate * 65536 +
+          condition(i.condition) * 4096 +
+          rn * 32 +
+          i.nzcv,
+      );
     }
     case "and-reg":
     case "orr-reg":
@@ -840,6 +869,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           i.rn * 32 +
           rd,
       );
+    }
+    case "fjcvtzs": {
+      const rd = register(i.rd, "zr");
+      if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
+      return word(0x1e7e0000 + i.rn * 32 + rd);
     }
     case "ldr-d":
     case "str-d": {

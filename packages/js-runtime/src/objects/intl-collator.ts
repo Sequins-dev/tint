@@ -1,5 +1,7 @@
 import { lookupCollatorLocale } from "./collation-locales.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -32,7 +34,10 @@ import {
 } from "./collator.ts";
 function requireCollator(value: unknown, realm: ErrorRealm): CollatorData {
   const object = viewObjectValue(value, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalCollatorData;
+    data =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalCollatorData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -52,7 +57,7 @@ export function installCollatorIntrinsic(
         ? prototype
         : constructorPrototype(target, "intl-collator", realm, hooks),
     );
-    object.internalCollatorData = configureCollator(
+    ensureExoticSlots(object).internalCollatorData = configureCollator(
       locales,
       options,
       realm,

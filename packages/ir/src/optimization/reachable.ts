@@ -120,10 +120,82 @@ function pruneTracedModule(
           op.kind === "general-record-descriptor" ||
           op.kind === "record-descriptor-address" ||
           op.kind === "record-has" ||
-          op.kind === "record-read"
+          op.kind === "record-read" ||
+          op.kind === "record-slot-read"
         ) {
           const record = recordId(op.record);
           if (record !== op.record) rewritten = { ...op, record };
+        } else if (
+          op.kind === "property-load" ||
+          op.kind === "property-store"
+        ) {
+          const record = recordId(op.record),
+            siteRecord = recordId(op.siteRecord),
+            epochRecord = recordId(op.epochRecord),
+            originalSpill =
+              op.kind === "property-load" ? op.spillRecord : undefined,
+            spillRecord =
+              originalSpill === undefined ? undefined : recordId(originalSpill);
+          if (
+            record !== op.record ||
+            siteRecord !== op.siteRecord ||
+            epochRecord !== op.epochRecord ||
+            (op.kind === "property-load" && spillRecord !== originalSpill)
+          )
+            rewritten =
+              op.kind === "property-load" && spillRecord !== undefined
+                ? { ...op, record, siteRecord, epochRecord, spillRecord }
+                : { ...op, record, siteRecord, epochRecord };
+        } else if (op.kind === "script-entry") {
+          const realmRecord = recordId(op.realmRecord),
+            agentRecord = recordId(op.agentRecord),
+            objectRecord = recordId(op.objectRecord),
+            entryRecord = recordId(op.entryRecord),
+            contextRecord = recordId(op.contextRecord);
+          if (
+            realmRecord !== op.realmRecord ||
+            agentRecord !== op.agentRecord ||
+            objectRecord !== op.objectRecord ||
+            entryRecord !== op.entryRecord ||
+            contextRecord !== op.contextRecord
+          )
+            rewritten = {
+              ...op,
+              realmRecord,
+              agentRecord,
+              objectRecord,
+              entryRecord,
+              contextRecord,
+            };
+        } else if (op.kind === "global-cell") {
+          const scopeRecord = recordId(op.scopeRecord),
+            globalRecord = recordId(op.globalRecord),
+            globalObjectRecord = recordId(op.globalObjectRecord),
+            cacheRecord = recordId(op.cacheRecord);
+          if (
+            scopeRecord !== op.scopeRecord ||
+            globalRecord !== op.globalRecord ||
+            globalObjectRecord !== op.globalObjectRecord ||
+            cacheRecord !== op.cacheRecord
+          )
+            rewritten = {
+              ...op,
+              scopeRecord,
+              globalRecord,
+              globalObjectRecord,
+              cacheRecord,
+            };
+        } else if (
+          op.kind === "element-load" ||
+          op.kind === "element-store" ||
+          op.kind === "element-length" ||
+          op.kind === "element-storage" ||
+          op.kind === "element-count"
+        ) {
+          const record = recordId(op.record),
+            elementsRecord = recordId(op.elementsRecord);
+          if (record !== op.record || elementsRecord !== op.elementsRecord)
+            rewritten = { ...op, record, elementsRecord };
         }
         if (rewritten !== op && instructions === undefined)
           instructions = block.instructions.slice(0, i);

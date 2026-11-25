@@ -11,6 +11,7 @@ import { executionPlan } from "../test262-execution.ts";
 import {
   createNativeBatchBuilder,
   deferNativeCase,
+  benchmarkScriptHost,
   prepareNativeScripts,
 } from "../test262-native.ts";
 import {
@@ -119,7 +120,7 @@ export function prepareOctane(
       features: [],
       includes: [],
     });
-    const result = prepareNativeScripts(plan, "raw", []);
+    const result = prepareNativeScripts(plan, "raw", [], benchmarkScriptHost);
     if (!result.ok)
       assert.fail(filename + ": " + JSON.stringify(result.outcome));
     return result.modules.map((module) => ({

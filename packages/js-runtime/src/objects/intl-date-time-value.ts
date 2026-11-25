@@ -26,6 +26,7 @@ import {
 import type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
 import { dateTimeTemporalPattern } from "./date-time-temporal-pattern.ts";
 import { splitTemporalEpochSecond } from "./temporal-epoch.ts";
+import { exoticSlots } from "./operations.ts";
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 export interface DateTimeFormatValue {
   readonly kind: number;
@@ -33,13 +34,14 @@ export interface DateTimeFormatValue {
   readonly object: Obj | undefined;
 }
 export function dateTimeTemporalKind(object: Obj): number {
-  if (object.internalTemporalPlainDate !== undefined) return 0;
-  if (object.internalTemporalPlainYearMonth !== undefined) return 1;
-  if (object.internalTemporalPlainMonthDay !== undefined) return 2;
-  if (object.internalTemporalPlainTime !== undefined) return 3;
-  if (object.internalTemporalPlainDateTime !== undefined) return 4;
-  if (object.internalTemporalInstant !== undefined) return 5;
-  if (object.internalTemporalZonedDateTime !== undefined) return 6;
+  if (exoticSlots(object).internalTemporalPlainDate !== undefined) return 0;
+  if (exoticSlots(object).internalTemporalPlainYearMonth !== undefined)
+    return 1;
+  if (exoticSlots(object).internalTemporalPlainMonthDay !== undefined) return 2;
+  if (exoticSlots(object).internalTemporalPlainTime !== undefined) return 3;
+  if (exoticSlots(object).internalTemporalPlainDateTime !== undefined) return 4;
+  if (exoticSlots(object).internalTemporalInstant !== undefined) return 5;
+  if (exoticSlots(object).internalTemporalZonedDateTime !== undefined) return 6;
   return -1;
 }
 /** ToDateTimeFormattable reads brands, never Temporal public fields/valueOf.
@@ -77,7 +79,7 @@ function prepared(
   const object = value.object;
   if (object === undefined) throw "DATE_TIME_TEMPORAL_VALUE_INVARIANT";
   if (value.kind !== 3 && value.kind !== 5) {
-    const calendar = object.internalTemporalCalendar ?? "iso8601",
+    const calendar = exoticSlots(object).internalTemporalCalendar ?? "iso8601",
       desired = formatter.configuration.locale.calendar;
     if (
       calendar !== desired &&
@@ -87,14 +89,14 @@ function prepared(
   }
   const pattern = dateTimeTemporalPattern(formatter, value.kind);
   if (pattern === undefined) throw createRuntimeError(realm, "type");
-  const instant = object.internalTemporalInstant;
+  const instant = exoticSlots(object).internalTemporalInstant;
   if (value.kind === 5) {
     if (instant === undefined) throw "DATE_TIME_INSTANT_INVARIANT";
     const input = instantInput(formatter, pattern, instant.integer, realm);
     return { input, pattern };
   }
-  const time = object.internalTemporalPlainTime,
-    dateTime = object.internalTemporalPlainDateTime;
+  const time = exoticSlots(object).internalTemporalPlainTime,
+    dateTime = exoticSlots(object).internalTemporalPlainDateTime;
   if (value.kind === 3) {
     if (time === undefined) throw "DATE_TIME_PLAIN_TIME_INVARIANT";
     return {
@@ -129,10 +131,10 @@ function prepared(
   }
   const date =
     value.kind === 0
-      ? object.internalTemporalPlainDate
+      ? exoticSlots(object).internalTemporalPlainDate
       : value.kind === 1
-        ? object.internalTemporalPlainYearMonth
-        : object.internalTemporalPlainMonthDay;
+        ? exoticSlots(object).internalTemporalPlainYearMonth
+        : exoticSlots(object).internalTemporalPlainMonthDay;
   if (date === undefined) throw "DATE_TIME_PLAIN_DATE_INVARIANT";
   return {
     pattern,

@@ -44,7 +44,10 @@ test("function realm lookup follows internal bound and Proxy targets without tra
     },
     () => undefined,
   );
-  proxy.internalProxyData = { target: bound, handler: first.objectPrototype };
+  objects.ensureExoticSlots(proxy).internalProxyData = {
+    target: bound,
+    handler: first.objectPrototype,
+  };
   assert.equal(objects.getFunctionRealm(proxy, first), second);
   assert.equal(traps, 0);
   assert.equal(first.agent.activeContext, undefined);
@@ -56,7 +59,10 @@ test("function realm lookup rejects revoked Proxy targets in the current realm",
     {},
     () => undefined,
   );
-  proxy.internalProxyData = { target: undefined, handler: undefined };
+  objects.ensureExoticSlots(proxy).internalProxyData = {
+    target: undefined,
+    handler: undefined,
+  };
   assert.throws(
     () =>
       second.executionContext.run(() => objects.getFunctionRealm(proxy, first)),

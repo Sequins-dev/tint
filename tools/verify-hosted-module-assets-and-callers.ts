@@ -3,7 +3,7 @@ const objects = "packages/js-runtime/src/objects/index.ts";
 verifyHostedFixture(
   `
 import {createTextModule,createBytesModule,loadRequestedModules,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord} from "modules";
-import {createObject,createErrorRealm,installArrayBufferIntrinsics,installTypedArrayIntrinsics,callObjectValue,getProperty,setProperty,viewObjectValue,type ObjectHooks,type ScriptPropertyKey} from "objects";
+import {createObject,createErrorRealm,installArrayBufferIntrinsics,installTypedArrayIntrinsics,callObjectValue,getProperty,setProperty,viewObjectValue,exoticSlots,type ObjectHooks,type ScriptPropertyKey} from "objects";
 import {createSourceFunction} from "functions";
 import {createSourceExecutionContext} from "jobs";
 export function run():number{
@@ -18,7 +18,7 @@ export function run():number{
  };
  const text="\\ufeff\\ud800\\n",textModule=createTextModule(text,realm,undefined);if(value(textModule)!==text||value(textModule)!==text)return 1;
  const input=new Uint8Array([0,137,255]),bytes=createBytesModule(input,realm,hooks,undefined);if(!bytes.ok)return 2;
- const exported=value(bytes.module),array=viewObjectValue(exported,witness),data=array===undefined?undefined:array.internalTypedArrayData;
+ const exported=value(bytes.module),array=viewObjectValue(exported,witness),data=array===undefined?undefined:exoticSlots(array).internalTypedArrayData;
  if(array===undefined||data===undefined)return 3;const storage=data.storage;if(storage.kind!=="ordinary")return 3;if(!storage.immutable||storage.resizable)return 3;
  input[1]=4;const payload=storage.data;if(payload===undefined)return 4;if(payload[1]!==137||payload[2]!==255||data.length!==3)return 4;
  if(setProperty<ScriptPropertyKey,unknown>(array,"1",7,{object:array,value:exported},hooks)||value(bytes.module)!==exported)return 5;

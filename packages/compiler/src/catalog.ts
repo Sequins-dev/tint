@@ -207,6 +207,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/scalar/property-fusion.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/scalar/signature.ts",
       packageId: "codegen",
     },
@@ -883,6 +887,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/ir/src/optimization/block-layout.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/bounds.ts",
       packageId: "ir",
     },
@@ -927,11 +935,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/element-cache.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/forward-loads.ts",
       packageId: "ir",
     },
     {
       id: "packages/ir/src/optimization/function-builder.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/general-numbers.ts",
       packageId: "ir",
     },
     {
@@ -956,6 +972,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/optional-split.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/property-cache.ts",
       packageId: "ir",
     },
     {
@@ -992,6 +1012,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/reference-lists.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/sink-environment-loads.ts",
       packageId: "ir",
     },
     {
@@ -1175,6 +1199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/lowering/arguments-forwarding.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/lowering/direct-eval-flags.ts",
       packageId: "js-engine",
     },
@@ -1192,6 +1220,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-engine/src/lowering/module-shape.ts",
+      packageId: "js-engine",
+    },
+    {
+      id: "packages/js-engine/src/lowering/numeric-loop-spec.ts",
       packageId: "js-engine",
     },
     {
@@ -1387,11 +1419,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/activations.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/arguments.ts",
       packageId: "js-runtime",
     },
     {
       id: "packages/js-runtime/src/objects/arithmetic.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/array-append.ts",
       packageId: "js-runtime",
     },
     {
@@ -1619,6 +1659,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/collection-data.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/collection-keys.ts",
       packageId: "js-runtime",
     },
@@ -1787,6 +1831,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/element-access.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/entry-iteration.ts",
       packageId: "js-runtime",
     },
@@ -1912,6 +1960,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/intl.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/intrinsic-functions.ts",
       packageId: "js-runtime",
     },
     {

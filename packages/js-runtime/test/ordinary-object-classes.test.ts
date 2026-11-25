@@ -113,7 +113,7 @@ test("class methods are non-enumerable, replaceable and non-constructible", () =
     unknown
   >;
   assert.equal(method.internalConstruct, undefined);
-  assert.equal(method.internalHomeObject, target);
+  assert.equal(method.internalRareSlots?.internalHomeObject, target);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "method");
   assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
   assert.equal(objects.callObject(method, 42, [], undefined).value, 42);
@@ -170,10 +170,10 @@ test("class accessor definitions merge halves and preserve callable metadata", (
   );
   const descriptor = objects.getOwnProperty(target, "x")!;
   assert.equal(descriptor.get, getter);
-  assert.equal(getter.internalHomeObject, target);
+  assert.equal(getter.internalRareSlots?.internalHomeObject, target);
   assert.equal(
     (descriptor.set as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
-      .internalHomeObject,
+      .internalRareSlots?.internalHomeObject,
     target,
   );
   assert.equal(descriptor.enumerable, false);
@@ -274,7 +274,7 @@ test("source methods capture their home object before their first call", () => {
     0,
     home,
   );
-  assert.equal(method.internalHomeObject, home);
+  assert.equal(method.internalRareSlots?.internalHomeObject, home);
   assert.equal(
     objects.callObject(method, 42, [], undefined).value,
     realm.objectPrototype,
@@ -285,7 +285,7 @@ test("source methods capture their home object before their first call", () => {
     realm,
     hooks,
   );
-  assert.equal(ordinary.internalHomeObject, undefined);
+  assert.equal(ordinary.internalRareSlots?.internalHomeObject, undefined);
 });
 
 test("prepared class prototypes are published unchanged and become the constructor home", () => {
@@ -313,7 +313,7 @@ test("prepared class prototypes are published unchanged and become the construct
     objects.getOwnProperty(prototype, "constructor")?.value,
     constructor,
   );
-  assert.equal(constructor.internalHomeObject, prototype);
+  assert.equal(constructor.internalRareSlots?.internalHomeObject, prototype);
 });
 
 test("derived class identities retain separate constructor and instance prototype chains", () => {
@@ -343,7 +343,7 @@ test("derived class identities retain separate constructor and instance prototyp
     prototype,
   );
   assert.equal(derived.prototype, parent);
-  assert.equal(derived.internalHomeObject, prototype);
+  assert.equal(derived.internalRareSlots?.internalHomeObject, prototype);
   assert.equal(objects.getOwnProperty(derived, "prototype")?.value, prototype);
   assert.equal(prototype.prototype, parentPrototype);
   assert.equal(
@@ -393,7 +393,10 @@ test("private class methods install before fields and remain separate from prope
     method,
   );
   assert.equal(objects.getOwnProperty(instance, "#method"), undefined);
-  assert.equal(method.internalHomeObject, realm.objectPrototype);
+  assert.equal(
+    method.internalRareSlots?.internalHomeObject,
+    realm.objectPrototype,
+  );
   assert.equal(method.internalConstruct, undefined);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "#method");
   assert.equal(objects.callObject(method, instance, [], undefined).value, 42);
@@ -440,13 +443,13 @@ test("InitializeInstanceElements checks extensibility once before any private me
     isTypeError,
   );
   assert.deepEqual(log, ["isExtensible"]);
-  assert.equal(receiver.internalPrivateElements, undefined);
+  assert.equal(receiver.internalRareSlots?.internalPrivateElements, undefined);
   mode = "throw";
   assert.throws(
     () => objects.initializeClassPrivateMethods(receiver, methods, realm),
     (error: unknown) => error === "trap",
   );
-  assert.equal(receiver.internalPrivateElements, undefined);
+  assert.equal(receiver.internalRareSlots?.internalPrivateElements, undefined);
   mode = "extensible";
   log.length = 0;
   objects.initializeClassPrivateMethods(receiver, methods, realm);

@@ -4,6 +4,7 @@ import {
 } from "@tint/foundation/chrono/iso-date-time";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
 import {
+  exoticSlots,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
@@ -46,12 +47,12 @@ export function plainTimeFrom(
       nanosecond: data.nanosecond,
     };
   }
-  const time = object.internalTemporalPlainTime;
+  const time = exoticSlots(object).internalTemporalPlainTime;
   if (time !== undefined) {
     overflow();
     return time;
   }
-  const dateTime = object.internalTemporalPlainDateTime;
+  const dateTime = exoticSlots(object).internalTemporalPlainDateTime;
   if (dateTime !== undefined) {
     overflow();
     return {
@@ -61,7 +62,7 @@ export function plainTimeFrom(
       nanosecond: dateTime.nanosecond,
     };
   }
-  const zoned = object.internalTemporalZonedDateTime;
+  const zoned = exoticSlots(object).internalTemporalZonedDateTime;
   if (zoned !== undefined) {
     overflow();
     return {

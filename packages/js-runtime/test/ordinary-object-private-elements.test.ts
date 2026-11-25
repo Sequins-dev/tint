@@ -16,7 +16,7 @@ test("private fields use definition identities, ignore prototypes and survive no
     other = objects.createPrivateName("x");
   const parent = objects.createObject<string, number>(undefined);
   const child = objects.createObject(parent);
-  assert.equal(parent.internalPrivateElements, undefined);
+  assert.equal(parent.internalRareSlots?.internalPrivateElements, undefined);
   assert.equal(objects.addPrivateField(parent, name, 41), "none");
   assert.equal(objects.addPrivateField(parent, name, 99), "type");
   // Existing private elements remain usable once extensions are prevented.
@@ -156,7 +156,7 @@ test("PrivateFieldAdd rejects non-extensible objects before the duplicate check"
   objects.preventExtensions(object);
   assert.equal(objects.addPrivateField(object, later, 2), "type");
   assert.equal(objects.hasPrivateElement(object, later), false);
-  assert.equal(object.internalPrivateElements?.length, 1);
+  assert.equal(object.internalRareSlots?.internalPrivateElements?.length, 1);
   // A frozen object's existing private field is still writable.
   assert.equal(
     objects.setPrivateElement({ value: 3, object }, name, 5, hooks),

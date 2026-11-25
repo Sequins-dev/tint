@@ -17,6 +17,8 @@ import {
   type ISODateTime,
 } from "@tint/foundation/chrono/iso-date-time";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -40,7 +42,9 @@ import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 function requireDateTime(value: unknown, realm: ErrorRealm): ISODateTime {
   const object = viewObjectValue(value, realm.objectPrototype),
     data =
-      object === undefined ? undefined : object.internalTemporalPlainDateTime;
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalTemporalPlainDateTime;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -105,7 +109,7 @@ export function installTemporalPlainDateTime(
       const object = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "temporal-plain-date-time", realm, hooks),
       );
-      object.internalTemporalPlainDateTime = {
+      ensureExoticSlots(object).internalTemporalPlainDateTime = {
         date: { year, month, day },
         hasTime: true,
         hour,
@@ -117,14 +121,15 @@ export function installTemporalPlainDateTime(
         timeZone: undefined,
         calendar,
       };
-      object.internalTemporalCalendar = calendar;
+      ensureExoticSlots(object).internalTemporalCalendar = calendar;
       return object;
     },
   );
   function make(data: ISODateTime): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
-    object.internalTemporalPlainDateTime = data;
-    object.internalTemporalCalendar = data.calendar ?? "iso8601";
+    ensureExoticSlots(object).internalTemporalPlainDateTime = data;
+    ensureExoticSlots(object).internalTemporalCalendar =
+      data.calendar ?? "iso8601";
     return object;
   }
   builtinProperty(

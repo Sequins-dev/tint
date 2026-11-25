@@ -76,10 +76,15 @@ test("plain computed reads convert inside the fused read", () => {
     calls("function f(o,k){return o[k]}", "readObjectValuePropertyKey"),
     1,
   );
-  // Compound assignment retains its converted key for PutValue instead.
+  assert.equal(calls("function f(o,k){return o[k]}", "packedNumberElement"), 1);
+  // Compound assignment reads a Number key's element directly; any other key
+  // converts once and is retained for PutValue.
   const compound = "function f(o,k){o[k]+=1}";
-  assert.equal(calls(compound, "readObjectValuePropertyKey"), 0);
+  assert.equal(calls(compound, "packedNumberElement"), 1);
+  assert.equal(calls(compound, "readObjectValuePropertyKey"), 1);
   assert.equal(calls(compound, "readObjectValueProperty"), 1);
+  assert.equal(calls(compound, "objectPropertyKey"), 1);
+  assert.equal(calls(compound, "writeObjectValuePropertyKey"), 1);
 });
 
 for (const [source, printed, completion] of [
@@ -119,4 +124,58 @@ test("number keys use Number::toString in computed reads and writes", () => {
     "none",
   );
   assert.deepEqual(realm.printed, ["azhne,0,2"]);
+});
+
+test("inline global cell writes respect deletion, writability, accessors, and prototype epoch", () => {
+  const cases: readonly [string, readonly string[], string][] = [
+    ["var g=1;for(var i=0;i<3;i++)g=g+2;g+=5;g++;print(g);", ["13"], "none"],
+    [
+      "globalThis.d=1;function w(fn){d=fn();}w(function(){return 2});w(function(){delete globalThis.d;return 3});print(d);",
+      ["3"],
+      "none",
+    ],
+    [
+      "'use strict';globalThis.ds=1;function w(fn){ds=fn();}w(function(){return 2});var err='ok';try{w(function(){delete globalThis.ds;return 3});}catch(e){err=e.constructor.name;}print(err+','+('ds' in globalThis));",
+      ["ReferenceError,false"],
+      "none",
+    ],
+    [
+      "var ro=1;function w(fn){ro=fn();}w(function(){return 2});w(function(){Object.defineProperty(globalThis,'ro',{writable:false});return 9});print(ro);",
+      ["2"],
+      "none",
+    ],
+    [
+      "'use strict';var ros=1;function w(fn){ros=fn();}w(function(){return 2});var err='ok';try{w(function(){Object.defineProperty(globalThis,'ros',{writable:false});return 9});}catch(e){err=e.constructor.name;}print(err+','+ros);",
+      ["TypeError,2"],
+      "none",
+    ],
+    [
+      "globalThis.acc=1;var log=[];function w(fn){acc=fn();}w(function(){return 2});w(function(){Object.defineProperty(globalThis,'acc',{set(v){log.push(v)},get(){return 99},configurable:true});return 7});print(acc+','+log.join());",
+      ["99,7"],
+      "none",
+    ],
+    [
+      "var p=1;var child=Object.create(globalThis);function r(o){return o.p;}function w(v){p=v;}w(2);print(r(child));w(3);print(r(child));",
+      ["2", "3"],
+      "none",
+    ],
+  ];
+  for (const [source, printed, completion] of cases) {
+    const realm = createLoweredRealm();
+    assert.equal(realm.run(source), completion, source);
+    assert.deepEqual(realm.printed, printed, source);
+  }
+});
+
+test("ordinary object fast paths preserve loose equality and truthiness", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      "var a={},b={};var o={valueOf(){return 5}};print([a==a,a==b,a!=b,a==null,o==5,o=='5',Boolean(a),!a,Boolean(0),Boolean(''),Boolean('x'),Boolean(null),Boolean(undefined)].join(','));",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true,false,true,false,true,true,true,false,false,false,true,false,false",
+  ]);
 });

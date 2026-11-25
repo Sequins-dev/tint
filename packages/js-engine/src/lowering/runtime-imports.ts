@@ -79,6 +79,14 @@ export function scriptRuntimeImports(
   usesWideRegisterCalls: boolean = false,
   usesNativeScriptCalls: boolean = false,
   usesIndexedWrites: boolean = false,
+  usesNullishEquality: boolean = false,
+  usesRelationalFallback: boolean = false,
+  usesLooseEqualityFallback: boolean = false,
+  excludesHTMLDDAObjects: boolean = false,
+  usesElementAccess: boolean = false,
+  usesIntrinsicCalls: boolean = false,
+  usesObjectLiterals: boolean = false,
+  usesSmallArrays: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -160,27 +168,39 @@ export function scriptRuntimeImports(
         "defineClassAccessor",
         "initializeClassFields",
         "viewObjectValue",
+        "isOrdinaryObject",
+        "viewTypeofObject",
         "createBigIntLiteral",
         "createRegExpLiteral",
         "scriptBoolean",
+        ...(usesNullishEquality || declarations === "all"
+          ? ["scriptIsHTMLDDA"]
+          : []),
+        ...(usesLooseEqualityFallback || declarations === "all"
+          ? ["looselyEqualOrThrow"]
+          : []),
+        ...(excludesHTMLDDAObjects || declarations === "all"
+          ? ["excludeHTMLDDAObjects"]
+          : []),
+        ...(usesRelationalFallback && !usesFusedResults
+          ? ["binaryObjectValueOperationOrThrow"]
+          : []),
         "scriptStrictEqual",
         "binaryObjectValueOperation",
         "objectPropertyKey",
         "updateObjectValue",
         "unaryObjectValueOperation",
         "createSourceFunction",
-        ...(usesNativeScriptCalls
+        // The complete vocabulary includes them: linked Script units compile
+        // against the surface it publishes.
+        ...(usesNativeScriptCalls || declarations === "all"
           ? [
               "createNativeSourceFunction",
+              "createSourceInstance",
               "sourceArgumentCount",
               "sourceArgument",
-              "sourceArgumentArea",
-              "sourceArgumentFromFrame",
-              "enterNativeSourceCall",
-              "enterSourceCall",
-              "exitSourceCall",
-              "enterExecutionName",
-              "leaveExecutionName",
+              "resolveScriptCallEntry",
+              "resolveScriptConstructEntry",
             ]
           : []),
         ...(usesRegisterCalls || declarations === "all"
@@ -275,10 +295,59 @@ export function scriptRuntimeImports(
               "createScriptPropertyCache",
               "readCachedObjectValueProperty",
               "writeCachedObjectValueProperty",
+              "cachedOwnPropertyValue",
+              "cachedInheritedPropertyValue",
+              "absentPropertyValue",
+              "cachedPropertyStore",
             ]
           : []),
         "readObjectValuePropertyKey",
         ...(usesIndexedWrites ? ["writeObjectValuePropertyKey"] : []),
+        ...(usesElementAccess || declarations === "all"
+          ? [
+              "packedNumberElement",
+              "absentElementValue",
+              "storePackedNumberElement",
+              "packedArrayLength",
+              "readCachedLengthValue",
+              "readFloat64Element",
+              "writeFloat64Element",
+            ]
+          : []),
+        ...(usesIntrinsicCalls || declarations === "all"
+          ? [
+              "scriptMapGet",
+              "scriptMapGetFast",
+              "scriptMapHas",
+              "scriptMapHasFast",
+              "scriptMapSet",
+              "scriptMapSetFast",
+              "scriptSetAdd",
+              "scriptSetAddFast",
+              "scriptArrayPush",
+              "scriptArrayPushFast",
+              "scriptArrayPop",
+            ]
+          : []),
+        ...(usesObjectLiterals || declarations === "all"
+          ? [
+              "createObjectLiteralSite",
+              "createLiteralObject",
+              "createLiteralObject1",
+              "createLiteralObject2",
+              "createLiteralObject3",
+              "createLiteralObject4",
+            ]
+          : []),
+        ...(usesSmallArrays || declarations === "all"
+          ? [
+              "createArray0",
+              "createArray1",
+              "createArray2",
+              "createArray3",
+              "createArray4",
+            ]
+          : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
         "setObjectValuePropertyWithReceiver",
@@ -315,8 +384,8 @@ export function scriptRuntimeImports(
         "createDeclarativeScope",
         "resolveBinding",
         "getIdentifierValue",
-        // Module code keeps uncached global lookups (see globalIdentifierSites).
         "createGlobalIdentifierCache",
+        "cachedGlobalIdentifierCell",
         "getBindingReference",
         "getBindingReferenceForTypeof",
         "putBindingReference",

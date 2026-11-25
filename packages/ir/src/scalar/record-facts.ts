@@ -316,9 +316,20 @@ export function analyzeRecordAccesses(
         return -op.record - 1;
       if (instructionResult(op) !== value) continue;
       if (op.kind === "record-new") return -op.record - 1;
+      if (
+        op.kind === "closure-environment" &&
+        !fn.exported &&
+        fn.closureEnvironment !== undefined
+      )
+        return -fn.closureEnvironment - 1;
       if (op.kind === "load") return slotOrigin(block, op.slot, i, depth + 1);
       if (op.kind === "reference-value" || op.kind === "reference-wrap")
         return valueOrigin(block, op.value, i, depth + 1);
+      // Block-local SSA identity for a direct field load: lets a check in this
+      // block prove a slot holding the same loaded reference at block exit,
+      // without crossing to predecessors or interfering with LICM on
+      // function-environment reads.
+      if (op.kind === "record-read") return fn.slots.length + 1 + value;
       return 0;
     }
     return 0;
@@ -343,6 +354,7 @@ export function analyzeRecordAccesses(
         if (-origin - 1 === record) matched = true;
         break;
       }
+      if (origin > fn.slots.length) break;
       const previous = predecessors[cursor];
       if (previous === undefined || previous === 0 || previous === 0xffffffff)
         break;
@@ -672,6 +684,12 @@ export function dataflowRecordGuards(
           set(index, layoutOf(op.value));
         }
       } else if (op.kind === "record-new") define(op.id, op.record + 1, 0, 0);
+      else if (
+        op.kind === "closure-environment" &&
+        !fn.exported &&
+        fn.closureEnvironment !== undefined
+      )
+        define(op.id, fn.closureEnvironment + 1, 0, 0);
       else if (op.kind === "reference-value" || op.kind === "reference-wrap") {
         if (stamps[op.value] === generation)
           define(

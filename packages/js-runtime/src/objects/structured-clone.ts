@@ -3,7 +3,7 @@ import {
   createStringBuilder,
   finishString,
 } from "@tint/foundation/text/string-builder";
-import { setMap } from "@tint/foundation/collections/linked-map";
+import { setScriptMap, syncScriptMapNumbers } from "./collection-data.ts";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
 import { createArrayObject } from "./arrays.ts";
 import {
@@ -17,6 +17,8 @@ import { stringValue } from "./coercion.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { builtinProperty } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createDataProperty,
   createObject,
   getOwnProperty,
@@ -62,44 +64,50 @@ export function throwWorkerCloneError(
 }
 
 function unsupportedObject(object: ScriptObject): boolean {
-  return (
+  const rare = object.internalRareSlots;
+  if (
     object.internalCall !== undefined ||
     object.internalConstruct !== undefined ||
-    object.internalPromiseData !== undefined ||
-    object.internalProxyData !== undefined ||
-    object.internalWeakData !== undefined ||
-    object.internalGeneratorData !== undefined ||
-    object.internalAsyncGeneratorData !== undefined ||
-    object.internalSyncIteratorData !== undefined ||
-    object.internalIteratorHelperData !== undefined ||
-    object.internalWrappedIteratorData !== undefined ||
-    object.internalMapIteratorData !== undefined ||
-    object.internalSetIteratorData !== undefined ||
-    object.internalRegExpIteratorData !== undefined ||
-    object.internalArrayIteratorData !== undefined ||
-    object.internalStringIteratorData !== undefined ||
-    object.internalSharedArrayBufferData !== undefined ||
-    object.internalDisposableStack !== undefined ||
-    object.internalAsyncDisposableStack !== undefined ||
-    object.internalTemporalPlainYearMonth !== undefined ||
-    object.internalTemporalPlainMonthDay !== undefined ||
-    object.internalTemporalPlainDate !== undefined ||
-    object.internalTemporalDuration !== undefined ||
-    object.internalTemporalPlainTime !== undefined ||
-    object.internalTemporalPlainDateTime !== undefined ||
-    object.internalTemporalZonedDateTime !== undefined ||
-    object.internalTemporalCalendar !== undefined ||
-    object.internalTemporalInstant !== undefined ||
-    object.internalLocaleData !== undefined ||
-    object.internalListFormatData !== undefined ||
-    object.internalSegmenterData !== undefined ||
-    object.internalCollatorData !== undefined ||
-    object.internalPluralRulesData !== undefined ||
-    object.internalIntlFormatData !== undefined ||
-    object.internalRelativeTimeData !== undefined ||
-    object.internalNumberFormatData !== undefined ||
-    object.internalArgumentsData ||
-    object.internalShadowRealm !== undefined
+    (rare !== undefined && rare.internalArgumentsData)
+  )
+    return true;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return false;
+  return (
+    exotic.internalPromiseData !== undefined ||
+    exotic.internalProxyData !== undefined ||
+    exotic.internalWeakData !== undefined ||
+    exotic.internalGeneratorData !== undefined ||
+    exotic.internalAsyncGeneratorData !== undefined ||
+    exotic.internalSyncIteratorData !== undefined ||
+    exotic.internalIteratorHelperData !== undefined ||
+    exotic.internalWrappedIteratorData !== undefined ||
+    exotic.internalMapIteratorData !== undefined ||
+    exotic.internalSetIteratorData !== undefined ||
+    exotic.internalRegExpIteratorData !== undefined ||
+    exotic.internalArrayIteratorData !== undefined ||
+    exotic.internalStringIteratorData !== undefined ||
+    exotic.internalSharedArrayBufferData !== undefined ||
+    exotic.internalDisposableStack !== undefined ||
+    exotic.internalAsyncDisposableStack !== undefined ||
+    exotic.internalTemporalPlainYearMonth !== undefined ||
+    exotic.internalTemporalPlainMonthDay !== undefined ||
+    exotic.internalTemporalPlainDate !== undefined ||
+    exotic.internalTemporalDuration !== undefined ||
+    exotic.internalTemporalPlainTime !== undefined ||
+    exotic.internalTemporalPlainDateTime !== undefined ||
+    exotic.internalTemporalZonedDateTime !== undefined ||
+    exotic.internalTemporalCalendar !== undefined ||
+    exotic.internalTemporalInstant !== undefined ||
+    exotic.internalLocaleData !== undefined ||
+    exotic.internalListFormatData !== undefined ||
+    exotic.internalSegmenterData !== undefined ||
+    exotic.internalCollatorData !== undefined ||
+    exotic.internalPluralRulesData !== undefined ||
+    exotic.internalIntlFormatData !== undefined ||
+    exotic.internalRelativeTimeData !== undefined ||
+    exotic.internalNumberFormatData !== undefined ||
+    exotic.internalShadowRealm !== undefined
   );
 }
 
@@ -185,14 +193,17 @@ export function serializeWorkerValue(
     const object = viewObjectValue(value, realm.objectPrototype);
     if (object === undefined)
       return throwWorkerCloneError(realm, "The value could not be cloned");
-    if (object.internalIdentity === 0)
-      object.internalIdentity = realm.agent.nextObjectIdentity++;
-    const seen = objects.get(object.internalIdentity);
+    let identity = exoticSlots(object).internalIdentity;
+    if (identity === 0) {
+      identity = realm.agent.nextObjectIdentity++;
+      ensureExoticSlots(object).internalIdentity = identity;
+    }
+    const seen = objects.get(identity);
     if (seen !== undefined) {
       tag("r");
       return number(seen);
     }
-    objects.set(object.internalIdentity, objects.size);
+    objects.set(identity, objects.size);
     const grant = attachments?.encode?.(object);
     if (grant !== undefined) {
       tag("x");
@@ -200,7 +211,7 @@ export function serializeWorkerValue(
     }
     if (unsupportedObject(object))
       return throwWorkerCloneError(realm, "The object could not be cloned");
-    const primitive = object.internalPrimitiveData;
+    const primitive = exoticSlots(object).internalPrimitiveData;
     if (primitive !== undefined) {
       if (primitive.kind === "symbol")
         return throwWorkerCloneError(
@@ -210,7 +221,7 @@ export function serializeWorkerValue(
       tag("w");
       return encode(primitive.value);
     }
-    const typed = object.internalTypedArrayData;
+    const typed = exoticSlots(object).internalTypedArrayData;
     if (typed !== undefined) {
       if (typedArrayWindow(typed) === undefined)
         return throwWorkerCloneError(realm, "The typed array is out of bounds");
@@ -221,7 +232,7 @@ export function serializeWorkerValue(
       number(typed.length ?? -1);
       return encode(typed.buffer);
     }
-    const view = object.internalDataViewData;
+    const view = exoticSlots(object).internalDataViewData;
     if (view !== undefined) {
       if (
         bufferStorageWindow(
@@ -237,7 +248,7 @@ export function serializeWorkerValue(
       number(view.byteLength ?? -1);
       return encode(view.buffer);
     }
-    if (object.internalErrorData) {
+    if (exoticSlots(object).internalErrorData) {
       tag("E");
       const name = getProperty<ScriptPropertyKey, unknown>(
         object,
@@ -257,7 +268,7 @@ export function serializeWorkerValue(
         if (value.error !== "none") throw createRuntimeError(realm, "type");
         field(value.value);
       }
-      const stack = object.internalErrorStack;
+      const stack = exoticSlots(object).internalErrorStack;
       tag(stack === undefined ? "0" : "1");
       if (stack !== undefined) field(stack);
       const cause = getOwnProperty<ScriptPropertyKey, unknown>(object, "cause");
@@ -266,9 +277,10 @@ export function serializeWorkerValue(
       if (cause !== undefined && !cause.accessor) encode(cause.value);
       return;
     }
-    const map = object.internalMapData;
-    const set = object.internalSetData;
+    const map = exoticSlots(object).internalMapData;
+    const set = exoticSlots(object).internalSetData;
     if (map !== undefined || set !== undefined) {
+      if (map !== undefined && map.numDirty) syncScriptMapNumbers(map);
       let head = map === undefined ? set?.head : map.head;
       const keys: unknown[] = [];
       const values: unknown[] = [];
@@ -285,18 +297,18 @@ export function serializeWorkerValue(
       }
       return;
     }
-    const date = object.internalDateValue;
+    const date = exoticSlots(object).internalDateValue;
     if (date !== undefined) {
       tag("D");
       return number(date);
     }
-    const expression = object.internalRegExpData;
+    const expression = exoticSlots(object).internalRegExpData;
     if (expression !== undefined) {
       tag("R");
       field(expression.originalSource);
       return field(expression.originalFlags);
     }
-    const storage = object.internalArrayBufferData;
+    const storage = exoticSlots(object).internalArrayBufferData;
     if (storage !== undefined) {
       const bytes = byteStorageData(storage);
       if (bytes === undefined)
@@ -408,7 +420,7 @@ export function deserializeWorkerValue(
       const date = createObject<ScriptPropertyKey, unknown>(
         realm.datePrototype,
       );
-      date.internalDateValue = Number(field());
+      ensureExoticSlots(date).internalDateValue = Number(field());
       return remember(date);
     }
     if (kind === "w") {
@@ -428,7 +440,9 @@ export function deserializeWorkerValue(
       const error = remember(createRuntimeError(realm, errorKind(field())));
       if (present())
         builtinProperty(error, "message", field(), true, false, hooks);
-      error.internalErrorStack = present() ? field() : undefined;
+      ensureExoticSlots(error).internalErrorStack = present()
+        ? field()
+        : undefined;
       if (present())
         builtinProperty(error, "cause", decode(), true, false, hooks);
       return error;
@@ -450,7 +464,8 @@ export function deserializeWorkerValue(
       const buffer = viewObjectValue(decode(), realm.objectPrototype);
       if (buffer === undefined) return invalid();
       const storage =
-        buffer.internalArrayBufferData ?? buffer.internalSharedArrayBufferData;
+        exoticSlots(buffer).internalArrayBufferData ??
+        exoticSlots(buffer).internalSharedArrayBufferData;
       if (storage === undefined) return invalid();
       let object: ScriptObject;
       if (element === undefined) {
@@ -459,8 +474,8 @@ export function deserializeWorkerValue(
         object = createObject<ScriptPropertyKey, unknown>(
           realm.dataViewPrototype,
         );
-        object.internalArrayBufferView = true;
-        object.internalDataViewData = {
+        ensureExoticSlots(object).internalArrayBufferView = true;
+        ensureExoticSlots(object).internalDataViewData = {
           buffer,
           storage,
           byteOffset,
@@ -508,7 +523,7 @@ export function deserializeWorkerValue(
       const buffer = createObject<ScriptPropertyKey, unknown>(
         realm.arrayBufferPrototype,
       );
-      buffer.internalArrayBufferData = storage.value;
+      ensureExoticSlots(buffer).internalArrayBufferData = storage.value;
       return remember(buffer);
     }
     if (kind === "q" || kind === "m") {
@@ -519,12 +534,12 @@ export function deserializeWorkerValue(
         ),
       );
       const data = createSetData();
-      if (isMap) object.internalMapData = data;
-      else object.internalSetData = data;
+      if (isMap) ensureExoticSlots(object).internalMapData = data;
+      else ensureExoticSlots(object).internalSetData = data;
       const length = count();
       for (let index = 0; index < length; index++) {
         const key = decode();
-        setMap<unknown, unknown>(data, key, isMap ? decode() : key);
+        setScriptMap(data, key, isMap ? decode() : key);
       }
       return object;
     }

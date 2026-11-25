@@ -142,10 +142,10 @@ test("Promise.try is a unary non-constructor static method", () => {
   assert.equal(runtime.getOwnProperty(method, "length")?.value, 1);
   assert.equal(runtime.getOwnProperty(method, "name")?.value, "try");
   assert.equal(method.internalConstruct, undefined);
-  assert.deepEqual([...method.properties.keys()].slice(0, 2), [
-    "length",
-    "name",
-  ]);
+  assert.deepEqual(
+    runtime.ownKeys(method, runtime.scriptPropertyKeyOrder).slice(0, 2),
+    ["length", "name"],
+  );
 });
 
 test("Promise.try rejects non-object receivers before calling back", () => {

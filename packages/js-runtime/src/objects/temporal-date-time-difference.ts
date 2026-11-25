@@ -41,6 +41,7 @@ import {
 } from "./errors.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
   createObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -272,7 +273,7 @@ export function installDateTimeDifferenceMethods(
           const result = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,
           );
-          result.internalTemporalDuration = duration;
+          ensureExoticSlots(result).internalTemporalDuration = duration;
           return result;
         },
         hooks,

@@ -36,6 +36,8 @@ import {
 } from "./test262-execution.ts";
 import {
   prepareNativeScripts,
+  test262ScriptHost,
+  test262UnitScriptHost,
   prepareNativeScriptProgram,
   prepareNativeModuleProgram,
   nativeModuleCapability,
@@ -800,7 +802,14 @@ try {
                 }
               : scriptProgram;
           } else {
-            const scripts = prepareNativeScripts(plan, variant, harness);
+            const scripts = prepareNativeScripts(
+              plan,
+              variant,
+              harness,
+              buildUnits === undefined
+                ? test262ScriptHost
+                : test262UnitScriptHost,
+            );
             prepared = scripts.ok
               ? {
                   ok: true,

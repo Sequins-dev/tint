@@ -4,6 +4,8 @@ import { viewObjectValue } from "./values.ts";
 import { builtinFunction } from "./intrinsics.ts";
 import {
   createObject,
+  ensureExoticSlots,
+  exoticSlots,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
@@ -22,7 +24,9 @@ export function awaitScriptValue(
 ): void {
   const object = viewObjectValue(value, realm.objectPrototype);
   const operation =
-    object === undefined ? undefined : object.internalAwaitOperation;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalAwaitOperation;
   if (operation !== undefined) {
     // The compiler is awaiting native work that already performs its specified
     // Awaits. Resume in its completing job rather than adding a Promise reaction.
@@ -36,7 +40,9 @@ export function awaitScriptValue(
     realm.objectPrototype,
   );
   const record =
-    awaited === undefined ? undefined : awaited.internalPromiseData;
+    awaited === undefined
+      ? undefined
+      : exoticSlots(awaited).internalPromiseData;
   if (record === undefined) throw "AWAIT_PROMISE_RECORD_INVARIANT";
   const onFulfilled = builtinFunction(
     realm.functionPrototype,
@@ -109,7 +115,7 @@ export function createNativeAwaitOperation(): NativeAwaitCapability {
     state.value = result;
     notify();
   }
-  value.internalAwaitOperation = {
+  ensureExoticSlots(value).internalAwaitOperation = {
     subscribe: (
       fulfilled: (value: unknown) => void,
       rejected: (error: unknown) => void,

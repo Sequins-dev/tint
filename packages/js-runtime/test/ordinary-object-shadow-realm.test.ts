@@ -277,11 +277,12 @@ test("importValue uses the child module loader and returns an outer intrinsic pr
   ]) as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(result.prototype, outer.promisePrototype);
   objects.drainScriptJobs(outer.agent, (error) => assert.fail(String(error)));
-  assert.equal(result.internalPromiseData?.state, "fulfilled");
-  const wrapped = result.internalPromiseData?.result as OrdinaryObject<
-    ScriptPropertyKey,
-    unknown
-  >;
+  assert.equal(
+    result.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
+  const wrapped = result.internalExoticSlots?.internalPromiseData
+    ?.result as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(wrapped.prototype, outer.functionPrototype);
   assert.notEqual(wrapped, target);
   assert.equal(hooks.call(wrapped, undefined, []), 42);
@@ -291,8 +292,15 @@ test("importValue uses the child module loader and returns an outer intrinsic pr
       name,
     ]) as OrdinaryObject<ScriptPropertyKey, unknown>;
     objects.drainScriptJobs(outer.agent, (error) => assert.fail(String(error)));
-    assert.equal(rejected.internalPromiseData?.state, "rejected");
-    assert.ok(typeError(outer)(rejected.internalPromiseData?.result));
+    assert.equal(
+      rejected.internalExoticSlots?.internalPromiseData?.state,
+      "rejected",
+    );
+    assert.ok(
+      typeError(outer)(
+        rejected.internalExoticSlots?.internalPromiseData?.result,
+      ),
+    );
   }
   assert.equal(loads, 3);
 });

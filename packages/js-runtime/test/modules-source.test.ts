@@ -209,11 +209,13 @@ test("module completion maps thrown values and sticky unsupported without invent
     assert.equal(modules.linkModule(f.module).ok, true);
   }
   assert.equal(
-    modules.evaluateModule(normal.module, hooks).internalPromiseData?.state,
+    modules.evaluateModule(normal.module, hooks).internalExoticSlots
+      ?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(
-    modules.evaluateModule(thrown.module, hooks).internalPromiseData?.result,
+    modules.evaluateModule(thrown.module, hooks).internalExoticSlots
+      ?.internalPromiseData?.result,
     error,
   );
   modules.evaluateModule(unsupported.module, hooks);
@@ -283,7 +285,8 @@ test("completion contract faults propagate out while the same user-thrown string
   );
   assert.equal(bad.module.evaluationError, undefined);
   assert.equal(
-    modules.evaluateModule(thrown.module, hooks).internalPromiseData?.result,
+    modules.evaluateModule(thrown.module, hooks).internalExoticSlots
+      ?.internalPromiseData?.result,
     "MODULE_COMPLETION_INVARIANT",
   );
 });
@@ -322,7 +325,10 @@ test("lowered async source modules reuse the continuation driver and module cell
   module.status = "unlinked";
   assert.equal(modules.linkModule(module).ok, true);
   const promise = modules.evaluateModule(module, hooks);
-  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "pending",
+  );
   assert.deepEqual(log, ["start"]);
   assert.equal(
     bindings.getBindingValue(module.environment, "x").error,
@@ -332,7 +338,10 @@ test("lowered async source modules reuse the continuation driver and module cell
     throw error;
   });
   assert.deepEqual(log, ["start", "resume"]);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   assert.equal(bindings.getBindingValue(module.environment, "x").value, 42);
   assert.equal(f.realm.agent.activeContext, undefined);
 });
@@ -368,7 +377,10 @@ test("a lowered async source error after suspension rejects with the original id
   objects.drainScriptJobs(f.realm.agent, (fault) => {
     throw fault;
   });
-  assert.equal(promise.internalPromiseData?.state, "rejected");
-  assert.equal(promise.internalPromiseData?.result, error);
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "rejected",
+  );
+  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
   assert.equal(module.evaluationError?.error, error);
 });

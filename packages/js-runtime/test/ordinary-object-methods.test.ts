@@ -26,7 +26,7 @@ test("method home objects survive extraction and observe later prototype changes
   );
   objects.makeMethod(method, home);
   objects.createDataProperty(receiver, "extracted", method, hooks);
-  assert.equal(method.internalHomeObject, home);
+  assert.equal(method.internalRareSlots?.internalHomeObject, home);
   assert.equal(objects.getSuperBase(method), first);
   const captured = objects.getSuperBase(method);
   objects.setPrototype(home, second);

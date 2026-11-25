@@ -217,6 +217,14 @@ export interface NativeRecordBinding {
   readonly module: string;
   readonly name: string;
   readonly operation: RecordOperation;
+  /** slot-read and the property cache operations: the first slot field's
+   * name and the slot count; field-word: the field's name. */
+  readonly field?: string;
+  readonly count?: number;
+  /** Property cache operations: the site's first cache field. */
+  readonly siteField?: string;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number;
 }
 /** Opaque managed weak storage is available only to declared runtime exports. */
 export interface NativeWeakBinding {
@@ -245,6 +253,9 @@ export interface CompileRequest extends ModuleRequest {
   /** The target's host policy (NativeTarget.hostABI). Builds pass their
    * target's; direct callers (tests and tools) default to darwin-aarch64. */
   readonly hostABI?: PosixHostABI;
+  /** The target implements FEAT_JSCVT (Darwin arm64 targets: all Apple
+   * silicon), so codegen may convert to ToInt32 with FJCVTZS. */
+  readonly jsConvert?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   /** Require the hosted context's optional linear-allocation state at byte 56. */
@@ -711,7 +722,11 @@ export function compileNativeProgram(
 ): Compilation {
   const backend = selectNativeBackend(target);
   if (!backend.ok) return { ok: false, error: backend.error };
-  return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
+  return compileArm64Program({
+    ...request,
+    hostABI: backend.target.hostABI,
+    jsConvert: backend.target.os === "darwin",
+  });
 }
 
 function withoutDynamicObjectRuntime(request: CompileRequest): {
@@ -2445,6 +2460,10 @@ function lowerTypedProgram(
   const recordBindings: {
     function: number;
     operation: RecordOperation;
+    field?: string | undefined;
+    count?: number | undefined;
+    siteField?: string | undefined;
+    entries?: number | undefined;
   }[] = [];
   for (const plan of surfacePlans) {
     if (plan === undefined) throw "surface plan invariant";
@@ -2502,7 +2521,14 @@ function lowerTypedProgram(
         "record-binding",
         "record binding requires a module function: " + name,
       );
-    recordBindings.push({ function: fn.id, operation: binding.operation });
+    recordBindings.push({
+      function: fn.id,
+      operation: binding.operation,
+      field: binding.field,
+      count: binding.count,
+      siteField: binding.siteField,
+      entries: binding.entries,
+    });
   }
   const serviceSources: {
     readonly function: number;
@@ -4003,6 +4029,7 @@ function compileTypedProgram(
         });
     },
     hostABI: request.hostABI ?? darwinAArch64Target.hostABI,
+    jsConvert: request.jsConvert === true,
     debugSpans: request.debugSymbols === true || request.stackTraces === true,
     throwTraces: request.stackTraces ?? false,
     operationRanges: request.operationRanges ?? false,

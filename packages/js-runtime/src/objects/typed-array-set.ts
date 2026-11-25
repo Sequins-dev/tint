@@ -5,7 +5,7 @@ import { viewObjectValue } from "./values.ts";
 import { toObjectValue } from "./boxing.ts";
 import { lengthOfArrayLike } from "./array-like.ts";
 import { numberValue } from "./coercion.ts";
-import { getProperty, type ObjectHooks } from "./operations.ts";
+import { exoticSlots, getProperty, type ObjectHooks } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import {
@@ -39,7 +39,9 @@ export function installTypedArraySet(
         if (target === undefined) throw "TYPED_ARRAY_SET_INVARIANT";
         const input = viewObjectValue(args[0], realm.objectPrototype),
           sourceData =
-            input === undefined ? undefined : input.internalTypedArrayData;
+            input === undefined
+              ? undefined
+              : exoticSlots(input).internalTypedArrayData;
         if (sourceData !== undefined && input !== undefined) {
           const sourceWindow = typedArrayWindow(sourceData);
           if (sourceWindow === undefined)

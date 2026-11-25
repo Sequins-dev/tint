@@ -13,7 +13,6 @@ export function visitInstructionOperands(
     case "general-null":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
     case "boolean-none":
     case "string-none":
     case "reference-none":
@@ -66,6 +65,51 @@ export function visitInstructionOperands(
     case "record-has":
       visit(op.object);
       return;
+    case "record-slot-read":
+      visit(op.object);
+      visit(op.index);
+      return;
+    case "property-load":
+      visit(op.object);
+      visit(op.site);
+      return;
+    case "property-store":
+      visit(op.object);
+      visit(op.value);
+      visit(op.site);
+      return;
+    case "script-entry":
+      visit(op.callee);
+      visit(op.realm);
+      return;
+    case "global-cell":
+      visit(op.scope);
+      visit(op.cache);
+      return;
+    case "element-load": {
+      visit(op.object);
+      visit(op.index);
+      const cachedStorage = op.cachedStorage,
+        cachedCount = op.cachedCount;
+      if (cachedStorage !== undefined) visit(cachedStorage);
+      if (cachedCount !== undefined) visit(cachedCount);
+      return;
+    }
+    case "element-store": {
+      visit(op.object);
+      visit(op.index);
+      visit(op.value);
+      const cachedStorage = op.cachedStorage,
+        cachedCount = op.cachedCount;
+      if (cachedStorage !== undefined) visit(cachedStorage);
+      if (cachedCount !== undefined) visit(cachedCount);
+      return;
+    }
+    case "element-length":
+    case "element-storage":
+    case "element-count":
+      visit(op.object);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;
@@ -81,16 +125,13 @@ export function visitInstructionOperands(
         visit(id);
       }
       return;
-    case "script-argument": {
-      visit(op.index);
-      const frame = op.frame;
-      if (frame !== undefined) {
-        visit(frame.count);
-        visit(frame.registers);
-        visit(frame.stack);
-      }
+    case "activation-read":
+      if (op.record !== undefined) visit(op.record);
+      if (op.index !== undefined) visit(op.index);
       return;
-    }
+    case "script-argument":
+      visit(op.index);
+      return;
     case "call":
       if (op.receiver !== undefined) visit(op.receiver);
       for (const id of op.arguments) {

@@ -7,7 +7,7 @@ import {
   epochDayFromGregorian,
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
-import { type ObjectHooks } from "./operations.ts";
+import { exoticSlots, type ObjectHooks } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
 import {
@@ -127,24 +127,27 @@ export function plainDateTimeFrom(
   }
   const object = viewObjectValue(item, realm.objectPrototype);
   if (object !== undefined) {
-    const branded = object.internalTemporalPlainDateTime;
+    const branded = exoticSlots(object).internalTemporalPlainDateTime;
     if (branded !== undefined) {
       overflow();
       return branded;
     }
-    const zoned = object.internalTemporalZonedDateTime;
+    const zoned = exoticSlots(object).internalTemporalZonedDateTime;
     if (zoned !== undefined) {
       overflow();
       return zoned.dateTime;
     }
-    const date = object.internalTemporalPlainDate;
+    const date = exoticSlots(object).internalTemporalPlainDate;
     if (date !== undefined) {
       overflow();
       return combineTemporalDateTime(
         date,
         { hour: 0, minute: 0, second: 0, nanosecond: 0 },
         realm,
-        canonicalTemporalCalendar(object.internalTemporalCalendar, realm),
+        canonicalTemporalCalendar(
+          exoticSlots(object).internalTemporalCalendar,
+          realm,
+        ),
       );
     }
     const calendar = objectTemporalCalendarIdentifier(

@@ -1,4 +1,5 @@
 import type {
+  ActivationField,
   Block,
   Environment,
   EnvironmentCell,
@@ -310,6 +311,17 @@ const generalTests: readonly GeneralTest[] = [
   "Uint32Array",
   "Float64Array",
   "object",
+  "nullish",
+  "absent",
+];
+/** Activation fields by their packed index; append only. */
+const activationFields: readonly ActivationField[] = [
+  "top",
+  "previous",
+  "kind",
+  "callee",
+  "count",
+  "argument",
 ];
 export function encodeInstruction(
   writer: ByteWriter,
@@ -341,7 +353,7 @@ export function encodeInstruction(
       writeSigned(writer, op.value);
       return true;
     case "general-is":
-      writePrefix(writer, 80, op, 0);
+      writePrefix(writer, 80, op, op.branch === true ? 2 : 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.value);
       writeByte(writer, generalTests.indexOf(op.type));
@@ -366,7 +378,7 @@ export function encodeInstruction(
       writeSigned(writer, op.value);
       return true;
     case "general-value":
-      writePrefix(writer, 9, op, 0);
+      writePrefix(writer, 9, op, op.unchecked === true ? 2 : 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.value);
       writeByte(writer, scalarCode(op.type));
@@ -424,7 +436,8 @@ export function encodeInstruction(
         bit(receiver !== undefined, 2) +
           bit(id !== undefined, 4) +
           bit(op.discardResult === true, 8) +
-          bit(op.scriptArguments !== undefined, 16),
+          bit(op.scriptArguments !== undefined, 16) +
+          bit(op.tail === true, 32),
       );
       if (receiver !== undefined) writeSigned(writer, receiver);
       if (id !== undefined) writeSigned(writer, id);
@@ -435,25 +448,164 @@ export function encodeInstruction(
         writeList(writer, op.scriptArguments);
       return true;
     }
-    case "script-argument": {
-      const frame = op.frame;
-      writePrefix(writer, 82, op, bit(frame !== undefined, 2));
+    case "script-argument":
+      writePrefix(writer, 82, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.index);
-      if (frame !== undefined) {
-        writeSigned(writer, frame.count);
-        writeSigned(writer, frame.registers);
-        writeSigned(writer, frame.stack);
-      }
+      return true;
+    case "activation-read": {
+      const record = op.record,
+        index = op.index;
+      writePrefix(
+        writer,
+        117,
+        op,
+        bit(record !== undefined, 2) + bit(index !== undefined, 4),
+      );
+      writeSigned(writer, op.id);
+      writeByte(writer, activationFields.indexOf(op.field));
+      if (record !== undefined) writeSigned(writer, record);
+      if (index !== undefined) writeSigned(writer, index);
       return true;
     }
     case "script-argument-count":
       writePrefix(writer, 83, op, 0);
       writeSigned(writer, op.id);
       return true;
-    case "script-argument-area":
-      writePrefix(writer, 84, op, bit(op.area === "stack", 2));
+    case "record-slot-read":
+      writePrefix(writer, 114, op, 0);
       writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.count);
+      writeSigned(writer, op.index);
+      return true;
+    case "property-load": {
+      const spillRecord = op.spillRecord,
+        spillField = op.spillField;
+      writePrefix(
+        writer,
+        115,
+        op,
+        bit(op.inherited, 2) |
+          bit(spillRecord !== undefined && spillField !== undefined, 4),
+      );
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.site);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.count);
+      writeSigned(writer, op.siteRecord);
+      writeSigned(writer, op.siteField);
+      writeSigned(writer, op.entries);
+      writeSigned(writer, op.epochRecord);
+      writeSigned(writer, op.epochField);
+      if (spillRecord !== undefined && spillField !== undefined) {
+        writeSigned(writer, spillRecord);
+        writeSigned(writer, spillField);
+      }
+      return true;
+    }
+    case "property-store":
+      writePrefix(writer, 116, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.site);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.count);
+      writeSigned(writer, op.siteRecord);
+      writeSigned(writer, op.siteField);
+      writeSigned(writer, op.epochRecord);
+      writeSigned(writer, op.epochField);
+      return true;
+    case "script-entry":
+      writePrefix(writer, 118, op, bit(op.construct, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.callee);
+      writeSigned(writer, op.realm);
+      writeSigned(writer, op.realmRecord);
+      writeSigned(writer, op.agentField);
+      writeSigned(writer, op.agentRecord);
+      writeSigned(writer, op.activeField);
+      writeSigned(writer, op.objectRecord);
+      writeSigned(writer, op.registerCallField);
+      writeSigned(writer, op.entryRecord);
+      writeSigned(writer, op.invokeField);
+      writeSigned(writer, op.contextField);
+      writeSigned(writer, op.constructibleField);
+      writeSigned(writer, op.contextRecord);
+      writeSigned(writer, op.realmField);
+      writeSigned(writer, op.scriptOrModuleField);
+      return true;
+    case "global-cell":
+      writePrefix(writer, 119, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.scope);
+      writeSigned(writer, op.cache);
+      writeSigned(writer, op.scopeRecord);
+      writeSigned(writer, op.declarativeField);
+      writeSigned(writer, op.objectField);
+      writeSigned(writer, op.globalField);
+      writeSigned(writer, op.globalRecord);
+      writeSigned(writer, op.lexicalEpochField);
+      writeSigned(writer, op.globalObjectField);
+      writeSigned(writer, op.globalObjectRecord);
+      writeSigned(writer, op.propertyEpochField);
+      writeSigned(writer, op.cacheRecord);
+      writeSigned(writer, op.cacheGlobalField);
+      writeSigned(writer, op.cacheLexicalEpochField);
+      writeSigned(writer, op.cacheObjectEpochField);
+      writeSigned(writer, op.cacheCellField);
+      return true;
+    case "element-load":
+    case "element-store": {
+      const cachedStorage = op.cachedStorage,
+        cachedCount = op.cachedCount;
+      const hasCache = cachedStorage !== undefined && cachedCount !== undefined;
+      writePrefix(
+        writer,
+        op.kind === "element-load" ? 120 : 121,
+        op,
+        hasCache ? 2 : 0,
+      );
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.index);
+      if (op.kind === "element-store") writeSigned(writer, op.value);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.countField);
+      writeSigned(writer, op.storageField);
+      if (cachedStorage !== undefined && cachedCount !== undefined) {
+        writeSigned(writer, cachedStorage);
+        writeSigned(writer, cachedCount);
+      }
+      return true;
+    }
+    case "element-length":
+      writePrefix(writer, 122, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.lengthField);
+      return true;
+    case "element-storage":
+    case "element-count":
+      writePrefix(writer, op.kind === "element-storage" ? 123 : 124, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.countField);
+      writeSigned(writer, op.storageField);
       return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
@@ -1006,7 +1158,9 @@ export function decodeInstruction(
       const id = readSigned(reader),
         value = readSigned(reader),
         type = generalValueType(readByte(reader));
-      return { kind: "general-value", id, value, type, ...span };
+      return flagged(flags, 2)
+        ? { kind: "general-value", id, value, type, unchecked: true, ...span }
+        : { kind: "general-value", id, value, type, ...span };
     }
     case 10:
     case 11: {
@@ -1057,7 +1211,22 @@ export function decodeInstruction(
         id = flagged(flags, 4) ? readSigned(reader) : undefined,
         target = readSigned(reader),
         callee = readSigned(reader),
-        args = readList(reader);
+        args = readList(reader),
+        scriptArguments = flagged(flags, 16) ? readList(reader) : undefined;
+      // A tail call is a script call: no receiver, its result used.
+      if (flagged(flags, 32)) {
+        if (scriptArguments === undefined) throw "packed tail call invariant";
+        return {
+          kind: "call-indirect",
+          id,
+          target,
+          callee,
+          arguments: args,
+          scriptArguments,
+          tail: true,
+          ...span,
+        };
+      }
       return {
         kind: "call-indirect",
         ...(receiver === undefined ? {} : { receiver }),
@@ -1066,7 +1235,7 @@ export function decodeInstruction(
         target,
         callee,
         arguments: args,
-        ...(flagged(flags, 16) ? { scriptArguments: readList(reader) } : {}),
+        ...(scriptArguments === undefined ? {} : { scriptArguments }),
         ...span,
       };
     }
@@ -1414,26 +1583,265 @@ export function decodeInstruction(
         kind: "script-argument",
         id: readSigned(reader),
         index: readSigned(reader),
-        ...(flagged(flags, 2)
-          ? {
-              frame: {
-                count: readSigned(reader),
-                registers: readSigned(reader),
-                stack: readSigned(reader),
-              },
-            }
-          : {}),
         ...span,
       };
     case 83:
       return { kind: "script-argument-count", id: readSigned(reader), ...span };
-    case 84:
+    case 117: {
+      const id = readSigned(reader),
+        field = activationFields[readByte(reader)];
+      if (field === undefined) throw "packed activation field invariant";
+      const record = flagged(flags, 2) ? readSigned(reader) : undefined,
+        index = flagged(flags, 4) ? readSigned(reader) : undefined;
+      if (record === undefined)
+        return { kind: "activation-read", id, field, ...span };
+      if (index === undefined)
+        return { kind: "activation-read", id, field, record, ...span };
+      return { kind: "activation-read", id, field, record, index, ...span };
+    }
+    case 114: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        count = readSigned(reader),
+        index = readSigned(reader);
       return {
-        kind: "script-argument-area",
-        id: readSigned(reader),
-        area: flagged(flags, 2) ? "stack" : "registers",
+        kind: "record-slot-read",
+        id,
+        object,
+        record,
+        field,
+        count,
+        index,
         ...span,
       };
+    }
+    case 115: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        site = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        count = readSigned(reader),
+        siteRecord = readSigned(reader),
+        siteField = readSigned(reader),
+        entries = readSigned(reader),
+        epochRecord = readSigned(reader),
+        epochField = readSigned(reader),
+        hasSpill = flagged(flags, 4),
+        spillRecord = hasSpill ? readSigned(reader) : undefined,
+        spillField = hasSpill ? readSigned(reader) : undefined;
+      return {
+        kind: "property-load",
+        id,
+        object,
+        site,
+        record,
+        field,
+        count,
+        siteRecord,
+        siteField,
+        inherited: flagged(flags, 2),
+        entries,
+        epochRecord,
+        epochField,
+        ...(spillRecord !== undefined && spillField !== undefined
+          ? { spillRecord, spillField }
+          : {}),
+        ...span,
+      };
+    }
+    case 116: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        value = readSigned(reader),
+        site = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        count = readSigned(reader),
+        siteRecord = readSigned(reader),
+        siteField = readSigned(reader),
+        epochRecord = readSigned(reader),
+        epochField = readSigned(reader);
+      return {
+        kind: "property-store",
+        id,
+        object,
+        value,
+        site,
+        record,
+        field,
+        count,
+        siteRecord,
+        siteField,
+        epochRecord,
+        epochField,
+        ...span,
+      };
+    }
+    case 118: {
+      const id = readSigned(reader),
+        callee = readSigned(reader),
+        realm = readSigned(reader),
+        realmRecord = readSigned(reader),
+        agentField = readSigned(reader),
+        agentRecord = readSigned(reader),
+        activeField = readSigned(reader),
+        objectRecord = readSigned(reader),
+        registerCallField = readSigned(reader),
+        entryRecord = readSigned(reader),
+        invokeField = readSigned(reader),
+        contextField = readSigned(reader),
+        constructibleField = readSigned(reader),
+        contextRecord = readSigned(reader),
+        realmField = readSigned(reader),
+        scriptOrModuleField = readSigned(reader);
+      return {
+        kind: "script-entry",
+        id,
+        callee,
+        realm,
+        construct: flagged(flags, 2),
+        realmRecord,
+        agentField,
+        agentRecord,
+        activeField,
+        objectRecord,
+        registerCallField,
+        entryRecord,
+        invokeField,
+        contextField,
+        constructibleField,
+        contextRecord,
+        realmField,
+        scriptOrModuleField,
+        ...span,
+      };
+    }
+    case 119: {
+      const id = readSigned(reader),
+        scope = readSigned(reader),
+        cache = readSigned(reader),
+        scopeRecord = readSigned(reader),
+        declarativeField = readSigned(reader),
+        objectField = readSigned(reader),
+        globalField = readSigned(reader),
+        globalRecord = readSigned(reader),
+        lexicalEpochField = readSigned(reader),
+        globalObjectField = readSigned(reader),
+        globalObjectRecord = readSigned(reader),
+        propertyEpochField = readSigned(reader),
+        cacheRecord = readSigned(reader),
+        cacheGlobalField = readSigned(reader),
+        cacheLexicalEpochField = readSigned(reader),
+        cacheObjectEpochField = readSigned(reader),
+        cacheCellField = readSigned(reader);
+      return {
+        kind: "global-cell",
+        id,
+        scope,
+        cache,
+        scopeRecord,
+        declarativeField,
+        objectField,
+        globalField,
+        globalRecord,
+        lexicalEpochField,
+        globalObjectField,
+        globalObjectRecord,
+        propertyEpochField,
+        cacheRecord,
+        cacheGlobalField,
+        cacheLexicalEpochField,
+        cacheObjectEpochField,
+        cacheCellField,
+        ...span,
+      };
+    }
+    case 120: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        index = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      if ((flags & 2) !== 0) {
+        const cachedStorage = readSigned(reader),
+          cachedCount = readSigned(reader);
+        return {
+          kind: "element-load",
+          id,
+          object,
+          index,
+          record,
+          field,
+          elementsRecord,
+          countField,
+          storageField,
+          cachedStorage,
+          cachedCount,
+          ...span,
+        };
+      }
+      return {
+        kind: "element-load",
+        id,
+        object,
+        index,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
+        ...span,
+      };
+    }
+    case 121: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        index = readSigned(reader),
+        value = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      if ((flags & 2) !== 0) {
+        const cachedStorage = readSigned(reader),
+          cachedCount = readSigned(reader);
+        return {
+          kind: "element-store",
+          id,
+          object,
+          index,
+          value,
+          record,
+          field,
+          elementsRecord,
+          countField,
+          storageField,
+          cachedStorage,
+          cachedCount,
+          ...span,
+        };
+      }
+      return {
+        kind: "element-store",
+        id,
+        object,
+        index,
+        value,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
+        ...span,
+      };
+    }
     case 85: {
       const id = readSigned(reader),
         string = readSigned(reader);
@@ -1601,6 +2009,64 @@ export function decodeInstruction(
         ...span,
       };
     }
+    case 122: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        lengthField = readSigned(reader);
+      return {
+        kind: "element-length",
+        id,
+        object,
+        record,
+        field,
+        elementsRecord,
+        lengthField,
+        ...span,
+      };
+    }
+    case 123: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      return {
+        kind: "element-storage",
+        id,
+        object,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
+        ...span,
+      };
+    }
+    case 124: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      return {
+        kind: "element-count",
+        id,
+        object,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
+        ...span,
+      };
+    }
     case 81: {
       const id = readSigned(reader),
         value = readSigned(reader);
@@ -1611,7 +2077,9 @@ export function decodeInstruction(
         value = readSigned(reader),
         type = generalTests[readByte(reader)];
       if (type === undefined) throw "packed general test invariant";
-      return { kind: "general-is", id, value, type, ...span };
+      return flagged(flags, 2)
+        ? { kind: "general-is", id, value, type, branch: true, ...span }
+        : { kind: "general-is", id, value, type, ...span };
     }
     case 79: {
       const receiver = flagged(flags, 2) ? readSigned(reader) : undefined,

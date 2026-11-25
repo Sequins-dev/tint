@@ -12,6 +12,8 @@ import {
 } from "@tint/foundation/chrono/gregorian-calendar";
 import { formatISODate } from "@tint/foundation/chrono/iso-date-time";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   getProperty,
   createObject,
   createConstructorObject,
@@ -59,8 +61,8 @@ export function installTemporalPartialDates(
         object === undefined
           ? undefined
           : yearMonth
-            ? object.internalTemporalPlainYearMonth
-            : object.internalTemporalPlainMonthDay;
+            ? exoticSlots(object).internalTemporalPlainYearMonth
+            : exoticSlots(object).internalTemporalPlainMonthDay;
       if (date === undefined) throw createRuntimeError(realm, "type");
       return date;
     }
@@ -107,9 +109,10 @@ export function installTemporalPartialDates(
           ),
         );
         const date: GregorianDate = { year, month, day };
-        if (yearMonth) object.internalTemporalPlainYearMonth = date;
-        else object.internalTemporalPlainMonthDay = date;
-        object.internalTemporalCalendar = calendar;
+        if (yearMonth)
+          ensureExoticSlots(object).internalTemporalPlainYearMonth = date;
+        else ensureExoticSlots(object).internalTemporalPlainMonthDay = date;
+        ensureExoticSlots(object).internalTemporalCalendar = calendar;
         return object;
       },
     );
@@ -129,9 +132,12 @@ export function installTemporalPartialDates(
             hooks,
           );
           const object = createObject<ScriptPropertyKey, unknown>(prototype);
-          if (yearMonth) object.internalTemporalPlainYearMonth = data.date;
-          else object.internalTemporalPlainMonthDay = data.date;
-          object.internalTemporalCalendar = data.calendar;
+          if (yearMonth)
+            ensureExoticSlots(object).internalTemporalPlainYearMonth =
+              data.date;
+          else
+            ensureExoticSlots(object).internalTemporalPlainMonthDay = data.date;
+          ensureExoticSlots(object).internalTemporalCalendar = data.calendar;
           return object;
         },
         hooks,
@@ -182,11 +188,9 @@ export function installTemporalPartialDates(
               const object = createObject<ScriptPropertyKey, unknown>(
                 prototype,
               );
-              object.internalTemporalPlainYearMonth = result;
-              object.internalTemporalCalendar = temporalCalendarSlot(
-                receiver,
-                realm,
-              );
+              ensureExoticSlots(object).internalTemporalPlainYearMonth = result;
+              ensureExoticSlots(object).internalTemporalCalendar =
+                temporalCalendarSlot(receiver, realm);
               return object;
             },
             hooks,
@@ -263,12 +267,11 @@ export function installTemporalPartialDates(
             temporalCalendarSlot(receiver, realm),
           );
           const object = createObject<ScriptPropertyKey, unknown>(prototype);
-          if (yearMonth) object.internalTemporalPlainYearMonth = result;
-          else object.internalTemporalPlainMonthDay = result;
-          object.internalTemporalCalendar = temporalCalendarSlot(
-            receiver,
-            realm,
-          );
+          if (yearMonth)
+            ensureExoticSlots(object).internalTemporalPlainYearMonth = result;
+          else ensureExoticSlots(object).internalTemporalPlainMonthDay = result;
+          ensureExoticSlots(object).internalTemporalCalendar =
+            temporalCalendarSlot(receiver, realm);
           return object;
         },
         hooks,
@@ -368,8 +371,8 @@ export function installTemporalPartialDates(
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalPlainDatePrototype,
           );
-          object.internalTemporalPlainDate = result;
-          object.internalTemporalCalendar = calendar;
+          ensureExoticSlots(object).internalTemporalPlainDate = result;
+          ensureExoticSlots(object).internalTemporalCalendar = calendar;
           return object;
         },
         hooks,

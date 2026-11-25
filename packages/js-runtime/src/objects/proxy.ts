@@ -7,6 +7,8 @@ import {
   builtinProperty,
 } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createExoticObject,
   createConstructorObject,
@@ -337,7 +339,7 @@ export function createProxy(
     invoke,
     construct,
   );
-  proxy.internalProxyData = state;
+  ensureExoticSlots(proxy).internalProxyData = state;
   return proxy;
 }
 export function installProxyIntrinsics(
@@ -359,7 +361,7 @@ export function installProxyIntrinsics(
     2,
     (receiver, args): unknown => {
       const proxy = createProxy(args[0], args[1], realm, hooks);
-      const state = proxy.internalProxyData;
+      const state = exoticSlots(proxy).internalProxyData;
       if (state === undefined) throw "PROXY_STATE_INVARIANT";
       const revoke = builtinFunction(
         realm.functionPrototype,

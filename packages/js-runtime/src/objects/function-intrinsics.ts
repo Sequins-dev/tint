@@ -5,6 +5,7 @@ import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import { ordinaryHasInstance } from "./functions.ts";
 import {
   createConstructorObject,
+  ensureRareSlots,
   getOwnProperty,
   getProperty,
   type OrdinaryObject,
@@ -179,6 +180,8 @@ export function installFunctionIntrinsics(
     },
     hooks,
   );
+  realm.functionCall = call;
+  realm.functionApply = apply;
   function forwardCall(
     receiver: unknown,
     args: readonly unknown[],
@@ -202,12 +205,12 @@ export function installFunctionIntrinsics(
     if (step === undefined) throw "CALLABLE_INVARIANT";
     return step;
   }
-  call.internalTailDispatch = (
+  ensureRareSlots<ScriptPropertyKey, unknown>(call).internalTailDispatch = (
     receiver,
     args,
   ): ObjectCallDispatch<ScriptPropertyKey, unknown> =>
     forwardCall(receiver, args, false);
-  apply.internalTailDispatch = (
+  ensureRareSlots<ScriptPropertyKey, unknown>(apply).internalTailDispatch = (
     receiver,
     args,
   ): ObjectCallDispatch<ScriptPropertyKey, unknown> =>

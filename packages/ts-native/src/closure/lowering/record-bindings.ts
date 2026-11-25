@@ -1,5 +1,9 @@
 import type {
+  ActivationField,
+  FunctionDebug,
   FunctionIR,
+  Instruction,
+  SlotBinding,
   Block,
   ScalarType,
   Span,
@@ -15,9 +19,604 @@ export type RecordOperation =
    * hidden slot (undefined before the first crossing, or for a record of
    * another layout). */
   | "view-slot"
+  /** `(record: T, index: number): F`: field `field + index` of the record's
+   * `count` consecutive fields of type F (index checked). */
+  | "slot-read"
   /** `(record: T, view: unknown): void`: store the view (ignored for a
    * record of another layout). */
-  | "set-view-slot";
+  | "set-view-slot"
+  /** `(value: unknown, site: S): unknown`: the cached own (or inherited)
+   * property value of an object value, or a miss (IR property-load). The
+   * object record layout is read from `site.inheritedObject`. */
+  | "property-load"
+  | "inherited-property-load"
+  /** `(value: unknown, site: S): boolean`: whether a property-load missed
+   * (IR general-is "absent"). */
+  | "absent-test"
+  /** `(target: unknown, value: unknown, site: S): boolean`: a cached
+   * property store (IR property-store). */
+  | "property-store"
+  /** `(witness: T): number`: the word index of a named field of T. */
+  | "field-word"
+  /** `(witness: T, value: unknown, index: number): unknown`: the packed
+   * binary64 element of an object value, or a miss (IR element-load). */
+  | "element-load"
+  /** `(witness: T, target: unknown, index: number, value: unknown):
+   * boolean`: overwrite a packed binary64 element (IR element-store). */
+  | "element-store"
+  /** `(array: Float64Array, index: number): number`: proven-in-bounds
+   * Float64Array element read (IR array-element). */
+  | "array-element"
+  /** `(array: Float64Array, index: number, value: number): void`:
+   * proven-in-bounds Float64Array element write (IR array-store). */
+  | "array-store"
+  /** `(witness: T, value: unknown): unknown`: the mirrored `length` of a
+   * packed array object, or a miss (IR element-length). */
+  | "element-length"
+  /** Native activation chain reads (IR activation-read), without a record
+   * witness: `(): number` the innermost record; `(record: number): F` a
+   * record's previous record, kind, actual count (numbers) or callee
+   * (unknown); `(record: number, index: number): unknown` an actual. */
+  | "activation-top"
+  | "activation-previous"
+  | "activation-kind"
+  | "activation-callee"
+  | "activation-count"
+  | "activation-argument"
+  /** `(callee: unknown, realm: ErrorRealm):
+   * ObjectScriptCall<unknown> | undefined`: resolve a native script entry
+   * closure for a direct call or ordinary construction (IR script-entry). */
+  | "script-call-entry"
+  | "script-construct-entry"
+  /** `(start: EnvironmentScope, cache: GlobalIdentifierCache):
+   * Descriptor | undefined`: read a cached global data cell (IR global-cell). */
+  | "global-cell";
+
+/** The record fields a global-cell binding reads (IR global-cell). */
+export interface GlobalCellLayout {
+  readonly scopeRecord: number;
+  readonly declarativeField: number;
+  readonly objectField: number;
+  readonly globalField: number;
+  readonly globalRecord: number;
+  readonly lexicalEpochField: number;
+  readonly globalObjectField: number;
+  readonly globalObjectRecord: number;
+  readonly propertyEpochField: number;
+  readonly cacheRecord: number;
+  readonly cacheGlobalField: number;
+  readonly cacheLexicalEpochField: number;
+  readonly cacheObjectEpochField: number;
+  readonly cacheCellField: number;
+}
+
+/** The record fields a script-entry binding reads (IR script-entry). */
+export interface ScriptEntryLayout {
+  readonly realmRecord: number;
+  readonly agentField: number;
+  readonly agentRecord: number;
+  readonly activeField: number;
+  readonly objectRecord: number;
+  readonly registerCallField: number;
+  readonly entryRecord: number;
+  readonly invokeField: number;
+  readonly contextField: number;
+  readonly constructibleField: number;
+  readonly contextRecord: number;
+  readonly realmField: number;
+  readonly scriptOrModuleField: number;
+}
+
+/** The record fields a property cache binding reads (see the IR
+ * instructions property-load and property-store). */
+export interface PropertyCacheLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly count: number;
+  readonly siteRecord: number;
+  readonly siteField: number;
+  readonly spillRecord?: number;
+  readonly spillField?: number;
+}
+/** A bound body's slots: its parameters only, so the replaced source
+ * body's locals cannot keep it from inlining. */
+function parameterSlots(fn: FunctionIR): ScalarType[] {
+  const slots: ScalarType[] = [];
+  for (let index = 0; index < fn.parameters.length; index++) {
+    const type = fn.slots[index];
+    if (fn.parameters[index] !== index || type === undefined)
+      throw "record binding parameter invariant";
+    slots.push(type);
+  }
+  return slots;
+}
+/** Debug metadata of a bound body: source variables and parameter slots
+ * remain; bindings of the replaced body's values and locals do not. */
+function parameterDebug(
+  debug: FunctionDebug,
+  parameters: number,
+): FunctionDebug {
+  const slots: SlotBinding[] = [];
+  for (const binding of debug.slots) {
+    if (binding === undefined) throw "record binding debug invariant";
+    if (binding.slot < parameters) slots.push(binding);
+  }
+  return {
+    variables: debug.variables,
+    slots,
+    values: [],
+    inlineSites: debug.inlineSites,
+  };
+}
+/** A bound body of one instruction over its parameters. */
+function boundBody(
+  fn: FunctionIR,
+  parameters: readonly number[],
+  instruction: (loaded: readonly number[]) => Instruction,
+  span: Span,
+): FunctionIR {
+  const instructions: Instruction[] = [];
+  const loaded: number[] = [];
+  for (const slot of parameters) {
+    loaded.push(instructions.length);
+    instructions.push({
+      start: span.start,
+      end: span.end,
+      kind: "load",
+      id: instructions.length,
+      slot,
+    });
+  }
+  const result = instruction(loaded);
+  instructions.push(result);
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { ...span, kind: "return", value: loaded.length },
+      },
+    ],
+  };
+}
+/** The activation field an activation binding reads, or undefined. */
+export function activationOperationField(
+  operation: RecordOperation,
+): ActivationField | undefined {
+  switch (operation) {
+    case "activation-top":
+      return "top";
+    case "activation-previous":
+      return "previous";
+    case "activation-kind":
+      return "kind";
+    case "activation-callee":
+      return "callee";
+    case "activation-count":
+      return "count";
+    case "activation-argument":
+      return "argument";
+    default:
+      return undefined;
+  }
+}
+/** The body of an activation binding: one activation-read of its numeric
+ * record (absent for top) and index (argument only) parameters. */
+export function bindActivationRead(
+  fn: FunctionIR,
+  field: ActivationField,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    fn.parameters,
+    (loaded): Instruction => {
+      const id = loaded.length,
+        record = loaded[0],
+        index = loaded[1];
+      if (record === undefined)
+        return {
+          start: span.start,
+          end: span.end,
+          kind: "activation-read",
+          id,
+          field,
+        };
+      if (index === undefined)
+        return {
+          start: span.start,
+          end: span.end,
+          kind: "activation-read",
+          id,
+          field,
+          record,
+        };
+      return {
+        start: span.start,
+        end: span.end,
+        kind: "activation-read",
+        id,
+        field,
+        record,
+        index,
+      };
+    },
+    span,
+  );
+}
+/** The body of a property-load binding: its value and site parameters, the
+ * site's entry count, and the epoch record inherited entries name. */
+export function bindPropertyLoad(
+  fn: FunctionIR,
+  value: number,
+  site: number,
+  layout: PropertyCacheLayout,
+  inherited: boolean,
+  entries: number,
+  epochRecord: number,
+  epochField: number,
+  span: Span,
+): FunctionIR {
+  const spillRecord = layout.spillRecord,
+    spillField = layout.spillField;
+  return boundBody(
+    fn,
+    [value, site],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "property-load",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      site: loaded[1] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      count: layout.count,
+      siteRecord: layout.siteRecord,
+      siteField: layout.siteField,
+      inherited,
+      entries,
+      epochRecord,
+      epochField,
+      ...(spillRecord !== undefined && spillField !== undefined
+        ? { spillRecord, spillField }
+        : {}),
+    }),
+    span,
+  );
+}
+/** The record fields element-load and element-store read: the witness
+ * record's elements field, and the elements record's count and storage. */
+export interface ElementLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly elementsRecord: number;
+  readonly countField: number;
+  readonly storageField: number;
+}
+/** The body of an element-load binding: its value and index parameters. */
+export function bindElementLoad(
+  fn: FunctionIR,
+  value: number,
+  index: number,
+  layout: ElementLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value, index],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "element-load",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      countField: layout.countField,
+      storageField: layout.storageField,
+    }),
+    span,
+  );
+}
+/** The body of an element-store binding: its target, index and value
+ * parameters. */
+export function bindElementStore(
+  fn: FunctionIR,
+  target: number,
+  index: number,
+  value: number,
+  layout: ElementLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [target, index, value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "element-store",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+      value: loaded[2] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      countField: layout.countField,
+      storageField: layout.storageField,
+    }),
+    span,
+  );
+}
+/** The body of an array-element binding: one unchecked IR array-element over
+ * its typed-array and index parameters. */
+export function bindArrayElement(
+  fn: FunctionIR,
+  array: number,
+  index: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [array, index],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "array-element",
+      id: loaded.length,
+      array: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+    }),
+    span,
+  );
+}
+/** The body of an array-store binding: one unchecked IR array-store over its
+ * typed-array, index and value parameters. */
+export function bindArrayStore(
+  fn: FunctionIR,
+  array: number,
+  index: number,
+  value: number,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 0,
+            slot: array,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 1,
+            slot: index,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 2,
+            slot: value,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "array-store",
+            array: 0,
+            index: 1,
+            value: 2,
+          },
+        ],
+        terminator: { ...span, kind: "return", value: undefined },
+      },
+    ],
+  };
+}
+/** The record fields element-length reads: the witness record's elements
+ * field and the elements record's length field. */
+export interface ElementLengthLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly elementsRecord: number;
+  readonly lengthField: number;
+}
+/** The body of an element-length binding: its value parameter. */
+export function bindElementLength(
+  fn: FunctionIR,
+  value: number,
+  layout: ElementLengthLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "element-length",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      lengthField: layout.lengthField,
+    }),
+    span,
+  );
+}
+/** The body of an absent-test binding: its value parameter's miss test. */
+export function bindAbsentTest(
+  fn: FunctionIR,
+  value: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "general-is",
+      id: loaded.length,
+      value: loaded[0] ?? -1,
+      type: "absent",
+    }),
+    span,
+  );
+}
+/** The body of a property-store binding: its target, value and site
+ * parameters, and the epoch record the site's transition entry names. */
+export function bindPropertyStore(
+  fn: FunctionIR,
+  target: number,
+  value: number,
+  site: number,
+  layout: PropertyCacheLayout,
+  epochRecord: number,
+  epochField: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [target, value, site],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "property-store",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      value: loaded[1] ?? -1,
+      site: loaded[2] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      count: layout.count,
+      siteRecord: layout.siteRecord,
+      siteField: layout.siteField,
+      epochRecord,
+      epochField,
+    }),
+    span,
+  );
+}
+/** The body of a script-entry binding: one IR script-entry over its callee
+ * and realm parameters. */
+export function bindScriptEntry(
+  fn: FunctionIR,
+  callee: number,
+  realm: number,
+  construct: boolean,
+  layout: ScriptEntryLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [callee, realm],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "script-entry",
+      id: loaded.length,
+      callee: loaded[0] ?? -1,
+      realm: loaded[1] ?? -1,
+      construct,
+      realmRecord: layout.realmRecord,
+      agentField: layout.agentField,
+      agentRecord: layout.agentRecord,
+      activeField: layout.activeField,
+      objectRecord: layout.objectRecord,
+      registerCallField: layout.registerCallField,
+      entryRecord: layout.entryRecord,
+      invokeField: layout.invokeField,
+      contextField: layout.contextField,
+      constructibleField: layout.constructibleField,
+      contextRecord: layout.contextRecord,
+      realmField: layout.realmField,
+      scriptOrModuleField: layout.scriptOrModuleField,
+    }),
+    span,
+  );
+}
+/** The body of a global-cell binding: one IR global-cell over its scope and
+ * cache parameters. */
+export function bindGlobalCell(
+  fn: FunctionIR,
+  scope: number,
+  cache: number,
+  layout: GlobalCellLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [scope, cache],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "global-cell",
+      id: loaded.length,
+      scope: loaded[0] ?? -1,
+      cache: loaded[1] ?? -1,
+      scopeRecord: layout.scopeRecord,
+      declarativeField: layout.declarativeField,
+      objectField: layout.objectField,
+      globalField: layout.globalField,
+      globalRecord: layout.globalRecord,
+      lexicalEpochField: layout.lexicalEpochField,
+      globalObjectField: layout.globalObjectField,
+      globalObjectRecord: layout.globalObjectRecord,
+      propertyEpochField: layout.propertyEpochField,
+      cacheRecord: layout.cacheRecord,
+      cacheGlobalField: layout.cacheGlobalField,
+      cacheLexicalEpochField: layout.cacheLexicalEpochField,
+      cacheObjectEpochField: layout.cacheObjectEpochField,
+      cacheCellField: layout.cacheCellField,
+    }),
+    span,
+  );
+}
+/** The body of a field-word binding: one constant. */
+export function bindFieldWord(
+  fn: FunctionIR,
+  word: number,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ ...span, kind: "constant", id: 0, value: word }],
+        terminator: { ...span, kind: "return", value: 0 },
+      },
+    ],
+  };
+}
 
 /** Signature and semantic result types are validated by the source adapter. */
 export function bindRecordOperation(
@@ -26,9 +625,41 @@ export function bindRecordOperation(
   record: number,
   operation: RecordOperation,
   span: Span,
-  /** The view slot's field index (view-slot and set-view-slot). */
+  /** The view slot's field index (view-slot and set-view-slot), or the
+   * first slot field (slot-read). */
   field: number = -1,
+  /** slot-read: the number of consecutive slot fields and the index
+   * parameter's slot. */
+  count: number = 0,
+  index: number = -1,
 ): FunctionIR {
+  if (operation === "slot-read") {
+    if (field < 0 || count < 1 || index < 0) throw "record slot invariant";
+    return {
+      ...fn,
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { ...span, kind: "load", id: 0, slot: input },
+            { ...span, kind: "load", id: 1, slot: index },
+            {
+              ...span,
+              kind: "record-slot-read",
+              id: 2,
+              object: 0,
+              record,
+              field,
+              count,
+              index: 1,
+            },
+          ],
+          terminator: { ...span, kind: "return", value: 2 },
+        },
+      ],
+    };
+  }
   if (operation === "view-slot" || operation === "set-view-slot") {
     if (field < 0) throw "record view slot invariant";
     const read = operation === "view-slot";
@@ -150,5 +781,15 @@ export function bindRecordOperation(
       terminator: { ...span, kind: "return", value: 5 },
     });
   }
+  if (operation === "test")
+    return {
+      ...fn,
+      slots: parameterSlots(fn),
+      ...(fn.debug === undefined
+        ? {}
+        : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+      entry: 0,
+      blocks,
+    };
   return { ...fn, entry: 0, blocks };
 }

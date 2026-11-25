@@ -30,6 +30,7 @@ import {
   calendarDateFromFields,
   type CalendarISODate,
 } from "./calendar.ts";
+import { exoticSlots } from "./operations.ts";
 function yearMonthWithinLimits(year: number, month: number): boolean {
   return (
     year >= -271821 &&
@@ -59,14 +60,14 @@ export function partialDateFrom(
   const object = viewObjectValue(item, realm.objectPrototype);
   if (object !== undefined) {
     const branded = yearMonth
-      ? object.internalTemporalPlainYearMonth
-      : object.internalTemporalPlainMonthDay;
+      ? exoticSlots(object).internalTemporalPlainYearMonth
+      : exoticSlots(object).internalTemporalPlainMonthDay;
     if (branded !== undefined) {
       overflow();
       return {
         date: branded,
         calendar: canonicalTemporalCalendar(
-          object.internalTemporalCalendar,
+          exoticSlots(object).internalTemporalCalendar,
           realm,
         ),
       };

@@ -2,7 +2,7 @@ import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { frameRoots } from "./frame-roots.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { ModuleIR } from "@tint/ir/scalar";
+import type { ModuleIR, RecordField } from "@tint/ir/scalar";
 import { decodeStackMaps, emitModule } from "@tint/codegen/aarch64/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
 const span = { start: 1, end: 3 };
@@ -133,6 +133,512 @@ test("generational barriers cover managed writes and omit numeric-only stores", 
     assert.equal(filtered, type !== "number");
   }
 });
+test("a general field write to an old object skips the barrier helper for non-reference tags", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "general", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "write",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["reference", "general"],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "record",
+              object: 0,
+              record: 0,
+              field: 0,
+              operation: "write",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [],
+            terminator: { kind: "return", value: undefined, ...span },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module, {
+    maxByteLength: 0xffffffff,
+    debugSpans: false,
+    linearAllocation: false,
+    generationalBarriers: true,
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  // After the inline nursery test (LDR x12, [x10, #56]): tags 5..7 and 3
+  // carry a reference (CMP x13, #5 / B.HS; CMP x13, #3 / B.NE skips).
+  const state = words.indexOf(0xf9401d4c);
+  assert.ok(state >= 0);
+  const compare = (immediate: number): number => {
+    const word = encode({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate,
+      shift: 0,
+      setFlags: true,
+    });
+    assert.ok(word.ok);
+    return word.value;
+  };
+  const five = words.indexOf(compare(5), state),
+    three = words.indexOf(compare(3), state);
+  assert.ok(five > state && three > five, JSON.stringify({ five, three }));
+});
+
+test("record-new stores zero-valued fields as XZR without materializing them", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 48,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+          { offset: 32, type: "number", mutable: true },
+          { offset: 40, type: "boolean", mutable: true },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "fresh",
+        exported: true,
+        parameters: [],
+        slots: [],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "reference-none", id: 0, ...span },
+              { kind: "general-none", id: 1, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              { kind: "constant", id: 3, value: false, ...span },
+              {
+                kind: "record-new",
+                id: 4,
+                record: 0,
+                arguments: [0, 1, 2, 3],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  const pair = (offset: number): number => {
+    const word = encode({
+      op: "stp",
+      width: 64,
+      rt: "zr",
+      rt2: "zr",
+      rn: 9,
+      offset,
+      mode: "offset",
+    });
+    assert.ok(word.ok);
+    return word.value;
+  };
+  // Words 8..40 are zero: two STP XZR pairs, the fifth word one STR XZR.
+  assert.ok(words.includes(pair(8)));
+  assert.ok(words.includes(pair(24)));
+  const single = encode({ op: "str", width: 64, rt: "zr", rn: 9, offset: 40 });
+  assert.ok(single.ok);
+  assert.ok(words.includes(single.value));
+  // The constants are never materialized in the frame: no MOV x9, #0 and
+  // no STR XZR, [sp, #imm].
+  assert.ok(!words.includes(0xd2800009));
+  assert.ok(!words.some((word) => (word & 0xffc003ff) >>> 0 === 0xf90003ff));
+});
+
+/** A function reading a four-entry property site (IR property-load) whose
+ * miss test branches to block 1 (the miss, emitted after it) and block 2
+ * (the hit), as code words. Object record 1 (shape, one value); site
+ * record 2: own entries are a shape and a word index, inherited entries add
+ * a holder and are followed by the epoch they were found under and the
+ * epoch record (record 3). */
+function propertyLoadWords(inherited: boolean, spill = false): number[] {
+  const stride = inherited ? 32 : 16;
+  const siteFields: RecordField[] = [];
+  for (let entry = 0; entry < 4; entry++) {
+    siteFields.push(
+      { offset: 8 + entry * stride, type: "reference", mutable: true },
+      { offset: 16 + entry * stride, type: "number", mutable: true },
+    );
+    if (inherited)
+      siteFields.push({
+        offset: 24 + entry * stride,
+        type: "general",
+        mutable: true,
+      });
+  }
+  if (inherited)
+    siteFields.push(
+      { offset: 8 + 4 * stride, type: "number", mutable: true },
+      { offset: 16 + 4 * stride, type: "reference", mutable: false },
+      { offset: 24 + 4 * stride, type: "reference", mutable: false },
+    );
+  const spillFields: RecordField[] = [
+    { offset: 8, type: "optional-reference", mutable: true },
+  ];
+  for (let slot = 0; slot < 16; slot++)
+    spillFields.push({
+      offset: 16 + slot * 16,
+      type: "general",
+      mutable: true,
+    });
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: spill ? 40 : 32,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+          ...(spill
+            ? [
+                {
+                  offset: 32,
+                  type: "optional-reference" as const,
+                  mutable: true,
+                },
+              ]
+            : []),
+        ],
+      },
+      {
+        byteLength: 8 + 4 * stride + (inherited ? 24 : 0),
+        fields: siteFields,
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+      { byteLength: 272, fields: spillFields },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "read",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference", "general"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "property-load",
+                id: 2,
+                object: 0,
+                site: 1,
+                record: 1,
+                field: 1,
+                count: 1,
+                siteRecord: 2,
+                siteField: 0,
+                inherited,
+                entries: 4,
+                epochRecord: 3,
+                epochField: 0,
+                ...(spill ? { spillRecord: 4, spillField: 2 } : {}),
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+              { kind: "general-is", id: 3, value: 2, type: "absent", ...span },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 3,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "general-none", id: 4, ...span }],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 5, slot: 2, ...span }],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  return words;
+}
+
+test("a fused four-entry property load tests entries 1-3 in a cold stub", () => {
+  const words = propertyLoadWords(false);
+  // CMP x9, x12 once per entry: entry 0 inline, entries 1-3 in the stub.
+  const compare = encode({
+    op: "sub-reg",
+    width: 64,
+    rd: "zr",
+    rn: 9,
+    rm: 12,
+    shift: "lsl",
+    amount: 0,
+    setFlags: true,
+  });
+  assert.ok(compare.ok);
+  const at = words.flatMap((word, index) =>
+    word === compare.value ? [index] : [],
+  );
+  assert.equal(at.length, 4);
+  // Entry 0's mismatch branches forward past the hit and miss code to the
+  // stub, so the stub's compares follow every other instruction of the body.
+  assert.ok(at[1]! - at[0]! > 4);
+});
+
+test("an inherited entry with slot 0 selects its direct cached value", () => {
+  // CSEL x9, x14, x9, EQ after CMP x13, #0 at the shared hit: slot 0 reads the
+  // direct inherited value from the cache entry (x14), positive slots read the
+  // receiver (x9).
+  const select = encode({
+    op: "csel",
+    width: 64,
+    rd: 9,
+    rn: 14,
+    rm: 9,
+    condition: "eq",
+  });
+  assert.ok(select.ok);
+  const count = (words: number[]): number =>
+    words.filter((word) => word === select.value).length;
+  assert.equal(count(propertyLoadWords(true)), 1);
+  assert.equal(count(propertyLoadWords(false)), 0);
+});
+
+test("a property load with spill storage walks chunks in a cold stub", () => {
+  const extractChunk = encode({
+    op: "ubfm",
+    width: 64,
+    rd: 12,
+    rn: 13,
+    immr: 16,
+    imms: 31,
+  });
+  assert.ok(extractChunk.ok);
+  const count = (words: number[]): number =>
+    words.filter((word) => word === extractChunk.value).length;
+  assert.equal(count(propertyLoadWords(true, true)), 1);
+  assert.equal(count(propertyLoadWords(false, true)), 1);
+  assert.equal(count(propertyLoadWords(true, false)), 0);
+});
+
+test("call-indirect skips descriptor and signature checks for script-entry callees", () => {
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "reference", mutable: false }],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "reference", mutable: false },
+          { offset: 16, type: "boolean", mutable: false },
+          { offset: 24, type: "optional-reference", mutable: false },
+        ],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "reference", mutable: false },
+          { offset: 16, type: "general", mutable: false },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "scriptTarget",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "general-none", id: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "provenCaller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "script-entry",
+                id: 2,
+                callee: 0,
+                realm: 1,
+                construct: false,
+                realmRecord: 1,
+                agentField: 0,
+                agentRecord: 2,
+                activeField: 0,
+                objectRecord: 3,
+                registerCallField: 0,
+                entryRecord: 4,
+                invokeField: 2,
+                contextField: 0,
+                constructibleField: 1,
+                contextRecord: 5,
+                realmField: 0,
+                scriptOrModuleField: 1,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+              { kind: "load", id: 3, slot: 2, ...span },
+              { kind: "reference-value", id: 4, value: 3, ...span },
+              { kind: "general-none", id: 5, ...span },
+              { kind: "reference-none", id: 6, ...span },
+              {
+                kind: "call-indirect",
+                id: 7,
+                callee: 4,
+                target: 0,
+                arguments: [0, 5, 5, 6],
+                scriptArguments: [],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 7, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "unprovenCaller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["reference", "general"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "general-none", id: 2, ...span },
+              { kind: "reference-none", id: 3, ...span },
+              {
+                kind: "call-indirect",
+                id: 4,
+                callee: 0,
+                target: 0,
+                arguments: [1, 2, 2, 3],
+                scriptArguments: [],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const sigLoad = encode({
+    op: "ldr",
+    width: 64,
+    rt: 10,
+    rn: 12,
+    offset: 24,
+  });
+  assert.ok(sigLoad.ok);
+  const view = new DataView(result.value.code.buffer);
+  const countSigLoads = (fnIndex: number): number => {
+    const fn = result.value.functions[fnIndex]!;
+    let hits = 0;
+    for (
+      let offset = fn.offset;
+      offset < fn.offset + fn.byteLength;
+      offset += 4
+    )
+      if (view.getUint32(offset, true) === sigLoad.value) hits++;
+    return hits;
+  };
+  assert.equal(countSigLoads(1), 0);
+  assert.equal(countSigLoads(2), 1);
+});
+
 test("reference vector copies are one indexed loop with at most one barrier", () => {
   function words(rebase: boolean, generationalBarriers: boolean): number[] {
     const module: ModuleIR = {

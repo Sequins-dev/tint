@@ -31,6 +31,7 @@ import { toNumber } from "@tint/foundation/numeric/big-integer";
 import { viewSymbolValue, symbolDescriptiveString } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  exoticSlots,
   createConstructorObject,
   getProperty,
   type OrdinaryObject,
@@ -63,10 +64,6 @@ export function installPrimitiveIntrinsics(
   installBigIntIntrinsics(global, realm, hooks);
   installURIIntrinsics(global, realm, hooks);
   installJSONIntrinsics(global, realm, hooks);
-  installStringRegExpMethods(realm, hooks);
-  installStringHTMLMethods(realm, hooks);
-  installStringCasingMethods(realm, hooks);
-  installStringLocaleCompare(realm, hooks);
   function numberConstructor(value: unknown): unknown {
     const converted = numericValue(value, hooks, realm);
     if (converted.error === "unsupported")
@@ -101,7 +98,9 @@ export function installPrimitiveIntrinsics(
       if (typeof receiver === kind) return receiver;
       const object = viewObjectValue(receiver, realm.objectPrototype);
       const data =
-        object === undefined ? undefined : object.internalPrimitiveData;
+        object === undefined
+          ? undefined
+          : exoticSlots(object).internalPrimitiveData;
       if (data === undefined || data.kind !== kind)
         throw createRuntimeError(realm, "type");
       return data.value;
@@ -183,6 +182,7 @@ export function installPrimitiveIntrinsics(
   }
   install("boolean", "Boolean", realm.booleanPrototype);
   const constructor = install("number", "Number", realm.numberPrototype);
+  realm.intrinsicFunctions.number = constructor;
   const stringConstructor = install("string", "String", realm.stringPrototype);
   function convertedString(value: unknown): string {
     const converted = stringValue(value, hooks, realm);
@@ -257,6 +257,32 @@ export function installPrimitiveIntrinsics(
     builtinProperty(realm.stringPrototype, name, method, true, true, hooks);
     return method;
   }
+  // Install hot string methods in the first eight in-object slots so
+  // `s.charCodeAt`, `s.charAt`, `s.slice`, and `s.indexOf` hit property-load.
+  realm.intrinsicFunctions.stringCharCodeAt = stringMethod(
+    "charCodeAt",
+    1,
+    (value, args): unknown => value.charCodeAt(number(args[0])),
+  );
+  realm.intrinsicFunctions.stringCharAt = stringMethod(
+    "charAt",
+    1,
+    (value, args): unknown => value.charAt(number(args[0])),
+  );
+  stringMethod("slice", 2, (value, args): unknown => {
+    const start = number(args[0]);
+    const end = args[1] === undefined ? value.length : number(args[1]);
+    return value.slice(start, end);
+  });
+  stringMethod("indexOf", 1, (value, args): unknown => {
+    const search = convertedString(args[0]);
+    const position = number(args[1]);
+    return value.indexOf(search, position);
+  });
+  installStringRegExpMethods(realm, hooks);
+  installStringHTMLMethods(realm, hooks);
+  installStringCasingMethods(realm, hooks);
+  installStringLocaleCompare(realm, hooks);
   stringMethod("normalize", 0, (value, args): unknown => {
     const form = args[0] === undefined ? "NFC" : convertedString(args[0]);
     const normalized = normalizeUnicode(value, form);
@@ -361,12 +387,6 @@ export function installPrimitiveIntrinsics(
   stringSearch("startsWith");
   stringSearch("endsWith");
   stringSearch("includes");
-  stringMethod("charCodeAt", 1, (value, args): unknown =>
-    value.charCodeAt(number(args[0])),
-  );
-  stringMethod("charAt", 1, (value, args): unknown =>
-    value.charAt(number(args[0])),
-  );
   stringMethod("substr", 2, (value, args): unknown => {
     const start = Math.trunc(number(args[0])) || 0;
     const length =
@@ -382,16 +402,6 @@ export function installPrimitiveIntrinsics(
     const start = number(args[0]);
     const end = args[1] === undefined ? value.length : number(args[1]);
     return value.substring(start, end);
-  });
-  stringMethod("slice", 2, (value, args): unknown => {
-    const start = number(args[0]);
-    const end = args[1] === undefined ? value.length : number(args[1]);
-    return value.slice(start, end);
-  });
-  stringMethod("indexOf", 1, (value, args): unknown => {
-    const search = convertedString(args[0]);
-    const position = number(args[1]);
-    return value.indexOf(search, position);
   });
   stringMethod("lastIndexOf", 1, (value, args): unknown => {
     const search = convertedString(args[0]);

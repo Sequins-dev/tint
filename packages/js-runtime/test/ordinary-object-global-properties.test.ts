@@ -2,6 +2,7 @@ import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import type { ObjectHooks, ScriptPropertyKey } from "../src/objects/index.ts";
 import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 const views = bindHostRecordViews();
 after(() => views.deregister());
 const object = await import("../src/objects/index.ts");
@@ -37,7 +38,7 @@ test("eval installs standard function metadata and preserves non-string identiti
   const evaluate = object.installEvalIntrinsic(global, realm, hooks);
   assert.equal(evaluate.internalConstruct, undefined);
   assert.equal(object.getOwnProperty(evaluate, "prototype"), undefined);
-  assert.equal(evaluate.internalInitialName, "eval");
+  assert.equal(exoticSlots(evaluate).internalInitialName, "eval");
   for (const [name, value] of [
     ["name", "eval"],
     ["length", 1],

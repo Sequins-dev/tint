@@ -525,6 +525,28 @@ operations; neither inheritance nor a Proxy forwards the brand. Three native reg
 failure and passes a separate diagnostic. Both reports remain in the dashboard.
 Complete unchanged Annex B selections are queued.
 
+### The [[IsHTMLDDA]] host capability
+
+Whether a host creates [[IsHTMLDDA]] objects is an explicit capability of the
+lowering (`htmlDDAObjects` in `ScriptLoweringOptions` and
+`GeneralLoweringOptions`). Code lowered with it tests `x == null` against
+undefined, null and the brand. Code lowered without it tests the tag alone
+and calls `excludeHTMLDDAObjects` when it initializes. The runtime makes that
+exclusion and `markHTMLDDAObject` mutually exclusive, so a host that creates
+such an object beside code lowered without the capability fails instead of
+changing loose equality: the refusal escapes the program's entry uncaught
+(exit status 70).
+
+| Host                                       | Capability                             |
+| ------------------------------------------ | -------------------------------------- |
+| Test262 (`test262ScriptHost`)              | Declared; it creates `$262.IsHTMLDDA`. |
+| Benchmark (`benchmarkScriptHost`)          | Not declared.                          |
+| General programs (`createGeneralLowering`) | Not declared by default.               |
+| Script lowering (`lowerScript`, eval)      | Declared by default.                   |
+
+`tools/native-script-cases.test.ts` runs Scripts lowered both ways
+beside the Test262 host's marked object.
+
 ### Debugger transport
 
 Darwin runs use `/usr/bin/lldb` and its bundled debugserver. By default

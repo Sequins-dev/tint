@@ -1,0 +1,103 @@
+{
+  "kind": "tint-frozen-self-compile",
+  "workload": "gr8 (frozen at origin/main 3d10cb5c0)",
+  "command": "node tools/frozen-workload.ts run gr8 base-3d10cb5c0 step1-7e03decee step2-24af2993b step2b-04619a2f4 --rounds 3 (under tint-timing.lock)",
+  "images": {
+    "base-3d10cb5c0": "f02cbfd39a953b1105ae89ab75e4d6a8fb0527ac22bca2dd65b1d4e7e5f16f33",
+    "step1-7e03decee": "376fd713da2ba7be77252caa918515fc5714e42f3a74131db9c4bd75fdb40645",
+    "step2-24af2993b": "08def44a2740b56efe1de6284844f2725c1cbb6b03d158d37fb3c9e1bb2f09a5",
+    "step2b-04619a2f4": "c545505b997fe70ffb3f09fa225375b560ecef2559ae003967001bbd499b55be"
+  },
+  "notes": "The compiler is typed code; the step 2b image is built from 04619a2f4. Later step 2b commits change Script runtime lookups only.",
+  "runs": [
+    {
+      "load": "one-minute load about 2-3",
+      "rows": [
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 89.77,
+          "cycles": 455785862671,
+          "instructions": 2417384066395,
+          "rssBytes": 2227470336
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 90.97,
+          "cycles": 454612863173,
+          "instructions": 2372114632456,
+          "rssBytes": 2227159040
+        },
+        {
+          "label": "step2-24af2993b",
+          "seconds": 85.76,
+          "cycles": 435750353460,
+          "instructions": 2290599190361,
+          "rssBytes": 2226634752
+        },
+        {
+          "label": "step2b-04619a2f4",
+          "seconds": 85.96,
+          "cycles": 436601248167,
+          "instructions": 2290429362842,
+          "rssBytes": 2227011584
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 89.03,
+          "cycles": 452979906275,
+          "instructions": 2418224668450,
+          "rssBytes": 2227978240
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 88.82,
+          "cycles": 453333597050,
+          "instructions": 2372228723338,
+          "rssBytes": 2226487296
+        },
+        {
+          "label": "step2-24af2993b",
+          "seconds": 85.23,
+          "cycles": 437761026583,
+          "instructions": 2290507402850,
+          "rssBytes": 2226733056
+        },
+        {
+          "label": "step2b-04619a2f4",
+          "seconds": 84.79,
+          "cycles": 433845866558,
+          "instructions": 2290247788778,
+          "rssBytes": 2226716672
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 93.23,
+          "cycles": 464578845127,
+          "instructions": 2418725042248,
+          "rssBytes": 2227404800
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 91.27,
+          "cycles": 458271229787,
+          "instructions": 2372388113507,
+          "rssBytes": 2227961856
+        },
+        {
+          "label": "step2-24af2993b",
+          "seconds": 90.18,
+          "cycles": 446725175577,
+          "instructions": 2291001402403,
+          "rssBytes": 2225733632
+        },
+        {
+          "label": "step2b-04619a2f4",
+          "seconds": 90.45,
+          "cycles": 446979348028,
+          "instructions": 2290742895683,
+          "rssBytes": 2227027968
+        }
+      ]
+    }
+  ]
+}

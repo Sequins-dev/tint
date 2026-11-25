@@ -23,7 +23,10 @@ import {
   type LinkedExport,
 } from "@tint/ts-native/modules";
 import { prepareCollectionRuntimes } from "@tint/ts-native/runtime";
-import { lowerModuleEntries } from "@tint/ts-native/closure/lowering";
+import {
+  lowerModuleEntries,
+  type RecordBinding,
+} from "@tint/ts-native/closure/lowering";
 import type { TargetDataLayout } from "@tint/ts-native/closure/layout";
 import type {
   RecordLayout,
@@ -451,7 +454,7 @@ function deriveSurfacePhysicalFacts(
       ? undefined
       : sources.get(exported.linkedName);
   }
-  const bindings: { function: number; operation: "identity" }[] = [];
+  const bindings: RecordBinding[] = [];
   for (const identity of identities) {
     if (identity === undefined) throw "surface identity invariant";
     const id = source(identity.function);

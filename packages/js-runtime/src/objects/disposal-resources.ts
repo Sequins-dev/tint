@@ -11,6 +11,7 @@ import {
 import { createPromiseObject, createScriptPromiseHooks } from "./promises.ts";
 import { awaitScriptValue, createNativeAwaitOperation } from "./await.ts";
 import {
+  exoticSlots,
   getProperty,
   type ObjectHooks,
   type OrdinaryObject,
@@ -43,7 +44,7 @@ function disposalPromise(
   hooks: ObjectHooks<unknown>,
 ): DisposalPromiseCapability {
   const promise = createPromiseObject(realm.promisePrototype),
-    record = promise.internalPromiseData;
+    record = exoticSlots(promise).internalPromiseData;
   if (record === undefined) throw "DISPOSAL_PROMISE_RECORD_INVARIANT";
   const protocol = disposalProtocol(realm, hooks);
   return {
