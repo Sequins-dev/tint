@@ -1302,6 +1302,7 @@ function lowerScriptEntry(
       readonly setData: Expression | undefined;
     }
   >();
+  let loopAtomicsViews = new Map<string, Expression>();
   function copyIdentifier(expr: Expression, span: Span): Expression {
     if (expr.kind !== "identifier") throw "SCRIPT_IDENTIFIER_INVARIANT";
     return id(expr.name, span);
@@ -4898,6 +4899,9 @@ function lowerScriptEntry(
       | "has"
       | "push"
       | "pop"
+      | "atomics-add"
+      | "atomics-load"
+      | "atomics-store"
       | undefined = undefined;
     let arity = 1;
     if (target.kind === "identifier") {
@@ -4953,9 +4957,21 @@ function lowerScriptEntry(
     else if (name === "pop" && count === 0) {
       shape = "pop";
       arity = 0;
+    } else if (name === "add" && count === 3) {
+      field = "atomicsAdd";
+      shape = "atomics-add";
+      arity = 3;
     } else if (name === "add") {
       field = "setAdd";
       shape = "set";
+    } else if (name === "load" && count === 2) {
+      field = "atomicsLoad";
+      shape = "atomics-load";
+      arity = 2;
+    } else if (name === "store" && count === 3) {
+      field = "atomicsStore";
+      shape = "atomics-store";
+      arity = 3;
     }
     if (
       shape === undefined ||
@@ -5111,6 +5127,203 @@ function lowerScriptEntry(
     } else if (shape === "number") {
       test = numbers(is("number"), 1);
       inline = copyIdentifier(operand(0), span);
+    } else if (
+      shape === "atomics-add" ||
+      shape === "atomics-load" ||
+      shape === "atomics-store"
+    ) {
+      if (field === undefined) throw "intrinsic field invariant";
+      let hoistedView: Expression | undefined = undefined;
+      const firstArg = args[0];
+      if (firstArg !== undefined && firstArg.kind === "identifier") {
+        const binding = localBindingReferences.get(firstArg.start);
+        if (binding !== undefined) {
+          const slot = localSlots.get(binding);
+          if (slot !== undefined && slot.kind === "identifier")
+            hoistedView = loopAtomicsViews.get(slot.name);
+        }
+      }
+      if (hoistedView !== undefined) {
+        const idx = operand(1);
+        const viewReady = and(
+          is(field),
+          scalarBinary(
+            "!==",
+            copyIdentifier(hoistedView, span),
+            id("undefined", span),
+            span,
+          ),
+        );
+        const idxReady = and(
+          numberOperand(idx, span),
+          and(
+            scalarBinary(
+              "===",
+              scalarBinary(
+                "|",
+                copyIdentifier(idx, span),
+                scalarNumber(0, span),
+                span,
+              ),
+              copyIdentifier(idx, span),
+              span,
+            ),
+            and(
+              scalarBinary(
+                ">=",
+                copyIdentifier(idx, span),
+                scalarNumber(0, span),
+                span,
+              ),
+              scalarBinary(
+                "<",
+                copyIdentifier(idx, span),
+                member(copyIdentifier(hoistedView, span), "length", span),
+                span,
+              ),
+            ),
+          ),
+        );
+        if (shape === "atomics-load") {
+          test = and(viewReady, idxReady);
+          inline = scalarBinary(
+            "|",
+            {
+              ...at(span),
+              kind: "call",
+              callee: member(id("Atomics", span), "load", span),
+              arguments: [
+                copyIdentifier(hoistedView, span),
+                scalarBinary(
+                  "|",
+                  copyIdentifier(idx, span),
+                  scalarNumber(0, span),
+                  span,
+                ),
+              ],
+            },
+            scalarNumber(0, span),
+            span,
+          );
+        } else if (shape === "atomics-add") {
+          const val = operand(2);
+          test = and(and(viewReady, idxReady), numberOperand(val, span));
+          inline = scalarBinary(
+            "|",
+            {
+              ...at(span),
+              kind: "call",
+              callee: member(id("Atomics", span), "add", span),
+              arguments: [
+                copyIdentifier(hoistedView, span),
+                scalarBinary(
+                  "|",
+                  copyIdentifier(idx, span),
+                  scalarNumber(0, span),
+                  span,
+                ),
+                scalarBinary(
+                  ">>>",
+                  copyIdentifier(val, span),
+                  scalarNumber(0, span),
+                  span,
+                ),
+              ],
+            },
+            scalarNumber(0, span),
+            span,
+          );
+        } else {
+          const val = operand(2);
+          test = and(
+            and(viewReady, idxReady),
+            and(
+              numberOperand(val, span),
+              scalarBinary(
+                "===",
+                scalarBinary(
+                  "|",
+                  copyIdentifier(val, span),
+                  scalarNumber(0, span),
+                  span,
+                ),
+                copyIdentifier(val, span),
+                span,
+              ),
+            ),
+          );
+          inline = scalarBinary(
+            "|",
+            {
+              ...at(span),
+              kind: "call",
+              callee: member(id("Atomics", span), "store", span),
+              arguments: [
+                copyIdentifier(hoistedView, span),
+                scalarBinary(
+                  "|",
+                  copyIdentifier(idx, span),
+                  scalarNumber(0, span),
+                  span,
+                ),
+                scalarBinary(
+                  ">>>",
+                  copyIdentifier(val, span),
+                  scalarNumber(0, span),
+                  span,
+                ),
+              ],
+            },
+            scalarNumber(0, span),
+            span,
+          );
+        }
+      } else {
+        const helper =
+          shape === "atomics-add"
+            ? "scriptAtomicsAddFast"
+            : shape === "atomics-load"
+              ? "scriptAtomicsLoadFast"
+              : "scriptAtomicsStoreFast";
+        const argsList =
+          shape === "atomics-load"
+            ? [
+                copyIdentifier(operand(0), span),
+                copyIdentifier(operand(1), span),
+                id("$errors"),
+              ]
+            : [
+                copyIdentifier(operand(0), span),
+                copyIdentifier(operand(1), span),
+                copyIdentifier(operand(2), span),
+                id("$errors"),
+              ];
+        const guard =
+          shape === "atomics-load"
+            ? and(is(field), numberOperand(operand(1), span))
+            : and(
+                is(field),
+                and(
+                  numberOperand(operand(1), span),
+                  numberOperand(operand(2), span),
+                ),
+              );
+        const fast = temporary(
+          scalarBranch(
+            guard,
+            runtimeCall(helper, argsList, span),
+            scalarNumber(4294967296, span),
+            span,
+          ),
+        );
+        test = scalarBinary(
+          "!==",
+          copyIdentifier(fast, span),
+          scalarNumber(4294967296, span),
+          span,
+        );
+        inline = copyIdentifier(fast, span);
+      }
     } else if (shape === "string") {
       if (field === undefined) throw "intrinsic field invariant";
       test = numbers(and(is(field), categoryOperand(base, "string", span)), 1);
@@ -6690,6 +6903,7 @@ function lowerScriptEntry(
     const outerLoopIntrinsics = loopIntrinsics;
     const outerLoopIntrinsicFields = loopIntrinsicFields;
     const outerLoopCollections = loopCollections;
+    const outerLoopAtomicsViews = loopAtomicsViews;
     loopIntrinsics = undefined;
     loopIntrinsicFields = new Map<string, Expression>();
     loopCollections = new Map<
@@ -6699,6 +6913,7 @@ function lowerScriptEntry(
         readonly setData: Expression | undefined;
       }
     >();
+    loopAtomicsViews = new Map<string, Expression>();
     const receiverName = "$receiver" + serial++,
       argsName = "$args" + serial++,
       calleeName = "$callee" + serial++,
@@ -7863,6 +8078,7 @@ function lowerScriptEntry(
     loopIntrinsics = outerLoopIntrinsics;
     loopIntrinsicFields = outerLoopIntrinsicFields;
     loopCollections = outerLoopCollections;
+    loopAtomicsViews = outerLoopAtomicsViews;
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
@@ -11337,6 +11553,7 @@ function lowerScriptEntry(
       const outerLoopIntrinsics = loopIntrinsics;
       const outerLoopIntrinsicFields = loopIntrinsicFields;
       const outerLoopCollections = loopCollections;
+      const outerLoopAtomicsViews = loopAtomicsViews;
       if (
         functionDepth > 0 &&
         withDepth === 0 &&
@@ -11352,6 +11569,7 @@ function lowerScriptEntry(
           number,
           { needMap: boolean; needSet: boolean }
         >();
+        const atomicsUses = new Set<number>();
         function scanExpr(expr: Expression | undefined): void {
           if (expr === undefined) return;
           switch (expr.kind) {
@@ -11396,7 +11614,53 @@ function lowerScriptEntry(
                 else if (prop === "has") {
                   neededIntrinsicFields.add("mapHas");
                   neededIntrinsicFields.add("setHas");
-                } else if (prop === "add") neededIntrinsicFields.add("setAdd");
+                } else if (prop === "add") {
+                  if (expr.arguments.length === 3) {
+                    neededIntrinsicFields.add("atomicsAdd");
+                    const firstArg = expr.arguments[0];
+                    if (
+                      firstArg !== undefined &&
+                      firstArg.kind === "identifier"
+                    ) {
+                      const binding = localBindingReferences.get(
+                        firstArg.start,
+                      );
+                      if (
+                        binding !== undefined &&
+                        !slotInitialization.has(binding)
+                      )
+                        atomicsUses.add(binding);
+                    }
+                  } else neededIntrinsicFields.add("setAdd");
+                } else if (prop === "load" && expr.arguments.length === 2) {
+                  neededIntrinsicFields.add("atomicsLoad");
+                  const firstArg = expr.arguments[0];
+                  if (
+                    firstArg !== undefined &&
+                    firstArg.kind === "identifier"
+                  ) {
+                    const binding = localBindingReferences.get(firstArg.start);
+                    if (
+                      binding !== undefined &&
+                      !slotInitialization.has(binding)
+                    )
+                      atomicsUses.add(binding);
+                  }
+                } else if (prop === "store" && expr.arguments.length === 3) {
+                  neededIntrinsicFields.add("atomicsStore");
+                  const firstArg = expr.arguments[0];
+                  if (
+                    firstArg !== undefined &&
+                    firstArg.kind === "identifier"
+                  ) {
+                    const binding = localBindingReferences.get(firstArg.start);
+                    if (
+                      binding !== undefined &&
+                      !slotInitialization.has(binding)
+                    )
+                      atomicsUses.add(binding);
+                  }
+                }
                 const calleeObject = callee.object;
                 if (
                   (prop === "get" ||
@@ -11706,6 +11970,32 @@ function lowerScriptEntry(
           }
           if (nextCollections !== undefined) loopCollections = nextCollections;
         }
+        if (!bailCollections && atomicsUses.size > 0) {
+          let nextViews: Map<string, Expression> | undefined;
+          let addedViews = 0;
+          for (const binding of atomicsUses) {
+            if (addedViews >= 4) break;
+            if (writtenBindings.has(binding)) continue;
+            const slot = localSlots.get(binding);
+            if (slot === undefined || slot.kind !== "identifier") continue;
+            if (loopAtomicsViews.has(slot.name)) continue;
+            usesIntrinsicCalls = true;
+            const viewTemp = temporary(
+              runtimeCall(
+                "scriptAtomicsInt32View",
+                [copyIdentifier(slot, node), id("$errors")],
+                node,
+              ),
+            );
+            if (nextViews === undefined) {
+              nextViews = new Map<string, Expression>();
+              for (const [k, v] of loopAtomicsViews) nextViews.set(k, v);
+            }
+            nextViews.set(slot.name, viewTemp);
+            addedViews++;
+          }
+          if (nextViews !== undefined) loopAtomicsViews = nextViews;
+        }
       }
       const first = directLoop
         ? undefined
@@ -11816,6 +12106,7 @@ function lowerScriptEntry(
       loopIntrinsics = outerLoopIntrinsics;
       loopIntrinsicFields = outerLoopIntrinsicFields;
       loopCollections = outerLoopCollections;
+      loopAtomicsViews = outerLoopAtomicsViews;
       const body: BlockStatement = {
         ...at(node),
         kind: "block",

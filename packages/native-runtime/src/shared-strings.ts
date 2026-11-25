@@ -6,10 +6,7 @@ import {
 } from "@tint/abi/host";
 import { latin1Text } from "@tint/foundation/text/latin1";
 import { adoptExternal } from "./ffi/primitives.ts";
-import {
-  currentContextDomain,
-  isFlatString,
-} from "./intrinsics/memory.ts";
+import { currentContextDomain, isFlatString } from "./intrinsics/memory.ts";
 import { readMemoryString } from "./intrinsics/packet-memory.ts";
 import {
   copyString,

@@ -733,3 +733,49 @@ test("rare generic internal slots stay unallocated until written", () => {
   assert.equal(plain.internalRareSlots?.internalImmutablePrototype, true);
   assert.equal(other.internalRareSlots, undefined);
 });
+
+test("missing properties cache undefined and invalidate on own or prototype addition", () => {
+  const proto = object(undefined);
+  const child = point(proto, ["a"]);
+  const sibling = point(proto, ["a"]);
+  const site = createScriptPropertyCache("missing");
+  const holder = lookupCachedScriptProperty(
+    child,
+    "missing",
+    site,
+    false,
+    stubs,
+    10,
+  );
+  assert.notEqual(holder, undefined);
+  assert.equal(site.foundIndex, -1);
+  assert.equal(site.foundValue, undefined);
+  assert.equal(site.inheritedShape, shape(child));
+  assert.equal(site.inheritedValue, undefined);
+  // Adding the property to the prototype bumps propertyEpoch and serves the new value.
+  createDataProperty<ScriptPropertyKey, unknown>(proto, "missing", 99, hooks);
+  const afterProto = lookupCachedScriptProperty(
+    sibling,
+    "missing",
+    site,
+    false,
+    stubs,
+    10,
+  );
+  assert.equal(afterProto, proto);
+  assert.equal(site.foundValue, 99);
+  // Adding the property to the object itself transitions its shape.
+  const other = point(object(undefined), ["a"]);
+  const ownSite = createScriptPropertyCache("late");
+  assert.notEqual(
+    lookupCachedScriptProperty(other, "late", ownSite, false, stubs, 10),
+    undefined,
+  );
+  assert.equal(ownSite.foundValue, undefined);
+  createDataProperty<ScriptPropertyKey, unknown>(other, "late", 7, hooks);
+  assert.equal(
+    lookupCachedScriptProperty(other, "late", ownSite, false, stubs, 10),
+    other,
+  );
+  assert.equal(ownSite.foundIndex, 1);
+});

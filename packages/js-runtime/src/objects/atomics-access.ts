@@ -120,6 +120,125 @@ function sharedStorage(data: TypedArrayData): SharedBlockStorage {
   if (storage.kind !== "shared") throw "ATOMIC_SHARED_STORAGE_INVARIANT";
   return storage;
 }
+/** Miss sentinel for inline Atomics fast paths (outside [-2^31, 2^32 - 1]). */
+const atomicsFastMiss = 4294967296;
+
+/** A cached native Uint32Array over a fixed-length little-endian Int32/Uint32
+ * view of a shared block whose service supports atomics. */
+function sharedWordView(data: TypedArrayData): Uint32Array | undefined {
+  const cached = data.nativeWords;
+  if (cached !== undefined) return cached;
+  const storage = data.storage;
+  const length = data.length;
+  if (
+    storage.kind !== "shared" ||
+    storage.service.atomics === undefined ||
+    length === undefined ||
+    data.endian !== "little" ||
+    (data.kind !== "Int32" && data.kind !== "Uint32")
+  )
+    return undefined;
+  const raw = storage.service.bytes(storage.handle);
+  if (raw === undefined) return undefined;
+  const byteOffset = raw.byteOffset + data.byteOffset;
+  if ((byteOffset & 3) !== 0 || data.byteOffset + length * 4 > raw.byteLength)
+    return undefined;
+  const view = new Uint32Array(raw.buffer, byteOffset, length);
+  data.nativeWords = view;
+  return view;
+}
+
+/** Returns the cached native Uint32Array for a fixed-length little-endian
+ * shared Int32Array view whose service supports atomics, for loop-hoisted
+ * inline Atomics.add/load/store. */
+export function scriptAtomicsInt32View(
+  target: unknown,
+  realm: ErrorRealm,
+): Uint32Array | undefined {
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return undefined;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return undefined;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined || data.kind !== "Int32") return undefined;
+  return sharedWordView(data);
+}
+
+/** Inline fast path for Atomics.add(typedArray, index, value) with Number
+ * index and value on an Int32/Uint32 shared view; returns atomicsFastMiss on
+ * any other receiver, index or kind. */
+export function scriptAtomicsAddFast(
+  target: unknown,
+  index: number,
+  operand: number,
+  realm: ErrorRealm,
+): number {
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return atomicsFastMiss;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return atomicsFastMiss;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined) return atomicsFastMiss;
+  const length = data.length;
+  if (length === undefined) return atomicsFastMiss;
+  const at = index | 0;
+  if (at !== index || at < 0 || at >= length) return atomicsFastMiss;
+  const words = sharedWordView(data);
+  if (words === undefined) return atomicsFastMiss;
+  const previous = Atomics.add(words, at, operand >>> 0);
+  return data.kind === "Int32" ? previous | 0 : previous;
+}
+
+/** Inline fast path for Atomics.load(typedArray, index) with Number index on
+ * an Int32/Uint32 shared view; returns atomicsFastMiss on miss. */
+export function scriptAtomicsLoadFast(
+  target: unknown,
+  index: number,
+  realm: ErrorRealm,
+): number {
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return atomicsFastMiss;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return atomicsFastMiss;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined) return atomicsFastMiss;
+  const length = data.length;
+  if (length === undefined) return atomicsFastMiss;
+  const at = index | 0;
+  if (at !== index || at < 0 || at >= length) return atomicsFastMiss;
+  const words = sharedWordView(data);
+  if (words === undefined) return atomicsFastMiss;
+  const value = Atomics.load(words, at);
+  return data.kind === "Int32" ? value | 0 : value;
+}
+
+/** Inline fast path for Atomics.store(typedArray, index, value) with Number
+ * index and int32 value on an Int32/Uint32 shared view; returns
+ * atomicsFastMiss on miss. */
+export function scriptAtomicsStoreFast(
+  target: unknown,
+  index: number,
+  operand: number,
+  realm: ErrorRealm,
+): number {
+  const intValue = operand | 0;
+  if (intValue !== operand) return atomicsFastMiss;
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return atomicsFastMiss;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return atomicsFastMiss;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined) return atomicsFastMiss;
+  const length = data.length;
+  if (length === undefined) return atomicsFastMiss;
+  const at = index | 0;
+  if (at !== index || at < 0 || at >= length) return atomicsFastMiss;
+  const words = sharedWordView(data);
+  if (words === undefined) return atomicsFastMiss;
+  Atomics.store(words, at, intValue >>> 0);
+  return intValue;
+}
+
 function loadSharedInteger(
   value: unknown,
   index: number,

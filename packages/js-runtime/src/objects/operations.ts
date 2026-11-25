@@ -1787,9 +1787,9 @@ export function writePropertyCell<Value>(
 
 /** Attributes a shape records for a fast-mode key: an open bit set, and
  * transitions key on the exact kind, so a new bit gives new shapes. */
-const propertyWritable = 1,
-  propertyEnumerable = 2,
-  propertyConfigurable = 4,
+const propertyWritable = 1;
+export const propertyEnumerable = 2;
+const propertyConfigurable = 4,
   /** An accessor: its descriptor stays in `properties` and its value slot
    * holds no value. */
   propertyAccessor = 8;
@@ -2039,7 +2039,7 @@ function fastValue<Key, Value>(
 }
 /** Store the value of the shape's key at index. Indices past the in-place
  * slots extend linked PropertySpill chunks in order. */
-function setFastValue<Key, Value>(
+export function setFastValue<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
   value: Value,
@@ -2775,6 +2775,11 @@ function addInlineEntry(
 }
 /** Maximum prototype hops cached in lookupCachedScriptProperty. */
 const maxCachedPrototypeDepth = 16;
+/** Sentinel holder for a cached absent property (foundIndex = -1,
+ * foundValue = undefined); never equal to any user receiver. */
+const missingPropertyHolder = createObject<ScriptPropertyKey, unknown>(
+  undefined,
+);
 /** Find `key` on a fast-mode object, a clean packed array, or any prototype
  * chain up to maxCachedPrototypeDepth (including dictionary-mode prototypes
  * such as Array.prototype, Map.prototype, String.prototype) and cache it.
@@ -2906,10 +2911,14 @@ export function lookupCachedScriptProperty(
     let prototype = object.prototype;
     for (let depth = 0; depth < maxCachedPrototypeDepth; depth++) {
       const current = prototype;
-      if (
-        current === undefined ||
-        hasCustomPropertyGet<ScriptPropertyKey, unknown>(current)
-      )
+      if (current === undefined) {
+        if (!object.internalDictionary) {
+          holder = missingPropertyHolder;
+          directValue = undefined;
+        }
+        break;
+      }
+      if (hasCustomPropertyGet<ScriptPropertyKey, unknown>(current))
         return undefined;
       if (!current.internalUsedAsPrototype)
         markPrototype<ScriptPropertyKey, unknown>(current);

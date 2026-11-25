@@ -11311,88 +11311,94 @@ function emitModuleForms(
           });
           if (op.operands.length > 0) rawLoad(14, resultOffset + 16);
           if (op.operands.length > 1) rawLoad(15, resultOffset + 24);
-          emit({ op: "dmb", domain: "ish" });
-          if (op.operation === "load")
-            emit({ op: "ldar", width, rt: 11, rn: 10 });
-          else if (op.operation === "store")
-            emit({ op: "stlr", width, rt: 14, rn: 10 });
-          else {
-            const exchange = op.operation === "compare-exchange";
-            // The element loads zero-extended, so the expected value
-            // compares in the element's width.
-            if (exchange && width < 32)
+          if (op.operation === "add" && options.hostABI?.os === "darwin") {
+            // Apple Silicon guarantees ARMv8.1 LSE: LDADDAL is a single
+            // sequentially consistent atomic add without LL/SC retry or DMB.
+            emit({ op: "ldaddal", width, rs: 14, rt: 11, rn: 10 });
+          } else {
+            emit({ op: "dmb", domain: "ish" });
+            if (op.operation === "load")
+              emit({ op: "ldar", width, rt: 11, rn: 10 });
+            else if (op.operation === "store")
+              emit({ op: "stlr", width, rt: 14, rn: 10 });
+            else {
+              const exchange = op.operation === "compare-exchange";
+              // The element loads zero-extended, so the expected value
+              // compares in the element's width.
+              if (exchange && width < 32)
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 14,
+                  rn: 14,
+                  immr: 0,
+                  imms: width - 1,
+                });
+              const loop = instructions.length;
+              emit({ op: "ldaxr", width, rt: 11, rn: 10 });
+              let mismatch = -1;
+              if (exchange) {
+                emit({
+                  op: "sub-reg",
+                  width: 32,
+                  rd: "zr",
+                  rn: 11,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                mismatch = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+              } else if (op.operation === "add" || op.operation === "sub")
+                emit({
+                  op: op.operation === "add" ? "add-reg" : "sub-reg",
+                  width: 32,
+                  rd: 12,
+                  rn: 11,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+              else if (op.operation !== "exchange") {
+                const combine: "and-reg" | "orr-reg" | "eor-reg" =
+                  op.operation === "and"
+                    ? "and-reg"
+                    : op.operation === "or"
+                      ? "orr-reg"
+                      : "eor-reg";
+                emit({ op: combine, width: 32, rd: 12, rn: 11, rm: 14 });
+              }
+              const written: number = exchange
+                ? 15
+                : op.operation === "exchange"
+                  ? 14
+                  : 12;
+              emit({ op: "stlxr", width, rs: 13, rt: written, rn: 10 });
               emit({
-                op: "ubfm",
-                width: 64,
-                rd: 14,
-                rn: 14,
-                immr: 0,
-                imms: width - 1,
-              });
-            const loop = instructions.length;
-            emit({ op: "ldaxr", width, rt: 11, rn: 10 });
-            let mismatch = -1;
-            if (exchange) {
-              emit({
-                op: "sub-reg",
+                op: "cbnz",
                 width: 32,
-                rd: "zr",
-                rn: 11,
-                rm: 14,
-                shift: "lsl",
-                amount: 0,
-                setFlags: true,
+                rt: 13,
+                displacement: (loop - instructions.length) * 4,
               });
-              mismatch = instructions.length;
-              emit({ op: "b.cond", condition: "ne", displacement: 0 });
-            } else if (op.operation === "add" || op.operation === "sub")
-              emit({
-                op: op.operation === "add" ? "add-reg" : "sub-reg",
-                width: 32,
-                rd: 12,
-                rn: 11,
-                rm: 14,
-                shift: "lsl",
-                amount: 0,
-                setFlags: false,
-              });
-            else if (op.operation !== "exchange") {
-              const combine: "and-reg" | "orr-reg" | "eor-reg" =
-                op.operation === "and"
-                  ? "and-reg"
-                  : op.operation === "or"
-                    ? "orr-reg"
-                    : "eor-reg";
-              emit({ op: combine, width: 32, rd: 12, rn: 11, rm: 14 });
+              if (exchange) {
+                const over = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchInstruction(mismatch, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - mismatch) * 4,
+                });
+                emit({ op: "clrex" });
+                patchInstruction(over, {
+                  op: "b",
+                  displacement: (instructions.length - over) * 4,
+                });
+              }
             }
-            const written: number = exchange
-              ? 15
-              : op.operation === "exchange"
-                ? 14
-                : 12;
-            emit({ op: "stlxr", width, rs: 13, rt: written, rn: 10 });
-            emit({
-              op: "cbnz",
-              width: 32,
-              rt: 13,
-              displacement: (loop - instructions.length) * 4,
-            });
-            if (exchange) {
-              const over = instructions.length;
-              emit({ op: "b", displacement: 0 });
-              patchInstruction(mismatch, {
-                op: "b.cond",
-                condition: "ne",
-                displacement: (instructions.length - mismatch) * 4,
-              });
-              emit({ op: "clrex" });
-              patchInstruction(over, {
-                op: "b",
-                displacement: (instructions.length - over) * 4,
-              });
-            }
+            emit({ op: "dmb", domain: "ish" });
           }
-          emit({ op: "dmb", domain: "ish" });
           const id = op.id;
           if (id === undefined) return;
           // The previous element, zero-extended in x11.

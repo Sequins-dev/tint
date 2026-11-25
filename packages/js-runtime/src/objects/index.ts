@@ -25,6 +25,12 @@ export {
 export { scriptArrayPush } from "./array-append.ts";
 export { scriptArrayPushFast } from "./array-append.ts";
 export { scriptArrayPop } from "./array-append.ts";
+export {
+  scriptAtomicsAddFast,
+  scriptAtomicsInt32View,
+  scriptAtomicsLoadFast,
+  scriptAtomicsStoreFast,
+} from "./atomics-access.ts";
 export { createModuleSourceObject } from "./module-source.ts";
 export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";

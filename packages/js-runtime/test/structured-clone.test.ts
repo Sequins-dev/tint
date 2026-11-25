@@ -642,3 +642,129 @@ test("native SharedArrayBuffer shares its block with views and preserves aliases
   assert.equal(wordView?.length, 2);
   assert.equal(read("left"), read("right"));
 });
+
+test("shape-cached fast objects preserve spilled slots, cycles, and getter-deleted properties", () => {
+  const source = isolate();
+  const target = isolate();
+  // Two objects sharing a 10-key shape (crossing the 8-slot inline spill boundary)
+  // plus a self-cycle and an alias.
+  const makeRecord = (base: number): ObjectValue => {
+    const obj = o.createObject<objects.ScriptPropertyKey, unknown>(source.root);
+    for (let i = 0; i < 10; i++)
+      o.createDataProperty(obj, "k" + i, base + i, source.hooks);
+    return obj;
+  };
+  const first = makeRecord(10);
+  const second = makeRecord(20);
+  o.createDataProperty(first, "self", first, source.hooks);
+  o.createDataProperty(second, "self", first, source.hooks);
+  const pair = o.createArrayObject(
+    0,
+    source.realm.arrayPrototype,
+    source.realm.arrayHooks,
+    source.hooks,
+  );
+  o.createDataProperty(pair, "0", first, source.hooks);
+  o.createDataProperty(pair, "1", second, source.hooks);
+  const encoded = serialize(pair, source.realm);
+  const copy = deserialize(encoded, target.realm) as ObjectValue;
+  const copy0 = o.getProperty(copy, "0", copy, target.hooks) as ObjectValue;
+  const copy1 = o.getProperty(copy, "1", copy, target.hooks) as ObjectValue;
+  assert.equal(o.getProperty(copy0, "k0", copy0, target.hooks), 10);
+  assert.equal(o.getProperty(copy0, "k9", copy0, target.hooks), 19);
+  assert.equal(o.getProperty(copy1, "k0", copy1, target.hooks), 20);
+  assert.equal(o.getProperty(copy1, "k9", copy1, target.hooks), 29);
+  assert.equal(o.getProperty(copy0, "self", copy0, target.hooks), copy0);
+  assert.equal(o.getProperty(copy1, "self", copy1, target.hooks), copy0);
+  // Both copies share the same target shape.
+  assert.equal(copy0.internalShape, copy1.internalShape);
+  // A nested getter deleting a later property on a shape-cached parent omits it.
+  const parent1 = o.createObject<objects.ScriptPropertyKey, unknown>(
+    source.root,
+  );
+  const parent2 = o.createObject<objects.ScriptPropertyKey, unknown>(
+    source.root,
+  );
+  const trigger = o.createObject<objects.ScriptPropertyKey, unknown>(
+    source.root,
+  );
+  const getter = o.createCallableObject<objects.ScriptPropertyKey, unknown>(
+    source.realm.functionPrototype,
+    () => {
+      o.deleteProperty(parent2, "gone");
+      return "ran";
+    },
+  );
+  o.createAccessorProperty(trigger, "hit", getter, false, source.hooks);
+  o.createDataProperty(parent1, "a", 1, source.hooks);
+  o.createDataProperty(parent1, "gone", "kept", source.hooks);
+  o.createDataProperty(parent2, "a", trigger, source.hooks);
+  o.createDataProperty(parent2, "gone", "dropped", source.hooks);
+  const list = o.createArrayObject(
+    0,
+    source.realm.arrayPrototype,
+    source.realm.arrayHooks,
+    source.hooks,
+  );
+  o.createDataProperty(list, "0", parent1, source.hooks);
+  o.createDataProperty(list, "1", parent2, source.hooks);
+  const mutatedCopy = deserialize(
+    serialize(list, source.realm),
+    target.realm,
+  ) as ObjectValue;
+  const p1 = o.getProperty(
+    mutatedCopy,
+    "0",
+    mutatedCopy,
+    target.hooks,
+  ) as ObjectValue;
+  const p2 = o.getProperty(
+    mutatedCopy,
+    "1",
+    mutatedCopy,
+    target.hooks,
+  ) as ObjectValue;
+  assert.equal(o.getProperty(p1, "gone", p1, target.hooks), "kept");
+  assert.equal(o.getOwnProperty(p2, "gone"), undefined);
+  const a2 = o.getProperty(p2, "a", p2, target.hooks) as ObjectValue;
+  assert.equal(o.getProperty(a2, "hit", a2, target.hooks), "ran");
+});
+
+test("repeated short strings share recent-string slots and malformed slots fail cleanly", () => {
+  const source = isolate();
+  const target = isolate();
+  const list = o.createArrayObject(
+    0,
+    source.realm.arrayPrototype,
+    source.realm.arrayHooks,
+    source.hooks,
+  );
+  const values = [
+    "leaf",
+    "node1",
+    "leaf",
+    "node1",
+    "snow\u2603",
+    "leaf",
+    "snow\u2603",
+  ];
+  for (let i = 0; i < values.length; i++)
+    o.createDataProperty(list, String(i), values[i], source.hooks);
+  const packet = serialize(list, source.realm);
+  // Repeated "leaf" and "node1" must use 2-byte tagRecentString references.
+  const copy = deserialize(packet, target.realm) as ObjectValue;
+  for (let i = 0; i < values.length; i++)
+    assert.equal(o.getProperty(copy, String(i), copy, target.hooks), values[i]);
+  // Malformed tagRecentString (empty slot or out-of-range slot) throws DataCloneError.
+  for (const bad of [new Uint8Array([114, 0]), new Uint8Array([114, 99])]) {
+    assert.throws(
+      () => deserialize(bad, target.realm),
+      (err: unknown) => {
+        const obj = err as ObjectValue;
+        return (
+          o.getProperty(obj, "name", obj, target.hooks) === "DataCloneError"
+        );
+      },
+    );
+  }
+});

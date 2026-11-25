@@ -43,6 +43,9 @@ export interface TypedArrayData {
   readonly length: number | undefined;
   readonly kind: TypedArrayElementKind;
   readonly endian: Endian;
+  /** Lazily cached native Uint32Array over a fixed-length little-endian
+   * Int32/Uint32 view of a SharedBlockStorage, for inline Atomics fast paths. */
+  nativeWords?: Uint32Array | undefined;
 }
 export function requireTypedArray(
   value: unknown,

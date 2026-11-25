@@ -587,6 +587,7 @@ function functionFlows(
           case "string-concat":
           case "string-allocate":
           case "string-write":
+            break;
           case "constant":
           case "error-message":
           case "error-is":

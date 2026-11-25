@@ -2939,7 +2939,8 @@ export function emitModule(
             branch(emit, "a", trapLabel);
             // Scan the UTF-16 units for any high byte != 0 so the allocated
             // string keeps the canonical one-byte/two-byte representation.
-            const readSite = fnLabel + ":read-string:" + String(op.id);
+            const readSite =
+              fnLabel + ":read-string:" + String(instructionCount);
             const scanLoop = readSite + ":scan",
               scanWide = readSite + ":wide",
               scanDone = readSite + ":scan-done",

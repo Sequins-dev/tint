@@ -88,8 +88,8 @@ export function churn(): number {
   let total = 0;
   for (let round = 0; round < 400000; round++) {
     const junk: number[] = [round, round + 1, round + 2, round + 3];
-    ring[round % 64] = junk;
-    total += ring[(round + 1) % 64]?.[0] ?? 0;
+    ring[round % 4] = junk;
+    total += ring[(round + 1) % 4]?.[0] ?? 0;
   }
   ring.length = 0;
   return total;
