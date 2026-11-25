@@ -1,5 +1,7 @@
 import {
   blockSuccessors,
+  effectInvoke,
+  instructionEffects,
   instructionResult,
   naturalLoops,
   visitInstructionOperands,
@@ -13,7 +15,8 @@ import {
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
-import type { RemarkSink } from "./observer.ts";
+import { recordReadsKept } from "./counted-loops.ts";
+import type { OptimizationRemark, RemarkSink } from "./observer.ts";
 
 export interface InvariantMotion {
   readonly fn: FunctionIR;
@@ -49,14 +52,26 @@ function pureType(op: Instruction): ScalarType | undefined {
   }
 }
 
+/** Whether `op` may change a native typed array's length: code it runs may
+ * detach a typed view of a realm ArrayBuffer (its length becomes 0), and C
+ * memory adoption or retargeting rewrites an array's header. */
+function changesArrayLength(op: Instruction): boolean {
+  if (op.kind === "c-call") return op.call.mayCallback === true;
+  if (op.kind === "c-memory")
+    return (
+      op.access.operation === "adopt" || op.access.operation === "retarget"
+    );
+  return (instructionEffects(op) & effectInvoke) !== 0;
+}
 /** Loop-invariant code motion over the scalar IR. Within each natural loop
  * that has a unique preheader (its only outside predecessor, ending in an
  * unconditional jump), operations whose operands are loop invariant
  * (constants, loads of slots the loop never writes, other invariant
  * operations) move to the preheader:
  *
- * - pure, non-trapping operations (arithmetic and comparisons, typed-array
- *   and string lengths, which never change, and function environments);
+ * - pure, non-trapping operations (arithmetic and comparisons, string
+ *   lengths, which never change, typed-array lengths in loops where nothing
+ *   changes one (changesArrayLength), and function environments);
  * - checked reads of immutable record fields (`record` terminators whose
  *   failure edge traps): the check still runs, once, before the loop.
  *
@@ -122,6 +137,13 @@ function hoistRound(
   const slots: ScalarType[] = fn.slots.slice();
   const replaced = new Map<number, Block>(),
     added: Block[] = [];
+  const pendingRemarks: OptimizationRemark[] = [];
+  const note =
+    remarks === undefined
+      ? undefined
+      : (remark: OptimizationRemark): void => {
+          pendingRemarks.push(remark);
+        };
   let hoisted = 0;
   // Loops whose blocks another loop already rewrote this round wait for the
   // next round (they would see stale block contents).
@@ -177,7 +199,7 @@ function hoistRound(
       () => nextBlock++,
       budget - visited,
       proofs,
-      remarks,
+      note,
     );
     if (motion === undefined) return undefined;
     visited += motion.visited;
@@ -195,7 +217,11 @@ function hoistRound(
       added.push(block);
     }
   }
-  if (hoisted === 0) return { fn, visited, hoisted: 0 };
+  if (hoisted === 0) {
+    if (remarks !== undefined)
+      reportMotionRemarks(remarks, pendingRemarks, true);
+    return { fn, visited, hoisted: 0 };
+  }
   const blocks: Block[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "licm block invariant";
@@ -205,7 +231,31 @@ function hoistRound(
     if (block === undefined) throw "licm block invariant";
     blocks.push(block);
   }
-  return { fn: { ...fn, slots, blocks }, visited, hoisted };
+  const candidate: FunctionIR = { ...fn, slots, blocks };
+  // A hoisted check can establish layout for a direct read through an
+  // inlined slot copy. Moving that check beyond the loop header can take
+  // it out of the verifier's unique-predecessor proof.
+  const preserve =
+    added.length === 0 ||
+    !blocks.some((block) =>
+      block.instructions.some((op) => op.kind === "record-read"),
+    ) ||
+    recordReadsKept(fn, candidate);
+  if (remarks !== undefined)
+    reportMotionRemarks(remarks, pendingRemarks, preserve);
+  return preserve
+    ? { fn: candidate, visited, hoisted }
+    : { fn, visited, hoisted: 0 };
+}
+
+function reportMotionRemarks(
+  sink: RemarkSink,
+  pending: readonly OptimizationRemark[],
+  preserve: boolean,
+): void {
+  for (const remark of pending)
+    if (remark !== undefined && (preserve || remark.outcome !== "applied"))
+      sink(remark);
 }
 
 interface LoopMotion {
@@ -344,6 +394,13 @@ function hoistLoop(
   let hoisted = 0,
     readHoisted = false;
   const { provenOrigins, failureTargets, unknownProven } = proofs;
+  let lengthsChange = false;
+  for (const id of loop.body) {
+    const block = byId.get(id);
+    if (block === undefined) throw "licm block invariant";
+    for (const op of block.instructions)
+      if (op !== undefined && changesArrayLength(op)) lengthsChange = true;
+  }
   for (const id of loop.body) {
     const block = byId.get(id);
     if (block === undefined) throw "licm block invariant";
@@ -366,6 +423,7 @@ function hoistLoop(
         invariant.set(op.id, op);
       else if (
         pureType(op) !== undefined &&
+        (op.kind !== "array-length" || !lengthsChange) &&
         operandsInvariant(op) &&
         // A reference unwrap's payload type is known for environments.
         (op.kind !== "reference-value" ||

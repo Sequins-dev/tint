@@ -138,6 +138,8 @@ export {
   bindForeignCalls,
   dynamicForeignCall,
   dynamicCallFrame,
+  dynamicScalarCall,
+  dynamicScalarFrame,
   callbackTransition,
   callbackEntered,
   directCallbackExtras,
@@ -154,6 +156,7 @@ export {
 export {
   hostParameters,
   hostReturnType,
+  executableHostOperation,
   bindHostOperations,
   type HostOperation,
   type HostBinding,
@@ -191,6 +194,7 @@ export function instructionMayThrow(op: Instruction): boolean {
     case "weak-slot-new":
     case "reference-vector-new":
     case "array-subarray":
+    case "array-view":
     case "string-concat":
     case "string-slice":
     case "string-from-code-units":
@@ -1375,6 +1379,36 @@ export function verify(
               define(op.id, type);
               break;
             }
+            case "array-view":
+              equal(use(op.buffer), "reference");
+              equal(use(op.byteOffset), "number");
+              equal(use(op.length), "number");
+              define(op.id, op.type);
+              break;
+            case "array-buffer-byte-length":
+              equal(use(op.buffer), "reference");
+              define(op.id, "number");
+              break;
+            case "array-atomic": {
+              const type = use(op.array);
+              if (!["Uint8Array", "Uint16Array", "Uint32Array"].includes(type))
+                fail("TYPE", "atomics require a native integer array");
+              equal(use(op.index), "number");
+              for (const operand of op.operands) equal(use(operand), "number");
+              if (
+                op.operands.length !==
+                (op.operation === "load"
+                  ? 0
+                  : op.operation === "compare-exchange"
+                    ? 2
+                    : 1)
+              )
+                fail("VALUE", "atomic operand count");
+              if ((op.id === undefined) !== (op.operation === "store"))
+                fail("VALUE", "only an atomic store has no result");
+              if (op.id !== undefined) define(op.id, "number");
+              break;
+            }
             case "weak-slot-new":
               equal(use(op.key), "general");
               equal(use(op.value), "general");
@@ -1722,7 +1756,13 @@ export function verify(
                   parameter = parameters[index];
                 if (argument === undefined || parameter === undefined)
                   fail("TYPE", "c-memory argument invariant");
-                equal(use(argument), parameter);
+                const actual = use(argument);
+                if (!(
+                  op.access.operation === "address" &&
+                  index === 0 &&
+                  actual === "reference"
+                ))
+                  equal(actual, parameter);
               }
               const resultType = types.value.result;
               if (resultType === "void") {

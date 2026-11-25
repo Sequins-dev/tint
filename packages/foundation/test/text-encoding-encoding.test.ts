@@ -38,6 +38,59 @@ test("encodeInto counts UTF-16 units and never splits a scalar", () => {
       assert.deepEqual(actual, expected);
     }
 });
+test("encodeInto resumes at a UTF-16 offset using the same destination", () => {
+  const encoder = new TextEncoder();
+  const text = "ascii\0\u007f\u0080é\u07ff\u0800雪😀\ud800x\udc00";
+  for (let size = 0; size <= 9; size++) {
+    const actual = new Uint8Array(size);
+    const expected = new Uint8Array(size);
+    for (let start = 0; start <= text.length; start++) {
+      actual.fill(0xcc);
+      expected.fill(0xcc);
+      assert.deepEqual(
+        encodeUTF8Into(text, actual, start),
+        encoder.encodeInto(text.slice(start), expected),
+      );
+      assert.deepEqual(actual, expected);
+    }
+  }
+});
+test("UTF-8 encodes exact output around SIMD and scratch window boundaries", () => {
+  const encoder = new TextEncoder();
+  for (let length = 0; length <= 17; length++) {
+    const prefix = "a".repeat(length);
+    for (const text of [prefix, prefix + "😀\ud800é\udc00雪" + prefix]) {
+      assert.deepEqual(encodeUTF8(text), encoder.encode(text));
+      for (let capacity = 0; capacity <= 17; capacity++) {
+        const actual = new Uint8Array(capacity + 2).fill(0xcc);
+        const expected = actual.slice();
+        assert.deepEqual(
+          encodeUTF8Into(text, actual.subarray(1, capacity + 1)),
+          encoder.encodeInto(text, expected.subarray(1, capacity + 1)),
+        );
+        assert.deepEqual(actual, expected);
+      }
+    }
+  }
+  for (let length = 4093; length <= 4097; length++) {
+    const text = "a".repeat(length) + "😀\ud800x\udc00" + "b".repeat(17);
+    const expected = encoder.encode(text);
+    const actual = new Uint8Array(expected.length);
+    const scratch = new Uint8Array(4096);
+    let read = 0;
+    let written = 0;
+    while (read < text.length) {
+      const chunk = encodeUTF8Into(text, scratch, read);
+      assert.ok(chunk.read > 0);
+      actual.set(scratch.subarray(0, chunk.written), written);
+      read += chunk.read;
+      written += chunk.written;
+    }
+    assert.equal(written, expected.length);
+    assert.deepEqual(actual, expected);
+    assert.deepEqual(encodeUTF8(text), expected);
+  }
+});
 test("ASCII runs of any length move in bulk around other scalars", () => {
   const encoder = new TextEncoder(),
     decoder = new TextDecoder();

@@ -25,8 +25,17 @@ export {
 export { scriptArrayPush } from "./array-append.ts";
 export { scriptArrayPushFast } from "./array-append.ts";
 export { scriptArrayPop } from "./array-append.ts";
+export {
+  scriptAtomicsAddFast,
+  scriptAtomicsInt32View,
+  scriptAtomicsLoadFast,
+  scriptAtomicsStoreFast,
+} from "./atomics-access.ts";
 export { createModuleSourceObject } from "./module-source.ts";
-export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
+export {
+  installFinalizationRegistryIntrinsics,
+  hostFinalizationRegistry,
+} from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";
 export { installWeakCollectionIntrinsics } from "./weak-collections.ts";
 export { canBeHeldWeakly, type WeakStorageService } from "./weak-storage.ts";
@@ -48,6 +57,8 @@ export {
   type ScriptRecord,
   clearKeptObjects,
   runScriptContext,
+  runRealmBoundCall,
+  activeInRealm,
   enterScriptContext,
   leaveScriptContext,
   type ScriptContextFrame,
@@ -120,6 +131,7 @@ export {
   addPrivateField,
   addPrivateMethod,
   addPrivateAccessor,
+  findPrivateElement,
   getPrivateElement,
   setPrivateElement,
   type PrivateName,
@@ -204,8 +216,11 @@ export {
   type DataAlias,
   type ObjectHooks,
   type ObjectCall,
+  type ObjectCallDispatch,
+  type ObjectRegisterCall,
   type ObjectExecutionContext,
   type ObjectConstruct,
+  type ObjectScriptCall,
   type Receiver,
 } from "./operations.ts";
 export { isCallableObject, callObject, constructObject } from "./call.ts";
@@ -309,6 +324,7 @@ export {
   createErrorRealm,
   installErrorIntrinsics,
   createRuntimeError,
+  createCodedRuntimeError,
   createNativeErrorView,
   createNativeCodedErrorView,
   createNativeSystemErrorView,
@@ -473,9 +489,14 @@ export { installReflectIntrinsics } from "./reflect-intrinsics.ts";
 export { getFunctionRealm } from "./function-realms.ts";
 
 export {
+  adoptArrayBuffer,
   installArrayBufferIntrinsics,
   detachArrayBuffer,
 } from "./array-buffer.ts";
+export {
+  bufferStorageByteLength,
+  type BufferStorage,
+} from "./buffer-storage.ts";
 
 export { installSharedArrayBufferIntrinsics } from "./shared-array-buffer.ts";
 export {
@@ -608,10 +629,13 @@ export {
   serializeWorkerValue,
   throwWorkerCloneError,
   type WorkerCloneAttachments,
+  type WorkerCloneSink,
+  type WorkerCloneSource,
 } from "./structured-clone.ts";
 export {
   builtinAccessor,
   builtinFunction,
+  builtinRegisterFunction,
   builtinFunctionMetadata,
   builtinProperty,
 } from "./intrinsics.ts";

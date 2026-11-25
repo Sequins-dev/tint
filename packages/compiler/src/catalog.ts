@@ -323,6 +323,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/foreign/static-ffi.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/foreign/views.ts",
       packageId: "compiler",
     },
@@ -2775,6 +2779,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/ffi-callbacks.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/ffi-unsafe.d.ts",
       packageId: "native-runtime",
     },
@@ -2795,6 +2803,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/openssl3.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/zlib.d.ts",
       packageId: "native-runtime",
     },
@@ -2811,7 +2823,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/ffi/address-words.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/ffi/c-string.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/callback-stubs.ts",
       packageId: "native-runtime",
     },
     {
@@ -2875,6 +2895,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/native-array-detach.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/intrinsics/packet-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/process.ts",
       packageId: "native-runtime",
     },
@@ -2884,6 +2912,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/intrinsics/shared-strings.ts",
       packageId: "native-runtime",
     },
     {
@@ -2899,6 +2931,26 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/buffer-codecs.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/buffer.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-jobs.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-public.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/crypto.ts",
       packageId: "native-runtime",
     },
@@ -2911,6 +2963,30 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/ffi-callbacks.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-signature.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-static.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/openssl.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/os-darwin.ts",
       packageId: "native-runtime",
     },
@@ -2920,6 +2996,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/os.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/type-error.ts",
       packageId: "native-runtime",
     },
     {
@@ -2939,6 +3019,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/packet-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/processors.ts",
       packageId: "native-runtime",
     },
@@ -2955,7 +3039,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/shared-buffers.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/shared-memory-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-string-arena.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-strings.ts",
       packageId: "native-runtime",
     },
     {

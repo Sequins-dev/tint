@@ -650,6 +650,7 @@ export function compileX64Program(
       managedSurfaces: request.managedSurfaces ?? [],
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
+      nodeFfiWeakProcessing: generational,
       ...(request.generalLowering === undefined
         ? {}
         : { generalLowering: request.generalLowering }),
@@ -1129,6 +1130,13 @@ function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
         name: "spinPause",
         operation: "cpu-pause",
       },
+      // The isolate's identity page, where the runtime publishes its shared
+      // string hold table (external-memory.ts).
+      {
+        module: request.memoryModule,
+        name: "currentContextDomain",
+        operation: "context-domain",
+      },
     ];
   for (const binding of collectorCandidates) {
     if (binding === undefined) throw "collector binding invariant";
@@ -1268,6 +1276,7 @@ export function compileMacOSProgram(
       denseReferenceLists: request.denseReferenceLists ?? false,
       linearAllocation: request.inlineAllocation ?? generational,
       generationalBarriers: generational,
+      nodeFfiWeakProcessing: generational,
       trustedExecutableCode: request.trustedExecutableCode === true,
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,

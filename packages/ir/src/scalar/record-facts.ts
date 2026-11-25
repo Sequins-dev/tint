@@ -36,12 +36,26 @@ function closedWorldHostOperation(operation: string): boolean {
     case "argument-length":
     case "argument-copy":
     case "environment-copy":
+    // Shrinks a typed-array view to zero elements: no descriptor or
+    // reference changes, and no fact relies on a length across a call.
+    case "native-array-detach":
     case "context-domain":
     case "stack-overflow-is":
     case "engine-range-error":
     case "root-head":
     case "memory-map":
+    // Fixed callback stubs hold only raw metadata and jump into a verified
+    // transition thunk. Their publication cannot open a managed entry.
+    case "executable-callback-map":
+    case "executable-callback-write":
+    case "executable-callback-unmap":
     case "memory-read-word":
+    // Raw-window reads: a binary64, or code units copied into a fresh string
+    // through the ordinary allocator.
+    case "memory-read-float64":
+    case "memory-read-string":
+    // A string object's address, read from the reference.
+    case "string-address":
     // A signature query reads immutable closure metadata. Only a separate
     // raw execution capability can use an address to open the call graph.
     case "native-function-signature":
@@ -63,10 +77,14 @@ function closedWorldHostOperation(operation: string): boolean {
  * (`hosted-thread-entry`), which builds a fresh context with its own heap and
  * module instances and reaches the program through the same closed root.
  * Isolates exchange no managed pointers: messages are copied or transferred
- * bytes, and shared memory, parking words and the mappings `memory-unmap`
- * releases are outside every managed heap. None of these operations writes a
- * managed object or creates a function value, so the program's interprocedural
- * facts and generational write tracking hold in every isolate. */
+ * bytes, and shared memory, parking words, message packets (which
+ * `memory-write-float64` and `memory-write-string` fill), shared string
+ * bodies (which `string-copy` fills and `string-at` references: immutable
+ * flat strings, like image literals) and the mappings `memory-unmap`
+ * releases are outside every managed heap. None of these operations writes
+ * a managed object or creates a function value, so the program's
+ * interprocedural facts and generational write tracking hold in every
+ * isolate. */
 function isolateHostOperation(operation: string): boolean {
   switch (operation) {
     case "thread-start":
@@ -81,6 +99,10 @@ function isolateHostOperation(operation: string): boolean {
     case "shared-write-word64":
     case "shared-compare-exchange-unsigned":
     case "shared-compare-exchange-word64":
+    case "memory-write-float64":
+    case "memory-write-string":
+    case "string-at":
+    case "string-copy":
       return true;
     default:
       return false;

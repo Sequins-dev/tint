@@ -1,0 +1,974 @@
+{
+ "set": "worker",
+ "date": "2026-11-22T14:54:46.722Z",
+ "platform": "darwin-arm64",
+ "node": "v26.13.1",
+ "images": {
+  "tint-worker": {
+   "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-worker-bench-worker-DIXpwp/worker-bench-worker",
+   "sha256": "1c3a20c5b7e67b04aba97163064372123508d150b6b77baade5a34c09995933b"
+  }
+ },
+ "rounds": [
+  {
+   "round": 0,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    18.4609375,
+    19.1494140625,
+    19.212890625
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 124436.00687499999,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 4983.09508395195 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5050.690417051315 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5243.224958896637 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7091.407958030701 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 6904.837583065033 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7607.596416950226 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19637.066833019257 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 24931.046999931335 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 21195.869874954224 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2263.798749923706 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2220.9770839214325 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2395.0423340797424 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4043.1284170150757 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4048.381500005722 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3993.1937499046326 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 825.7200419999863,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 24.449375000000003 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 29.261750000000006 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 10.196832999999998 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 23.48750000000001 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 19.103249999999946 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 19.574041999999963 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 47.867542000000014 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 48.327958999999964 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 44.95662500000003 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 27.61070799999999 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 24.659625000000005 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 25.507916999999964 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 23.642833999999993 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 17.688541999999984 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 17.715542000000028 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    20.43994140625,
+    19.48046875,
+    19.3115234375
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 134630.3215,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 8862.022500038147 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 6979.655333995819 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 6630.038332939148 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 8431.990833044052 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 8076.768541097641 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 8637.449583053589 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 20113.46979212761 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 22105.008833169937 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 22444.300666093826 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2460.498083114624 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2371.03054189682 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2213.1282908916473 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4049.0458750724792 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4405.053249835968 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 4341.503416061401 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 883.1940000000177,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 33.97475000000003 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 29.52687499999996 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 10.204667000000029 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 23.193457999999964 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 18.92783300000002 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 18.73458400000004 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 46.660167 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 44.073916999999994 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 43.330625 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 25.94958300000002 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 24.910792000000015 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 25.453624999999988 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 23.708958999999936 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 18.80370800000003 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 18.80733299999997 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    20.9794921875,
+    20.63037109375,
+    19.84423828125
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 123560.87004199997,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5735.280915975571 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5372.43741607666 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5697.51841711998 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 8438.493791103363 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 8573.398667097092 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7841.645833969116 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 20125.427707910538 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 19772.242334127426 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 20006.026083946228 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2181.9090418815613 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2202.7132909297943 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2396.0571658611298 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4084.5834999084473 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4319.541417121887 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 4301.161333084106 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 959.1921250000014,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 28.6045 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 36.780624999999986 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 12.83079200000003 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 30.69270800000004 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 20.320209000000034 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 21.907083 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 52.55304100000001 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 46.715374999999995 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 49.92533400000002 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 33.58079099999998 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 29.21787500000005 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 24.6042920000001 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 23.457208000000037 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 18.536625000000072 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 18.232749999999896 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    20.6767578125,
+    20.1015625,
+    19.70703125
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 145013.13925,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 6108.486000061035 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 6679.679082870483 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 6063.485249996185 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 8290.068790912628 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 8446.725417137146 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 11244.73737502098 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 25325.558875083923 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 23248.926249980927 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 25949.46795797348 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2380.0482079982758 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2460.723207950592 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2502.151249885559 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4573.61054110527 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4748.596625089645 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 4383.130375146866 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 966.8187080000062,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 42.62454200000002 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 34.04891700000002 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 14.691249999999968 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 23.74954200000002 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 19.22150000000005 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 20.685375000000022 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 49.98416699999996 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 47.636874999999975 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 45.415666999999985 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 31.22758399999998 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 28.336416999999983 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 26.89829199999997 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 33.11554100000001 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 22.797708000000057 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 19.16983300000004 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 4,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    30.02001953125,
+    23.90869140625,
+    21.2919921875
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 166797.06908299995,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 6495.666000127792 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 7246.3927500247955 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 6875.145792007446 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 9387.9180829525 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 15639.253499984741 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 17494.462249994278 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 40143.95458292961 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 19889.432625055313 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 21574.33016681671 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2349.508374929428 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2423.802958011627 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2270.172166824341 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4179.279624938965 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4056.3135001659393 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 4152.62908411026 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 857.8064580000937,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 28.685624999999987 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 26.424083999999993 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 10.283708000000047 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 25.348208 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 19.607500000000016 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 19.302499999999952 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 45.42475000000002 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 45.89295800000002 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 43.754458 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 26.84720900000002 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 25.08920900000004 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 24.49879199999998 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 21.006167000000005 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 18.061958000000004 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 17.875167000000033 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 5,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    30.251953125,
+    29.28369140625,
+    24.16650390625
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 126879.64341600006,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 6099.041166067123 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5875.661749839783 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5991.092417001724 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7859.024457931519 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 7817.165874958038 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 8440.222457885742 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 20658.26454114914 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 21530.762750148773 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 22299.713375091553 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2338.0792911052704 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2141.5320830345154 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2102.0246670246124 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3837.354957818985 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3534.1557919979095 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3467.7707090377808 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 757.5242919999873,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 23.62254199999998 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 30.427625000000006 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 9.85499999999999 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 19.632083000000023 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 16.559708999999998 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 16.36529200000001 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 39.88370800000001 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 37.951040999999975 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 37.70595800000001 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 25.07774999999998 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 21.546208999999976 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 21.58295800000002 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 20.564542000000017 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 15.908667000000037 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 17.54970800000001 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 6,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    21.4775390625,
+    26.24951171875,
+    23.64794921875
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 136395.0492919999,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5275.711583137512 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5689.337375164032 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5314.179417133331 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7855.697958946228 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 8701.973000049591 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7891.068749904633 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 21590.585166215897 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 21384.373082876205 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 25815.367084026337 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 1921.794250011444 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2129.1781249046326 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2275.031832933426 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4271.761875152588 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4053.766750097275 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 5169.978458881378 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 755.5077090000268,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 22.167 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 24.652458999999993 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 8.838875000000002 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 20.079999999999984 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 16.60366700000003 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 17.214125000000024 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 40.51487499999996 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 37.49979099999996 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 38.623582999999996 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 24.881916999999987 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 22.365417000000036 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 23.12745799999999 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 20.83220799999998 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 17.37595799999997 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 18.668874999999957 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 7,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    24.955078125,
+    25.06298828125,
+    23.48974609375
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 138347.63675000006,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5493.117000102997 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5420.144458055496 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5830.511458158493 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 9659.397416830063 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 11389.154875040054 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 9515.788374900818 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 23154.716459035873 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 22158.631166934967 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 22590.3342089653 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2382.7897498607635 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2568.5374579429626 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2481.2952921390533 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 4307.083749771118 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 4627.117958068848 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 4254.981583118439 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 1858.34866600018,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 100.49841700000002 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 71.79787500000009 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 33.237542000000076 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 44.973209 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 31.17983300000003 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 28.965667000000053 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 76.27183400000001 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 60.458417000000054 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 59.22158300000001 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 37.99708399999986 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 27.564624999999978 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 28.389042000000018 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 23.144999999999982 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 21.713874999999916 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 20.170707999999877 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 8,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    31.5068359375,
+    26.69580078125,
+    24.31689453125
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 121284.10662500001,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 6721.494166851044 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 6917.824666976929 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5575.875333070755 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7776.231167078018 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 7100.278208017349 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7285.255790948868 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19712.847625017166 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 19647.832832813263 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 19583.801332950592 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2162.6881251335144 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2215.3357911109924 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2262.210207939148 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3555.6820828914642 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3514.115583896637 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3417.650166988373 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 710.6133749999572,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 20.933666999999986 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 30.327875000000006 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 9.897667000000013 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 18.011833000000024 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 15.754083000000008 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 17.71579200000002 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 37.32733300000001 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 36.074040999999966 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 35.37133299999999 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 22.398833000000025 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 20.77441699999997 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 20.894709000000034 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 19.03045800000001 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 16.66020800000001 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 16.881167000000005 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 9,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    21.83544921875,
+    24.4892578125,
+    23.74267578125
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 123264.08187499992,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 7322.392500162125 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 6164.301542043686 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5348.143834114075 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7063.458542108536 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 7874.548082828522 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7098.828250169754 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19234.50750017166 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 23665.531583070755 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 20089.958040952682 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2036.7837090492249 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2030.6984589099884 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 1943.1689999103546 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3516.0062499046326 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3537.317875146866 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3654.1332499980927 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 630.1242500001099,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 25.659459 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 29.210125000000005 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 12.210499999999996 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 22.68308300000001 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 19.897042 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 19.492500000000007 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 46.118375000000015 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 44.26829200000003 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 45.18512499999997 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 27.88575000000003 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 27.039499999999975 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 25.97187500000001 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 22.30570799999998 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 19.156375000000025 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 19.632041999999956 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 10,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    21.07568359375,
+    23.3134765625,
+    23.3662109375
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 110281.27950000018,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5837.597125053406 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5369.272417068481 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5358.706958055496 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7706.049292087555 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 7305.017374992371 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7863.801959037781 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19599.7677090168 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 17240.65320801735 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 16734.43220806122 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 1750.4965829849243 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 1895.4007921218872 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 1851.3559999465942 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3195.208333969116 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3098.812083005905 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 2991.276582956314 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 632.6001659999602,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 19.868499999999983 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 20.765041999999994 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 8.40825000000001 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 16.662667 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 13.378374999999977 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 13.841291999999981 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 31.81012499999997 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 31.46112499999998 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 30.826250000000016 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 19.95708400000001 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 19.42254200000002 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 18.937999999999988 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 16.386334000000033 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 13.18958299999997 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 14.935999999999979 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 11,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    14.240234375,
+    20.4736328125,
+    22.2626953125
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 114554.44108400005,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 4703.9712500572205 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 4985.208957910538 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5154.954584121704 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7223.135750055313 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 6581.822209119797 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 6714.268625020981 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19308.93849992752 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 20795.56658387184 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 20024.91383290291 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 1906.4578750133514 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 1967.7113749980927 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 1875.0148749351501 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3465.6346249580383 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3608.2554581165314 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3841.685625076294 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 706.7845830000006,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 21.941167000000007 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 22.834791999999993 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 8.544333000000023 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 18.286040999999983 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 16.182582999999966 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 16.369957999999997 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 38.337917000000004 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 36.19658300000003 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 36.846292000000005 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 24.449208999999996 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 22.430457999999987 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 21.354916000000003 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 18.34687500000001 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 15.582416999999964 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 15.807458999999994 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 12,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    14.8349609375,
+    18.52001953125,
+    21.24365234375
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 114470.5282500002,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5624.602082967758 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5769.626583099365 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 4991.81454205513 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 6231.027333021164 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 7158.036416053772 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7269.477666854858 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 18506.460791110992 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 19901.249374866486 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 19397.219416856766 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2026.271833896637 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 2010.9737088680267 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2021.9480419158936 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3582.9597918987274 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3698.7252910137177 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3807.019583940506 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 787.0166670000181,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 26.500709 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 29.528040999999973 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 9.884582999999992 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 19.74595800000003 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 16.595792000000017 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 17.69350000000003 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 43.17545799999999 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 40.540332999999976 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 36.31545900000003 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 23.33737500000001 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 24.243333000000007 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 31.703458000000012 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 19.95799999999997 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 15.102125000000001 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 16.122749999999996 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 13,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    15.61083984375,
+    17.45263671875,
+    20.4619140625
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 117461.9774999998,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5265.937165975571 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 4825.556334018707 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5014.025917053223 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7510.528374910355 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 9586.741041898727 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7263.746875047684 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19565.944540977478 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 18724.60812497139 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 20653.87979197502 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2012.910500049591 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 1982.0183749198914 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 2030.1170420646667 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3588.253499984741 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3525.0642919540405 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3437.012291908264 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 518.9065419998951,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 26.041958000000008 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 32.98212499999998 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 10.185625000000016 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 17.635458999999997 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 16.131875000000008 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 19.627166999999986 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 39.08195899999998 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 34.104375000000005 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 34.19500000000005 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 27.10291699999999 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 23.434958999999992 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 30.710249999999974 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 17.45595800000001 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 14.598208 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 24.259874999999965 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 14,
+   "order": [
+    "tint-worker",
+    "node-worker"
+   ],
+   "load": [
+    16.96630859375,
+    17.521484375,
+    20.0947265625
+   ],
+   "observations": [
+    {
+     "member": "tint-worker",
+     "status": 0,
+     "passed": true,
+     "wallMs": 115851.885917,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH_KERNEL worker allocation 0 5287.831042051315 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 1 5100.5002501010895 -816883584\r",
+      "WORKER_BENCH_KERNEL worker allocation 2 5012.042291879654 -816883584\r",
+      "WORKER_BENCH_KERNEL worker numeric 0 7754.542042016983 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 1 7827.986416101456 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker numeric 2 7648.564749956131 -1447863644\r",
+      "WORKER_BENCH_KERNEL worker calls 0 19857.411625146866 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 1 19538.076250076294 485192500\r",
+      "WORKER_BENCH_KERNEL worker calls 2 18760.243624925613 485192500\r",
+      "WORKER_BENCH_KERNEL worker strings 0 2079.8183748722076 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 1 1982.580500125885 1831815049\r",
+      "WORKER_BENCH_KERNEL worker strings 2 1967.1349170207977 1831815049\r",
+      "WORKER_BENCH_KERNEL worker compiler 0 3602.966125011444 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 1 3592.104875087738 3411900\r",
+      "WORKER_BENCH_KERNEL worker compiler 2 3440.3271248340607 3411900\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-worker",
+     "status": 42,
+     "passed": true,
+     "wallMs": 702.1859170000535,
+     "lines": [
+      "WORKER_BENCH_KERNEL worker allocation 0 22.879583999999994 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 1 30.656791999999996 -816883584",
+      "WORKER_BENCH_KERNEL worker allocation 2 9.775666999999999 -816883584",
+      "WORKER_BENCH_KERNEL worker numeric 0 18.52054100000001 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 1 15.811958000000033 -1447863644",
+      "WORKER_BENCH_KERNEL worker numeric 2 16.363833 -1447863644",
+      "WORKER_BENCH_KERNEL worker calls 0 38.72416700000002 485192500",
+      "WORKER_BENCH_KERNEL worker calls 1 35.55379099999999 485192500",
+      "WORKER_BENCH_KERNEL worker calls 2 35.529916999999955 485192500",
+      "WORKER_BENCH_KERNEL worker strings 0 23.24733299999997 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 1 21.298749999999984 1831815049",
+      "WORKER_BENCH_KERNEL worker strings 2 20.471082999999965 1831815049",
+      "WORKER_BENCH_KERNEL worker compiler 0 17.656042000000014 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 1 15.312584000000015 3411900",
+      "WORKER_BENCH_KERNEL worker compiler 2 15.26483300000001 3411900"
+     ],
+     "stderr": ""
+    }
+   ]
+  }
+ ]
+}

@@ -11,6 +11,10 @@ import {
 } from "./native-ffi-fixtures.ts";
 import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
 import {
+  verifyCryptoAsyncFixture,
+  verifyCryptoPublicFixture,
+} from "./build-node-crypto-async-fixture.ts";
+import {
   verifyCallbackFixture,
   verifyCallbackTrap,
   verifyMayCallbackOnlyFixture,
@@ -20,6 +24,7 @@ import {
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
 import {
   verifyDynamicFixture,
+  verifyDynamicSymbolWords,
   withDynamicLibrary,
 } from "./native-dynamic-fixtures.ts";
 import assert from "node:assert/strict";
@@ -52,8 +57,14 @@ test(
     verifyAbiProbeFixture();
   },
 );
-test("createHash('sha256') matches Node's digests under GC churn", () => {
+test("node:crypto hashes, HMAC and random bytes use system OpenSSL", () => {
   verifyCryptoFixture();
+});
+test("node:crypto PBKDF2 returns through the blocking pool and reactor wake", () => {
+  verifyCryptoAsyncFixture();
+});
+test("node:crypto imports share Buffer identity and reject unsupported operations", () => {
+  verifyCryptoPublicFixture();
 });
 test(
   "images load libraries beyond libSystem and bind absent optional symbols as 0",
@@ -82,6 +93,9 @@ const clang =
   spawnSync("clang", ["--version"], { encoding: "utf8" }).status === 0
     ? {}
     : { skip: "clang is not installed (the test library is compiled)" };
+test("dynamic symbol lookup preserves exact address words", clang, () => {
+  withDynamicLibrary(verifyDynamicSymbolWords);
+});
 test("dynamic calls reach every C argument and result class", clang, () => {
   withDynamicLibrary((library) => verifyDynamicFixture(library));
 });

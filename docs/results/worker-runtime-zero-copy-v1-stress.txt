@@ -1,0 +1,39 @@
+== stress parallel /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-worker-shared-strings-stress-parallel-ZnEXSx/worker-shared-strings-stress-parallel
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+== stress serial /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-worker-shared-strings-stress-serial-AKFKJp/worker-shared-strings-stress-serial
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+== stress copying /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-worker-shared-strings-stress-copying-LDpNIT/worker-shared-strings-stress-copying
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42
+STOPPED_AT_ENTRY
+shared strings stress: ok
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 42

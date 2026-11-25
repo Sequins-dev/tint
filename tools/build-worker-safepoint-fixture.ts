@@ -51,10 +51,18 @@ function allocateWork(base:number):void {
   }
   write(base,8,checksum);
 }
+// Neither allocates nor calls inside its loop: only the loop poll stops it.
+function spinWork(base:number):void {
+  write(base,32,1);
+  let checksum=0;
+  for(let index=0;index<4000000000;index++)checksum=(checksum*31+index)|0;
+  write(base,40,checksum|1);
+}
 export function evaluate(base:number,id:number,_control:NativeWorkerTurnControl):number {
-  const offset=id===1?0:16;
+  const offset=id===1?0:id===2?16:32;
   try{
     if(id===1)allocateWork(base);
+    else if(id===3)spinWork(base);
     else{
       write(base,offset,1);
       while(read(base,offset+4)===0)parkNativeWord(base+offset+4,0,0);
@@ -105,7 +113,7 @@ export function run(argument:number):number {
   const base=memory.mapMemory(16384);
   if(base<=0)return 2;
   try{
-    let allocationExit=-1,callExit=-1;
+    let allocationExit=-1,callExit=-1,spinExit=-1;
     const allocating=startNativeWorker(memory,parking,threads,runtime,{
       threadId:1,moduleId:base,stackBytes:8388608,heapBytes:8388608,
       onError:(message:string):void=>{throw message;},
@@ -116,20 +124,26 @@ export function run(argument:number):number {
       onError:(message:string):void=>{throw message;},
       onExit:(status:number):void=>{callExit=status;},
     });
+    const spinning=startNativeWorker(memory,parking,threads,runtime,{
+      threadId:3,moduleId:base,stackBytes:8388608,heapBytes:8388608,
+      onError:(message:string):void=>{throw message;},
+      onExit:(status:number):void=>{spinExit=status;},
+    });
     const request:{close():void}=runtime.loop.setInterval(():void=>{
-      if(read(base,0)!==1||read(base,16)!==1)return;
+      if(read(base,0)!==1||read(base,16)!==1||read(base,32)!==1)return;
       request.close();
       allocating.requestStop();
       calling.requestStop();
+      spinning.requestStop();
       write(base,20,1);
       wakeNativeWord(base+20,1);
     },1);
     runtime.loop.setTimeout(():void=>{throw "worker safepoint fixture stalled";},2000).unref();
     runtime.loop.run("callback");
-    if(allocationExit!==1||callExit!==1)return 3;
+    if(allocationExit!==1||callExit!==1||spinExit!==1)return 3;
     if(read(base,8)!==0)return 4;
-    if(read(base,24)!==0)return 5;
-    if(read(base,12)!==0||read(base,28)!==0)return 6;
+    if(read(base,24)!==0||read(base,40)!==0)return 5;
+    if(read(base,12)!==0||read(base,28)!==0||read(base,44)!==0)return 6;
     return 42;
   }finally{
     runtime.close();

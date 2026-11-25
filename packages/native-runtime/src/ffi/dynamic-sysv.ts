@@ -49,9 +49,11 @@ import {
 export {
   closeLibrary,
   findSymbol,
+  findSymbolWords,
   openLibrary,
   openProgram,
   optionalSymbol,
+  registerOptionalLibrary,
   resultBoolean,
   resultHigh,
   resultLow,
@@ -63,6 +65,7 @@ export {
   type ForeignSignature,
   type ForeignType,
   type LibraryHandle,
+  type SymbolAddress,
 } from "./dynamic.ts";
 
 export interface ForeignFunction extends SharedForeignFunction {

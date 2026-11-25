@@ -1,13 +1,15 @@
+import type { HostOperation } from "@tint/ir/scalar";
+import type { RuntimeSource } from "../runtime-contracts.ts";
 import {
   cLibraryImage,
   linuxArm64CTarget,
   type CFunctionDeclaration,
+  type CSignature,
   type CLibraryDeclaration,
   type CLibraryImage,
   type CLibraryManifestEntry,
   type CTarget,
 } from "@tint/abi/c";
-import {} from "@tint/ir/scalar";
 import type { ImportMapping } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -69,15 +71,26 @@ export interface NativeForeignMemoryBinding {
   readonly operation:
     | "address"
     | "adopt"
+    | "adopt-words"
+    | "address-into"
     | "retarget"
     | "stable"
     | "callback-key"
     | "call"
-    | "call-callbacks";
+    | "call-callbacks"
+    | "call-scalar"
+    | "call-scalar-callbacks"
+    | "runtime-callback-address"
+    | "call-direct-bytes"
+    | "call-static-scalar"
+    | "call-direct-scalar";
+  readonly staticSignature?: CSignature;
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
 export const foreignRuntimeModules = {
+  nodeFfi: "packages/native-runtime/src/node/ffi.ts",
+  nodeBuffer: "packages/native-runtime/src/node/buffer.ts",
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",
   /** `tint:ffi/unsafe`: views over memory C owns. */
@@ -85,6 +98,8 @@ export const foreignRuntimeModules = {
   /** The public loader with the SysV leaf call-frame implementation. */
   sysv: "packages/native-runtime/src/ffi/dynamic-sysv.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
+  addressWords: "packages/native-runtime/src/ffi/address-words.ts",
+  callbackStubs: "packages/native-runtime/src/ffi/callback-stubs.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
 };
@@ -94,17 +109,17 @@ export const foreignRuntimeModules = {
  * collector-registered storage (`external`) uses. Weak cells work under
  * every collector, and only a created one makes collections trace them. */
 export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
-  readonly runtimes: readonly { module: string; namespace: string }[];
+  readonly runtimes: readonly RuntimeSource[];
   readonly memoryBindings: readonly NativeForeignMemoryBinding[];
   readonly weakBindings: readonly {
     readonly module: string;
     readonly name: string;
-    readonly operation: "new" | "key";
+    readonly operation: "new" | "key" | "clear" | "value" | "set-value";
   }[];
   readonly hostBindings: readonly {
     readonly module: string;
     readonly name: string;
-    readonly operation: "collect-garbage";
+    readonly operation: HostOperation;
   }[];
 } {
   const modules = foreignRuntimeModules;
@@ -119,6 +134,11 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
     {
       module: modules.primitives,
       name: "externalAddress",
+      operation: "address",
+    },
+    {
+      module: modules.primitives,
+      name: "externalBufferAddress",
       operation: "address",
     },
     { module: modules.primitives, name: "adoptExternal", operation: "adopt" },
@@ -140,25 +160,125 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       operation: "callback-key",
     },
   ];
-  return {
-    runtimes: [
-      { module: modules.primitives, namespace: "ffi" },
-      { module: modules.weak, namespace: "ffi-weak" },
-      { module: modules.memory, namespace: "ffi-memory" },
-    ],
-    memoryBindings: bindings,
-    weakBindings: [
-      { module: modules.weak, name: "createWeakSlot", operation: "new" },
-      { module: modules.weak, name: "weakSlotKey", operation: "key" },
-    ],
-    hostBindings: [
+  const weakBindings: {
+    readonly module: string;
+    readonly name: string;
+    readonly operation: "new" | "key" | "clear" | "value" | "set-value";
+  }[] = [
+    { module: modules.weak, name: "createWeakSlot", operation: "new" },
+    { module: modules.weak, name: "weakSlotKey", operation: "key" },
+    // The Worker message path's send cache of shared string bodies.
+    { module: modules.weak, name: "weakSlotValue", operation: "value" },
+  ];
+  const runtimes: RuntimeSource[] = [
+    { module: modules.primitives, namespace: "ffi" },
+    { module: modules.weak, namespace: "ffi-weak" },
+    { module: modules.memory, namespace: "ffi-memory" },
+  ];
+  const hostBindings: {
+    module: string;
+    name: string;
+    operation: HostOperation;
+  }[] = [
+    {
+      module: modules.memory,
+      name: "collectGarbage",
+      operation: "collect-garbage",
+    },
+  ];
+  if (loaded.has(modules.nodeFfi))
+    weakBindings.push(
+      { module: modules.weak, name: "clearWeakSlot", operation: "clear" },
       {
-        module: modules.memory,
-        name: "collectGarbage",
-        operation: "collect-garbage",
+        module: modules.weak,
+        name: "setWeakSlotValue",
+        operation: "set-value",
       },
-    ],
-  };
+    );
+  if (loaded.has(modules.nodeFfi) && loaded.has(modules.addressWords)) {
+    runtimes.push({
+      module: modules.addressWords,
+      namespace: "ffi-address-words",
+      retainedExports: [
+        "adoptExternalWords",
+        "byteAddressInto",
+        "callScalarForeign",
+        "callScalarForeignCallbacks",
+      ],
+    });
+    bindings.push(
+      {
+        module: modules.addressWords,
+        name: "adoptExternalWords",
+        operation: "adopt-words",
+      },
+      {
+        module: modules.addressWords,
+        name: "byteAddressInto",
+        operation: "address-into",
+      },
+      {
+        module: modules.addressWords,
+        name: "callScalarForeign",
+        operation: "call-scalar",
+      },
+      {
+        module: modules.addressWords,
+        name: "callScalarForeignCallbacks",
+        operation: "call-scalar-callbacks",
+      },
+    );
+  }
+  if (loaded.has(modules.nodeFfi) && loaded.has(modules.callbackStubs)) {
+    runtimes.push({
+      module: modules.callbackStubs,
+      namespace: "ffi-callback-stubs",
+      retainedExports: [
+        "runtimeCallbackAddress",
+        "runtimeI32CallbackAddress",
+        "mapCallbackMemory",
+        "writeCallbackMemory",
+        "unmapCallbackMemory",
+      ],
+    });
+    bindings.push(
+      {
+        module: modules.callbackStubs,
+        name: "runtimeCallbackAddress",
+        operation: "runtime-callback-address",
+      },
+      {
+        module: modules.callbackStubs,
+        name: "runtimeI32CallbackAddress",
+        operation: "runtime-callback-address",
+        staticSignature: {
+          parameters: [{ kind: "scalar", scalar: "i32" }],
+          result: { kind: "scalar", scalar: "i32" },
+          fixedParameters: 1,
+          callClass: "leaf",
+          errno: "none",
+        },
+      },
+    );
+    hostBindings.push(
+      {
+        module: modules.callbackStubs,
+        name: "mapCallbackMemory",
+        operation: "executable-callback-map",
+      },
+      {
+        module: modules.callbackStubs,
+        name: "writeCallbackMemory",
+        operation: "executable-callback-write",
+      },
+      {
+        module: modules.callbackStubs,
+        name: "unmapCallbackMemory",
+        operation: "executable-callback-unmap",
+      },
+    );
+  }
+  return { runtimes, memoryBindings: bindings, weakBindings, hostBindings };
 }
 /** How `target` loads binding module `module`: the library manifest
  * (`cLibraryManifest`, plus a build's `additional` entries) is the only
@@ -274,7 +394,10 @@ export function prepareForeignLibrary(
   const expanded = expandForeignLibrary(
     parsed.value,
     target,
-    image.optional && target.name !== "darwin-arm64" ? image.name : undefined,
+    image.runtimeResolved === true ||
+      (image.optional && target.name !== "darwin-arm64")
+      ? image.name
+      : undefined,
   );
   if (!expanded.ok) return { ok: false, error: id + ": " + expanded.error };
   const views = foreignViews(parsed.value, target);
@@ -391,6 +514,34 @@ export function expandForeignInputs(
       packageId: input.packageId,
       bytes: encoder.encode(prepared.value.text),
     });
+  }
+  if (
+    target.name === "darwin-arm64" ||
+    target.name === "linux-arm64" ||
+    target.name === "linux-x86_64"
+  ) {
+    const packages = new Set<string>();
+    for (const input of inputs) {
+      if (input === undefined) throw "foreign input invariant";
+      packages.add(input.packageId);
+    }
+    for (const packageId of packages) {
+      if (packageId === undefined) throw "foreign package invariant";
+      grantForeignRuntime(
+        inputs,
+        mappings,
+        packageId,
+        "node:ffi",
+        foreignRuntimeModules.nodeFfi,
+      );
+      grantForeignRuntime(
+        inputs,
+        mappings,
+        packageId,
+        "node:buffer",
+        foreignRuntimeModules.nodeBuffer,
+      );
+    }
   }
   return { ok: true, value: { inputs: expanded, mappings, libraries } };
 }

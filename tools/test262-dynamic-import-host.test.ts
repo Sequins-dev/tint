@@ -676,6 +676,10 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "createArray2",
     "createArray3",
     "createArray4",
+    "scriptAtomicsAddFast",
+    "scriptAtomicsLoadFast",
+    "scriptAtomicsStoreFast",
+    "scriptAtomicsInt32View",
   ];
   const old = {
     ...snapshot,
@@ -723,8 +727,10 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   // eleven helpers for element access, builtin intrinsics and object literals;
   // step 5a-3 adds ten helpers for packed length and fixed-arity literals;
   // step 5a-6 adds five direct collection/push fast-path helpers; A7 adds
-  // viewObjectValue, isOrdinaryObject, readFloat64Element and writeFloat64Element.
-  assert.equal(current.values.length, 192);
+  // viewObjectValue, isOrdinaryObject, readFloat64Element and writeFloat64Element;
+  // Atomics inline fast paths add scriptAtomicsAddFast, scriptAtomicsLoadFast,
+  // scriptAtomicsStoreFast and scriptAtomicsInt32View.
+  assert.equal(current.values.length, 196);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

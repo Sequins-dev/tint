@@ -1,0 +1,2275 @@
+{
+  "head": "8cf9a9389a59a4a59f2d02e7c7219635636a687f",
+  "iterations": 100000,
+  "warm": 20000,
+  "rounds": 9,
+  "target": "darwin-aarch64",
+  "cpu": "Apple M5 Max",
+  "node": "26.13.1",
+  "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+  "dsoSha256": "bdc046af5fdaf48d5240c8d0ae55f96a74b62e9e0351388b3036983979ef332f",
+  "sourceSha256": "52f096f6874e041eca05d01f878f65b691f3e7ed66f632f34d37401c0da661d7",
+  "timingLock": "/Users/stephenbelanger/.t3/tint-timing.lock",
+  "loadBefore": [
+    5.166015625,
+    4.40283203125,
+    4.04541015625
+  ],
+  "loadAfter": [
+    11.78076171875,
+    6.53955078125,
+    4.884765625
+  ],
+  "observations": [
+    {
+      "round": 0,
+      "engine": "node",
+      "started": "2026-11-21T03:53:03.879Z"
+    },
+    {
+      "round": 0,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:53:04.086Z"
+    },
+    {
+      "round": 0,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:53:15.262Z"
+    },
+    {
+      "round": 1,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:53:21.305Z"
+    },
+    {
+      "round": 1,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:53:27.051Z"
+    },
+    {
+      "round": 1,
+      "engine": "node",
+      "started": "2026-11-21T03:53:32.948Z"
+    },
+    {
+      "round": 2,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:53:33.103Z"
+    },
+    {
+      "round": 2,
+      "engine": "node",
+      "started": "2026-11-21T03:53:37.136Z"
+    },
+    {
+      "round": 2,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:53:37.295Z"
+    },
+    {
+      "round": 3,
+      "engine": "node",
+      "started": "2026-11-21T03:53:43.710Z"
+    },
+    {
+      "round": 3,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:53:43.880Z"
+    },
+    {
+      "round": 3,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:53:49.916Z"
+    },
+    {
+      "round": 4,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:53:56.046Z"
+    },
+    {
+      "round": 4,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:54:01.910Z"
+    },
+    {
+      "round": 4,
+      "engine": "node",
+      "started": "2026-11-21T03:54:08.039Z"
+    },
+    {
+      "round": 5,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:54:08.200Z"
+    },
+    {
+      "round": 5,
+      "engine": "node",
+      "started": "2026-11-21T03:54:30.364Z"
+    },
+    {
+      "round": 5,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:54:30.714Z"
+    },
+    {
+      "round": 6,
+      "engine": "node",
+      "started": "2026-11-21T03:54:41.914Z"
+    },
+    {
+      "round": 6,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:54:42.406Z"
+    },
+    {
+      "round": 6,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:54:51.919Z"
+    },
+    {
+      "round": 7,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:54:55.144Z"
+    },
+    {
+      "round": 7,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:54:58.117Z"
+    },
+    {
+      "round": 7,
+      "engine": "node",
+      "started": "2026-11-21T03:55:01.100Z"
+    },
+    {
+      "round": 8,
+      "engine": "tintRuntime",
+      "started": "2026-11-21T03:55:01.263Z"
+    },
+    {
+      "round": 8,
+      "engine": "node",
+      "started": "2026-11-21T03:55:04.237Z"
+    },
+    {
+      "round": 8,
+      "engine": "tintLiteral",
+      "started": "2026-11-21T03:55:04.397Z"
+    }
+  ],
+  "native": [
+    {
+      "round": 0,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 21896 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_59e122d7-5ae6-437c-884a-1186aed1a047 AT_ENTRY')\nTINT_NATIVE_59e122d7-5ae6-437c-884a-1186aed1a047 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 32.62512493133545 100000\r\nTINT_FFI_BENCH arity-1 38.96549987792969 200000\r\nTINT_FFI_BENCH arity-2 40.489457845687866 300000\r\nTINT_FFI_BENCH arity-4 47.0083749294281 500000\r\nTINT_FFI_BENCH arity-8 57.869791984558105 900000\r\nTINT_FFI_BENCH arity-12 70.37458300590515 1300000\r\nTINT_FFI_BENCH arity-24 101.93445801734924 2500000\r\nTINT_FFI_BENCH buffer 42.41962504386902 4200000\r\nTINT_FFI_BENCH callback 66.14475011825562 4200000\r\nTINT_FFI_BENCH js-only-control 22.33758306503296 4200000\r\nProcess 21896 resuming\nProcess 21896 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_59e122d7-5ae6-437c-884a-1186aed1a047 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_59e122d7-5ae6-437c-884a-1186aed1a047 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_59e122d7-5ae6-437c-884a-1186aed1a047 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 0,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 22051 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_8d7779cc-db2e-46df-8854-e665783b3f39 AT_ENTRY')\nTINT_NATIVE_8d7779cc-db2e-46df-8854-e665783b3f39 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 34.630332946777344 100000\r\nTINT_FFI_BENCH arity-1 39.737499952316284 200000\r\nTINT_FFI_BENCH arity-2 44.451666831970215 300000\r\nTINT_FFI_BENCH arity-4 52.804166078567505 500000\r\nTINT_FFI_BENCH arity-8 67.30120801925659 900000\r\nTINT_FFI_BENCH arity-12 85.48862504959106 1300000\r\nTINT_FFI_BENCH arity-24 130.81987500190735 2500000\r\nTINT_FFI_BENCH buffer 42.78637504577637 4200000\r\nTINT_FFI_BENCH callback 67.62270784378052 4200000\r\nTINT_FFI_BENCH js-only-control 23.17658281326294 4200000\r\nProcess 22051 resuming\nProcess 22051 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_8d7779cc-db2e-46df-8854-e665783b3f39 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_8d7779cc-db2e-46df-8854-e665783b3f39 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_8d7779cc-db2e-46df-8854-e665783b3f39 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 1,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 22193 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_920d0fdc-adac-456e-996c-c59db2f0ee61 AT_ENTRY')\nTINT_NATIVE_920d0fdc-adac-456e-996c-c59db2f0ee61 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 32.742082834243774 100000\r\nTINT_FFI_BENCH arity-1 38.473042011260986 200000\r\nTINT_FFI_BENCH arity-2 40.686999797821045 300000\r\nTINT_FFI_BENCH arity-4 45.61708307266235 500000\r\nTINT_FFI_BENCH arity-8 56.28058314323425 900000\r\nTINT_FFI_BENCH arity-12 67.47112488746643 1300000\r\nTINT_FFI_BENCH arity-24 103.57112503051758 2500000\r\nTINT_FFI_BENCH buffer 42.831125020980835 4200000\r\nTINT_FFI_BENCH callback 64.6574158668518 4200000\r\nTINT_FFI_BENCH js-only-control 22.272332906723022 4200000\r\nProcess 22193 resuming\nProcess 22193 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_920d0fdc-adac-456e-996c-c59db2f0ee61 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_920d0fdc-adac-456e-996c-c59db2f0ee61 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_920d0fdc-adac-456e-996c-c59db2f0ee61 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 1,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 22353 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_3a93babd-6e89-4f3c-b7d7-ec825df2375a AT_ENTRY')\nTINT_NATIVE_3a93babd-6e89-4f3c-b7d7-ec825df2375a AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 35.01699995994568 100000\r\nTINT_FFI_BENCH arity-1 39.75316596031189 200000\r\nTINT_FFI_BENCH arity-2 44.226500034332275 300000\r\nTINT_FFI_BENCH arity-4 55.05262494087219 500000\r\nTINT_FFI_BENCH arity-8 65.11016607284546 900000\r\nTINT_FFI_BENCH arity-12 85.04083395004272 1300000\r\nTINT_FFI_BENCH arity-24 127.64458322525024 2500000\r\nTINT_FFI_BENCH buffer 41.765541076660156 4200000\r\nTINT_FFI_BENCH callback 66.1492919921875 4200000\r\nTINT_FFI_BENCH js-only-control 22.04295802116394 4200000\r\nProcess 22353 resuming\nProcess 22353 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_3a93babd-6e89-4f3c-b7d7-ec825df2375a EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_3a93babd-6e89-4f3c-b7d7-ec825df2375a SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_3a93babd-6e89-4f3c-b7d7-ec825df2375a EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 2,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 22456 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_24883f3c-3b62-4a50-85f9-2a2d4b2b8edc AT_ENTRY')\nTINT_NATIVE_24883f3c-3b62-4a50-85f9-2a2d4b2b8edc AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 35.455000162124634 100000\r\nTINT_FFI_BENCH arity-1 38.90249991416931 200000\r\nTINT_FFI_BENCH arity-2 43.2594997882843 300000\r\nTINT_FFI_BENCH arity-4 51.68045902252197 500000\r\nTINT_FFI_BENCH arity-8 66.82191610336304 900000\r\nTINT_FFI_BENCH arity-12 80.63841700553894 1300000\r\nTINT_FFI_BENCH arity-24 124.72416710853577 2500000\r\nTINT_FFI_BENCH buffer 46.7279999256134 4200000\r\nTINT_FFI_BENCH callback 65.94325017929077 4200000\r\nTINT_FFI_BENCH js-only-control 22.54929208755493 4200000\r\nProcess 22456 resuming\nProcess 22456 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_24883f3c-3b62-4a50-85f9-2a2d4b2b8edc EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_24883f3c-3b62-4a50-85f9-2a2d4b2b8edc SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_24883f3c-3b62-4a50-85f9-2a2d4b2b8edc EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 2,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 22636 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_71a99cdc-87e8-42ce-933c-f18fa39a96ac AT_ENTRY')\nTINT_NATIVE_71a99cdc-87e8-42ce-933c-f18fa39a96ac AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 32.41266679763794 100000\r\nTINT_FFI_BENCH arity-1 37.040374994277954 200000\r\nTINT_FFI_BENCH arity-2 41.87695813179016 300000\r\nTINT_FFI_BENCH arity-4 47.863332986831665 500000\r\nTINT_FFI_BENCH arity-8 57.08058404922485 900000\r\nTINT_FFI_BENCH arity-12 67.28345799446106 1300000\r\nTINT_FFI_BENCH arity-24 102.17737483978271 2500000\r\nTINT_FFI_BENCH buffer 42.97279119491577 4200000\r\nTINT_FFI_BENCH callback 65.9823751449585 4200000\r\nTINT_FFI_BENCH js-only-control 23.155209064483643 4200000\r\nProcess 22636 resuming\nProcess 22636 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_71a99cdc-87e8-42ce-933c-f18fa39a96ac EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_71a99cdc-87e8-42ce-933c-f18fa39a96ac SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_71a99cdc-87e8-42ce-933c-f18fa39a96ac EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 3,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 22909 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_045e8d60-4d29-40b7-acdb-f28ec76151ef AT_ENTRY')\nTINT_NATIVE_045e8d60-4d29-40b7-acdb-f28ec76151ef AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 32.205291986465454 100000\r\nTINT_FFI_BENCH arity-1 37.85958385467529 200000\r\nTINT_FFI_BENCH arity-2 39.27679109573364 300000\r\nTINT_FFI_BENCH arity-4 48.12237501144409 500000\r\nTINT_FFI_BENCH arity-8 56.17887496948242 900000\r\nTINT_FFI_BENCH arity-12 67.70262479782104 1300000\r\nTINT_FFI_BENCH arity-24 101.4792091846466 2500000\r\nTINT_FFI_BENCH buffer 42.06841588020325 4200000\r\nTINT_FFI_BENCH callback 65.40829205513 4200000\r\nTINT_FFI_BENCH js-only-control 21.776916980743408 4200000\r\nProcess 22909 resuming\nProcess 22909 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_045e8d60-4d29-40b7-acdb-f28ec76151ef EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_045e8d60-4d29-40b7-acdb-f28ec76151ef SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_045e8d60-4d29-40b7-acdb-f28ec76151ef EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 3,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 23082 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_87cf22db-07ba-476a-b9fa-6c7844b94589 AT_ENTRY')\nTINT_NATIVE_87cf22db-07ba-476a-b9fa-6c7844b94589 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 35.417624950408936 100000\r\nTINT_FFI_BENCH arity-1 38.29920792579651 200000\r\nTINT_FFI_BENCH arity-2 43.64199995994568 300000\r\nTINT_FFI_BENCH arity-4 52.49029207229614 500000\r\nTINT_FFI_BENCH arity-8 67.98037505149841 900000\r\nTINT_FFI_BENCH arity-12 80.63716697692871 1300000\r\nTINT_FFI_BENCH arity-24 122.54533290863037 2500000\r\nTINT_FFI_BENCH buffer 40.52270793914795 4200000\r\nTINT_FFI_BENCH callback 65.7960410118103 4200000\r\nTINT_FFI_BENCH js-only-control 21.986124992370605 4200000\r\nProcess 23082 resuming\nProcess 23082 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_87cf22db-07ba-476a-b9fa-6c7844b94589 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_87cf22db-07ba-476a-b9fa-6c7844b94589 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_87cf22db-07ba-476a-b9fa-6c7844b94589 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 4,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 23256 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_5ccb77d0-16ae-4d16-9c2a-451e8d359076 AT_ENTRY')\nTINT_NATIVE_5ccb77d0-16ae-4d16-9c2a-451e8d359076 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 33.909125089645386 100000\r\nTINT_FFI_BENCH arity-1 36.53620886802673 200000\r\nTINT_FFI_BENCH arity-2 42.06874990463257 300000\r\nTINT_FFI_BENCH arity-4 46.925999879837036 500000\r\nTINT_FFI_BENCH arity-8 57.92783308029175 900000\r\nTINT_FFI_BENCH arity-12 68.95291686058044 1300000\r\nTINT_FFI_BENCH arity-24 99.59645795822144 2500000\r\nTINT_FFI_BENCH buffer 44.11045789718628 4200000\r\nTINT_FFI_BENCH callback 65.8414580821991 4200000\r\nTINT_FFI_BENCH js-only-control 22.714457988739014 4200000\r\nProcess 23256 resuming\nProcess 23256 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_5ccb77d0-16ae-4d16-9c2a-451e8d359076 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_5ccb77d0-16ae-4d16-9c2a-451e8d359076 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_5ccb77d0-16ae-4d16-9c2a-451e8d359076 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 4,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 23457 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_3ee4ff2b-4043-44a5-bee4-5743a598c876 AT_ENTRY')\nTINT_NATIVE_3ee4ff2b-4043-44a5-bee4-5743a598c876 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 36.48570799827576 100000\r\nTINT_FFI_BENCH arity-1 39.2332501411438 200000\r\nTINT_FFI_BENCH arity-2 43.93566703796387 300000\r\nTINT_FFI_BENCH arity-4 52.71266579627991 500000\r\nTINT_FFI_BENCH arity-8 66.02445912361145 900000\r\nTINT_FFI_BENCH arity-12 83.80850005149841 1300000\r\nTINT_FFI_BENCH arity-24 123.5819160938263 2500000\r\nTINT_FFI_BENCH buffer 42.68304204940796 4200000\r\nTINT_FFI_BENCH callback 64.95958399772644 4200000\r\nTINT_FFI_BENCH js-only-control 22.265166997909546 4200000\r\nProcess 23457 resuming\nProcess 23457 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_3ee4ff2b-4043-44a5-bee4-5743a598c876 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_3ee4ff2b-4043-44a5-bee4-5743a598c876 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_3ee4ff2b-4043-44a5-bee4-5743a598c876 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 5,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 24200 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_f825dc40-e96e-40f0-b65b-e0572d519bb8 AT_ENTRY')\nTINT_NATIVE_f825dc40-e96e-40f0-b65b-e0572d519bb8 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 50.74612498283386 100000\r\nTINT_FFI_BENCH arity-1 127.53087496757507 200000\r\nTINT_FFI_BENCH arity-2 77.17237496376038 300000\r\nTINT_FFI_BENCH arity-4 63.91700005531311 500000\r\nTINT_FFI_BENCH arity-8 286.024875164032 900000\r\nTINT_FFI_BENCH arity-12 164.16825008392334 1300000\r\nTINT_FFI_BENCH arity-24 425.42495918273926 2500000\r\nTINT_FFI_BENCH buffer 182.04541611671448 4200000\r\nTINT_FFI_BENCH callback 200.56374979019165 4200000\r\nTINT_FFI_BENCH js-only-control 55.573540925979614 4200000\r\nProcess 24200 resuming\nProcess 24200 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_f825dc40-e96e-40f0-b65b-e0572d519bb8 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_f825dc40-e96e-40f0-b65b-e0572d519bb8 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_f825dc40-e96e-40f0-b65b-e0572d519bb8 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 5,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 25259 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_9b0b36ed-f7b1-459d-82eb-28ccc87d9cb2 AT_ENTRY')\nTINT_NATIVE_9b0b36ed-f7b1-459d-82eb-28ccc87d9cb2 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 50.94279193878174 100000\r\nTINT_FFI_BENCH arity-1 76.74816703796387 200000\r\nTINT_FFI_BENCH arity-2 109.26975011825562 300000\r\nTINT_FFI_BENCH arity-4 110.5341248512268 500000\r\nTINT_FFI_BENCH arity-8 174.20554113388062 900000\r\nTINT_FFI_BENCH arity-12 143.9369580745697 1300000\r\nTINT_FFI_BENCH arity-24 284.9210422039032 2500000\r\nTINT_FFI_BENCH buffer 135.9549160003662 4200000\r\nTINT_FFI_BENCH callback 199.46879196166992 4200000\r\nTINT_FFI_BENCH js-only-control 126.17500019073486 4200000\r\nProcess 25259 resuming\nProcess 25259 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_9b0b36ed-f7b1-459d-82eb-28ccc87d9cb2 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_9b0b36ed-f7b1-459d-82eb-28ccc87d9cb2 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_9b0b36ed-f7b1-459d-82eb-28ccc87d9cb2 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 6,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 26994 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_9f7c6a77-c517-4f7a-9796-6b2f9d44596e AT_ENTRY')\nTINT_NATIVE_9f7c6a77-c517-4f7a-9796-6b2f9d44596e AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 41.22395896911621 100000\r\nTINT_FFI_BENCH arity-1 46.776000022888184 200000\r\nTINT_FFI_BENCH arity-2 51.93666696548462 300000\r\nTINT_FFI_BENCH arity-4 59.68733310699463 500000\r\nTINT_FFI_BENCH arity-8 72.4282500743866 900000\r\nTINT_FFI_BENCH arity-12 85.45012497901917 1300000\r\nTINT_FFI_BENCH arity-24 127.09045886993408 2500000\r\nTINT_FFI_BENCH buffer 54.208834171295166 4200000\r\nTINT_FFI_BENCH callback 84.18570804595947 4200000\r\nTINT_FFI_BENCH js-only-control 27.411458015441895 4200000\r\nProcess 26994 resuming\nProcess 26994 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_9f7c6a77-c517-4f7a-9796-6b2f9d44596e EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_9f7c6a77-c517-4f7a-9796-6b2f9d44596e SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_9f7c6a77-c517-4f7a-9796-6b2f9d44596e EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 6,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 27077 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_407cd506-a059-42ef-9f73-b4f2b0d712b4 AT_ENTRY')\nTINT_NATIVE_407cd506-a059-42ef-9f73-b4f2b0d712b4 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 39.29254221916199 100000\r\nTINT_FFI_BENCH arity-1 43.959290981292725 200000\r\nTINT_FFI_BENCH arity-2 51.05191707611084 300000\r\nTINT_FFI_BENCH arity-4 60.8654580116272 500000\r\nTINT_FFI_BENCH arity-8 74.24258303642273 900000\r\nTINT_FFI_BENCH arity-12 93.18104219436646 1300000\r\nTINT_FFI_BENCH arity-24 150.59483313560486 2500000\r\nTINT_FFI_BENCH buffer 48.744333028793335 4200000\r\nTINT_FFI_BENCH callback 74.61095786094666 4200000\r\nTINT_FFI_BENCH js-only-control 26.716334104537964 4200000\r\nProcess 27077 resuming\nProcess 27077 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_407cd506-a059-42ef-9f73-b4f2b0d712b4 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_407cd506-a059-42ef-9f73-b4f2b0d712b4 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_407cd506-a059-42ef-9f73-b4f2b0d712b4 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 7,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 27164 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_b878cd0b-a2e6-4c61-9105-3a5aeea3e58f AT_ENTRY')\nTINT_NATIVE_b878cd0b-a2e6-4c61-9105-3a5aeea3e58f AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 38.49608302116394 100000\r\nTINT_FFI_BENCH arity-1 42.26129198074341 200000\r\nTINT_FFI_BENCH arity-2 47.49149990081787 300000\r\nTINT_FFI_BENCH arity-4 50.406749963760376 500000\r\nTINT_FFI_BENCH arity-8 63.65679216384888 900000\r\nTINT_FFI_BENCH arity-12 79.92916703224182 1300000\r\nTINT_FFI_BENCH arity-24 117.2899580001831 2500000\r\nTINT_FFI_BENCH buffer 48.174875020980835 4200000\r\nTINT_FFI_BENCH callback 72.54704189300537 4200000\r\nTINT_FFI_BENCH js-only-control 24.74529194831848 4200000\r\nProcess 27164 resuming\nProcess 27164 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_b878cd0b-a2e6-4c61-9105-3a5aeea3e58f EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_b878cd0b-a2e6-4c61-9105-3a5aeea3e58f SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_b878cd0b-a2e6-4c61-9105-3a5aeea3e58f EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 7,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 27468 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_081b7062-09e1-433e-9838-66513a4fac9d AT_ENTRY')\nTINT_NATIVE_081b7062-09e1-433e-9838-66513a4fac9d AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 37.25712490081787 100000\r\nTINT_FFI_BENCH arity-1 40.84845805168152 200000\r\nTINT_FFI_BENCH arity-2 47.0257089138031 300000\r\nTINT_FFI_BENCH arity-4 55.80512499809265 500000\r\nTINT_FFI_BENCH arity-8 69.73079204559326 900000\r\nTINT_FFI_BENCH arity-12 86.87404084205627 1300000\r\nTINT_FFI_BENCH arity-24 127.12754082679749 2500000\r\nTINT_FFI_BENCH buffer 43.65979194641113 4200000\r\nTINT_FFI_BENCH callback 70.13599991798401 4200000\r\nTINT_FFI_BENCH js-only-control 23.733457803726196 4200000\r\nProcess 27468 resuming\nProcess 27468 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_081b7062-09e1-433e-9838-66513a4fac9d EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_081b7062-09e1-433e-9838-66513a4fac9d SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_081b7062-09e1-433e-9838-66513a4fac9d EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 8,
+      "engine": "tintRuntime",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 27596 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_69640303-33d2-4263-b427-de000b52d49b AT_ENTRY')\nTINT_NATIVE_69640303-33d2-4263-b427-de000b52d49b AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 37.358875036239624 100000\r\nTINT_FFI_BENCH arity-1 42.349000215530396 200000\r\nTINT_FFI_BENCH arity-2 46.73204183578491 300000\r\nTINT_FFI_BENCH arity-4 55.292917013168335 500000\r\nTINT_FFI_BENCH arity-8 68.28954219818115 900000\r\nTINT_FFI_BENCH arity-12 85.78254199028015 1300000\r\nTINT_FFI_BENCH arity-24 132.01449990272522 2500000\r\nTINT_FFI_BENCH buffer 43.84224987030029 4200000\r\nTINT_FFI_BENCH callback 68.3654580116272 4200000\r\nTINT_FFI_BENCH js-only-control 23.174208164215088 4200000\r\nProcess 27596 resuming\nProcess 27596 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_69640303-33d2-4263-b427-de000b52d49b EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_69640303-33d2-4263-b427-de000b52d49b SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_69640303-33d2-4263-b427-de000b52d49b EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime",
+          "imageSha256": "029d02bd7f669d6336f0aa0bee5a8a57d8eb761744fbb4bae8649bf166bf0150",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-p94IKO/node-ffi-benchmark-runtime.manifest.json",
+            "sha256": "2b2d7dc7e4ad0885ec9843929f2b7948e76f24a69482314b4a9a1b1032acd65d"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    },
+    {
+      "round": 8,
+      "engine": "tintLiteral",
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 27693 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_f2d22c38-df91-4b89-8d3d-a9d38cc03fc3 AT_ENTRY')\nTINT_NATIVE_f2d22c38-df91-4b89-8d3d-a9d38cc03fc3 AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 34.050832986831665 100000\r\nTINT_FFI_BENCH arity-1 39.51695799827576 200000\r\nTINT_FFI_BENCH arity-2 44.786582946777344 300000\r\nTINT_FFI_BENCH arity-4 49.10129189491272 500000\r\nTINT_FFI_BENCH arity-8 62.511040925979614 900000\r\nTINT_FFI_BENCH arity-12 74.79987502098083 1300000\r\nTINT_FFI_BENCH arity-24 109.34649991989136 2500000\r\nTINT_FFI_BENCH buffer 46.491167068481445 4200000\r\nTINT_FFI_BENCH callback 66.98658418655396 4200000\r\nTINT_FFI_BENCH js-only-control 23.54212498664856 4200000\r\nProcess 27693 resuming\nProcess 27693 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_f2d22c38-df91-4b89-8d3d-a9d38cc03fc3 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_f2d22c38-df91-4b89-8d3d-a9d38cc03fc3 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_f2d22c38-df91-4b89-8d3d-a9d38cc03fc3 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal",
+          "imageSha256": "22cb8bf77a250fb83808c92ec9d63284d31954d7736a530582deaf163944fe59",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-2m3IHO/node-ffi-benchmark-literal.manifest.json",
+            "sha256": "df0296f03a15a9a32a6d5a65ad2f37dd5d1fae45218c8308ae0279bcee429e99"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "results": {
+    "node": [
+      {
+        "case": "arity-0",
+        "round": 0,
+        "milliseconds": 3.0345418453216553,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 0,
+        "milliseconds": 2.4437918663024902,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 0,
+        "milliseconds": 2.5296249389648438,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 0,
+        "milliseconds": 15.117291927337646,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 0,
+        "milliseconds": 12.178208112716675,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 0,
+        "milliseconds": 19.45995807647705,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 0,
+        "milliseconds": 32.35508394241333,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 0,
+        "milliseconds": 7.174750089645386,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 0,
+        "milliseconds": 10.09679102897644,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 0,
+        "milliseconds": 0.22991704940795898,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 1,
+        "milliseconds": 0.9466249942779541,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 1,
+        "milliseconds": 1.894582986831665,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 1,
+        "milliseconds": 2.222583055496216,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 1,
+        "milliseconds": 14.543749809265137,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 1,
+        "milliseconds": 12.34404182434082,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 1,
+        "milliseconds": 17.856292009353638,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 1,
+        "milliseconds": 32.55229091644287,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 1,
+        "milliseconds": 7.33316707611084,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 1,
+        "milliseconds": 9.666500091552734,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 1,
+        "milliseconds": 0.23570799827575684,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 2,
+        "milliseconds": 0.9922089576721191,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 2,
+        "milliseconds": 2.127957820892334,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 2,
+        "milliseconds": 4.5954999923706055,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 2,
+        "milliseconds": 15.835290908813477,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 2,
+        "milliseconds": 12.672374963760376,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 2,
+        "milliseconds": 18.12795901298523,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 2,
+        "milliseconds": 33.076416969299316,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 2,
+        "milliseconds": 8.036250114440918,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 2,
+        "milliseconds": 10.046790838241577,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 2,
+        "milliseconds": 0.22891592979431152,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 3,
+        "milliseconds": 1.1040830612182617,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 3,
+        "milliseconds": 2.1059999465942383,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 3,
+        "milliseconds": 2.4555840492248535,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 3,
+        "milliseconds": 15.706624984741211,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 3,
+        "milliseconds": 12.743958950042725,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 3,
+        "milliseconds": 19.051041841506958,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 3,
+        "milliseconds": 39.0946249961853,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 3,
+        "milliseconds": 9.83883285522461,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 3,
+        "milliseconds": 11.000250101089478,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 3,
+        "milliseconds": 0.27033281326293945,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 4,
+        "milliseconds": 1.1794579029083252,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 4,
+        "milliseconds": 1.8748750686645508,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 4,
+        "milliseconds": 2.3097500801086426,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 4,
+        "milliseconds": 16.78137493133545,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 4,
+        "milliseconds": 12.692332983016968,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 4,
+        "milliseconds": 18.612541913986206,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 4,
+        "milliseconds": 35.1395001411438,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 4,
+        "milliseconds": 8.1021249294281,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 4,
+        "milliseconds": 9.727499961853027,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 4,
+        "milliseconds": 0.25258398056030273,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 5,
+        "milliseconds": 1.3494172096252441,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 5,
+        "milliseconds": 2.8906660079956055,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 5,
+        "milliseconds": 4.798374891281128,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 5,
+        "milliseconds": 20.162875175476074,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 5,
+        "milliseconds": 16.63508415222168,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 5,
+        "milliseconds": 23.886374950408936,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 5,
+        "milliseconds": 94.79991602897644,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 5,
+        "milliseconds": 37.306041955947876,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 5,
+        "milliseconds": 13.33079195022583,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 5,
+        "milliseconds": 0.4928748607635498,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 6,
+        "milliseconds": 1.3602080345153809,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 6,
+        "milliseconds": 2.7592079639434814,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 6,
+        "milliseconds": 4.448666095733643,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 6,
+        "milliseconds": 21.545042037963867,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 6,
+        "milliseconds": 18.207458972930908,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 6,
+        "milliseconds": 97.56170797348022,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 6,
+        "milliseconds": 88.2812089920044,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 6,
+        "milliseconds": 10.674875020980835,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 6,
+        "milliseconds": 133.7138750553131,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 6,
+        "milliseconds": 0.5804579257965088,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 7,
+        "milliseconds": 1.0242090225219727,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 7,
+        "milliseconds": 1.981917142868042,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 7,
+        "milliseconds": 3.1706669330596924,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 7,
+        "milliseconds": 14.453750133514404,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 7,
+        "milliseconds": 14.038249969482422,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 7,
+        "milliseconds": 20.001084089279175,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 7,
+        "milliseconds": 36.529374837875366,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 7,
+        "milliseconds": 7.097874879837036,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 7,
+        "milliseconds": 9.798959016799927,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 7,
+        "milliseconds": 0.21645784378051758,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 8,
+        "milliseconds": 0.9888331890106201,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 8,
+        "milliseconds": 1.904083013534546,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 8,
+        "milliseconds": 2.9314589500427246,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 8,
+        "milliseconds": 16.64187502861023,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 8,
+        "milliseconds": 12.927500009536743,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 8,
+        "milliseconds": 18.99749994277954,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 8,
+        "milliseconds": 33.89912509918213,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 8,
+        "milliseconds": 7.596750020980835,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 8,
+        "milliseconds": 10.625958919525146,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 8,
+        "milliseconds": 0.24075007438659668,
+        "checksum": 4200000
+      }
+    ],
+    "tintLiteral": [
+      {
+        "case": "arity-0",
+        "round": 0,
+        "milliseconds": 32.62512493133545,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 0,
+        "milliseconds": 38.96549987792969,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 0,
+        "milliseconds": 40.489457845687866,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 0,
+        "milliseconds": 47.0083749294281,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 0,
+        "milliseconds": 57.869791984558105,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 0,
+        "milliseconds": 70.37458300590515,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 0,
+        "milliseconds": 101.93445801734924,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 0,
+        "milliseconds": 42.41962504386902,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 0,
+        "milliseconds": 66.14475011825562,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 0,
+        "milliseconds": 22.33758306503296,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 1,
+        "milliseconds": 32.742082834243774,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 1,
+        "milliseconds": 38.473042011260986,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 1,
+        "milliseconds": 40.686999797821045,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 1,
+        "milliseconds": 45.61708307266235,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 1,
+        "milliseconds": 56.28058314323425,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 1,
+        "milliseconds": 67.47112488746643,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 1,
+        "milliseconds": 103.57112503051758,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 1,
+        "milliseconds": 42.831125020980835,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 1,
+        "milliseconds": 64.6574158668518,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 1,
+        "milliseconds": 22.272332906723022,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 2,
+        "milliseconds": 32.41266679763794,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 2,
+        "milliseconds": 37.040374994277954,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 2,
+        "milliseconds": 41.87695813179016,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 2,
+        "milliseconds": 47.863332986831665,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 2,
+        "milliseconds": 57.08058404922485,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 2,
+        "milliseconds": 67.28345799446106,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 2,
+        "milliseconds": 102.17737483978271,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 2,
+        "milliseconds": 42.97279119491577,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 2,
+        "milliseconds": 65.9823751449585,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 2,
+        "milliseconds": 23.155209064483643,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 3,
+        "milliseconds": 32.205291986465454,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 3,
+        "milliseconds": 37.85958385467529,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 3,
+        "milliseconds": 39.27679109573364,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 3,
+        "milliseconds": 48.12237501144409,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 3,
+        "milliseconds": 56.17887496948242,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 3,
+        "milliseconds": 67.70262479782104,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 3,
+        "milliseconds": 101.4792091846466,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 3,
+        "milliseconds": 42.06841588020325,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 3,
+        "milliseconds": 65.40829205513,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 3,
+        "milliseconds": 21.776916980743408,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 4,
+        "milliseconds": 33.909125089645386,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 4,
+        "milliseconds": 36.53620886802673,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 4,
+        "milliseconds": 42.06874990463257,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 4,
+        "milliseconds": 46.925999879837036,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 4,
+        "milliseconds": 57.92783308029175,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 4,
+        "milliseconds": 68.95291686058044,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 4,
+        "milliseconds": 99.59645795822144,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 4,
+        "milliseconds": 44.11045789718628,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 4,
+        "milliseconds": 65.8414580821991,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 4,
+        "milliseconds": 22.714457988739014,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 5,
+        "milliseconds": 50.94279193878174,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 5,
+        "milliseconds": 76.74816703796387,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 5,
+        "milliseconds": 109.26975011825562,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 5,
+        "milliseconds": 110.5341248512268,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 5,
+        "milliseconds": 174.20554113388062,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 5,
+        "milliseconds": 143.9369580745697,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 5,
+        "milliseconds": 284.9210422039032,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 5,
+        "milliseconds": 135.9549160003662,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 5,
+        "milliseconds": 199.46879196166992,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 5,
+        "milliseconds": 126.17500019073486,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 6,
+        "milliseconds": 41.22395896911621,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 6,
+        "milliseconds": 46.776000022888184,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 6,
+        "milliseconds": 51.93666696548462,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 6,
+        "milliseconds": 59.68733310699463,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 6,
+        "milliseconds": 72.4282500743866,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 6,
+        "milliseconds": 85.45012497901917,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 6,
+        "milliseconds": 127.09045886993408,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 6,
+        "milliseconds": 54.208834171295166,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 6,
+        "milliseconds": 84.18570804595947,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 6,
+        "milliseconds": 27.411458015441895,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 7,
+        "milliseconds": 38.49608302116394,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 7,
+        "milliseconds": 42.26129198074341,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 7,
+        "milliseconds": 47.49149990081787,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 7,
+        "milliseconds": 50.406749963760376,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 7,
+        "milliseconds": 63.65679216384888,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 7,
+        "milliseconds": 79.92916703224182,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 7,
+        "milliseconds": 117.2899580001831,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 7,
+        "milliseconds": 48.174875020980835,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 7,
+        "milliseconds": 72.54704189300537,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 7,
+        "milliseconds": 24.74529194831848,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 8,
+        "milliseconds": 34.050832986831665,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 8,
+        "milliseconds": 39.51695799827576,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 8,
+        "milliseconds": 44.786582946777344,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 8,
+        "milliseconds": 49.10129189491272,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 8,
+        "milliseconds": 62.511040925979614,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 8,
+        "milliseconds": 74.79987502098083,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 8,
+        "milliseconds": 109.34649991989136,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 8,
+        "milliseconds": 46.491167068481445,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 8,
+        "milliseconds": 66.98658418655396,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 8,
+        "milliseconds": 23.54212498664856,
+        "checksum": 4200000
+      }
+    ],
+    "tintRuntime": [
+      {
+        "case": "arity-0",
+        "round": 0,
+        "milliseconds": 34.630332946777344,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 0,
+        "milliseconds": 39.737499952316284,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 0,
+        "milliseconds": 44.451666831970215,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 0,
+        "milliseconds": 52.804166078567505,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 0,
+        "milliseconds": 67.30120801925659,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 0,
+        "milliseconds": 85.48862504959106,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 0,
+        "milliseconds": 130.81987500190735,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 0,
+        "milliseconds": 42.78637504577637,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 0,
+        "milliseconds": 67.62270784378052,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 0,
+        "milliseconds": 23.17658281326294,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 1,
+        "milliseconds": 35.01699995994568,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 1,
+        "milliseconds": 39.75316596031189,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 1,
+        "milliseconds": 44.226500034332275,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 1,
+        "milliseconds": 55.05262494087219,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 1,
+        "milliseconds": 65.11016607284546,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 1,
+        "milliseconds": 85.04083395004272,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 1,
+        "milliseconds": 127.64458322525024,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 1,
+        "milliseconds": 41.765541076660156,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 1,
+        "milliseconds": 66.1492919921875,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 1,
+        "milliseconds": 22.04295802116394,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 2,
+        "milliseconds": 35.455000162124634,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 2,
+        "milliseconds": 38.90249991416931,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 2,
+        "milliseconds": 43.2594997882843,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 2,
+        "milliseconds": 51.68045902252197,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 2,
+        "milliseconds": 66.82191610336304,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 2,
+        "milliseconds": 80.63841700553894,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 2,
+        "milliseconds": 124.72416710853577,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 2,
+        "milliseconds": 46.7279999256134,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 2,
+        "milliseconds": 65.94325017929077,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 2,
+        "milliseconds": 22.54929208755493,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 3,
+        "milliseconds": 35.417624950408936,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 3,
+        "milliseconds": 38.29920792579651,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 3,
+        "milliseconds": 43.64199995994568,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 3,
+        "milliseconds": 52.49029207229614,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 3,
+        "milliseconds": 67.98037505149841,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 3,
+        "milliseconds": 80.63716697692871,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 3,
+        "milliseconds": 122.54533290863037,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 3,
+        "milliseconds": 40.52270793914795,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 3,
+        "milliseconds": 65.7960410118103,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 3,
+        "milliseconds": 21.986124992370605,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 4,
+        "milliseconds": 36.48570799827576,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 4,
+        "milliseconds": 39.2332501411438,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 4,
+        "milliseconds": 43.93566703796387,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 4,
+        "milliseconds": 52.71266579627991,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 4,
+        "milliseconds": 66.02445912361145,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 4,
+        "milliseconds": 83.80850005149841,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 4,
+        "milliseconds": 123.5819160938263,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 4,
+        "milliseconds": 42.68304204940796,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 4,
+        "milliseconds": 64.95958399772644,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 4,
+        "milliseconds": 22.265166997909546,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 5,
+        "milliseconds": 50.74612498283386,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 5,
+        "milliseconds": 127.53087496757507,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 5,
+        "milliseconds": 77.17237496376038,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 5,
+        "milliseconds": 63.91700005531311,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 5,
+        "milliseconds": 286.024875164032,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 5,
+        "milliseconds": 164.16825008392334,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 5,
+        "milliseconds": 425.42495918273926,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 5,
+        "milliseconds": 182.04541611671448,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 5,
+        "milliseconds": 200.56374979019165,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 5,
+        "milliseconds": 55.573540925979614,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 6,
+        "milliseconds": 39.29254221916199,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 6,
+        "milliseconds": 43.959290981292725,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 6,
+        "milliseconds": 51.05191707611084,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 6,
+        "milliseconds": 60.8654580116272,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 6,
+        "milliseconds": 74.24258303642273,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 6,
+        "milliseconds": 93.18104219436646,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 6,
+        "milliseconds": 150.59483313560486,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 6,
+        "milliseconds": 48.744333028793335,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 6,
+        "milliseconds": 74.61095786094666,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 6,
+        "milliseconds": 26.716334104537964,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 7,
+        "milliseconds": 37.25712490081787,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 7,
+        "milliseconds": 40.84845805168152,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 7,
+        "milliseconds": 47.0257089138031,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 7,
+        "milliseconds": 55.80512499809265,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 7,
+        "milliseconds": 69.73079204559326,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 7,
+        "milliseconds": 86.87404084205627,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 7,
+        "milliseconds": 127.12754082679749,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 7,
+        "milliseconds": 43.65979194641113,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 7,
+        "milliseconds": 70.13599991798401,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 7,
+        "milliseconds": 23.733457803726196,
+        "checksum": 4200000
+      },
+      {
+        "case": "arity-0",
+        "round": 8,
+        "milliseconds": 37.358875036239624,
+        "checksum": 100000
+      },
+      {
+        "case": "arity-1",
+        "round": 8,
+        "milliseconds": 42.349000215530396,
+        "checksum": 200000
+      },
+      {
+        "case": "arity-2",
+        "round": 8,
+        "milliseconds": 46.73204183578491,
+        "checksum": 300000
+      },
+      {
+        "case": "arity-4",
+        "round": 8,
+        "milliseconds": 55.292917013168335,
+        "checksum": 500000
+      },
+      {
+        "case": "arity-8",
+        "round": 8,
+        "milliseconds": 68.28954219818115,
+        "checksum": 900000
+      },
+      {
+        "case": "arity-12",
+        "round": 8,
+        "milliseconds": 85.78254199028015,
+        "checksum": 1300000
+      },
+      {
+        "case": "arity-24",
+        "round": 8,
+        "milliseconds": 132.01449990272522,
+        "checksum": 2500000
+      },
+      {
+        "case": "buffer",
+        "round": 8,
+        "milliseconds": 43.84224987030029,
+        "checksum": 4200000
+      },
+      {
+        "case": "callback",
+        "round": 8,
+        "milliseconds": 68.3654580116272,
+        "checksum": 4200000
+      },
+      {
+        "case": "js-only-control",
+        "round": 8,
+        "milliseconds": 23.174208164215088,
+        "checksum": 4200000
+      }
+    ]
+  },
+  "jsControl": {
+    "node": 2.407500743865967,
+    "tintLiteral": 231.55209064483643,
+    "tintRuntime": 231.74208164215088
+  },
+  "medians": [
+    {
+      "case": "arity-0",
+      "node": 11.040830612182617,
+      "tintLiteral": 339.09125089645386,
+      "tintRuntime": 364.85707998275757,
+      "parity": false
+    },
+    {
+      "case": "arity-1",
+      "node": 21.059999465942383,
+      "tintLiteral": 389.6549987792969,
+      "tintRuntime": 397.5316596031189,
+      "parity": false
+    },
+    {
+      "case": "arity-2",
+      "node": 29.314589500427246,
+      "tintLiteral": 420.6874990463257,
+      "tintRuntime": 444.51666831970215,
+      "parity": false
+    },
+    {
+      "case": "arity-4",
+      "node": 158.35290908813477,
+      "tintLiteral": 481.2237501144409,
+      "tintRuntime": 550.5262494087219,
+      "parity": false
+    },
+    {
+      "case": "arity-8",
+      "node": 127.43958950042725,
+      "tintLiteral": 579.2783308029175,
+      "tintRuntime": 679.8037505149841,
+      "parity": false
+    },
+    {
+      "case": "arity-12",
+      "node": 190.51041841506958,
+      "tintLiteral": 703.7458300590515,
+      "tintRuntime": 854.8862504959106,
+      "parity": false
+    },
+    {
+      "case": "arity-24",
+      "node": 351.395001411438,
+      "tintLiteral": 1035.7112503051758,
+      "tintRuntime": 1276.4458322525024,
+      "parity": false
+    },
+    {
+      "case": "buffer",
+      "node": 80.36250114440918,
+      "tintLiteral": 441.1045789718628,
+      "tintRuntime": 436.5979194641113,
+      "parity": false
+    },
+    {
+      "case": "callback",
+      "node": 100.9679102897644,
+      "tintLiteral": 661.4475011825562,
+      "tintRuntime": 676.2270784378052,
+      "parity": false
+    }
+  ]
+}

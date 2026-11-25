@@ -1,0 +1,5494 @@
+{
+  "nodeVersion": "26.13.1",
+  "nodeOpenSSL": "4.1.0",
+  "images": [
+    {
+      "label": "typed",
+      "image": "/tmp/tint-crypto-v5/typed",
+      "control": false,
+      "sha256": "53f579bd5a8010c69e6b8b7a601bda95589284bc098e6578fd2501aae270ab79"
+    },
+    {
+      "label": "public",
+      "image": "/tmp/tint-crypto-v5/public",
+      "control": false,
+      "sha256": "4cc081a13ae42947b742e4dfa6ff14566631ba93cb7eabb656872af8f392f103"
+    },
+    {
+      "label": "control",
+      "image": "/tmp/tint-crypto-v5/control",
+      "control": true,
+      "sha256": "dde4209e40efd65e9dc011380bc6da132b6d259bec5d769acd2aa921c46ccd21"
+    }
+  ],
+  "rounds": [
+    {
+      "order": [
+        "typed",
+        "public",
+        "control",
+        "node",
+        "nodeControl"
+      ],
+      "load": [
+        15.76123046875,
+        8.5166015625,
+        6.60693359375
+      ],
+      "results": {
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 392.8974986076355,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 603.9549994468689,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 690.746660232544,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 916.2995791435242,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 2418.6020970344543,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 4048.2770562171936,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1511.704170703888,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 2381.985001564026,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 1116620.933637023,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 1658828.4485042095,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 923.7571678161621,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 2026.0025024414062,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 866.4504098892212,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 1502.0595788955688,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 1899.4316697120667,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 1757.158751487732,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 3084.2687487602234,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 4773.177099227905,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 2609.1304206848145,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 2872.0262503623962,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 1077485.3518232703,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 1500352.8641536832,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 1755.036831855774,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 3304.020838737488,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 352.73374795913696,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 311.6166591644287,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 291.87000036239624,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 290.2029085159302,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 285.8645439147949,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 301.7582893371582,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 322.574999332428,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 334.1270899772644,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 342.12134778499603,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 351.8862649798393,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 671.9084997177124,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 552.8233432769775,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 680.087080001831,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 856.5475010871887,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 752.0720791816711,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 774.7733306884766,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1763.8354063034058,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2348.214590549469,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1531.2374997138977,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 2091.0670804977417,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 621542.6400303841,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 1329585.2858573198,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 653.5873317718506,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1738.0441617965698,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 18.13167095184326,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 17.335829734802246,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 15.787498950958252,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 23.68833065032959,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 37.75625228881836,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 40.23960828781128,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 13.856658935546875,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 17.204580307006836,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 44.10557448863983,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 41.66457802057266,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 11.07416820526123,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 25.01333713531494,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "public",
+        "control",
+        "node",
+        "nodeControl",
+        "typed"
+      ],
+      "load": [
+        22.0888671875,
+        10.78173828125,
+        7.49560546875
+      ],
+      "results": {
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 762.5041699409485,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 1003.0845904350281,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 978.6562514305115,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 1045.8879089355469,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1943.4666991233826,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2635.8500003814697,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1174.197919368744,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1536.362910270691,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 553464.5188599825,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 883124.1875886917,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 992.5426645278931,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1737.1199989318848,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 281.8641710281372,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 260.0654196739197,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 284.56125020980835,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 262.38749980926514,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 267.1541452407837,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 257.03749656677246,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 286.0420799255371,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 292.8879189491272,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 288.5749563574791,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 287.10905462503433,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 539.7738351821899,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 522.795000076294,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 512.5737500190735,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 593.6549997329712,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 619.9062514305115,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 698.8637495040894,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1843.4895992279053,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2405.4708003997803,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1218.5687494277954,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1561.0658311843872,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 524419.7621941566,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 865886.066108942,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 484.01866817474365,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1350.317497253418,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 17.908339500427246,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 16.683330535888672,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 17.26874828338623,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 13.852920532226562,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 29.518747329711914,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 27.78329849243164,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 11.86000108718872,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 19.26584005355835,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 41.179358959198,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 39.550475776195526,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 11.603499412536621,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 17.585840225219727,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 251.83833122253418,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 394.81083154678345,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 401.73624992370605,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 442.7774977684021,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1156.8333506584167,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1610.7541918754578,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 497.76833057403564,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 831.7279195785522,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 405367.51225590706,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 745552.5696277618,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 317.50833225250244,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 879.5441627502441,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "control",
+        "node",
+        "nodeControl",
+        "typed",
+        "public"
+      ],
+      "load": [
+        18.61474609375,
+        10.91552734375,
+        7.64111328125
+      ],
+      "results": {
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 255.3125,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 219.89665985107422,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 222.37624883651733,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 217.69500017166138,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 251.1396050453186,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 195.20834684371948,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 260.60750007629395,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 238.2704210281372,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 228.67973893880844,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 205.89493215084076,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 477.7443313598633,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 451.4074993133545,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 481.484169960022,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 555.772078037262,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 576.260838508606,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 573.2166600227356,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1334.0770959854126,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2192.4749970436096,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1073.4775018692017,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1313.6670804023743,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 442227.86370664835,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 777219.3979471922,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 466.9533357620239,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1228.9391613006592,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 14.889581203460693,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 13.995418548583984,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 13.858330249786377,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 15.457088947296143,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 33.399999141693115,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 31.393754482269287,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 12.075409889221191,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 11.954998970031738,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 39.87550735473633,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 37.59749233722687,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 9.081500053405762,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 19.01750087738037,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 282.08667039871216,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 413.4570789337158,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 409.673330783844,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 459.3120789527893,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1301.5499949455261,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1713.1020903587341,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 533.2683300971985,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 834.2300009727478,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 453069.9886381626,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 796347.8211313486,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 289.1206684112549,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 801.369161605835,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 637.3941612243652,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 829.933750629425,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 807.2274994850159,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 827.195827960968,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1636.816644668579,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2240.7041430473328,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 964.2400002479553,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1302.392499446869,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 467184.89471822977,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 792385.253123939,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 926.021336555481,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1458.575839996338,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "node",
+        "nodeControl",
+        "typed",
+        "public",
+        "control"
+      ],
+      "load": [
+        15.96728515625,
+        10.70654296875,
+        7.62353515625
+      ],
+      "results": {
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 468.04791927337646,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 545.7437491416931,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 562.760419845581,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 565.8841705322266,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1472.2625017166138,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2030.4312467575073,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1034.519169330597,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1262.0024991035461,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 482560.87489426136,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 811034.8274931312,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 408.9076681137085,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1133.3083391189575,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 13.264999389648438,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 11.624999046325684,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 14.931249618530273,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 11.637909412384033,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 23.997950553894043,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 29.218757152557373,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 9.214169979095459,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 11.476669311523438,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 33.52761268615723,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 30.761584639549255,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 8.330499649047852,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 17.493319511413574,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 248.61541986465454,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 394.6737504005432,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 404.5300006866455,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 441.735417842865,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1264.9624943733215,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1602.3478984832764,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 493.77875089645386,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 874.5929098129272,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 441070.31263411045,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 726325.1952826977,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 314.82483196258545,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 859.4199991226196,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 676.1008310317993,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 867.3595786094666,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 863.142499923706,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 819.6579194068909,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1600.0396013259888,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 2004.2874932289124,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 953.8233399391174,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1311.9320917129517,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 458916.66784882545,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 753099.93699193,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 838.9968357086182,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1469.4774961471558,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 196.17959022521973,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 185.5745792388916,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 179.02000188827515,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 183.2450008392334,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 184.4499945640564,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 175.1083493232727,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 195.60250043869019,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 194.95541095733643,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 192.0592039823532,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 189.1283318400383,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 366.6598320007324,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 390.93499660491943,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeControl",
+        "typed",
+        "public",
+        "control",
+        "node"
+      ],
+      "load": [
+        12.939453125,
+        10.421875,
+        7.60986328125
+      ],
+      "results": {
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 13.510000705718994,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 12.454161643981934,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 11.288750171661377,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 11.70875072479248,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 24.489545822143555,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 24.000000953674316,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 9.297499656677246,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 11.193749904632568,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 78.12492549419403,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 30.10965883731842,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 7.828167915344238,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 16.247496604919434,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 274.3829107284546,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 425.9037494659424,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 422.7858281135559,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 454.7937512397766,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1126.0625004768372,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1620.439600944519,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 524.3887495994568,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 878.7170815467834,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 484800.29311031103,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 826725.2622172236,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 341.73933601379395,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 905.5074977874756,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 581.1412501335144,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 747.1779203414917,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 742.3008298873901,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 782.3425006866455,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1606.6187500953674,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1989.6833062171936,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 862.0870804786682,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1237.5449991226196,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 478530.92569857836,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 808206.2192261219,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 761.2861680984497,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1306.803321838379,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 223.6316704750061,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 214.62291955947876,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 198.37374925613403,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 208.61083984375,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 227.19374895095825,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 213.8082981109619,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 199.29666996002197,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 213.91250133514404,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 232.26160556077957,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 269.5312723517418,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 400.1868362426758,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 398.0641555786133,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 421.9712495803833,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 505.245840549469,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 530.3574991226196,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 555.3220796585083,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1507.408356666565,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1831.152057647705,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 1067.8604102134705,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1282.2433304786682,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 454080.2417322993,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 836519.2078053951,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 409.2874994277954,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1100.8441638946533,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "typed",
+        "public",
+        "control",
+        "node",
+        "nodeControl"
+      ],
+      "load": [
+        12.40673828125,
+        10.390625,
+        7.63134765625
+      ],
+      "results": {
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 203.139169216156,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 321.7645788192749,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 332.1866703033447,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 352.13915824890137,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 960.9833598136902,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1265.8104062080383,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 393.905827999115,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 657.7208304405212,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 356644.69562470913,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 627159.6681326628,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 240.74416828155518,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 650.2308416366577,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 467.4566698074341,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 585.859169960022,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 575.375828742981,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 634.0120887756348,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1305.245852470398,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1637.8416538238525,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 714.0208292007446,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 973.2679200172424,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 382587.730884552,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 675430.1758483052,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 644.3161640167236,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1166.5875005722046,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 201.13458156585693,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 194.7933316230774,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 197.15916872024536,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 195.0962495803833,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 201.72289609909058,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 193.80415678024292,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 205.03583192825317,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 210.6725001335144,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 209.63698625564575,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 201.336108148098,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 418.46416759490967,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 425.4766607284546,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 383.9479112625122,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 476.65207862854004,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 470.7979202270508,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 529.282910823822,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1273.7146019935608,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1815.4103994369507,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 883.4229207038879,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1107.9383397102356,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 400158.52730721235,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 689315.2697011828,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 323.0118360519409,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 851.3191604614258,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 12.710409164428711,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 10.666661262512207,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 10.13667106628418,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 10.59541940689087,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 20.981240272521973,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 20.756256580352783,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 7.620420455932617,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 8.252921104431152,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 25.879591703414917,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 25.39064735174179,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 6.1613359451293945,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 14.404182434082031,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "public",
+        "control",
+        "node",
+        "nodeControl",
+        "typed"
+      ],
+      "load": [
+        11.35400390625,
+        10.2294921875,
+        7.60595703125
+      ],
+      "results": {
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 466.28124952316284,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 589.1883301734924,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 591.8758296966553,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 618.350830078125,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1291.0666465759277,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1591.0312414169312,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 732.899169921875,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1005.4058313369751,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 392430.3399398923,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 665355.4691001773,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 586.1831645965576,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1014.2233419418335,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 194.4395899772644,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 179.15832996368408,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 177.56749868392944,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 176.60083055496216,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 184.95625257492065,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 179.04794216156006,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 195.57167053222656,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 192.15499877929688,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 187.6596361398697,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 187.50037997961044,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 363.3074998855591,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 362.7691602706909,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 333.0183410644531,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 424.8883295059204,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 423.4833312034607,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 456.2295913696289,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1198.2854008674622,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1613.1875038146973,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 881.1320805549622,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1068.9304184913635,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 400670.5740466714,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 718344.0774679184,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 333.2561683654785,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 896.8883419036865,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 12.064998149871826,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 11.216251850128174,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 10.898327827453613,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 11.42625093460083,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 24.489593505859375,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 23.26040267944336,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 9.036660194396973,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 9.64249849319458,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 27.34363079071045,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 26.530586183071136,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 6.442831993103027,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 13.756661415100098,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 225.55208921432495,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 351.35124921798706,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 354.9425005912781,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 398.2574987411499,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1014.3229007720947,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1419.7604060173035,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 451.32750034332275,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 780.007917881012,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 427240.7228127122,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 742180.0121665001,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 266.1898365020752,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 739.1424989700317,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "control",
+        "node",
+        "nodeControl",
+        "typed",
+        "public"
+      ],
+      "load": [
+        10.37646484375,
+        10.05712890625,
+        7.57470703125
+      ],
+      "results": {
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 178.81375074386597,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 162.64666080474854,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 167.72958040237427,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 162.62333154678345,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 167.84374713897705,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 172.43750095367432,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 172.93750047683716,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 176.2041687965393,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 174.48049038648605,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 216.14506840705872,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 327.9073324203491,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 329.97167587280273,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 321.8566584587097,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 416.10790967941284,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 415.81250190734863,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 438.1595778465271,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1171.0458517074585,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1632.7937483787537,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 773.7858295440674,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 990.1816701889038,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 400381.5082833171,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 663342.1210572124,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 319.34883213043213,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 863.9858198165894,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 11.150829792022705,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 10.05666971206665,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 10.385420322418213,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 10.436248779296875,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 23.177099227905273,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 23.51250648498535,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 8.2908296585083,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 8.884170055389404,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 40.69134593009949,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 25.066547095775604,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 6.497331619262695,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 14.308342933654785,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 208.8141679763794,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 320.16000032424927,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 321.61667108535767,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 347.6270818710327,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 960.464608669281,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1252.5292038917542,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 375.5062508583069,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 648.5687494277954,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 364661.29682958126,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 666678.7108406425,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 252.8398323059082,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 691.9333171844482,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 517.9479217529297,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 643.5237503051758,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 645.7200002670288,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 702.4524998664856,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1361.6187453269958,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1700.433349609375,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 740.234580039978,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1023.9445900917053,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 407617.18712747097,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 694385.4177370667,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 672.3613319396973,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1181.0024976730347,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "node",
+        "nodeControl",
+        "typed",
+        "public",
+        "control"
+      ],
+      "load": [
+        9.111328125,
+        9.79248046875,
+        7.5234375
+      ],
+      "results": {
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 388.43458890914917,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 495.79833984375,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 524.4929194450378,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 543.0762481689453,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1376.0249972343445,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1950.947904586792,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 991.9679188728333,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1212.9808282852173,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 438750.32756477594,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 857677.4103567004,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 416.61566734313965,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1106.238317489624,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 14.597501754760742,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 14.487080574035645,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 11.935839653015137,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 13.925831317901611,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 29.53125238418579,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 30.26670217514038,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 10.09916067123413,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 12.049999237060547,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 31.737610697746277,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 31.573697924613953,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 8.479164123535156,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 18.027496337890625,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 205.89791774749756,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 336.83375120162964,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 351.7870807647705,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 356.333749294281,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1006.4208507537842,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1326.1812567710876,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 411.74916982650757,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 694.7325015068054,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 377347.98062592745,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 657968.2612791657,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 251.71133613586426,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 690.2524995803833,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 551.5779209136963,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 709.4512486457825,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 684.5520806312561,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 706.1537504196167,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1456.866705417633,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1833.341646194458,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 797.6079201698303,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1037.3033285140991,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 407024.57819133997,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 703287.9218459129,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 678.1271677017212,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1158.2333374023438,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 167.47540950775146,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 158.6437487602234,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 152.23582983016968,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 162.06333875656128,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 172.26250171661377,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 155.27085065841675,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 170.8258295059204,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 171.72082901000977,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 260.9025686979294,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 167.48066991567612,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 330.6876640319824,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 331.63915634155273,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeControl",
+        "typed",
+        "public",
+        "control",
+        "node"
+      ],
+      "load": [
+        8.06103515625,
+        9.5126953125,
+        7.47509765625
+      ],
+      "results": {
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 12.027909755706787,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 11.306250095367432,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 9.900000095367432,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 10.10624885559082,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 21.549999713897705,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 26.060402393341064,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 8.4641695022583,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 10.924999713897705,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 24.738721549510956,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 23.11263233423233,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 6.655832290649414,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 13.082499504089355,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 187.53957986831665,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 299.62958097457886,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 303.3158302307129,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 318.42540979385376,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 896.4457988739014,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1145.8374977111816,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 368.51750135421753,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 640.3499984741211,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 366960.9371572733,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 639463.2151350379,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 253.4709997177124,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 696.3441801071167,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 409.0487480163574,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 513.4470796585083,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 531.7387509346008,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 545.0362515449524,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1100.1520991325378,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1372.947895526886,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 599.2416596412659,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 895.1183319091797,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 347154.94979172945,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 647807.452827692,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 610.6059999465942,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1047.6608180999756,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 159.87541913986206,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 145.66582918167114,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 161.3854193687439,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 151.99042081832886,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 149.49790239334106,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 182.8125,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 156.024169921875,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 165.79833030700684,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 196.6133713722229,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 156.09059482812881,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 304.039999961853,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 301.11334323883057,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 271.9183301925659,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 334.98499870300293,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 367.23042011260986,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 365.8929204940796,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 971.7937588691711,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1354.1375041007996,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 654.89333152771,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 837.2670888900757,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 336623.6947476864,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 592604.8206165433,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 283.0533323287964,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 808.5358381271362,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "typed",
+        "public",
+        "control",
+        "node",
+        "nodeControl"
+      ],
+      "load": [
+        7.50341796875,
+        9.3466796875,
+        7.43994140625
+      ],
+      "results": {
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 192.97083854675293,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 304.3454098701477,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 304.8800015449524,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 324.99083042144775,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 917.1937584877014,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1193.1145548820496,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 374.212908744812,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 625.2616691589355,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 345789.8749038577,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 608093.7497317791,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 229.39116382598877,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 629.659161567688,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 472.24957942962646,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 590.1700019836426,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 564.8316597938538,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 591.7300009727478,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1217.841649055481,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1543.8541531562805,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 687.1466612815857,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 978.4979200363159,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 373356.93277418613,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 664567.5422623754,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 601.9005002975464,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1027.986660003662,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 175.14874935150146,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 153.43291997909546,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 153.16541194915771,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 152.18958139419556,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 155.65625429153442,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 151.7229437828064,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 168.31542015075684,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 169.16625022888184,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 169.5975661277771,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 162.10880130529404,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 315.1183319091797,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 309.86666202545166,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 299.5841717720032,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 369.51667070388794,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 376.1062502861023,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 403.34500074386597,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1040.16455411911,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1444.3041443824768,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 683.0375003814697,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 854.5899987220764,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 347410.80459207296,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 607882.4885189533,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 288.93183517456055,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 774.385838508606,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 10.56041955947876,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 9.936668872833252,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 9.10707950592041,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 8.881251811981201,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 20.995843410491943,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 19.991648197174072,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 7.621250152587891,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 7.747499942779541,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 23.76548945903778,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 22.300519049167633,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 5.781164169311523,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 11.69166088104248,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "public",
+        "control",
+        "node",
+        "nodeControl",
+        "typed"
+      ],
+      "load": [
+        6.96435546875,
+        9.17041015625,
+        7.39892578125
+      ],
+      "results": {
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 480.8262515068054,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 582.7933287620544,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 563.4191703796387,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 572.8891706466675,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1195.841646194458,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1500.850009918213,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 636.6904091835022,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 859.8708319664001,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 324883.3008110523,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 567541.1801785231,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 521.8386640548706,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 865.3666591644287,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 161.7775011062622,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 140.34667015075684,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 141.0883378982544,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 142.15291023254395,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 143.14165115356445,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 141.66460037231445,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 153.68165969848633,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 157.20582962036133,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 155.92575073242188,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 151.20301395654678,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 290.4358320236206,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 299.244179725647,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 266.3908314704895,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 318.2504200935364,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 332.07082986831665,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 352.4008297920227,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 945.5416440963745,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1313.897955417633,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 617.1841597557068,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 814.456250667572,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 321360.67654937506,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 565996.0936754942,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 268.57716846466064,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 714.2908382415771,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 9.466249942779541,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 8.737921714782715,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 8.336660861968994,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 8.299999237060547,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 18.92085075378418,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 19.23750638961792,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 6.2445807456970215,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 7.309591770172119,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 21.48374915122986,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 21.159648895263672,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 5.271999359130859,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 12.166662216186523,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 183.98666143417358,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 283.1429195404053,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 292.491250038147,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 312.9075002670288,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 895.0249910354614,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1095.9978938102722,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 347.2933292388916,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 581.7120885848999,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 327468.098141253,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 574899.0895226598,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 215.89149951934814,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 604.4575023651123,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "control",
+        "node",
+        "nodeControl",
+        "typed",
+        "public"
+      ],
+      "load": [
+        6.34765625,
+        8.966796875,
+        7.34716796875
+      ],
+      "results": {
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 158.16457986831665,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 142.26875066757202,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 141.5304183959961,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 144.48041915893555,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 144.92499828338623,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 141.18335247039795,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 152.67791986465454,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 155.63125133514404,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 159.34370458126068,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 151.20767056941986,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 293.3425006866455,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 311.4816617965698,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 284.3499994277954,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 342.6929187774658,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 369.9316692352295,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 380.2758288383484,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1054.4604539871216,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1434.0937495231628,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 727.7195906639099,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 836.8937516212463,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 326173.82798343897,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 584489.2580062151,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 293.0215005874634,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 736.3958406448364,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 9.897921085357666,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 8.60874891281128,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 8.007080554962158,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 8.473331928253174,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 19.06459331512451,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 18.291640281677246,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 10.321660041809082,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 14.104578495025635,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 47.5272536277771,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 47.03551530838013,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 7.300999641418457,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 13.936681747436523,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 191.21582984924316,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 294.3495798110962,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 306.1087489128113,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 323.51208209991455,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 876.0250091552734,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1113.2291555404663,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 373.70999813079834,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 597.4216604232788,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 329279.7850444913,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 587161.9451791048,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 216.8808364868164,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 614.2983388900757,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 447.88459062576294,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 577.7975010871887,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 583.4770798683167,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 601.9666719436646,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1196.2812423706055,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1546.1374998092651,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 644.8866701126099,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 982.3012495040894,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 376212.40224689245,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 670634.2771649361,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 607.0528316497803,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1123.5016584396362,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "node",
+        "nodeControl",
+        "typed",
+        "public",
+        "control"
+      ],
+      "load": [
+        6.412109375,
+        8.853515625,
+        7.33447265625
+      ],
+      "results": {
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 367.5475001335144,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 405.16541957855225,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 425.05959033966064,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 459.8841691017151,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1234.2854499816895,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1641.4708018302917,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 858.9225006103516,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1022.2679209709167,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 409125.9762644768,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 715103.68026793,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 342.050332069397,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1004.7183227539062,
+            "checksum": 256000000
+          }
+        ],
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 12.279999256134033,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 11.122081279754639,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 11.178750991821289,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 10.881669521331787,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 24.229156970977783,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 23.283302783966064,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 10.479159355163574,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 10.195000171661377,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 27.83164381980896,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 26.366673409938812,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 7.3701677322387695,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 14.683318138122559,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 231.3224983215332,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 359.6779203414917,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 371.1179184913635,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 376.495840549469,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1100.6583452224731,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1442.4728989601135,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 435.9783387184143,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 735.4883313179016,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 396308.2656264305,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 712022.2970843315,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 280.0613317489624,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 756.2883186340332,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 437.8166604042053,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 564.4429087638855,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 566.7116713523865,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 585.2620887756348,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1202.8124928474426,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1493.1187510490417,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 640.7329106330872,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 944.1120791435242,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 361163.41408342123,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 675277.0198509097,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 594.7443313598633,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1016.6275024414062,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 179.629168510437,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 160.80167055130005,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 161.62666082382202,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 162.74417161941528,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 166.8624997138977,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 161.2874984741211,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 171.77165985107422,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 175.3304100036621,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 173.50353300571442,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 168.45669597387314,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 322.9753313064575,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 325.7933187484741,
+            "checksum": 256000000
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeControl",
+        "typed",
+        "public",
+        "control",
+        "node"
+      ],
+      "load": [
+        6.44140625,
+        8.70068359375,
+        7.314453125
+      ],
+      "results": {
+        "nodeControl": [
+          {
+            "name": "sha256-64",
+            "ns": 12.053749561309814,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 9.649591445922852,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 9.53916072845459,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 9.924170970916748,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 23.652100563049316,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 19.397950172424316,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 8.023748397827148,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 9.413340091705322,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 24.578534066677094,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 24.577602744102478,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 6.304832458496094,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 13.922500610351562,
+            "checksum": 256000000
+          }
+        ],
+        "typed": [
+          {
+            "name": "sha256-64",
+            "ns": 205.9608292579651,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 321.5987515449524,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 329.7320890426636,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 351.1675000190735,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 970.2770948410034,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1274.5437502861023,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 373.63499879837036,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 642.577919960022,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 364351.4020368457,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 651455.5672183633,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 253.8786678314209,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 717.6258420944214,
+            "checksum": 256000000
+          }
+        ],
+        "public": [
+          {
+            "name": "sha256-64",
+            "ns": 504.81125116348267,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 652.7087497711182,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 656.3254189491272,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 714.2454099655151,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1466.2562489509583,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1853.5812497138977,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 807.5683403015137,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1117.5154209136963,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 431193.6842277646,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 768923.5033467412,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 697.3261680603027,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1213.712501525879,
+            "checksum": 256000000
+          }
+        ],
+        "control": [
+          {
+            "name": "sha256-64",
+            "ns": 216.01750135421753,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 196.183340549469,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 193.24916124343872,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 193.4820795059204,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 193.86454820632935,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 188.6083483695984,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 213.22499990463257,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 213.30250024795532,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 336.9143232703209,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 197.26529717445374,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 395.6148328781128,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 395.7075023651123,
+            "checksum": 256000000
+          }
+        ],
+        "node": [
+          {
+            "name": "sha256-64",
+            "ns": 367.4262499809265,
+            "checksum": 8000000
+          },
+          {
+            "name": "sha512-64",
+            "ns": 452.72958040237427,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-64",
+            "ns": 470.9850001335144,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-unicode-64",
+            "ns": 478.90334129333496,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha512-string-ascii-1024",
+            "ns": 1266.335391998291,
+            "checksum": 3200000
+          },
+          {
+            "name": "sha512-string-unicode-1024",
+            "ns": 1665.9250020980835,
+            "checksum": 3200000
+          },
+          {
+            "name": "hmac-sha256-64",
+            "ns": 818.7929201126099,
+            "checksum": 8000000
+          },
+          {
+            "name": "hmac-sha512-64",
+            "ns": 1062.5266599655151,
+            "checksum": 16000000
+          },
+          {
+            "name": "sha256-1MiB",
+            "ns": 416861.0041961074,
+            "checksum": 20480
+          },
+          {
+            "name": "sha512-1MiB",
+            "ns": 723134.4413012266,
+            "checksum": 40960
+          },
+          {
+            "name": "random-32",
+            "ns": 386.0220003128052,
+            "checksum": 10000000
+          },
+          {
+            "name": "random-4096",
+            "ns": 1004.4850015640259,
+            "checksum": 256000000
+          }
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "name": "sha256-64",
+      "typedNs": {
+        "q1": 198.05500388145447,
+        "median": 208.8141679763794,
+        "q3": 250.22687554359436
+      },
+      "publicNs": {
+        "q1": 466.86895966529846,
+        "median": 504.81125116348267,
+        "q3": 609.2677056789398
+      },
+      "controlNs": {
+        "q1": 171.31207942962646,
+        "median": 194.4395899772644,
+        "q3": 219.82458591461182
+      },
+      "nodeNs": {
+        "q1": 310.72041511535645,
+        "median": 367.5475001335144,
+        "q3": 445.0095844268799
+      },
+      "nodeControlNs": {
+        "q1": 11.589369773864746,
+        "median": 12.279999256134033,
+        "q3": 14.053751230239868
+      },
+      "typedNodeOverTint": {
+        "q1": 1.5124774746716272,
+        "median": 1.5888964661908132,
+        "q3": 1.8332900059719877
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 8.176067186425366,
+        "median": 9.729637763931125,
+        "q3": 13.892785203502601
+      },
+      "publicNodeOverTint": {
+        "q1": 0.6498155658996747,
+        "median": 0.7042243247621334,
+        "q3": 0.7416217357502858
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.9602167923603028,
+        "median": 1.0430105886881489,
+        "q3": 1.2258657875142678
+      }
+    },
+    {
+      "name": "sha512-64",
+      "typedNs": {
+        "q1": 312.2527050971985,
+        "median": 336.83375120162964,
+        "q3": 394.74229097366333
+      },
+      "publicNs": {
+        "q1": 584.3262493610382,
+        "median": 643.5237503051758,
+        "q3": 788.5558354854584
+      },
+      "controlNs": {
+        "q1": 156.03833436965942,
+        "median": 179.15832996368408,
+        "q3": 205.40313005447388
+      },
+      "nodeNs": {
+        "q1": 387.3410451412201,
+        "median": 452.72958040237427,
+        "q3": 525.494794845581
+      },
+      "nodeControlNs": {
+        "q1": 9.996669292449951,
+        "median": 11.216251850128174,
+        "q3": 13.224790096282959
+      },
+      "typedNodeOverTint": {
+        "q1": 1.175264484995588,
+        "median": 1.2996873727448468,
+        "q3": 1.4129886817317407
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 2.2645776422702477,
+        "median": 2.554380044301791,
+        "q3": 2.834845858255676
+      },
+      "publicNodeOverTint": {
+        "q1": 0.6096105727905194,
+        "median": 0.6524236128206244,
+        "q3": 0.6962320931166758
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.7799677771171093,
+        "median": 0.8738284416419821,
+        "q3": 0.9479415854410986
+      }
+    },
+    {
+      "name": "sha512-string-ascii-64",
+      "typedNs": {
+        "q1": 313.8627099990845,
+        "median": 351.7870807647705,
+        "q3": 403.1331253051758
+      },
+      "publicNs": {
+        "q1": 571.0437500476837,
+        "median": 645.7200002670288,
+        "q3": 774.764164686203
+      },
+      "controlNs": {
+        "q1": 157.2754156589508,
+        "median": 177.56749868392944,
+        "q3": 197.7664589881897
+      },
+      "nodeNs": {
+        "q1": 395.95937609672546,
+        "median": 470.7979202270508,
+        "q3": 546.5589594841003
+      },
+      "nodeControlNs": {
+        "q1": 9.71958041191101,
+        "median": 10.898327827453613,
+        "q3": 12.897084951400757
+      },
+      "typedNodeOverTint": {
+        "q1": 1.2008007883864393,
+        "median": 1.2544353756819187,
+        "q3": 1.4119520668367764
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 2.256059205138202,
+        "median": 2.429289934575662,
+        "q3": 2.8186523423779146
+      },
+      "publicNodeOverTint": {
+        "q1": 0.6389820281733436,
+        "median": 0.690621888036473,
+        "q3": 0.7165512478957722
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.8335617732355601,
+        "median": 0.9542984113763036,
+        "q3": 0.980338495921925
+      }
+    },
+    {
+      "name": "sha512-string-unicode-64",
+      "typedNs": {
+        "q1": 336.30895614624023,
+        "median": 356.333749294281,
+        "q3": 442.25645780563354
+      },
+      "publicNs": {
+        "q1": 596.8483364582062,
+        "median": 702.4524998664856,
+        "q3": 801.0002100467682
+      },
+      "controlNs": {
+        "q1": 157.12646007537842,
+        "median": 176.60083055496216,
+        "q3": 201.85354471206665
+      },
+      "nodeNs": {
+        "q1": 420.75228929519653,
+        "median": 478.90334129333496,
+        "q3": 560.6031250953674
+      },
+      "nodeControlNs": {
+        "q1": 10.015209913253784,
+        "median": 10.881669521331787,
+        "q3": 12.780835628509521
+      },
+      "typedNodeOverTint": {
+        "q1": 1.1622652303429482,
+        "median": 1.2410965571576547,
+        "q3": 1.3223969799392736
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 2.088660829490129,
+        "median": 2.2081684136849873,
+        "q3": 2.517876999549878
+      },
+      "publicNodeOverTint": {
+        "q1": 0.649961891031805,
+        "median": 0.6816368953421411,
+        "q3": 0.7238181929472303
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.8417992197807795,
+        "median": 0.9005610473927285,
+        "q3": 0.9600229175937648
+      }
+    },
+    {
+      "name": "sha512-string-ascii-1024",
+      "typedNs": {
+        "q1": 938.8291835784912,
+        "median": 1006.4208507537842,
+        "q3": 1141.447925567627
+      },
+      "publicNs": {
+        "q1": 1210.3270709514618,
+        "median": 1361.6187453269958,
+        "q3": 1603.329175710678
+      },
+      "controlNs": {
+        "q1": 161.25937700271606,
+        "median": 184.4499945640564,
+        "q3": 214.4583225250244
+      },
+      "nodeNs": {
+        "q1": 1112.75315284729,
+        "median": 1266.335391998291,
+        "q3": 1424.1437494754791
+      },
+      "nodeControlNs": {
+        "q1": 21.272921562194824,
+        "median": 23.997950553894043,
+        "q3": 27.004170417785645
+      },
+      "typedNodeOverTint": {
+        "q1": 1.1027292053794278,
+        "median": 1.18136482963693,
+        "q3": 1.315277969340599
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 1.2840077316132903,
+        "median": 1.4152917891177894,
+        "q3": 1.6073697518226673
+      },
+      "publicNodeOverTint": {
+        "q1": 0.8570721945155348,
+        "median": 0.8833267323994779,
+        "q3": 0.9413794154594729
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.9605235145549283,
+        "median": 0.9995682577478423,
+        "q3": 1.0681095260664841
+      }
+    },
+    {
+      "name": "sha512-string-unicode-1024",
+      "typedNs": {
+        "q1": 1222.8218793869019,
+        "median": 1326.1812567710876,
+        "q3": 1606.551045179367
+      },
+      "publicNs": {
+        "q1": 1544.9958264827728,
+        "median": 1700.433349609375,
+        "q3": 1996.985399723053
+      },
+      "controlNs": {
+        "q1": 158.27917456626892,
+        "median": 179.04794216156006,
+        "q3": 194.5062518119812
+      },
+      "nodeNs": {
+        "q1": 1528.745824098587,
+        "median": 1665.9250020980835,
+        "q3": 1990.6895756721497
+      },
+      "nodeControlNs": {
+        "q1": 20.373952388763428,
+        "median": 23.51250648498535,
+        "q3": 28.501027822494507
+      },
+      "typedNodeOverTint": {
+        "q1": 1.1598722565908064,
+        "median": 1.2671600522454824,
+        "q3": 1.3053364602137552
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 1.3206750124139561,
+        "median": 1.4021559946140476,
+        "q3": 1.5030889958213431
+      },
+      "publicNodeOverTint": {
+        "q1": 0.9164605669542039,
+        "median": 0.9602221391116802,
+        "q3": 1.0134848191018038
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 1.003624147734003,
+        "median": 1.053197391412798,
+        "q3": 1.1209641129928403
+      }
+    },
+    {
+      "name": "hmac-sha256-64",
+      "typedNs": {
+        "q1": 373.9614534378052,
+        "median": 411.74916982650757,
+        "q3": 495.77354073524475
+      },
+      "publicNs": {
+        "q1": 666.0166656970978,
+        "median": 740.234580039978,
+        "q3": 907.9552102088928
+      },
+      "controlNs": {
+        "q1": 169.57062482833862,
+        "median": 195.57167053222656,
+        "q3": 209.13041591644287
+      },
+      "nodeNs": {
+        "q1": 750.7527101039886,
+        "median": 881.1320805549622,
+        "q3": 1051.1897897720337
+      },
+      "nodeControlNs": {
+        "q1": 8.157289028167725,
+        "median": 9.214169979095459,
+        "q3": 10.400409698486328
+      },
+      "typedNodeOverTint": {
+        "q1": 1.8862743213412183,
+        "median": 2.013015664503346,
+        "q3": 2.143265639739064
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 3.2284799360046543,
+        "median": 3.4098750398170927,
+        "q3": 3.9840983090574102
+      },
+      "publicNodeOverTint": {
+        "q1": 1.0258437178643156,
+        "median": 1.0928701651346466,
+        "q3": 1.2197532204098256
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 1.35081175386015,
+        "median": 1.4575074706833313,
+        "q3": 1.5818270059835036
+      }
+    },
+    {
+      "name": "hmac-sha512-64",
+      "typedNs": {
+        "q1": 641.4639592170715,
+        "median": 694.7325015068054,
+        "q3": 832.97896027565
+      },
+      "publicNs": {
+        "q1": 975.8829200267792,
+        "median": 1023.9445900917053,
+        "q3": 1269.9687492847443
+      },
+      "controlNs": {
+        "q1": 170.4435396194458,
+        "median": 192.15499877929688,
+        "q3": 213.60750079154968
+      },
+      "nodeNs": {
+        "q1": 922.3858344554901,
+        "median": 1068.9304184913635,
+        "q3": 1272.1229147911072
+      },
+      "nodeControlNs": {
+        "q1": 9.148755073547363,
+        "median": 10.924999713897705,
+        "q3": 12.002499103546143
+      },
+      "typedNodeOverTint": {
+        "q1": 1.380163477548623,
+        "median": 1.44295990162267,
+        "q3": 1.6141217841451594
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 1.8233765071709915,
+        "median": 1.9013775223625748,
+        "q3": 2.2402062066271995
+      },
+      "publicNodeOverTint": {
+        "q1": 0.9412773496468235,
+        "median": 0.9670266143016805,
+        "q3": 1.0496507903473997
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 1.1262969736990156,
+        "median": 1.1646740450229782,
+        "q3": 1.2721201468153884
+      }
+    },
+    {
+      "name": "sha256-1MiB",
+      "typedNs": {
+        "q1": 360498.0488307774,
+        "median": 377347.98062592745,
+        "q3": 434155.5177234113
+      },
+      "publicNs": {
+        "q1": 374784.6675105393,
+        "median": 407024.57819133997,
+        "q3": 463050.7812835276
+      },
+      "controlNs": {
+        "q1": 173.99201169610023,
+        "median": 196.6133713722229,
+        "q3": 246.58208712935448
+      },
+      "nodeNs": {
+        "q1": 373784.66594964266,
+        "median": 409125.9762644768,
+        "q3": 448154.05271947384
+      },
+      "nodeControlNs": {
+        "q1": 25.309156626462936,
+        "median": 31.737610697746277,
+        "q3": 40.93535244464874
+      },
+      "typedNodeOverTint": {
+        "q1": 0.9569397668874882,
+        "median": 1.0046876146638646,
+        "q3": 1.1099817016962352
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 0.9573162270830649,
+        "median": 1.0051118579572158,
+        "q3": 1.110482328966304
+      },
+      "publicNodeOverTint": {
+        "q1": 0.9470509438496308,
+        "median": 0.9696641080579115,
+        "q3": 1.0334620713281295
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.9474499538613477,
+        "median": 0.9701422928726824,
+        "q3": 1.0339243242450362
+      }
+    },
+    {
+      "name": "sha512-1MiB",
+      "typedNs": {
+        "q1": 633311.4416338503,
+        "median": 666678.7108406425,
+        "q3": 743866.290897131
+      },
+      "publicNs": {
+        "q1": 667994.8731325567,
+        "median": 694385.4177370667,
+        "q3": 780654.3782353401
+      },
+      "controlNs": {
+        "q1": 164.79473561048508,
+        "median": 189.1283318400383,
+        "q3": 211.02000027894974
+      },
+      "nodeNs": {
+        "q1": 635612.3047880828,
+        "median": 718344.0774679184,
+        "q3": 823777.0176492631
+      },
+      "nodeControlNs": {
+        "q1": 24.82207491993904,
+        "median": 26.530586183071136,
+        "q3": 34.58559513092041
+      },
+      "typedNodeOverTint": {
+        "q1": 0.9802468123438197,
+        "median": 0.9996525844692221,
+        "q3": 1.104567651352025
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 0.9804604957291961,
+        "median": 0.9998824655178988,
+        "q3": 1.104873124998595
+      },
+      "publicNodeOverTint": {
+        "q1": 0.9276179322847798,
+        "median": 0.9808605029978079,
+        "q3": 1.0470050708810494
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.9278150052497824,
+        "median": 0.9810679771167399,
+        "q3": 1.047271676054517
+      }
+    },
+    {
+      "name": "random-32",
+      "typedNs": {
+        "q1": 246.22775220870972,
+        "median": 253.8786678314209,
+        "q3": 301.97275018692017
+      },
+      "publicNs": {
+        "q1": 604.4766659736633,
+        "median": 672.3613319396973,
+        "q3": 800.1415019035339
+      },
+      "controlNs": {
+        "q1": 319.0468316078186,
+        "median": 363.3074998855591,
+        "q3": 409.3255019187927
+      },
+      "nodeNs": {
+        "q1": 306.18516635894775,
+        "median": 342.050332069397,
+        "q3": 412.95158338546753
+      },
+      "nodeControlNs": {
+        "q1": 6.3738322257995605,
+        "median": 7.300999641418457,
+        "q3": 8.404831886291504
+      },
+      "typedNodeOverTint": {
+        "q1": 1.2326892611227223,
+        "median": 1.2630479510208479,
+        "q3": 1.435784699452367
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": -5.316791559031429,
+        "median": -3.532195678195101,
+        "q3": -2.553239010893898
+      },
+      "publicNodeOverTint": {
+        "q1": 0.4813638880147646,
+        "median": 0.5013250545171127,
+        "q3": 0.5456004331969122
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 0.9095157300231353,
+        "median": 1.043391545846685,
+        "q3": 1.203092838605253
+      }
+    },
+    {
+      "name": "random-4096",
+      "typedNs": {
+        "q1": 670.2416706085205,
+        "median": 717.6258420944214,
+        "q3": 830.3945803642273
+      },
+      "publicNs": {
+        "q1": 1037.8237390518188,
+        "median": 1166.5875005722046,
+        "q3": 1382.6895809173584
+      },
+      "controlNs": {
+        "q1": 318.637490272522,
+        "median": 362.7691602706909,
+        "q3": 411.77040815353394
+      },
+      "nodeNs": {
+        "q1": 829.927499294281,
+        "median": 1004.4850015640259,
+        "q3": 1119.7733283042908
+      },
+      "nodeControlNs": {
+        "q1": 13.83958101272583,
+        "median": 14.404182434082031,
+        "q3": 17.53957986831665
+      },
+      "typedNodeOverTint": {
+        "q1": 1.2060883265033895,
+        "median": 1.2486547451309924,
+        "q3": 1.3641097190400604
+      },
+      "typedAdjustedNodeOverTint": {
+        "q1": 2.300098550332244,
+        "median": 2.3817518460804656,
+        "q3": 3.0557787973233483
+      },
+      "publicNodeOverTint": {
+        "q1": 0.7424366211821658,
+        "median": 0.77733115621471,
+        "q3": 0.8424778538801083
+      },
+      "publicAdjustedNodeOverTint": {
+        "q1": 1.0483144433403153,
+        "median": 1.1292709983891105,
+        "q3": 1.2255914498425695
+      }
+    }
+  ]
+}

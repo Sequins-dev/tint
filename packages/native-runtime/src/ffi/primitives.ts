@@ -18,6 +18,11 @@ export function adoptExternal(
 export function externalAddress(view: Uint8Array): number {
   throw "HOST_UNAVAILABLE";
 }
+/** The data address of a native SharedArrayBuffer (its borrowed byte array),
+ * or -1 for any non-external buffer. */
+export function externalBufferAddress(buffer: SharedArrayBuffer): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** Point external view `view` at `address` (a released view moves to an
  * inaccessible guard at least as long as the view). */
 export function retargetExternal(view: Uint8Array, address: number): void {

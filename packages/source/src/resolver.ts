@@ -67,7 +67,10 @@ function packageShape(specifier: string): "bare" | "deep" | "invalid" {
   // `tint:ffi` and `tint:ffi/unsafe` are granted with C binding modules
   // (docs/native-ffi.md).
   if (
+    specifier === "node:buffer" ||
+    specifier === "node:crypto" ||
     specifier === "node:fs" ||
+    specifier === "node:ffi" ||
     specifier === "node:worker_threads" ||
     specifier === "tint:ffi" ||
     specifier === "tint:ffi/unsafe"

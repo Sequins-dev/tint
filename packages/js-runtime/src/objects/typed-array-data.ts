@@ -21,10 +21,15 @@ import {
 } from "./numeric-element.ts";
 import { readBigIntBytes, writeBigIntBytes } from "./bigint-bytes.ts";
 import { coerceBigInt } from "./bigint-coercion.ts";
-import { createIntegerIndexedObject } from "./integer-indexed.ts";
+import { createIntegerIndexedMethods } from "./integer-indexed.ts";
 import { canonicalNumericIndex } from "./integer-index.ts";
 import { scriptPropertyKeyOrder, type ScriptPropertyKey } from "./symbols.ts";
-import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
+import {
+  createExoticObject,
+  type OrdinaryObject,
+  type ObjectHooks,
+  type ObjectInternalMethods,
+} from "./operations.ts";
 import { numberValue } from "./coercion.ts";
 import {
   createRuntimeError,
@@ -43,6 +48,9 @@ export interface TypedArrayData {
   readonly length: number | undefined;
   readonly kind: TypedArrayElementKind;
   readonly endian: Endian;
+  /** Lazily cached native Uint32Array over a fixed-length little-endian
+   * Int32/Uint32 view of a SharedBlockStorage, for inline Atomics fast paths. */
+  nativeWords?: Uint32Array | undefined;
 }
 export function requireTypedArray(
   value: unknown,
@@ -183,9 +191,10 @@ export function setTypedArrayElement(
     width = typedArrayElementWidth(kind);
   if (kind === "BigInt64" || kind === "BigUint64") {
     const converted = coerceBigInt(value, false, realm, hooks);
-    if (!validIndex(data, index)) return;
+    if (!Number.isInteger(index) || index < 0 || (index === 0 && 1 / index < 0))
+      return;
     const window = typedArrayWindow(data, "write", "unordered");
-    if (window === undefined) throw "TYPED_ARRAY_WRITE_INVARIANT";
+    if (window === undefined || index >= window.length) return;
     const ordinaryBytes = window.bytes;
     const bytes =
       ordinaryBytes === undefined ? new Uint8Array(width) : ordinaryBytes;
@@ -203,47 +212,71 @@ export function setTypedArrayElement(
   if (converted.error === "unsupported")
     return rejectUnsupportedExecution(realm);
   if (converted.error !== "none") throw createRuntimeError(realm, "type");
-  if (!validIndex(data, index)) return;
+  if (!Number.isInteger(index) || index < 0 || (index === 0 && 1 / index < 0))
+    return;
   const window = typedArrayWindow(data, "write", "unordered");
-  if (window === undefined) throw "TYPED_ARRAY_WRITE_INVARIANT";
+  if (window === undefined || index >= window.length) return;
   writeTypedArrayNumber(data, index, converted.value, window);
 }
 /** Internal creation after constructor validation; no observable property reads. */
-export function createTypedArrayView(
-  prototype: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
-  data: TypedArrayData,
+function integerIndexedMethods(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
-): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const object = createIntegerIndexedObject<ScriptPropertyKey, unknown>(
-    prototype,
+): ObjectInternalMethods<ScriptPropertyKey, unknown> {
+  const cached = realm.typedArrayIntegerIndexed;
+  if (cached !== undefined && cached.hooks === hooks) return cached.methods;
+  const methods = createIntegerIndexedMethods<
+    ScriptPropertyKey,
+    unknown,
+    TypedArrayData
+  >(
+    (object): TypedArrayData => {
+      const data = exoticSlots(object).internalTypedArrayData;
+      if (data === undefined) throw "TYPED_ARRAY_DATA_INVARIANT";
+      return data;
+    },
     {
-      mutable: (): boolean => !bufferStorageImmutable(data.storage),
+      mutable: (data): boolean => !bufferStorageImmutable(data.storage),
       numericIndex: (key): number | undefined =>
         typeof key === "string" ? canonicalNumericIndex(key) : undefined,
-      valid: (index): boolean => validIndex(data, index),
-      read: (index): unknown => {
+      valid: (data, index): boolean => validIndex(data, index),
+      read: (data, index): unknown => {
         const window = typedArrayWindow(data, "read", "unordered");
         if (window === undefined) throw "TYPED_ARRAY_READ_INVARIANT";
         return readTypedArrayElement(data, index, window);
       },
-      write: (index, value): void => {
+      write: (data, index, value): void => {
         setTypedArrayElement(data, index, value, realm, hooks);
       },
-      length: (): number => {
+      length: (data): number => {
         const window = typedArrayWindow(data);
         return window === undefined ? 0 : window.length;
       },
       fromIndex: (index): ScriptPropertyKey => String(index),
       keyOrder: scriptPropertyKeyOrder,
-      canPreventExtensions: (): boolean =>
+      canPreventExtensions: (data): boolean =>
         data.length !== undefined &&
         (data.storage.kind === "shared" ||
           !bufferStorageResizable(data.storage)),
     },
     hooks,
   );
-  ensureExoticSlots(object).internalTypedArrayData = data;
-  ensureExoticSlots(object).internalArrayBufferView = true;
+  realm.typedArrayIntegerIndexed = { hooks, methods };
+  return methods;
+}
+
+export function createTypedArrayView(
+  prototype: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  data: TypedArrayData,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const object = createExoticObject<ScriptPropertyKey, unknown>(
+    prototype,
+    integerIndexedMethods(realm, hooks),
+  );
+  const slots = ensureExoticSlots(object);
+  slots.internalTypedArrayData = data;
+  slots.internalArrayBufferView = true;
   return object;
 }

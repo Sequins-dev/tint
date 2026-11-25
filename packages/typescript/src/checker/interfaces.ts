@@ -61,6 +61,7 @@ export function realmConstructorInstance(name: string): string | undefined {
     case "TypeError":
     case "RangeError":
     case "ArrayBuffer":
+    case "SharedArrayBuffer":
     case "Uint8Array":
     case "Uint16Array":
     case "Uint32Array":
@@ -215,6 +216,7 @@ export function resolveInterfaceTypes(
     { kind: "RangeError" },
     { kind: "bigint" },
     { kind: "Error" },
+    { kind: "SharedArrayBuffer" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {

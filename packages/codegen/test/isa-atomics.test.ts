@@ -53,3 +53,28 @@ test("rejected exclusive encodings leave output bytes unchanged", () => {
   );
   assert.deepEqual([...bytes], Array(12).fill(0xaa));
 });
+
+test("LSE ldaddal encodes 8, 16, 32, and 64-bit widths matching clang", () => {
+  const cases: readonly [8 | 16 | 32 | 64, number][] = [
+    [8, 0x38ee014b],
+    [16, 0x78ee014b],
+    [32, 0xb8ee014b],
+    [64, 0xf8ee014b],
+  ];
+  for (const [width, expected] of cases) {
+    assert.deepEqual(encode({ op: "ldaddal", width, rs: 14, rt: 11, rn: 10 }), {
+      ok: true,
+      value: expected,
+    });
+  }
+  assert.deepEqual(
+    encode({
+      op: "ldaddal",
+      width: 32,
+      rs: "sp",
+      rt: 0,
+      rn: 1,
+    } as unknown as Instruction),
+    { ok: false, error: "INVALID_REGISTER" },
+  );
+});

@@ -1,0 +1,28 @@
+{
+  "spec": "ffi-callbacks",
+  "target": "darwin-arm64",
+  "clang": "Apple clang version 21.0.0",
+  "aliases": [],
+  "types": [],
+  "records": [],
+  "functions": [
+    {
+      "name": "pthread_self",
+      "parameters": [],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "record", "name": "_opaque_pthread_t" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "abort",
+      "parameters": [],
+      "result": { "kind": "void" },
+      "variadic": false
+    }
+  ],
+  "constants": [],
+  "skipped": []
+}

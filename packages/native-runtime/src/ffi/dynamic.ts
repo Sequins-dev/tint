@@ -8,9 +8,8 @@
  * argument state. Callers set each argument in a typed form (numbers,
  * booleans, exact 64-bit words, borrowed byte arrays, record images), call
  * `invoke`, then read the result in a typed form. This is the interface a
- * `node:ffi` layer adapts (its BigInt and union conversions wait for the
- * typed/untyped convergence): it never needs to know registers or stack
- * slots.
+ * `node:ffi` adapts, converting its public values without knowing native
+ * registers or stack slots.
  *
  * Borrowed byte arrays never have their (movable) addresses computed here:
  * the frame names them through patches, which the trampoline resolves
@@ -752,6 +751,20 @@ export function closeLibrary(handle: LibraryHandle): void {
 /** Opened optional libraries by image name, and those that failed. */
 const optionalLibraries = new Map<string, LibraryHandle>(),
   absentLibraries = new Set<string>();
+/** Publish a runtime-selected handle after validating its ABI and symbols.
+ * Callers retain it for the lifetime of the importing isolate. */
+export function registerOptionalLibrary(
+  image: string,
+  handle: LibraryHandle,
+): void {
+  if (
+    isNull(handle) ||
+    optionalLibraries.has(image) ||
+    absentLibraries.has(image)
+  )
+    throw new TypeError("invalid optional library registration");
+  optionalLibraries.set(image, handle);
+}
 /** The address of `name` in optional library `image`, opened (once) with
  * dlopen at first use, or -1 when the library or the symbol is absent
  * (docs/native-ffi.md, "Optional libraries"): what ELF images use where
@@ -806,3 +819,24 @@ export {
   wordNumber,
   wordOffset,
 };
+
+/** The exact address returned by dlsym, including absolute symbols. */
+export interface SymbolAddress {
+  readonly low: number;
+  readonly high: number;
+}
+/** Preserve the full pointer word for consumers that expose BigInt addresses.
+ * The legacy numeric lookup keeps its existing generated call path. */
+export function findSymbolWords(
+  handle: LibraryHandle,
+  name: string,
+): SymbolAddress {
+  if (isNull(handle)) throw new TypeError("null library handle");
+  dlerror();
+  const symbol = dlsym({ low: handle.low, high: handle.high }, name);
+  if (isNull(symbol)) {
+    const message = dlerror();
+    if (message !== 0) throw loaderError("dlsym", message, name);
+  }
+  return symbol;
+}

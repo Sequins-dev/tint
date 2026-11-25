@@ -373,9 +373,23 @@ before using the native operation. Realm arrays and prototype imitations use
 ordinary realm property lookup, assignment and method calls. A successful
 guard is independent of the brand checks inside typed-array methods.
 
-A native typed-array ABI still requires matching native storage. The
-projection checks the element layout and passes the same reference. A realm
-value fails with TypeError and the message
+A native typed-array ABI passes matching native storage by reference. A
+realm typed array of the same kind with a fixed native window is viewed
+natively (`projectNativeTypedArray`): over an ordinary buffer's backing,
+or over a shared block's nonmoving payload. A view over an ordinary buffer
+observes its detachment as a realm typed array does. The buffer's backing
+record lists its views, and detaching the buffer (`transfer`,
+`transferToFixedLength` or a Worker transfer) detaches each view through the
+`native-array-detach` host operation. The view's length becomes 0, so the
+existing bounds check makes element reads give undefined and ignores
+writes. Its data pointer moves to just before its owner's payload, a
+negative `byteOffset`, which `Atomics` and the validating methods (`fill`,
+`set`, `subarray`, `slice`, `join`, `at`, `reverse`, iteration) reject with
+a TypeError after their length-0 test. `byteOffset` reads as 0. Native-born
+typed arrays and shared-block views never detach, and LICM still hoists a
+typed-array length out of any loop that runs no code that could detach one.
+Any other value, including a resizable buffer, a length-tracking view or a
+growable shared buffer, fails with TypeError and the message
 `Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view`.
 
 Evidence comes from `tools/build-typed-realm-instanceof-fixture.ts`, its Node
@@ -412,6 +426,20 @@ The focused evidence is `coded-error-guard`,
 `tools/build-typed-node-errors-fixture.ts` and its Node 24.12.0 reference.
 The typed profile requires a literal key for fixed-layout objects. Typed
 dynamic keys remain available on realm-backed indexed objects.
+
+### Node crypto in the program realm
+
+The Node host publishes the crypto PoC through synthetic module records.
+Static imports, runtime imports and CommonJS `require` read the same realm
+exports. The host validates general values and projects typed-array windows
+to typed leaf calls. Digest and random bytes adopt the Node Buffer
+prototype over owned storage. Callback PBKDF2 crosses the helper pool as
+an owned byte payload and returns through the owner inbox.
+
+Program realm provisioning uses the same compiler path on AArch64 and
+x86-64. The native fixture exercises module identity, Buffer branding and
+callback ordering. The pinned conformance cases use the public module
+exports on all three targets. [Node crypto design](design-node-crypto.md)
 
 ### Typed BigInt (slice 4a)
 
@@ -557,6 +585,61 @@ The gap table tracks remaining signatures, collection layouts and escaping
 typed-array ABI crossings. A raw array header would retain stale storage
 after a realm resize or detach. The byte-range interface supplies the
 projection needed by a scoped lending consumer.
+
+### Node FFI call plans (slice 4a)
+
+The trusted `node:ffi` module uses the program realm for function identity,
+errors, callbacks and Buffer views. A binding owns the resolved symbol and
+validated signature. A call frame carries exact pointer and integer words, and
+borrowed byte ranges keep their storage owners live until the native call
+returns. Materializing an escaping address promotes the shared storage owner
+to address-stable backing so aliases continue to see the same bytes.
+
+The compiler records canonical scalar signatures from literal definitions on
+resolved `node:ffi` imports. The binding selects a matching native call stub
+after ordinary definition validation and symbol lookup. Its fixed ABI layout
+determines register moves and outgoing stack space. Runtime definitions use a
+runtime-classified call plan. Libraries with registered callbacks enter through
+the rooted native transition. Callback registration classifies the declared
+signature and allocates an executable entry with the same library lifetime.
+
+General code calls a wrapper through the engine's call protocol. The
+wrapper's call step runs the binding in the context the ordinary entry
+would select, without its context thunk. A wrapper created in a Script or
+module also carries a positional register entry for calls from that
+context with up to six arguments, which skips the argument list as well.
+
+A binding uses a compiled number entry when one exists for its runtime
+signature key. These come from literal definitions and from the `i32`
+prototypes compiled for the program's call arities, so runtime
+definitions use them too. Per-call checks avoid object identity
+comparisons, because realm error views expose both operands of each one.
+Integer argument checks use primitive tag tests rather than the realm
+typeof classifier. Exact int32 values take a fast check.
+
+Typed fixed-arity entries read the wrapper's plan from its stable
+`typedView` field. The IR inliner inlines bound record views, so a
+direct typed call makes no calls before the C function.
+
+Typed programs call the same public realm functions, constructors and
+property operations as general code. The compiler links the realm helpers
+when an application uses the reviewed FFI exports. It projects primitive
+typed callbacks through checked parameter conversions and caches their
+realm callable views.
+
+Local typed arrays that cross into the realm select the backing storage for
+the allocation and its aliases together. The existing flow analysis requires
+a known allocation site and checks every use before changing representation.
+Escaping arrays supplied through the raw native typed-array ABI still need a
+lifetime-aware projection. Unsupported crossings fail during checking.
+
+The pinned Node suite uses a test-only CommonJS adapter. Its diagnostics
+identify Node's CLI, permission, VFS and libuv requirements and V8's private
+ABI metadata. Shared byte views require a host-supplied native shared-block
+service. The generational runtime processes weak references. Library
+creation in the region collector raises `ERR_FFI_CALL_FAILED` with
+`node:ffi DynamicLibrary requires a runtime that processes weak slots`.
+Raw memory helpers remain available.
 
 ### Captured bindings across function fallback (slice 3)
 
@@ -834,7 +917,7 @@ removes it.
 | 1c  | **Fine-grained intrinsic groups.** Split the coarse `js-runtime` installers (primitives also install Date, JSON, BigInt and locale formatting; arrays include `fromAsync`) so a program links only the intrinsics it names; needed before islands, whose realm otherwise costs a typed program about 27 MB.                                                                                                                                                                                                                                                                   | The fixed realm core.                                                                                                                                                                    | 1          |
 | 2a  | **Trusted modules and identity crossings.** General code imports trusted runtime modules; they stay typed behind checked entries. Checked boundaries accept `unknown` parameters, results and constants, which cross unchanged (typed `unknown` and general values share one representation), so JavaScript values keep their identity. A trusted export whose type cannot cross is reported, never made general.                                                                                                                                                             | "General code cannot import the trusted module"; `node:ffi` need 1.                                                                                                                      | 1          |
 | 2b  | **Complete for the scoped native views.** Numeric lists, primitive-field records, unary numeric closures and generic ArrayBufferView byte ranges cross the typed and general boundary. The gap table assigns broader ABI shapes and lifecycle work.                                                                                                                                                                                                                                                                                                                           | Upward contagion; record-shaped Node API results.                                                                                                                                        | 2a         |
-| 4a  | **Typed code over general values (the `node:ffi` needs).** Typed code operates on `unknown` values through the program realm: typed BigInt (from and to two 32-bit halves, comparison, `typeof`), objects with dynamic keys (index signatures and `Record<string, T>` as general objects: create with computed keys, enumerate own keys, read by computed key), `typeof`/`instanceof` narrowing of general values including realm constructors and callables, realm `Error` and errors with `code`, and rest parameters in typed functions. **Complete.** Delivered before 3. | `node:ffi` needs 2 to 6; the `KNOWN DEFECT` workarounds in `node/{crypto,zlib,os}.ts`.                                                                                                   | 2a         |
+| 4a  | **Typed code over general values (the `node:ffi` needs).** Typed code operates on `unknown` values through the program realm: typed BigInt (from and to two 32-bit halves, comparison, `typeof`), objects with dynamic keys (index signatures and `Record<string, T>` as general objects: create with computed keys, enumerate own keys, read by computed key), `typeof`/`instanceof` narrowing of general values including realm constructors and callables, realm `Error` and errors with `code`, and rest parameters in typed functions. **Complete.** Delivered before 3. | `node:ffi` needs 2 to 6; coded errors for the Node built-ins.                                                                                                                            | 2a         |
 | 3   | **Complete for the hosted fallback stream.** Pinned source validation rejects type errors. Replay selects source-backed units, ordinary calls and class and suspended-function evaluation use the selected entries, and nested numeric siblings share lexical cells with general closures. The gap table assigns broader boundary shapes and direct eval.                                                                                                                                                                                                                     | Module-wide loss for generators, async, `var`, inheritance, accessors, private elements, decorators, `arguments`, direct eval.                                                           | 2          |
 | 4   | **General representation for unmodelled types; open slots.** The checker types unmodelled globals and types as general instead of rejecting; their operations are general; unmodelled globals resolve to realm intrinsics. Native builtins become specializations selected by proven receivers. Inferred types become speculation: open locals, parameters and unescaped fields whose writes are not all proven take the general representation; explicit annotations become checked contracts on every write path.                                                           | `new Error`, `.message`, `instanceof` on realm constructors, missing Math/String/DataView members, `Reflect`, `JSON`, `Object`, `Symbol`, `Promise`; inferred types acting as contracts. | 1, 2       |
 | 4b  | **Open-field transitions.** Speculated open fields of escaping records keep their specialized representation behind guards and transition the object's layout to general storage on a foreign write (stable identity with replaceable backing or general slots), without a failure path. Coordinated with the GC/layout owner.                                                                                                                                                                                                                                                | General storage for every open field of an escaping record.                                                                                                                              | 2, 4       |
@@ -898,7 +981,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by slice 3 hosted validation) A genuine source type error confirmed by TypeScript 6.0.3 fails before fallback.                                                                                                                                                                                                                                | `typed-array-index`                                                                                     | Slice 3 source validation                |
 | No per-program compiler options                                                                                                                                                                                                                                                                                                                        | `typed-array-index-unchecked`                                                                           | not yet scheduled                        |
 | C struct views (`Ptr<Interface>` member access, FFI phase 2b) are typed-only; untyped code needs a real object whose accessor properties keep `v.member`'s meaning                                                                                                                                                                                     | (FFI view modules)                                                                                      | 2                                        |
-| Map iteration in typed code (`for (const [k, v] of map)`, `map.keys()`: only get/has/set/delete/clear are typed)                                                                                                                                                                                                                                       | `map-set`                                                                                               | 4                                        |
+| Typed Map entries support `for (const [k, v] of map)`. `map.keys()` and `map.values()` still require lowering.                                                                                                                                                                                                                                         | `map-set`                                                                                               | 4                                        |
 | (Implemented in 4a C1 for indexed objects) Typed computed keys, ordinary reads and writes, `in`, `delete`, own enumeration, `for…in` and spread                                                                                                                                                                                                        | `dynamic-object-*`, `explicit-dynamic-property-contract`                                                | 4a C1                                    |
 | Indexed spread requires a contextual indexed result and indexed sources. Open computed literals expose `unknown` reads pending guarded inference.                                                                                                                                                                                                      | (typed indexed object lowering)                                                                         | 4a follow-up                             |
 | (Removed for slice 2b’s numeric lists and primitive-field records) Existing native storage can be put in erased dynamic-key properties while retaining typed aliases. Other layouts need matching view shapes.                                                                                                                                         | `dynamic-object-local-aggregate`, `dynamic-object-own-data-definition`, `dynamic-object-aggregate-flow` | Aggregate view layouts and projections   |
@@ -911,7 +994,8 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Projected unary numeric properties can be narrowed and called as Function. Native closures erased outside this boundary and other signatures still need callable projection.                                                                                                                                                                           | `tools/build-typed-general-call-contracts-fixture.ts`                                                   | Callable ABI generalization              |
 | Realm library member signatures with callbacks or non-scalar results, including `Promise.then`, `Map.get`, `RegExp.exec` and `Uint8Array.prototype`, require additional bridge lowering. Realm property writes, index signatures, optional chains and direct calls or construction through library constructor aliases also require separate lowering. | `build-typed-realm-instanceof-fixture.ts` and checker diagnostics                                       | 4                                        |
 | WeakMap and WeakSet constructors are installed. Constructing their instances requires the realm's weak-storage service.                                                                                                                                                                                                                                | `weak-collections`                                                                                      | 2b, 4                                    |
-| The slice 2b byte-range API projects ordinary and shared realm views. Passing an escaping view to the raw typed-array ABI needs a lifecycle-aware carrier for resizing and detachment.                                                                                                                                                                 | `build-realm-array-native-projection-failure-fixture.ts`                                                | Typed-array ABI lifecycle                |
+| Realm typed arrays reaching typed `Uint8Array` parameters. With `node:ffi` imported (which links the program realm), `const first = (input: Uint8Array): number => input[0] ?? 0;` and `const bytes = Buffer.from([42]); first(bytes)` stop lowering at `downcast operand representation invariant`: the local takes a `Uint8Array` representation while the checker records a checked downcast on it. Accepting the proven representation instead traps at run time. Passing `first(Buffer.from([42]))` directly builds, but the checked projection rejects the realm Buffer and the image exits 70; JavaScript accepts a Buffer there. Typed lowering owns both, not `node:ffi`. | (needs a realm import; reproduction above)                                                              | Typed-array projection of realm values   |
+| Realm typed arrays with a fixed native window reach the raw typed-array ABI as native views, which observe a detachment of their buffer. Resizable buffers, length-tracking views and growable shared buffers still need a lifecycle-aware carrier for resizing.                                                                                       | `native-realm-array-projection`                                                                         | Typed-array ABI lifecycle                |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                                                                                    | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                  | 4a                                       |
 | Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                                                                               | `reassignment-narrowing`                                                                                | 4a                                       |
 | Module-level loops and non-literal initializers ("module evaluation is required for this statement"; `tint:ffi` runtime module, FFI phase 4)                                                                                                                                                                                                           | `module-initializers`, `module-statements`                                                              | 5                                        |

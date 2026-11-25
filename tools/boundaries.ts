@@ -57,7 +57,10 @@ export function foreignBindingModule(
  * "Foreign memory"): reading memory at arbitrary addresses is the FFI's
  * unsafe part, so each user is listed here and reviewed. */
 export const unsafeForeignMemoryModules: readonly string[] = [
+  "packages/native-runtime/src/node/ffi.ts",
   "packages/native-runtime/src/node/zlib.ts",
+  "packages/native-runtime/src/node/crypto-jobs.ts",
+  "packages/native-runtime/src/node/openssl.ts",
   "packages/native-runtime/src/node/os-darwin.ts",
   "packages/native-runtime/src/node/os-linux.ts",
 ];

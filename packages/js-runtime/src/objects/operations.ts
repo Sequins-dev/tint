@@ -187,6 +187,8 @@ export interface OrdinaryRareSlots<Key, Value> {
    * expando properties, kept distinct from internalChildShape so numeric/length
    * sites never conflate plain objects with packed arrays. */
   internalArrayChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
+  /** Opaque host-owned digest lifetime slot, read only through a checked view. */
+  internalCryptoDigest: unknown;
 }
 /** Internal slots present only on specific builtin, exotic, error or host
  * objects. Kept out of OrdinaryObject so ordinary instances stay compact. */
@@ -345,6 +347,12 @@ export interface ObjectInternalMethods<Key, Value> {
   readonly preventExtensions?: (object: OrdinaryObject<Key, Value>) => boolean;
   /** The typed (native) record a record view presents (record-views.ts). */
   readonly typedRecord?: () => unknown;
+  /** The same view when it never changes, so hot typed callers read it
+   * without calling `typedRecord`. */
+  readonly typedView?: TypedRecordView;
+}
+export interface TypedRecordView {
+  readonly value: unknown;
 }
 /** Internal parameter access, never user-visible accessor functions. Callbacks
  * must not execute user code; descriptor changes can disconnect this alias. */
@@ -711,6 +719,7 @@ export function ensureRareSlots<Key, Value>(
     internalHomeObject: undefined,
     internalDataAliases: undefined,
     internalArrayChildShape: undefined,
+    internalCryptoDigest: undefined,
   };
   object.internalRareSlots = created;
   return created;
@@ -942,6 +951,7 @@ function allocateObject<Key, Value>(
           internalHomeObject: undefined,
           internalDataAliases,
           internalArrayChildShape: undefined,
+          internalCryptoDigest: undefined,
         };
   return {
     // A fast object starts at its prototype's root shape once one exists.
@@ -1787,9 +1797,9 @@ export function writePropertyCell<Value>(
 
 /** Attributes a shape records for a fast-mode key: an open bit set, and
  * transitions key on the exact kind, so a new bit gives new shapes. */
-const propertyWritable = 1,
-  propertyEnumerable = 2,
-  propertyConfigurable = 4,
+const propertyWritable = 1;
+export const propertyEnumerable = 2;
+const propertyConfigurable = 4,
   /** An accessor: its descriptor stays in `properties` and its value slot
    * holds no value. */
   propertyAccessor = 8;
@@ -2039,7 +2049,7 @@ function fastValue<Key, Value>(
 }
 /** Store the value of the shape's key at index. Indices past the in-place
  * slots extend linked PropertySpill chunks in order. */
-function setFastValue<Key, Value>(
+export function setFastValue<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
   value: Value,
@@ -2775,6 +2785,11 @@ function addInlineEntry(
 }
 /** Maximum prototype hops cached in lookupCachedScriptProperty. */
 const maxCachedPrototypeDepth = 16;
+/** Sentinel holder for a cached absent property (foundIndex = -1,
+ * foundValue = undefined); never equal to any user receiver. */
+const missingPropertyHolder = createObject<ScriptPropertyKey, unknown>(
+  undefined,
+);
 /** Find `key` on a fast-mode object, a clean packed array, or any prototype
  * chain up to maxCachedPrototypeDepth (including dictionary-mode prototypes
  * such as Array.prototype, Map.prototype, String.prototype) and cache it.
@@ -2906,10 +2921,14 @@ export function lookupCachedScriptProperty(
     let prototype = object.prototype;
     for (let depth = 0; depth < maxCachedPrototypeDepth; depth++) {
       const current = prototype;
-      if (
-        current === undefined ||
-        hasCustomPropertyGet<ScriptPropertyKey, unknown>(current)
-      )
+      if (current === undefined) {
+        if (!object.internalDictionary) {
+          holder = missingPropertyHolder;
+          directValue = undefined;
+        }
+        break;
+      }
+      if (hasCustomPropertyGet<ScriptPropertyKey, unknown>(current))
         return undefined;
       if (!current.internalUsedAsPrototype)
         markPrototype<ScriptPropertyKey, unknown>(current);
@@ -3376,6 +3395,27 @@ export function ordinaryOwnKeys<Key, Value>(
       }
     }
     return ordered;
+  }
+  return sortPropertyKeys<Key>(keys, keyOrder);
+}
+/** The keys of `object`'s property map in [[OwnPropertyKeys]] order: every
+ * own key except packed array indices, which precede them. */
+export function propertyMapKeys<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  keyOrder: (key: Key) => number,
+): Key[] {
+  const keys: Key[] = [];
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    if (shape !== undefined)
+      for (const key of shape.keys) {
+        if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+        keys.push(key);
+      }
+  } else {
+    const properties = object.properties;
+    if (properties !== undefined)
+      for (const [key, descriptor] of properties) keys.push(key);
   }
   return sortPropertyKeys<Key>(keys, keyOrder);
 }

@@ -11,6 +11,7 @@ import {
   type NativeRecordBinding,
   type BoundaryRecord,
   type BoundaryRecordUse,
+  type WorkerEvaluation,
 } from "@tint/compiler/native";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -67,6 +68,11 @@ export interface GeneralLoweringOptions {
     readonly reactor: string;
   };
   readonly nodeWorkers?: GeneralNodeWorkers;
+  readonly nodeCrypto?: {
+    readonly module: string;
+    readonly jobs: string;
+    readonly commonJS?: boolean;
+  };
 }
 export interface GeneralNodeWorkers {
   readonly host: string;
@@ -87,6 +93,12 @@ const workerExports: readonly string[] = [
   "workerData",
   "threadId",
   "resourceLimits",
+];
+const cryptoExports: readonly string[] = [
+  "createHash",
+  "createHmac",
+  "randomBytes",
+  "pbkdf2",
 ];
 
 /** The general lowering used when the typed pipeline rejects a program: each
@@ -126,6 +138,15 @@ export function createGeneralLowering(
     if (workers.typedBindings !== undefined)
       runtimeModules.push(workers.typedBindings);
   }
+  const crypto = options.nodeCrypto;
+  if (crypto !== undefined) {
+    if (eventLoop === undefined) throw "node:crypto requires a Node event loop";
+    runtimeModules.push(crypto.module, crypto.jobs);
+  }
+  const syntheticModules: string[] = [];
+  if (workers !== undefined) syntheticModules.push("node:worker_threads");
+  if (crypto !== undefined)
+    syntheticModules.push("node:crypto", "crypto", "node:buffer", "buffer");
   const objectViews = [
       "viewObjectValue",
       "viewSymbolValue",
@@ -148,18 +169,23 @@ export function createGeneralLowering(
     recordBindings.push(binding);
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
+  // node:crypto objects hold their OpenSSL state as a checked record view.
+  const cryptoViews = ["viewDigestLifetime"];
+  if (crypto !== undefined)
+    for (const name of cryptoViews)
+      recordBindings.push({ module: crypto.module, name, operation: "view" });
   return {
     runtimeModules,
     recordBindings,
-    ...(workers === undefined
-      ? {}
-      : { syntheticModules: ["node:worker_threads"] }),
+    ...(syntheticModules.length === 0 ? {} : { syntheticModules }),
     ...(workers?.typedBindings === undefined
       ? {}
       : {
           prepareTypedWorkers: (
             request: GeneralProgramRequest,
-          ): GeneralProgram => lowerGeneralProgram(request, options, true),
+            typedGuests: boolean,
+          ): GeneralProgram =>
+            lowerGeneralProgram(request, options, true, typedGuests),
         }),
     runtimes: [
       {
@@ -185,16 +211,35 @@ export function createGeneralLowering(
           "realmErrorOperation",
         ],
       },
+      ...(crypto === undefined
+        ? []
+        : [
+            {
+              module: crypto.module,
+              namespace: "general-node-crypto-views",
+              retainedExports: cryptoViews,
+            },
+          ]),
     ],
     lower: (request: GeneralProgramRequest): GeneralProgram =>
       lowerGeneralProgram(request, options),
   };
 }
 
+/** A typed Worker entry (docs/design-worker-runtime.md): the host calls `start`
+ * in that Worker's isolate; it evaluates the entry and the modules of its
+ * graph that use the Worker bindings. */
+interface TypedGuestPlan {
+  readonly entry: string;
+  readonly start: SourceModule;
+  readonly deferred: readonly string[];
+}
+
 function lowerGeneralProgram(
   original: GeneralProgramRequest,
   options: GeneralLoweringOptions,
   typedWorkerEntry = false,
+  typedGuests = false,
 ): GeneralProgram {
   const runtime = options.runtime;
   const workers = options.nodeWorkers;
@@ -233,11 +278,11 @@ function lowerGeneralProgram(
   // Only the modules that depend on the worker bindings need to move into
   // the checked entry's evaluation scope. Shared runtime modules such as
   // source text and syntax must remain accessible to the host too.
-  const typedWorkerModules = new Set<string>();
-  if (typedGraph !== undefined) {
+  function workerDependents(graph: Set<string>): Set<string> {
+    const dependents = new Set<string>();
     const importers = new Map<string, string[]>();
     for (const source of original.modules) {
-      if (source === undefined || !typedGraph.has(source.id)) continue;
+      if (source === undefined || !graph.has(source.id)) continue;
       for (const [, dependency] of source.dependencies) {
         const found = importers.get(dependency);
         if (found === undefined) importers.set(dependency, [source.id]);
@@ -247,11 +292,103 @@ function lowerGeneralProgram(
     const pending = ["node:worker_threads"];
     for (let index = 0; index < pending.length; index++) {
       const id = pending[index];
-      if (id === undefined || typedWorkerModules.has(id)) continue;
-      typedWorkerModules.add(id);
+      if (id === undefined || dependents.has(id)) continue;
+      dependents.add(id);
       for (const importer of importers.get(id) ?? [])
         if (importer !== undefined) pending.push(importer);
     }
+    return dependents;
+  }
+  const typedWorkerModules =
+    typedGraph === undefined ? new Set<string>() : workerDependents(typedGraph);
+  const typedGuestPlans: TypedGuestPlan[] = [];
+  const typedGuestModules: string[] = [];
+  if (typedGuests) {
+    const planned = planTypedGuests();
+    if (planned !== undefined) return { ok: false, error: planned };
+  }
+  /** Plans each Worker entry as a typed start function, or explains why the
+   * entries keep the general guest path. */
+  function planTypedGuests(): string | undefined {
+    if (typedGraph === undefined)
+      return "typed Worker entries require a typed main entry";
+    const entries = original.workerEntries ?? [];
+    const claimed = new Map<string, string>();
+    for (const id of typedWorkerModules)
+      if (id !== "node:worker_threads") claimed.set(id, original.entry);
+    // A module reached from one Worker entry alone evaluates only in that
+    // Worker's isolates, as under Node; shared modules initialize in every
+    // isolate, as the main entry's do.
+    const reached = new Map<string, number>();
+    for (const id of typedGraph) reached.set(id, 1);
+    const graphs: Set<string>[] = [];
+    for (const entry of entries) {
+      if (entry === undefined) throw "worker entry invariant";
+      const graph = applicationGraph([entry]);
+      graphs.push(graph);
+      for (const id of graph) reached.set(id, (reached.get(id) ?? 0) + 1);
+    }
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index],
+        graph = graphs[index];
+      if (entry === undefined || graph === undefined)
+        throw "worker entry invariant";
+      if (entry === original.entry || !available.has(entry))
+        return "Worker entry " + entry + " is not an application module";
+      for (const source of original.modules) {
+        if (source === undefined) throw "general module invariant";
+        for (const [, dependency] of source.dependencies)
+          if (dependency === entry)
+            return "Worker entry " + entry + " is imported by " + source.id;
+      }
+      const deferred: string[] = [entry];
+      for (const id of workerDependents(graph))
+        if (id !== "node:worker_threads" && id !== entry) deferred.push(id);
+      for (const source of original.modules)
+        if (
+          source !== undefined &&
+          graph.has(source.id) &&
+          reached.get(source.id) === 1 &&
+          !deferred.includes(source.id)
+        )
+          deferred.push(source.id);
+      for (const id of deferred) {
+        const owner = claimed.get(id);
+        if (owner !== undefined)
+          return (
+            "module " +
+            id +
+            " uses the Worker bindings in the graphs of " +
+            owner +
+            " and " +
+            entry
+          );
+        claimed.set(id, entry);
+      }
+      for (const source of original.modules)
+        if (
+          source !== undefined &&
+          graph.has(source.id) &&
+          !typedGuestModules.includes(source.id)
+        )
+          typedGuestModules.push(source.id);
+      const text =
+        'import "./worker-entry";\nexport function start(): number { return 0; }\n';
+      const parsed = parseModule(createSourceTextView(text));
+      if (!parsed.ok) throw "typed Worker start invariant";
+      const dependencies = new Map<string, string>();
+      dependencies.set("./worker-entry", entry);
+      typedGuestPlans.push({
+        entry,
+        start: {
+          id: fresh("$typed-worker:" + entry),
+          module: parsed.value,
+          dependencies,
+        },
+        deferred,
+      });
+    }
+    return undefined;
   }
   const guestGraph = typedWorkerEntry
     ? applicationGraph(original.workerEntries ?? [])
@@ -304,9 +441,11 @@ function lowerGeneralProgram(
     guestGraph !== undefined
       ? {
           ...original,
-          modules: original.modules.filter(
-            (source) => source !== undefined && guestGraph.has(source.id),
-          ),
+          modules: typedGuests
+            ? []
+            : original.modules.filter(
+                (source) => source !== undefined && guestGraph.has(source.id),
+              ),
         }
       : mixed === undefined
         ? companions === undefined
@@ -385,6 +524,32 @@ function lowerGeneralProgram(
   for (let index = 0; index < request.modules.length; index++) {
     const source = request.modules[index];
     if (source === undefined) throw "general module invariant";
+    if (options.nodeCrypto !== undefined) {
+      for (const declaration of source.module.imports) {
+        const name = declaration.specifier;
+        if (
+          declaration.typeOnly ||
+          (name !== "node:crypto" && name !== "crypto")
+        )
+          continue;
+        for (const binding of declaration.bindings) {
+          if (
+            binding.typeOnly ||
+            binding.namespace ||
+            binding.imported === "default" ||
+            cryptoExports.includes(binding.imported)
+          )
+            continue;
+          return {
+            ok: false,
+            error:
+              "node:crypto " +
+              binding.imported +
+              " is outside Tint's crypto proof of concept",
+          };
+        }
+      }
+    }
     const erased = eraseTypeSyntax(source.module, {
       typeExport: (specifier: string, name: string): boolean => {
         const target = source.dependencies.get(specifier);
@@ -491,7 +656,13 @@ function lowerGeneralProgram(
   const hasNodeErrors =
     original.availableIds?.includes(nodeErrorModule) ??
     available.has(nodeErrorModule);
-  const errors = errorAdapters(request.boundaries.length !== 0, hasNodeErrors);
+  const nodeTypeErrorModule = "packages/native-runtime/src/node/type-error.ts";
+  const hasNodeTypeErrors = available.has(nodeTypeErrorModule);
+  const errors = errorAdapters(
+    request.boundaries.length !== 0 || options.nodeCrypto !== undefined,
+    hasNodeErrors,
+    hasNodeTypeErrors,
+  );
   boundaryImports += adapters.imports + errors.imports;
   const dynamicDeclarations = new Set<string>();
   for (let k = 0; k < request.boundaries.length; k++) {
@@ -583,8 +754,13 @@ function lowerGeneralProgram(
     return { ok: false, error: "entry module is not lowered" };
   const output = options.output;
   const eventLoop = options.nodeEventLoop;
-  const names = request.modules.map((module): string => module.id);
-  const moduleCount = names.length + request.boundaries.length;
+  // Worker filenames resolve to module records, or to typed entries' indices.
+  const names = typedGuests
+    ? (original.workerEntries ?? []).slice()
+    : request.modules.map((module): string => module.id);
+  const moduleCount = request.modules.length + request.boundaries.length;
+  const crypto = options.nodeCrypto;
+  const builtinStart = moduleCount + (workers === undefined ? 0 : 1);
   if (workers !== undefined) {
     const exports = workerExports
       .map(
@@ -605,9 +781,45 @@ function lowerGeneralProgram(
       exports +
       "},undefined);\n";
   }
+  if (crypto !== undefined) {
+    const addBuiltin = (
+      id: number,
+      name: string,
+      names: readonly string[],
+    ): string => {
+      const exportNames = ["default", ...names];
+      return (
+        "  case " +
+        id +
+        ": return createSyntheticModule(realm," +
+        JSON.stringify(exportNames) +
+        ",(module:ModuleRecord):void=>{" +
+        'setSyntheticModuleExport(module,"default",nodeCrypto.' +
+        name +
+        ");" +
+        names
+          .map(
+            (key): string =>
+              "setSyntheticModuleExport(module," +
+              JSON.stringify(key) +
+              ",nodeCrypto.exportValue(nodeCrypto." +
+              name +
+              "," +
+              JSON.stringify(key) +
+              "));",
+          )
+          .join("") +
+        "},undefined" +
+        (name === "crypto" ? ",nodeCrypto.reportMissingExport" : "") +
+        ");\n"
+      );
+    };
+    creates += addBuiltin(builtinStart, "crypto", cryptoExports);
+    creates += addBuiltin(builtinStart + 1, "buffer", ["Buffer", "kMaxLength"]);
+  }
   const selectedInstallers = installers.installers().slice();
   if (
-    workers !== undefined &&
+    (workers !== undefined || crypto !== undefined) &&
     !selectedInstallers.includes("installPromiseIntrinsics")
   )
     selectedInstallers.push("installPromiseIntrinsics");
@@ -617,7 +829,11 @@ function lowerGeneralProgram(
     typedGraph !== undefined
   ) {
     for (const source of original.modules) {
-      if (source === undefined || !typedGraph.has(source.id)) continue;
+      if (
+        source === undefined ||
+        (!typedGraph.has(source.id) && !typedGuestModules.includes(source.id))
+      )
+        continue;
       const dependencies = new Map<string, string>();
       let usesWorker = false;
       for (const [specifier, target] of source.dependencies) {
@@ -636,12 +852,23 @@ function lowerGeneralProgram(
       ";\n";
     imports +=
       'import {initializeWorkerThreads} from "typed-worker-bindings";\n';
+    for (let k = 0; k < typedGuestPlans.length; k++) {
+      const plan = typedGuestPlans[k];
+      if (plan === undefined) throw "typed Worker plan invariant";
+      generated.push(plan.start);
+      imports +=
+        "import {start as typedWorker" +
+        k +
+        "} from " +
+        JSON.stringify(plan.start.id) +
+        ";\n";
+    }
   }
   const text = generalHostSource(
     imports,
     creates,
     edges,
-    moduleCount + (workers === undefined ? 0 : 1),
+    builtinStart + (crypto === undefined ? 0 : 2),
     entryIndex,
     request.start,
     output !== undefined,
@@ -652,6 +879,14 @@ function lowerGeneralProgram(
     names,
     mixed,
     typedWorkerEntry,
+    typedGuestPlans.length,
+    crypto === undefined
+      ? undefined
+      : {
+          crypto: builtinStart,
+          buffer: builtinStart + 1,
+          commonJS: crypto.commonJS === true,
+        },
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -669,6 +904,10 @@ function lowerGeneralProgram(
     ["global", runtime.globalEnvironment],
   ]);
   if (output !== undefined) hostDependencies.set("output", output.module);
+  if (crypto !== undefined) {
+    hostDependencies.set("node-crypto", crypto.module);
+    hostDependencies.set("node-crypto-jobs", crypto.jobs);
+  }
   if (eventLoop !== undefined) {
     hostDependencies.set("node-event-globals", eventLoop.globals);
     hostDependencies.set("node-event-driver", eventLoop.driver);
@@ -738,11 +977,12 @@ function lowerGeneralProgram(
         typedEntry === undefined
           ? {}
           : {
-              workerEvaluation: {
-                entry: typedEntry.id,
-                start: request.start,
-                modules: [...typedWorkerModules],
-              },
+              workerEvaluation: workerEvaluations(
+                typedEntry.id,
+                request.start,
+                typedWorkerModules,
+                typedGuestPlans,
+              ),
               moduleConstructors: [
                 {
                   module: typedBindings,
@@ -751,9 +991,15 @@ function lowerGeneralProgram(
                 },
               ],
             }),
-        ...(workerModules === undefined ? {} : { workerModules }),
+        ...(typedGuests
+          ? { workerModules: typedGuestModules }
+          : workerModules === undefined
+            ? {}
+            : { workerModules }),
       },
     };
+  if (typedGuests)
+    return { ok: false, error: "typed Worker entries require no boundaries" };
   const viewsParsed = parseModule(
     createSourceTextView(adapters.stubs + errors.stubs),
   );
@@ -764,6 +1010,8 @@ function lowerGeneralProgram(
     };
   const viewsDependencies = new Map<string, string>();
   if (hasNodeErrors) viewsDependencies.set("node-errors", nodeErrorModule);
+  if (hasNodeTypeErrors)
+    viewsDependencies.set("node-type-error", nodeTypeErrorModule);
   for (const record of records)
     if (record !== undefined)
       viewsDependencies.set(record.module, record.module);
@@ -806,11 +1054,35 @@ function lowerGeneralProgram(
   };
 }
 
+/** The deferred evaluation scopes: the main entry's, then each typed Worker
+ * entry's start function. */
+function workerEvaluations(
+  entry: string,
+  start: string,
+  mainModules: Set<string>,
+  guests: readonly TypedGuestPlan[],
+): WorkerEvaluation[] {
+  const modules: string[] = [];
+  for (const id of mainModules) modules.push(id);
+  const evaluations: WorkerEvaluation[] = [{ entry, start, modules }];
+  for (const guest of guests) {
+    if (guest === undefined) throw "typed Worker plan invariant";
+    const deferred: string[] = [guest.start.id];
+    for (const id of guest.deferred) deferred.push(id);
+    evaluations.push({
+      entry: guest.start.id,
+      start: "start",
+      modules: deferred,
+    });
+  }
+  return evaluations;
+}
 /** The retained stubs see only native layout identities and traced slots.
  * Publication lives in the host, where the shared realm is available. */
 function errorAdapters(
   enabled: boolean,
   nodeErrors: boolean,
+  nodeTypeErrors: boolean,
 ): {
   imports: string;
   functions: string;
@@ -865,8 +1137,9 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     );
   }
   let factories = "createNativeErrorView,prepareRealmErrorArgument";
+  if (nodeErrors || nodeTypeErrors) factories += ",createNativeCodedErrorView";
   if (nodeErrors) {
-    factories += ",createNativeCodedErrorView,createNativeSystemErrorView";
+    factories += ",createNativeSystemErrorView";
     stubs +=
       'import type {NativeCodedError,NativeCodedRangeError,NativeSystemError} from "node-errors";\n';
     adapter(
@@ -883,6 +1156,14 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
       "NativeSystemError",
       "NativeSystemError",
       "createNativeSystemErrorView(program.realm,program.hooks,native.message,native.info.errno,native.info.code,native.info.message,native.info.syscall,value,program.object)",
+    );
+  }
+  if (nodeTypeErrors) {
+    stubs += 'import type {NativeCodedTypeError} from "node-type-error";\n';
+    adapter(
+      "NativeCodedTypeError",
+      "NativeCodedTypeError",
+      'createNativeCodedErrorView(program.realm,program.hooks,"type",native.message,native.code,undefined,false,value,program.object)',
     );
   }
   stubs += `export function nativeErrorReceiver(value:unknown):unknown {
@@ -1139,6 +1420,18 @@ const installerArguments: ReadonlyMap<string, string> = new Map<string, string>(
  * first request and resolved per referrer, as the source graph resolved
  * them; the start export's result (a number, or undefined for 0) is the
  * exit status, and an uncaught exception or rejected evaluation exits 1. */
+/** Each typed Worker isolate runs its entry's start function, then its loop. */
+function typedGuestDispatch(count: number): string {
+  if (count === 0) return "";
+  let cases = "";
+  for (let k = 0; k < count; k++)
+    cases += "case " + k + ":status=typedWorker" + k + "();break;";
+  return (
+    "{let status=0;switch(moduleId){" +
+    cases +
+    'default:throw "unknown typed Worker entry";}events.loop.run("callback");return failed?1:status;}'
+  );
+}
 function generalHostSource(
   imports: string,
   creates: string,
@@ -1154,12 +1447,21 @@ function generalHostSource(
   names: readonly string[],
   mixed?: FunctionFallbackPlan,
   typedWorkerEntry = false,
+  typedGuests = 0,
+  crypto?: {
+    readonly crypto: number;
+    readonly buffer: number;
+    readonly commonJS: boolean;
+  },
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
-    if (workers !== undefined && installer === "installPromiseIntrinsics") {
+    if (
+      (workers !== undefined || crypto !== undefined) &&
+      installer === "installPromiseIntrinsics"
+    ) {
       installs += " installProgramPromiseIntrinsics(core);\n";
       programInstallers.push("installProgramPromiseIntrinsics");
       continue;
@@ -1200,7 +1502,7 @@ function generalHostSource(
     ? `import {installNodeEventLoopGlobals} from "node-event-globals";
 import {createReactorEventLoop,type ReactorEventLoop} from "node-event-driver";
 import {monotonicMilliseconds} from "node-event-clock";
-import {createReactor${workers === undefined ? "" : ",signalReactor"}} from "node-event-reactor";`
+import {createReactor${workers === undefined && crypto === undefined ? "" : ",signalReactor"}} from "node-event-reactor";`
     : "";
   const hostedByNode = workers?.nodeHosted === true;
   const threadHostFactory = hostedByNode
@@ -1230,34 +1532,68 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
  });
  workerHost=session;
  const workers=session.exports;
- ${typedWorkerEntry ? 'initializeWorkerThreads(workers,realm);if(threadId===0){const status=typedStart();events.loop.run("callback");return failed?1:status;}' : ""}`;
-  const drainJobs =
-    "drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});";
+ ${typedWorkerEntry ? 'initializeWorkerThreads(workers,realm);if(threadId===0){const status=typedStart();events.loop.run("callback");return failed?1:status;}' + typedGuestDispatch(typedGuests) : ""}`;
+  const drainJobs = "drainScriptJobs(realm.agent,rethrowScriptJobError);";
   const drainCheckpoint =
     workers === undefined
       ? drainJobs
       : `workerHost?.checkpointAtomicWaits();do{${drainJobs}}while((workerHost?.checkpointAtomicWaits()??0)>0);`;
   const eventSetup = nodeEventLoop
-    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;"}
+    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;const noopWake=():void=>{};"}
+ ${crypto === undefined ? "" : "let cryptoJobs:CryptoJobs|undefined=undefined;"}
+ const rethrowScriptJobError=(error:unknown):void=>{throw error;};
  const events:ReactorEventLoop=createReactorEventLoop({
   createReactor:()=>createReactor(),
   now:():number=>monotonicMilliseconds(),
   drainMicrotasks:():void=>{${drainCheckpoint}},
-  onWake:():void=>{${workers === undefined ? "" : "events.loop.enqueueIO(():void=>{});"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
+  onWake:():void=>{${crypto === undefined ? "" : "cryptoJobs?.receive();"}${workers === undefined ? "" : "events.loop.enqueueIO(noopWake);"}},${workers === undefined ? "" : "\n  stopRequested:():boolean=>control?.stopRequested()===true"}
  });
  try {
   installNodeEventLoopGlobals(events.loop,object,realm,hooks);
+  ${crypto === undefined ? "" : "cryptoJobs=createCryptoJobHost(events);"}
   ${workerRegistry}`
     : "";
+  const closeWorkers = workers === undefined ? "" : "workerHost?.close();";
   const eventCleanup = nodeEventLoop
-    ? `} catch(error){report(error);return 1;} finally{${workers === undefined ? "" : "workerHost?.close();"}events.close();}`
+    ? `} catch(error){report(error);return 1;} finally{${
+        crypto === undefined
+          ? closeWorkers + "events.close();"
+          : "try{cryptoJobs?.close();}finally{try{closeDigestContexts();}finally{try{" +
+            closeWorkers +
+            "}finally{events.close();}}}"
+      }}`
     : "";
+  const supportsAsyncEntry = workers !== undefined || crypto !== undefined;
+  const nodeCryptoImport =
+    crypto === undefined
+      ? ""
+      : `import {createNodeCryptoModules,closeDigestContexts} from "node-crypto";
+import {createCryptoJobHost,runCryptoBlockingHelper,type CryptoJobs} from "node-crypto-jobs";`;
+  const nodeCryptoSetup =
+    crypto === undefined
+      ? ""
+      : `const nodeCrypto=createNodeCryptoModules(programRealmCore(),toRealmError);
+ ${crypto.commonJS ? 'createDataProperty<ScriptPropertyKey,unknown>(object,"require",nodeCrypto.require,hooks);' : ""}`;
+  const builtinResolution =
+    crypto === undefined
+      ? ""
+      : `const specifier=request.specifier;
+  if(specifier==="node:crypto"||specifier==="crypto"){
+   finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(${crypto.crypto})});return;
+  }
+  if(specifier==="node:buffer"||specifier==="buffer"){
+   finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(${crypto.buffer})});return;
+  }`;
   const entryWrapper =
     workers === undefined
-      ? `export function ${start}():number {`
+      ? crypto === undefined
+        ? `export function ${start}():number {`
+        : `export function ${start}(argument:number):number {
+ if(argument!==0)return runCryptoBlockingHelper(argument,signalReactor);`
       : `export function ${start}(argument:number${hostedByNode ? ",broker:number" : ""}):number {
  const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost(signalReactor);
  if(argument===0)return runIsolate(${entry},0,undefined,memory,parking${hostedByNode ? ",broker" : ""});
+ ${crypto === undefined ? "" : "if(argument%2===0)return runCryptoBlockingHelper(argument,signalReactor);"}
  return runNativeWorker(memory,parking,argument,
   (moduleId:number,threadId:number,control:NativeWorkerTurnControl):number=>
    runIsolate(moduleId,threadId,control,memory,parking${hostedByNode ? ",broker" : ""}));
@@ -1341,7 +1677,7 @@ export function $tintCallUnit(${signature}):number {
  const value=result.value;
  if(typeof value==="number")return value;
  ${
-   workers === undefined
+   !supportsAsyncEntry
      ? ""
      : `const promise=viewObjectValue(value,object)?.internalExoticSlots?.internalPromiseData;
  if(promise!==undefined){
@@ -1365,6 +1701,7 @@ import {createObject,createCallableObject,createDataProperty,programRealmCore,in
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${eventImports}
 ${workerImports}
+${nodeCryptoImport}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
 function describe(value:unknown,hooks:ObjectHooks<unknown>,realm:ErrorRealm):string{
@@ -1394,6 +1731,7 @@ ${adapters}${mixedAdapter}${entryWrapper}
  let failed=false;
  function report(error:unknown):void{failed=true;${workerError}emit(2,"Uncaught "+describe(error,hooks,realm)+"\\n");}
  ${eventSetup}
+ ${nodeCryptoSetup}
  const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);
  function create(index:number):ModuleRecord{
   switch(index){
@@ -1403,6 +1741,7 @@ ${creates}  }
  function record(index:number):ModuleRecord{const existing=records[index];if(existing!==undefined)return existing;const created=create(index);records[index]=created;return created;}
  const edges=new Map<string,number>();
 ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{
+  ${builtinResolution}
   const from=referrer.kind==="module"?referrer.hostDefined:undefined;
   const target=typeof from==="number"?edges.get(String(from)+"\\u0000"+request.specifier):undefined;
   if(target===undefined){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}
@@ -1415,8 +1754,8 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  if(!linked.ok){report(linked.error);return 1;}
  const evaluation=evaluateModule(root,hooks);
  ${nodeEventLoop ? 'events.loop.checkpoint("microtask");' : "drainScriptJobs(realm.agent,report);"}
- ${workers === undefined ? "const" : "let"} evaluated=settledModulePromise(evaluation,realm);
- ${workers === undefined ? "" : 'if(evaluated.kind==="pending"){events.loop.run("microtask");evaluated=settledModulePromise(evaluation,realm);}'}
+ ${supportsAsyncEntry ? "let" : "const"} evaluated=settledModulePromise(evaluation,realm);
+ ${supportsAsyncEntry ? 'if(evaluated.kind==="pending"){events.loop.run("microtask");evaluated=settledModulePromise(evaluation,realm);}' : ""}
  if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
  if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
  ${workers === undefined ? "" : 'if(threadId!==0){events.loop.run("callback");return failed?1:0;}'}

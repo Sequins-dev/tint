@@ -35,7 +35,7 @@ export function createPrivateName(description: string): PrivateName {
 }
 
 /** Private elements are own internal state: neither prototypes nor properties participate. */
-function findPrivateElement<Key, Value>(
+export function findPrivateElement<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   name: PrivateName,
 ): PrivateElement<Value> | undefined {

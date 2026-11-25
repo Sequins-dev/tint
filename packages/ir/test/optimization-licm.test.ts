@@ -211,6 +211,54 @@ test("invariant operations a kept operation still uses are kept", () => {
   hoist(withCallee);
 });
 
+test("typed-array lengths move unless the loop runs code that may change them", () => {
+  // total += array.length, with or without a call in the body.
+  const sum = (call: boolean): Instruction[] => [
+    ...(call
+      ? [
+          {
+            kind: "call",
+            id: undefined,
+            target: 1,
+            arguments: [],
+            ...span,
+          } satisfies Instruction,
+        ]
+      : []),
+    { kind: "load", id: 30, slot: 4, ...span },
+    { kind: "array-length", id: 31, array: 30, ...span },
+    { kind: "load", id: 32, slot: 3, ...span },
+    { kind: "binary", id: 33, operator: "+", left: 32, right: 31, ...span },
+    { kind: "store", slot: 3, value: 33, ...span },
+  ];
+  const callee: FunctionIR = {
+    id: 1,
+    name: "detach",
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+    ],
+  };
+  const lengthIn = (fn: FunctionIR, id: number): boolean =>
+    kinds(fn.blocks.find((block) => block.id === id)).includes("array-length");
+  const plain = hoist(loop(sum(false), { slots: ["Uint8Array"] }));
+  assert.ok(lengthIn(plain, 0) && !lengthIn(plain, 2));
+  // The call may detach a view of a realm ArrayBuffer: its length becomes 0.
+  const module = loop(sum(true), { slots: ["Uint8Array"] });
+  const calling = hoist({
+    functions: [module.functions[0]!, callee],
+  });
+  assert.ok(!lengthIn(calling, 0) && lengthIn(calling, 2));
+});
+
 test("checked reads of immutable fields move with their check; mutable fields stay", () => {
   for (const mutable of [false, true]) {
     const module = loop(
@@ -330,6 +378,54 @@ test("unchecked reads of objects built in the same block do not block read hoist
     hoisted.blocks.find((block) => block.id === 0)!.terminator.kind,
     "record",
   );
+});
+
+test("loop motion preserves the checked layout used by a direct read", () => {
+  const module = loop([{ kind: "load", id: 40, slot: 4, ...span }], {
+    slots: ["reference", "number", "reference"],
+    records: [
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 16, type: "number", mutable: false },
+          { offset: 24, type: "number", mutable: true },
+        ],
+      },
+    ],
+    bodyTerminator: {
+      kind: "record",
+      object: 40,
+      record: 0,
+      field: 0,
+      operation: "read",
+      slot: 5,
+      consequent: 4,
+      alternate: 5,
+      ...span,
+    },
+    extraBlocks: [
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 41, slot: 4, ...span },
+          { kind: "store", slot: 6, value: 41, ...span },
+          { kind: "load", id: 42, slot: 6, ...span },
+          {
+            kind: "record-read",
+            id: 43,
+            object: 42,
+            record: 0,
+            field: 1,
+            ...span,
+          },
+          { kind: "store", slot: 3, value: 43, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  });
+  hoist(module);
 });
 
 test("a union dispatch's later layout checks stay behind the earlier check", () => {

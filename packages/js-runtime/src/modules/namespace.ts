@@ -83,7 +83,10 @@ export function getModuleNamespace(
   function read(name: string): unknown {
     if (deferred) evaluateModuleSync(module, module.realm.objectHooks);
     const entry = exports_.get(name);
-    if (entry === undefined) return undefined;
+    if (entry === undefined) {
+      module.reportMissingNamespaceExport?.(name);
+      return undefined;
+    }
     const target = entry.namespaceModule;
     if (target !== undefined)
       return entry.source

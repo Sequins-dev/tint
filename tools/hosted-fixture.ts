@@ -75,6 +75,10 @@ import {
 } from "./gate/native-fixture.ts";
 import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import {
+  cryptoHostBindings,
+  cryptoHostRuntimes,
+} from "./node-crypto-host-options.ts";
 /** Build target and execution runner are selected independently. */
 const fixtureTarget = nativeFixtureTarget();
 import type { CLibraryManifestEntry } from "@tint/abi/c";
@@ -378,6 +382,7 @@ type GeneralLowering = ReturnType<typeof createGeneralLowering>;
 let generalLowering: GeneralLowering | undefined;
 let nodeGeneralLowering: GeneralLowering | undefined;
 const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
+const nodeIsolateStackBytes = 16777216;
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
  * TINT_GENERAL_FALLBACK=0 disables retries while retaining the worker image
@@ -391,11 +396,17 @@ export function workspaceGeneralLowering(
     readonly stackBytes: number;
     readonly nodeHosted: boolean;
   },
+  nodeCrypto?: "esm" | "commonjs",
 ): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0" && workerImage === undefined)
     return undefined;
   const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
-  if (!functionFallback && workerImage === undefined && cached !== undefined)
+  if (
+    !functionFallback &&
+    workerImage === undefined &&
+    nodeCrypto === undefined &&
+    cached !== undefined
+  )
     return cached;
   const lowering = createGeneralLowering({
     functionFallback,
@@ -411,6 +422,15 @@ export function workspaceGeneralLowering(
       module: "packages/native-runtime/src/intrinsics/fs.ts",
       name: "write",
     },
+    ...(nodeCrypto === undefined
+      ? {}
+      : {
+          nodeCrypto: {
+            module: "packages/native-runtime/src/node/crypto-public.ts",
+            jobs: "packages/native-runtime/src/node/crypto-host.ts",
+            commonJS: nodeCrypto === "commonjs",
+          },
+        }),
     ...(nodeEventLoop
       ? {
           nodeEventLoop: {
@@ -438,7 +458,11 @@ export function workspaceGeneralLowering(
           },
         }),
   });
-  if (!functionFallback && workerImage === undefined) {
+  if (
+    !functionFallback &&
+    workerImage === undefined &&
+    nodeCrypto === undefined
+  ) {
     if (nodeEventLoop) nodeGeneralLowering = lowering;
     else generalLowering = lowering;
   }
@@ -448,6 +472,36 @@ export function workspaceGeneralLowering(
 /** Build through the full hosted pipeline and run through the target runner.
  * Returns the image path (kept only with TINT_BUILD_ONLY=1 or
  * TINT_KEEP_NATIVE=1). */
+/** One declaration per runtime module: a fixture's own and the ones its
+ * imports bring (the FFI runtimes declare intrinsics/memory.ts, which shared
+ * buffer fixtures also bind). The first namespace stands; retained exports
+ * merge, and a whole-module declaration retains everything. */
+function mergeRuntimes(
+  runtimes: readonly RuntimeSource[],
+): readonly RuntimeSource[] {
+  const merged: RuntimeSource[] = [];
+  for (const runtime of runtimes) {
+    const at = merged.findIndex((entry) => entry.module === runtime.module);
+    const existing = merged[at];
+    if (existing === undefined) {
+      merged.push(runtime);
+      continue;
+    }
+    const first = existing.retainedExports,
+      second = runtime.retainedExports;
+    merged[at] =
+      first === undefined || second === undefined
+        ? { module: existing.module, namespace: existing.namespace }
+        : {
+            ...existing,
+            retainedExports: [
+              ...first,
+              ...second.filter((name) => !first.includes(name)),
+            ],
+          };
+  }
+  return merged;
+}
 function buildHostedFixture(
   text: string,
   name: string,
@@ -489,6 +543,7 @@ function buildHostedFixture(
     readonly requireTyped?: boolean;
     readonly nodeEventLoop?: boolean;
     readonly nodeWorkers?: boolean;
+    readonly nodeCrypto?: "esm" | "commonjs";
     readonly nodeWorkerLibrary?: boolean;
     /** Host validation over captured application sources, when supplied. */
     readonly validateSource?: GeneralLowering["validateSource"];
@@ -534,17 +589,20 @@ function buildHostedFixture(
       ? {
           managedBytes: options.managedBytes,
           nodeHosted: options.nodeWorkerLibrary === true,
-          stackBytes: options.stackBytes ?? 16777216,
+          stackBytes: options.stackBytes ?? nodeIsolateStackBytes,
         }
       : undefined;
+  const needsNodeLoop =
+    options.nodeEventLoop === true ||
+    workerImage !== undefined ||
+    options.nodeCrypto !== undefined;
   const general = workspaceGeneralLowering(
     functionFallback,
-    options.nodeEventLoop === true || workerImage !== undefined,
+    needsNodeLoop,
     workerImage,
+    options.nodeCrypto,
   );
-  const eventLoop =
-    (options.nodeEventLoop === true || workerImage !== undefined) &&
-    general !== undefined;
+  const eventLoop = needsNodeLoop && general !== undefined;
   /** The general fallback's reason, when the program took it. */
   let generalFallback: string | undefined;
   let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
@@ -654,6 +712,7 @@ function buildHostedFixture(
     (dependencyIds.includes(foreignRuntimeModules.unsafe) ||
       dependencies.some(
         (dependency) =>
+          dependency[1] === foreignRuntimeModules.nodeFfi ||
           dependency[1] === foreignRuntimeModules.unsafe ||
           dependency[1] === foreignRuntimeModules.index,
       ));
@@ -661,6 +720,10 @@ function buildHostedFixture(
   const roots = [
     ...projectRoots(),
     ...(general?.runtimeModules ?? []),
+    // Requested runtimes load even when no application module imports them.
+    ...additionalRuntimes
+      .map((runtime) => runtime.module)
+      .filter((id) => !localModuleIds.has(id) && !projectRoots().includes(id)),
     ...dependencies
       .map((dependency) => dependency[1])
       .filter(
@@ -671,6 +734,16 @@ function buildHostedFixture(
     ...dependencyIds,
     ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
   ];
+  // A typed built-in can reach unsafe FFI transitively. The fixture's
+  // explicitly imported roots alone do not expose that dependency.
+  if (
+    fixtureTarget.arch === "x86_64" &&
+    !sysvDynamic &&
+    workspaceModuleLoader(roots, foreign.snapshot).ids.includes(
+      foreignRuntimeModules.unsafe,
+    )
+  )
+    roots.push(foreignRuntimeModules.sysv);
   const replay = { loads: 0, modules: 0, utf16Units: 0 };
   const moduleLoader =
     replaySources === undefined
@@ -772,7 +845,7 @@ function buildHostedFixture(
     ...(options.optimization === undefined
       ? {}
       : { optimization: options.optimization }),
-    threaded: options.threaded ?? false,
+    threaded: options.threaded ?? options.nodeCrypto !== undefined,
     nodeWorkerLibrary: options.nodeWorkerLibrary === true,
     threadExitPipe: options.threadExitPipe ?? false,
     ...(options.workerModules === undefined
@@ -787,10 +860,11 @@ function buildHostedFixture(
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
     trustedExecutableCode: options.trustedExecutableCode ?? false,
-    runtimes: [
+    runtimes: mergeRuntimes([
       ...request.runtimes,
       ...additionalRuntimes,
       ...ffi.runtimes,
+      ...(options.nodeCrypto === undefined ? [] : cryptoHostRuntimes),
       ...(eventLoop
         ? [
             {
@@ -801,7 +875,7 @@ function buildHostedFixture(
           ]
         : []),
       ...(serviceImage?.runtimes ?? []),
-    ],
+    ]),
     recordBindings: [
       ...recordBindings,
       ...(serviceImage?.recordBindings ?? []),
@@ -822,7 +896,21 @@ function buildHostedFixture(
           options.omittedHostOperations?.includes(binding.operation) !== true,
       ),
       ...(options.hostBindings ?? []),
-      ...ffi.hostBindings,
+      ...ffi.hostBindings.filter(
+        (binding) =>
+          options.allowJit === true ||
+          !binding.operation.startsWith("executable-"),
+      ),
+      ...(options.nodeCrypto === undefined
+        ? []
+        : cryptoHostBindings.filter(
+            (binding) =>
+              options.hostBindings?.some(
+                (requested) =>
+                  requested.module === binding.module &&
+                  requested.name === binding.name,
+              ) !== true,
+          )),
       ...(eventLoop
         ? [
             {
@@ -886,11 +974,15 @@ function buildHostedFixture(
     // Copying GC metadata needs a forwarding word per semispace allocation unit.
     allocationCapacity: options.allocationCapacity,
     rootCapacity: options.rootCapacity ?? 4096,
-    // x86-64 stack frames spill more slots than arm64; 1 MiB overflows during
-    // general-fallback realm startup.
+    // x86-64 stack frames spill more slots than arm64; the Node realm's module
+    // initializer uses the Node isolate stack budget.
     stackBytes:
       options.stackBytes ??
-      (fixtureTarget.arch === "x86_64" ? 4194304 : 1048576),
+      (options.nodeCrypto !== undefined
+        ? nodeIsolateStackBytes
+        : fixtureTarget.arch === "x86_64"
+          ? 4194304
+          : 1048576),
     identifier: "tint-hosted-" + name,
     ...(options.maxSpecializations === undefined
       ? {}

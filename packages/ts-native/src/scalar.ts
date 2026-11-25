@@ -44,9 +44,36 @@ import {
   type ReturnType,
   type Span as IRSpan,
   type ForeignMemoryAccess,
+  type ArrayAtomicOperation,
 } from "@tint/ir/scalar";
+/** The IR operation of an `Atomics` function the checker admitted. */
+function atomicOperation(property: string): ArrayAtomicOperation {
+  switch (property) {
+    case "load":
+      return "load";
+    case "store":
+      return "store";
+    case "add":
+      return "add";
+    case "sub":
+      return "sub";
+    case "and":
+      return "and";
+    case "or":
+      return "or";
+    case "xor":
+      return "xor";
+    case "exchange":
+      return "exchange";
+    case "compareExchange":
+      return "compare-exchange";
+  }
+  throw "atomics operation invariant";
+}
 const nativeArrayArgumentMessage: string =
   "Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view";
+const nativeSharedArrayBufferMessage: string =
+  "Passing a realm SharedArrayBuffer to a native SharedArrayBuffer requires a fixed-length SharedArrayBuffer";
 
 /** Where a C view member lives (docs/native-ffi.md, "C views"): the root
  * view (a slot), a constant byte offset into it and, for array elements, a
@@ -387,6 +414,7 @@ export interface RealmErrorRuntime {
 
 export interface NodeErrorRecords {
   readonly coded?: number | undefined;
+  readonly type?: number | undefined;
   readonly range?: number | undefined;
   readonly system?: number | undefined;
   readonly info?: number | undefined;
@@ -407,6 +435,7 @@ export function lowerFunction(
   realmErrorBindings?: RealmErrorRuntime,
   nodeErrors?: NodeErrorRecords,
   generalObjectViews: boolean = false,
+  sharedBlockCheck?: number,
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings,
@@ -426,6 +455,8 @@ export function lowerFunction(
   // source locals. Union-valued merge slots are not inferred from a branch store.
   const speculativeSlots: number[] = [],
     speculativeValues: number[] = [];
+  const sharedBufferFlowSlots: number[] = [],
+    sharedBufferFlowValues: number[] = [];
   const undefinedValues: number[] = [],
     undefinedSlots: number[] = [],
     // Slots holding BigInts (references to BigIntValue, possibly absent).
@@ -493,7 +524,12 @@ export function lowerFunction(
         type = valueTypes[op.array];
         break;
       case "array-new":
+      case "array-view":
         type = op.type;
+        break;
+      case "array-buffer-byte-length":
+      case "array-atomic":
+        type = "number";
         break;
       case "string-none":
       case "string-wrap":
@@ -677,6 +713,14 @@ export function lowerFunction(
       const input = save(id, "general", node);
       requireSpeculativeContract(input, type, node);
       id = load(input, node);
+    }
+    if (
+      sourceType === "general" &&
+      sharedBufferFlowValues[id] === 1 &&
+      type === "reference"
+    ) {
+      const input = save(id, "general", node);
+      return load(nativeSharedArrayBufferArgument(input, node), node);
     }
     if (sourceType === "general" && type === "primitive") {
       if (primitives === undefined) throw "primitive runtime invariant";
@@ -1217,11 +1261,13 @@ export function lowerFunction(
     emit({ kind: "load", id, slot, start: node.start, end: node.end });
     if (undefinedSlots[slot] === 1) undefinedValues[id] = 1;
     if (speculativeSlots[slot] === 1) speculativeValues[id] = 1;
+    if (sharedBufferFlowSlots[slot] === 1) sharedBufferFlowValues[id] = 1;
     return id;
   }
   function store(slot: number, value: number, node: IRSpan): void {
     // A saved undefined literal is constant only until its slot is overwritten.
     undefinedSlots[slot] = 0;
+    sharedBufferFlowSlots[slot] = 0;
     emit({
       kind: "store",
       slot,
@@ -1245,7 +1291,7 @@ export function lowerFunction(
   function cellAccess(
     local: number,
     operation: "read" | "write" | "initialize",
-    node: Span,
+    node: IRSpan,
   ): void {
     const cell = ownedCells.find((c) => c !== undefined && c.local === local);
     if (cell === undefined) return;
@@ -1294,7 +1340,7 @@ export function lowerFunction(
     finish({ kind: "trap", start: node.start, end: node.end });
     current = success;
   }
-  function readLocal(local: number, node: Span): number {
+  function readLocal(local: number, node: IRSpan): number {
     cellAccess(local, "read", node);
     return load(local, node);
   }
@@ -1428,6 +1474,8 @@ export function lowerFunction(
     const slot = temporary(type);
     store(slot, id, node);
     if (undefinedValues[id] === 1) undefinedSlots[slot] = 1;
+    if (type === "general" && sharedBufferFlowValues[id] === 1)
+      sharedBufferFlowSlots[slot] = 1;
     return slot;
   }
   const expressionOverrides = createKeyIndex<Expression, number>(syntaxHash);
@@ -2951,6 +2999,120 @@ export function lowerFunction(
     });
     return save(id, "string", node);
   }
+  /** `Atomics.<property>(array, index, ...operands)` on a native integer
+   * array, its arguments already evaluated: ValidateAtomicAccess (ToIndex,
+   * then the length check) and the sequentially consistent access. The
+   * operands are numbers, so their ToIntegerOrInfinity runs no code. */
+  function atomicsCall(
+    property: string,
+    kind: "Uint8Array" | "Uint16Array" | "Uint32Array",
+    args: readonly number[],
+    node: Span,
+  ): number {
+    const source = args[0],
+      input = args[1];
+    if (source === undefined || input === undefined)
+      throw "atomics argument invariant";
+    // A narrowed unknown keeps its general carrier: a native array, or a
+    // realm typed array viewed natively.
+    const array =
+      slots[source] === "general"
+        ? nativeArrayArgument(source, kind, node)
+        : source;
+    const operation = atomicOperation(property);
+    const index = integerIndex(
+      save(numericInput(input, node), "number", node),
+      node,
+    );
+    // ValidateIntegerTypedArray, then ValidateAtomicAccess: a detached view
+    // (length 0, a negative byte offset) throws TypeError for any index.
+    const inBounds = save(
+      load(binarySlot(">=", index, numberSlot(0, node), node), node),
+      "boolean",
+      node,
+    );
+    conditionalStore(
+      inBounds,
+      inBounds,
+      () => binarySlot("<", index, arrayLength(array, node), node),
+      node,
+    );
+    const valid = block(),
+      invalid = block();
+    choose(load(inBounds, node), valid, invalid, node);
+    current = invalid;
+    rejectDetached(array, node);
+    throwNativeError("RangeError", "Invalid atomic access index", node);
+    current = valid;
+    const values = args
+      .slice(2)
+      .map((operand) => save(numericInput(operand, node), "number", node));
+    const id = operation === "store" ? undefined : nextValue++;
+    emit({
+      kind: "array-atomic",
+      operation,
+      id,
+      array: load(array, node),
+      index: load(index, node),
+      operands: values.map((operand) => load(operand, node)),
+      start: node.start,
+      end: node.end,
+    });
+    if (id !== undefined) return save(id, "number", node);
+    // Atomics.store returns ToIntegerOrInfinity(value) as a number: +0 for
+    // NaN and either zero.
+    const stored = values[0];
+    if (stored === undefined) throw "atomics operand invariant";
+    return binarySlot(
+      "+",
+      integerIndex(stored, node),
+      numberSlot(0, node),
+      node,
+    );
+  }
+  /** TypeError when native typed array `array` is a detached view (its
+   * data before its owner's, a negative byte offset). A detached view is
+   * empty, so a nonempty array costs one length test. */
+  function rejectDetached(array: number, node: Span): void {
+    const empty = binarySlot(
+      "===",
+      arrayLength(array, node),
+      numberSlot(0, node),
+      node,
+    );
+    const check = block(),
+      done = block();
+    choose(load(empty, node), check, done, node);
+    current = check;
+    const offset = nextValue++;
+    emit({
+      kind: "array-byte-offset",
+      id: offset,
+      array: load(array, node),
+      start: node.start,
+      end: node.end,
+    });
+    requireCondition(
+      binarySlot(">=", save(offset, "number", node), numberSlot(0, node), node),
+      "TypeError",
+      "Cannot perform this operation on a detached ArrayBuffer",
+      node,
+    );
+    jump(done.id, node);
+    current = done;
+  }
+  /** ValidateTypedArray for a native typed-array receiver slot: TypeError
+   * when it is a detached view (other receivers are unchanged). */
+  function rejectDetachedReceiver(receiver: number, node: Span): void {
+    const type = slots[receiver];
+    if (
+      type === "Uint8Array" ||
+      type === "Uint16Array" ||
+      type === "Uint32Array" ||
+      type === "Float64Array"
+    )
+      rejectDetached(receiver, node);
+  }
   function arrayLength(array: number, node: Span): number {
     const id = nextValue++;
     emit({
@@ -2970,12 +3132,22 @@ export function lowerFunction(
     error: "Error" | "RangeError" | "TypeError",
     node: IRSpan,
   ): number {
-    if (nodeErrors === undefined || error === "TypeError")
+    if (
+      nodeErrors === undefined ||
+      (error === "TypeError" && nodeErrors.type === undefined)
+    )
       return intrinsicErrorTest(value, error, node);
     const candidates: (number | undefined)[] =
-      error === "RangeError"
-        ? [nodeErrors.range]
-        : [nodeErrors.coded, nodeErrors.range, nodeErrors.system];
+      error === "TypeError"
+        ? [nodeErrors.type]
+        : error === "RangeError"
+          ? [nodeErrors.range]
+          : [
+              nodeErrors.coded,
+              nodeErrors.range,
+              nodeErrors.system,
+              nodeErrors.type,
+            ];
     const operand = save(value, "general", node);
     const yes = block(),
       done = block(),
@@ -3458,7 +3630,7 @@ export function lowerFunction(
       range = nodeErrors?.range,
       system = nodeErrors?.system;
     if (property === "code") {
-      for (const record of [coded, range, system]) {
+      for (const record of [coded, range, system, nodeErrors?.type]) {
         if (record === undefined) continue;
         const next = chooseRecord(record);
         answer(
@@ -3793,21 +3965,56 @@ export function lowerFunction(
     if (slots[operand] !== "general")
       throw "downcast operand representation invariant";
     // Values are block-local: each test block reloads the operand slot.
+    const matched =
+      downcast.sharedBuffer === true
+        ? save(coerce(load(operand, node), "general", node), "general", node)
+        : operand;
     const accepted = block();
     for (const test of downcast.tests) {
       if (test === undefined) throw "downcast test invariant";
-      const id = nextValue++;
-      emit({
-        kind: "general-is",
-        id,
-        value: load(operand, node),
-        type: test,
-        start: node.start,
-        end: node.end,
-      });
+      let matchId: number;
+      if (test === "Uint8Array")
+        matchId = load(isNativeTypedArray(operand, "Uint8Array", node), node);
+      else {
+        matchId = nextValue++;
+        emit({
+          kind: "general-is",
+          id: matchId,
+          value: load(operand, node),
+          type: test,
+          start: node.start,
+          end: node.end,
+        });
+      }
       const next = block();
-      choose(id, accepted, next, node);
+      choose(matchId, accepted, next, node);
       current = next;
+    }
+    if (downcast.sharedBuffer === true) {
+      const next = block();
+      choose(
+        load(nativeSharedArrayBufferTest(operand, node), node),
+        accepted,
+        next,
+        node,
+      );
+      current = next;
+      const project = dynamicObjects?.projectSharedArrayBuffer;
+      if (project !== undefined) {
+        const projected = dynamicResult(project, [operand], node);
+        const acceptProjected = block(),
+          rejectProjected = block();
+        choose(
+          load(nativeArrayTest(projected, "Uint8Array", node), node),
+          acceptProjected,
+          rejectProjected,
+          node,
+        );
+        current = acceptProjected;
+        store(matched, load(projected, node), node);
+        jump(accepted.id, node);
+        current = rejectProjected;
+      }
     }
     for (const record of downcast.records) {
       if (record === undefined) throw "downcast record invariant";
@@ -3863,10 +4070,252 @@ export function lowerFunction(
     );
     current = accepted;
     const type = scalarType(node);
-    return save(coerce(load(operand, node), type, node), type, node);
+    return save(coerce(load(matched, node), type, node), type, node);
   }
   function requireRange(condition: number, node: Span): void {
     requireCondition(condition, "RangeError", "Invalid range", node);
+  }
+  /** ToIndex of an optional typed number argument; absent is `fallback`. */
+  function argumentIndex(
+    argument: number | undefined,
+    fallback: () => number,
+    node: Span,
+  ): number {
+    if (argument === undefined || undefinedSlots[argument] === 1)
+      return fallback();
+    const index = integerIndex(
+      save(numericInput(argument, node), "number", node),
+      node,
+    );
+    requireRange(binarySlot(">=", index, numberSlot(0, node), node), node);
+    requireRange(
+      binarySlot("<=", index, numberSlot(9007199254740991, node), node),
+      node,
+    );
+    if (slots[argument] === "optional-number") {
+      const present = nextValue++;
+      emitPresence(present, load(argument, node), false, node);
+      conditionalStore(
+        unarySlot("!", save(present, "boolean", node), "boolean", node),
+        index,
+        fallback,
+        node,
+      );
+    }
+    return index;
+  }
+  /** `new ArrayBuffer(length)`: a zeroed owned byte array, typed as the
+   * buffer it roots. */
+  function arrayBufferNew(node: Expression & { readonly kind: "new" }): number {
+    const size = node.arguments[0];
+    const length = argumentIndex(
+      size === undefined ? undefined : value(size),
+      () => numberSlot(0, node),
+      node,
+    );
+    const array = nextValue++;
+    emit({
+      kind: "array-new",
+      id: array,
+      type: "Uint8Array",
+      length: load(length, node),
+      start: node.start,
+      end: node.end,
+    });
+    const owned = save(array, "Uint8Array", node),
+      buffer = nextValue++;
+    emit({
+      kind: "array-buffer",
+      id: buffer,
+      array: load(owned, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(buffer, "reference", node);
+  }
+  /** `new SharedArrayBuffer(length)` (a fixed-length buffer): a new block
+   * of the isolate's shared block service (the checker's callee), whose
+   * payload a borrowed byte array views without ever moving, typed as the
+   * buffer it roots. */
+  function sharedArrayBufferNew(
+    node: Expression & { readonly kind: "new" },
+  ): number {
+    const size = node.arguments[0];
+    const length = argumentIndex(
+      size === undefined ? undefined : value(size),
+      () => numberSlot(0, node),
+      node,
+    );
+    const allocator = info(node).callee;
+    if (allocator === undefined) throw "shared block allocator invariant";
+    const address = nextValue++;
+    emit({
+      kind: "call",
+      id: address,
+      target: allocator,
+      arguments: [load(length, node)],
+      start: node.start,
+      end: node.end,
+    });
+    const payload = save(address, "number", node),
+      empty = nextValue++;
+    emit({
+      kind: "array-new",
+      id: empty,
+      type: "Uint8Array",
+      length: load(numberSlot(0, node), node),
+      start: node.start,
+      end: node.end,
+    });
+    const owned = save(empty, "Uint8Array", node),
+      adopted = nextValue++;
+    const operands: number[] = [
+      load(owned, node),
+      load(payload, node),
+      load(length, node),
+    ];
+    emit({
+      kind: "c-memory",
+      access: {
+        operation: "adopt",
+        type: { kind: "void" },
+        offset: 0,
+        minimum: 0,
+      },
+      id: adopted,
+      arguments: operands,
+      start: node.start,
+      end: node.end,
+    });
+    const borrowed = save(adopted, "Uint8Array", node),
+      buffer = nextValue++;
+    emit({
+      kind: "array-buffer",
+      id: buffer,
+      array: load(borrowed, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(buffer, "reference", node);
+  }
+  /** `new T(buffer, byteOffset?, length?)` (InitializeTypedArrayFromArrayBuffer
+   * for a fixed-length buffer): the offset must be a multiple of the element
+   * width; without a length the view runs to the buffer's end, which must
+   * fall on an element boundary; with one, the view must fit. */
+  function arrayViewNew(node: Expression & { readonly kind: "new" }): number {
+    const type = scalarType(node);
+    if (
+      type !== "Uint8Array" &&
+      type !== "Uint16Array" &&
+      type !== "Uint32Array" &&
+      type !== "Float64Array"
+    )
+      throw "array view contract invariant";
+    const width =
+      type === "Uint8Array"
+        ? 1
+        : type === "Uint16Array"
+          ? 2
+          : type === "Float64Array"
+            ? 8
+            : 4;
+    const source = node.arguments[0],
+      offsetArgument = node.arguments[1],
+      lengthArgument = node.arguments[2];
+    if (source === undefined) throw "array view buffer invariant";
+    const rawBuffer = value(source),
+      offsetInput =
+        offsetArgument === undefined ? undefined : value(offsetArgument),
+      lengthInput =
+        lengthArgument === undefined ? undefined : value(lengthArgument),
+      buffer =
+        slots[rawBuffer] === "general"
+          ? nativeSharedArrayBufferArgument(rawBuffer, node)
+          : rawBuffer;
+    const zero = numberSlot(0, node),
+      elementBytes = numberSlot(width, node);
+    const offset = argumentIndex(offsetInput, () => zero, node);
+    if (width > 1)
+      requireCondition(
+        binarySlot(
+          "===",
+          binarySlot("%", offset, elementBytes, node),
+          zero,
+          node,
+        ),
+        "RangeError",
+        "start offset of " + type + " should be a multiple of " + width,
+        node,
+      );
+    const byteLengthId = nextValue++;
+    emit({
+      kind: "array-buffer-byte-length",
+      id: byteLengthId,
+      buffer: load(buffer, node),
+      start: node.start,
+      end: node.end,
+    });
+    const bytes = save(byteLengthId, "number", node);
+    // The view's element count when no length is given.
+    function remaining(): number {
+      if (width > 1)
+        requireCondition(
+          binarySlot(
+            "===",
+            binarySlot("%", bytes, elementBytes, node),
+            zero,
+            node,
+          ),
+          "RangeError",
+          "byte length of " + type + " should be a multiple of " + width,
+          node,
+        );
+      requireCondition(
+        binarySlot("<=", offset, bytes, node),
+        "RangeError",
+        "start offset is outside the bounds of the buffer",
+        node,
+      );
+      return binarySlot(
+        "/",
+        binarySlot("-", bytes, offset, node),
+        elementBytes,
+        node,
+      );
+    }
+    const length = argumentIndex(lengthInput, remaining, node);
+    if (lengthInput !== undefined && undefinedSlots[lengthInput] !== 1) {
+      // An explicit length must fit: checked again for an absent optional
+      // length, where it holds by construction.
+      requireCondition(
+        binarySlot(
+          "<=",
+          binarySlot(
+            "+",
+            offset,
+            binarySlot("*", length, elementBytes, node),
+            node,
+          ),
+          bytes,
+          node,
+        ),
+        "RangeError",
+        "invalid typed array length",
+        node,
+      );
+    }
+    const id = nextValue++;
+    emit({
+      kind: "array-view",
+      id,
+      type,
+      buffer: load(buffer, node),
+      byteOffset: load(offset, node),
+      length: load(length, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, type, node);
   }
   /** Continue when boolean slot `condition` holds, else throw `error`. */
   /** Records and typed arrays: present references (never undefined). */
@@ -4814,7 +5263,7 @@ export function lowerFunction(
   function runtimeCall(
     target: number,
     args: readonly number[],
-    node: Span,
+    node: IRSpan,
     callee?: number,
   ): number | undefined {
     const type = signatures[target]?.returnType;
@@ -5404,6 +5853,8 @@ export function lowerFunction(
       bigIntSlots[result] = 1;
     if (result !== undefined && info(node).speculative === true)
       speculativeSlots[result] = 1;
+    if (result !== undefined && info(node).sharedBufferFlow === true)
+      sharedBufferFlowSlots[result] = 1;
     return result;
   }
   function chainExpression(node: Expression): number | undefined {
@@ -5515,7 +5966,7 @@ export function lowerFunction(
   function dynamicCall(
     callee: number,
     args: readonly number[],
-    node: Span,
+    node: IRSpan,
   ): number | undefined {
     const target = dynamicSignatures[callee];
     if (target === undefined) throw "dynamic object signature invariant";
@@ -5524,7 +5975,7 @@ export function lowerFunction(
   function dynamicResult(
     target: number,
     args: readonly number[],
-    node: Span,
+    node: IRSpan,
   ): number {
     const result = dynamicCall(target, args, node);
     if (result === undefined) throw "dynamic object result invariant";
@@ -5691,6 +6142,7 @@ export function lowerFunction(
         const object = value(node.object),
           key = dynamicKey(node);
         const raw = dynamicResult(runtime.read, [object, key], node);
+        if (metadata.downcast !== undefined) return raw;
         const schema = metadata.dynamicContract;
         const type = metadata.type;
         if (schema === undefined || type === "void")
@@ -5822,10 +6274,115 @@ export function lowerFunction(
         throw "dynamic object operation invariant";
     }
   }
-  function generalCall(
+  /** Advance a fixed-arity FFI call only after evaluating the real callee
+   * and arguments. A missed witness reuses those values in ordinary lowering. */
+  function fixedFfiCall(
     node: Expression & { readonly kind: "call" },
+    target: number,
+    assertion?: Expression,
+  ): number {
+    const call = info(node).generalCall;
+    if (call === undefined) throw "fixed FFI fallback invariant";
+    const callee = ungroup(node.callee);
+    const base =
+      callee.kind === "member" || callee.kind === "index"
+        ? callee.object
+        : undefined;
+    const overrides: {
+      readonly expression: Expression;
+      readonly previous: number | undefined;
+    }[] = [];
+    function useValue(expression: Expression, slot: number): void {
+      overrides.push({
+        expression,
+        previous: expressionOverrides.get(expression),
+      });
+      expressionOverrides.set(expression, slot);
+    }
+    const fixedReceiver = base === undefined ? undefined : value(base);
+    const previousBase =
+      base === undefined ? undefined : expressionOverrides.get(base);
+    if (base !== undefined && fixedReceiver !== undefined)
+      expressionOverrides.set(base, fixedReceiver);
+    const bound = value(node.callee);
+    if (base !== undefined) {
+      if (previousBase === undefined) expressionOverrides.delete(base);
+      else expressionOverrides.set(base, previousBase);
+    }
+    const argumentsSlots = node.arguments.map(value);
+    if (base !== undefined && fixedReceiver !== undefined)
+      useValue(base, fixedReceiver);
+    useValue(node.callee, bound);
+    for (let index = 0; index < node.arguments.length; index++) {
+      const argument = node.arguments[index],
+        slot = argumentsSlots[index];
+      if (argument === undefined || slot === undefined)
+        throw "fixed FFI argument invariant";
+      useValue(argument, slot);
+    }
+    const fast = runtimeCall(target, [bound, ...argumentsSlots], node);
+    if (fast === undefined) throw "fixed FFI result invariant";
+    const type = assertion === undefined ? "general" : "number";
+    const output = temporary(type);
+    const hit = block(),
+      miss = block(),
+      done = block();
+    const present = nextValue++;
+    emit({
+      kind: "optional-present",
+      id: present,
+      value: load(fast, node),
+      start: node.start,
+      end: node.end,
+    });
+    choose(present, hit, miss, node);
+    current = hit;
+    const result = nextValue++;
+    emit({
+      kind: "optional-value",
+      id: result,
+      value: load(fast, node),
+      start: node.start,
+      end: node.end,
+    });
+    store(output, coerce(result, type, node), node);
+    jump(done.id, node);
+    current = miss;
+    const generic = generalCall(node, call);
+    const downcast =
+      assertion === undefined ? undefined : info(assertion).downcast;
+    const returned =
+      assertion === undefined || downcast === undefined
+        ? generic
+        : checkedDowncast(generic, assertion, downcast);
+    store(output, load(returned, node), node);
+    jump(done.id, node);
+    for (let index = overrides.length - 1; index >= 0; index--) {
+      const override = overrides[index];
+      if (override === undefined) throw "fixed FFI override invariant";
+      if (override.previous === undefined)
+        expressionOverrides.delete(override.expression);
+      else expressionOverrides.set(override.expression, override.previous);
+    }
+    current = done;
+    return output;
+  }
+
+  function generalCall(
+    node: Expression & { readonly kind: "call" | "new" },
     call: { readonly target: number | undefined },
   ): number {
+    if (node.kind === "new") {
+      const callee = value(node.callee);
+      const rest = info(node).rest;
+      const constructor = call.target;
+      if (rest === undefined || constructor === undefined)
+        throw "general construction invariant";
+      const argumentsList = packCallArguments(node.arguments, rest, node);
+      const result = runtimeCall(constructor, [callee, argumentsList], node);
+      if (result === undefined) throw "general construction result invariant";
+      return result;
+    }
     const target = ungroup(node.callee);
     const base =
       target.kind === "member" || target.kind === "index"
@@ -5883,7 +6440,7 @@ export function lowerFunction(
   function nativeArrayTest(
     slot: number,
     kind: NativeTypedArray,
-    node: Span,
+    node: IRSpan,
   ): number {
     const packed = coerce(load(slot, node), "general", node);
     const test = nextValue++;
@@ -5897,14 +6454,167 @@ export function lowerFunction(
     });
     return save(test, "boolean", node);
   }
+  /** True when `operand` is a native typed SharedArrayBuffer (a borrowed
+   * Uint8Array viewing a published block of the isolate's shared block
+   * service). */
+  function nativeSharedArrayBufferTest(operand: number, node: IRSpan): number {
+    const checker = sharedBlockCheck;
+    if (checker === undefined) return booleanSlot(false, node);
+    const general = save(
+      coerce(load(operand, node), "general", node),
+      "general",
+      node,
+    );
+    const result = temporary("boolean");
+    const check = block(),
+      notBuffer = block(),
+      done = block();
+    choose(
+      load(nativeArrayTest(general, "Uint8Array", node), node),
+      check,
+      notBuffer,
+      node,
+    );
+    current = check;
+    const array = save(
+      coerce(load(general, node), "Uint8Array", node),
+      "Uint8Array",
+      node,
+    );
+    const args: number[] = [load(array, node)];
+    const id = nextValue++;
+    emit({
+      kind: "call",
+      id,
+      target: checker,
+      arguments: args,
+      start: node.start,
+      end: node.end,
+    });
+    store(result, id, node);
+    jump(done.id, node);
+    current = notBuffer;
+    store(result, load(booleanSlot(false, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  /** True when `operand` is a native typed array of `kind`, excluding native
+   * typed SharedArrayBuffers (which share the Uint8Array tag). */
+  function isNativeTypedArray(
+    operand: number,
+    kind: NativeTypedArray,
+    node: IRSpan,
+  ): number {
+    if (kind !== "Uint8Array" || sharedBlockCheck === undefined)
+      return nativeArrayTest(operand, kind, node);
+    const result = temporary("boolean");
+    const check = block(),
+      notArray = block(),
+      done = block();
+    choose(
+      load(nativeArrayTest(operand, kind, node), node),
+      check,
+      notArray,
+      node,
+    );
+    current = check;
+    store(
+      result,
+      load(
+        unarySlot(
+          "!",
+          nativeSharedArrayBufferTest(operand, node),
+          "boolean",
+          node,
+        ),
+        node,
+      ),
+      node,
+    );
+    jump(done.id, node);
+    current = notArray;
+    store(result, load(booleanSlot(false, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  /** A general value consumed as a native SharedArrayBuffer: a native typed
+   * SharedArrayBuffer or a fixed-length realm SharedArrayBuffer projected to
+   * its borrowed byte array (projectNativeSharedArrayBuffer), else TypeError. */
+  function nativeSharedArrayBufferArgument(slot: number, node: IRSpan): number {
+    const source = save(
+      coerce(load(slot, node), "general", node),
+      "general",
+      node,
+    );
+    sharedBufferFlowSlots[source] = 0;
+    const accepted = block(),
+      projecting = block();
+    choose(
+      load(nativeSharedArrayBufferTest(source, node), node),
+      accepted,
+      projecting,
+      node,
+    );
+    current = projecting;
+    const project = dynamicObjects?.projectSharedArrayBuffer;
+    if (project !== undefined) {
+      const projected = dynamicResult(project, [source], node);
+      const acceptProjected = block(),
+        reject = block();
+      choose(
+        load(nativeArrayTest(projected, "Uint8Array", node), node),
+        acceptProjected,
+        reject,
+        node,
+      );
+      current = acceptProjected;
+      store(source, load(projected, node), node);
+      jump(accepted.id, node);
+      current = reject;
+    }
+    throwNativeError("TypeError", nativeSharedArrayBufferMessage, node);
+    current = accepted;
+    return save(
+      coerce(load(source, node), "reference", node),
+      "reference",
+      node,
+    );
+  }
+  /** A general value passed to a native typed-array parameter: a native
+   * array of `kind`, or a realm typed array of that kind viewed natively
+   * (projectNativeTypedArray), else a TypeError. */
   function nativeArrayArgument(
     slot: number,
     kind: NativeTypedArray,
     node: Span,
   ): number {
-    const test = nativeArrayTest(slot, kind, node);
+    const project = dynamicObjects?.projectTypedArray;
+    let source = slot;
+    if (project !== undefined) {
+      source = save(coerce(load(slot, node), "general", node), "general", node);
+      const native = block(),
+        projecting = block();
+      choose(
+        load(isNativeTypedArray(slot, kind, node), node),
+        native,
+        projecting,
+        node,
+      );
+      current = projecting;
+      const projected = dynamicResult(
+        project,
+        [source, stringSlot(kind, node)],
+        node,
+      );
+      store(source, load(projected, node), node);
+      jump(native.id, node);
+      current = native;
+    }
+    const test = isNativeTypedArray(source, kind, node);
     requireCondition(test, "TypeError", nativeArrayArgumentMessage, node);
-    return save(coerce(load(slot, node), kind, node), kind, node);
+    return save(coerce(load(source, node), kind, node), kind, node);
   }
   function arrayInstanceOf(
     node: Expression & { readonly kind: "binary" },
@@ -5912,15 +6622,34 @@ export function lowerFunction(
     metadata: ExpressionInfo,
   ): number {
     const operand = value(node.left);
-    const test = nativeArrayTest(operand, kind, node);
     const global = metadata.realmGlobal,
       instance = metadata.realmInstanceOf;
-    if (global === undefined || instance === undefined) return test;
+    if (global === undefined || instance === undefined)
+      return isNativeTypedArray(operand, kind, node);
     const constructor = dynamicResult(
       global,
       [
         stringSlot(kind, node.right),
         stringSlot("installTypedArrayIntrinsics", node.right),
+      ],
+      node.right,
+    );
+    return callRealmInstanceOf(instance, operand, constructor, node);
+  }
+  function sharedBufferInstanceOf(
+    node: Expression & { readonly kind: "binary" },
+    metadata: ExpressionInfo,
+  ): number {
+    const operand = value(node.left);
+    const global = metadata.realmGlobal,
+      instance = metadata.realmInstanceOf;
+    if (global === undefined || instance === undefined)
+      return nativeSharedArrayBufferTest(operand, node);
+    const constructor = dynamicResult(
+      global,
+      [
+        stringSlot("SharedArrayBuffer", node.right),
+        stringSlot("installSharedArrayBufferIntrinsics", node.right),
       ],
       node.right,
     );
@@ -5936,6 +6665,20 @@ export function lowerFunction(
       realmErrors === undefined ? operand : exposedError(operand, node);
     const kind = temporary("string"),
       done = block();
+    if (sharedBlockCheck !== undefined) {
+      const yes = block(),
+        no = block();
+      choose(
+        load(nativeSharedArrayBufferTest(left, node), node),
+        yes,
+        no,
+        node,
+      );
+      current = yes;
+      store(kind, load(stringSlot("SharedArrayBuffer", node), node), node);
+      jump(done.id, node);
+      current = no;
+    }
     const arrays: NativeTypedArray[] = [
       "Uint8Array",
       "Uint16Array",
@@ -6191,6 +6934,8 @@ export function lowerFunction(
         return list;
       }
       case "new": {
+        const general = metadata.generalCall;
+        if (general !== undefined) return generalCall(node, general);
         const construction = records?.constructors?.get(node);
         if (construction !== undefined) {
           if (
@@ -6294,6 +7039,11 @@ export function lowerFunction(
           }
           return set;
         }
+        if (info(node).builtin === "array-buffer-new")
+          return arrayBufferNew(node);
+        if (info(node).builtin === "shared-array-buffer-new")
+          return sharedArrayBufferNew(node);
+        if (info(node).builtin === "array-view-new") return arrayViewNew(node);
         const type = scalarType(node);
         if (
           info(node).builtin !== "array-new" ||
@@ -6774,6 +7524,18 @@ export function lowerFunction(
       case "satisfies": {
         const downcast = info(node).downcast;
         if (downcast === undefined) return expression(node.expression);
+        const called = ungroup(node.expression);
+        if (
+          called.kind === "call" &&
+          scalarType(node) === "number" &&
+          downcast.tests.length === 1 &&
+          downcast.tests[0] === "number" &&
+          downcast.records.length === 0 &&
+          downcast.errors === undefined
+        ) {
+          const target = info(called).fixedFfiCall;
+          if (target !== undefined) return fixedFfiCall(called, target, node);
+        }
         return checkedDowncast(value(node.expression), node, downcast);
       }
       case "group":
@@ -7144,9 +7906,25 @@ export function lowerFunction(
           recordAccess(object, result, "read", access, node);
           return result;
         }
+        const metadata = info(node).builtin;
+        if (metadata === "array-buffer-byte-length") {
+          const rawBuffer = value(node.object),
+            buffer =
+              slots[rawBuffer] === "general"
+                ? nativeSharedArrayBufferArgument(rawBuffer, node)
+                : rawBuffer,
+            id = nextValue++;
+          emit({
+            kind: "array-buffer-byte-length",
+            id,
+            buffer: load(buffer, node.object),
+            start: node.start,
+            end: node.end,
+          });
+          return save(id, "number", node);
+        }
         const array = value(node.object),
           id = nextValue++;
-        const metadata = info(node).builtin;
         emit({
           kind:
             metadata === "array-buffer" ||
@@ -7159,11 +7937,21 @@ export function lowerFunction(
           start: node.start,
           end: node.end,
         });
-        return save(
+        const result = save(
           id,
           metadata === "array-buffer" ? "reference" : "number",
           node,
         );
+        // A detached view's data sits before its owner's (a negative
+        // offset): its byteOffset is 0.
+        if (metadata === "array-byte-offset")
+          conditionalStore(
+            binarySlot("<", result, numberSlot(0, node), node),
+            result,
+            () => numberSlot(0, node),
+            node,
+          );
+        return result;
       }
       case "binary": {
         if (info(node).builtin === "list-has") {
@@ -7180,6 +7968,8 @@ export function lowerFunction(
         const metadata = info(node);
         const array = metadata.arrayInstance;
         if (array !== undefined) return arrayInstanceOf(node, array, metadata);
+        if (metadata.sharedBufferInstance === true)
+          return sharedBufferInstanceOf(node, metadata);
         const instance = metadata.realmInstanceOf;
         if (instance !== undefined && metadata.builtin === undefined) {
           const left = value(node.left);
@@ -7274,16 +8064,20 @@ export function lowerFunction(
           else if (
             literal.kind === "string" &&
             compared.kind === "unary" &&
-            compared.operator === "typeof" &&
-            (compared.generalTag === true ||
-              info(compared).realmTypeof === undefined)
+            compared.operator === "typeof"
           ) {
             const name = literal.value;
+            // The realm classifier differs from the value tag only for
+            // values with the object tag: callable and [[IsHTMLDDA]] objects,
+            // symbols and BigInts. Number, boolean and string results are
+            // the tag itself; "undefined" also covers [[IsHTMLDDA]].
             if (
               name === "number" ||
               name === "boolean" ||
               name === "string" ||
-              name === "undefined" ||
+              (name === "undefined" &&
+                (compared.generalTag === true ||
+                  info(compared).realmTypeof === undefined)) ||
               (name === "object" && compared.generalTag === true)
             ) {
               category = name;
@@ -7895,6 +8689,8 @@ export function lowerFunction(
           });
           return save(id, "general", node);
         }
+        if (metadata.fixedFfiCall !== undefined)
+          return fixedFfiCall(node, metadata.fixedFfiCall);
         const general = metadata.generalCall;
         if (general !== undefined) return generalCall(node, general);
         const created = info(node).cView;
@@ -8135,8 +8931,9 @@ export function lowerFunction(
               receiverType === "Uint16Array" ||
               receiverType === "Uint32Array" ||
               receiverType === "Float64Array";
-            const callback = value(argument),
-              input = typed ? undefined : listRuntime(target.object),
+            const callback = value(argument);
+            if (typed) rejectDetachedReceiver(receiver, node);
+            const input = typed ? undefined : listRuntime(target.object),
               output =
                 builtin === "list-map" || builtin === "list-filter"
                   ? listRuntime(node)
@@ -8536,11 +9333,11 @@ export function lowerFunction(
           }
           if (builtin === "list-join" || builtin === "array-join") {
             const receiver = value(target.object),
-              args = node.arguments.map(value),
-              runtime =
-                builtin === "list-join"
-                  ? listRuntime(target.object)
-                  : undefined;
+              args = node.arguments.map(value);
+            if (builtin === "array-join")
+              rejectDetachedReceiver(receiver, node);
+            const runtime =
+              builtin === "list-join" ? listRuntime(target.object) : undefined;
             function literal(text: string): number {
               const id = nextValue++;
               emit({
@@ -9068,6 +9865,7 @@ export function lowerFunction(
             const destination = value(target.object),
               args = node.arguments.map(value),
               input = args[0];
+            rejectDetachedReceiver(destination, node);
             if (input === undefined) throw "set source invariant";
             const kind = info(node).arraySetSource;
             let source = input;
@@ -9150,8 +9948,9 @@ export function lowerFunction(
           }
           if (builtin === "array-subarray" || builtin === "array-slice") {
             const array = value(target.object),
-              args = node.arguments.map(value),
-              lengthId = nextValue++;
+              args = node.arguments.map(value);
+            rejectDetachedReceiver(array, node);
+            const lengthId = nextValue++;
             emit({
               kind: "array-length",
               id: lengthId,
@@ -9205,8 +10004,10 @@ export function lowerFunction(
             return save(id, scalarType(node), node);
           }
           if (builtin === "array-reverse" || builtin === "list-reverse") {
-            const receiver = value(target.object),
-              runtime =
+            const receiver = value(target.object);
+            if (builtin === "array-reverse")
+              rejectDetachedReceiver(receiver, node);
+            const runtime =
                 builtin === "list-reverse"
                   ? listRuntime(target.object)
                   : undefined,
@@ -9320,6 +10121,7 @@ export function lowerFunction(
           if (builtin === "array-at" || builtin === "list-at") {
             const receiver = value(target.object),
               args = node.arguments.map(value);
+            if (builtin === "array-at") rejectDetachedReceiver(receiver, node);
             const index = integerIndex(
               save(
                 numericInput(args[0] ?? numberSlot(0, node), node),
@@ -10335,6 +11137,25 @@ export function lowerFunction(
           const args = node.arguments.map(value),
             first = args[0];
           if (first === undefined) throw "builtin argument invariant";
+          if (builtin === "array-fill" && array !== undefined)
+            rejectDetachedReceiver(array, node);
+          if (
+            builtin === "atomics-uint8" ||
+            builtin === "atomics-uint16" ||
+            builtin === "atomics-uint32"
+          ) {
+            if (target.kind !== "member") throw "atomics callee invariant";
+            return atomicsCall(
+              target.property,
+              builtin === "atomics-uint8"
+                ? "Uint8Array"
+                : builtin === "atomics-uint16"
+                  ? "Uint16Array"
+                  : "Uint32Array",
+              args,
+              node,
+            );
+          }
           if (
             builtin === "is-finite" ||
             builtin === "is-nan" ||

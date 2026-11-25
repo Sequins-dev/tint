@@ -135,6 +135,84 @@ test("CFG inlining remaps repeated calls, branches, parameters and return values
     );
   assert.deepEqual(input, snapshot);
 });
+test("calls inline only within one interruptibility class", () => {
+  const input = fixture();
+  // A runtime caller keeps its call to an interruptible Worker function,
+  // which would otherwise lose its polls.
+  const kept = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    (fn) => fn.name === "absolute",
+  );
+  assert.ok(kept);
+  assert.equal(kept.inlined, 0);
+  assert.deepEqual(kept.module, input);
+  // A loop-free runtime helper inlines into Worker code: it adds no poll.
+  const leaf = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    (fn) => fn.name === "caller",
+  );
+  assert.equal(leaf?.inlined, 2);
+  // A runtime helper with a loop stays a call from Worker code, so its loop
+  // never gains a poll.
+  const absolute = input.functions[1]!;
+  const looping: ModuleIR = {
+    functions: [
+      input.functions[0]!,
+      {
+        ...absolute,
+        blocks: absolute.blocks
+          .map((block) =>
+            block.id === 2
+              ? {
+                  ...block,
+                  terminator: {
+                    kind: "branch" as const,
+                    condition: 5,
+                    consequent: 0,
+                    alternate: 3,
+                    ...span,
+                  },
+                }
+              : block,
+          )
+          .concat([
+            {
+              id: 3,
+              instructions: [{ kind: "load", id: 6, slot: 0, ...span }],
+              terminator: { kind: "return", value: 6, ...span },
+            },
+          ]),
+      },
+    ],
+  };
+  const separated = inlineSmallFunctions(
+    looping,
+    10000,
+    false,
+    false,
+    undefined,
+    (fn) => fn.name === "caller",
+  );
+  assert.equal(separated?.inlined ?? 0, 0);
+  // Two application functions inline as they would without Workers.
+  const same = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    () => true,
+  );
+  assert.equal(same?.inlined, 2);
+});
 test("budget exhaustion rolls back and allocating, recursive or environment-bearing callees are retained", () => {
   const input = fixture();
   assert.equal(inlineSmallFunctions(input, 1), undefined);
@@ -1464,6 +1542,126 @@ test("callees with local string slots inline", () => {
     ),
   );
 });
+/** A bound record view: test the record tag and take the reference payload. */
+function recordViewModule(recordTest: boolean): ModuleIR {
+  const view: FunctionIR = {
+    id: 1,
+    name: "view",
+    exported: false,
+    parameters: [0],
+    slots: ["general"],
+    returnType: "optional-reference",
+    entry: 0,
+    blocks: recordTest
+      ? [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "general-record-is",
+                id: 1,
+                value: 0,
+                record: 0,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 0, ...span },
+              {
+                kind: "general-value",
+                id: 3,
+                value: 2,
+                type: "reference",
+                ...span,
+              },
+              { kind: "reference-wrap", id: 4, value: 3, ...span },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "reference-none", id: 5, ...span }],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+        ]
+      : [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "general-value",
+                id: 1,
+                value: 0,
+                type: "reference",
+                ...span,
+              },
+              { kind: "reference-wrap", id: 2, value: 1, ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+  };
+  return {
+    records: [
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["general"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      view,
+    ],
+  };
+}
+
+test("bound record views inline their record test and payload read", () => {
+  const viewModule = recordViewModule(true);
+  assert.equal(verify(viewModule).ok, true, JSON.stringify(verify(viewModule)));
+  const inlined = inlineSmallFunctions(viewModule, 10000);
+  assert.ok(inlined);
+  assert.equal(inlined.inlined, 1);
+  assert.equal(
+    verify(inlined.module).ok,
+    true,
+    JSON.stringify(verify(inlined.module)),
+  );
+  const caller = inlined.module.functions[0]!;
+  const operations = caller.blocks.flatMap((block) => block.instructions);
+  assert.ok(operations.some((op) => op.kind === "general-record-is"));
+  assert.ok(!operations.some((op) => op.kind === "call"));
+});
+
 test("single-instruction script cache intrinsics inline past the reference allowance", () => {
   const calls: Array<FunctionIR["blocks"][number]["instructions"][number]> = [
     { kind: "load", id: 0, slot: 0, ...span },

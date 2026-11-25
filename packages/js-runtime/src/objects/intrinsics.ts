@@ -1,4 +1,5 @@
 import type { ScriptPropertyKey } from "./symbols.ts";
+import type { ErrorRealm } from "./errors.ts";
 import {
   ensureExoticSlots,
   createCallableObject,
@@ -6,6 +7,7 @@ import {
   type OrdinaryObject,
   type ObjectHooks,
   type ObjectCall,
+  type ObjectRegisterCall,
 } from "./operations.ts";
 
 /** Standard non-enumerable intrinsic property on an embedding-owned object. */
@@ -67,6 +69,31 @@ export function builtinFunction(
     implementation,
   );
   builtinFunctionMetadata(fn, name, length, hooks);
+  return fn;
+}
+
+/** A builtin that also handles 0–2 positional arguments in registers without
+ * allocating an arguments array. Calls with more arguments, `.call`/`.apply`,
+ * or foreign wrappers still enter `implementation`. */
+export function builtinRegisterFunction(
+  prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
+  realm: ErrorRealm,
+  name: string,
+  length: number,
+  implementation: ObjectCall<unknown>,
+  invoke: ObjectRegisterCall<unknown>,
+  hooks: ObjectHooks<unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const fn = builtinFunction(prototype, name, length, implementation, hooks);
+  fn.internalRegisterCall = {
+    context: { realm, scriptOrModule: undefined },
+    traceName: name,
+    callerPolicy: "opaque",
+    constructible: false,
+    invoke,
+    invokeWide: undefined,
+    scriptInvoke: undefined,
+  };
   return fn;
 }
 

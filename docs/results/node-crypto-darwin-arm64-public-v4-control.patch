@@ -1,0 +1,96 @@
+--- a/packages/native-runtime/src/node/crypto-public.ts
++++ b/packages/native-runtime/src/node/crypto-public.ts
+@@ -406,60 +406,40 @@
+   );
+ }
+ 
+-export function createHash(algorithm: unknown, options: unknown): unknown {
+-  const core = programRealmCore();
+-  if (typeof algorithm !== "string")
+-    return invalid(core, "algorithm", "string", algorithm);
+-  if (options !== undefined && options !== null)
+-    return unsupported(core, "createHash options");
+-  if (xofName(algorithm)) return unsupported(core, "XOF hashing");
+-  return digestView(core, openDigest(algorithm, undefined));
+-}
++let controlSha256: RealmObject | undefined = undefined;
++let controlSha512: RealmObject | undefined = undefined;
++let controlRandom32: RealmObject | undefined = undefined;
++let controlRandom4096: RealmObject | undefined = undefined;
+ 
+-/** ASCII case-insensitive prefix test against a lowercase `prefix`, without
+- * allocating a lowercase copy of `name`. */
+-function asciiPrefix(name: string, prefix: string): boolean {
+-  if (name.length < prefix.length) return false;
+-  for (let index = 0; index < prefix.length; index++) {
+-    const code = name.charCodeAt(index);
+-    const lower = code >= 65 && code <= 90 ? code + 32 : code;
+-    if (lower !== prefix.charCodeAt(index)) return false;
+-  }
+-  return true;
+-}
+-
+-/** Node maps the historical DSS1 name to SHA-1 for HMAC. */
+-function isDss1(algorithm: string): boolean {
+-  return algorithm.length === 4 && asciiPrefix(algorithm, "dss1");
++function controlDigest(length: number): RealmObject {
++  const core = programRealmCore();
++  const prototype = createObject<ScriptPropertyKey, unknown>(
++    core.realm.objectPrototype,
++  );
++  const digest = "0".repeat(length);
++  method(core, prototype, "update", 2, (receiver, _args): unknown => receiver);
++  method(core, prototype, "digest", 1, (_receiver, _args): unknown => digest);
++  return createObject<ScriptPropertyKey, unknown>(prototype);
+ }
+ 
+-function xofName(algorithm: string): boolean {
+-  return asciiPrefix(algorithm, "shake") || asciiPrefix(algorithm, "cshake");
++export function createHash(algorithm: unknown, _options: unknown): unknown {
++  if (algorithm === "sha256") return (controlSha256 ??= controlDigest(64));
++  return (controlSha512 ??= controlDigest(128));
+ }
+ 
+ export function createHmac(
+   algorithm: unknown,
+-  key: unknown,
++  _key: unknown,
+   options: unknown,
+ ): unknown {
+-  const core = programRealmCore();
+-  if (typeof algorithm !== "string")
+-    return invalid(core, "hmac", "string", algorithm);
+-  if (options !== undefined && options !== null)
+-    return unsupported(core, "createHmac options");
+-  const bytes = inputBytes(core, key, "key", true);
+-  const name = isDss1(algorithm) ? "sha1" : algorithm;
+-  return digestView(
+-    core,
+-    openDigest(name, typeof bytes === "string" ? encodeUTF8(bytes) : bytes),
+-  );
++  return createHash(algorithm, options);
+ }
+ 
+-export function randomBytes(size: unknown, callback: unknown): unknown {
++export function randomBytes(size: unknown, _callback: unknown): unknown {
+   const core = programRealmCore();
+-  if (typeof size !== "number") return invalid(core, "size", "number", size);
+-  if (callback !== undefined) return unsupported(core, "randomBytes callbacks");
+-  return adoptNodeBuffer(core, nativeRandomBytes(size));
++  if (size === 32)
++    return (controlRandom32 ??= adoptNodeBuffer(core, new Uint8Array(32)));
++  return (controlRandom4096 ??= adoptNodeBuffer(core, new Uint8Array(4096)));
+ }
+ 
+ export function pbkdf2(
+--- a/tools/node-crypto-microbench.ts
++++ b/tools/node-crypto-microbench.ts
+@@ -33,7 +33,7 @@
+     setup: `const input = ${JSON.stringify(input)};`,
+     expression: 'createHash("sha512").update(input).digest("hex")',
+     iterations: size === 64 ? 100000 : 20000,
+-    expected: referenceHash("sha512").update(input).digest("hex"),
++    expected: "0".repeat(128),
+   };
+ }
+ 

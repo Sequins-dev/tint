@@ -134,6 +134,10 @@ export function installProgramConstructorGroup(
     case "installArrayBufferIntrinsics":
       installProgramArrayBufferIntrinsics(core);
       break;
+    case "installSharedArrayBufferIntrinsics":
+      // SharedArrayBuffer requires an embedding-provided shared block service
+      // (installed by the Worker host or fixture harness when opted in).
+      break;
     case "installTypedArrayIntrinsics":
       installProgramTypedArrayIntrinsics(core);
       break;

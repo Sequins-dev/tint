@@ -180,7 +180,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
     module = lowering.scriptRuntimeImports(span, false, false, false, "module");
   assert.equal(count(script), 121);
   assert.equal(count(module), 125);
-  assert.equal(lowering.scriptRuntimeSurface().length, 219);
+  assert.equal(lowering.scriptRuntimeSurface().length, 223);
   assert.ok(
     lowering
       .scriptRuntimeSurface()

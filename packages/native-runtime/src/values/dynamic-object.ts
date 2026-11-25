@@ -26,6 +26,7 @@ import {
   createObject,
   createRuntimeError,
   deleteObjectValueProperty,
+  exoticSlots,
   finishObjectPropertyContract,
   installProgramObjectIntrinsics,
   installProgramConstructorGroup,
@@ -40,6 +41,7 @@ import {
   setObjectLiteralPrototype,
   setObjectValueProperty,
   symbolDescriptiveString,
+  typedArrayWindow,
   viewObjectValue,
   viewSymbolValue,
   type ContractField,
@@ -50,6 +52,8 @@ import {
   type PropertyValueRule,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
+import { byteStorageData } from "@tint/js-runtime/bytes";
+import { detachNativeArray } from "../intrinsics/native-array-detach.ts";
 
 type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
 let cachedContracts: Map<string, ObjectShapeContract> | undefined = undefined;
@@ -378,6 +382,8 @@ export function realmInstanceOf(
     prototype = core.realm.prototypes.get("type");
   else if (nativeKind === "RangeError")
     prototype = core.realm.prototypes.get("range");
+  else if (nativeKind === "SharedArrayBuffer")
+    prototype = core.realm.sharedArrayBufferPrototype;
   else if (nativeKind !== "") {
     installProgramTypedArrayIntrinsics(core);
     prototype = core.realm.typedArrayPrototypes.get(nativeKind.slice(0, -5));
@@ -391,6 +397,114 @@ export function realmInstanceOf(
   );
   if (result.error !== "none") throw createRuntimeError(core.realm, "type");
   return result.value;
+}
+/** A realm typed array as the native typed array of `nativeKind` (Uint8Array,
+ * Uint16Array, Uint32Array or Float64Array) that views the same bytes, for
+ * typed code (the slice 2b buffer view): over an ordinary buffer's backing,
+ * which collections move together with the view, or over a shared block's
+ * nonmoving payload. An ordinary buffer keeps one view per element kind and
+ * window, and its detachment detaches them as V8's typed arrays observe it:
+ * their length becomes 0. A typed array already detached is an empty one.
+ * Undefined when there is no fixed native window: another kind, a big-endian
+ * or length-tracking view, a resizable buffer or a growable shared one. */
+export function projectNativeTypedArray(
+  value: unknown,
+  nativeKind: string,
+): unknown {
+  const core = programRealmCore();
+  const object = viewObjectValue(value, core.realm.objectPrototype);
+  const data =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTypedArrayData;
+  if (
+    data === undefined ||
+    data.kind + "Array" !== nativeKind ||
+    data.endian !== "little"
+  )
+    return undefined;
+  const length = data.length;
+  if (length === undefined) return undefined;
+  const storage = data.storage;
+  if (storage.kind === "shared") {
+    const bytes = storage.growable
+      ? undefined
+      : storage.service.bytes(storage.handle);
+    if (bytes === undefined || typedArrayWindow(data) === undefined)
+      return undefined;
+    return nativeView(nativeKind, bytes, data.byteOffset, length);
+  }
+  if (storage.resizable) return undefined;
+  const bytes = byteStorageData(storage);
+  if (bytes === undefined) return emptyNativeArray(nativeKind);
+  if (typedArrayWindow(data) === undefined) return undefined;
+  let known = storage.nativeViews;
+  while (known !== undefined) {
+    if (
+      known.kind === nativeKind &&
+      known.byteOffset === data.byteOffset &&
+      known.length === length
+    )
+      return known.view;
+    known = known.next;
+  }
+  const view = nativeView(nativeKind, bytes, data.byteOffset, length);
+  storage.nativeViews = {
+    kind: nativeKind,
+    byteOffset: data.byteOffset,
+    length,
+    view,
+    next: storage.nativeViews,
+  };
+  if (storage.onDetach === undefined) {
+    const owner = storage;
+    storage.onDetach = (): void => {
+      let projected = owner.nativeViews;
+      while (projected !== undefined) {
+        detachNativeArray(projected.view);
+        projected = projected.next;
+      }
+    };
+  }
+  return view;
+}
+/** A realm SharedArrayBuffer as the borrowed native byte array that views
+ * its shared block payload, for typed code. Growable shared buffers have
+ * no fixed native window and return undefined (throwing TypeError). */
+export function projectNativeSharedArrayBuffer(value: unknown): unknown {
+  const core = programRealmCore();
+  const object = viewObjectValue(value, core.realm.objectPrototype);
+  const storage =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalSharedArrayBufferData;
+  if (storage === undefined || storage.growable) return undefined;
+  return storage.service.bytes(storage.handle);
+}
+/** A native typed array of `nativeKind` over `bytes` from `byteOffset`. */
+function nativeView(
+  nativeKind: string,
+  bytes: Uint8Array,
+  byteOffset: number,
+  length: number,
+): unknown {
+  const offset = bytes.byteOffset + byteOffset;
+  if (nativeKind === "Uint8Array")
+    return new Uint8Array(bytes.buffer, offset, length);
+  if (nativeKind === "Uint16Array")
+    return new Uint16Array(bytes.buffer, offset, length);
+  if (nativeKind === "Uint32Array")
+    return new Uint32Array(bytes.buffer, offset, length);
+  if (nativeKind === "Float64Array")
+    return new Float64Array(bytes.buffer, offset, length);
+  return undefined;
+}
+function emptyNativeArray(nativeKind: string): unknown {
+  if (nativeKind === "Uint8Array") return new Uint8Array(0);
+  if (nativeKind === "Uint16Array") return new Uint16Array(0);
+  if (nativeKind === "Uint32Array") return new Uint32Array(0);
+  if (nativeKind === "Float64Array") return new Float64Array(0);
+  return undefined;
 }
 export function invokeArrayMethod(
   receiver: unknown,
@@ -496,6 +610,7 @@ export function bindingRest(
 }
 export {
   projectUnaryNumber,
+  projectNativeCallback,
   projectNumberList,
   projectNativeRecord,
 } from "../intrinsics/value-views.ts";

@@ -1,0 +1,1050 @@
+{
+ "set": "typed-transport-pair",
+ "date": "2026-11-22T16:41:38.842Z",
+ "platform": "darwin-arm64",
+ "node": "v26.13.1",
+ "images": {
+  "tint-typed-transport-a": {
+   "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/typed-transport/tint-hosted-worker-bench-typed-transport-3QqgZO/worker-bench-typed-transport",
+   "sha256": "2d612db7c2383e035bede9161cb48b930fe258028c41606130d44dc738ee3a33"
+  },
+  "tint-typed-transport-b": {
+   "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/after-ports/tint-hosted-worker-bench-typed-transport-rX3h7W/worker-bench-typed-transport",
+   "sha256": "af825382f9f35720b2189b2ec868d3539c5a3f8aee662661750f069e15e47aa8"
+  }
+ },
+ "rounds": [
+  {
+   "round": 0,
+   "order": [
+    "tint-typed-transport-a",
+    "tint-typed-transport-b",
+    "node-typed-transport"
+   ],
+   "load": [
+    5.71923828125,
+    6.0419921875,
+    6.57177734375
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3178.964041,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.52358293533325}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":51.073832988739014}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":47.98591709136963}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":185.66241717338562}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":184.74645805358887}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":137.8148329257965}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":85.08054208755493}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":83.43395805358887}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":85.41341590881348}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 3187.74525,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":34.311290979385376}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":26.83958411216736}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":35.72120785713196}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":134.33629202842712}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":275.4424579143524}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":337.29237484931946}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 341.87216699999954,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":20.160542000000007}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.823874999999987}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":8.027916000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.579208999999992}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":4.568458000000021}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.420541999999983}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":9.97399999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":14.298957999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":12.930791}"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "order": [
+    "tint-typed-transport-a",
+    "node-typed-transport",
+    "tint-typed-transport-b"
+   ],
+   "load": [
+    5.74169921875,
+    6.041015625,
+    6.568359375
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3399.525125000001,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":54.08954191207886}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":64.27820897102356}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":62.78591704368591}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":183.4342920780182}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":154.83958387374878}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":159.2962920665741}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":89.32079195976257}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":192.34962511062622}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":109.96662497520447}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 390.1436250000006,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":12.45233300000001}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":10.338750000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.852792000000022}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.607291000000004}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.641249999999985}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.280625000000015}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":8.404750000000007}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":8.201624999999979}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":10.254750000000001}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2827.4438329999994,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":34.572415828704834}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":33.68616700172424}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":29.86583399772644}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":121.97204089164734}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.1894998550415}\r"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "order": [
+    "node-typed-transport",
+    "tint-typed-transport-a",
+    "tint-typed-transport-b"
+   ],
+   "load": [
+    5.76220703125,
+    6.0400390625,
+    6.56494140625
+   ],
+   "observations": [
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 167.85275000000001,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":10.846790999999996}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":9.645209000000008}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.423833000000002}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.862082999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.207499999999996}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.791125000000008}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.408749999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":10.120833000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":10.448291999999995}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3155.1966250000023,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":41.89695882797241}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.19670820236206}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":50.20020794868469}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":143.6802499294281}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":238.10516691207886}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":140.08620810508728}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":92.5569999217987}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":92.08387494087219}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":90.0767080783844}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 3099.447208999998,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.47125005722046}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":29.22487497329712}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":80.59033298492432}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":140.40708303451538}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":198.54641604423523}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":241.39633297920227}\r"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "order": [
+    "node-typed-transport",
+    "tint-typed-transport-b",
+    "tint-typed-transport-a"
+   ],
+   "load": [
+    6.9384765625,
+    6.271484375,
+    6.64013671875
+   ],
+   "observations": [
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 324.25937500000146,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":8.937999999999988}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":11.244709}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":10.43829199999999}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.346292000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":3.8927500000000066}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":3.7078329999999937}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":5.738292000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.568416999999982}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":8.355917000000005}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2960.8407079999997,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":55.86283302307129}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":43.4765419960022}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":24.359916925430298}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":206.48516702651978}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":162.08462500572205}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":215.49658298492432}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3335.807249999998,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":49.05604100227356}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":46.38595795631409}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":54.94308304786682}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":169.81487488746643}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":158.8564579486847}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":161.21591711044312}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":103.38687491416931}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":105.28166699409485}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":99.64862489700317}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 4,
+   "order": [
+    "tint-typed-transport-b",
+    "node-typed-transport",
+    "tint-typed-transport-a"
+   ],
+   "load": [
+    6.783203125,
+    6.25,
+    6.63037109375
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2813.4607090000027,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":32.41779112815857}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":35.02975010871887}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.083457946777344}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":124.21479201316833}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":135.0306670665741}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":131.5460000038147}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 291.15570800000205,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":8.011124999999993}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.709249999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.599374999999981}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.919208999999995}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.373165999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.07654100000002}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":10.481750000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.536333000000013}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.660583000000003}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3005.3104170000006,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":41.984874963760376}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":44.41616702079773}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":39.23970913887024}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":143.72708296775818}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":140.91958284378052}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":136.33212518692017}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":83.67254090309143}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":83.70475006103516}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":86.43966698646545}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 5,
+   "order": [
+    "tint-typed-transport-b",
+    "tint-typed-transport-a",
+    "node-typed-transport"
+   ],
+   "load": [
+    6.64013671875,
+    6.22900390625,
+    6.62060546875
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2673.026665999998,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":29.940124988555908}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":24.670584201812744}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":28.45295810699463}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":127.58337497711182}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":124.87749981880188}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":111.88633298873901}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2923.9418330000044,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":39.80066704750061}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":36.31925010681152}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":34.41591715812683}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":126.47470903396606}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":115.13575005531311}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":120.73183298110962}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":84.28837490081787}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":84.63770794868469}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":77.22379183769226}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 148.62345800000185,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.365541999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.695208999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.730125000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.78479200000001}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.765999999999991}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.716667000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.558790999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.059874999999991}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.831292000000005}"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 6,
+   "order": [
+    "tint-typed-transport-a",
+    "tint-typed-transport-b",
+    "node-typed-transport"
+   ],
+   "load": [
+    6.3486328125,
+    6.17529296875,
+    6.59912109375
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2940.304790999995,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":38.31258296966553}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.046249866485596}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":39.68595790863037}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":125.31170892715454}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":116.7844169139862}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":117.53925013542175}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.01979207992554}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":87.00958299636841}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":79.00029182434082}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2652.359709000004,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":20.433416843414307}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":33.04199981689453}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":26.024333953857422}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":115.51641702651978}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":109.6458330154419}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":112.40350008010864}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 191.34850000000006,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":8.221207999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":9.051249999999996}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":9.764291999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.2131669999999986}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.161291000000006}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":7.541250000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":10.424541000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":11.27425000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":8.373458999999997}"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 7,
+   "order": [
+    "tint-typed-transport-a",
+    "node-typed-transport",
+    "tint-typed-transport-b"
+   ],
+   "load": [
+    6.080078125,
+    6.12255859375,
+    6.57763671875
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2946.4617910000015,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.9684579372406}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":39.612375020980835}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.72350001335144}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":126.2604591846466}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":123.29404211044312}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":119.82616591453552}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":77.42650008201599}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.64333319664001}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":77.7592921257019}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 146.7274580000012,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":8.060209}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.675458000000006}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.637374999999992}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.878957999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.811374999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.530250000000009}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.241874999999993}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.914500000000004}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.621791000000002}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2672.501292000001,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.032958984375}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.76116704940796}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.624207973480225}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":109.80004119873047}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":110.9977080821991}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.0263340473175}\r"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 8,
+   "order": [
+    "node-typed-transport",
+    "tint-typed-transport-a",
+    "tint-typed-transport-b"
+   ],
+   "load": [
+    5.6796875,
+    6.03564453125,
+    6.54150390625
+   ],
+   "observations": [
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 160.38604199999827,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":14.148291999999998}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.688457999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.629458}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":4.950292000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.42708300000001}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.2847909999999985}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.17108300000001}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.651375000000002}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.547708}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3128.2365409999984,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":46.51566696166992}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.79954195022583}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":43.71233296394348}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":144.86833310127258}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":145.60854196548462}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":143.13812494277954}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":79.74066591262817}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":81.35433292388916}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":80.0807089805603}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2733.0965829999986,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":35.46000003814697}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":28.2271671295166}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":33.67858290672302}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":121.55037498474121}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":143.04437494277954}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":137.55329203605652}\r"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 9,
+   "order": [
+    "node-typed-transport",
+    "tint-typed-transport-b",
+    "tint-typed-transport-a"
+   ],
+   "load": [
+    5.9453125,
+    6.08447265625,
+    6.5556640625
+   ],
+   "observations": [
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 157.47366599999805,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.9155000000000015}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.738833999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.473583000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.1930420000000055}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.557124999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.413332999999994}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.572707999999992}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.018333999999996}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.6413749999999965}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2436.1670000000013,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":29.975250005722046}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":31.515083074569702}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":27.272833108901978}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":117.54995799064636}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2955.2709170000016,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":39.73650002479553}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":44.45504188537598}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":41.73141598701477}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":127.51758289337158}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":126.74412488937378}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":120.9346251487732}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.61941695213318}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":82.94516706466675}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":79.32495784759521}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 10,
+   "order": [
+    "tint-typed-transport-b",
+    "node-typed-transport",
+    "tint-typed-transport-a"
+   ],
+   "load": [
+    5.7890625,
+    6.0498046875,
+    6.54052734375
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2680.3616249999977,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":35.69262480735779}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":33.63641619682312}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":32.15583395957947}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":113.61208391189575}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":111.31004190444946}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":118.5662088394165}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 145.48937499999738,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.128416000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.480499999999992}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.302042}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.468708000000007}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.870667000000012}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.172874999999991}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.227125000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.7502919999999875}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.655124999999998}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2900.8307499999937,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.26200008392334}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.25629186630249}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":22.24316716194153}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":130.44204211235046}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":118.69974994659424}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":119.40350008010864}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":77.87970805168152}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":76.89654207229614}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.4284999370575}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 11,
+   "order": [
+    "tint-typed-transport-b",
+    "tint-typed-transport-a",
+    "node-typed-transport"
+   ],
+   "load": [
+    5.5654296875,
+    5.9990234375,
+    6.51953125
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2683.144042,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":36.560165882110596}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":36.88212513923645}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":43.82429218292236}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":113.87833404541016}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":112.46499991416931}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":125.35945892333984}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2948.920874999996,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.84191703796387}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.38304114341736}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.12529110908508}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":125.02558279037476}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":120.85179090499878}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.8698329925537}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.83145904541016}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":81.99799990653992}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":82.36737489700317}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 145.22212500000023,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.334875000000004}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.552249999999994}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.504750000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.182333}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.850999999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.076291999999995}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.300832999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.8542910000000035}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":6.885874999999999}"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 12,
+   "order": [
+    "tint-typed-transport-a",
+    "tint-typed-transport-b",
+    "node-typed-transport"
+   ],
+   "load": [
+    5.19970703125,
+    5.916015625,
+    6.48681640625
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2921.3696250000066,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.785332918167114}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":39.348000049591064}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":36.57091689109802}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":121.17562508583069}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":120.05666589736938}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":116.09774994850159}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.51854109764099}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":80.20845818519592}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":80.04670906066895}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2704.6010410000017,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":27.63783311843872}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.25441598892212}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":33.73129200935364}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":125.18562507629395}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":126.95600008964539}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":124.55187511444092}\r"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 150.36699999999837,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.318582999999997}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.3877919999999975}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.54225000000001}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.1860829999999964}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.847959000000003}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.798209}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.429791999999992}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":8.198334000000003}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.627583000000001}"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 13,
+   "order": [
+    "tint-typed-transport-a",
+    "node-typed-transport",
+    "tint-typed-transport-b"
+   ],
+   "load": [
+    4.943359375,
+    5.8505859375,
+    6.46044921875
+   ],
+   "observations": [
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 2956.7812080000003,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":45.50370812416077}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":40.063124895095825}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":36.64687514305115}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.10366702079773}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":128.0900421142578}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.92404198646545}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":81.09883308410645}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.38941597938538}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":78.49662518501282}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 148.64545799999905,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.624583999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.585374999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":6.498457999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.057333}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.783833999999999}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.978958000000006}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.481709000000009}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.016833000000005}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.559792000000002}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2916.0696250000037,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.645707845687866}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":38.950292110443115}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":37.418874979019165}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":119.76466703414917}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":330.117791891098}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.9305408000946}\r"
+     ],
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "round": 14,
+   "order": [
+    "node-typed-transport",
+    "tint-typed-transport-a",
+    "tint-typed-transport-b"
+   ],
+   "load": [
+    4.8779296875,
+    5.80615234375,
+    6.43701171875
+   ],
+   "observations": [
+    {
+     "member": "node-typed-transport",
+     "status": 42,
+     "passed": true,
+     "wallMs": 306.1987919999956,
+     "lines": [
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":9.142792}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":8.167333000000013}",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":7.218290999999994}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":6.852374999999995}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.702291000000002}",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":5.714124999999996}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":7.6017909999999915}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":8.422750000000008}",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":9.515417000000014}"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-a",
+     "status": 0,
+     "passed": true,
+     "wallMs": 3012.341082999992,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":42.43345808982849}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":41.410332918167114}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":41.06991696357727}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":129.13258385658264}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":127.23641681671143}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":123.24504113197327}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":79.39558291435242}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":82.27470803260803}\r",
+      "WORKER_BENCH {\"operation\":\"typed-string-1KiB\",\"count\":1000,\"elapsed\":80.9360830783844}\r",
+      "WORKER_BENCH_EXIT True 42"
+     ],
+     "stderr": ""
+    },
+    {
+     "member": "tint-typed-transport-b",
+     "status": 0,
+     "passed": false,
+     "wallMs": 2801.9618749999936,
+     "lines": [
+      "WORKER_BENCH_STOPPED",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":30.070791006088257}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":33.17579102516174}\r",
+      "WORKER_BENCH {\"operation\":\"typed-round-trip\",\"count\":1000,\"elapsed\":28.0237078666687}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":122.00487494468689}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":156.59333300590515}\r",
+      "WORKER_BENCH {\"operation\":\"typed-batch\",\"count\":10000,\"elapsed\":205.07804203033447}\r"
+     ],
+     "stderr": ""
+    }
+   ]
+  }
+ ]
+}

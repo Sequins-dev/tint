@@ -94,11 +94,30 @@ export {
   openLibrary,
   openProgram,
   findSymbol,
+  findSymbolWords,
   closeLibrary,
   optionalSymbol,
+  registerOptionalLibrary,
   type ForeignFunction,
   type DynamicCallback,
   type LibraryHandle,
+  type SymbolAddress,
   type ForeignSignature,
   type ForeignType,
 } from "./dynamic.ts";
+export {
+  bytesAtWords,
+  stableAddressWords,
+  callScalarForeign,
+  callScalarForeignCallbacks,
+} from "./address-words.ts";
+
+export { allocateCallbackStub, releaseCallbackStub } from "./callback-stubs.ts";
+export {
+  callbackDispatcher,
+  hasRegisteredCallbacks,
+  registeredCallbackActivity,
+  rethrowCallbackFailure,
+  type CallbackActivity,
+  type CallbackDispatcher,
+} from "./index.ts";

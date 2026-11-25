@@ -29,6 +29,12 @@ export type HostOperation =
   | "native-function-signature"
   | "native-value-function-descriptor"
   | "native-value-function-signature"
+  /** Detach a native typed-array view (a general value): its length becomes
+   * 0 and its data address sits one word before its owner's data, which
+   * collections preserve and no attached view has (a negative byte
+   * offset). Any other value is left unchanged. A typed program's views of
+   * a realm ArrayBuffer observe its detachment this way. */
+  | "native-array-detach"
   | "root-head"
   | "context-domain"
   /** Whether a general value is the one a stack overflow throws (tag 0 with
@@ -47,6 +53,11 @@ export type HostOperation =
    * registry: (code address, code byte length, table address) -> 0 or -1. */
   | "stack-maps-register"
   | "memory-map"
+  /** Registration-stub storage. Only the reviewed FFI runtime owns these
+   * windows and publishes fixed native thunks through this capability. */
+  | "executable-callback-map"
+  | "executable-callback-write"
+  | "executable-callback-unmap"
   | "executable-map"
   | "executable-write"
   | "executable-call-number"
@@ -60,7 +71,11 @@ export type HostOperation =
   /** Return a page-aligned range of a private anonymous mapping to the OS
    * while keeping it mapped read/write: (address, byteLength) -> 0, or
    * -errno. The range reads as zero afterwards. The collector releases an
-   * evacuated semispace with it; the caller proves nothing live remains. */
+   * evacuated semispace with it; the caller proves nothing live remains.
+   * Defensively, both backends release only a range inside the context's
+   * managed mapping or inside the releasable window its identity page
+   * records (nativeIdentityReleasable*Offset: the shared string arena);
+   * any other range, or a misaligned one, returns -1 and maps nothing. */
   | "memory-release"
   | "memory-read-word"
   | "memory-write-word"
@@ -68,6 +83,33 @@ export type HostOperation =
   /** Bounded copy of a Uint8Array into a caller-owned raw writable window:
    * (address, byteLength, offset, bytes) -> 0, or -1 for invalid input. */
   | "memory-write-bytes"
+  /** A binary64 at an eight-byte-aligned offset of a caller-owned raw window,
+   * with the memory-read-word bounds contract: (address, byteLength, offset)
+   * reads it (NaN for invalid input); (address, byteLength, offset, value)
+   * writes it and returns 0, or -1 for invalid input. */
+  | "memory-read-float64"
+  | "memory-write-float64"
+  /** Bulk UTF-16 copies between strings and a caller-owned raw window.
+   * memory-write-string copies every code unit of a string (two bytes each,
+   * native byte order) to (address, byteLength, offset) and returns 0, or -1
+   * when the units do not fit or an input is invalid. memory-read-string
+   * returns a fresh string of `units` code units copied from the window;
+   * invalid input traps. */
+  | "memory-write-string"
+  | "memory-read-string"
+  /** Shared string bodies (docs/design-worker-runtime.md, "Shared string
+   * bodies"): flat string objects outside every managed heap, in the
+   * process's shared string arena, which every isolate may reference.
+   * string-address returns a string object's address. string-at returns the
+   * string object at an address the caller proves holds one; anything but an
+   * exact, nonzero, eight-byte-aligned integer below 2^53 traps. string-copy
+   * copies a flat string object verbatim (header, length and units), by the
+   * extent its header gives, to (address, byteLength, offset) of a
+   * caller-owned raw window and returns that extent in bytes, or -1 when the
+   * string is not flat, does not fit or an input is invalid. */
+  | "string-address"
+  | "string-at"
+  | "string-copy"
   /** GDB/LLDB JIT interface of a jitDebugInterface image: the address of
    * __jit_debug_descriptor, and a call of __jit_debug_register_code. */
   | "jit-debug-descriptor"
@@ -131,6 +173,7 @@ export type HostOperation =
    * string-from-utf8 with `whole`). */
   | "string-utf8-length"
   | "string-write-utf8"
+  | "string-write-utf8-bytes"
   | "string-from-utf8"
   | "string-from-utf8-whole"
   /** The number-string cache (foundation's numeric/number-string-cache.ts),
@@ -145,12 +188,27 @@ export type HostOperation =
    * window. */
   | "string-flat"
   | "string-flatten-into";
+/** Code generation shares the executable mapping ABI with callback stubs. */
+export function executableHostOperation(
+  operation: HostOperation,
+): HostOperation {
+  switch (operation) {
+    case "executable-callback-map":
+      return "executable-map";
+    case "executable-callback-write":
+      return "executable-write";
+    case "executable-callback-unmap":
+      return "executable-unmap";
+    default:
+      return operation;
+  }
+}
 /** Internal filesystem ABI: failures return -errno captured immediately. Paths
  * are NUL-terminated UTF-8 byte arrays; read/write cover the supplied view. */
 export function hostParameters(
   operation: HostOperation,
 ): readonly ScalarType[] | undefined {
-  switch (operation) {
+  switch (executableHostOperation(operation)) {
     case "word-park":
       return ["number", "number", "number"];
     case "word-wake":
@@ -189,6 +247,7 @@ export function hostParameters(
       return ["reference"];
     case "native-value-function-descriptor":
     case "native-value-function-signature":
+    case "native-array-detach":
       return ["general"];
     case "external-memory-register":
       return ["number", "number"];
@@ -235,6 +294,18 @@ export function hostParameters(
     case "executable-write":
     case "memory-write-bytes":
       return ["number", "number", "number", "Uint8Array"];
+    case "memory-read-float64":
+      return ["number", "number", "number"];
+    case "memory-write-float64":
+    case "memory-read-string":
+      return ["number", "number", "number", "number"];
+    case "memory-write-string":
+    case "string-copy":
+      return ["number", "number", "number", "string"];
+    case "string-address":
+      return ["string"];
+    case "string-at":
+      return ["number"];
     case "executable-unmap":
     case "memory-unmap":
     case "memory-release":
@@ -273,6 +344,7 @@ export function hostParameters(
       return ["Uint8Array", "number", "number"];
     case "string-copy-latin1":
     case "string-write-utf8":
+    case "string-write-utf8-bytes":
       return ["string", "number", "number", "Uint8Array", "number"];
     case "string-ascii-prefix":
     case "string-utf8-length":
@@ -379,6 +451,19 @@ export function hostInstruction(
         start: 0,
         end: 0,
       };
+    case "string-write-utf8-bytes":
+      return {
+        kind: "string-write-utf8",
+        id,
+        string: first,
+        begin: second,
+        limit: third,
+        bytes: args[3] ?? 0,
+        offset: args[4] ?? 0,
+        written: true,
+        start: 0,
+        end: 0,
+      };
     case "string-from-utf8":
       return {
         kind: "string-from-utf8",
@@ -468,9 +553,12 @@ export function hostReturnType(
     operation === "number-string-cache" ||
     operation === "string-index-cache" ||
     operation === "sha256-rounds" ||
-    operation === "jit-debug-register"
+    operation === "jit-debug-register" ||
+    operation === "native-array-detach"
   )
     return "void";
+  if (operation === "memory-read-string" || operation === "string-at")
+    return "string";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed" ||
     operation === "engine-range-error"

@@ -31,15 +31,37 @@ interface Flow {
   demanded: boolean;
 }
 
-export function aggregatePayload(types: readonly Type[], id: number): boolean {
+export function nativeByteView(type: Type | undefined): boolean {
+  return (
+    type?.kind === "Uint8Array" ||
+    type?.kind === "Uint16Array" ||
+    type?.kind === "Uint32Array" ||
+    type?.kind === "Float64Array"
+  );
+}
+
+export function aggregatePayload(
+  types: readonly Type[],
+  id: number,
+  bytes: boolean = false,
+): boolean {
   const type = types[id];
+  if (
+    bytes &&
+    (type?.kind === "Uint8Array" ||
+      type?.kind === "Uint16Array" ||
+      type?.kind === "Uint32Array" ||
+      type?.kind === "Float64Array")
+  )
+    return type.arrayFlow !== true && type.view === undefined;
   if (type?.kind === "array") return type.realmArray !== true;
   if (type?.kind === "object")
     return type.stringIndex === undefined && type.realmRecord !== true;
   return (
     type?.kind === "union" &&
     type.members.some(
-      (member) => member !== undefined && aggregatePayload(types, member),
+      (member) =>
+        member !== undefined && aggregatePayload(types, member, bytes),
     )
   );
 }
@@ -59,6 +81,7 @@ export function planLocalRealm(
   returnOwners: ReadonlyKeyIndex<Span, number>,
   sinks: ReadonlyKeyIndex<Expression, boolean>,
   reads: ReadonlyKeyIndex<Expression, boolean>,
+  bytes: boolean = false,
 ): LocalRealmPlan {
   const flows: Flow[] = [];
   const nodes = createKeyIndex<Expression, Flow>(syntaxHash);
@@ -84,7 +107,9 @@ export function planLocalRealm(
       );
       const plan: DirectFunction = {
         parameters,
-        result: aggregatePayload(types, type.result) ? newFlow() : undefined,
+        result: aggregatePayload(types, type.result, bytes)
+          ? newFlow()
+          : undefined,
         escapes:
           exported ||
           params.some(
@@ -176,7 +201,7 @@ export function planLocalRealm(
     expression: (mapped, node) => {
       const type = expressions.get(node);
       const flow =
-        type !== undefined && aggregatePayload(types, type)
+        type !== undefined && aggregatePayload(types, type, bytes)
           ? newFlow()
           : undefined;
       if (flow !== undefined) {
@@ -230,6 +255,18 @@ export function planLocalRealm(
           } else if (flow !== undefined) flow.rejected = true;
           break;
         }
+        case "new": {
+          const type = kind(node);
+          if (flow === undefined) break;
+          if (!bytes || !nativeByteView(type) || !localAllocation(node))
+            flow.rejected = true;
+          else
+            for (const argument of node.arguments) {
+              if (argument === undefined) throw "byte view argument invariant";
+              use(argument, flow);
+            }
+          break;
+        }
         case "call": {
           let target = node.callee;
           while (target.kind === "group" || target.kind === "satisfies")
@@ -248,13 +285,33 @@ export function planLocalRealm(
               const arg = node.arguments[i],
                 param = fn.parameters[i];
               if (arg === undefined || param === undefined) continue;
-              if (aggregatePayload(types, bindingTypes[param] ?? -1))
+              if (aggregatePayload(types, bindingTypes[param] ?? -1, bytes))
                 use(arg, local(param));
             }
             connect(flow, fn.result);
             if (flow !== undefined && fn.result === undefined)
               flow.rejected = true;
             break;
+          }
+          if (
+            bytes &&
+            target.kind === "member" &&
+            nativeByteView(kind(target.object))
+          ) {
+            const name = target.property;
+            if (
+              name === "subarray" ||
+              name === "slice" ||
+              name === "fill" ||
+              name === "set"
+            ) {
+              const receiver = use(target.object, flow);
+              if (name === "set") {
+                const source = node.arguments[0];
+                if (source !== undefined) use(source, receiver);
+              }
+              break;
+            }
           }
           if (
             target.kind === "member" &&
@@ -437,7 +494,9 @@ export function planLocalRealm(
   nodes.forEach((flow, node) => {
     if (
       selected.has(flow.id) &&
-      (node.kind === "array" || node.kind === "object")
+      (node.kind === "array" ||
+        node.kind === "object" ||
+        (bytes && node.kind === "new"))
     )
       literals.set(node, true);
   });
