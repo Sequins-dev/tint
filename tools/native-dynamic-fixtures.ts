@@ -367,13 +367,10 @@ export function run(): number {
 }
 `;
 }
-export function verifyDynamicFixture(
-  library: string,
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyDynamicFixture(library: string): string {
   return verifyHostedFixture(
     dynamicFixtureSource(library),
-    runtimeEntry === undefined ? "ffi-dynamic" : "ffi-dynamic-copying",
+    "ffi-dynamic",
     [
       ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
@@ -382,7 +379,6 @@ export function verifyDynamicFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
     },

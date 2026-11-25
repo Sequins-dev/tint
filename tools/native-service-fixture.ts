@@ -14,6 +14,7 @@ export function nativeServiceFixtureRequest(
     runtimes: [],
     globals: ["undefined"],
   },
+  generationalBarriers: boolean = false,
 ) {
   const checked = checkClosureModule(
     parse(
@@ -41,7 +42,7 @@ export function nativeServiceFixtureRequest(
   const directory = compiler.createManagedSurfaceDirectory(
     "counter",
     canonical.value,
-    facts.value,
+    { ...facts.value, generationalBarriers },
     "Frame",
   );
   assert.ok(directory.ok, JSON.stringify(directory));
@@ -86,5 +87,6 @@ export function nativeServiceFixtureRequest(
     instantiations: new Map(),
     read: read.value,
     runtime,
+    ...(generationalBarriers ? { generationalBarriers: true } : {}),
   };
 }

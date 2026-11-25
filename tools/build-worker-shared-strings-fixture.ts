@@ -6,8 +6,7 @@
 //
 // TINT_SHARED_STRINGS_COLLECTOR selects the collectors under test:
 // - serial: generational heaps small enough for serial minors and marking;
-// - parallel: heaps whose minors and marking run on the collector pool;
-// - copying: the copying runtime, where every collection is full.
+// - parallel: heaps whose minors and marking run on the collector pool.
 // Build with TINT_BUILD_ONLY=1 and run the image under LLDB: it exits 42 and
 // prints "shared strings: ok".
 import { readFileSync } from "node:fs";
@@ -28,7 +27,6 @@ const collector = process.env.TINT_SHARED_STRINGS_COLLECTOR ?? "parallel";
 const heaps: Record<string, number> = {
   serial: 8388608,
   parallel: 67108864,
-  copying: 33554432,
 };
 const managedBytes = heaps[collector];
 if (managedBytes === undefined)
@@ -83,9 +81,6 @@ export function run(): number { return main("${peer.id}"${stress ? "" : `, "${co
   {
     ...workerFixtureOptions([peer.id]),
     managedBytes,
-    ...(collector === "copying"
-      ? { runtimeEntry: "initializeCopyingRuntime" as const }
-      : {}),
     requireTyped: true,
     onGeneralFallback: (modules: readonly string[], reason: string): void => {
       throw Error("general fallback for " + modules.join(", ") + ": " + reason);

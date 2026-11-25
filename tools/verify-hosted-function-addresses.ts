@@ -87,7 +87,7 @@ export function run():number {
   [{ module: memory, namespace: "function-address-memory" }],
   {
     allowJit: true,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeRuntime",
     managedBytes: 67108864,
     allocationCapacity: 1048576,
     rootCapacity: 16384,

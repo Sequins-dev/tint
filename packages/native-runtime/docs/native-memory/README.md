@@ -29,22 +29,14 @@ inputs or bounds, before any write. Zero-length ranges may be one-past the windo
 The generated leaf uses word copies and byte tails; it neither allocates nor calls
 a platform library. Mapping validity and exclusive access remain caller obligations.
 
-`configureLinearAllocation(state, starts)` is an explicit host capability for
-publishing permanent collector control buffers. It checks the eight-word state,
-zero initial cursor/base, positive aligned semispace limit (at most 0x7ffffff0),
-and bitmap capacity before modifying either the reserved pointer or context.
-Failure leaves the previous publication intact. Both buffers must remain outside
-the moving heap for the whole context lifetime; the caller establishes ownership.
-The operation returns 0 on publication and -1 on invalid state.
-
 `configureGenerationalAllocation(state, starts, dirty, queue)` publishes sixteen
 state words plus permanent nursery-start, dirty-object, and Float64 queue buffers.
 Publication validates zero initial tops, the aligned old prefix and nursery extent,
 bitmap capacities, and a nonempty queue before mutating the context. The runtime
 owns zeroing and lifetime of these disjoint buffers. Queue count/capacity and overflow
-are maintained jointly by the runtime and generated nonallocating barrier. Ordinary
-linear publication clears the generation flag. See `docs/allocation-throughput.md`
-for the state layout and runtime policy; the intrinsic itself performs no collection.
+are maintained jointly by the runtime and generated nonallocating barrier. See
+`docs/allocation-throughput.md` for the state layout and runtime policy; the intrinsic
+itself performs no collection.
 
 ## Trusted native function identities
 

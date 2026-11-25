@@ -2,7 +2,6 @@
 //   TINT_BUILD_ONLY=1 node tools/worker-bench/build-native.ts <variant>
 // Variants:
 //   plain      kernels in a program without Workers (the project collector)
-//   copying    the same program with the copying collector (attribution)
 //   raw        kernels plus a node:zlib kernel (C calls, external storage)
 //   main       kernels on the main thread of a program that starts a Worker
 //   worker     kernels inside a Worker of that program
@@ -27,15 +26,9 @@ if (process.env.TINT_BUILD_ONLY !== "1")
   throw Error("Worker benchmarks are measured outside the builder");
 const variant = process.argv[2] ?? "";
 if (
-  ![
-    "plain",
-    "copying",
-    "raw",
-    "main",
-    "worker",
-    "transport",
-    "typed-transport",
-  ].includes(variant)
+  !["plain", "raw", "main", "worker", "transport", "typed-transport"].includes(
+    variant,
+  )
 )
   throw Error("unknown Worker benchmark variant " + variant);
 // Measurements of typed variants must be of typed code.
@@ -89,7 +82,7 @@ function checksums(
 }
 const expected = checksums(kernelNames, kernelScale, runKernel);
 
-if (variant === "plain" || variant === "copying") {
+if (variant === "plain") {
   verifyHostedFixture(
     `import { monotonicMilliseconds } from "clock";
 import { runKernelsInline } from "./inline.ts";
@@ -109,9 +102,6 @@ export function run(): number {
       ...sizes,
       requireTyped: true,
       hostBindings: [clockBinding],
-      ...(variant === "copying"
-        ? { runtimeEntry: "initializeCopyingRuntime" as const }
-        : {}),
     },
   );
 } else if (variant === "raw") {

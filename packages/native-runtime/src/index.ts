@@ -96,6 +96,5 @@ export function initializeRuntime(
   if (heap === undefined) throw "INVALID_RUNTIME_HEAP";
   return heap.allocate;
 }
-export { initializeCopyingRuntime } from "./copying.ts";
 
 export { initializeGenerationalRuntime } from "./generational.ts";

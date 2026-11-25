@@ -39,8 +39,10 @@ import {
   readObjectValueProperty,
   setObjectLiteralPrototype,
   setObjectValueProperty,
+  symbolDescriptiveString,
   typedArrayWindow,
   viewObjectValue,
+  viewSymbolValue,
   type ContractField,
   type ObjectShapeContract,
   type OrdinaryObject,
@@ -249,6 +251,14 @@ export function speculativeUnary(operator: string, value: unknown): unknown {
   );
 }
 export function speculativeString(value: unknown): string {
+  const core = programRealmCore();
+  return stringValueOrThrow(value, core.hooks, core.realm);
+}
+/** `String(value)` for a value typed code holds as unknown: a Symbol's
+ * descriptive string, any other value's ToString. */
+export function stringConstructor(value: unknown): string {
+  const symbol = viewSymbolValue(value);
+  if (symbol !== undefined) return symbolDescriptiveString(symbol);
   const core = programRealmCore();
   return stringValueOrThrow(value, core.hooks, core.realm);
 }

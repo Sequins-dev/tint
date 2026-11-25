@@ -74,7 +74,7 @@ export function run(): number { return compute() === ${(() => {
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 4194304,
     allocationCapacity: 65536,
     rootCapacity: 4096,

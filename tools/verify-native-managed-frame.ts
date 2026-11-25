@@ -433,7 +433,7 @@ verifyHostedFixture(
   ],
   {
     allowJit: true,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeRuntime",
     managedBytes: 16777216,
     allocationCapacity: 262144,
     hostBindings: [

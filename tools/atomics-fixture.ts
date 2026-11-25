@@ -241,7 +241,7 @@ export function verifyAtomicsFixture(): string {
     {
       managedBytes: 16777216,
       allocationCapacity: 262144,
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry: "initializeGenerationalRuntime",
       hostBindings,
     },
   );

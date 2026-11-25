@@ -64,6 +64,7 @@ export function dynamicObjectRuntimeSource(
     "speculativeBinary",
     "speculativeString",
     "speculativeUnary",
+    "stringConstructor",
     "realmGlobal",
     "realmInstanceOf",
     "invokeArrayMethod",

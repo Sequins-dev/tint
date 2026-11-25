@@ -17,7 +17,7 @@ tail.value=43;if(probe(head,43)!==43||seek(head,42)!==undefined||seek(head,43)!=
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 524288,
     allocationCapacity: 32768,
     rootCapacity: 4096,

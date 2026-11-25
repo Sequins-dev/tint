@@ -47,63 +47,6 @@ test("executable host grants require explicit JIT image permission", () => {
   }
 });
 
-test("copying runtime start-bit metadata must cover the configured semispace", () => {
-  const stages: string[] = [];
-  const request: BuildRequest = {
-    modules: [],
-    entry: "main",
-    start: "run",
-    runtimes: [],
-    hostBindings: [],
-    allocatorModule: "allocator",
-    runtimeModule: "runtime",
-    runtimeEntry: "initializeCopyingRuntime",
-    memoryModule: "memory",
-    identifier: "copying-policy-test",
-    managedBytes: 16777216,
-    controlBytes: 65536,
-    allocationCapacity: 131072,
-    rootCapacity: 4096,
-    stackBytes: 1048576,
-    report: (stage) => stages.push(stage),
-  };
-  for (const [managedBytes, allocationCapacity] of [
-    // One start bit per 8-byte granule: a 16 MiB heap's 8 MiB semispace
-    // needs 32,768 bitmap words, which 10,891 descriptors (3n + 96) cover.
-    [16777216, 4096],
-    [16777216, 10890],
-    [16, 256],
-    [Number.NaN, 256],
-    [8192, 0],
-    [8192, 1.5],
-  ]) {
-    const rejected = buildMacOSProgram({
-      ...request,
-      managedBytes: managedBytes!,
-      allocationCapacity: allocationCapacity!,
-    });
-    assert.equal(rejected.ok, false);
-    if (!rejected.ok) assert.equal(rejected.error.stage, "memory-policy");
-  }
-  assert.deepEqual(
-    stages,
-    [],
-    "invalid workspaces fail before any native compilation",
-  );
-  for (const [managedBytes, allocationCapacity] of [
-    [16777216, 10891],
-    [8192, 1],
-  ]) {
-    const allowed = buildMacOSProgram({
-      ...request,
-      managedBytes: managedBytes!,
-      allocationCapacity: allocationCapacity!,
-    });
-    assert.equal(allowed.ok, false);
-    if (!allowed.ok) assert.equal(allowed.error.stage, "allocator");
-  }
-});
-
 test("generational runtime rejects undersized start-bit and mark workspaces before compilation", () => {
   const stages: string[] = [];
   const request: BuildRequest = {

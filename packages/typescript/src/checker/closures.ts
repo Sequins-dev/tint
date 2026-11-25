@@ -209,6 +209,7 @@ export type ClosureIntrinsic =
   | "dynamic-object-array-method"
   | "dynamic-object-static-call"
   | "dynamic-object-own-enumeration"
+  | "dynamic-object-string"
   | "dynamic-object-enroll"
   | "dynamic-object-open-literal"
   | "dynamic-object-literal"
@@ -6191,20 +6192,31 @@ function checkClosureModuleLayout(
                 "String accepts at most one argument in this slice",
               );
             const argument = node.arguments[0];
+            let realmConversion = false;
             if (argument !== undefined) {
               const input = expression(argument, owner);
               if (
                 ![number, string, boolean, undefinedType, bigint].some((type) =>
                   system.assignable(input, type),
                 )
-              )
-                fail(
-                  argument,
-                  "UNSUPPORTED",
-                  "String requires a supported primitive input",
-                );
+              ) {
+                // An unknown value (a caught value, a general result) is
+                // converted by the program realm: ToString, or a Symbol's
+                // description.
+                const kind = types[input]?.kind;
+                if (kind !== "unknown" && kind !== "dynamic-result")
+                  fail(
+                    argument,
+                    "UNSUPPORTED",
+                    "String requires a primitive or unknown input",
+                  );
+                realmConversion = true;
+              }
             }
-            intrinsics.set(node, "string-convert");
+            intrinsics.set(
+              node,
+              realmConversion ? "dynamic-object-string" : "string-convert",
+            );
             result = string;
             break;
           }

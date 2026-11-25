@@ -172,7 +172,7 @@ const built = buildMacOSProgram({
   allowJit: true,
   // Raw code capabilities do not yet have the managed-write proof required by
   // the generational mutator. Keep that restriction intact for this first slice.
-  runtimeEntry: "initializeCopyingRuntime",
+  runtimeEntry: "initializeRuntime",
   denseReferenceLists: false,
   entry: "fixture",
   start: "run",

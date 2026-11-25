@@ -86,7 +86,7 @@ export function run(): number {
   {
     managedBytes: 4194304,
     allocationCapacity: 65536,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     hostBindings,
   },
 );

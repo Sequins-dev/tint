@@ -893,6 +893,33 @@ test("writes through a record union check the field against every member", () =>
     assert.ok(!r.ok && r.error.fallback === undefined, body);
   }
 });
+test("String converts unknown values on the typed path", () => {
+  for (const [source, intrinsic] of [
+    ["function f(x:number):string{return String(x);}", "string-convert"],
+    [
+      'function f():string{try{return "";}catch(error){return String(error);}}',
+      "dynamic-object-string",
+    ],
+    [
+      "function f(x:unknown):string{return String(x);}",
+      "dynamic-object-string",
+    ],
+  ] as const) {
+    const r = check(source);
+    assert.ok(r.ok, source + ": " + JSON.stringify(r));
+    const found: string[] = [];
+    r.value.intrinsics.forEach((value) => {
+      if (value === "string-convert" || value === "dynamic-object-string")
+        found.push(value);
+    });
+    assert.deepEqual(found, [intrinsic], source);
+  }
+  // Other non-primitive inputs still need a typed conversion.
+  const record = check(
+    "interface P {readonly x:number} function f(p:P):string{return String(p);}",
+  );
+  assert.ok(!record.ok && record.error.code === "UNSUPPORTED");
+});
 test("string sets check standard construction, methods and readonly views", () => {
   for (const source of [
     'function f():number{const s=new Set<string>();s.add("a").add("b");if(s.has("a"))s.delete("b");const n=s.size;s.clear();return n;}',

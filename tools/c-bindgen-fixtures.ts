@@ -311,15 +311,11 @@ export function run(): number {
 }
 `;
 }
-export function verifyGeneratedZlibAllocatorFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyGeneratedZlibAllocatorFixture(): string {
   const declarations = generatedZlibDeclarations();
   return verifyHostedFixture(
     generatedZlibAllocatorSource(),
-    runtimeEntry === undefined
-      ? "bindgen-zlib-allocator"
-      : "bindgen-zlib-allocator-copying",
+    "bindgen-zlib-allocator",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["zlib", declarations.id],
@@ -329,7 +325,6 @@ export function verifyGeneratedZlibAllocatorFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [declarations],

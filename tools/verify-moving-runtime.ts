@@ -195,7 +195,6 @@ function parse(text: string) {
   return parsed.value;
 }
 const modules = [...workspaceModules(projectRoots())];
-const copying = generational || process.env.TINT_COPYING_RUNTIME === "1";
 const runtime = modules.find(
   (item) => item.id === "packages/native-runtime/src/index.ts",
 );
@@ -223,7 +222,8 @@ if (rejectMoves)
     "false",
   );
 const index = modules.indexOf(runtime);
-if (!copying) modules[index] = { ...runtime, module: parse(runtimeSource) };
+if (!generational)
+  modules[index] = { ...runtime, module: parse(runtimeSource) };
 else if (
   rejectMoves ||
   rejectAllocations ||
@@ -232,17 +232,15 @@ else if (
   rejectMinor ||
   disableBarriers
 ) {
-  const runtimePath = generational
-    ? "packages/native-runtime/src/generational.ts"
-    : "packages/native-runtime/src/copying.ts";
-  const copyingIndex = modules.findIndex((item) => item.id === runtimePath);
-  const copyingModule = modules[copyingIndex];
-  assert.ok(copyingModule);
+  const runtimePath = "packages/native-runtime/src/generational.ts";
+  const generationalIndex = modules.findIndex(
+    (item) => item.id === runtimePath,
+  );
+  const generationalModule = modules[generationalIndex];
+  assert.ok(generationalModule);
   const text = readFileSync(runtimePath, "utf8");
   let modified = text;
-  if (rejectMoves && !generational)
-    modified = modified.replace(/moveMemory\([\s\S]*?\) === 0/, "false");
-  if (rejectMoves && generational) {
+  if (rejectMoves) {
     const id = "packages/native-runtime/src/tracing/cheney.ts";
     const index = modules.findIndex((item) => item.id === id);
     const cheney = modules[index];
@@ -278,8 +276,11 @@ else if (
       "  allocation[6] = 0;\n  function collect(",
     );
   if (modified !== text)
-    modules[copyingIndex] = { ...copyingModule, module: parse(modified) };
-  else assert.ok(rejectMoves && generational);
+    modules[generationalIndex] = {
+      ...generationalModule,
+      module: parse(modified),
+    };
+  else assert.ok(rejectMoves);
 }
 modules.push({
   id: "fixture",
@@ -364,10 +365,8 @@ const built = buildMacOSProgram({
       : request.hostBindings,
   runtimeEntry: generational
     ? "initializeGenerationalRuntime"
-    : copying
-      ? "initializeCopyingRuntime"
-      : "initializeRuntime",
-  inlineAllocation: copying && process.env.TINT_INLINE_ALLOCATION !== "0",
+    : "initializeRuntime",
+  inlineAllocation: generational && process.env.TINT_INLINE_ALLOCATION !== "0",
   ...(process.env.TINT_SIGNPOSTS === "1" ? { signposts: true } : {}),
   ...(parallel ? { requireParallelCollection: true } : {}),
   ...(parallelThreads ? { threaded: true } : {}),
