@@ -972,6 +972,7 @@ interface EmissionFacts {
   noSafepointsKnown: boolean;
   directReturns: Uint8Array | undefined;
   directReturnsKnown: boolean;
+  pureLeafNoActivation: Uint8Array | undefined;
 }
 interface BranchForms {
   /** BL for local calls; false after any call target was out of reach. */
@@ -1083,6 +1084,7 @@ export function emitModuleFromStore(
     noSafepointsKnown: false,
     directReturns: undefined,
     directReturnsKnown: false,
+    pureLeafNoActivation: undefined,
   };
   const hints = options.formHints;
   if (hints !== undefined) {
@@ -4842,7 +4844,8 @@ function emitModuleForms(
    * Memory accesses stay in the GP domain (moving through `fmov`) to avoid
    * cross-domain FP/GP store-to-load forwarding stalls on Apple Silicon.
    * When `load` is true, `scratch` is a free GP register; when `load` is false,
-   * x9 and x10 are used as free GP temporaries (already spilled in prologue). */
+   * x10 and x11 are used as free GP temporaries (already spilled in prologue,
+   * preserving x8/x9 which still hold `new.target` until parameters spill). */
   function scriptActualPair(
     index: number,
     offset: number,
@@ -4860,9 +4863,9 @@ function emitModuleForms(
       rawLoad(scratch, offset + 8);
       emit({ op: "fmov-d-x", rd: d + 1, rn: scratch });
     } else {
-      emit({ op: "fmov-x-d", rd: 9, rn: d });
-      emit({ op: "fmov-x-d", rd: 10, rn: d + 1 });
-      generalPair(9, offset, false);
+      emit({ op: "fmov-x-d", rd: 10, rn: d });
+      emit({ op: "fmov-x-d", rd: 11, rn: d + 1 });
+      generalPair(10, offset, false);
     }
   }
   /** Zero stack words whose order is unobservable (no label or safepoint
@@ -5620,39 +5623,56 @@ function emitModuleForms(
     // Non-script functions with no calls, allocations, throws, or activation
     // reads cannot observe nativeActivationTop or trigger GC: lazyActivation
     // callers can invoke them directly without linking or zeroing extra actuals.
-    const pureLeafNoActivation = new Uint8Array(module.functions.length);
-    for (let id = 0; id < module.functions.length; id++) {
-      const f = module.functions[id];
-      if (f === undefined || f.import === true || f.scriptEntry === true)
-        continue;
-      let pure: boolean = true;
-      for (const block of f.blocks) {
-        if (block === undefined) {
-          pure = false;
-          break;
-        }
-        const tk = block.terminator.kind;
-        if (tk === "throw" || tk === "throw-literal") {
-          pure = false;
-          break;
-        }
-        for (const op of block.instructions) {
-          if (
-            op === undefined ||
-            op.kind === "call" ||
-            op.kind === "call-indirect" ||
-            op.kind === "c-call" ||
-            op.kind === "host-call" ||
-            op.kind === "activation-read" ||
-            (irInstructionEffects(op) & irEffectAllocate) !== 0
-          ) {
-            pure = false;
-            break;
+    // Read bodies from `bodies` because `frameModule` strips `module.functions`
+    // to headers (empty `blocks`).
+    let pureLeafNoActivation = facts.pureLeafNoActivation;
+    if (pureLeafNoActivation === undefined) {
+      pureLeafNoActivation = new Uint8Array(module.functions.length);
+      for (let id = 0; id < module.functions.length; id++) {
+        const header = module.functions[id];
+        if (
+          header === undefined ||
+          header.import === true ||
+          header.scriptEntry === true
+        )
+          continue;
+        if (noSafepoints !== undefined && noSafepoints[id] !== 1) continue;
+        const f = bodies.get(id);
+        try {
+          if (f === undefined || f.blocks.length === 0) continue;
+          let pure: boolean = true;
+          for (const block of f.blocks) {
+            if (block === undefined) {
+              pure = false;
+              break;
+            }
+            const tk = block.terminator.kind;
+            if (tk === "throw" || tk === "throw-literal") {
+              pure = false;
+              break;
+            }
+            for (const op of block.instructions) {
+              if (
+                op === undefined ||
+                op.kind === "call" ||
+                op.kind === "call-indirect" ||
+                op.kind === "c-call" ||
+                op.kind === "host-call" ||
+                op.kind === "activation-read" ||
+                (irInstructionEffects(op) & irEffectAllocate) !== 0
+              ) {
+                pure = false;
+                break;
+              }
+            }
+            if (!pure) break;
           }
+          if (pure) pureLeafNoActivation[id] = 1;
+        } finally {
+          bodies.release(id);
         }
-        if (!pure) break;
       }
-      if (pure) pureLeafNoActivation[id] = 1;
+      facts.pureLeafNoActivation = pureLeafNoActivation;
     }
     const signatures = module.functions.map((fn): SignatureLayout => {
       if (fn === undefined) throw "function invariant";
@@ -8970,6 +8990,7 @@ function emitModuleForms(
                   zeroScriptActualSlot(i);
               }
               const resumeAt = instructions.length;
+              stackWords.clear();
               const spillBaseOffset = scriptArgumentsOffset;
               coldStubs.push((): void => {
                 farBranch(spillExtraBranch, {

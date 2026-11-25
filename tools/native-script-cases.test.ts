@@ -257,6 +257,36 @@ for (var r = 0; r < 3; r++) {
   if (lazyGc6(gcAcc, { n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }) !== 2015) throw 23;
   if (lazyGc9(gcAcc, { n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }, { n: 6 }, { n: 7 }, { n: 8 }) !== 2036) throw 24;
 }
+
+// Constructing with 4..7 arguments must preserve new.target (x8/x9) across
+// d0..d7 actual spilling and GC.
+function WideNew(a, b, c, d, e, f, g) {
+  var nt = new.target;
+  var junk = [];
+  for (var j = 0; j < 200; j++) junk.push({ x: j });
+  this.ok = nt === WideNew && junk.length === 200;
+  this.sum = (a || 0) + (b || 0) + (c || 0) + (d || 0) + (e || 0) + (f || 0) + (g || 0);
+}
+var wn4 = new WideNew(1, 2, 3, 4);
+if (!wn4.ok || wn4.sum !== 10) throw 25;
+var wn7 = new WideNew(1, 2, 3, 4, 5, 6, 7);
+if (!wn7.ok || wn7.sum !== 28) throw 26;
+
+// Lazy-activation function with <= 3 params calling an allocating helper after
+// dirtying stack frames must zero deferred actual slots 3..6 before GC runs.
+function dirtyStack(a, b, c, d, e, f, g) { return a + b + c + d + e + f + g; }
+function lazyAlloc1(x) {
+  var arr = new Array(200);
+  for (var j = 0; j < 200; j++) arr[j] = { v: x + j };
+  return arr[199].v;
+}
+function lazyAllocWrap(x) {
+  return lazyAlloc1(x);
+}
+for (var k = 0; k < 20; k++) {
+  dirtyStack(1, 2, 3, 4, 5, 6, 7);
+  if (lazyAllocWrap(k) !== k + 199) throw 27;
+}
 `,
 ];
 

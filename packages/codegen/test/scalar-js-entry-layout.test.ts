@@ -271,3 +271,143 @@ test("pure-leaf and lazy-activation script entries emit exact stack maps and lay
   // Activation callee + 7 register actual slots + live general arg temporary (id 1).
   assert.equal(lazySite.generals.length, 9);
 });
+
+test("lazy-activation direct calls link around non-leaf helpers and preserve x9 (new.target)", () => {
+  const mod: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "pureHelper",
+        exported: false,
+        parameters: [0],
+        slots: ["general"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "allocHelper",
+        exported: false,
+        parameters: [0],
+        slots: ["general"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              {
+                kind: "host-call",
+                operation: "collect-garbage",
+                id: undefined,
+                arguments: [],
+                ...span,
+              },
+              { kind: "load", id: 0, slot: 0, ...span },
+            ],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "callerPure",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 0, ...span },
+              { kind: "script-argument", id: 1, index: 0, ...span },
+              { kind: "call", id: 2, target: 0, arguments: [1], ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: "callerAlloc",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 0, ...span },
+              { kind: "script-argument", id: 1, index: 0, ...span },
+              { kind: "call", id: 2, target: 1, arguments: [1], ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+      {
+        id: 4,
+        name: "readsNewTargetWith4Args",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 2, ...span },
+              { kind: "constant", id: 1, value: 3, ...span },
+              { kind: "script-argument", id: 2, index: 1, ...span },
+            ],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(mod).ok);
+  const emitted = emitModule(mod, { closedRoots: [2, 3, 4] });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const callerPure = emitted.value.functions[2]!;
+  const callerAlloc = emitted.value.functions[3]!;
+  // callerAlloc must emit deferred extra-actual zeroing and activation
+  // link/unlink around its call to allocHelper; callerPure skips them.
+  assert.ok(
+    callerAlloc.byteLength > callerPure.byteLength,
+    `expected callerAlloc (${callerAlloc.byteLength}) > callerPure (${callerPure.byteLength})`,
+  );
+  // readsNewTargetWith4Args must spill d0..d7 using x10/x11, never clobbering
+  // x9 (new.target payload) with `fmov x9, dN` (0x9e660009 + N*32).
+  const fn4 = emitted.value.functions[4]!;
+  const code = emitted.value.code;
+  for (let off = fn4.offset; off < fn4.offset + fn4.byteLength; off += 4) {
+    const word =
+      (code[off]! |
+        (code[off + 1]! << 8) |
+        (code[off + 2]! << 16) |
+        (code[off + 3]! << 24)) >>>
+      0;
+    const isFmovX9 = (word & 0xfffffc1f) === 0x9e660009;
+    assert.equal(
+      isFmovX9,
+      false,
+      `unexpected fmov x9, dN (0x${word.toString(16)}) at +${off - fn4.offset}`,
+    );
+  }
+});
