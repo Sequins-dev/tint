@@ -836,6 +836,8 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   // One never-recycled identity page per hosted context. This tiny tombstone
   // deliberately outlives cleanup of its heap/control mappings, preventing ABA
   // aliasing when another context is initialized at reused virtual addresses.
+  // Its first words record the isolate's shared block registry
+  // (native-runtime shared-buffers.ts).
   map(26, page);
   imm(9, 0);
   compare(26, 9);

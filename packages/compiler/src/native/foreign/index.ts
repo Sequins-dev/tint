@@ -136,6 +136,11 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       name: "externalAddress",
       operation: "address",
     },
+    {
+      module: modules.primitives,
+      name: "externalBufferAddress",
+      operation: "address",
+    },
     { module: modules.primitives, name: "adoptExternal", operation: "adopt" },
     {
       module: modules.primitives,
@@ -162,6 +167,8 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   }[] = [
     { module: modules.weak, name: "createWeakSlot", operation: "new" },
     { module: modules.weak, name: "weakSlotKey", operation: "key" },
+    // The Worker message path's send cache of shared string bodies.
+    { module: modules.weak, name: "weakSlotValue", operation: "value" },
   ];
   const runtimes: RuntimeSource[] = [
     { module: modules.primitives, namespace: "ffi" },
@@ -182,7 +189,6 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   if (loaded.has(modules.nodeFfi))
     weakBindings.push(
       { module: modules.weak, name: "clearWeakSlot", operation: "clear" },
-      { module: modules.weak, name: "weakSlotValue", operation: "value" },
       {
         module: modules.weak,
         name: "setWeakSlotValue",

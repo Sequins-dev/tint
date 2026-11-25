@@ -1130,6 +1130,13 @@ function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
         name: "spinPause",
         operation: "cpu-pause",
       },
+      // The isolate's identity page, where the runtime publishes its shared
+      // string hold table (external-memory.ts).
+      {
+        module: request.memoryModule,
+        name: "currentContextDomain",
+        operation: "context-domain",
+      },
     ];
   for (const binding of collectorCandidates) {
     if (binding === undefined) throw "collector binding invariant";

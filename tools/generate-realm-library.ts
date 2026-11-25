@@ -29,6 +29,7 @@ const groups: Record<string, string[]> = {
   installProxyIntrinsics: ["Proxy"],
   installPromiseIntrinsics: ["Promise"],
   installArrayBufferIntrinsics: ["ArrayBuffer"],
+  installSharedArrayBufferIntrinsics: ["SharedArrayBuffer"],
   installDataViewIntrinsics: ["DataView"],
   installDisposableStackIntrinsics: ["DisposableStack"],
   installAsyncDisposableStackIntrinsics: ["AsyncDisposableStack"],

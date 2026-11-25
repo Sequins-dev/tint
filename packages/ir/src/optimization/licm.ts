@@ -1,5 +1,7 @@
 import {
   blockSuccessors,
+  effectInvoke,
+  instructionEffects,
   instructionResult,
   naturalLoops,
   visitInstructionOperands,
@@ -50,14 +52,26 @@ function pureType(op: Instruction): ScalarType | undefined {
   }
 }
 
+/** Whether `op` may change a native typed array's length: code it runs may
+ * detach a typed view of a realm ArrayBuffer (its length becomes 0), and C
+ * memory adoption or retargeting rewrites an array's header. */
+function changesArrayLength(op: Instruction): boolean {
+  if (op.kind === "c-call") return op.call.mayCallback === true;
+  if (op.kind === "c-memory")
+    return (
+      op.access.operation === "adopt" || op.access.operation === "retarget"
+    );
+  return (instructionEffects(op) & effectInvoke) !== 0;
+}
 /** Loop-invariant code motion over the scalar IR. Within each natural loop
  * that has a unique preheader (its only outside predecessor, ending in an
  * unconditional jump), operations whose operands are loop invariant
  * (constants, loads of slots the loop never writes, other invariant
  * operations) move to the preheader:
  *
- * - pure, non-trapping operations (arithmetic and comparisons, typed-array
- *   and string lengths, which never change, and function environments);
+ * - pure, non-trapping operations (arithmetic and comparisons, string
+ *   lengths, which never change, typed-array lengths in loops where nothing
+ *   changes one (changesArrayLength), and function environments);
  * - checked reads of immutable record fields (`record` terminators whose
  *   failure edge traps): the check still runs, once, before the loop.
  *
@@ -380,6 +394,13 @@ function hoistLoop(
   let hoisted = 0,
     readHoisted = false;
   const { provenOrigins, failureTargets, unknownProven } = proofs;
+  let lengthsChange = false;
+  for (const id of loop.body) {
+    const block = byId.get(id);
+    if (block === undefined) throw "licm block invariant";
+    for (const op of block.instructions)
+      if (op !== undefined && changesArrayLength(op)) lengthsChange = true;
+  }
   for (const id of loop.body) {
     const block = byId.get(id);
     if (block === undefined) throw "licm block invariant";
@@ -402,6 +423,7 @@ function hoistLoop(
         invariant.set(op.id, op);
       else if (
         pureType(op) !== undefined &&
+        (op.kind !== "array-length" || !lengthsChange) &&
         operandsInvariant(op) &&
         // A reference unwrap's payload type is known for environments.
         (op.kind !== "reference-value" ||

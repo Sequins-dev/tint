@@ -166,6 +166,7 @@ export type ClosureIntrinsic =
   | "math-sign"
   | "math-floor"
   | "math-imul"
+  | "atomics"
   | "math-min"
   | "math-max"
   | "numeric-constant"
@@ -173,6 +174,10 @@ export type ClosureIntrinsic =
   | "array-subarray"
   | "array-slice"
   | "array-new"
+  | "array-view-new"
+  | "array-buffer-new"
+  | "shared-array-buffer-new"
+  | "array-buffer-byte-length"
   | "array-join"
   | "array-at"
   | "array-reverse"
@@ -189,6 +194,7 @@ export type ClosureIntrinsic =
   | "realm-global"
   | "realm-instanceof"
   | "array-instanceof"
+  | "shared-buffer-instanceof"
   | "error-is"
   | "error-property"
   | "literal-property-has"
@@ -240,6 +246,18 @@ export type ClosureIntrinsic =
   | "string-char-at"
   | "string-at"
   | "string-code-unit";
+/** The Atomics functions typed code runs inline on native integer arrays. */
+const atomicsOperations: readonly string[] = [
+  "load",
+  "store",
+  "add",
+  "sub",
+  "and",
+  "or",
+  "xor",
+  "exchange",
+  "compareExchange",
+];
 export interface ClosureBody {
   readonly node: Span;
   readonly scriptEntry: true | undefined;
@@ -441,11 +459,13 @@ function checkClosureModuleLayout(
     "BigInt",
     "Object",
     "Math",
+    "Atomics",
     "Uint8Array",
     "Uint16Array",
     "Uint32Array",
     "Float64Array",
     "ArrayBuffer",
+    "SharedArrayBuffer",
     "TypeError",
     "RangeError",
     "Error",
@@ -2603,13 +2623,18 @@ function checkClosureModuleLayout(
       if (truth && types[declared]?.kind === "object") selected.push(candidate);
       else return undefined;
     }
-    if (truth && declared !== instance && isArray(instance)) {
+    if (
+      truth &&
+      declared !== instance &&
+      (isArray(instance) || types[instance]?.kind === "SharedArrayBuffer")
+    ) {
       const kind = types[instance]?.kind;
       if (
         kind === "Uint8Array" ||
         kind === "Uint16Array" ||
         kind === "Uint32Array" ||
-        kind === "Float64Array"
+        kind === "Float64Array" ||
+        kind === "SharedArrayBuffer"
       ) {
         const known = arrayFlowTypes.get(kind);
         const flow =
@@ -2888,6 +2913,7 @@ function checkClosureModuleLayout(
       type?.kind === "map" ||
       type?.kind === "set" ||
       type?.kind === "ArrayBuffer" ||
+      type?.kind === "SharedArrayBuffer" ||
       type?.kind === "Uint8Array" ||
       type?.kind === "Uint16Array" ||
       type?.kind === "Uint32Array" ||
@@ -2983,6 +3009,7 @@ function checkClosureModuleLayout(
                 type?.kind === "set" ||
                 type?.kind === "map" ||
                 type?.kind === "ArrayBuffer" ||
+                type?.kind === "SharedArrayBuffer" ||
                 type?.kind === "Uint8Array" ||
                 type?.kind === "Uint16Array" ||
                 type?.kind === "Uint32Array" ||
@@ -4062,6 +4089,7 @@ function checkClosureModuleLayout(
       case "undefined":
       case "null":
       case "Uint8Array":
+      case "SharedArrayBuffer":
       case "TypeError":
       case "RangeError":
       case "Error":
@@ -5617,6 +5645,15 @@ function checkClosureModuleLayout(
             break;
           }
           if (
+            (types[obj]?.kind === "ArrayBuffer" ||
+              types[obj]?.kind === "SharedArrayBuffer") &&
+            node.property === "byteLength"
+          ) {
+            intrinsics.set(node, "array-buffer-byte-length");
+            result = number;
+            break;
+          }
+          if (
             isArray(obj) &&
             ["buffer", "byteOffset", "byteLength"].includes(node.property)
           ) {
@@ -5933,6 +5970,39 @@ function checkClosureModuleLayout(
             intrinsics.set(node, map ? "map-new" : "set-new");
             break;
           }
+          if (
+            target.kind === "identifier" &&
+            !references.has(target) &&
+            target.name === "ArrayBuffer" &&
+            node.typeArguments.length === 0 &&
+            node.arguments.length <= 1
+          ) {
+            // A fixed-length buffer of zeroed bytes. A resizable one (with
+            // a maxByteLength option) takes the realm constructor.
+            const size = node.arguments[0];
+            if (size !== undefined)
+              requireType(expression(size, owner), optionalNumber, size);
+            result = primitive("ArrayBuffer");
+            intrinsics.set(node, "array-buffer-new");
+            break;
+          }
+          if (
+            target.kind === "identifier" &&
+            !references.has(target) &&
+            target.name === "SharedArrayBuffer" &&
+            node.typeArguments.length === 0 &&
+            node.arguments.length <= 1
+          ) {
+            // A fixed-length block of the isolate's shared block service
+            // (a growable one, with a maxByteLength option, takes the realm
+            // constructor).
+            const size = node.arguments[0];
+            if (size !== undefined)
+              requireType(expression(size, owner), optionalNumber, size);
+            result = primitive("SharedArrayBuffer");
+            intrinsics.set(node, "shared-array-buffer-new");
+            break;
+          }
 
           if (
             target.kind !== "identifier" ||
@@ -5994,30 +6064,49 @@ function checkClosureModuleLayout(
               "ARITY",
               "typed-array construction accepts an optional numeric length, numeric array or supported typed-array source",
             );
+          const source = node.arguments[0];
+          const input =
+            source === undefined
+              ? undefined
+              : expression(
+                  source,
+                  owner,
+                  ungroup(source).kind === "array"
+                    ? typeOf(optionalNumericListAnnotation)
+                    : undefined,
+                );
+          if (
+            source !== undefined &&
+            input !== undefined &&
+            (types[input]?.kind === "ArrayBuffer" ||
+              types[input]?.kind === "SharedArrayBuffer")
+          ) {
+            // A view of the buffer's bytes: (buffer, byteOffset?, length?).
+            if (node.arguments.length > 3)
+              fail(
+                node,
+                "ARITY",
+                "typed-array buffer views accept a byte offset and a length",
+              );
+            for (const arg of node.arguments.slice(1)) {
+              if (arg === undefined) throw "missing call argument";
+              requireType(expression(arg, owner), optionalNumber, arg);
+            }
+            result = primitive(target.name);
+            intrinsics.set(node, "array-view-new");
+            break;
+          }
           if (node.arguments.length > 1)
             unsupported(
               node,
               "realm-library-construction",
-              "typed-array byte offsets and lengths require the realm constructor",
+              "typed-array byte offsets and lengths require a buffer",
             );
-          for (const arg of node.arguments) {
-            if (arg === undefined) throw "missing call argument";
-            const input = expression(
-              arg,
-              owner,
-              ungroup(arg).kind === "array"
-                ? typeOf(optionalNumericListAnnotation)
-                : undefined,
-            );
-            if (types[input]?.kind === "ArrayBuffer")
-              unsupported(
-                arg,
-                "realm-library-construction",
-                "typed-array buffer construction requires the realm constructor",
-              );
+          if (source !== undefined && input !== undefined) {
             if (isList(input))
-              requireType(listReadType(input, arg), optionalNumber, arg);
-            else if (!isArray(input)) requireType(input, optionalNumber, arg);
+              requireType(listReadType(input, source), optionalNumber, source);
+            else if (!isArray(input))
+              requireType(input, optionalNumber, source);
           }
           result = primitive(target.name);
           intrinsics.set(node, "array-new");
@@ -6387,6 +6476,57 @@ function checkClosureModuleLayout(
           }
           if (target.kind === "member") {
             const receiver = ungroup(target.object);
+            if (
+              receiver.kind === "identifier" &&
+              receiver.name === "Atomics" &&
+              !references.has(receiver) &&
+              atomicsOperations.includes(target.property)
+            ) {
+              // Atomics on a native integer array are inline (the pinned
+              // library types them on integer typed arrays only).
+              const arity =
+                target.property === "load"
+                  ? 2
+                  : target.property === "compareExchange"
+                    ? 4
+                    : 3;
+              if (node.arguments.length !== arity)
+                fail(
+                  node,
+                  "ARITY",
+                  "Atomics." +
+                    target.property +
+                    " takes " +
+                    String(arity) +
+                    " arguments",
+                );
+              const source = node.arguments[0];
+              if (source === undefined) throw "missing call argument";
+              const array = types[expression(source, owner)]?.kind;
+              if (array === "Float64Array")
+                fail(
+                  source,
+                  "TYPE_MISMATCH",
+                  "Atomics operations require an integer typed array",
+                );
+              if (
+                array !== "Uint8Array" &&
+                array !== "Uint16Array" &&
+                array !== "Uint32Array"
+              )
+                unsupported(
+                  node,
+                  "realm-library-member",
+                  "Atomics on a realm typed array requires realm projection",
+                );
+              for (const argument of node.arguments.slice(1)) {
+                if (argument === undefined) throw "missing call argument";
+                requireType(expression(argument, owner), number, argument);
+              }
+              intrinsics.set(node, "atomics");
+              result = number;
+              break;
+            }
             if (
               receiver.kind === "identifier" &&
               receiver.name === "Math" &&
@@ -8236,6 +8376,7 @@ function checkClosureModuleLayout(
             ) {
               if (
                 isErrorKind(target.name) ||
+                target.name === "SharedArrayBuffer" ||
                 (candidate !== undefined &&
                   isArray(candidate) &&
                   types[candidate]?.kind !== "object")
@@ -8249,7 +8390,9 @@ function checkClosureModuleLayout(
                       ? "range-error-is"
                       : target.name === "Error"
                         ? "error-is"
-                        : "array-instanceof",
+                        : target.name === "SharedArrayBuffer"
+                          ? "shared-buffer-instanceof"
+                          : "array-instanceof",
                 );
               } else intrinsics.set(node, "realm-instanceof");
             } else intrinsics.set(node, "realm-instanceof");

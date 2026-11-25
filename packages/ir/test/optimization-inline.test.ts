@@ -135,6 +135,84 @@ test("CFG inlining remaps repeated calls, branches, parameters and return values
     );
   assert.deepEqual(input, snapshot);
 });
+test("calls inline only within one interruptibility class", () => {
+  const input = fixture();
+  // A runtime caller keeps its call to an interruptible Worker function,
+  // which would otherwise lose its polls.
+  const kept = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    (fn) => fn.name === "absolute",
+  );
+  assert.ok(kept);
+  assert.equal(kept.inlined, 0);
+  assert.deepEqual(kept.module, input);
+  // A loop-free runtime helper inlines into Worker code: it adds no poll.
+  const leaf = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    (fn) => fn.name === "caller",
+  );
+  assert.equal(leaf?.inlined, 2);
+  // A runtime helper with a loop stays a call from Worker code, so its loop
+  // never gains a poll.
+  const absolute = input.functions[1]!;
+  const looping: ModuleIR = {
+    functions: [
+      input.functions[0]!,
+      {
+        ...absolute,
+        blocks: absolute.blocks
+          .map((block) =>
+            block.id === 2
+              ? {
+                  ...block,
+                  terminator: {
+                    kind: "branch" as const,
+                    condition: 5,
+                    consequent: 0,
+                    alternate: 3,
+                    ...span,
+                  },
+                }
+              : block,
+          )
+          .concat([
+            {
+              id: 3,
+              instructions: [{ kind: "load", id: 6, slot: 0, ...span }],
+              terminator: { kind: "return", value: 6, ...span },
+            },
+          ]),
+      },
+    ],
+  };
+  const separated = inlineSmallFunctions(
+    looping,
+    10000,
+    false,
+    false,
+    undefined,
+    (fn) => fn.name === "caller",
+  );
+  assert.equal(separated?.inlined ?? 0, 0);
+  // Two application functions inline as they would without Workers.
+  const same = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    () => true,
+  );
+  assert.equal(same?.inlined, 2);
+});
 test("budget exhaustion rolls back and allocating, recursive or environment-bearing callees are retained", () => {
   const input = fixture();
   assert.equal(inlineSmallFunctions(input, 1), undefined);

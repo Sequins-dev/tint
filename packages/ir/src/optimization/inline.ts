@@ -6,6 +6,7 @@ import {
   substituteTerminatorValues,
   instructionEffects,
   effectAllocate,
+  naturalLoops,
   type ModuleIR,
   type FunctionIR,
   type Instruction,
@@ -130,6 +131,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-length":
     case "array-write":
     case "array-store":
+    case "array-atomic":
     // Tag tests and payload views of general values are pure inline
     // sequences (a mismatched checked view traps).
     case "general-is":
@@ -187,7 +189,9 @@ function supported(op: Instruction, references: boolean = true): boolean {
         op.operation === "memory-compare-exchange-word" ||
         op.operation === "memory-fetch-add-word" ||
         op.operation === "memory-load-acquire-word" ||
-        op.operation === "memory-store-release-word"
+        op.operation === "memory-store-release-word" ||
+        op.operation === "memory-read-float64" ||
+        op.operation === "memory-write-float64"
       );
     // A leaf C call never allocates, throws or re-enters managed code, so
     // its single-instruction bindings inline into callers: the call site
@@ -243,10 +247,12 @@ function inlineRefusal(
   referenceAllowance: number,
   effectful: boolean,
   nonallocatingCaller: boolean,
+  separated: boolean,
 ): string {
   if (callee === undefined) return "unknown callee";
   if (callee.id === caller.id) return "recursive call";
   if (environment) return "call passes a closure environment";
+  if (separated) return "caller and callee differ in interruptibility";
   if (eligibility === 0) {
     if (callee.import === true) return "callee is an import";
     if (
@@ -291,13 +297,19 @@ function inlineRefusal(
  * handlers are excluded. Caller exception edges survive cloning. Input is verified
  * IR and never mutated. Incremental mode keeps only completed nonallocating
  * callers, caps each expansion and retains original callees after exhaustion.
- * Remarks describe only decisions of callers whose result is kept. */
+ * Remarks describe only decisions of callers whose result is kept.
+ * `interruptible` marks the functions that poll for Worker stop requests (at
+ * loop headers, and on entry when they call). Worker code never inlines into
+ * runtime code, which would lose its polls, and runtime code inlines into
+ * Worker code only when it has no loop: an inlined leaf brings no call and no
+ * loop header, so it gains no poll either. */
 export function inlineSmallFunctions(
   module: ModuleIR,
   budget: number,
   guarded: boolean = false,
   incremental: boolean = false,
   remarks?: RemarkSink,
+  interruptible?: (fn: FunctionIR) => boolean,
 ): Inlining | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
@@ -311,6 +323,33 @@ export function inlineSmallFunctions(
       sink(remark);
     }
     pendingRemarks = [];
+  }
+  // Interruptibility class by function ID (empty when every function shares one).
+  const classify = interruptible;
+  const classes = new Uint8Array(
+    classify === undefined ? 0 : module.functions.length,
+  );
+  if (classify !== undefined)
+    for (let id = 0; id < module.functions.length; id++) {
+      const fn = module.functions[id];
+      if (fn === undefined) throw "inline function invariant";
+      classes[id] = classify(fn) ? 1 : 0;
+    }
+  // Loop-free runtime callees, computed on first use: 1 free, 2 loops.
+  const loopFree = new Uint8Array(classes.length);
+  /** Whether the callee must stay a call because the classes differ. */
+  function separated(caller: FunctionIR, callee: number): boolean {
+    if (classes.length === 0 || classes[caller.id] === classes[callee])
+      return false;
+    if (classes[caller.id] !== 1) return true;
+    if (loopFree[callee] === 0) {
+      const target = module.functions[callee];
+      if (target === undefined) throw "inline callee invariant";
+      const loops = naturalLoops(target, 100000);
+      loopFree[callee] =
+        loops !== undefined && loops.loops.length === 0 ? 1 : 2;
+    }
+    return loopFree[callee] !== 1;
   }
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
@@ -475,7 +514,9 @@ export function inlineSmallFunctions(
         originalCount++;
         if (
           op.kind === "call"
-            ? !eligible[op.target] || op.environment !== undefined
+            ? !eligible[op.target] ||
+              op.environment !== undefined ||
+              separated(fn, op.target)
             : incremental
               ? (instructionEffects(op) & effectAllocate) !== 0
               : !supported(op)
@@ -489,7 +530,8 @@ export function inlineSmallFunctions(
           op.kind === "call" &&
           eligible[op.target] &&
           op.target !== fn.id &&
-          op.environment === undefined
+          op.environment === undefined &&
+          !separated(fn, op.target)
         )
           hasCandidate = true;
       }
@@ -540,6 +582,7 @@ export function inlineSmallFunctions(
           !eligible[callee.id] ||
           callee.id === fn.id ||
           op.environment !== undefined ||
+          separated(fn, callee.id) ||
           (!isIntrinsic && cost > allowance) ||
           (shapeRecognized(fn) && effectful[callee.id] === 1) ||
           (eligible[callee.id] === 2 &&
@@ -567,6 +610,7 @@ export function inlineSmallFunctions(
                   referenceAllowance,
                   effectful[op.target] === 1,
                   nonallocatingCaller,
+                  separated(fn, op.target),
                 ),
             });
           instructions.push(op);
@@ -1254,6 +1298,21 @@ export function inlineSmallFunctions(
                   array: value(instruction.array),
                   index: value(instruction.index),
                   value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-atomic":
+                cloned.push({
+                  ...instruction,
+                  id:
+                    instruction.id === undefined
+                      ? undefined
+                      : value(instruction.id),
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  operands: instruction.operands.map(value),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

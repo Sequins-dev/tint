@@ -39,6 +39,10 @@ export interface EventLoop {
   setInterval(callback: Callback, delay?: number): EventLoopHandle;
   clearInterval(handle: EventLoopHandle | undefined): void;
   checkpoint(entry: Entry): void;
+  /** From inside a running callback: the checkpoint its return would run.
+   * A callback that delivers several events runs it between them, as
+   * Node's per-callback scope does. */
+  checkpointWithin(): void;
   run(entry: Entry): void;
 }
 
@@ -208,16 +212,27 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
     if (handle !== undefined && handle.kind === "timeout") handle.close();
   }
 
+  const runTick = (callback: Callback, _context: undefined): void => {
+    if (!stopped()) callback();
+  };
+
   function checkpoint(entry: Entry): void {
     if (stopped()) return;
-    if (entry === "microtask") host.drainMicrotasks();
-    while (!stopped()) {
-      drainJobs<undefined>(ticks, (callback, _context): void => {
-        if (!stopped()) callback();
-      });
-      if (stopped()) return;
+    if (entry === "microtask") {
       host.drainMicrotasks();
-      if (ticks.size === 0) return;
+      if (stopped()) return;
+    }
+    if (ticks.size === 0) {
+      host.drainMicrotasks();
+      if (ticks.size === 0 || stopped()) return;
+    }
+    for (;;) {
+      if (ticks.size !== 0) {
+        drainJobs<undefined>(ticks, runTick);
+        if (stopped()) return;
+      }
+      host.drainMicrotasks();
+      if (ticks.size === 0 || stopped()) return;
     }
   }
 
@@ -344,6 +359,10 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
       } finally {
         running = false;
       }
+    },
+    checkpointWithin: (): void => {
+      if (!running) throw "EVENT_LOOP_NOT_RUNNING";
+      checkpoint("callback");
     },
     run,
   };

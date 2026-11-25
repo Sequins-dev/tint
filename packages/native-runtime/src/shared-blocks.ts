@@ -8,7 +8,10 @@ import type {
   SharedResult,
   SharedStatus,
   SharedUnsignedWidth,
+  SharedUpdate,
 } from "@tint/js-runtime/bytes/shared";
+import { sharedUpdateValue } from "@tint/js-runtime/bytes/shared";
+import { adoptExternal } from "./ffi/primitives.ts";
 import {
   sharedRegistryMagic,
   sharedRegistryHeaderBytes,
@@ -215,6 +218,11 @@ export interface NativeSharedBlockService extends SharedBlockService {
   readonly registry: NativeSharedBlockRegistry;
   readonly waitRegistry: NativeSharedBlockRegistry | undefined;
   readonly waitEvents: NativeWaitRegistry | undefined;
+  /** Trusted: the payload address of block `handle` (0 for an invalid
+   * handle), for a nonmoving byte view of it (shared-buffers.ts). */
+  address(handle: number): number;
+  /** Trusted: the block whose payload starts at `address`, or 0. */
+  handleAt(address: number): number;
 }
 function sharedFacade(
   host: NativeSharedMemoryHost,
@@ -224,11 +232,47 @@ function sharedFacade(
   clock: (() => number) | undefined,
   wrapWaiting?: (waiting: SharedBlockWaiting) => SharedBlockWaiting,
 ): NativeSharedBlockService {
+  // A published descriptor never changes and its mapping lives as long as
+  // the engine, so each isolate resolves a handle's location once.
+  const locations: (BlockLocation | undefined)[] = [];
+  // Reused across non-reentrant read/write/atomic/waiter operations on this
+  // isolate's facade (create and grow keep per-operation scratch).
+  const facadeScratch = new Uint32Array(2);
+  function blockLength(
+    block: BlockLocation,
+    order: number,
+    scratch: Uint32Array,
+  ): number {
+    return block.growable
+      ? readNumber(
+          host,
+          registry,
+          block.offset + sharedBlockLengthOffset,
+          scratch,
+          order,
+        )
+      : block.maximum;
+  }
   function location(
     handle: number,
     scratch: Uint32Array,
   ): BlockLocation | undefined {
     if (!integer(handle) || handle === 0) return undefined;
+    if (handle < locations.length) {
+      const known = locations[handle];
+      if (known !== undefined) return known;
+    }
+    const block = publishedLocation(handle, scratch);
+    if (block !== undefined) {
+      while (locations.length <= handle) locations.push(undefined);
+      locations[handle] = block;
+    }
+    return block;
+  }
+  function publishedLocation(
+    handle: number,
+    scratch: Uint32Array,
+  ): BlockLocation | undefined {
     const count = readNumber(
       host,
       registry,
@@ -371,7 +415,7 @@ function sharedFacade(
     };
   }
   function describe(handle: number): SharedResult<SharedBlockDescriptor> {
-    const block = location(handle, new Uint32Array(2));
+    const block = location(handle, facadeScratch);
     return block === undefined
       ? { ok: false, error: "invalid-handle" }
       : {
@@ -385,20 +429,13 @@ function sharedFacade(
         };
   }
   function length(handle: number, order: SharedOrder): SharedResult<number> {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return { ok: false, error: "invalid-handle" };
     const code = orderCode(order);
     if (code < 0) return { ok: false, error: "invalid-order" };
     return {
       ok: true,
-      value: readNumber(
-        host,
-        registry,
-        block.offset + sharedBlockLengthOffset,
-        scratch,
-        code,
-      ),
+      value: blockLength(block, code, facadeScratch),
     };
   }
   function foreignAddress(
@@ -458,24 +495,18 @@ function sharedFacade(
     width: SharedUnsignedWidth,
     order: SharedOrder,
   ): SharedResult<number> {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return { ok: false, error: "invalid-handle" };
     const status = access(offset, width, order, false);
     if (status !== "none") return { ok: false, error: status };
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-      orderCode(order),
-    );
+    const code = orderCode(order);
+    const length = blockLength(block, code, facadeScratch);
     const value = host.readSharedUnsigned(
       block.base,
       length,
       offset,
       width,
-      orderCode(order),
+      code,
     );
     return value < 0
       ? { ok: false, error: "invalid-range" }
@@ -488,8 +519,7 @@ function sharedFacade(
     value: number,
     order: SharedOrder,
   ): SharedStatus {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return "invalid-handle";
     const status = access(offset, width, order, false);
     if (status !== "none") return status;
@@ -498,20 +528,15 @@ function sharedFacade(
       value > (width === 1 ? 255 : width === 2 ? 65535 : 4294967295)
     )
       return "invalid-value";
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-      orderCode(order),
-    );
+    const code = orderCode(order);
+    const length = blockLength(block, code, facadeScratch);
     return host.writeSharedUnsigned(
       block.base,
       length,
       offset,
       width,
       value,
-      orderCode(order),
+      code,
     ) === 0
       ? "none"
       : "invalid-range";
@@ -522,26 +547,14 @@ function sharedFacade(
     order: SharedOrder,
     output: Uint32Array,
   ): SharedStatus {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return "invalid-handle";
     const status = access(offset, 8, order, true);
     if (status !== "none") return status;
     if (output.length < 2) return "invalid-value";
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-      orderCode(order),
-    );
-    return host.readSharedWord64(
-      block.base,
-      length,
-      offset,
-      orderCode(order),
-      output,
-    ) === 0
+    const code = orderCode(order);
+    const length = blockLength(block, code, facadeScratch);
+    return host.readSharedWord64(block.base, length, offset, code, output) === 0
       ? "none"
       : "invalid-range";
   }
@@ -552,28 +565,16 @@ function sharedFacade(
     lo: number,
     hi: number,
   ): SharedStatus {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return "invalid-handle";
     const status = access(offset, 8, order, true);
     if (status !== "none") return status;
     if (!integer(lo) || !integer(hi) || lo > 0xffffffff || hi > 0xffffffff)
       return "invalid-value";
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-      orderCode(order),
-    );
-    return host.writeSharedWord64(
-      block.base,
-      length,
-      offset,
-      orderCode(order),
-      lo,
-      hi,
-    ) === 0
+    const code = orderCode(order);
+    const length = blockLength(block, code, facadeScratch);
+    return host.writeSharedWord64(block.base, length, offset, code, lo, hi) ===
+      0
       ? "none"
       : "invalid-range";
   }
@@ -584,8 +585,7 @@ function sharedFacade(
     expected: number,
     replacement: number,
   ): SharedResult<number> {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return { ok: false, error: "invalid-handle" };
     const status = access(offset, width, "seq-cst", false);
     if (status !== "none") return { ok: false, error: status };
@@ -597,12 +597,7 @@ function sharedFacade(
       replacement > maximum
     )
       return { ok: false, error: "invalid-value" };
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-    );
+    const length = blockLength(block, 1, facadeScratch);
     const atomic = atomicHost;
     if (atomic === undefined) throw "NATIVE_SHARED_ATOMIC_AUTHORITY";
     const value = atomic.compareExchangeSharedUnsigned(
@@ -617,6 +612,46 @@ function sharedFacade(
       ? { ok: false, error: "invalid-range" }
       : { ok: true, value };
   }
+  /** The compare-exchange loop of one read-modify-write, under a single
+   * block lookup and length read. */
+  function updateUnsigned(
+    handle: number,
+    offset: number,
+    width: SharedUnsignedWidth,
+    operation: SharedUpdate,
+    operand: number,
+  ): SharedResult<number> {
+    const block = location(handle, facadeScratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const status = access(offset, width, "seq-cst", false);
+    if (status !== "none") return { ok: false, error: status };
+    const maximum = width === 1 ? 255 : width === 2 ? 65535 : 4294967295;
+    if (!integer(operand) || operand > maximum)
+      return { ok: false, error: "invalid-value" };
+    const length = blockLength(block, 1, facadeScratch);
+    const atomic = atomicHost;
+    if (atomic === undefined) throw "NATIVE_SHARED_ATOMIC_AUTHORITY";
+    let previous = host.readSharedUnsigned(
+      block.base,
+      length,
+      offset,
+      width,
+      1,
+    );
+    for (;;) {
+      if (previous < 0) return { ok: false, error: "invalid-range" };
+      const observed = atomic.compareExchangeSharedUnsigned(
+        block.base,
+        length,
+        offset,
+        width,
+        previous,
+        sharedUpdateValue(operation, previous, operand, width),
+      );
+      if (observed === previous) return { ok: true, value: previous };
+      previous = observed;
+    }
+  }
   function compareExchangeWord64(
     handle: number,
     offset: number,
@@ -626,8 +661,7 @@ function sharedFacade(
     replacementHi: number,
     output: Uint32Array,
   ): SharedStatus {
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return "invalid-handle";
     const status = access(offset, 8, "seq-cst", true);
     if (status !== "none") return status;
@@ -643,12 +677,7 @@ function sharedFacade(
       replacementHi > 0xffffffff
     )
       return "invalid-value";
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-    );
+    const length = blockLength(block, 1, facadeScratch);
     return host.compareExchangeSharedWord64(
       block.base,
       length,
@@ -698,6 +727,14 @@ function sharedFacade(
               replacementHi,
               output,
             ),
+          updateUnsigned: (
+            handle,
+            offset,
+            width,
+            operation,
+            operand,
+          ): SharedResult<number> =>
+            updateUnsigned(handle, offset, width, operation, operand),
         };
   function waiterLocation(
     handle: number,
@@ -706,17 +743,11 @@ function sharedFacade(
   ): SharedResult<NativeWaitLocation> {
     if (width !== 4 && width !== 8)
       return { ok: false, error: "invalid-width" };
-    const scratch = new Uint32Array(2),
-      block = location(handle, scratch);
+    const block = location(handle, facadeScratch);
     if (block === undefined) return { ok: false, error: "invalid-handle" };
     const status = access(offset, width, "seq-cst", width === 8);
     if (status !== "none") return { ok: false, error: status };
-    const length = readNumber(
-      host,
-      registry,
-      block.offset + sharedBlockLengthOffset,
-      scratch,
-    );
+    const length = blockLength(block, 1, facadeScratch);
     if (offset > length || width > length - offset)
       return { ok: false, error: "invalid-range" };
     return {
@@ -790,6 +821,30 @@ function sharedFacade(
     create: (initial, maximum, growable): SharedResult<SharedBlockDescriptor> =>
       create(initial, maximum, growable),
     describe: (handle): SharedResult<SharedBlockDescriptor> => describe(handle),
+    address: (handle): number => {
+      const block = location(handle, facadeScratch);
+      return block === undefined ? 0 : block.base;
+    },
+    bytes: (handle): Uint8Array | undefined => {
+      const block = location(handle, facadeScratch);
+      return block === undefined
+        ? undefined
+        : adoptExternal(new Uint8Array(0), block.base, block.maximum);
+    },
+    handleAt: (address): number => {
+      if (!integer(address) || address === 0) return 0;
+      const count = readNumber(
+        host,
+        registry,
+        sharedRegistryPublishedCountOffset,
+        facadeScratch,
+      );
+      for (let handle = 1; handle <= count; handle++) {
+        const block = location(handle, facadeScratch);
+        if (block !== undefined && block.base === address) return handle;
+      }
+      return 0;
+    },
     length: (handle, order): SharedResult<number> => length(handle, order),
     foreignAddress: (handle, offset, extent): SharedResult<number> =>
       foreignAddress(handle, offset, extent),

@@ -565,6 +565,69 @@ test("atomic RMW operations wrap every integer width and return the prior value"
   }
 });
 
+test("fixed shared integer views take one service call per Atomics operation", async () => {
+  for (const growable of [false, true]) {
+    const f = await memoryFixture(true, 16, growable ? 32 : 16);
+    // A fixed-length view needs no length read; a length-tracking view of a
+    // growable buffer takes the general path.
+    const views = [f.view("Int16Array", f.buffer, 8), f.view("Int16Array")];
+    const atomic = f.service.atomics!;
+    const calls: string[] = [];
+    const service = f.service as unknown as Record<string, unknown>;
+    for (const name of ["length", "readUnsigned", "writeUnsigned"] as const) {
+      const original = (service[name] as Function).bind(f.service);
+      service[name] = (...args: unknown[]) => {
+        calls.push(name);
+        return original(...args);
+      };
+    }
+    Object.defineProperty(f.service, "atomics", {
+      value: {
+        ...atomic,
+        compareExchangeUnsigned: (
+          ...args: [number, number, 1 | 2 | 4, number, number]
+        ) => {
+          calls.push("compareExchangeUnsigned");
+          return atomic.compareExchangeUnsigned(...args);
+        },
+        updateUnsigned: (...args: Parameters<typeof atomic.updateUnsigned>) => {
+          calls.push("updateUnsigned");
+          return atomic.updateUnsigned(...args);
+        },
+      },
+    });
+    for (const [at, view] of views.entries()) {
+      calls.length = 0;
+      assert.equal(f.invoke("store", [view, 3, 65535.5]), 65535);
+      assert.equal(f.invoke("add", [view, 3, 2]), -1);
+      assert.equal(f.invoke("compareExchange", [view, 3, 1, -32768]), 1);
+      assert.equal(f.invoke("load", [view, 3]), -32768);
+      const fixed = at === 0 || !growable;
+      assert.deepEqual(
+        fixed
+          ? calls
+          : calls.filter((call) => call === "updateUnsigned").length,
+        fixed
+          ? [
+              "writeUnsigned",
+              "updateUnsigned",
+              "compareExchangeUnsigned",
+              "readUnsigned",
+            ]
+          : 0,
+      );
+    }
+    // Index conversions that could observe Script stay on the general path.
+    assert.equal(f.invoke("load", [views[0], "3"]), -32768);
+    f.kind(() => f.invoke("load", [views[0], 8]), "range");
+    f.kind(() => f.invoke("add", [views[0], -1, 1]), "range");
+    assert.equal(f.invoke("exchange", [views[0], 3.9, -0]), -32768);
+    assert.equal(Object.is(f.invoke("store", [views[0], 3, -0.5]), 0), true);
+    assert.equal(f.invoke("store", [views[0], 3, NaN]), 0);
+    assert.equal(f.invoke("store", [views[0], 3, -Infinity]), -Infinity);
+  }
+});
+
 test("atomic RMW retries a competing update without recoercing operands", async () => {
   const f = await memoryFixture(true),
     view = f.view("Uint32Array");

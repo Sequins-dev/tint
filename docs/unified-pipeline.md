@@ -373,9 +373,23 @@ before using the native operation. Realm arrays and prototype imitations use
 ordinary realm property lookup, assignment and method calls. A successful
 guard is independent of the brand checks inside typed-array methods.
 
-A native typed-array ABI still requires matching native storage. The
-projection checks the element layout and passes the same reference. A realm
-value fails with TypeError and the message
+A native typed-array ABI passes matching native storage by reference. A
+realm typed array of the same kind with a fixed native window is viewed
+natively (`projectNativeTypedArray`): over an ordinary buffer's backing,
+or over a shared block's nonmoving payload. A view over an ordinary buffer
+observes its detachment as a realm typed array does. The buffer's backing
+record lists its views, and detaching the buffer (`transfer`,
+`transferToFixedLength` or a Worker transfer) detaches each view through the
+`native-array-detach` host operation. The view's length becomes 0, so the
+existing bounds check makes element reads give undefined and ignores
+writes. Its data pointer moves to just before its owner's payload, a
+negative `byteOffset`, which `Atomics` and the validating methods (`fill`,
+`set`, `subarray`, `slice`, `join`, `at`, `reverse`, iteration) reject with
+a TypeError after their length-0 test. `byteOffset` reads as 0. Native-born
+typed arrays and shared-block views never detach, and LICM still hoists a
+typed-array length out of any loop that runs no code that could detach one.
+Any other value, including a resizable buffer, a length-tracking view or a
+growable shared buffer, fails with TypeError and the message
 `Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view`.
 
 Evidence comes from `tools/build-typed-realm-instanceof-fixture.ts`, its Node
@@ -981,7 +995,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Realm library member signatures with callbacks or non-scalar results, including `Promise.then`, `Map.get`, `RegExp.exec` and `Uint8Array.prototype`, require additional bridge lowering. Realm property writes, index signatures, optional chains and direct calls or construction through library constructor aliases also require separate lowering. | `build-typed-realm-instanceof-fixture.ts` and checker diagnostics                                       | 4                                        |
 | WeakMap and WeakSet constructors are installed. Constructing their instances requires the realm's weak-storage service.                                                                                                                                                                                                                                | `weak-collections`                                                                                      | 2b, 4                                    |
 | Realm typed arrays reaching typed `Uint8Array` parameters. With `node:ffi` imported (which links the program realm), `const first = (input: Uint8Array): number => input[0] ?? 0;` and `const bytes = Buffer.from([42]); first(bytes)` stop lowering at `downcast operand representation invariant`: the local takes a `Uint8Array` representation while the checker records a checked downcast on it. Accepting the proven representation instead traps at run time. Passing `first(Buffer.from([42]))` directly builds, but the checked projection rejects the realm Buffer and the image exits 70; JavaScript accepts a Buffer there. Typed lowering owns both, not `node:ffi`. | (needs a realm import; reproduction above)                                                              | Typed-array projection of realm values   |
-| The slice 2b byte-range API projects ordinary and shared realm views. Passing an escaping view to the raw typed-array ABI needs a lifecycle-aware carrier for resizing and detachment.                                                                                                                                                                 | `build-realm-array-native-projection-failure-fixture.ts`                                                | Typed-array ABI lifecycle                |
+| Realm typed arrays with a fixed native window reach the raw typed-array ABI as native views, which observe a detachment of their buffer. Resizable buffers, length-tracking views and growable shared buffers still need a lifecycle-aware carrier for resizing.                                                                                       | `native-realm-array-projection`                                                                         | Typed-array ABI lifecycle                |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                                                                                    | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                  | 4a                                       |
 | Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                                                                               | `reassignment-narrowing`                                                                                | 4a                                       |
 | Module-level loops and non-literal initializers ("module evaluation is required for this statement"; `tint:ffi` runtime module, FFI phase 4)                                                                                                                                                                                                           | `module-initializers`, `module-statements`                                                              | 5                                        |

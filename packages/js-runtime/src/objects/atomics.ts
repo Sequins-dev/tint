@@ -81,36 +81,26 @@ export function installAtomicsIntrinsics(
     true,
     hooks,
   );
-  builtinProperty(
-    atomics,
+  const loadFn = builtinFunction(
+    realm.functionPrototype,
     "load",
-    builtinFunction(
-      realm.functionPrototype,
-      "load",
-      2,
-      (receiver, args): unknown =>
-        loadAtomicValue(args[0], args[1], realm, hooks),
-      hooks,
-    ),
-    true,
-    true,
+    2,
+    (receiver, args): unknown =>
+      loadAtomicValue(args[0], args[1], realm, hooks),
     hooks,
   );
-  builtinProperty(
-    atomics,
+  realm.intrinsicFunctions.atomicsLoad = loadFn;
+  builtinProperty(atomics, "load", loadFn, true, true, hooks);
+  const storeFn = builtinFunction(
+    realm.functionPrototype,
     "store",
-    builtinFunction(
-      realm.functionPrototype,
-      "store",
-      3,
-      (receiver, args): unknown =>
-        storeAtomicValue(args[0], args[1], args[2], realm, hooks),
-      hooks,
-    ),
-    true,
-    true,
+    3,
+    (receiver, args): unknown =>
+      storeAtomicValue(args[0], args[1], args[2], realm, hooks),
     hooks,
   );
+  realm.intrinsicFunctions.atomicsStore = storeFn;
+  builtinProperty(atomics, "store", storeFn, true, true, hooks);
   builtinProperty(
     atomics,
     "compareExchange",
@@ -134,21 +124,16 @@ export function installAtomicsIntrinsics(
     hooks,
   );
   function installUpdate(operation: AtomicUpdate): void {
-    builtinProperty(
-      atomics,
+    const fn = builtinFunction(
+      realm.functionPrototype,
       operation,
-      builtinFunction(
-        realm.functionPrototype,
-        operation,
-        3,
-        (receiver, args): unknown =>
-          updateAtomicValue(operation, args[0], args[1], args[2], realm, hooks),
-        hooks,
-      ),
-      true,
-      true,
+      3,
+      (receiver, args): unknown =>
+        updateAtomicValue(operation, args[0], args[1], args[2], realm, hooks),
       hooks,
     );
+    if (operation === "add") realm.intrinsicFunctions.atomicsAdd = fn;
+    builtinProperty(atomics, operation, fn, true, true, hooks);
   }
   installUpdate("exchange");
   installUpdate("add");

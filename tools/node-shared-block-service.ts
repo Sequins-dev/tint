@@ -9,6 +9,7 @@ import type {
   SharedStatus,
   SharedUnsignedWidth,
 } from "@tint/js-runtime/bytes/shared";
+import { sharedUpdateValue } from "@tint/js-runtime/bytes/shared";
 
 interface NodeSharedBlock {
   readonly descriptor: SharedBlockDescriptor;
@@ -93,6 +94,34 @@ export class NodeSharedBlockService implements SharedBlockService {
       scratch[1] = Number(observed >> 32n);
       return "none";
     },
+    updateUnsigned: (handle, offset, width, operation, operand) => {
+      if (width !== 1 && width !== 2 && width !== 4)
+        return { ok: false, error: "invalid-width" };
+      const access = this.access(handle, offset, width, "seq-cst");
+      if (!access.ok) return access;
+      const maximum = width === 1 ? 255 : width === 2 ? 65535 : 4294967295;
+      if (!validLength(operand) || operand > maximum)
+        return { ok: false, error: "invalid-value" };
+      const data =
+        width === 1
+          ? new Uint8Array(access.value.payload, offset, 1)
+          : width === 2
+            ? new Uint16Array(access.value.payload, offset, 1)
+            : new Uint32Array(access.value.payload, offset, 1);
+      // The same retry loop as the native leaf, so sharedUpdateValue is
+      // checked against Node's own Atomics arithmetic.
+      let previous = Atomics.load(data, 0);
+      for (;;) {
+        const observed = Atomics.compareExchange(
+          data,
+          0,
+          previous,
+          sharedUpdateValue(operation, previous, operand, width),
+        );
+        if (observed === previous) return { ok: true, value: previous };
+        previous = observed;
+      }
+    },
   };
 
   create(
@@ -134,6 +163,11 @@ export class NodeSharedBlockService implements SharedBlockService {
     return block === undefined
       ? { ok: false, error: "invalid-handle" }
       : { ok: true, value: block.descriptor };
+  }
+
+  bytes(handle: number): Uint8Array | undefined {
+    const block = this.blocks.get(handle);
+    return block === undefined ? undefined : new Uint8Array(block.payload);
   }
 
   length(handle: number, order: SharedOrder): SharedResult<number> {

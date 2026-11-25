@@ -37,6 +37,17 @@ export interface DebugOrigin {
 /** Categories general-is tests. */
 export type NativeTypedArray =
   "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+/** The Atomics operations on a native integer array (see `array-atomic`). */
+export type ArrayAtomicOperation =
+  | "load"
+  | "store"
+  | "add"
+  | "sub"
+  | "and"
+  | "or"
+  | "xor"
+  | "exchange"
+  | "compare-exchange";
 export type GeneralTest =
   | "undefined"
   | "number"
@@ -741,6 +752,44 @@ export type Instruction = Span &
         readonly array: number;
         readonly begin: number;
         readonly length: number;
+      }
+    | {
+        /** A view of `type` over typed ArrayBuffer `buffer` (an owning or
+         * borrowed array): `length` elements from `byteOffset`. Traps
+         * unless both are integers, `byteOffset` is a multiple of the
+         * element width and the view lies within the buffer's bytes. */
+        readonly kind: "array-view";
+        readonly id: number;
+        readonly type:
+          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly buffer: number;
+        readonly byteOffset: number;
+        readonly length: number;
+      }
+    | {
+        /** The byte length of typed ArrayBuffer `buffer`, whose element
+         * width its header records. */
+        readonly kind: "array-buffer-byte-length";
+        readonly id: number;
+        readonly buffer: number;
+      }
+    | {
+        /** An Atomics operation on element `index` of a native integer
+         * array (Uint8Array, Uint16Array or Uint32Array), sequentially
+         * consistent. `operands` are numbers, converted as an element write
+         * converts its value: none for "load"; the value for "store",
+         * "exchange" and the read-modify-write operations; the expected
+         * and replacement values for "compare-exchange", which writes the
+         * replacement only when the element equals the converted expected
+         * value. Every operation but "store" (which has no result) yields
+         * the element's previous value. Traps unless `index` is an integer
+         * below the array's length. */
+        readonly kind: "array-atomic";
+        readonly operation: ArrayAtomicOperation;
+        readonly id: number | undefined;
+        readonly array: number;
+        readonly index: number;
+        readonly operands: readonly number[];
       }
     | {
         /** Trusted opaque cell: general handles must never be viewed as records. */

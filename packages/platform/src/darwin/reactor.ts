@@ -22,6 +22,10 @@ const ADD = 1;
 const DELETE = 2;
 const CLEAR = 0x20;
 const TRIGGER = 0x01000000;
+// kevent64's KEVENT_FLAG_IMMEDIATE. A zero timespec is not a poll: it takes
+// the timed-wait path and reschedules the thread, about 11 us per call on
+// macOS arm64, against 0.15 us for an immediate poll.
+const IMMEDIATE = 1;
 const INTERRUPTED = -4;
 
 function change(
@@ -90,6 +94,8 @@ export function createReactor(): NativeReactor {
       let received = 0;
       if (timeout === Infinity)
         received = kevent64$wait(queue, 0, 0, events, BATCH, 0, 0);
+      else if (timeout === 0)
+        received = kevent64$wait(queue, 0, 0, events, BATCH, IMMEDIATE, 0);
       else {
         const ns = Math.ceil(Math.min(timeout, 2147483647) * 1000000);
         if (

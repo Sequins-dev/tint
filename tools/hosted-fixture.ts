@@ -472,6 +472,36 @@ export function workspaceGeneralLowering(
 /** Build through the full hosted pipeline and run through the target runner.
  * Returns the image path (kept only with TINT_BUILD_ONLY=1 or
  * TINT_KEEP_NATIVE=1). */
+/** One declaration per runtime module: a fixture's own and the ones its
+ * imports bring (the FFI runtimes declare intrinsics/memory.ts, which shared
+ * buffer fixtures also bind). The first namespace stands; retained exports
+ * merge, and a whole-module declaration retains everything. */
+function mergeRuntimes(
+  runtimes: readonly RuntimeSource[],
+): readonly RuntimeSource[] {
+  const merged: RuntimeSource[] = [];
+  for (const runtime of runtimes) {
+    const at = merged.findIndex((entry) => entry.module === runtime.module);
+    const existing = merged[at];
+    if (existing === undefined) {
+      merged.push(runtime);
+      continue;
+    }
+    const first = existing.retainedExports,
+      second = runtime.retainedExports;
+    merged[at] =
+      first === undefined || second === undefined
+        ? { module: existing.module, namespace: existing.namespace }
+        : {
+            ...existing,
+            retainedExports: [
+              ...first,
+              ...second.filter((name) => !first.includes(name)),
+            ],
+          };
+  }
+  return merged;
+}
 function buildHostedFixture(
   text: string,
   name: string,
@@ -690,6 +720,10 @@ function buildHostedFixture(
   const roots = [
     ...projectRoots(),
     ...(general?.runtimeModules ?? []),
+    // Requested runtimes load even when no application module imports them.
+    ...additionalRuntimes
+      .map((runtime) => runtime.module)
+      .filter((id) => !localModuleIds.has(id) && !projectRoots().includes(id)),
     ...dependencies
       .map((dependency) => dependency[1])
       .filter(
@@ -826,7 +860,7 @@ function buildHostedFixture(
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
     trustedExecutableCode: options.trustedExecutableCode ?? false,
-    runtimes: [
+    runtimes: mergeRuntimes([
       ...request.runtimes,
       ...additionalRuntimes,
       ...ffi.runtimes,
@@ -841,7 +875,7 @@ function buildHostedFixture(
           ]
         : []),
       ...(serviceImage?.runtimes ?? []),
-    ],
+    ]),
     recordBindings: [
       ...recordBindings,
       ...(serviceImage?.recordBindings ?? []),

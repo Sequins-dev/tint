@@ -36,6 +36,9 @@ export interface IntrinsicFunctions {
   setAdd: IntrinsicFunction;
   arrayPush: IntrinsicFunction;
   arrayPop: IntrinsicFunction;
+  atomicsAdd: IntrinsicFunction;
+  atomicsLoad: IntrinsicFunction;
+  atomicsStore: IntrinsicFunction;
 }
 
 export function createIntrinsicFunctions(): IntrinsicFunctions {
@@ -61,5 +64,8 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     setAdd: undefined,
     arrayPush: undefined,
     arrayPop: undefined,
+    atomicsAdd: undefined,
+    atomicsLoad: undefined,
+    atomicsStore: undefined,
   };
 }

@@ -89,6 +89,8 @@ export interface NativeWorkerTurnControl {
 export interface NativeWorkerEngineGrant {
   readonly sequence: number;
   readonly shared: NativeSharedBlockRegistry;
+  /** The shared string arena's control page (shared-strings.ts), or 0. */
+  readonly strings: number;
 }
 
 export interface NativeWorkerRequest {
@@ -124,6 +126,7 @@ const ENGINE_SEQUENCE = 152;
 const BLOCKS = 160;
 const BLOCK_BYTES = 168;
 const BLOCK_ENGINE = 176;
+const STRINGS = 184;
 
 /** Launch from the current image. The owner watches a nonblocking exit pipe.
  * Worker code uses its own hosted context and shares only scalar startup data. */
@@ -272,6 +275,7 @@ export function startNativeWorker(
       writeNumber(memory, record, BLOCKS, engine.shared.base);
       writeNumber(memory, record, BLOCK_BYTES, engine.shared.byteLength);
       writeNumber(memory, record, BLOCK_ENGINE, engine.shared.engineId);
+      writeNumber(memory, record, STRINGS, engine.strings);
     }
     const port = request.parentPort;
     if (port !== undefined) {
@@ -424,6 +428,7 @@ export function runNativeWorker(
             byteLength: readNumber(memory, record, BLOCK_BYTES, scratch),
             engineId: readNumber(memory, record, BLOCK_ENGINE, scratch),
           },
+          strings: readNumber(memory, record, STRINGS, scratch),
         };
   const control: NativeWorkerTurnControl = {
     input: readNumber(memory, record, CONTROL_INPUT, scratch),

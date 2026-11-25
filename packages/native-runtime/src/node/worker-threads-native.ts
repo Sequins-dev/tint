@@ -126,10 +126,15 @@ function send(
   value: unknown,
   list: readonly unknown[] | undefined,
 ): void {
-  const { realm } = host();
+  const { bindings, realm } = host();
+  // The object's own postMessage, which untyped code may have replaced; the
+  // intrinsic one posts without a realm call.
+  const method = read(object, "postMessage", realm);
+  if (bindings.post(object, method, value, list)) return;
   const args: unknown[] = [value];
   if (list !== undefined) args.push(transferList(list, realm));
-  invoke(object, "postMessage", args);
+  const call = callObjectValue(method, object, args, realm.objectPrototype);
+  if (call.error !== "none") throw call.value;
 }
 function listen(
   object: ScriptObject,
@@ -137,7 +142,9 @@ function listen(
   listener: WorkerListener,
   once: boolean,
 ): void {
-  const { realm } = host();
+  const { bindings, realm } = host();
+  const method = read(object, once ? "once" : "on", realm);
+  if (bindings.listen(object, method, name, listener, once)) return;
   const callback = createCallableObject<ScriptPropertyKey, unknown>(
     realm.functionPrototype,
     (_receiver, args): unknown => {
@@ -146,7 +153,13 @@ function listen(
     },
     realm.executionContext,
   );
-  invoke(object, once ? "once" : "on", [name, callback]);
+  const call = callObjectValue(
+    method,
+    object,
+    [name, callback],
+    realm.objectPrototype,
+  );
+  if (call.error !== "none") throw call.value;
 }
 export interface MessagePort {
   readonly object: ScriptObject;

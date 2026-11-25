@@ -327,6 +327,10 @@ export function scriptRuntimeImports(
               "scriptArrayPush",
               "scriptArrayPushFast",
               "scriptArrayPop",
+              "scriptAtomicsAddFast",
+              "scriptAtomicsInt32View",
+              "scriptAtomicsLoadFast",
+              "scriptAtomicsStoreFast",
             ]
           : []),
         ...(usesObjectLiterals || declarations === "all"

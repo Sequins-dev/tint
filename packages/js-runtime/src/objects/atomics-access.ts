@@ -11,6 +11,12 @@ import {
   processAtomicWaitEvents,
 } from "./atomics-wait.ts";
 import type { StorageAccess } from "../bytes/index.ts";
+import type {
+  SharedBlockStorage,
+  SharedUnsignedWidth,
+  SharedUpdate,
+} from "../bytes/shared.ts";
+import { viewObjectValue } from "./values.ts";
 import { bufferIndex } from "./array-buffer.ts";
 import type { BufferStorageWindow } from "./buffer-storage.ts";
 import { readBigIntBytes, writeBigIntBytes } from "./bigint-bytes.ts";
@@ -22,7 +28,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import { readNumericElement, writeNumericElement } from "./numeric-element.ts";
-import type { ObjectHooks } from "./operations.ts";
+import { exoticSlots, type ObjectHooks } from "./operations.ts";
 import {
   requireTypedArray,
   typedArrayWindow,
@@ -37,6 +43,287 @@ import {
 interface AtomicAccess {
   readonly data: TypedArrayData;
   readonly index: number;
+}
+/** The common case of every Atomics operation: a fixed-length Int8–Uint32
+ * view over shared storage, an in-range integer index and Number operands.
+ * A shared block never shrinks, so a fixed-length view that was in bounds
+ * when created stays in bounds, and no conversion here can run Script; the
+ * operation is then one service call on the element's unsigned encoding.
+ * Returns undefined for everything else, which takes the general path. */
+function sharedIntegerData(
+  value: unknown,
+  index: number,
+  realm: ErrorRealm,
+): TypedArrayData | undefined {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  const data =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTypedArrayData;
+  if (
+    data === undefined ||
+    data.storage.kind !== "shared" ||
+    data.length === undefined ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= data.length
+  )
+    return undefined;
+  const kind = data.kind;
+  return kind === "Int32" ||
+    kind === "Uint8" ||
+    kind === "Int8" ||
+    kind === "Uint16" ||
+    kind === "Int16" ||
+    kind === "Uint32"
+    ? data
+    : undefined;
+}
+function sharedIntegerWidth(data: TypedArrayData): SharedUnsignedWidth {
+  const kind = data.kind;
+  return kind === "Int8" || kind === "Uint8"
+    ? 1
+    : kind === "Int16" || kind === "Uint16"
+      ? 2
+      : 4;
+}
+/** ToUint8/16/32 of a Number: the element's unsigned encoding. */
+function unsignedEncoding(value: number, width: SharedUnsignedWidth): number {
+  const word = value >>> 0;
+  return width === 4 ? word : width === 2 ? word & 65535 : word & 255;
+}
+function decodeSharedInteger(data: TypedArrayData, unsigned: number): number {
+  const kind = data.kind;
+  return kind === "Int32"
+    ? unsigned | 0
+    : kind === "Int8"
+      ? (unsigned << 24) >> 24
+      : kind === "Int16"
+        ? (unsigned << 16) >> 16
+        : unsigned;
+}
+/** ToIntegerOrInfinity of a Number, as Atomics.store returns it. */
+function integerNumber(value: number): number {
+  if (value !== value) return 0;
+  const integer = Math.trunc(value);
+  return integer === 0 ? 0 : integer;
+}
+function sharedElementOffset(
+  data: TypedArrayData,
+  index: number,
+  width: SharedUnsignedWidth,
+): number {
+  return data.byteOffset + index * width;
+}
+function sharedStorage(data: TypedArrayData): SharedBlockStorage {
+  const storage = data.storage;
+  if (storage.kind !== "shared") throw "ATOMIC_SHARED_STORAGE_INVARIANT";
+  return storage;
+}
+/** Miss sentinel for inline Atomics fast paths (outside [-2^31, 2^32 - 1]). */
+const atomicsFastMiss = 4294967296;
+
+/** A cached native Uint32Array over a fixed-length little-endian Int32/Uint32
+ * view of a shared block whose service supports atomics. */
+function sharedWordView(data: TypedArrayData): Uint32Array | undefined {
+  const cached = data.nativeWords;
+  if (cached !== undefined) return cached;
+  const storage = data.storage;
+  const length = data.length;
+  if (
+    storage.kind !== "shared" ||
+    storage.service.atomics === undefined ||
+    length === undefined ||
+    data.endian !== "little" ||
+    (data.kind !== "Int32" && data.kind !== "Uint32")
+  )
+    return undefined;
+  const raw = storage.service.bytes(storage.handle);
+  if (raw === undefined) return undefined;
+  const byteOffset = raw.byteOffset + data.byteOffset;
+  if ((byteOffset & 3) !== 0 || data.byteOffset + length * 4 > raw.byteLength)
+    return undefined;
+  const view = new Uint32Array(raw.buffer, byteOffset, length);
+  data.nativeWords = view;
+  return view;
+}
+
+/** Returns the cached native Uint32Array for a fixed-length little-endian
+ * shared Int32Array view whose service supports atomics, for loop-hoisted
+ * inline Atomics.add/load/store. */
+export function scriptAtomicsInt32View(
+  target: unknown,
+  realm: ErrorRealm,
+): Uint32Array | undefined {
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return undefined;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return undefined;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined || data.kind !== "Int32") return undefined;
+  return sharedWordView(data);
+}
+
+/** Inline fast path for Atomics.add(typedArray, index, value) with Number
+ * index and value on an Int32/Uint32 shared view; returns atomicsFastMiss on
+ * any other receiver, index or kind. */
+export function scriptAtomicsAddFast(
+  target: unknown,
+  index: number,
+  operand: number,
+  realm: ErrorRealm,
+): number {
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return atomicsFastMiss;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return atomicsFastMiss;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined) return atomicsFastMiss;
+  const length = data.length;
+  if (length === undefined) return atomicsFastMiss;
+  const at = index | 0;
+  if (at !== index || at < 0 || at >= length) return atomicsFastMiss;
+  const words = sharedWordView(data);
+  if (words === undefined) return atomicsFastMiss;
+  const previous = Atomics.add(words, at, operand >>> 0);
+  return data.kind === "Int32" ? previous | 0 : previous;
+}
+
+/** Inline fast path for Atomics.load(typedArray, index) with Number index on
+ * an Int32/Uint32 shared view; returns atomicsFastMiss on miss. */
+export function scriptAtomicsLoadFast(
+  target: unknown,
+  index: number,
+  realm: ErrorRealm,
+): number {
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return atomicsFastMiss;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return atomicsFastMiss;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined) return atomicsFastMiss;
+  const length = data.length;
+  if (length === undefined) return atomicsFastMiss;
+  const at = index | 0;
+  if (at !== index || at < 0 || at >= length) return atomicsFastMiss;
+  const words = sharedWordView(data);
+  if (words === undefined) return atomicsFastMiss;
+  const value = Atomics.load(words, at);
+  return data.kind === "Int32" ? value | 0 : value;
+}
+
+/** Inline fast path for Atomics.store(typedArray, index, value) with Number
+ * index and int32 value on an Int32/Uint32 shared view; returns
+ * atomicsFastMiss on miss. */
+export function scriptAtomicsStoreFast(
+  target: unknown,
+  index: number,
+  operand: number,
+  realm: ErrorRealm,
+): number {
+  const intValue = operand | 0;
+  if (intValue !== operand) return atomicsFastMiss;
+  const object = viewObjectValue(target, realm.objectPrototype);
+  if (object === undefined) return atomicsFastMiss;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return atomicsFastMiss;
+  const data = exotic.internalTypedArrayData;
+  if (data === undefined) return atomicsFastMiss;
+  const length = data.length;
+  if (length === undefined) return atomicsFastMiss;
+  const at = index | 0;
+  if (at !== index || at < 0 || at >= length) return atomicsFastMiss;
+  const words = sharedWordView(data);
+  if (words === undefined) return atomicsFastMiss;
+  Atomics.store(words, at, intValue >>> 0);
+  return intValue;
+}
+
+function loadSharedInteger(
+  value: unknown,
+  index: number,
+  realm: ErrorRealm,
+): number | undefined {
+  const data = sharedIntegerData(value, index, realm);
+  if (data === undefined) return undefined;
+  const storage = sharedStorage(data),
+    width = sharedIntegerWidth(data);
+  const result = storage.service.readUnsigned(
+    storage.handle,
+    sharedElementOffset(data, index, width),
+    width,
+    "seq-cst",
+  );
+  if (!result.ok) throw "ATOMIC_LOAD_INVARIANT";
+  return decodeSharedInteger(data, result.value);
+}
+function storeSharedInteger(
+  value: unknown,
+  index: number,
+  operand: number,
+  realm: ErrorRealm,
+): number | undefined {
+  const data = sharedIntegerData(value, index, realm);
+  if (data === undefined) return undefined;
+  const storage = sharedStorage(data),
+    width = sharedIntegerWidth(data);
+  if (
+    storage.service.writeUnsigned(
+      storage.handle,
+      sharedElementOffset(data, index, width),
+      width,
+      unsignedEncoding(operand, width),
+      "seq-cst",
+    ) !== "none"
+  )
+    throw "ATOMIC_STORE_INVARIANT";
+  return integerNumber(operand);
+}
+function compareExchangeSharedInteger(
+  value: unknown,
+  index: number,
+  expected: number,
+  replacement: number,
+  realm: ErrorRealm,
+): number | undefined {
+  const data = sharedIntegerData(value, index, realm);
+  if (data === undefined) return undefined;
+  const storage = sharedStorage(data),
+    atomics = storage.service.atomics;
+  if (atomics === undefined) return undefined;
+  const width = sharedIntegerWidth(data);
+  const result = atomics.compareExchangeUnsigned(
+    storage.handle,
+    sharedElementOffset(data, index, width),
+    width,
+    unsignedEncoding(expected, width),
+    unsignedEncoding(replacement, width),
+  );
+  if (!result.ok) throw "ATOMIC_COMPARE_EXCHANGE_INVARIANT";
+  return decodeSharedInteger(data, result.value);
+}
+function updateSharedInteger(
+  operation: AtomicUpdate,
+  value: unknown,
+  index: number,
+  operand: number,
+  realm: ErrorRealm,
+): number | undefined {
+  const data = sharedIntegerData(value, index, realm);
+  if (data === undefined) return undefined;
+  const storage = sharedStorage(data),
+    atomics = storage.service.atomics;
+  if (atomics === undefined) return undefined;
+  const width = sharedIntegerWidth(data);
+  const result = atomics.updateUnsigned(
+    storage.handle,
+    sharedElementOffset(data, index, width),
+    width,
+    operation,
+    unsignedEncoding(operand, width),
+  );
+  if (!result.ok) throw "ATOMIC_UPDATE_INVARIANT";
+  return decodeSharedInteger(data, result.value);
 }
 interface IntegerArrayWitness {
   readonly data: TypedArrayData;
@@ -108,6 +395,10 @@ export function loadAtomicValue(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): unknown {
+  if (typeof index === "number") {
+    const loaded = loadSharedInteger(value, index, realm);
+    if (loaded !== undefined) return loaded;
+  }
   const access = validateAtomicAccess(value, index, "read", realm, hooks);
   const window = revalidateAtomicAccess(access, "read", realm);
   const data = access.data,
@@ -124,6 +415,10 @@ export function storeAtomicValue(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): unknown {
+  if (typeof index === "number" && typeof operand === "number") {
+    const stored = storeSharedInteger(value, index, operand, realm);
+    if (stored !== undefined) return stored;
+  }
   const access = validateAtomicAccess(value, index, "write", realm, hooks);
   const data = access.data,
     kind = data.kind;
@@ -153,6 +448,20 @@ export function compareExchangeAtomicValue(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): unknown {
+  if (
+    typeof index === "number" &&
+    typeof expected === "number" &&
+    typeof replacement === "number"
+  ) {
+    const observed = compareExchangeSharedInteger(
+      value,
+      index,
+      expected,
+      replacement,
+      realm,
+    );
+    if (observed !== undefined) return observed;
+  }
   const access = validateAtomicAccess(value, index, "write", realm, hooks);
   const data = access.data,
     kind = data.kind;
@@ -254,7 +563,7 @@ function compareExchangeBytes(
   }
   return observed;
 }
-export type AtomicUpdate = "exchange" | "add" | "sub" | "and" | "or" | "xor";
+export type AtomicUpdate = SharedUpdate;
 function equalBytes(left: Uint8Array, right: Uint8Array): boolean {
   for (let i = 0; i < left.length; i++) if (left[i] !== right[i]) return false;
   return true;
@@ -269,6 +578,16 @@ export function updateAtomicValue(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): unknown {
+  if (typeof index === "number" && typeof operand === "number") {
+    const previous = updateSharedInteger(
+      operation,
+      value,
+      index,
+      operand,
+      realm,
+    );
+    if (previous !== undefined) return previous;
+  }
   const access = validateAtomicAccess(value, index, "write", realm, hooks);
   const data = access.data,
     kind = data.kind;

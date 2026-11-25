@@ -1,0 +1,29 @@
+Shared string fixtures on Linux x86-64 (Debian 13 VM, TCG), images cross-built
+at e503b7ee8 (workspace source snapshot 4524e0098572adae), run under LLDB 19.
+The copying runtime is not supported on x86-64 yet (build refuses it).
+
+== serial-0 (main fixture) image 3ba12c70eb70d0f1
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== serial-1 (stress) image 51a2541bbe5c2a38
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== parallel-0 (main fixture) image 1cf869279d33a55b
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== parallel-1 (stress) image 3706967fc6b4bbba
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+
+Earlier attempts at a5856ceaf (kept for the record):
+- every image: "Uncaught SHARED_STRING_RELEASE_PAGES" or SIGILL (ud2) in the
+  stress images: x86-64 memory-release refuses ranges outside the managed
+  mapping, and the failure threw inside a collection. Fixed in e503b7ee8
+  (pages stay resident, counted).
+- main fixture after that fix: "in-flight read 211" (the sender's hold
+  outlived a collection in the sending turn on x86-64); the step now collects
+  in a later turn.
