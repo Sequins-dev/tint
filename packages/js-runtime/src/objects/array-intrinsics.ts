@@ -39,12 +39,18 @@ export function installArrayIntrinsics(
       );
     return createArrayFromList(args, 0, prototype, realm, hooks);
   }
-  const constructor = createConstructorObject<ScriptPropertyKey, unknown>(
-    realm.functionPrototype,
-    (receiver, args): unknown => build(args, realm.arrayPrototype),
-    (args, target): unknown =>
-      build(args, constructorPrototype(target, "array", realm, hooks)),
-  );
+  const constructor: OrdinaryObject<ScriptPropertyKey, unknown> =
+    createConstructorObject<ScriptPropertyKey, unknown>(
+      realm.functionPrototype,
+      (receiver, args): unknown => build(args, realm.arrayPrototype),
+      (args, target): unknown =>
+        build(
+          args,
+          target === constructor
+            ? realm.arrayPrototype
+            : constructorPrototype(target, "array", realm, hooks),
+        ),
+    );
   realm.arrayConstructor = constructor;
   const species = builtinFunction(
     realm.functionPrototype,

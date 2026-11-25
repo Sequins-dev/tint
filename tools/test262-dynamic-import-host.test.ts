@@ -650,6 +650,9 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "absentElementValue",
     "storePackedNumberElement",
     "readCachedLengthValue",
+    "readFloat64Element",
+    "writeFloat64Element",
+    "isOrdinaryObject",
     "scriptMapGet",
     "scriptMapHas",
     "scriptMapSet",
@@ -703,7 +706,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   // inherited), their miss test and the cached store where they imported
   // one slot reader; native script entries add six helpers; step 5a adds
   // eleven helpers for element access, builtin intrinsics and object literals.
-  assert.equal(current.values.length, 173);
+  assert.equal(current.values.length, 176);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

@@ -97,6 +97,7 @@ import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import { fallsThrough, forwardableEntries } from "./block-entries.ts";
 import {
   fusedPropertyAccesses,
+  knownObjectTagAccesses,
   scriptEntryCalleeValues,
 } from "../../scalar/property-fusion.ts";
 import {
@@ -3609,15 +3610,20 @@ function emitModuleForms(
         // 6/7: a bounded safe integer, without/with possible NaN. Magnitudes
         // prove signed-64 conversion safe, but do not imply valid array indices.
         if (!integerFactsKnown) {
-          cachedIntegerFacts = stableSlots
-            ? provenWordFacts(
-                fn,
-                work(1000000),
-                wordReturns,
-                provenIntegerSlots(fn, work(200000)),
-                wordArguments === undefined ? undefined : wordArguments[fn.id],
-              )
-            : undefined;
+          cachedIntegerFacts =
+            stableSlots ||
+            (fn.environment === undefined &&
+              fn.name.includes("__tint_spec_loop_"))
+              ? provenWordFacts(
+                  fn,
+                  work(1000000),
+                  wordReturns,
+                  provenIntegerSlots(fn, work(200000)),
+                  wordArguments === undefined
+                    ? undefined
+                    : wordArguments[fn.id],
+                )
+              : undefined;
           integerFactsKnown = true;
         }
         const integerFacts = cachedIntegerFacts;
@@ -8725,7 +8731,161 @@ function emitModuleForms(
         const fusedAccesses = viewAccesses
           ? undefined
           : fusedPropertyAccesses(fn);
+        const knownObjectTag = knownObjectTagAccesses(fn, fusedAccesses);
         const scriptEntryCallees = scriptEntryCalleeValues(fn);
+        // For pure-leaf outlined numeric loop kernels (`__tint_spec_loop_*`),
+        // hoist up to two immutable Float64Array parameter data pointers into
+        // scratch registers x14 and x15 once at function entry so inner
+        // array-element/array-store operations index directly without reloading
+        // `[array, #nativeArrayDataOffset]` on every access.
+        const hoistedArrayDataValues = new Map<number, number>();
+        if (
+          fn.environment === undefined &&
+          fn.name.includes("__tint_spec_loop_") &&
+          fn.blocks[0]?.id === fn.entry
+        ) {
+          let pureLeaf = true;
+          const storedSlots = new Uint8Array(fn.slots.length);
+          for (const block of fn.blocks) {
+            if (block === undefined) {
+              pureLeaf = false;
+              break;
+            }
+            const t = block.terminator;
+            if (
+              t.kind !== "jump" &&
+              t.kind !== "branch" &&
+              t.kind !== "return"
+            ) {
+              pureLeaf = false;
+              break;
+            }
+            if (block.exception !== undefined) {
+              pureLeaf = false;
+              break;
+            }
+            for (const op of block.instructions) {
+              if (op === undefined) {
+                pureLeaf = false;
+                break;
+              }
+              if (op.kind === "store") {
+                storedSlots[op.slot] = 1;
+              } else if (
+                op.kind === "binary" &&
+                (op.operator === "%" ||
+                  op.operator === ">>>" ||
+                  op.operator === "**")
+              ) {
+                pureLeaf = false;
+                break;
+              } else if (
+                op.kind !== "load" &&
+                op.kind !== "constant" &&
+                op.kind !== "unary" &&
+                op.kind !== "binary" &&
+                op.kind !== "array-element" &&
+                op.kind !== "array-store" &&
+                op.kind !== "array-length" &&
+                op.kind !== "array-valid"
+              ) {
+                pureLeaf = false;
+                break;
+              }
+            }
+            if (!pureLeaf) break;
+          }
+          if (pureLeaf) {
+            // Rank immutable Float64Array parameters by loop-weighted
+            // array-element/store frequency so the two hottest inner-loop
+            // arrays (e.g. `x` and `x0` in lin_solve, `d0` and `u` in advect)
+            // get hoisted into x14 and x15 rather than epilogue out-buffers.
+            const loadSlot = new Map<number, number>();
+            const slotUseCount = new Map<number, number>();
+            const loopForest = naturalLoops(fn, work(100000));
+            const blockDepth = new Uint8Array(fn.blocks.length);
+            if (loopForest !== undefined) {
+              for (const loop of loopForest.loops) {
+                if (loop === undefined) continue;
+                for (const id of loop.body) {
+                  if (id !== undefined && id < blockDepth.length)
+                    blockDepth[id] = Math.min(4, (blockDepth[id] ?? 0) + 1);
+                }
+              }
+            }
+            for (const block of fn.blocks) {
+              if (block === undefined) continue;
+              const weight = 1 << ((blockDepth[block.id] ?? 0) * 3);
+              for (const op of block.instructions) {
+                if (op === undefined) continue;
+                if (op.kind === "load") {
+                  if (
+                    fn.slots[op.slot] === "Float64Array" &&
+                    storedSlots[op.slot] === 0
+                  )
+                    loadSlot.set(op.id, op.slot);
+                } else if (
+                  op.kind === "array-element" ||
+                  op.kind === "array-store"
+                ) {
+                  const s = loadSlot.get(op.array);
+                  if (s !== undefined)
+                    slotUseCount.set(s, (slotUseCount.get(s) ?? 0) + weight);
+                }
+              }
+            }
+            let firstParam = -1,
+              firstCount = 0,
+              secondParam = -1,
+              secondCount = 0;
+            for (const param of fn.parameters) {
+              if (
+                param !== undefined &&
+                fn.slots[param] === "Float64Array" &&
+                storedSlots[param] === 0
+              ) {
+                const count = slotUseCount.get(param) ?? 0;
+                if (count > firstCount) {
+                  secondParam = firstParam;
+                  secondCount = firstCount;
+                  firstParam = param;
+                  firstCount = count;
+                } else if (count > secondCount) {
+                  secondParam = param;
+                  secondCount = count;
+                }
+              }
+            }
+            const hoistedSlots = new Map<number, number>();
+            const top: number[] = [];
+            if (firstParam >= 0) top.push(firstParam);
+            if (secondParam >= 0) top.push(secondParam);
+            const regs = [14, 15];
+            for (let i = 0; i < top.length && i < regs.length; i++) {
+              const param = top[i];
+              const reg = regs[i];
+              if (param === undefined || reg === undefined) continue;
+              const offset = slotOffsets[param];
+              if (offset !== undefined) {
+                rawLoad(reg, offset);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: reg,
+                  rn: reg,
+                  offset: nativeArrayDataOffset,
+                });
+                hoistedSlots.set(param, reg);
+              }
+            }
+            if (hoistedSlots.size > 0) {
+              for (const [id, s] of loadSlot) {
+                const reg = hoistedSlots.get(s);
+                if (reg !== undefined) hoistedArrayDataValues.set(id, reg);
+              }
+            }
+          }
+        }
         /** The token of Uint8Array value `id` (fresh when unknown). */
         function viewValueToken(id: number): number {
           const known = viewValueTokens.get(id);
@@ -11241,89 +11401,23 @@ function emitModuleForms(
                   coldStubsAvailable() &&
                   (fusedMiss === undefined ||
                     offsets[fusedMiss * 2] === undefined);
+                const tagKnown = knownObjectTag?.has(op.id) === true;
                 const stringCold =
-                  op.kind === "property-load" && op.inherited && useColdStubs;
-                generalPair(9, value(op.object).offset, true);
+                  !tagKnown &&
+                  op.kind === "property-load" &&
+                  op.inherited &&
+                  useColdStubs;
                 let site = 0;
                 let stringBranch = -1,
                   shapeReadyAt = -1;
-                if (op.kind === "property-load" && op.inherited) {
-                  if (epochAt + 16 > 4088)
+                if (tagKnown) {
+                  if (
+                    op.kind === "property-load" &&
+                    op.inherited &&
+                    epochAt + 16 > 4088
+                  )
                     throw "property cache layout invariant";
-                  site = rawRegister(op.site, 11);
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 9,
-                    immediate: 5,
-                    shift: 0,
-                    setFlags: true,
-                  });
-                  if (stringCold) {
-                    if (fusedMiss !== undefined) forwardable.delete(fusedMiss);
-                    stringBranch = instructions.length;
-                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 9,
-                      rn: 10,
-                      offset: shapeField.offset,
-                    });
-                    shapeReadyAt = instructions.length;
-                    stackWords.clear();
-                  } else {
-                    const isObj = instructions.length;
-                    emit({ op: "b.cond", condition: "eq", displacement: 0 });
-                    emit({
-                      op: "sub-imm",
-                      width: 64,
-                      rd: "zr",
-                      rn: 9,
-                      immediate: 3,
-                      shift: 0,
-                      setFlags: true,
-                    });
-                    miss();
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 9,
-                      rn: site,
-                      offset: epochAt + 16,
-                    });
-                    const doneShape = instructions.length;
-                    emit({ op: "b", displacement: 0 });
-                    patchInstruction(isObj, {
-                      op: "b.cond",
-                      condition: "eq",
-                      displacement: (instructions.length - isObj) * 4,
-                    });
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 9,
-                      rn: 10,
-                      offset: shapeField.offset,
-                    });
-                    patchInstruction(doneShape, {
-                      op: "b",
-                      displacement: (instructions.length - doneShape) * 4,
-                    });
-                    stackWords.clear();
-                  }
-                } else {
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 9,
-                    immediate: 5,
-                    shift: 0,
-                    setFlags: true,
-                  });
-                  miss();
+                  rawLoad(10, value(op.object).offset + 8);
                   site = rawRegister(op.site, 11);
                   emit({
                     op: "ldr",
@@ -11332,6 +11426,95 @@ function emitModuleForms(
                     rn: 10,
                     offset: shapeField.offset,
                   });
+                } else {
+                  generalPair(9, value(op.object).offset, true);
+                  if (op.kind === "property-load" && op.inherited) {
+                    if (epochAt + 16 > 4088)
+                      throw "property cache layout invariant";
+                    site = rawRegister(op.site, 11);
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 5,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    if (stringCold) {
+                      if (fusedMiss !== undefined)
+                        forwardable.delete(fusedMiss);
+                      stringBranch = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: 10,
+                        offset: shapeField.offset,
+                      });
+                      shapeReadyAt = instructions.length;
+                      stackWords.clear();
+                    } else {
+                      const isObj = instructions.length;
+                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 9,
+                        immediate: 3,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                      miss();
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: site,
+                        offset: epochAt + 16,
+                      });
+                      const doneShape = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(isObj, {
+                        op: "b.cond",
+                        condition: "eq",
+                        displacement: (instructions.length - isObj) * 4,
+                      });
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: 10,
+                        offset: shapeField.offset,
+                      });
+                      patchInstruction(doneShape, {
+                        op: "b",
+                        displacement: (instructions.length - doneShape) * 4,
+                      });
+                      stackWords.clear();
+                    }
+                  } else {
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 5,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    miss();
+                    site = rawRegister(op.site, 11);
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 10,
+                      offset: shapeField.offset,
+                    });
+                  }
                 }
                 /** x12/x13 = the shape and word index of the entry at `at`. */
                 function entryPair(at: number): void {
@@ -16557,14 +16740,20 @@ function emitModuleForms(
                   floatLoad(0, op.index);
                   emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
                 }
-                rawValue(10, op.array);
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 10,
-                  rn: 10,
-                  offset: nativeArrayDataOffset,
-                });
+                const hoistedBase = hoistedArrayDataValues.get(op.array);
+                let dataReg = 10;
+                if (hoistedBase !== undefined) {
+                  dataReg = hoistedBase;
+                } else {
+                  rawValue(10, op.array);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 10,
+                    offset: nativeArrayDataOffset,
+                  });
+                }
                 if (op.kind === "array-store" && type === "Float64Array") {
                   let element = 0;
                   if (storedAsInteger(op.value)) floatLoad(0, op.value);
@@ -16574,7 +16763,7 @@ function emitModuleForms(
                     size: 3,
                     fp: true,
                     rt: element,
-                    rn: 10,
+                    rn: dataReg,
                     rm: index,
                     scaled: true,
                   });
@@ -16587,7 +16776,7 @@ function emitModuleForms(
                     size: scale,
                     fp: false,
                     rt: 11,
-                    rn: 10,
+                    rn: dataReg,
                     rm: index,
                     scaled: scale !== 0,
                   });
@@ -16601,7 +16790,7 @@ function emitModuleForms(
                     size: 3,
                     fp: true,
                     rt: target,
-                    rn: 10,
+                    rn: dataReg,
                     rm: index,
                     scaled: true,
                   });

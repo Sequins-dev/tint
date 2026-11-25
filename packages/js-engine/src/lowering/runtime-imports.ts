@@ -167,6 +167,7 @@ export function scriptRuntimeImports(
         "defineClassAccessor",
         "initializeClassFields",
         "viewObjectValue",
+        "isOrdinaryObject",
         "createBigIntLiteral",
         "createRegExpLiteral",
         "scriptBoolean",
@@ -306,6 +307,8 @@ export function scriptRuntimeImports(
               "absentElementValue",
               "storePackedNumberElement",
               "readCachedLengthValue",
+              "readFloat64Element",
+              "writeFloat64Element",
             ]
           : []),
         ...(usesIntrinsicCalls || declarations === "all"

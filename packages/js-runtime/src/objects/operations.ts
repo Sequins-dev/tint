@@ -458,7 +458,7 @@ interface ScriptPropertyCacheEntry {
 export interface PropertyEpoch {
   value: number;
 }
-export const propertyEpoch: PropertyEpoch = { value: 0 };
+export const propertyEpoch: PropertyEpoch = { value: 1 };
 /** Inline entries per site for reads (IR property-load `entries`): own and
  * inherited entries each, filled in order and then kept. */
 export const propertyCacheEntries = 4;
@@ -522,10 +522,6 @@ export interface ScriptPropertyCache {
   /** A method site (`o.m()`) reads only its inherited entries, so it keeps
    * the receiver's own properties there too, with non-zero slot. */
   readonly method: boolean;
-  /** Stride counter and rotating slot for promoting hot megamorphic shapes
-   * into the inline entries without thrashing on every miss. */
-  evictClock: number;
-  evictSlot: number;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
   return {
@@ -585,8 +581,6 @@ export function createScriptPropertyCache(
     used: 0,
     megamorphic: false,
     method,
-    evictClock: 0,
-    evictSlot: 0,
   };
 }
 export interface ScriptPropertyStubCache {
@@ -2498,20 +2492,45 @@ function prepareInheritedEpoch(cache: ScriptPropertyCache): boolean {
   }
   return cache.inheritedShape3 === unusedPropertyShape;
 }
-function nextEvictSlot(cache: ScriptPropertyCache): number {
-  const clock = (cache.evictClock + 1) & 7;
-  cache.evictClock = clock;
-  if (clock !== 0) return -1;
-  const slot = cache.evictSlot;
-  cache.evictSlot = (slot + 1) & 3;
-  return slot;
+/** Sampled eviction clock for full megamorphic inline caches (1-in-64 misses):
+ * lets hot shapes replace cold startup shapes (e.g. shared Class.create
+ * `this.initialize` sites) without thrashing round-robin megamorphic sites. */
+const megamorphicEvictClock: { value: number } = { value: 0 };
+function sampleEvictInlineEntry(
+  cache: ScriptPropertyCache,
+  object: ScriptObject,
+  shape: ScriptShape,
+  holder: ScriptObject,
+  offset: number,
+  directValue: unknown,
+  slotWord: number,
+): void {
+  const tick = (megamorphicEvictClock.value + 1) | 0;
+  megamorphicEvictClock.value = tick;
+  if ((tick & 63) !== 0) return;
+  const slotIndex = (tick >>> 6) & (propertyCacheEntries - 1);
+  if (holder === object) {
+    const bits = ownSlotBits(offset, slotWord);
+    if (!cache.method) {
+      if (inlineEntryIndex(cache, false, shape) >= 0) return;
+      setOwnEntry(cache, slotIndex, shape, bits);
+    } else {
+      if (cache.inheritedEpoch !== propertyEpoch.value) return;
+      if (inlineEntryIndex(cache, true, shape) >= 0) return;
+      setInheritedEntry(cache, slotIndex, shape, bits, undefined);
+    }
+    return;
+  }
+  if (cache.inheritedEpoch !== propertyEpoch.value) return;
+  if (inlineEntryIndex(cache, true, shape) >= 0) return;
+  setInheritedEntry(cache, slotIndex, shape, 0, directValue);
 }
 /** Make a found property an inline entry: own when the object holds it,
  * except at a method site, else inherited (direct value cached with slot = 0
  * for prototype hits, or non-zero slot for the receiver's own property).
- * When all inline entries are occupied (e.g. cold setup shapes ahead of hot
- * loop shapes), promote every 8th miss into a rotating slot so hot shapes
- * replace cold ones without thrashing on every miss. */
+ * Once all inline entries are occupied, keep them sticky with 1-in-64 sampled
+ * eviction so hot shapes replace cold startup shapes without thrashing
+ * round-robin megamorphic sites. */
 function addInlineEntry(
   cache: ScriptPropertyCache,
   object: ScriptObject,
@@ -2524,33 +2543,52 @@ function addInlineEntry(
   if (holder === object) {
     const bits = ownSlotBits(offset, slotWord);
     if (!cache.method) {
-      const index = inlineEntryIndex(cache, false, shape);
-      if (index >= 0) {
-        setOwnEntry(cache, index, shape, bits);
+      if (cache.ownShape3 !== unusedPropertyShape) {
+        sampleEvictInlineEntry(
+          cache,
+          object,
+          shape,
+          holder,
+          offset,
+          directValue,
+          slotWord,
+        );
         return;
       }
-      const evict = nextEvictSlot(cache);
-      if (evict >= 0) setOwnEntry(cache, evict, shape, bits);
+      const index = inlineEntryIndex(cache, false, shape);
+      if (index >= 0) setOwnEntry(cache, index, shape, bits);
       return;
     }
-    prepareInheritedEpoch(cache);
+    if (!prepareInheritedEpoch(cache)) {
+      sampleEvictInlineEntry(
+        cache,
+        object,
+        shape,
+        holder,
+        offset,
+        directValue,
+        slotWord,
+      );
+      return;
+    }
     const index = inlineEntryIndex(cache, true, shape);
-    if (index >= 0) {
-      setInheritedEntry(cache, index, shape, bits, undefined);
-      return;
-    }
-    const evict = nextEvictSlot(cache);
-    if (evict >= 0) setInheritedEntry(cache, evict, shape, bits, undefined);
+    if (index >= 0) setInheritedEntry(cache, index, shape, bits, undefined);
     return;
   }
-  prepareInheritedEpoch(cache);
+  if (!prepareInheritedEpoch(cache)) {
+    sampleEvictInlineEntry(
+      cache,
+      object,
+      shape,
+      holder,
+      offset,
+      directValue,
+      slotWord,
+    );
+    return;
+  }
   const index = inlineEntryIndex(cache, true, shape);
-  if (index >= 0) {
-    setInheritedEntry(cache, index, shape, 0, directValue);
-    return;
-  }
-  const evict = nextEvictSlot(cache);
-  if (evict >= 0) setInheritedEntry(cache, evict, shape, 0, directValue);
+  if (index >= 0) setInheritedEntry(cache, index, shape, 0, directValue);
 }
 /** Maximum prototype hops cached in lookupCachedScriptProperty. */
 const maxCachedPrototypeDepth = 16;
@@ -2580,27 +2618,57 @@ export function lookupCachedScriptProperty(
     if (holder !== undefined) {
       if (holder === object) {
         cache.foundIndex = stub.offset;
-        addInlineEntry(
-          cache,
-          object,
-          shape,
-          holder,
-          stub.offset,
-          undefined,
-          slotWord,
-        );
+        if (
+          (!cache.method && cache.ownShape3 === unusedPropertyShape) ||
+          (cache.method &&
+            (cache.inheritedEpoch !== propertyEpoch.value ||
+              cache.inheritedShape3 === unusedPropertyShape))
+        )
+          addInlineEntry(
+            cache,
+            object,
+            shape,
+            holder,
+            stub.offset,
+            undefined,
+            slotWord,
+          );
+        else
+          sampleEvictInlineEntry(
+            cache,
+            object,
+            shape,
+            holder,
+            stub.offset,
+            undefined,
+            slotWord,
+          );
       } else {
         cache.foundIndex = -1;
         cache.foundValue = stub.directValue;
-        addInlineEntry(
-          cache,
-          object,
-          shape,
-          holder,
-          -1,
-          stub.directValue,
-          slotWord,
-        );
+        if (
+          cache.inheritedEpoch !== propertyEpoch.value ||
+          cache.inheritedShape3 === unusedPropertyShape
+        )
+          addInlineEntry(
+            cache,
+            object,
+            shape,
+            holder,
+            -1,
+            stub.directValue,
+            slotWord,
+          );
+        else
+          sampleEvictInlineEntry(
+            cache,
+            object,
+            shape,
+            holder,
+            -1,
+            stub.directValue,
+            slotWord,
+          );
       }
       return holder;
     }

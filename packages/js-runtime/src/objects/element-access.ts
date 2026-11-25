@@ -80,3 +80,22 @@ export function readCachedLengthValue(
   if (elements !== undefined) return elements.length;
   return readCachedObjectValueProperty(base, key, hooks, realm, cache);
 }
+
+/** Proven-in-bounds Float64Array read for pre-loop-guarded numeric loops.
+ * Native code binds this to IR array-element; callers must prove `index` is an
+ * integer in `[0, array.length)` before entering the loop. */
+export function readFloat64Element(array: Float64Array, index: number): number {
+  const value = array[index];
+  return value === undefined ? 0 : value;
+}
+
+/** Proven-in-bounds Float64Array write for pre-loop-guarded numeric loops.
+ * Native code binds this to IR array-store; callers must prove `index` is an
+ * integer in `[0, array.length)` before entering the loop. */
+export function writeFloat64Element(
+  array: Float64Array,
+  index: number,
+  value: number,
+): void {
+  array[index] = value;
+}

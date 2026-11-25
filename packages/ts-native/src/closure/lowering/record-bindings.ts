@@ -44,6 +44,12 @@ export type RecordOperation =
   /** `(witness: T, target: unknown, index: number, value: unknown):
    * boolean`: overwrite a packed binary64 element (IR element-store). */
   | "element-store"
+  /** `(array: Float64Array, index: number): number`: proven-in-bounds
+   * Float64Array element read (IR array-element). */
+  | "array-element"
+  /** `(array: Float64Array, index: number, value: number): void`:
+   * proven-in-bounds Float64Array element write (IR array-store). */
+  | "array-store"
   /** Native activation chain reads (IR activation-read), without a record
    * witness: `(): number` the innermost record; `(record: number): F` a
    * record's previous record, kind, actual count (numbers) or callee
@@ -347,6 +353,83 @@ export function bindElementStore(
     }),
     span,
   );
+}
+/** The body of an array-element binding: one unchecked IR array-element over
+ * its typed-array and index parameters. */
+export function bindArrayElement(
+  fn: FunctionIR,
+  array: number,
+  index: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [array, index],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "array-element",
+      id: loaded.length,
+      array: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+    }),
+    span,
+  );
+}
+/** The body of an array-store binding: one unchecked IR array-store over its
+ * typed-array, index and value parameters. */
+export function bindArrayStore(
+  fn: FunctionIR,
+  array: number,
+  index: number,
+  value: number,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 0,
+            slot: array,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 1,
+            slot: index,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 2,
+            slot: value,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "array-store",
+            array: 0,
+            index: 1,
+            value: 2,
+          },
+        ],
+        terminator: { ...span, kind: "return", value: undefined },
+      },
+    ],
+  };
 }
 /** The body of an absent-test binding: its value parameter's miss test. */
 export function bindAbsentTest(
@@ -663,5 +746,15 @@ export function bindRecordOperation(
       terminator: { ...span, kind: "return", value: 5 },
     });
   }
+  if (operation === "test")
+    return {
+      ...fn,
+      slots: parameterSlots(fn),
+      ...(fn.debug === undefined
+        ? {}
+        : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+      entry: 0,
+      blocks,
+    };
   return { ...fn, entry: 0, blocks };
 }

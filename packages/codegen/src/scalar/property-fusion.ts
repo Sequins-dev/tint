@@ -371,3 +371,251 @@ export function scriptEntryCalleeValues(
   }
   return proven;
 }
+
+/** Property-load / property-store instruction IDs whose receiver value is
+ * already proven to carry the general object tag (tag === 5) on every path
+ * reaching the instruction, allowing codegen to load the payload directly and
+ * skip the redundant tag test (and string-primitive cold stub). Undefined when
+ * `fn` contains no `property-load` or `property-store`. */
+export function knownObjectTagAccesses(
+  fn: FunctionIR,
+  fusedAccesses: ReadonlyMap<number, FusedPropertyAccess> | undefined,
+): ReadonlySet<number> | undefined {
+  let hasPropertyAccess = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "known object tag block invariant";
+    for (const op of block.instructions) {
+      if (
+        op !== undefined &&
+        (op.kind === "property-load" || op.kind === "property-store")
+      ) {
+        hasPropertyAccess = true;
+        break;
+      }
+    }
+    if (hasPropertyAccess) break;
+  }
+  if (!hasPropertyAccess) return undefined;
+  const generalSlots = new Map<number, number>();
+  for (let slot = 0; slot < fn.slots.length; slot++) {
+    if (fn.slots[slot] === "general") generalSlots.set(slot, generalSlots.size);
+  }
+  const slotCount = generalSlots.size;
+  const blockCount = fn.blocks.length;
+  const inKnown: (Uint8Array | undefined)[] = [];
+  for (let index = 0; index < blockCount; index++) inKnown.push(undefined);
+  inKnown[fn.entry] = new Uint8Array(slotCount);
+  const worklist: number[] = [fn.entry];
+  const queued = new Uint8Array(blockCount);
+  queued[fn.entry] = 1;
+  function propagate(target: number, edgeOut: Uint8Array): void {
+    if (target === fn.entry) return;
+    const existing = inKnown[target];
+    if (existing === undefined) {
+      inKnown[target] = edgeOut.slice();
+      if (queued[target] === 0) {
+        queued[target] = 1;
+        worklist.push(target);
+      }
+      return;
+    }
+    let changed = false;
+    for (let i = 0; i < slotCount; i++) {
+      if (existing[i] === 1 && edgeOut[i] === 0) {
+        existing[i] = 0;
+        changed = true;
+      }
+    }
+    if (changed && queued[target] === 0) {
+      queued[target] = 1;
+      worklist.push(target);
+    }
+  }
+  const maxSteps = Math.max(256, blockCount * 16);
+  let steps = 0;
+  const valueKnown = new Set<number>();
+  const valueSlot = new Map<number, number>();
+  const valueSlotVersion = new Map<number, number>();
+  const recordIsSlot = new Map<number, number>();
+  const recordIsVersion = new Map<number, number>();
+  const recordIsNegated = new Set<number>();
+  const slotVersion = new Uint32Array(slotCount);
+  const storedSlots = new Uint8Array(slotCount);
+  while (worklist.length > 0) {
+    if (++steps > maxSteps) return undefined;
+    const blockId = worklist.pop();
+    if (blockId === undefined) break;
+    queued[blockId] = 0;
+    const block = fn.blocks[blockId];
+    const entry = inKnown[blockId];
+    if (block === undefined || entry === undefined) continue;
+    const knownSlots = entry.slice();
+    valueKnown.clear();
+    valueSlot.clear();
+    valueSlotVersion.clear();
+    recordIsSlot.clear();
+    recordIsVersion.clear();
+    recordIsNegated.clear();
+    slotVersion.fill(0);
+    storedSlots.fill(0);
+    const fusion = fusedAccesses?.get(blockId);
+    let missOut: Uint8Array | undefined = undefined;
+    for (const op of block.instructions) {
+      if (op === undefined) throw "known object tag instruction invariant";
+      if (op.kind === "load") {
+        const idx = generalSlots.get(op.slot);
+        if (idx !== undefined) {
+          valueSlot.set(op.id, idx);
+          valueSlotVersion.set(op.id, slotVersion[idx] ?? 0);
+          if (knownSlots[idx] === 1) valueKnown.add(op.id);
+        }
+      } else if (op.kind === "store") {
+        const idx = generalSlots.get(op.slot);
+        if (idx !== undefined) {
+          storedSlots[idx] = 1;
+          slotVersion[idx] = (slotVersion[idx] ?? 0) + 1;
+          knownSlots[idx] = valueKnown.has(op.value) ? 1 : 0;
+        }
+      } else if (op.kind === "general-record-is") {
+        const idx = valueSlot.get(op.value);
+        if (idx !== undefined) {
+          const ver = valueSlotVersion.get(op.value);
+          if (ver !== undefined && ver === (slotVersion[idx] ?? 0)) {
+            recordIsSlot.set(op.id, idx);
+            recordIsVersion.set(op.id, ver);
+          }
+        }
+      } else if (op.kind === "unary" && op.operator === "!") {
+        const idx = recordIsSlot.get(op.operand);
+        if (idx !== undefined) {
+          const ver = recordIsVersion.get(op.operand);
+          if (ver !== undefined && ver === (slotVersion[idx] ?? 0)) {
+            recordIsSlot.set(op.id, idx);
+            recordIsVersion.set(op.id, ver);
+            if (!recordIsNegated.has(op.operand)) recordIsNegated.add(op.id);
+          }
+        }
+      } else if (
+        (op.kind === "property-load" || op.kind === "property-store") &&
+        fusion !== undefined &&
+        fusion.access === op.id
+      ) {
+        missOut = knownSlots.slice();
+        if (op.kind === "property-store" || !op.inherited) {
+          valueKnown.add(op.object);
+          const idx = valueSlot.get(op.object);
+          if (
+            idx !== undefined &&
+            valueSlotVersion.get(op.object) === (slotVersion[idx] ?? 0)
+          )
+            knownSlots[idx] = 1;
+        }
+      }
+    }
+    const exception = block.exception;
+    if (exception !== undefined) {
+      const exOut = entry.slice();
+      for (let i = 0; i < slotCount; i++)
+        if (storedSlots[i] === 1) exOut[i] = 0;
+      const exIdx = generalSlots.get(exception.slot);
+      if (exIdx !== undefined) exOut[exIdx] = 0;
+      propagate(exception.target, exOut);
+    }
+    const t = block.terminator;
+    if (
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+      t.operation === "read"
+    ) {
+      const idx = generalSlots.get(t.slot);
+      if (idx !== undefined) knownSlots[idx] = 0;
+    }
+    if (
+      fusion !== undefined &&
+      fusion.access !== undefined &&
+      missOut !== undefined
+    ) {
+      propagate(fusion.miss, missOut);
+      if (t.kind === "branch") propagate(fusion.hit, knownSlots);
+      else if (t.kind === "jump") propagate(t.target, knownSlots);
+    } else if (t.kind === "branch") {
+      if (
+        fusion !== undefined &&
+        fusion.test === t.condition &&
+        fusion.access === undefined
+      ) {
+        propagate(fusion.hit, knownSlots);
+      } else {
+        const recSlot = recordIsSlot.get(t.condition);
+        const recVer = recordIsVersion.get(t.condition);
+        if (
+          recSlot !== undefined &&
+          recVer !== undefined &&
+          recVer === (slotVersion[recSlot] ?? 0)
+        ) {
+          const negated = recordIsNegated.has(t.condition);
+          const proved = knownSlots.slice();
+          proved[recSlot] = 1;
+          propagate(negated ? t.alternate : t.consequent, proved);
+          propagate(negated ? t.consequent : t.alternate, knownSlots);
+        } else {
+          propagate(t.consequent, knownSlots);
+          propagate(t.alternate, knownSlots);
+        }
+      }
+    } else if (t.kind === "jump") {
+      propagate(t.target, knownSlots);
+    } else if (
+      t.kind === "record" ||
+      t.kind === "record-cell" ||
+      t.kind === "cell"
+    ) {
+      propagate(t.consequent, knownSlots);
+      propagate(t.alternate, knownSlots);
+    }
+  }
+  const proven = new Set<number>();
+  for (let blockId = 0; blockId < blockCount; blockId++) {
+    const block = fn.blocks[blockId];
+    const entry = inKnown[blockId];
+    if (block === undefined || entry === undefined) continue;
+    const knownSlots = entry.slice();
+    valueKnown.clear();
+    valueSlot.clear();
+    valueSlotVersion.clear();
+    slotVersion.fill(0);
+    const fusion = fusedAccesses?.get(blockId);
+    for (const op of block.instructions) {
+      if (op === undefined) throw "known object tag instruction invariant";
+      if (op.kind === "load") {
+        const idx = generalSlots.get(op.slot);
+        if (idx !== undefined) {
+          valueSlot.set(op.id, idx);
+          valueSlotVersion.set(op.id, slotVersion[idx] ?? 0);
+          if (knownSlots[idx] === 1) valueKnown.add(op.id);
+        }
+      } else if (op.kind === "store") {
+        const idx = generalSlots.get(op.slot);
+        if (idx !== undefined) {
+          slotVersion[idx] = (slotVersion[idx] ?? 0) + 1;
+          knownSlots[idx] = valueKnown.has(op.value) ? 1 : 0;
+        }
+      } else if (op.kind === "property-load" || op.kind === "property-store") {
+        if (valueKnown.has(op.object)) proven.add(op.id);
+        if (
+          fusion !== undefined &&
+          fusion.access === op.id &&
+          (op.kind === "property-store" || !op.inherited)
+        ) {
+          valueKnown.add(op.object);
+          const idx = valueSlot.get(op.object);
+          if (
+            idx !== undefined &&
+            valueSlotVersion.get(op.object) === (slotVersion[idx] ?? 0)
+          )
+            knownSlots[idx] = 1;
+        }
+      }
+    }
+  }
+  return proven.size === 0 ? undefined : proven;
+}

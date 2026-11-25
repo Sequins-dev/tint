@@ -512,6 +512,33 @@ function inheritedNonMethodAndEviction() {
     for (const s of shapes) sum += readV(s);
   }
   out.push(sum);
+  // Sampled megamorphic eviction (>300 misses): cold startup shapes followed by
+  // 4 hot shapes (RayTrace Class.create pattern) plus prototype mutation invalidation.
+  const callInit = (o) => o.init();
+  const cold = [];
+  for (let k = 0; k < 5; k++) {
+    const p = { init() { return "c" + k; } };
+    const o = Object.create(p);
+    o["cold" + k] = k;
+    cold.push(o);
+  }
+  for (const c of cold) out.push(callInit(c));
+  const hotProtos = [];
+  const hot = [];
+  for (let k = 0; k < 4; k++) {
+    const p = { init() { return k + 1; } };
+    hotProtos.push(p);
+    const o = Object.create(p);
+    o["hot" + k] = k;
+    hot.push(o);
+  }
+  let hotSum = 0;
+  for (let r = 0; r < 100; r++) {
+    for (const h of hot) hotSum += callInit(h);
+  }
+  hotProtos[2].init = function () { return 100; };
+  for (const h of hot) hotSum += callInit(h);
+  out.push(hotSum);
   return out.join(",");
 }
 export function sections() {

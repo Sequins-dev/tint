@@ -90,6 +90,12 @@ function crossingType(
 function shapeRecognized(fn: FunctionIR): boolean {
   return fn.name.startsWith("__tint_reference_list_");
 }
+/** Outlined pre-loop-proven numeric loop kernels stay out-of-line so they keep
+ * `fn.environment === undefined` and run with intraprocedural integer slots
+ * without polluting their general script callers. */
+function outlinedSpecLoop(fn: FunctionIR): boolean {
+  return fn.name.includes("__tint_spec_loop_");
+}
 /** Blocks other than empty traps (the failure edges of checked record
  * accesses), which add no code worth bounding. */
 function nonTrapBlocks(fn: FunctionIR): number {
@@ -196,8 +202,11 @@ function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
     last.kind === "property-store" ||
     last.kind === "element-load" ||
     last.kind === "element-store" ||
+    last.kind === "array-element" ||
+    last.kind === "array-store" ||
     last.kind === "script-entry" ||
-    last.kind === "global-cell"
+    last.kind === "global-cell" ||
+    last.kind === "general-record-is"
   );
 }
 /** Most non-trap blocks of an inlined scalar or void callee. */
@@ -227,7 +236,8 @@ function inlineRefusal(
       callee.receiverSlot !== undefined
     )
       return "callee uses an environment or receiver";
-    if (shapeRecognized(callee)) return "callee is a shape-recognized helper";
+    if (shapeRecognized(callee) || outlinedSpecLoop(callee))
+      return "callee is a shape-recognized helper";
     if (cost > maxExpansion)
       return (
         "callee cost " + String(cost) + " exceeds limit " + String(maxExpansion)
@@ -313,6 +323,7 @@ export function inlineSmallFunctions(
     let good =
         fn.import !== true &&
         !shapeRecognized(fn) &&
+        !outlinedSpecLoop(fn) &&
         fn.receiverSlot === undefined &&
         fn.environment === undefined &&
         fn.closureEnvironment === undefined &&

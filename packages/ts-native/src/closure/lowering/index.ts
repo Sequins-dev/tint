@@ -42,6 +42,8 @@ import {
   bindPropertyLoad,
   bindPropertyStore,
   bindAbsentTest,
+  bindArrayElement,
+  bindArrayStore,
   bindElementLoad,
   bindElementStore,
   bindRecordOperation,
@@ -4752,6 +4754,34 @@ function lowerEntries(
               epochField,
               span,
             );
+        continue;
+      }
+      if (
+        binding.operation === "array-element" ||
+        binding.operation === "array-store"
+      ) {
+        const store = binding.operation === "array-store";
+        const third = fn.parameters[2];
+        if (
+          first === undefined ||
+          second === undefined ||
+          (store && third === undefined) ||
+          fn.parameters.length !== (store ? 3 : 2) ||
+          fn.slots[first] !== "Float64Array" ||
+          fn.slots[second] !== "number" ||
+          (store && third !== undefined && fn.slots[third] !== "number") ||
+          fn.returnType !== (store ? "void" : "number") ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "array element bindings take a Float64Array, a number index, and (for stores) a number value",
+          );
+        functions[fn.id] =
+          store && third !== undefined
+            ? bindArrayStore(fn, first, second, third, span)
+            : bindArrayElement(fn, first, second, span);
         continue;
       }
       if (

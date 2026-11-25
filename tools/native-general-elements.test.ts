@@ -497,6 +497,104 @@ function popAndSpecLoops() {
   // Trigger inner deopt at row 2 (grid too short for row 2, falls back to general).
   const shortGrid = [0, 0, 0, 0, 0, 0, 0, 0];
   out.push(gridSolve(shortGrid, 2, 2), shortGrid.length, shortGrid[5], shortGrid[10]);
+  // Proven-unchecked outlined kernels: same-array RAW (set_bnd pattern),
+  // 1-carried-scalar lin_solve with aliasing (x === x0), zero trips,
+  // descending i--, and pre-loop OOB/negative/fractional deopt.
+  function setBndLike(x, n) {
+    var rowSize = n + 2;
+    for (var i = 1; i <= n; i++) {
+      x[i] = x[i + rowSize] * 2;
+      x[i + (n + 1) * rowSize] = x[i + n * rowSize] + 1;
+    }
+    return i;
+  }
+  const bnd = new Array(16);
+  for (let k = 0; k < 16; k++) bnd[k] = k + 1;
+  out.push(setBndLike(bnd, 2), bnd.join("/"));
+  function linSolveCarried(x, x0, a, invC, w, h) {
+    var rowSize = w + 2;
+    var last = 0;
+    for (var j = 1; j <= h; j++) {
+      var lastRow = (j - 1) * rowSize;
+      var currentRow = j * rowSize;
+      var nextRow = (j + 1) * rowSize;
+      var lastX = x[currentRow];
+      ++currentRow;
+      for (var i = 1; i <= w; i++) {
+        lastX = x[currentRow] =
+          (x0[currentRow] + a * (lastX + x[++currentRow] + x[++lastRow] + x[++nextRow])) * invC;
+      }
+      last = lastX;
+    }
+    return Math.round(last * 1000) / 1000;
+  }
+  const lsX = new Array(16), lsX0 = new Array(16);
+  for (let k = 0; k < 16; k++) { lsX[k] = k * 0.25; lsX0[k] = k * 0.5; }
+  out.push(linSolveCarried(lsX, lsX0, 0.2, 0.5, 2, 2), lsX.map((v) => Math.round(v * 1000) / 1000).join("/"));
+  // Aliasing x === x0 inside proven kernel must preserve exact sequential reads/writes.
+  const lsAlias = new Array(16);
+  for (let k = 0; k < 16; k++) lsAlias[k] = k + 1;
+  out.push(linSolveCarried(lsAlias, lsAlias, 0.1, 0.5, 2, 2), lsAlias.map((v) => Math.round(v * 1000) / 1000).join("/"));
+  // Zero trips, descending i--, and fractional/negative pre-loop deopt.
+  function descFill(arr, start) {
+    var total = 0;
+    for (var i = start; i >= 0; i--) {
+      arr[i] = arr[i] + i;
+      total += arr[i];
+    }
+    return i + ":" + total;
+  }
+  const desc = [10, 20, 30, 40];
+  out.push(descFill(desc, 3), desc.join("/"), descFill(desc, -1));
+  const frac = [1, 2, 3];
+  out.push(descFill(frac, 1.5), frac[1.5], frac[0.5]);
+  // Non-proven 2D outlined kernel (advect-like bilinear interpolation with
+  // dynamic computed indices and both normal completion and mid-loop deopt).
+  function advectLike(d, d0, u, v, w, h, dt) {
+    var rowSize = w + 2;
+    var Wdt0 = dt * w;
+    var Hdt0 = dt * h;
+    var Wp5 = w + 0.5;
+    var Hp5 = h + 0.5;
+    for (var j = 1; j <= h; j++) {
+      var pos = j * rowSize;
+      for (var i = 1; i <= w; i++) {
+        var x = i - Wdt0 * u[++pos];
+        var y = j - Hdt0 * v[pos];
+        if (x < 0.5) x = 0.5;
+        else if (x > Wp5) x = Wp5;
+        var i0 = x | 0;
+        var i1 = i0 + 1;
+        if (y < 0.5) y = 0.5;
+        else if (y > Hp5) y = Hp5;
+        var j0 = y | 0;
+        var j1 = j0 + 1;
+        var s1 = x - i0;
+        var s0 = 1 - s1;
+        var t1 = y - j0;
+        var t0 = 1 - t1;
+        var row1 = j0 * rowSize;
+        var row2 = j1 * rowSize;
+        d[pos] =
+          s0 * (t0 * d0[i0 + row1] + t1 * d0[i0 + row2]) +
+          s1 * (t0 * d0[i1 + row1] + t1 * d0[i1 + row2]);
+      }
+    }
+    return j * 10 + i;
+  }
+  const adD = new Array(16), adD0 = new Array(16), adU = new Array(16), adV = new Array(16);
+  for (let k = 0; k < 16; k++) {
+    adD[k] = 0;
+    adD0[k] = k + 1;
+    adU[k] = (k % 3) * 0.25 - 0.2;
+    adV[k] = ((k + 1) % 3) * 0.25 - 0.1;
+  }
+  out.push(advectLike(adD, adD0, adU, adV, 2, 2, 0.5), adD.map((v) => Math.round(v * 1000) / 1000).join("/"));
+  // Trigger deopt inside 2D outlined kernel when d0 is too short for row 2.
+  const adShortD = new Array(16);
+  for (let k = 0; k < 16; k++) adShortD[k] = 0;
+  const adShortD0 = [1, 2, 3, 4, 5, 6, 7, 8];
+  out.push(advectLike(adShortD, adShortD0, adU, adV, 2, 2, 0.5), adShortD.map((v) => (Number.isNaN(v) ? "NaN" : Math.round(v * 1000) / 1000)).join("/"));
   return out.join(",");
 }
 export function sections() {

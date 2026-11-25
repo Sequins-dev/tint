@@ -179,6 +179,15 @@ export function viewObjectValue(
   throw "UNBOUND_OBJECT_VIEW";
 }
 
+/** True when `value` is an OrdinaryObject (ECMAScript Object/Function/Proxy).
+ * Native code binds this to IR general-record-is (`operation: "test"`). */
+export function isOrdinaryObject(
+  value: unknown,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): boolean {
+  return viewObjectValue(value, witness) !== undefined;
+}
+
 /** Resolve a callee's native script entry closure for a direct call in
  * `realm`'s active execution context, or undefined when the call must take the
  * general path. Native code binds this to IR script-entry. */

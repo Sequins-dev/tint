@@ -4,6 +4,8 @@ export {
   absentElementValue,
   storePackedNumberElement,
   readCachedLengthValue,
+  readFloat64Element,
+  writeFloat64Element,
 } from "./element-access.ts";
 export {
   createIntrinsicFunctions,
@@ -225,6 +227,7 @@ export {
 } from "./intl-format-views.ts";
 export {
   viewObjectValue,
+  isOrdinaryObject,
   resolveScriptCallEntry,
   resolveScriptConstructEntry,
   objectValueTypeof,

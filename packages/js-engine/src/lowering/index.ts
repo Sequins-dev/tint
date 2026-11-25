@@ -123,6 +123,9 @@ export const propertyCacheNames: readonly string[] = [
   "packedNumberElement",
   "absentElementValue",
   "storePackedNumberElement",
+  "readFloat64Element",
+  "writeFloat64Element",
+  "isOrdinaryObject",
 ];
 export interface PropertyCacheBinding {
   readonly module: string;
@@ -135,6 +138,9 @@ export interface PropertyCacheBinding {
     | "property-store"
     | "element-load"
     | "element-store"
+    | "array-element"
+    | "array-store"
+    | "test"
     | "activation-top"
     | "activation-previous"
     | "activation-kind"
@@ -210,6 +216,9 @@ export function propertyCacheBindings(
       field: "internalArrayElements",
       siteField: "numberCount",
     },
+    { module, name: "readFloat64Element", operation: "array-element" },
+    { module, name: "writeFloat64Element", operation: "array-store" },
+    { module, name: "isOrdinaryObject", operation: "test" },
   ];
 }
 /** The runtime objects module's activation chain reads (js-runtime
@@ -563,6 +572,12 @@ interface AssignmentReference extends Span {
   readonly invalid?: boolean;
   readonly local?: boolean;
   readonly fixedBinding?: number;
+  readonly globalCell?: {
+    readonly start: Expression;
+    readonly cache: Expression;
+    readonly cell: Expression;
+    readonly name: string;
+  };
   readonly base: Expression;
   readonly property: Expression | undefined;
   /** Read-modify-write references keep a computed key in a mutable temporary.
@@ -1266,6 +1281,7 @@ function lowerScriptEntry(
     : id("undefined");
   const externalPrivate = new Map<string, Expression>();
   const templateSites: Statement[] = [];
+  const specLoopHelpers: Statement[] = [];
   let functionDepth = 0;
   let suppressingNumericLoopSpec = false;
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
@@ -3094,34 +3110,45 @@ function lowerScriptEntry(
       span,
     );
     if (cached && key.kind === "string" && key.value === "length") {
-      // Packed array length or String length inline; other values take the
-      // runtime read.
+      // String length first (single tag check, matching the common string hot
+      // path), then packed array length inline; other values take the runtime
+      // read.
       usesElementAccess = true;
-      const elements = temporary(
-        optionalMember(
-          runtimeCall(
-            "viewObjectValue",
-            [object, member(id("$errors"), "objectPrototype", span)],
+      const result = temporary(id("undefined", span), true, true);
+      if (result.kind !== "identifier") throw "length temporary invariant";
+      const nonString = nestedStatements(() => {
+        const elements = temporary(
+          optionalMember(
+            runtimeCall(
+              "viewObjectValue",
+              [object, member(id("$errors"), "objectPrototype", span)],
+              span,
+            ),
+            "internalArrayElements",
             span,
           ),
-          "internalArrayElements",
-          span,
-        ),
-      );
-      return temporary(
-        scalarBranch(
-          scalarBinary("!==", elements, id("undefined", span), span),
-          member(elements, "length", span),
-          scalarBranch(
-            categoryOperand(object, "string", span),
-            member(object, "length", span),
-            runtimeCall("readCachedLengthValue", args, span),
+        );
+        statements.push(
+          assignTo(
+            result.name,
+            scalarBranch(
+              scalarBinary("!==", elements, id("undefined", span), span),
+              member(elements, "length", span),
+              runtimeCall("readCachedLengthValue", args, span),
+              span,
+            ),
             span,
           ),
-          span,
-        ),
-        true,
-      );
+        );
+      });
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: categoryOperand(object, "string", span),
+        consequent: assignTo(result.name, member(object, "length", span), span),
+        alternate: block(nonString, span),
+      });
+      return result;
     }
     if (cache === undefined) return temporary(read, true);
     // The site's inline value (IR property-load natively); a miss takes the
@@ -3143,9 +3170,9 @@ function lowerScriptEntry(
       statements.push(ifAbsent(name, cache, assignTo(name, read, span), span));
     } else {
       // On own-entry miss, also probe the site's direct inherited entries
-      // inline before falling back to the runtime: own hits pay zero overhead,
-      // while inherited data and method reads (e.g. `this.initialize.apply`,
-      // `info.isHit`, `material.reflection`) hit inline.
+      // inline before falling back to the runtime: own hits pay zero overhead
+      // (both property-loads fuse cleanly with their miss tests), while
+      // inherited data and method reads hit inline.
       const inheritedProbe = block(
         [
           assignTo(
@@ -3448,6 +3475,37 @@ function lowerScriptEntry(
           property: undefined,
           fixedBinding,
         };
+      if (!compactResults && !hasBindingContract(target)) {
+        const args = withGlobalIdentifierCache(
+          [
+            scope,
+            text(target.name, target),
+            { ...at(target), kind: "boolean", value: strict },
+          ],
+          target,
+        );
+        const start = args[0],
+          cache = args[3];
+        if (start !== undefined && cache !== undefined) {
+          const cell = temporary(
+            call("cachedGlobalIdentifierCell", [start, cache], target),
+          );
+          const ref = temporary(
+            scalarBranch(
+              scalarBinary("!==", cell, id("undefined", target), target),
+              id("undefined", target),
+              call("resolveBinding", args, target),
+              target,
+            ),
+          );
+          return {
+            ...at(target),
+            base: ref,
+            property: undefined,
+            globalCell: { start, cache, cell, name: target.name },
+          };
+        }
+      }
       return {
         ...at(target),
         base: reference(target.name, target),
@@ -3569,6 +3627,47 @@ function lowerScriptEntry(
       );
       return temporary(member(target.base, "value", target), true);
     }
+    const gc = target.globalCell;
+    if (gc !== undefined) {
+      const result = temporary(id("undefined", target), true, true);
+      if (result.kind !== "identifier")
+        throw "global cell read temporary invariant";
+      statements.push({
+        ...at(target),
+        kind: "if",
+        test: scalarBinary("!==", gc.cell, id("undefined", target), target),
+        consequent: assignTo(
+          result.name,
+          member(gc.cell, "value", target),
+          target,
+        ),
+        alternate: block(
+          nestedStatements(() => {
+            statements.push({
+              ...at(target),
+              kind: "if",
+              test: scalarBinary(
+                "!==",
+                target.base,
+                id("undefined", target),
+                target,
+              ),
+              consequent: block(
+                nestedStatements(() => {
+                  statements.push(
+                    assignTo(result.name, read(target.base, target), target),
+                  );
+                }),
+                target,
+              ),
+              alternate: undefined,
+            });
+          }),
+          target,
+        ),
+      });
+      return result;
+    }
     const property = target.property;
     const superReceiver = target.superReceiver;
     const privateKey = target.privateName;
@@ -3688,6 +3787,100 @@ function lowerScriptEntry(
           bindingWriteValue(value, target),
           target,
         );
+      return;
+    }
+    const gc = target.globalCell;
+    if (gc !== undefined) {
+      const assignedValue = temporary(assigned, true);
+      const slowHit = nestedStatements(() => {
+        check(
+          temporary(
+            call(
+              "setGlobalBinding",
+              [
+                member(gc.start, "global", target),
+                text(gc.name, target),
+                assignedValue,
+                { ...at(target), kind: "boolean", value: strict },
+              ],
+              target,
+            ),
+          ),
+          target,
+        );
+      });
+      const hitBranch = nestedStatements(() => {
+        const live = temporary(
+          call(
+            "cachedGlobalIdentifierCell",
+            [{ ...gc.start }, { ...gc.cache }],
+            target,
+          ),
+        );
+        statements.push({
+          ...at(target),
+          kind: "if",
+          test: scalarBinary(
+            "&&",
+            scalarBinary("!==", live, id("undefined", target), target),
+            scalarBinary(
+              "&&",
+              member(live, "writable", target),
+              negate(
+                member(
+                  member(member(gc.start, "global", target), "object", target),
+                  "internalUsedAsPrototype",
+                  target,
+                ),
+                target,
+              ),
+              target,
+            ),
+            target,
+          ),
+          consequent: {
+            ...at(target),
+            kind: "expression",
+            expression: {
+              ...at(target),
+              kind: "assignment",
+              target: member(live, "value", target),
+              value: assignedValue,
+            },
+          },
+          alternate: block(slowHit, target),
+        });
+      });
+      const missBranch = nestedStatements(() => {
+        statements.push({
+          ...at(target),
+          kind: "if",
+          test: scalarBinary(
+            "!==",
+            target.base,
+            id("undefined", target),
+            target,
+          ),
+          consequent: block(
+            nestedStatements(() => {
+              checkedRuntimeCompletion(
+                "putBindingReference",
+                [target.base, assignedValue],
+                target,
+              );
+            }),
+            target,
+          ),
+          alternate: undefined,
+        });
+      });
+      statements.push({
+        ...at(target),
+        kind: "if",
+        test: scalarBinary("!==", gc.cell, id("undefined", target), target),
+        consequent: block(hitBranch, target),
+        alternate: block(missBranch, target),
+      });
       return;
     }
     const property = target.property;
@@ -4133,17 +4326,14 @@ function lowerScriptEntry(
       value: {
         ...at(span),
         kind: "conditional",
-        test: {
-          ...at(span),
-          kind: "binary",
-          operator: "===",
-          left: runtimeCall(
-            "viewObjectValue",
+        test: negate(
+          runtimeCall(
+            "isOrdinaryObject",
             [returned, member(id("$errors", span), "objectPrototype", span)],
             span,
           ),
-          right: id("undefined", span),
-        },
+          span,
+        ),
         consequent: instance,
         alternate: returned,
       },
@@ -5446,6 +5636,20 @@ function lowerScriptEntry(
     const fallback = objectRuntime("scriptBoolean", [value], span);
     if (compactResults) return fallback;
     const falsy: Expression = { ...at(span), kind: "boolean", value: false };
+    let nonNullish = fallback;
+    if (!htmlDDAObjects) {
+      excludesHTMLDDAObjects = true;
+      nonNullish = scalarBranch(
+        runtimeCall(
+          "isOrdinaryObject",
+          [value, member(id("$errors"), "objectPrototype", span)],
+          span,
+        ),
+        { ...at(span), kind: "boolean", value: true },
+        fallback,
+        span,
+      );
+    }
     return scalarBranch(
       categoryOperand(value, "boolean", span),
       value,
@@ -5465,7 +5669,7 @@ function lowerScriptEntry(
             span,
           ),
           falsy,
-          fallback,
+          nonNullish,
           span,
         ),
         span,
@@ -6601,17 +6805,15 @@ function lowerScriptEntry(
         statements.push({
           ...at(span),
           kind: "if",
-          test: scalarBinary(
-            "===",
+          test: negate(
             runtimeCall(
-              "viewObjectValue",
+              "isOrdinaryObject",
               [
                 { ...rawReceiver },
                 member(id("$errors"), "objectPrototype", span),
               ],
               span,
             ),
-            id("undefined", span),
             span,
           ),
           consequent: {
@@ -6658,17 +6860,17 @@ function lowerScriptEntry(
     // object or direct eval binds nothing in its own environments, so
     // identifier resolution and every closure it creates see the captured
     // scope unchanged; AOT and runtime-compiled entries skip creating them.
-    const bindsNothing =
+    // A zero-parameter forwarding entry only needs a declarative scope if its
+    // cold fallback materializes `arguments`, so it allocates the scope lazily.
+    const noDeclarations =
       !raw &&
       !options.packed &&
       !suspending &&
       !derived &&
       !options.classFieldInitializer &&
       !options.baseConstructor &&
-      (parameters.length === 0 || directParameters) &&
       !evalBody &&
       !evalParameters &&
-      !hasArguments &&
       functionDeclarations.variables.every((name) => hoistedNames.has(name)) &&
       functionDeclarations.functions.every(
         (declaration) =>
@@ -6684,20 +6886,32 @@ function lowerScriptEntry(
           !hoistedNames.has(copy.name)
         );
       });
-    const parameterRecord = bindsNothing
+    const bindsNothing =
+      noDeclarations &&
+      (parameters.length === 0 || directParameters) &&
+      !hasArguments;
+    const lazyForwardingScope =
+      noDeclarations &&
+      parameters.length === 0 &&
+      hasArguments &&
+      forwardingSites !== undefined;
+    const noEagerScope = bindsNothing || lazyForwardingScope;
+    const parameterRecord = noEagerScope
       ? id("undefined")
       : temporary(
           call("createDeclarativeEnvironment", [id("undefined")], span),
         );
-    scope = bindsNothing
-      ? capturedScope
-      : temporary(
-          call(
-            "createDeclarativeScope",
-            [parameterParent, parameterRecord],
-            span,
-          ),
-        );
+    scope = lazyForwardingScope
+      ? temporary(capturedScope, false, true)
+      : bindsNothing
+        ? capturedScope
+        : temporary(
+            call(
+              "createDeclarativeScope",
+              [parameterParent, parameterRecord],
+              span,
+            ),
+          );
     lexical = parameterRecord;
     variableScope = parameterEval ? parameterParent : scope;
     let separate = false;
@@ -6789,12 +7003,15 @@ function lowerScriptEntry(
         ],
         span,
       );
-      const instantiate = (listName: string): void => {
+      const instantiate = (
+        listName: string,
+        record: Expression = parameterRecord,
+      ): void => {
         expression(
           runtimeCall(
             "instantiateScriptArguments",
             [
-              parameterRecord,
+              record,
               id(listName, span),
               raw ? id("undefined") : id(calleeName, span),
               argumentPlan,
@@ -6856,7 +7073,22 @@ function lowerScriptEntry(
             });
             const lazy = "$arguments" + serial++;
             materializeList(lazy);
-            instantiate(lazy);
+            if (lazyForwardingScope) {
+              const lazyRecord = temporary(
+                call("createDeclarativeEnvironment", [id("undefined")], span),
+              );
+              expression({
+                ...at(span),
+                kind: "assignment",
+                target: { ...scope },
+                value: call(
+                  "createDeclarativeScope",
+                  [{ ...capturedScope }, lazyRecord],
+                  span,
+                ),
+              });
+              instantiate(lazy, lazyRecord);
+            } else instantiate(lazy);
             const body: BlockStatement = {
               ...at(span),
               kind: "block",
@@ -7046,7 +7278,7 @@ function lowerScriptEntry(
       // Without declarations or a separate var environment, the body shares
       // the parameter scope; skip allocating a plan on every invocation.
       const declares =
-        (separate && !bindsNothing) ||
+        (separate && !noEagerScope) ||
         variables.length > 0 ||
         lexicalDeclarations.length > 0;
       const bodyPlan = (): Expression =>
@@ -7073,17 +7305,18 @@ function lowerScriptEntry(
           ],
           body,
         );
-      scope = temporary(
-        declares
-          ? call("instantiateFunctionBody", [scope, bodyPlan()], body)
-          : { ...scope, ...at(body) },
-      );
+      if (!lazyForwardingScope)
+        scope = temporary(
+          declares
+            ? call("instantiateFunctionBody", [scope, bodyPlan()], body)
+            : { ...scope, ...at(body) },
+        );
       variableScope = scope;
       // This operation always establishes a declarative body scope. Bodies
       // that bind nothing never read it (and may share an object scope).
       lexical = member(scope, "declarative", body);
-      const record = bindsNothing ? id("undefined") : temporary(lexical);
-      if (!bindsNothing)
+      const record = noEagerScope ? id("undefined") : temporary(lexical);
+      if (!noEagerScope)
         statements.push({
           ...at(body),
           kind: "if",
@@ -9218,10 +9451,25 @@ function lowerScriptEntry(
             !compactResults &&
             (node.operator === "==" || node.operator === "!=")
           ) {
+            const witness = member(id("$errors"), "objectPrototype", node);
             const matches = scalarBranch(
               bothNumbers(left, right, node),
               scalarBinary("===", left, right, node),
-              looseEquality(left, right, node),
+              scalarBranch(
+                scalarBinary(
+                  "&&",
+                  runtimeCall("isOrdinaryObject", [left, witness], node),
+                  runtimeCall(
+                    "isOrdinaryObject",
+                    [right, { ...witness }],
+                    node,
+                  ),
+                  node,
+                ),
+                scalarBinary("===", left, right, node),
+                looseEquality(left, right, node),
+                node,
+              ),
               node,
             );
             return node.operator === "==" ? matches : negate(matches, node);
@@ -10662,6 +10910,13 @@ function lowerScriptEntry(
                   [target, member(id("$errors"), "objectPrototype", span)],
                   span,
                 ),
+              readFloat64ElementCall: (array, index, span) =>
+                runtimeCall("readFloat64Element", [array, index], span),
+              writeFloat64ElementCall: (array, index, val, span) =>
+                runtimeCall("writeFloat64Element", [array, index, val], span),
+              addHelperFunction: (fn) => {
+                specLoopHelpers.push(fn);
+              },
               lowerGeneralLoopTail: (innerFor, outerUpdate) => {
                 const prev = suppressingNumericLoopSpec;
                 suppressingNumericLoopSpec = true;
@@ -12079,6 +12334,9 @@ function lowerScriptEntry(
       returnType: named("ModuleRecord"),
       body: factoryBody,
     });
+    for (const helper of specLoopHelpers) {
+      if (helper !== undefined) output.push(helper);
+    }
     // The two callbacks have independent lexical parameters. Materialize fresh
     // syntax per occurrence before identity-based binding and import renaming.
     const moduleOutput: Module = { ...at(script), imports, statements: output };
@@ -12086,6 +12344,9 @@ function lowerScriptEntry(
   }
   for (const site of templateSites) {
     if (site !== undefined) output.push(site);
+  }
+  for (const helper of specLoopHelpers) {
+    if (helper !== undefined) output.push(helper);
   }
   const contextArguments = instantiation("runScriptContext");
   const resultType = contextArguments[0];

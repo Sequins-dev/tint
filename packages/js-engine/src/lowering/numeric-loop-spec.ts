@@ -1,6 +1,7 @@
 import type {
   BlockStatement,
   Expression,
+  Parameter,
   Span,
   Statement,
   TypeNode,
@@ -29,6 +30,18 @@ export interface NumericLoopSpecContext {
     innerFor: Statement & { readonly kind: "for" },
     outerUpdate: Expression | undefined,
   ) => Statement[];
+  readonly readFloat64ElementCall: (
+    array: Expression,
+    index: Expression,
+    span: Span,
+  ) => Expression;
+  readonly writeFloat64ElementCall: (
+    array: Expression,
+    index: Expression,
+    value: Expression,
+    span: Span,
+  ) => Expression;
+  readonly addHelperFunction: (fn: Statement) => void;
   readonly markElementAccess: () => void;
 }
 
@@ -39,8 +52,30 @@ interface ArrayEntry {
   written: boolean;
   elName: string;
   rawName: string;
-  dataName: string;
   countName: string;
+}
+
+interface ProvenAccessCheck {
+  readonly arr: ArrayEntry;
+  readonly slope: Expression;
+  readonly intercept: Expression;
+}
+
+interface ProvenInnerPlan {
+  readonly iv: ScalarEntry;
+  readonly ivStep: number;
+  readonly inclusive: boolean;
+  readonly boundExpr: Expression;
+  readonly auxList: readonly ScalarEntry[];
+  readonly auxDeltas: ReadonlyMap<string, number>;
+  readonly intConstList: readonly ScalarEntry[];
+  readonly checks: readonly ProvenAccessCheck[];
+}
+
+interface AffineValue {
+  readonly slope: Expression;
+  readonly intercept: Expression;
+  readonly hasMul: boolean;
 }
 
 interface ScalarEntry {
@@ -245,6 +280,14 @@ function collectEmittedNames(expr: Expression, out: Set<string>): void {
       collectEmittedNames(expr.left, out);
       collectEmittedNames(expr.right, out);
       return;
+    case "assignment":
+      collectEmittedNames(expr.target, out);
+      collectEmittedNames(expr.value, out);
+      return;
+    case "call":
+      for (const arg of expr.arguments)
+        if (arg !== undefined) collectEmittedNames(arg, out);
+      return;
     case "conditional":
       collectEmittedNames(expr.test, out);
       collectEmittedNames(expr.consequent, out);
@@ -252,6 +295,41 @@ function collectEmittedNames(expr: Expression, out: Set<string>): void {
       return;
     case "group":
       collectEmittedNames(expr.expression, out);
+      return;
+    default:
+      return;
+  }
+}
+
+function collectEmittedStmtNames(stmt: Statement, out: Set<string>): void {
+  switch (stmt.kind) {
+    case "block":
+      for (const child of stmt.statements)
+        if (child !== undefined) collectEmittedStmtNames(child, out);
+      return;
+    case "expression":
+      collectEmittedNames(stmt.expression, out);
+      return;
+    case "if":
+      collectEmittedNames(stmt.test, out);
+      collectEmittedStmtNames(stmt.consequent, out);
+      if (stmt.alternate !== undefined)
+        collectEmittedStmtNames(stmt.alternate, out);
+      return;
+    case "while":
+      collectEmittedNames(stmt.test, out);
+      collectEmittedStmtNames(stmt.body, out);
+      return;
+    case "variable":
+      for (const decl of stmt.declarations) {
+        if (
+          decl !== undefined &&
+          decl.kind !== "array-binding" &&
+          decl.kind !== "object-binding" &&
+          decl.initializer !== undefined
+        )
+          collectEmittedNames(decl.initializer, out);
+      }
       return;
     default:
       return;
@@ -333,6 +411,7 @@ export function specializeNumericForLoop(
   const writtenArrays = new Set<string>();
   const distinctPairs: DistinctPair[] = [];
   const distinctSeen = new Set<string>();
+  let hasSameArrayRAW = false;
   const assigned = new Set<string>();
   const assignedInner = new Set<string>();
   let phase: "outer" | "inner" = "outer";
@@ -374,7 +453,6 @@ export function specializeNumericForLoop(
         written: false,
         elName: "",
         rawName: "",
-        dataName: "",
         countName: "",
       };
       arrays.set(resolved.key, entry);
@@ -385,7 +463,10 @@ export function specializeNumericForLoop(
     } else {
       entry.read = true;
       for (const writtenKey of writtenArrays) {
-        if (writtenKey === entry.key) return undefined;
+        if (writtenKey === entry.key) {
+          hasSameArrayRAW = true;
+          continue;
+        }
         const pairId =
           writtenKey < entry.key
             ? writtenKey + "|" + entry.key
@@ -722,6 +803,739 @@ export function specializeNumericForLoop(
       scalar.defBeforeUseInner = true;
   }
 
+  // Analyze whether the inner loop qualifies for pre-loop range-proven
+  // unchecked integer indexing (`readFloat64Element` / `writeFloat64Element`).
+  const safeIntLimit = 33554432; // 2^25: any product of two values <= 2^25 is <= 2^50 < 2^53 (exact).
+
+  function scalarKeyOfIdent(
+    identNode: Expression & { readonly kind: "identifier" },
+  ): ScalarEntry | undefined {
+    const local = context.resolveLocalSlot(identNode, false);
+    let key: string;
+    if (local !== undefined) key = "local:" + String(local.binding);
+    else {
+      const captured = context.resolveCapturedReadOnlyBinding(identNode);
+      if (captured === undefined) return undefined;
+      key = "captured:" + String(captured);
+    }
+    return scalars.get(key);
+  }
+
+  function arrayEntryOfIdent(
+    identNode: Expression & { readonly kind: "identifier" },
+  ): ArrayEntry | undefined {
+    const local = context.resolveLocalSlot(identNode, false);
+    let key: string;
+    if (local !== undefined) key = "local:" + String(local.binding);
+    else {
+      const captured = context.resolveCapturedReadOnlyBinding(identNode);
+      if (captured === undefined) return undefined;
+      key = "captured:" + String(captured);
+    }
+    return arrays.get(key);
+  }
+
+  function isZeroNum(expr: Expression): boolean {
+    return expr.kind === "number" && expr.value === 0;
+  }
+  function isOneNum(expr: Expression): boolean {
+    return expr.kind === "number" && expr.value === 1;
+  }
+  function simplifyAdd(
+    a: Expression,
+    b: Expression,
+    op: string,
+    span: Span,
+  ): Expression {
+    if (a.kind === "number" && b.kind === "number") {
+      const v = op === "+" ? a.value + b.value : a.value - b.value;
+      if (Number.isSafeInteger(v)) return numLiteral(v, span);
+    }
+    if (op === "+" && isZeroNum(a)) return b;
+    if (isZeroNum(b)) return a;
+    if (op === "-" && isZeroNum(a))
+      return { ...spanOf(span), kind: "unary", operator: "-", operand: b };
+    return binaryExpr(op, a, b, span);
+  }
+  function simplifyMul(a: Expression, b: Expression, span: Span): Expression {
+    if (a.kind === "number" && b.kind === "number") {
+      const v = a.value * b.value;
+      if (Number.isSafeInteger(v)) return numLiteral(v, span);
+    }
+    if (isZeroNum(a) || isZeroNum(b)) return numLiteral(0, span);
+    if (isOneNum(a)) return b;
+    if (isOneNum(b)) return a;
+    return binaryExpr("*", a, b, span);
+  }
+  function simplifyNeg(a: Expression, span: Span): Expression {
+    if (a.kind === "number") return numLiteral(-a.value, span);
+    return { ...spanOf(span), kind: "unary", operator: "-", operand: a };
+  }
+
+  function stepDeltaOf(
+    input: Expression,
+  ): { readonly scalar: ScalarEntry; readonly delta: number } | undefined {
+    const expr = unwrap(input);
+    if (expr.kind === "update") {
+      const target = unwrap(expr.target);
+      if (target.kind !== "identifier") return undefined;
+      const entry = scalarKeyOfIdent(target);
+      if (entry === undefined) return undefined;
+      return { scalar: entry, delta: expr.operator === "++" ? 1 : -1 };
+    }
+    if (
+      expr.kind === "compound" &&
+      (expr.operator === "+" || expr.operator === "-")
+    ) {
+      const target = unwrap(expr.target);
+      const rhs = unwrap(expr.value);
+      if (
+        target.kind === "identifier" &&
+        rhs.kind === "number" &&
+        rhs.value === 1
+      ) {
+        const entry = scalarKeyOfIdent(target);
+        if (entry === undefined) return undefined;
+        return { scalar: entry, delta: expr.operator === "+" ? 1 : -1 };
+      }
+    }
+    return undefined;
+  }
+
+  function analyzeProvenInnerLoop(
+    targetFor: Statement & { readonly kind: "for" },
+  ): ProvenInnerPlan | undefined {
+    const upd = targetFor.update;
+    const tst = targetFor.test;
+    if (upd === undefined || tst === undefined) return undefined;
+    const ivUpdate = stepDeltaOf(upd);
+    if (ivUpdate === undefined) return undefined;
+    const iv = ivUpdate.scalar;
+    const ivStep = ivUpdate.delta;
+
+    // Parse simple comparison test on `iv`.
+    const testExpr = unwrap(tst);
+    if (testExpr.kind !== "binary") return undefined;
+    const leftTest = unwrap(testExpr.left);
+    const rightTest = unwrap(testExpr.right);
+    let inclusive = false;
+    let boundSource: Expression | undefined = undefined;
+    if (
+      leftTest.kind === "identifier" &&
+      scalarKeyOfIdent(leftTest)?.key === iv.key
+    ) {
+      if (ivStep === 1 && testExpr.operator === "<") {
+        inclusive = false;
+        boundSource = rightTest;
+      } else if (ivStep === 1 && testExpr.operator === "<=") {
+        inclusive = true;
+        boundSource = rightTest;
+      } else if (ivStep === -1 && testExpr.operator === ">") {
+        inclusive = false;
+        boundSource = rightTest;
+      } else if (ivStep === -1 && testExpr.operator === ">=") {
+        inclusive = true;
+        boundSource = rightTest;
+      }
+    } else if (
+      rightTest.kind === "identifier" &&
+      scalarKeyOfIdent(rightTest)?.key === iv.key
+    ) {
+      if (ivStep === 1 && testExpr.operator === ">") {
+        inclusive = false;
+        boundSource = leftTest;
+      } else if (ivStep === 1 && testExpr.operator === ">=") {
+        inclusive = true;
+        boundSource = leftTest;
+      } else if (ivStep === -1 && testExpr.operator === "<") {
+        inclusive = false;
+        boundSource = leftTest;
+      } else if (ivStep === -1 && testExpr.operator === "<=") {
+        inclusive = true;
+        boundSource = leftTest;
+      }
+    }
+    if (boundSource === undefined) return undefined;
+
+    // Pass 1: inspect all writes in targetFor.body to find step-constant aux
+    // IVs and ensure `iv` is not mutated inside the body and no array access
+    // lives inside a conditional branch.
+    const auxDelta = new Map<string, number>();
+    const nonAuxWritten = new Set<string>();
+    let bodyValid = true;
+    function scanBodyExpr(input: Expression, inCond: boolean): void {
+      if (!bodyValid) return;
+      const expr = unwrap(input);
+      switch (expr.kind) {
+        case "number":
+        case "identifier":
+          return;
+        case "unary":
+          scanBodyExpr(expr.operand, inCond);
+          return;
+        case "binary":
+          scanBodyExpr(expr.left, inCond);
+          scanBodyExpr(expr.right, inCond);
+          return;
+        case "index":
+          if (inCond) {
+            bodyValid = false;
+            return;
+          }
+          scanBodyExpr(expr.index, inCond);
+          return;
+        case "update": {
+          const step = stepDeltaOf(expr);
+          if (step === undefined || step.scalar.key === iv.key) {
+            bodyValid = false;
+            return;
+          }
+          if (inCond) nonAuxWritten.add(step.scalar.key);
+          else
+            auxDelta.set(
+              step.scalar.key,
+              (auxDelta.get(step.scalar.key) ?? 0) + step.delta,
+            );
+          return;
+        }
+        case "assignment": {
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            const entry = scalarKeyOfIdent(target);
+            if (entry === undefined || entry.key === iv.key) {
+              bodyValid = false;
+              return;
+            }
+            nonAuxWritten.add(entry.key);
+            scanBodyExpr(expr.value, inCond);
+            return;
+          }
+          if (target.kind === "index") {
+            if (inCond) {
+              bodyValid = false;
+              return;
+            }
+            scanBodyExpr(target.index, inCond);
+            scanBodyExpr(expr.value, inCond);
+            return;
+          }
+          bodyValid = false;
+          return;
+        }
+        case "compound": {
+          const step = stepDeltaOf(expr);
+          if (step !== undefined) {
+            if (step.scalar.key === iv.key) {
+              bodyValid = false;
+              return;
+            }
+            if (inCond) nonAuxWritten.add(step.scalar.key);
+            else
+              auxDelta.set(
+                step.scalar.key,
+                (auxDelta.get(step.scalar.key) ?? 0) + step.delta,
+              );
+            return;
+          }
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            const entry = scalarKeyOfIdent(target);
+            if (entry === undefined || entry.key === iv.key) {
+              bodyValid = false;
+              return;
+            }
+            nonAuxWritten.add(entry.key);
+            scanBodyExpr(expr.value, inCond);
+            return;
+          }
+          if (target.kind === "index") {
+            if (inCond) {
+              bodyValid = false;
+              return;
+            }
+            scanBodyExpr(target.index, inCond);
+            scanBodyExpr(expr.value, inCond);
+            return;
+          }
+          bodyValid = false;
+          return;
+        }
+        case "conditional":
+          scanBodyCond(expr.test, true);
+          scanBodyExpr(expr.consequent, true);
+          scanBodyExpr(expr.alternate, true);
+          return;
+        default:
+          bodyValid = false;
+          return;
+      }
+    }
+    function scanBodyCond(input: Expression, inCond: boolean): void {
+      if (!bodyValid) return;
+      const expr = unwrap(input);
+      if (expr.kind === "binary") {
+        if (isComparisonBinary(expr.operator)) {
+          scanBodyExpr(expr.left, inCond);
+          scanBodyExpr(expr.right, inCond);
+          return;
+        }
+        if (expr.operator === "&&" || expr.operator === "||") {
+          scanBodyCond(expr.left, inCond);
+          scanBodyCond(expr.right, true);
+          return;
+        }
+      }
+      bodyValid = false;
+    }
+    function scanBodyStmt(stmt: Statement, inCond: boolean): void {
+      if (!bodyValid) return;
+      switch (stmt.kind) {
+        case "block":
+          for (const child of stmt.statements)
+            if (child !== undefined) scanBodyStmt(child, inCond);
+          return;
+        case "expression":
+          scanBodyExpr(stmt.expression, inCond);
+          return;
+        case "if":
+          scanBodyCond(stmt.test, inCond);
+          scanBodyStmt(stmt.consequent, true);
+          if (stmt.alternate !== undefined) scanBodyStmt(stmt.alternate, true);
+          return;
+        case "variable":
+          for (const decl of stmt.declarations) {
+            if (
+              decl === undefined ||
+              decl.kind === "array-binding" ||
+              decl.kind === "object-binding"
+            ) {
+              bodyValid = false;
+              return;
+            }
+            const init = decl.initializer;
+            if (init === undefined) continue;
+            const slot = context.resolveVarDeclarationSlot(decl);
+            if (slot === undefined) {
+              bodyValid = false;
+              return;
+            }
+            const key = "local:" + String(slot.binding);
+            if (key === iv.key) {
+              bodyValid = false;
+              return;
+            }
+            nonAuxWritten.add(key);
+            scanBodyExpr(init, inCond);
+          }
+          return;
+        case "empty":
+          return;
+        default:
+          bodyValid = false;
+          return;
+      }
+    }
+    scanBodyStmt(targetFor.body, false);
+    if (!bodyValid) return undefined;
+
+    const auxList: ScalarEntry[] = [];
+    const finalAuxDeltas = new Map<string, number>();
+    for (const [key, delta] of auxDelta) {
+      if (nonAuxWritten.has(key)) continue;
+      if (delta === 0 || delta < -16 || delta > 16) continue;
+      const entry = scalars.get(key);
+      if (entry === undefined) continue;
+      auxList.push(entry);
+      finalAuxDeltas.set(key, delta);
+    }
+
+    // Build loop-invariant integer expression (in terms of outer $specNum vars,
+    // using placeholder key references resolved after varNames are assigned).
+    const intConstSeen = new Set<string>();
+    const intConstList: ScalarEntry[] = [];
+    function recordIntConst(entry: ScalarEntry): Expression {
+      if (!intConstSeen.has(entry.key)) {
+        intConstSeen.add(entry.key);
+        intConstList.push(entry);
+      }
+      return ident(entry.key, entry.sample);
+    }
+
+    function evalInvariantInt(
+      input: Expression,
+      allowMul: boolean,
+    ): { readonly expr: Expression; readonly hasMul: boolean } | undefined {
+      const expr = unwrap(input);
+      if (expr.kind === "number") {
+        if (
+          !Number.isSafeInteger(expr.value) ||
+          (expr.value | 0) !== expr.value ||
+          expr.value < -safeIntLimit ||
+          expr.value > safeIntLimit
+        )
+          return undefined;
+        return { expr: numLiteral(expr.value, expr), hasMul: false };
+      }
+      if (expr.kind === "identifier") {
+        const entry = scalarKeyOfIdent(expr);
+        if (entry === undefined || entry.writtenInner) return undefined;
+        return { expr: recordIntConst(entry), hasMul: false };
+      }
+      if (expr.kind === "unary") {
+        if (expr.operator === "+")
+          return evalInvariantInt(expr.operand, allowMul);
+        if (expr.operator === "-") {
+          const innerVal = evalInvariantInt(expr.operand, allowMul);
+          if (innerVal === undefined) return undefined;
+          return {
+            expr: simplifyNeg(innerVal.expr, expr),
+            hasMul: innerVal.hasMul,
+          };
+        }
+        return undefined;
+      }
+      if (expr.kind === "binary") {
+        if (expr.operator === "+" || expr.operator === "-") {
+          const l = evalInvariantInt(expr.left, allowMul);
+          const r = evalInvariantInt(expr.right, allowMul);
+          if (l === undefined || r === undefined) return undefined;
+          return {
+            expr: simplifyAdd(l.expr, r.expr, expr.operator, expr),
+            hasMul: l.hasMul || r.hasMul,
+          };
+        }
+        if (expr.operator === "*" && allowMul) {
+          const l = evalInvariantInt(expr.left, false);
+          const r = evalInvariantInt(expr.right, false);
+          if (l === undefined || r === undefined) return undefined;
+          return { expr: simplifyMul(l.expr, r.expr, expr), hasMul: true };
+        }
+      }
+      return undefined;
+    }
+
+    const boundEval = evalInvariantInt(boundSource, true);
+    if (boundEval === undefined) return undefined;
+
+    // Pass 2: walk targetFor.body in exact JS evaluation order, tracking aux
+    // offsets and requiring every array index to be affine in iteration t.
+    const auxOff = new Map<string, number>();
+    for (const aux of auxList) auxOff.set(aux.key, 0);
+    const checks: ProvenAccessCheck[] = [];
+    let affineValid = true;
+
+    function evalAffine(input: Expression): AffineValue | undefined {
+      const expr = unwrap(input);
+      if (expr.kind === "number") {
+        if (
+          !Number.isSafeInteger(expr.value) ||
+          (expr.value | 0) !== expr.value ||
+          expr.value < -safeIntLimit ||
+          expr.value > safeIntLimit
+        )
+          return undefined;
+        return {
+          slope: numLiteral(0, expr),
+          intercept: numLiteral(expr.value, expr),
+          hasMul: false,
+        };
+      }
+      if (expr.kind === "identifier") {
+        const entry = scalarKeyOfIdent(expr);
+        if (entry === undefined) return undefined;
+        if (entry.key === iv.key) {
+          return {
+            slope: numLiteral(ivStep, expr),
+            intercept: ident(iv.key, expr),
+            hasMul: false,
+          };
+        }
+        const delta = finalAuxDeltas.get(entry.key);
+        if (delta !== undefined) {
+          const cur = auxOff.get(entry.key) ?? 0;
+          return {
+            slope: numLiteral(delta, expr),
+            intercept: simplifyAdd(
+              ident(entry.key, expr),
+              numLiteral(cur, expr),
+              "+",
+              expr,
+            ),
+            hasMul: false,
+          };
+        }
+        if (!entry.writtenInner) {
+          return {
+            slope: numLiteral(0, expr),
+            intercept: recordIntConst(entry),
+            hasMul: false,
+          };
+        }
+        return undefined;
+      }
+      if (expr.kind === "update") {
+        const step = stepDeltaOf(expr);
+        if (step === undefined) return undefined;
+        const delta = finalAuxDeltas.get(step.scalar.key);
+        if (delta === undefined) return undefined;
+        const before = auxOff.get(step.scalar.key) ?? 0;
+        const after = before + step.delta;
+        auxOff.set(step.scalar.key, after);
+        const usedOff = expr.prefix ? after : before;
+        return {
+          slope: numLiteral(delta, expr),
+          intercept: simplifyAdd(
+            ident(step.scalar.key, expr),
+            numLiteral(usedOff, expr),
+            "+",
+            expr,
+          ),
+          hasMul: false,
+        };
+      }
+      if (expr.kind === "unary") {
+        if (expr.operator === "+") return evalAffine(expr.operand);
+        if (expr.operator === "-") {
+          const innerVal = evalAffine(expr.operand);
+          if (innerVal === undefined) return undefined;
+          return {
+            slope: simplifyNeg(innerVal.slope, expr),
+            intercept: simplifyNeg(innerVal.intercept, expr),
+            hasMul: innerVal.hasMul,
+          };
+        }
+        return undefined;
+      }
+      if (expr.kind === "binary") {
+        if (expr.operator === "+" || expr.operator === "-") {
+          const l = evalAffine(expr.left);
+          const r = evalAffine(expr.right);
+          if (l === undefined || r === undefined) return undefined;
+          return {
+            slope: simplifyAdd(l.slope, r.slope, expr.operator, expr),
+            intercept: simplifyAdd(
+              l.intercept,
+              r.intercept,
+              expr.operator,
+              expr,
+            ),
+            hasMul: l.hasMul || r.hasMul,
+          };
+        }
+        if (expr.operator === "*") {
+          const l = evalAffine(expr.left);
+          const r = evalAffine(expr.right);
+          if (l === undefined || r === undefined) return undefined;
+          if (l.hasMul || r.hasMul) return undefined;
+          if (isZeroNum(l.slope)) {
+            return {
+              slope: simplifyMul(l.intercept, r.slope, expr),
+              intercept: simplifyMul(l.intercept, r.intercept, expr),
+              hasMul: true,
+            };
+          }
+          if (isZeroNum(r.slope)) {
+            return {
+              slope: simplifyMul(l.slope, r.intercept, expr),
+              intercept: simplifyMul(l.intercept, r.intercept, expr),
+              hasMul: true,
+            };
+          }
+        }
+      }
+      return undefined;
+    }
+
+    function walkAffineExpr(input: Expression): void {
+      if (!affineValid) return;
+      const expr = unwrap(input);
+      switch (expr.kind) {
+        case "number":
+        case "identifier":
+          return;
+        case "unary":
+          walkAffineExpr(expr.operand);
+          return;
+        case "binary":
+          walkAffineExpr(expr.left);
+          walkAffineExpr(expr.right);
+          return;
+        case "index": {
+          const base = unwrap(expr.object);
+          if (base.kind !== "identifier") {
+            affineValid = false;
+            return;
+          }
+          const arr = arrayEntryOfIdent(base);
+          const idxAff = evalAffine(expr.index);
+          if (arr === undefined || idxAff === undefined) {
+            affineValid = false;
+            return;
+          }
+          checks.push({
+            arr,
+            slope: idxAff.slope,
+            intercept: idxAff.intercept,
+          });
+          return;
+        }
+        case "update": {
+          const step = stepDeltaOf(expr);
+          if (step !== undefined && finalAuxDeltas.has(step.scalar.key)) {
+            auxOff.set(
+              step.scalar.key,
+              (auxOff.get(step.scalar.key) ?? 0) + step.delta,
+            );
+          }
+          return;
+        }
+        case "assignment": {
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            walkAffineExpr(expr.value);
+            return;
+          }
+          if (target.kind === "index") {
+            const base = unwrap(target.object);
+            if (base.kind !== "identifier") {
+              affineValid = false;
+              return;
+            }
+            const arr = arrayEntryOfIdent(base);
+            const idxAff = evalAffine(target.index);
+            if (arr === undefined || idxAff === undefined) {
+              affineValid = false;
+              return;
+            }
+            checks.push({
+              arr,
+              slope: idxAff.slope,
+              intercept: idxAff.intercept,
+            });
+            walkAffineExpr(expr.value);
+            return;
+          }
+          affineValid = false;
+          return;
+        }
+        case "compound": {
+          const step = stepDeltaOf(expr);
+          if (step !== undefined && finalAuxDeltas.has(step.scalar.key)) {
+            auxOff.set(
+              step.scalar.key,
+              (auxOff.get(step.scalar.key) ?? 0) + step.delta,
+            );
+            return;
+          }
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            walkAffineExpr(expr.value);
+            return;
+          }
+          if (target.kind === "index") {
+            const base = unwrap(target.object);
+            if (base.kind !== "identifier") {
+              affineValid = false;
+              return;
+            }
+            const arr = arrayEntryOfIdent(base);
+            const idxAff = evalAffine(target.index);
+            if (arr === undefined || idxAff === undefined) {
+              affineValid = false;
+              return;
+            }
+            checks.push({
+              arr,
+              slope: idxAff.slope,
+              intercept: idxAff.intercept,
+            });
+            walkAffineExpr(expr.value);
+            return;
+          }
+          affineValid = false;
+          return;
+        }
+        case "conditional":
+          walkAffineCond(expr.test);
+          walkAffineExpr(expr.consequent);
+          walkAffineExpr(expr.alternate);
+          return;
+        default:
+          affineValid = false;
+          return;
+      }
+    }
+    function walkAffineCond(input: Expression): void {
+      if (!affineValid) return;
+      const expr = unwrap(input);
+      if (expr.kind === "binary") {
+        if (isComparisonBinary(expr.operator)) {
+          walkAffineExpr(expr.left);
+          walkAffineExpr(expr.right);
+          return;
+        }
+        if (expr.operator === "&&" || expr.operator === "||") {
+          walkAffineCond(expr.left);
+          walkAffineCond(expr.right);
+          return;
+        }
+      }
+      affineValid = false;
+    }
+    function walkAffineStmt(stmt: Statement): void {
+      if (!affineValid) return;
+      switch (stmt.kind) {
+        case "block":
+          for (const child of stmt.statements)
+            if (child !== undefined) walkAffineStmt(child);
+          return;
+        case "expression":
+          walkAffineExpr(stmt.expression);
+          return;
+        case "if":
+          walkAffineCond(stmt.test);
+          walkAffineStmt(stmt.consequent);
+          if (stmt.alternate !== undefined) walkAffineStmt(stmt.alternate);
+          return;
+        case "variable":
+          for (const decl of stmt.declarations) {
+            if (
+              decl === undefined ||
+              decl.kind === "array-binding" ||
+              decl.kind === "object-binding"
+            ) {
+              affineValid = false;
+              return;
+            }
+            if (decl.initializer !== undefined)
+              walkAffineExpr(decl.initializer);
+          }
+          return;
+        case "empty":
+          return;
+        default:
+          affineValid = false;
+          return;
+      }
+    }
+    walkAffineStmt(targetFor.body);
+    if (!affineValid || checks.length === 0) return undefined;
+    return {
+      iv,
+      ivStep,
+      inclusive,
+      boundExpr: boundEval.expr,
+      auxList,
+      auxDeltas: finalAuxDeltas,
+      intConstList,
+      checks,
+    };
+  }
+
+  const provenTarget = innerFor !== undefined ? innerFor : node;
+  const provenPlan = analyzeProvenInnerLoop(provenTarget);
+  if (hasSameArrayRAW && provenPlan === undefined) return undefined;
+
   context.markElementAccess();
 
   // Assign fresh variable names.
@@ -729,7 +1543,6 @@ export function specializeNumericForLoop(
     if (arr === undefined) throw "NUMERIC_LOOP_ARRAY_INVARIANT";
     arr.elName = context.freshName("$specEl");
     arr.rawName = context.freshName("$specRaw");
-    arr.dataName = context.freshName("$specData");
     arr.countName = context.freshName("$specCount");
   }
   const mutableVarNames = new Set<string>();
@@ -1011,30 +1824,12 @@ export function specializeNumericForLoop(
     makeDeopt: (span: Span) => BlockStatement,
     span: Span,
   ): Expression {
-    const rawName = context.freshName("$specElem");
-    out.push(
-      varDecl(
-        "const",
-        rawName,
-        {
-          ...spanOf(span),
-          kind: "index",
-          object: ident(arr.dataName, span),
-          index: indexExpr,
-          optional: false,
-        },
-        span,
-      ),
+    const idxRef = emitWriteBoundsCheck(arr, indexExpr, out, makeDeopt, span);
+    return context.readFloat64ElementCall(
+      ident(arr.rawName, span),
+      idxRef,
+      span,
     );
-    out.push(
-      ifStmt(
-        binaryExpr("===", ident(rawName, span), ident("undefined", span), span),
-        makeDeopt(span),
-        undefined,
-        span,
-      ),
-    );
-    return ident(rawName, span);
   }
 
   function emitExpr(
@@ -1443,14 +2238,9 @@ export function specializeNumericForLoop(
     for (const write of deferredWrites) {
       loopBody.push(
         exprStmt(
-          assignExpr(
-            {
-              ...spanOf(targetFor),
-              kind: "index",
-              object: ident(write.array.dataName, targetFor),
-              index: write.indexExpr,
-              optional: false,
-            },
+          context.writeFloat64ElementCall(
+            ident(write.array.rawName, targetFor),
+            write.indexExpr,
             write.valueExpr,
             targetFor,
           ),
@@ -1490,6 +2280,1144 @@ export function specializeNumericForLoop(
     };
   }
 
+  function emitProvenInnerLoop(
+    targetFor: Statement & { readonly kind: "for" },
+    plan: ProvenInnerPlan,
+    deoptFlagName: string,
+    markRan: boolean,
+    allowOutline: boolean = true,
+  ): Statement {
+    const span = spanOf(targetFor);
+    function resolveKeyExpr(input: Expression): Expression {
+      switch (input.kind) {
+        case "number":
+          return numLiteral(input.value, input);
+        case "identifier": {
+          const entry = scalars.get(input.name);
+          if (entry === undefined) throw "NUMERIC_LOOP_PROVEN_KEY_INVARIANT";
+          return ident(entry.varName, input);
+        }
+        case "unary":
+          return {
+            ...spanOf(input),
+            kind: "unary",
+            operator: input.operator,
+            operand: resolveKeyExpr(input.operand),
+          };
+        case "binary":
+          return binaryExpr(
+            input.operator,
+            resolveKeyExpr(input.left),
+            resolveKeyExpr(input.right),
+            input,
+          );
+        default:
+          throw "NUMERIC_LOOP_PROVEN_EXPR_INVARIANT";
+      }
+    }
+
+    function safeIntCheck(expr: Expression): Expression {
+      return binaryExpr(
+        "&&",
+        binaryExpr(
+          "===",
+          binaryExpr("|", expr, numLiteral(0, span), span),
+          expr,
+          span,
+        ),
+        binaryExpr(
+          "&&",
+          binaryExpr(">=", expr, numLiteral(-safeIntLimit, span), span),
+          binaryExpr("<=", expr, numLiteral(safeIntLimit, span), span),
+          span,
+        ),
+        span,
+      );
+    }
+
+    const stmts: Statement[] = [];
+    const okName = context.freshName("$specPOk");
+    stmts.push(
+      varDecl(
+        "let",
+        okName,
+        boolLiteral(true, span),
+        span,
+        namedType("boolean", span),
+      ),
+    );
+    const boundName = context.freshName("$specPBound");
+    stmts.push(
+      varDecl(
+        "const",
+        boundName,
+        resolveKeyExpr(plan.boundExpr),
+        span,
+        namedType("number", span),
+      ),
+    );
+    // Verify iv, bound, checked invariant scalars, and aux IVs are exact safe
+    // integers before computing trip count and endpoint bounds.
+    let baseOk: Expression = binaryExpr(
+      "&&",
+      safeIntCheck(ident(plan.iv.varName, span)),
+      safeIntCheck(ident(boundName, span)),
+      span,
+    );
+    for (const s of plan.intConstList) {
+      baseOk = binaryExpr(
+        "&&",
+        baseOk,
+        safeIntCheck(ident(s.varName, span)),
+        span,
+      );
+    }
+    for (const aux of plan.auxList) {
+      baseOk = binaryExpr(
+        "&&",
+        baseOk,
+        safeIntCheck(ident(aux.varName, span)),
+        span,
+      );
+    }
+    stmts.push(
+      ifStmt(
+        { ...spanOf(span), kind: "unary", operator: "!", operand: baseOk },
+        exprStmt(
+          assignExpr(ident(okName, span), boolLiteral(false, span), span),
+          span,
+        ),
+        undefined,
+        span,
+      ),
+    );
+
+    const tripsName = context.freshName("$specPTrips");
+    const rawDiff =
+      plan.ivStep === 1
+        ? binaryExpr(
+            "-",
+            ident(boundName, span),
+            ident(plan.iv.varName, span),
+            span,
+          )
+        : binaryExpr(
+            "-",
+            ident(plan.iv.varName, span),
+            ident(boundName, span),
+            span,
+          );
+    const tripsInit = plan.inclusive
+      ? binaryExpr("+", rawDiff, numLiteral(1, span), span)
+      : rawDiff;
+    stmts.push(
+      varDecl(
+        "const",
+        tripsName,
+        {
+          ...spanOf(span),
+          kind: "conditional",
+          test: ident(okName, span),
+          consequent: tripsInit,
+          alternate: numLiteral(0, span),
+        },
+        span,
+        namedType("number", span),
+      ),
+    );
+
+    // When ok && trips > 0, check trips <= safeIntLimit and verify every affine
+    // array access endpoint [first, last] lies within [0, arr.count).
+    const positiveBody: Statement[] = [];
+    const lastStepName = context.freshName("$specPLast");
+    positiveBody.push(
+      varDecl(
+        "const",
+        lastStepName,
+        binaryExpr("-", ident(tripsName, span), numLiteral(1, span), span),
+        span,
+        namedType("number", span),
+      ),
+    );
+    positiveBody.push(
+      ifStmt(
+        binaryExpr(
+          ">",
+          ident(tripsName, span),
+          numLiteral(safeIntLimit, span),
+          span,
+        ),
+        exprStmt(
+          assignExpr(ident(okName, span), boolLiteral(false, span), span),
+          span,
+        ),
+        undefined,
+        span,
+      ),
+    );
+    for (const chk of plan.checks) {
+      const slName = context.freshName("$specPSl");
+      const icName = context.freshName("$specPIc");
+      const endName = context.freshName("$specPEnd");
+      positiveBody.push(
+        varDecl(
+          "const",
+          slName,
+          resolveKeyExpr(chk.slope),
+          span,
+          namedType("number", span),
+        ),
+      );
+      positiveBody.push(
+        varDecl(
+          "const",
+          icName,
+          resolveKeyExpr(chk.intercept),
+          span,
+          namedType("number", span),
+        ),
+      );
+      positiveBody.push(
+        varDecl(
+          "const",
+          endName,
+          binaryExpr(
+            "+",
+            ident(icName, span),
+            binaryExpr(
+              "*",
+              ident(slName, span),
+              ident(lastStepName, span),
+              span,
+            ),
+            span,
+          ),
+          span,
+          namedType("number", span),
+        ),
+      );
+      const chkOk = binaryExpr(
+        "&&",
+        safeIntCheck(ident(slName, span)),
+        binaryExpr(
+          "&&",
+          safeIntCheck(ident(icName, span)),
+          binaryExpr(
+            "&&",
+            binaryExpr(">=", ident(icName, span), numLiteral(0, span), span),
+            binaryExpr(
+              "&&",
+              binaryExpr(
+                "<",
+                ident(icName, span),
+                ident(chk.arr.countName, span),
+                span,
+              ),
+              binaryExpr(
+                "&&",
+                binaryExpr(
+                  ">=",
+                  ident(endName, span),
+                  numLiteral(0, span),
+                  span,
+                ),
+                binaryExpr(
+                  "<",
+                  ident(endName, span),
+                  ident(chk.arr.countName, span),
+                  span,
+                ),
+                span,
+              ),
+              span,
+            ),
+            span,
+          ),
+          span,
+        ),
+        span,
+      );
+      positiveBody.push(
+        ifStmt(
+          { ...spanOf(span), kind: "unary", operator: "!", operand: chkOk },
+          exprStmt(
+            assignExpr(ident(okName, span), boolLiteral(false, span), span),
+            span,
+          ),
+          undefined,
+          span,
+        ),
+      );
+    }
+
+    // Build integer-typed inner loop body (zero bounds checks, zero snapshots,
+    // zero deopts, in-place Float64Array element reads and writes).
+    const intNameMap = new Map<string, string>();
+    const provenMutable = new Set<string>(mutableVarNames);
+
+    const ivIntName = context.freshName("$specPIv");
+    intNameMap.set(plan.iv.key, ivIntName);
+    provenMutable.add(ivIntName);
+    const boundIntName = context.freshName("$specPBndI");
+    const auxIntNames: {
+      readonly entry: ScalarEntry;
+      readonly intName: string;
+    }[] = [];
+    for (const aux of plan.auxList) {
+      const auxInt = context.freshName("$specPAux");
+      intNameMap.set(aux.key, auxInt);
+      provenMutable.add(auxInt);
+      auxIntNames.push({ entry: aux, intName: auxInt });
+    }
+    const constIntNames: {
+      readonly entry: ScalarEntry;
+      readonly intName: string;
+    }[] = [];
+    for (const s of plan.intConstList) {
+      if (intNameMap.has(s.key)) continue;
+      const constInt = context.freshName("$specPCst");
+      intNameMap.set(s.key, constInt);
+      constIntNames.push({ entry: s, intName: constInt });
+    }
+
+    function provenNameOf(entry: ScalarEntry): string {
+      return intNameMap.get(entry.key) ?? entry.varName;
+    }
+    function isProvenImmutable(expr: Expression): boolean {
+      if (expr.kind === "number") return true;
+      if (expr.kind === "identifier") return !provenMutable.has(expr.name);
+      return false;
+    }
+    function provenExprMayMutate(
+      input: Expression,
+      names: ReadonlySet<string>,
+    ): boolean {
+      if (names.size === 0) return false;
+      const expr = unwrap(input);
+      switch (expr.kind) {
+        case "number":
+        case "identifier":
+          return false;
+        case "unary":
+          return provenExprMayMutate(expr.operand, names);
+        case "binary":
+          return (
+            provenExprMayMutate(expr.left, names) ||
+            provenExprMayMutate(expr.right, names)
+          );
+        case "index":
+          return provenExprMayMutate(expr.index, names);
+        case "update": {
+          const target = unwrap(expr.target);
+          if (target.kind !== "identifier") return false;
+          return names.has(provenNameOf(lookupScalar(target)));
+        }
+        case "assignment": {
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            if (names.has(provenNameOf(lookupScalar(target)))) return true;
+            return provenExprMayMutate(expr.value, names);
+          }
+          if (target.kind === "index") {
+            return (
+              provenExprMayMutate(target.index, names) ||
+              provenExprMayMutate(expr.value, names)
+            );
+          }
+          return false;
+        }
+        case "compound": {
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            if (names.has(provenNameOf(lookupScalar(target)))) return true;
+            return provenExprMayMutate(expr.value, names);
+          }
+          if (target.kind === "index") {
+            return (
+              provenExprMayMutate(target.index, names) ||
+              provenExprMayMutate(expr.value, names)
+            );
+          }
+          return false;
+        }
+        case "conditional":
+          return (
+            provenExprMayMutate(expr.test, names) ||
+            provenExprMayMutate(expr.consequent, names) ||
+            provenExprMayMutate(expr.alternate, names)
+          );
+        default:
+          return true;
+      }
+    }
+    function provenNeedsLeftSave(
+      emittedLeft: Expression,
+      rightSource: Expression,
+    ): boolean {
+      if (emittedLeft.kind === "number") return false;
+      const referenced = new Set<string>();
+      collectEmittedNames(emittedLeft, referenced);
+      const mutableReferenced = new Set<string>();
+      for (const name of referenced) {
+        if (name !== undefined && provenMutable.has(name))
+          mutableReferenced.add(name);
+      }
+      if (mutableReferenced.size === 0) return false;
+      return provenExprMayMutate(rightSource, mutableReferenced);
+    }
+
+    function emitProvenExpr(input: Expression, out: Statement[]): Expression {
+      const expr = unwrap(input);
+      switch (expr.kind) {
+        case "number":
+          return numLiteral(expr.value, expr);
+        case "identifier":
+          return ident(provenNameOf(lookupScalar(expr)), expr);
+        case "unary": {
+          const operand = emitProvenExpr(expr.operand, out);
+          return {
+            ...spanOf(expr),
+            kind: "unary",
+            operator: expr.operator,
+            operand,
+          };
+        }
+        case "binary": {
+          let left = emitProvenExpr(expr.left, out);
+          if (provenNeedsLeftSave(left, expr.right)) {
+            const leftName = context.freshName("$specPL");
+            out.push(
+              varDecl("const", leftName, left, expr, namedType("number", expr)),
+            );
+            left = ident(leftName, expr);
+          }
+          const right = emitProvenExpr(expr.right, out);
+          return binaryExpr(expr.operator, left, right, expr);
+        }
+        case "index": {
+          const base = unwrap(expr.object);
+          if (base.kind !== "identifier") throw "NUMERIC_LOOP_ARRAY_INVARIANT";
+          const arr = lookupArray(base);
+          const idx = emitProvenExpr(expr.index, out);
+          const elemName = context.freshName("$specPEl");
+          out.push(
+            varDecl(
+              "const",
+              elemName,
+              context.readFloat64ElementCall(
+                ident(arr.rawName, expr),
+                idx,
+                expr,
+              ),
+              expr,
+              namedType("number", expr),
+            ),
+          );
+          return ident(elemName, expr);
+        }
+        case "update": {
+          const target = unwrap(expr.target);
+          if (target.kind !== "identifier")
+            throw "NUMERIC_LOOP_UPDATE_INVARIANT";
+          const entry = lookupScalar(target);
+          const name = provenNameOf(entry);
+          const delta = expr.operator === "++" ? 1 : -1;
+          const isInt = intNameMap.has(entry.key);
+          const sum = binaryExpr(
+            "+",
+            ident(name, expr),
+            numLiteral(delta, expr),
+            expr,
+          );
+          const nextVal = isInt
+            ? binaryExpr("|", sum, numLiteral(0, expr), expr)
+            : sum;
+          if (expr.prefix) {
+            out.push(
+              exprStmt(assignExpr(ident(name, expr), nextVal, expr), expr),
+            );
+            return ident(name, expr);
+          }
+          const prevName = context.freshName("$specPPrev");
+          out.push(
+            varDecl(
+              "const",
+              prevName,
+              ident(name, expr),
+              expr,
+              namedType("number", expr),
+            ),
+          );
+          out.push(
+            exprStmt(assignExpr(ident(name, expr), nextVal, expr), expr),
+          );
+          return ident(prevName, expr);
+        }
+        case "assignment": {
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            const entry = lookupScalar(target);
+            const name = provenNameOf(entry);
+            const rhs = emitProvenExpr(expr.value, out);
+            out.push(exprStmt(assignExpr(ident(name, expr), rhs, expr), expr));
+            return ident(name, expr);
+          }
+          if (target.kind === "index") {
+            const base = unwrap(target.object);
+            if (base.kind !== "identifier")
+              throw "NUMERIC_LOOP_ARRAY_INVARIANT";
+            const arr = lookupArray(base);
+            // Evaluate index before RHS (exact JS order).
+            const idx = emitProvenExpr(target.index, out);
+            let idxRef: Expression;
+            if (isProvenImmutable(idx)) idxRef = idx;
+            else {
+              const idxName = context.freshName("$specPWIdx");
+              out.push(
+                varDecl("const", idxName, idx, expr, namedType("number", expr)),
+              );
+              idxRef = ident(idxName, expr);
+            }
+            const rhs = emitProvenExpr(expr.value, out);
+            let valRef: Expression;
+            if (isProvenImmutable(rhs)) valRef = rhs;
+            else {
+              const valName = context.freshName("$specPWVal");
+              out.push(
+                varDecl("const", valName, rhs, expr, namedType("number", expr)),
+              );
+              valRef = ident(valName, expr);
+            }
+            out.push(
+              exprStmt(
+                context.writeFloat64ElementCall(
+                  ident(arr.rawName, expr),
+                  idxRef,
+                  valRef,
+                  expr,
+                ),
+                expr,
+              ),
+            );
+            return valRef;
+          }
+          throw "NUMERIC_LOOP_ASSIGN_INVARIANT";
+        }
+        case "compound": {
+          const target = unwrap(expr.target);
+          if (target.kind === "identifier") {
+            const entry = lookupScalar(target);
+            const name = provenNameOf(entry);
+            const isInt = intNameMap.has(entry.key);
+            let oldRef: Expression = ident(name, expr);
+            if (provenNeedsLeftSave(oldRef, expr.value)) {
+              const oldName = context.freshName("$specPOld");
+              out.push(
+                varDecl(
+                  "const",
+                  oldName,
+                  oldRef,
+                  expr,
+                  namedType("number", expr),
+                ),
+              );
+              oldRef = ident(oldName, expr);
+            }
+            const rhs = emitProvenExpr(expr.value, out);
+            const res = binaryExpr(expr.operator, oldRef, rhs, expr);
+            const finalVal = isInt
+              ? binaryExpr("|", res, numLiteral(0, expr), expr)
+              : res;
+            out.push(
+              exprStmt(assignExpr(ident(name, expr), finalVal, expr), expr),
+            );
+            return ident(name, expr);
+          }
+          if (target.kind === "index") {
+            const base = unwrap(target.object);
+            if (base.kind !== "identifier")
+              throw "NUMERIC_LOOP_ARRAY_INVARIANT";
+            const arr = lookupArray(base);
+            const idx = emitProvenExpr(target.index, out);
+            let idxRef: Expression;
+            if (isProvenImmutable(idx)) idxRef = idx;
+            else {
+              const idxName = context.freshName("$specPWIdx");
+              out.push(
+                varDecl("const", idxName, idx, expr, namedType("number", expr)),
+              );
+              idxRef = ident(idxName, expr);
+            }
+            const oldName = context.freshName("$specPOldE");
+            out.push(
+              varDecl(
+                "const",
+                oldName,
+                context.readFloat64ElementCall(
+                  ident(arr.rawName, expr),
+                  idxRef,
+                  expr,
+                ),
+                expr,
+                namedType("number", expr),
+              ),
+            );
+            const rhs = emitProvenExpr(expr.value, out);
+            const valName = context.freshName("$specPWVal");
+            out.push(
+              varDecl(
+                "const",
+                valName,
+                binaryExpr(expr.operator, ident(oldName, expr), rhs, expr),
+                expr,
+                namedType("number", expr),
+              ),
+            );
+            const valRef = ident(valName, expr);
+            out.push(
+              exprStmt(
+                context.writeFloat64ElementCall(
+                  ident(arr.rawName, expr),
+                  idxRef,
+                  valRef,
+                  expr,
+                ),
+                expr,
+              ),
+            );
+            return valRef;
+          }
+          throw "NUMERIC_LOOP_COMPOUND_INVARIANT";
+        }
+        case "conditional": {
+          const cond = emitProvenCond(expr.test, out);
+          const resName = context.freshName("$specPCond");
+          out.push(
+            varDecl(
+              "let",
+              resName,
+              numLiteral(0, expr),
+              expr,
+              namedType("number", expr),
+            ),
+          );
+          const thenStmts: Statement[] = [];
+          const thenVal = emitProvenExpr(expr.consequent, thenStmts);
+          thenStmts.push(
+            exprStmt(assignExpr(ident(resName, expr), thenVal, expr), expr),
+          );
+          const elseStmts: Statement[] = [];
+          const elseVal = emitProvenExpr(expr.alternate, elseStmts);
+          elseStmts.push(
+            exprStmt(assignExpr(ident(resName, expr), elseVal, expr), expr),
+          );
+          out.push(
+            ifStmt(
+              cond,
+              blockStmt(thenStmts, expr),
+              blockStmt(elseStmts, expr),
+              expr,
+            ),
+          );
+          return ident(resName, expr);
+        }
+        default:
+          throw "NUMERIC_LOOP_EXPR_INVARIANT";
+      }
+    }
+    function emitProvenCond(input: Expression, out: Statement[]): Expression {
+      const expr = unwrap(input);
+      if (expr.kind === "binary") {
+        if (isComparisonBinary(expr.operator)) {
+          let left = emitProvenExpr(expr.left, out);
+          if (provenNeedsLeftSave(left, expr.right)) {
+            const leftName = context.freshName("$specPCL");
+            out.push(
+              varDecl("const", leftName, left, expr, namedType("number", expr)),
+            );
+            left = ident(leftName, expr);
+          }
+          const right = emitProvenExpr(expr.right, out);
+          const op =
+            expr.operator === "=="
+              ? "==="
+              : expr.operator === "!="
+                ? "!=="
+                : expr.operator;
+          return binaryExpr(op, left, right, expr);
+        }
+        if (expr.operator === "&&" || expr.operator === "||") {
+          const left = emitProvenCond(expr.left, out);
+          const resName = context.freshName("$specPBool");
+          out.push(
+            varDecl("let", resName, left, expr, namedType("boolean", expr)),
+          );
+          const rightStmts: Statement[] = [];
+          const right = emitProvenCond(expr.right, rightStmts);
+          rightStmts.push(
+            exprStmt(assignExpr(ident(resName, expr), right, expr), expr),
+          );
+          let testExpr: Expression = ident(resName, expr);
+          if (expr.operator !== "&&") {
+            testExpr = {
+              ...spanOf(expr),
+              kind: "unary",
+              operator: "!",
+              operand: testExpr,
+            };
+          }
+          out.push(
+            ifStmt(testExpr, blockStmt(rightStmts, expr), undefined, expr),
+          );
+          return ident(resName, expr);
+        }
+      }
+      throw "NUMERIC_LOOP_COND_INVARIANT";
+    }
+    function emitProvenStmt(stmt: Statement, out: Statement[]): void {
+      switch (stmt.kind) {
+        case "block":
+          for (const child of stmt.statements) {
+            if (child === undefined) throw "NUMERIC_LOOP_BLOCK_INVARIANT";
+            emitProvenStmt(child, out);
+          }
+          return;
+        case "expression": {
+          const value = emitProvenExpr(stmt.expression, out);
+          if (value.kind !== "identifier") out.push(exprStmt(value, stmt));
+          return;
+        }
+        case "if": {
+          const cond = emitProvenCond(stmt.test, out);
+          const thenStmts: Statement[] = [];
+          emitProvenStmt(stmt.consequent, thenStmts);
+          const alt = stmt.alternate;
+          let altBlock: BlockStatement | undefined = undefined;
+          if (alt !== undefined) {
+            const elseStmts: Statement[] = [];
+            emitProvenStmt(alt, elseStmts);
+            altBlock = blockStmt(elseStmts, alt);
+          }
+          out.push(
+            ifStmt(cond, blockStmt(thenStmts, stmt.consequent), altBlock, stmt),
+          );
+          return;
+        }
+        case "variable": {
+          for (const decl of stmt.declarations) {
+            if (
+              decl === undefined ||
+              decl.kind === "array-binding" ||
+              decl.kind === "object-binding"
+            )
+              throw "NUMERIC_LOOP_VAR_INVARIANT";
+            const init = decl.initializer;
+            if (init === undefined) continue;
+            const slot = context.resolveVarDeclarationSlot(decl);
+            if (slot === undefined) throw "NUMERIC_LOOP_VAR_INVARIANT";
+            const entry = scalars.get("local:" + String(slot.binding));
+            if (entry === undefined) throw "NUMERIC_LOOP_VAR_INVARIANT";
+            const rhs = emitProvenExpr(init, out);
+            out.push(
+              exprStmt(
+                assignExpr(ident(provenNameOf(entry), decl), rhs, decl),
+                decl,
+              ),
+            );
+          }
+          return;
+        }
+        case "empty":
+          return;
+        default:
+          throw "NUMERIC_LOOP_STMT_INVARIANT";
+      }
+    }
+
+    const whileBody: Statement[] = [];
+    emitProvenStmt(targetFor.body, whileBody);
+    whileBody.push(
+      exprStmt(
+        assignExpr(
+          ident(ivIntName, span),
+          binaryExpr(
+            "|",
+            binaryExpr(
+              "+",
+              ident(ivIntName, span),
+              numLiteral(plan.ivStep, span),
+              span,
+            ),
+            numLiteral(0, span),
+            span,
+          ),
+          span,
+        ),
+        span,
+      ),
+    );
+    const loopOp =
+      plan.ivStep === 1
+        ? plan.inclusive
+          ? "<="
+          : "<"
+        : plan.inclusive
+          ? ">="
+          : ">";
+    const whileLoop: Statement = {
+      ...spanOf(targetFor),
+      kind: "while",
+      test: binaryExpr(
+        loopOp,
+        ident(ivIntName, span),
+        ident(boundIntName, span),
+        span,
+      ),
+      body: blockStmt(whileBody, targetFor),
+    };
+
+    // Determine exact live inputs/outputs of the proven inner loop so we can
+    // outline it into a tiny top-level leaf function (`__tint_spec_loop_*`)
+    // free from the enclosing function's fallback-loop slot/register pressure.
+    const usedBodyNames = new Set<string>();
+    for (const stmt of whileBody)
+      if (stmt !== undefined) collectEmittedStmtNames(stmt, usedBodyNames);
+    const usedArrays: ArrayEntry[] = [];
+    for (const arr of arrayList) {
+      if (arr !== undefined && usedBodyNames.has(arr.rawName))
+        usedArrays.push(arr);
+    }
+    const usedConstInts: {
+      readonly entry: ScalarEntry;
+      readonly intName: string;
+    }[] = [];
+    for (const ci of constIntNames) {
+      if (ci !== undefined && usedBodyNames.has(ci.intName))
+        usedConstInts.push(ci);
+    }
+    const readOnlyNonIv: ScalarEntry[] = [];
+    const writtenNonIv: ScalarEntry[] = [];
+    for (const s of scalarList) {
+      if (s === undefined || intNameMap.has(s.key)) continue;
+      if (!usedBodyNames.has(s.varName)) continue;
+      if (isNested ? s.writtenInner : s.written) writtenNonIv.push(s);
+      else readOnlyNonIv.push(s);
+    }
+
+    const totalKernelParams =
+      usedArrays.length +
+      2 +
+      auxIntNames.length +
+      usedConstInts.length +
+      readOnlyNonIv.length +
+      writtenNonIv.length;
+    const intLoopSetup: Statement[] = [];
+    if (allowOutline && writtenNonIv.length <= 1 && totalKernelParams <= 16) {
+      const kernelName = context.freshName("__tint_spec_loop_");
+      const params: Parameter[] = [];
+      const callArgs: Expression[] = [];
+      const kernelBody: Statement[] = [];
+      const addParam = (
+        name: string,
+        typeName: string,
+        argExpr: Expression,
+      ): void => {
+        params.push({
+          ...spanOf(span),
+          name,
+          type: namedType(typeName, span),
+          rest: false,
+          optional: false,
+        });
+        callArgs.push(argExpr);
+      };
+      for (const arr of usedArrays) {
+        addParam(arr.rawName, "Float64Array", ident(arr.rawName, span));
+      }
+      const pIv = context.freshName("$kIv");
+      const pBnd = context.freshName("$kBnd");
+      addParam(pIv, "number", ident(plan.iv.varName, span));
+      addParam(pBnd, "number", ident(boundName, span));
+      kernelBody.push(
+        varDecl(
+          "let",
+          ivIntName,
+          binaryExpr("|", ident(pIv, span), numLiteral(0, span), span),
+          span,
+          namedType("number", span),
+        ),
+      );
+      kernelBody.push(
+        varDecl(
+          "const",
+          boundIntName,
+          binaryExpr("|", ident(pBnd, span), numLiteral(0, span), span),
+          span,
+          namedType("number", span),
+        ),
+      );
+      for (const aux of auxIntNames) {
+        const pAux = context.freshName("$kAux");
+        addParam(pAux, "number", ident(aux.entry.varName, span));
+        kernelBody.push(
+          varDecl(
+            "let",
+            aux.intName,
+            binaryExpr("|", ident(pAux, span), numLiteral(0, span), span),
+            span,
+            namedType("number", span),
+          ),
+        );
+      }
+      for (const ci of usedConstInts) {
+        const pCst = context.freshName("$kCst");
+        addParam(pCst, "number", ident(ci.entry.varName, span));
+        kernelBody.push(
+          varDecl(
+            "const",
+            ci.intName,
+            binaryExpr("|", ident(pCst, span), numLiteral(0, span), span),
+            span,
+            namedType("number", span),
+          ),
+        );
+      }
+      for (const ro of readOnlyNonIv) {
+        addParam(ro.varName, "number", ident(ro.varName, span));
+      }
+      const carriedOut = writtenNonIv[0];
+      if (carriedOut !== undefined) {
+        const pOut = context.freshName("$kOut");
+        addParam(pOut, "number", ident(carriedOut.varName, span));
+        kernelBody.push(
+          varDecl(
+            "let",
+            carriedOut.varName,
+            ident(pOut, span),
+            span,
+            namedType("number", span),
+          ),
+        );
+      }
+      kernelBody.push(whileLoop);
+      if (carriedOut !== undefined) {
+        kernelBody.push({
+          ...spanOf(span),
+          kind: "return",
+          expression: ident(carriedOut.varName, span),
+        });
+      }
+      context.addHelperFunction({
+        ...spanOf(span),
+        kind: "function",
+        name: kernelName,
+        exported: false,
+        parameters: params,
+        returnType: namedType(
+          carriedOut !== undefined ? "number" : "void",
+          span,
+        ),
+        body: blockStmt(kernelBody, span),
+      });
+      const callExpr: Expression = {
+        ...spanOf(span),
+        kind: "call",
+        callee: ident(kernelName, span),
+        arguments: callArgs,
+      };
+      if (carriedOut !== undefined) {
+        intLoopSetup.push(
+          exprStmt(
+            assignExpr(ident(carriedOut.varName, span), callExpr, span),
+            span,
+          ),
+        );
+      } else {
+        intLoopSetup.push(exprStmt(callExpr, span));
+      }
+      // Analytically advance primary IV and auxiliary IVs by exact trip count.
+      intLoopSetup.push(
+        exprStmt(
+          assignExpr(
+            ident(plan.iv.varName, span),
+            binaryExpr(
+              plan.ivStep === 1 ? "+" : "-",
+              ident(plan.iv.varName, span),
+              ident(tripsName, span),
+              span,
+            ),
+            span,
+          ),
+          span,
+        ),
+      );
+      for (const aux of auxIntNames) {
+        const delta = plan.auxDeltas.get(aux.entry.key) ?? 0;
+        if (delta === 0) continue;
+        const advance: Expression =
+          delta === 1
+            ? binaryExpr(
+                "+",
+                ident(aux.entry.varName, span),
+                ident(tripsName, span),
+                span,
+              )
+            : delta === -1
+              ? binaryExpr(
+                  "-",
+                  ident(aux.entry.varName, span),
+                  ident(tripsName, span),
+                  span,
+                )
+              : binaryExpr(
+                  "+",
+                  ident(aux.entry.varName, span),
+                  binaryExpr(
+                    "*",
+                    ident(tripsName, span),
+                    numLiteral(delta, span),
+                    span,
+                  ),
+                  span,
+                );
+        intLoopSetup.push(
+          exprStmt(
+            assignExpr(ident(aux.entry.varName, span), advance, span),
+            span,
+          ),
+        );
+      }
+    } else {
+      intLoopSetup.push(
+        varDecl(
+          "let",
+          ivIntName,
+          binaryExpr(
+            "|",
+            ident(plan.iv.varName, span),
+            numLiteral(0, span),
+            span,
+          ),
+          span,
+          namedType("number", span),
+        ),
+      );
+      intLoopSetup.push(
+        varDecl(
+          "const",
+          boundIntName,
+          binaryExpr("|", ident(boundName, span), numLiteral(0, span), span),
+          span,
+          namedType("number", span),
+        ),
+      );
+      for (const aux of auxIntNames) {
+        intLoopSetup.push(
+          varDecl(
+            "let",
+            aux.intName,
+            binaryExpr(
+              "|",
+              ident(aux.entry.varName, span),
+              numLiteral(0, span),
+              span,
+            ),
+            span,
+            namedType("number", span),
+          ),
+        );
+      }
+      for (const ci of usedConstInts) {
+        intLoopSetup.push(
+          varDecl(
+            "const",
+            ci.intName,
+            binaryExpr(
+              "|",
+              ident(ci.entry.varName, span),
+              numLiteral(0, span),
+              span,
+            ),
+            span,
+            namedType("number", span),
+          ),
+        );
+      }
+      intLoopSetup.push(whileLoop);
+      // Sync integer IVs back to their outer scalar slots once after the loop.
+      intLoopSetup.push(
+        exprStmt(
+          assignExpr(
+            ident(plan.iv.varName, span),
+            ident(ivIntName, span),
+            span,
+          ),
+          span,
+        ),
+      );
+      for (const aux of auxIntNames) {
+        intLoopSetup.push(
+          exprStmt(
+            assignExpr(
+              ident(aux.entry.varName, span),
+              ident(aux.intName, span),
+              span,
+            ),
+            span,
+          ),
+        );
+      }
+    }
+    if (markRan && defBeforeUseWritten.length > 0) {
+      intLoopSetup.push(
+        exprStmt(
+          assignExpr(ident(ranName, span), boolLiteral(true, span), span),
+          span,
+        ),
+      );
+    }
+
+    positiveBody.push(
+      ifStmt(
+        ident(okName, span),
+        blockStmt(intLoopSetup, span),
+        undefined,
+        span,
+      ),
+    );
+
+    stmts.push(
+      ifStmt(
+        binaryExpr(
+          "&&",
+          ident(okName, span),
+          binaryExpr(">", ident(tripsName, span), numLiteral(0, span), span),
+          span,
+        ),
+        blockStmt(positiveBody, span),
+        undefined,
+        span,
+      ),
+    );
+    stmts.push(
+      ifStmt(
+        {
+          ...spanOf(span),
+          kind: "unary",
+          operator: "!",
+          operand: ident(okName, span),
+        },
+        exprStmt(
+          assignExpr(ident(deoptFlagName, span), boolLiteral(true, span), span),
+          span,
+        ),
+        undefined,
+        span,
+      ),
+    );
+    return blockStmt(stmts, span);
+  }
+
   // Build fast-path inner block (inside all array-elements & scalar-number
   // guards).
   const inner: Statement[] = [];
@@ -1510,30 +3438,6 @@ export function specializeNumericForLoop(
         memberExpr(ident(arr.elName, node), "numberCount", node),
         node,
         namedType("number", node),
-      ),
-    );
-    inner.push(
-      varDecl(
-        "const",
-        arr.dataName,
-        {
-          ...spanOf(node),
-          kind: "conditional",
-          test: binaryExpr(
-            "===",
-            ident(arr.countName, node),
-            memberExpr(ident(arr.rawName, node), "length", node),
-            node,
-          ),
-          consequent: ident(arr.rawName, node),
-          alternate: {
-            ...spanOf(node),
-            kind: "call",
-            callee: memberExpr(ident(arr.rawName, node), "subarray", node),
-            arguments: [numLiteral(0, node), ident(arr.countName, node)],
-          },
-        },
-        node,
       ),
     );
   }
@@ -1629,7 +3533,13 @@ export function specializeNumericForLoop(
     if (innerInit !== undefined) {
       emitStatement(innerInit, outerBody, prefixDeferred, makeOuterDeoptBlock);
     }
-    outerBody.push(emitInnerLoop(innerFor, makeNestedInnerDeoptBlock, false));
+    if (provenPlan !== undefined) {
+      outerBody.push(
+        emitProvenInnerLoop(innerFor, provenPlan, innerDeoptName, false, true),
+      );
+    } else {
+      outerBody.push(emitInnerLoop(innerFor, makeNestedInnerDeoptBlock, false));
+    }
     // If the inner loop deopted, sync live + outer-prefix scalars back to
     // general slots, run the general inner loop (without init) + general outer
     // update, then break out of the outer fast loop so the general outer loop
@@ -1665,43 +3575,411 @@ export function specializeNumericForLoop(
         node,
       ),
     );
-    handleInnerDeopt.push({ ...spanOf(node), kind: "break", label: undefined });
-    outerBody.push(
-      ifStmt(
-        ident(innerDeoptName, node),
-        blockStmt(handleInnerDeopt, node),
-        undefined,
-        node,
-      ),
-    );
-    if (defBeforeUseWritten.length > 0) {
+    if (provenPlan !== undefined) {
+      handleInnerDeopt.push({
+        ...spanOf(node),
+        kind: "break",
+        label: undefined,
+      });
       outerBody.push(
+        ifStmt(
+          ident(innerDeoptName, node),
+          blockStmt(handleInnerDeopt, node),
+          undefined,
+          node,
+        ),
+      );
+      if (defBeforeUseWritten.length > 0) {
+        outerBody.push(
+          exprStmt(
+            assignExpr(ident(ranName, node), boolLiteral(true, node), node),
+            node,
+          ),
+        );
+      }
+      const outerUpdate = node.update;
+      if (outerUpdate !== undefined) {
+        const outerUpdateDeferred: DeferredWrite[] = [];
+        const outerUpdateExpr = emitExpr(
+          outerUpdate,
+          outerBody,
+          outerUpdateDeferred,
+          makeOuterDeoptBlock,
+        );
+        if (outerUpdateExpr.kind !== "identifier")
+          outerBody.push(exprStmt(outerUpdateExpr, outerUpdate));
+      }
+      inner.push({
+        ...spanOf(node),
+        kind: "while",
+        test: boolLiteral(true, node),
+        body: blockStmt(outerBody, node),
+      });
+    } else {
+      const helperOuterBody = outerBody.slice();
+      helperOuterBody.push(
+        ifStmt(
+          ident(innerDeoptName, node),
+          { ...spanOf(node), kind: "break", label: undefined },
+          undefined,
+          node,
+        ),
+      );
+      if (defBeforeUseWritten.length > 0) {
+        helperOuterBody.push(
+          exprStmt(
+            assignExpr(ident(ranName, node), boolLiteral(true, node), node),
+            node,
+          ),
+        );
+      }
+      const outerUpdate = node.update;
+      if (outerUpdate !== undefined) {
+        const outerUpdateDeferred: DeferredWrite[] = [];
+        const outerUpdateExpr = emitExpr(
+          outerUpdate,
+          helperOuterBody,
+          outerUpdateDeferred,
+          makeOuterDeoptBlock,
+        );
+        if (outerUpdateExpr.kind !== "identifier")
+          helperOuterBody.push(exprStmt(outerUpdateExpr, outerUpdate));
+      }
+      // For non-proven 2-level loops (e.g. advect with indirect d0 reads),
+      // outline the 2D loop into a pure-leaf `__tint_spec_loop_*` helper so it
+      // runs with intraprocedural integer slots/word facts and hoisted
+      // Float64Array data pointers instead of staying inside the outer closure.
+      const outScalars: ScalarEntry[] = [];
+      const outSeen = new Set<string>();
+      for (const s of liveWritten) {
+        if (s !== undefined && !outSeen.has(s.key)) {
+          outSeen.add(s.key);
+          outScalars.push(s);
+        }
+      }
+      for (const s of defBeforeUseWritten) {
+        if (s !== undefined && !outSeen.has(s.key)) {
+          outSeen.add(s.key);
+          outScalars.push(s);
+        }
+      }
+      const kernelName = context.freshName("__tint_spec_loop_");
+      const params: Parameter[] = [];
+      const callArgs: Expression[] = [];
+      const kernelBody: Statement[] = [];
+      const addParam = (
+        name: string,
+        typeName: string,
+        argExpr: Expression,
+      ): void => {
+        params.push({
+          ...spanOf(node),
+          name,
+          type: namedType(typeName, node),
+          rest: false,
+          optional: false,
+        });
+        callArgs.push(argExpr);
+      };
+      const usedOuterNames = new Set<string>();
+      for (const stmt of helperOuterBody)
+        if (stmt !== undefined) collectEmittedStmtNames(stmt, usedOuterNames);
+      for (const arr of arrayList) {
+        if (arr === undefined) throw "NUMERIC_LOOP_ARRAY_INVARIANT";
+        if (usedOuterNames.has(arr.rawName))
+          addParam(arr.rawName, "Float64Array", ident(arr.rawName, node));
+        if (usedOuterNames.has(arr.countName))
+          addParam(arr.countName, "number", ident(arr.countName, node));
+      }
+      for (const s of scalarList) {
+        if (s === undefined) throw "NUMERIC_LOOP_SCALAR_INVARIANT";
+        if (s.defBeforeUse) {
+          if (usedOuterNames.has(s.varName) || outSeen.has(s.key)) {
+            kernelBody.push(
+              varDecl(
+                "let",
+                s.varName,
+                numLiteral(0, node),
+                node,
+                namedType("number", node),
+              ),
+            );
+          }
+        } else if (usedOuterNames.has(s.varName) || outSeen.has(s.key)) {
+          if (s.written) {
+            const pName = context.freshName("$kIn");
+            addParam(pName, "number", ident(s.varName, node));
+            kernelBody.push(
+              varDecl(
+                "let",
+                s.varName,
+                ident(pName, node),
+                node,
+                namedType("number", node),
+              ),
+            );
+          } else {
+            addParam(s.varName, "number", ident(s.varName, node));
+          }
+        }
+      }
+      const outBufParam =
+        outScalars.length > 0 ? context.freshName("$kOutBuf") : undefined;
+      if (outBufParam !== undefined) {
+        const callerBufName = context.freshName("$specOutBuf");
+        inner.push(
+          varDecl(
+            "const",
+            callerBufName,
+            {
+              ...spanOf(node),
+              kind: "new",
+              callee: ident("Float64Array", node),
+              typeArguments: [],
+              arguments: [numLiteral(outScalars.length, node)],
+            },
+            node,
+            namedType("Float64Array", node),
+          ),
+        );
+        addParam(outBufParam, "Float64Array", ident(callerBufName, node));
+      }
+      if (defBeforeUseWritten.length > 0) {
+        kernelBody.push(
+          varDecl(
+            "let",
+            ranName,
+            boolLiteral(false, node),
+            node,
+            namedType("boolean", node),
+          ),
+        );
+      }
+      kernelBody.push(
+        varDecl(
+          "let",
+          deoptName,
+          boolLiteral(false, node),
+          node,
+          namedType("boolean", node),
+        ),
+      );
+      kernelBody.push(
+        varDecl(
+          "let",
+          innerDeoptName,
+          boolLiteral(false, node),
+          node,
+          namedType("boolean", node),
+        ),
+      );
+      kernelBody.push({
+        ...spanOf(node),
+        kind: "while",
+        test: boolLiteral(true, node),
+        body: blockStmt(helperOuterBody, node),
+      });
+      if (outBufParam !== undefined) {
+        for (let idx = 0; idx < outScalars.length; idx++) {
+          const s = outScalars[idx];
+          if (s === undefined) continue;
+          kernelBody.push(
+            exprStmt(
+              context.writeFloat64ElementCall(
+                ident(outBufParam, node),
+                numLiteral(idx, node),
+                ident(s.varName, node),
+                node,
+              ),
+              node,
+            ),
+          );
+        }
+      }
+      kernelBody.push(
+        ifStmt(
+          ident(innerDeoptName, node),
+          {
+            ...spanOf(node),
+            kind: "return",
+            expression: numLiteral(3, node),
+          },
+          undefined,
+          node,
+        ),
+      );
+      if (defBeforeUseWritten.length > 0) {
+        kernelBody.push(
+          ifStmt(
+            ident(deoptName, node),
+            {
+              ...spanOf(node),
+              kind: "return",
+              expression: {
+                ...spanOf(node),
+                kind: "conditional",
+                test: ident(ranName, node),
+                consequent: numLiteral(4, node),
+                alternate: numLiteral(2, node),
+              },
+            },
+            undefined,
+            node,
+          ),
+        );
+        kernelBody.push({
+          ...spanOf(node),
+          kind: "return",
+          expression: {
+            ...spanOf(node),
+            kind: "conditional",
+            test: ident(ranName, node),
+            consequent: numLiteral(1, node),
+            alternate: numLiteral(0, node),
+          },
+        });
+      } else {
+        kernelBody.push({
+          ...spanOf(node),
+          kind: "return",
+          expression: {
+            ...spanOf(node),
+            kind: "conditional",
+            test: ident(deoptName, node),
+            consequent: numLiteral(2, node),
+            alternate: numLiteral(0, node),
+          },
+        });
+      }
+      context.addHelperFunction({
+        ...spanOf(node),
+        kind: "function",
+        name: kernelName,
+        exported: false,
+        parameters: params,
+        returnType: namedType("number", node),
+        body: blockStmt(kernelBody, node),
+      });
+      const statusName = context.freshName("$spec2dSt");
+      inner.push(
+        varDecl(
+          "const",
+          statusName,
+          {
+            ...spanOf(node),
+            kind: "call",
+            callee: ident(kernelName, node),
+            arguments: callArgs,
+          },
+          node,
+          namedType("number", node),
+        ),
+      );
+      if (outBufParam !== undefined) {
+        const callerBufArg = callArgs[callArgs.length - 1];
+        if (callerBufArg === undefined || callerBufArg.kind !== "identifier")
+          throw "NUMERIC_LOOP_OUTBUF_INVARIANT";
+        for (let idx = 0; idx < outScalars.length; idx++) {
+          const s = outScalars[idx];
+          if (s === undefined) continue;
+          inner.push(
+            exprStmt(
+              assignExpr(
+                ident(s.varName, node),
+                context.readFloat64ElementCall(
+                  ident(callerBufArg.name, node),
+                  numLiteral(idx, node),
+                  node,
+                ),
+                node,
+              ),
+              node,
+            ),
+          );
+        }
+      }
+      if (defBeforeUseWritten.length > 0) {
+        inner.push(
+          exprStmt(
+            assignExpr(
+              ident(ranName, node),
+              binaryExpr(
+                "||",
+                binaryExpr(
+                  "===",
+                  ident(statusName, node),
+                  numLiteral(1, node),
+                  node,
+                ),
+                binaryExpr(
+                  "===",
+                  ident(statusName, node),
+                  numLiteral(4, node),
+                  node,
+                ),
+                node,
+              ),
+              node,
+            ),
+            node,
+          ),
+        );
+      }
+      inner.push(
         exprStmt(
-          assignExpr(ident(ranName, node), boolLiteral(true, node), node),
+          assignExpr(
+            ident(deoptName, node),
+            binaryExpr(
+              "||",
+              binaryExpr(
+                "===",
+                ident(statusName, node),
+                numLiteral(2, node),
+                node,
+              ),
+              binaryExpr(
+                "===",
+                ident(statusName, node),
+                numLiteral(4, node),
+                node,
+              ),
+              node,
+            ),
+            node,
+          ),
+          node,
+        ),
+      );
+      inner.push(
+        exprStmt(
+          assignExpr(
+            ident(innerDeoptName, node),
+            binaryExpr(
+              "===",
+              ident(statusName, node),
+              numLiteral(3, node),
+              node,
+            ),
+            node,
+          ),
+          node,
+        ),
+      );
+      inner.push(
+        ifStmt(
+          ident(innerDeoptName, node),
+          blockStmt(handleInnerDeopt, node),
+          undefined,
           node,
         ),
       );
     }
-    const outerUpdate = node.update;
-    if (outerUpdate !== undefined) {
-      const outerUpdateDeferred: DeferredWrite[] = [];
-      const outerUpdateExpr = emitExpr(
-        outerUpdate,
-        outerBody,
-        outerUpdateDeferred,
-        makeOuterDeoptBlock,
-      );
-      if (outerUpdateExpr.kind !== "identifier")
-        outerBody.push(exprStmt(outerUpdateExpr, outerUpdate));
-    }
-    inner.push({
-      ...spanOf(node),
-      kind: "while",
-      test: boolLiteral(true, node),
-      body: blockStmt(outerBody, node),
-    });
   } else {
-    inner.push(emitInnerLoop(node, makeSingleDeoptBlock, true));
+    if (provenPlan !== undefined) {
+      inner.push(emitProvenInnerLoop(node, provenPlan, deoptName, true));
+    } else {
+      inner.push(emitInnerLoop(node, makeSingleDeoptBlock, true));
+    }
   }
 
   // Sync written scalars back to their general slots (skipped when nested
@@ -1807,20 +4085,22 @@ export function specializeNumericForLoop(
       ),
     );
   }
-  for (const pair of distinctPairs) {
-    if (pair === undefined) throw "NUMERIC_LOOP_DISTINCT_INVARIANT";
-    const aArr = arrays.get(pair.first),
-      bArr = arrays.get(pair.second);
-    if (aArr === undefined || bArr === undefined)
-      throw "NUMERIC_LOOP_DISTINCT_INVARIANT";
-    addGuard(
-      binaryExpr(
-        "!==",
-        ident(aArr.elName, node),
-        ident(bArr.elName, node),
-        node,
-      ),
-    );
+  if (provenPlan === undefined) {
+    for (const pair of distinctPairs) {
+      if (pair === undefined) throw "NUMERIC_LOOP_DISTINCT_INVARIANT";
+      const aArr = arrays.get(pair.first),
+        bArr = arrays.get(pair.second);
+      if (aArr === undefined || bArr === undefined)
+        throw "NUMERIC_LOOP_DISTINCT_INVARIANT";
+      addGuard(
+        binaryExpr(
+          "!==",
+          ident(aArr.elName, node),
+          ident(bArr.elName, node),
+          node,
+        ),
+      );
+    }
   }
   for (const scalar of scalarList) {
     if (scalar === undefined) throw "NUMERIC_LOOP_SCALAR_INVARIANT";

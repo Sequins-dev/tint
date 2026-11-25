@@ -312,6 +312,46 @@ function runDirectTests() {
   out.push(c.inc.call(c, 99));
   Function.prototype.call = savedCall;
   out.push(c.inc.call(c, 1));
+  // Inline global cell write invalidation (delete, non-writable, setter, global proto),
+  // new Array() direct target shortcut vs subclass, and zero-param lazy forwarding scope.
+  globalThis.__a7g = 10;
+  function writeG(fn) { __a7g = fn(); }
+  writeG(function () { return 20; });
+  out.push(__a7g);
+  writeG(function () { delete globalThis.__a7g; return 30; });
+  out.push(__a7g);
+  Object.defineProperty(globalThis, "__a7ro", { value: 1, writable: true, configurable: true });
+  function writeRo(fn) { __a7ro = fn(); }
+  writeRo(function () { return 2; });
+  writeRo(function () { Object.defineProperty(globalThis, "__a7ro", { writable: false }); return 9; });
+  out.push(__a7ro);
+  var setterLog = [];
+  globalThis.__a7acc = 1;
+  function writeAcc(fn) { __a7acc = fn(); }
+  writeAcc(function () { return 2; });
+  writeAcc(function () {
+    Object.defineProperty(globalThis, "__a7acc", {
+      set: function (v) { setterLog.push(v); },
+      get: function () { return 77; },
+      configurable: true,
+    });
+    return 55;
+  });
+  out.push(__a7acc, setterLog.join(","));
+  var a1 = new Array(3), a2 = new Array(4, 5);
+  class SubArr extends Array {}
+  var sub = new SubArr(2);
+  out.push(a1.length, a2.join(","), sub instanceof SubArr, sub.length);
+  // Zero-param forwarding wrapper (lazyForwardingScope): hot path + cold fallback.
+  var Mk = function () { return function () { this.initialize.apply(this, arguments); }; };
+  var Pair = Mk();
+  Pair.prototype = { initialize: function (x, y) { this.s = x + y; } };
+  out.push(new Pair(3, 4).s);
+  var savedApply = Function.prototype.apply;
+  var applySeen = 0;
+  Function.prototype.apply = function (t, a) { applySeen = a.length; return savedApply.call(this, t, a); };
+  out.push(new Pair(10, 20).s, applySeen);
+  Function.prototype.apply = savedApply;
   return out.join("|");
 }
 `;
