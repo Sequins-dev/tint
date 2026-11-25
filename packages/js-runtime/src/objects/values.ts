@@ -225,12 +225,57 @@ export function resolveScriptConstructEntry(
   return entry;
 }
 
-/** In-place value `index` of a fast-mode Script object (internalValue0..7),
- * as the portable bodies of the generated caches' functions read it. */
+/** In-place (`0..7`) or spilled (`>= 8`) value `index` of a fast-mode Script
+ * object, as the portable bodies of the generated caches' functions read it. */
 export function readPropertyValueSlot(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   index: number,
 ): unknown {
+  if (index >= 8) {
+    const offset = index - 8;
+    let chunkIndex = offset >>> 4;
+    let chunk: PropertySpill<unknown> | undefined = object.internalValues;
+    while (chunkIndex > 0 && chunk !== undefined) {
+      chunk = chunk.next;
+      chunkIndex--;
+    }
+    if (chunk === undefined) return undefined;
+    switch (offset & 15) {
+      case 0:
+        return chunk.v0;
+      case 1:
+        return chunk.v1;
+      case 2:
+        return chunk.v2;
+      case 3:
+        return chunk.v3;
+      case 4:
+        return chunk.v4;
+      case 5:
+        return chunk.v5;
+      case 6:
+        return chunk.v6;
+      case 7:
+        return chunk.v7;
+      case 8:
+        return chunk.v8;
+      case 9:
+        return chunk.v9;
+      case 10:
+        return chunk.v10;
+      case 11:
+        return chunk.v11;
+      case 12:
+        return chunk.v12;
+      case 13:
+        return chunk.v13;
+      case 14:
+        return chunk.v14;
+      case 15:
+        return chunk.v15;
+    }
+    throw "PROPERTY_SLOT_INVARIANT";
+  }
   switch (index) {
     case 0:
       return object.internalValue0;
@@ -296,70 +341,6 @@ export function propertySlotWord(
   return 2;
 }
 
-/** Read one slot of a PropertySpill chunk locally (retained property-cache
- * helpers cannot call into other modules). */
-function readLocalSpillSlot(
-  chunk: PropertySpill<unknown>,
-  index: number,
-): unknown {
-  switch (index) {
-    case 0:
-      return chunk.v0;
-    case 1:
-      return chunk.v1;
-    case 2:
-      return chunk.v2;
-    case 3:
-      return chunk.v3;
-    case 4:
-      return chunk.v4;
-    case 5:
-      return chunk.v5;
-    case 6:
-      return chunk.v6;
-    case 7:
-      return chunk.v7;
-    case 8:
-      return chunk.v8;
-    case 9:
-      return chunk.v9;
-    case 10:
-      return chunk.v10;
-    case 11:
-      return chunk.v11;
-    case 12:
-      return chunk.v12;
-    case 13:
-      return chunk.v13;
-    case 14:
-      return chunk.v14;
-    case 15:
-      return chunk.v15;
-  }
-  throw "PROPERTY_SLOT_INVARIANT";
-}
-
-/** Read a fast-mode own value given its encoded raw-bit slot (positive for
- * in-place slots starting at word 2, negative for linked PropertySpill chunks). */
-function readEncodedPropertySlot(
-  object: OrdinaryObject<ScriptPropertyKey, unknown>,
-  slot: number,
-): unknown {
-  if (slot < 0) {
-    const raw = -slot / Number.MIN_VALUE;
-    let chunkIndex = raw >>> 16;
-    let chunk: PropertySpill<unknown> | undefined = object.internalValues;
-    while (chunkIndex > 0 && chunk !== undefined) {
-      chunk = chunk.next;
-      chunkIndex--;
-    }
-    return chunk === undefined
-      ? undefined
-      : readLocalSpillSlot(chunk, ((raw & 0xffff) - 2) >>> 1);
-  }
-  return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
-}
-
 /** The value of `value`'s own data property cached at `site`: its shape is
  * one of the site's own entry shapes, which proves the property and its
  * slot. Otherwise the site itself, which absentPropertyValue recognizes and
@@ -380,7 +361,14 @@ export function cachedOwnPropertyValue(
   else if (shape === site.ownShape2) slot = site.ownSlot2;
   else if (shape === site.ownShape3) slot = site.ownSlot3;
   else return site;
-  return readEncodedPropertySlot(object, slot);
+  if (slot < 0) {
+    const raw = -slot / Number.MIN_VALUE;
+    return readPropertyValueSlot(
+      object,
+      8 + ((raw >>> 16) << 4) + (((raw & 0xffff) - 2) >>> 1),
+    );
+  }
+  return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
 }
 
 /** As cachedOwnPropertyValue, for a method site: a directly cached inherited
@@ -417,7 +405,14 @@ export function cachedInheritedPropertyValue(
   } else return site;
   if (slot === 0) return direct;
   if (object === undefined) return site;
-  return readEncodedPropertySlot(object, slot);
+  if (slot < 0) {
+    const raw = -slot / Number.MIN_VALUE;
+    return readPropertyValueSlot(
+      object,
+      8 + ((raw >>> 16) << 4) + (((raw & 0xffff) - 2) >>> 1),
+    );
+  }
+  return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
 }
 
 /** Whether a cached read missed. Native code binds it to the miss test of

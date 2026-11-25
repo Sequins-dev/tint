@@ -329,7 +329,12 @@ export function cachedGlobalIdentifierCell(
 ): Descriptor<unknown> | undefined {
   if (start.declarative !== undefined || start.object !== undefined)
     return undefined;
-  return cachedGlobalCell<ScriptPropertyKey, unknown>(start.global, cache);
+  const global = start.global;
+  return cache.global === global &&
+    cache.lexicalEpoch === global.lexicalEpoch &&
+    cache.objectEpoch === global.object.internalPropertyEpoch
+    ? cache.cell
+    : undefined;
 }
 export function getIdentifierValue<Key, Value>(
   start: EnvironmentScope<Key, Value>,
