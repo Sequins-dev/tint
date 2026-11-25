@@ -36,6 +36,12 @@ export interface ForeignCall {
    * first operand's address and every argument comes from a call frame
    * (docs/native-ffi.md, "Dynamic calls"); `symbol` is empty. */
   readonly dynamic?: true | undefined;
+  /** The growable scalar frame has an exact target and no borrowed operands.
+   * Its boolean result reports whether the outgoing stack window fit. */
+  readonly dynamicScalar?: true | undefined;
+  /** A runtime-selected, compile-time classified scalar trampoline. The
+   * same validated exact-word frame reaches it, without frame dispatch. */
+  readonly staticScalar?: CSignature | undefined;
   /** The callee is an address, not an import: the first operand is that
    * address (a nonzero number, else trap) and the remaining operands are
    * the prototype's (docs/native-ffi.md, "Optional libraries"). `symbol`
@@ -145,6 +151,46 @@ export const dynamicCallFrame = {
    * universal thunks' entries are bases 1 + byteOperands onward. */
   callbackOperands: 4,
 };
+/** Header of a growable scalar call. Stack words follow the header. The
+ * frame contains no managed pointers, and may live in stable storage. */
+export const dynamicScalarFrame = {
+  registers: 0,
+  floats: 64,
+  stackBytes: 128,
+  target: 136,
+  size: 144,
+};
+
+/** Use the shared callback transition without scoped callback operands. */
+export function dynamicScalarCall(
+  callbacks: boolean,
+  staticScalar?: CSignature,
+): ForeignCall {
+  const pointer: CType = { kind: "pointer", pointee: { kind: "void" } };
+  const parameters: CType[] = callbacks
+    ? [pointer, pointer, pointer]
+    : [pointer];
+  const operands: ForeignOperand[] = callbacks
+    ? ["bytes", "callback", "bytes"]
+    : ["bytes"];
+  const call: ForeignCall = {
+    symbol: "",
+    signature: {
+      parameters,
+      result: { kind: "scalar", scalar: "bool" },
+      fixedParameters: parameters.length,
+      callClass: callbacks ? "may-callback" : "leaf",
+      errno: "none",
+    },
+    operands,
+    result: "boolean",
+    dynamic: true,
+    dynamicScalar: true,
+    ...(staticScalar === undefined ? {} : { staticScalar }),
+  };
+  return callbacks ? { ...call, mayCallback: true } : call;
+}
+
 /** The universal trampoline call: operands are the callee address, the
  * frame and `dynamicCallFrame.byteOperands` borrowed byte arrays. With
  * `callbacks` it is a may-callback call: the callback state and
@@ -187,12 +233,35 @@ export function dynamicForeignCall(callbacks: boolean = false): ForeignCall {
 }
 /** Whether `call` is exactly the universal trampoline's shape. */
 function dynamicShape(call: ForeignCall): boolean {
-  const expected = dynamicForeignCall(call.mayCallback === true);
+  const specialized = call.staticScalar;
+  if (
+    specialized !== undefined &&
+    (call.dynamicScalar !== true ||
+      call.mayCallback === true ||
+      specialized.callClass !== "leaf" ||
+      specialized.errno !== "none" ||
+      specialized.fixedParameters !== specialized.parameters.length ||
+      specialized.parameters.some(
+        (type) => type?.kind !== "scalar" && type?.kind !== "pointer",
+      ) ||
+      (specialized.result.kind !== "scalar" &&
+        specialized.result.kind !== "pointer" &&
+        specialized.result.kind !== "void"))
+  )
+    return false;
+  const expected =
+    call.dynamicScalar === true
+      ? dynamicScalarCall(call.mayCallback === true)
+      : dynamicForeignCall(call.mayCallback === true);
+  const result = call.signature.result;
   if (
     call.symbol !== "" ||
-    call.result !== "void" ||
+    call.result !== expected.result ||
     call.callbacks !== undefined ||
-    call.signature.result.kind !== "void" ||
+    (call.dynamicScalar === true
+      ? result.kind !== "scalar" || result.scalar !== "bool"
+      : result.kind !== "void") ||
+    call.signature.fixedParameters !== expected.signature.fixedParameters ||
     call.signature.callClass !== expected.signature.callClass ||
     call.signature.errno !== "none" ||
     call.signature.parameters.length !== expected.signature.parameters.length ||
@@ -245,8 +314,16 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
             : "Uint8Array",
       );
     }
-    return { ok: true, value: { parameters, result: "void" } };
+    return {
+      ok: true,
+      value: {
+        parameters,
+        result: call.dynamicScalar === true ? "boolean" : "void",
+      },
+    };
   }
+  if (call.dynamicScalar === true || call.staticScalar !== undefined)
+    return { ok: false, error: "scalar call requires a trampoline" };
   if (!validSymbol(call.symbol))
     return { ok: false, error: "invalid foreign symbol" };
   if (call.mayCallback === true) {
@@ -452,11 +529,14 @@ export interface ForeignMemoryAccess {
     | "store"
     | "fits"
     | "address"
+    | "address-into"
     | "adopt"
+    | "adopt-words"
     | "retarget"
     | "available"
     | "callback-key"
     | "callback-address"
+    | "runtime-callback-address"
     | "stable";
   /** Loads and stores: the field's C scalar or pointer type (else void,
    * with offset and minimum 0). */
@@ -468,8 +548,8 @@ export interface ForeignMemoryAccess {
   /** Element loads and stores: bytes between elements and their count. */
   readonly stride?: number | undefined;
   readonly length?: number | undefined;
-  /** `callback-address`: the C prototype and id of a registered callback
-   * thunk, whose entry address the access yields. */
+  /** Callback entry prototype. `callback-address` also takes a static slot.
+   * `runtime-callback-address` instead reads the id supplied by its stub. */
   readonly callback?: CSignature | undefined;
   readonly slot?: number | undefined;
 }
@@ -485,6 +565,25 @@ export function foreignMemoryTypes(
   // callback state block is found by thunks. `stable`: whether an array's
   // data never moves (external storage, or a view of it such as foreign
   // memory): what C may hold across callbacks.
+  if (access.operation === "runtime-callback-address") {
+    const prototype = access.callback;
+    if (prototype !== undefined) {
+      const parameter = prototype.parameters[0];
+      const result = prototype.result;
+      if (
+        prototype.parameters.length !== 1 ||
+        prototype.fixedParameters !== 1 ||
+        prototype.callClass !== "leaf" ||
+        prototype.errno !== "none" ||
+        parameter?.kind !== "scalar" ||
+        parameter.scalar !== "i32" ||
+        result.kind !== "scalar" ||
+        result.scalar !== "i32"
+      )
+        return { ok: false, error: "malformed runtime callback prototype" };
+    }
+    return { ok: true, value: { parameters: [], result: "number" } };
+  }
   if (access.operation === "callback-address") {
     const slot = access.slot;
     return access.callback !== undefined &&
@@ -549,6 +648,19 @@ export function foreignMemoryTypes(
       return validSymbol(access.symbol ?? "")
         ? { ok: true, value: { parameters: [], result: "boolean" } }
         : { ok: false, error: "invalid foreign symbol" };
+    if (access.operation === "address-into")
+      return {
+        ok: true,
+        value: { parameters: ["Uint8Array", "Uint8Array"], result: "void" },
+      };
+    if (access.operation === "adopt-words")
+      return {
+        ok: true,
+        value: {
+          parameters: ["Uint8Array", "number", "number", "number"],
+          result: "Uint8Array",
+        },
+      };
     return access.operation === "address"
       ? { ok: true, value: { parameters: ["Uint8Array"], result: "number" } }
       : access.operation === "retarget"

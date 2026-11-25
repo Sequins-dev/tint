@@ -10,12 +10,15 @@ import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
   nativeArrayOwnerOffset,
+  nativeCStackReserveBytes,
+  nativeStackLimitOffset,
   nativeHeaderFlagUnit,
   nativeHeaderFlagsShift,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import {
   dynamicCallFrame,
+  dynamicScalarFrame,
   type ForeignCall,
   type ForeignMemoryAccess,
   type ScalarType,
@@ -622,6 +625,115 @@ export function emitSysVDynamicCall(request: CallSite): void {
   emit({ op: "movsd", dst: mem(11, layout.floats + 8), src: x1 });
 }
 
+/** Only the classified GP/SSE and stack locations appear in this stub. */
+export function emitSysVFixedScalarCall(
+  request: CallSite,
+  layout: SysVCallLayout,
+): void {
+  const emit = request.emit;
+  const shape = dynamicScalarFrame;
+  byteData(
+    emit,
+    request.argument(0),
+    shape.size + layout.stackBytes,
+    request.trap,
+  );
+  emit({ op: "mov", dst: request.staging(8), src: r11 });
+  for (let offset = 0; offset < layout.stackBytes; offset += 8) {
+    emit({ op: "mov", dst: rax, src: mem(11, shape.size + offset) });
+    emit({ op: "mov", dst: mem(4, offset), src: rax });
+  }
+  for (const location of layout.arguments) {
+    if (location === undefined) throw "fixed SysV argument invariant";
+    if (location.gp >= 0) {
+      const register = argumentRegisters[location.gp];
+      if (register === undefined) throw "fixed SysV register invariant";
+      emit({
+        op: "mov",
+        dst: gpr(register),
+        src: mem(11, shape.registers + location.gp * 8),
+      });
+    } else if (location.fp >= 0)
+      emit({
+        op: "movsd",
+        dst: xmm(location.fp),
+        src: mem(11, shape.floats + location.fp * 8),
+      });
+  }
+  emit({ op: "cmp", dst: mem(11, shape.target), src: imm(0) });
+  branch(emit, "e", request.trap);
+  emit({ op: "call", target: mem(11, shape.target) });
+  if (layout.result.class !== "void") {
+    emit({ op: "mov", dst: r11, src: request.staging(8) });
+    if (layout.result.class === "float")
+      emit({ op: "movsd", dst: mem(11, shape.floats), src: x0 });
+    else emit({ op: "mov", dst: mem(11, shape.registers), src: rax });
+  }
+  emit({ op: "mov", dst: eax, src: imm(1) });
+}
+
+/** The scalar ABI frame has a variable stack image and an exact target. */
+export function emitSysVScalarDynamicCall(
+  request: CallSite,
+  context: Memory<64>,
+): void {
+  const emit = request.emit,
+    site = request.site,
+    trap = request.trap,
+    transition = request.transition;
+  const layout = dynamicScalarFrame;
+  const stage = request.staging;
+  const argument = request.argument(transition === undefined ? 0 : 2);
+  byteData(emit, argument, layout.size, trap);
+  emit({ op: "mov", dst: stage(8), src: r11 });
+  emit({ op: "mov", dst: rdx, src: mem(11, layout.stackBytes) });
+  emit({ op: "test", dst: rdx, src: imm(15) });
+  branch(emit, "ne", trap);
+  emit({ op: "mov", dst: r10, src: argument });
+  emit({ op: "mov", dst: r10, src: mem(10, nativeArrayLengthOffset) });
+  emit({ op: "sub", dst: r10, src: imm(layout.size) });
+  emit({ op: "cmp", dst: rdx, src: r10 });
+  branch(emit, "a", trap);
+  emit({ op: "lea", dst: rax, src: request.stack });
+  emit({ op: "sub", dst: rax, src: rdx });
+  emit({ op: "mov", dst: stage(16), src: rax });
+  emit({ op: "sub", dst: rax, src: imm(nativeCStackReserveBytes + 8) });
+  emit({ op: "mov", dst: r10, src: context });
+  emit({ op: "cmp", dst: rax, src: mem(10, nativeStackLimitOffset) });
+  const exhausted = site + ":exhausted";
+  const done = site + ":done";
+  branch(emit, "b", exhausted);
+  if (transition !== undefined) transition.begin();
+  emit({ op: "mov", dst: rsp, src: stage(16) });
+  emit({ op: "mov", dst: r11, src: stage(8) });
+  emit({ op: "mov", dst: rdx, src: mem(11, layout.stackBytes) });
+  const copyLoop = site + ":stack";
+  const copyDone = site + ":registers";
+  emit({ op: "xor", dst: word(1), src: word(1) });
+  emit({ op: "label", name: copyLoop });
+  emit({ op: "cmp", dst: rcx, src: rdx });
+  branch(emit, "ae", copyDone);
+  emit({ op: "mov", dst: rax, src: indexed(11, 1, layout.size, 1) });
+  emit({ op: "mov", dst: indexed(4, 1, 0, 1), src: rax });
+  emit({ op: "add", dst: rcx, src: imm(8) });
+  emit({ op: "jmp", target: label(copyLoop) });
+  emit({ op: "label", name: copyDone });
+  emit({ op: "cmp", dst: mem(11, layout.target), src: imm(0) });
+  branch(emit, "e", trap);
+  loadRegisters(emit, (offset) => mem(11, offset));
+  emit({ op: "call", target: mem(11, layout.target) });
+  if (transition !== undefined) transition.end();
+  emit({ op: "lea", dst: rsp, src: request.stack });
+  emit({ op: "mov", dst: r11, src: stage(8) });
+  emit({ op: "mov", dst: mem(11, layout.registers), src: rax });
+  emit({ op: "movsd", dst: mem(11, layout.floats), src: x0 });
+  emit({ op: "mov", dst: eax, src: imm(1) });
+  emit({ op: "jmp", target: label(done) });
+  emit({ op: "label", name: exhausted });
+  emit({ op: "xor", dst: eax, src: eax });
+  emit({ op: "label", name: done });
+}
+
 export interface MemorySite extends IntegerSite {
   readonly access: ForeignMemoryAccess;
   readonly argument: (index: number) => Memory<64>;
@@ -669,11 +781,29 @@ export function emitSysVMemory(request: MemorySite): ScalarType | "void" {
     return "boolean";
   }
 
-  if (operation === "adopt" || operation === "retarget") {
-    toInteger(request, arg(1), 8, false, site + ":address");
+  if (operation === "address-into") {
+    byteData(emit, arg(0), 0, trap);
+    emit({ op: "mov", dst: rdx, src: r11 });
+    byteData(emit, arg(1), 8, trap);
+    emit({ op: "mov", dst: mem(11, 0), src: rdx });
+    return "void";
+  }
+
+  if (
+    operation === "adopt" ||
+    operation === "adopt-words" ||
+    operation === "retarget"
+  ) {
+    const exact = operation === "adopt-words";
+    toInteger(request, arg(1), exact ? 4 : 8, false, site + ":address");
     emit({ op: "mov", dst: rdx, src: rax });
-    if (operation === "adopt") {
-      toInteger(request, arg(2), 4, false, site + ":length");
+    if (exact) {
+      toInteger(request, arg(2), 4, false, site + ":address-high");
+      emit({ op: "shl", dst: rax, count: 32 });
+      emit({ op: "or", dst: rdx, src: rax });
+    }
+    if (operation !== "retarget") {
+      toInteger(request, arg(exact ? 3 : 2), 4, false, site + ":length");
       emit({ op: "mov", dst: r11, src: arg(0) });
       emit({ op: "cmp", dst: mem(11, 0), src: imm(2) });
       branch(emit, "ne", trap);

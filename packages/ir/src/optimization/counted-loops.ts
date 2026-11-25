@@ -599,8 +599,8 @@ function loopLocalCandidates(
 }
 
 /** Whether every record read `before` proves (as the verifier does, with
- * or without module-stable layouts) is still proven in `after`, which only
- * adds blocks and values. */
+ * or without module-stable layouts) is still proven in `after`, where
+ * existing record reads keep their result IDs. */
 export function recordReadsKept(
   before: FunctionIR,
   after: FunctionIR,

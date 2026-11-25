@@ -24,6 +24,7 @@ import {
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
 import {
   verifyDynamicFixture,
+  verifyDynamicSymbolWords,
   withDynamicLibrary,
 } from "./native-dynamic-fixtures.ts";
 import assert from "node:assert/strict";
@@ -92,6 +93,9 @@ const clang =
   spawnSync("clang", ["--version"], { encoding: "utf8" }).status === 0
     ? {}
     : { skip: "clang is not installed (the test library is compiled)" };
+test("dynamic symbol lookup preserves exact address words", clang, () => {
+  withDynamicLibrary(verifyDynamicSymbolWords);
+});
 test("dynamic calls reach every C argument and result class", clang, () => {
   withDynamicLibrary((library) => verifyDynamicFixture(library));
 });

@@ -116,6 +116,8 @@ export interface ExpressionInfo {
   readonly bigIntRecord?: number | undefined;
   readonly realmTypeof?: number | undefined;
   readonly generalCall?: { readonly target: number | undefined } | undefined;
+  /** Optional fixed-arity native entry for a guarded Node FFI callable. */
+  readonly fixedFfiCall?: number | undefined;
   /** A list iterated by for-of whose element type excludes undefined: a
    * hole throws a TypeError instead of binding undefined. */
   readonly holeCheck?: boolean | undefined;
@@ -1583,6 +1585,7 @@ export type {
   ClosureIntrinsic,
   CheckedClosures,
   NativeRecordViewField,
+  NativeCallbackView,
   CheckedTypeSystem,
   ClosureDiagnostic,
   ClosureFallback,

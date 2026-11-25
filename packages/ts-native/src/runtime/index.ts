@@ -188,6 +188,7 @@ interface CollectionPassInput {
   readonly roots: readonly string[];
   readonly records: readonly RuntimeBindingRecord[] | undefined;
   readonly cViews: CViewRegistry | undefined;
+  readonly realmImports: ReadonlyMap<string, "callable" | "value"> | undefined;
   readonly hasBigInt: boolean;
   readonly demandCount: number;
 }
@@ -591,6 +592,7 @@ function prepareCollectionPass(
       roots: specializedValue.roots,
       records: control?.records,
       cViews: checked?.cViews,
+      realmImports: checked?.realmImports,
       hasBigInt:
         helpers.has("bigint:literal") &&
         checked !== undefined &&
@@ -624,6 +626,7 @@ function prepareCollectionPass(
     const result = checkClosureModule(input.module, {
       interfaceCache,
       cViews: input.cViews,
+      realmImports: input.realmImports,
     });
     if (!result.ok)
       return {

@@ -650,6 +650,7 @@ export function compileX64Program(
       managedSurfaces: request.managedSurfaces ?? [],
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
+      nodeFfiWeakProcessing: generational,
       ...(request.generalLowering === undefined
         ? {}
         : { generalLowering: request.generalLowering }),
@@ -1275,6 +1276,7 @@ export function compileMacOSProgram(
       denseReferenceLists: request.denseReferenceLists ?? false,
       linearAllocation: request.inlineAllocation ?? generational,
       generationalBarriers: generational,
+      nodeFfiWeakProcessing: generational,
       trustedExecutableCode: request.trustedExecutableCode === true,
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,

@@ -15,7 +15,8 @@ import {
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
-import type { RemarkSink } from "./observer.ts";
+import { recordReadsKept } from "./counted-loops.ts";
+import type { OptimizationRemark, RemarkSink } from "./observer.ts";
 
 export interface InvariantMotion {
   readonly fn: FunctionIR;
@@ -136,6 +137,13 @@ function hoistRound(
   const slots: ScalarType[] = fn.slots.slice();
   const replaced = new Map<number, Block>(),
     added: Block[] = [];
+  const pendingRemarks: OptimizationRemark[] = [];
+  const note =
+    remarks === undefined
+      ? undefined
+      : (remark: OptimizationRemark): void => {
+          pendingRemarks.push(remark);
+        };
   let hoisted = 0;
   // Loops whose blocks another loop already rewrote this round wait for the
   // next round (they would see stale block contents).
@@ -191,7 +199,7 @@ function hoistRound(
       () => nextBlock++,
       budget - visited,
       proofs,
-      remarks,
+      note,
     );
     if (motion === undefined) return undefined;
     visited += motion.visited;
@@ -209,7 +217,11 @@ function hoistRound(
       added.push(block);
     }
   }
-  if (hoisted === 0) return { fn, visited, hoisted: 0 };
+  if (hoisted === 0) {
+    if (remarks !== undefined)
+      reportMotionRemarks(remarks, pendingRemarks, true);
+    return { fn, visited, hoisted: 0 };
+  }
   const blocks: Block[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "licm block invariant";
@@ -219,7 +231,31 @@ function hoistRound(
     if (block === undefined) throw "licm block invariant";
     blocks.push(block);
   }
-  return { fn: { ...fn, slots, blocks }, visited, hoisted };
+  const candidate: FunctionIR = { ...fn, slots, blocks };
+  // A hoisted check can establish layout for a direct read through an
+  // inlined slot copy. Moving that check beyond the loop header can take
+  // it out of the verifier's unique-predecessor proof.
+  const preserve =
+    added.length === 0 ||
+    !blocks.some((block) =>
+      block.instructions.some((op) => op.kind === "record-read"),
+    ) ||
+    recordReadsKept(fn, candidate);
+  if (remarks !== undefined)
+    reportMotionRemarks(remarks, pendingRemarks, preserve);
+  return preserve
+    ? { fn: candidate, visited, hoisted }
+    : { fn, visited, hoisted: 0 };
+}
+
+function reportMotionRemarks(
+  sink: RemarkSink,
+  pending: readonly OptimizationRemark[],
+  preserve: boolean,
+): void {
+  for (const remark of pending)
+    if (remark !== undefined && (preserve || remark.outcome !== "applied"))
+      sink(remark);
 }
 
 interface LoopMotion {

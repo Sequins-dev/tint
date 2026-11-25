@@ -586,6 +586,61 @@ typed-array ABI crossings. A raw array header would retain stale storage
 after a realm resize or detach. The byte-range interface supplies the
 projection needed by a scoped lending consumer.
 
+### Node FFI call plans (slice 4a)
+
+The trusted `node:ffi` module uses the program realm for function identity,
+errors, callbacks and Buffer views. A binding owns the resolved symbol and
+validated signature. A call frame carries exact pointer and integer words, and
+borrowed byte ranges keep their storage owners live until the native call
+returns. Materializing an escaping address promotes the shared storage owner
+to address-stable backing so aliases continue to see the same bytes.
+
+The compiler records canonical scalar signatures from literal definitions on
+resolved `node:ffi` imports. The binding selects a matching native call stub
+after ordinary definition validation and symbol lookup. Its fixed ABI layout
+determines register moves and outgoing stack space. Runtime definitions use a
+runtime-classified call plan. Libraries with registered callbacks enter through
+the rooted native transition. Callback registration classifies the declared
+signature and allocates an executable entry with the same library lifetime.
+
+General code calls a wrapper through the engine's call protocol. The
+wrapper's call step runs the binding in the context the ordinary entry
+would select, without its context thunk. A wrapper created in a Script or
+module also carries a positional register entry for calls from that
+context with up to six arguments, which skips the argument list as well.
+
+A binding uses a compiled number entry when one exists for its runtime
+signature key. These come from literal definitions and from the `i32`
+prototypes compiled for the program's call arities, so runtime
+definitions use them too. Per-call checks avoid object identity
+comparisons, because realm error views expose both operands of each one.
+Integer argument checks use primitive tag tests rather than the realm
+typeof classifier. Exact int32 values take a fast check.
+
+Typed fixed-arity entries read the wrapper's plan from its stable
+`typedView` field. The IR inliner inlines bound record views, so a
+direct typed call makes no calls before the C function.
+
+Typed programs call the same public realm functions, constructors and
+property operations as general code. The compiler links the realm helpers
+when an application uses the reviewed FFI exports. It projects primitive
+typed callbacks through checked parameter conversions and caches their
+realm callable views.
+
+Local typed arrays that cross into the realm select the backing storage for
+the allocation and its aliases together. The existing flow analysis requires
+a known allocation site and checks every use before changing representation.
+Escaping arrays supplied through the raw native typed-array ABI still need a
+lifetime-aware projection. Unsupported crossings fail during checking.
+
+The pinned Node suite uses a test-only CommonJS adapter. Its diagnostics
+identify Node's CLI, permission, VFS and libuv requirements and V8's private
+ABI metadata. Shared byte views require a host-supplied native shared-block
+service. The generational runtime processes weak references. Library
+creation in the region collector raises `ERR_FFI_CALL_FAILED` with
+`node:ffi DynamicLibrary requires a runtime that processes weak slots`.
+Raw memory helpers remain available.
+
 ### Captured bindings across function fallback (slice 3)
 
 When a nested function needs the realm, an eligible arithmetic sibling can
@@ -939,6 +994,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Projected unary numeric properties can be narrowed and called as Function. Native closures erased outside this boundary and other signatures still need callable projection.                                                                                                                                                                           | `tools/build-typed-general-call-contracts-fixture.ts`                                                   | Callable ABI generalization              |
 | Realm library member signatures with callbacks or non-scalar results, including `Promise.then`, `Map.get`, `RegExp.exec` and `Uint8Array.prototype`, require additional bridge lowering. Realm property writes, index signatures, optional chains and direct calls or construction through library constructor aliases also require separate lowering. | `build-typed-realm-instanceof-fixture.ts` and checker diagnostics                                       | 4                                        |
 | WeakMap and WeakSet constructors are installed. Constructing their instances requires the realm's weak-storage service.                                                                                                                                                                                                                                | `weak-collections`                                                                                      | 2b, 4                                    |
+| Realm typed arrays reaching typed `Uint8Array` parameters. With `node:ffi` imported (which links the program realm), `const first = (input: Uint8Array): number => input[0] ?? 0;` and `const bytes = Buffer.from([42]); first(bytes)` stop lowering at `downcast operand representation invariant`: the local takes a `Uint8Array` representation while the checker records a checked downcast on it. Accepting the proven representation instead traps at run time. Passing `first(Buffer.from([42]))` directly builds, but the checked projection rejects the realm Buffer and the image exits 70; JavaScript accepts a Buffer there. Typed lowering owns both, not `node:ffi`. | (needs a realm import; reproduction above)                                                              | Typed-array projection of realm values   |
 | Realm typed arrays with a fixed native window reach the raw typed-array ABI as native views, which observe a detachment of their buffer. Resizable buffers, length-tracking views and growable shared buffers still need a lifecycle-aware carrier for resizing.                                                                                       | `native-realm-array-projection`                                                                         | Typed-array ABI lifecycle                |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                                                                                    | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                  | 4a                                       |
 | Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                                                                               | `reassignment-narrowing`                                                                                | 4a                                       |

@@ -32,7 +32,10 @@ export {
   scriptAtomicsStoreFast,
 } from "./atomics-access.ts";
 export { createModuleSourceObject } from "./module-source.ts";
-export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
+export {
+  installFinalizationRegistryIntrinsics,
+  hostFinalizationRegistry,
+} from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";
 export { installWeakCollectionIntrinsics } from "./weak-collections.ts";
 export { canBeHeldWeakly, type WeakStorageService } from "./weak-storage.ts";
@@ -54,6 +57,8 @@ export {
   type ScriptRecord,
   clearKeptObjects,
   runScriptContext,
+  runRealmBoundCall,
+  activeInRealm,
   enterScriptContext,
   leaveScriptContext,
   type ScriptContextFrame,
@@ -211,9 +216,11 @@ export {
   type DataAlias,
   type ObjectHooks,
   type ObjectCall,
+  type ObjectCallDispatch,
   type ObjectRegisterCall,
   type ObjectExecutionContext,
   type ObjectConstruct,
+  type ObjectScriptCall,
   type Receiver,
 } from "./operations.ts";
 export { isCallableObject, callObject, constructObject } from "./call.ts";

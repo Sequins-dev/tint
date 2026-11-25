@@ -1542,6 +1542,126 @@ test("callees with local string slots inline", () => {
     ),
   );
 });
+/** A bound record view: test the record tag and take the reference payload. */
+function recordViewModule(recordTest: boolean): ModuleIR {
+  const view: FunctionIR = {
+    id: 1,
+    name: "view",
+    exported: false,
+    parameters: [0],
+    slots: ["general"],
+    returnType: "optional-reference",
+    entry: 0,
+    blocks: recordTest
+      ? [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "general-record-is",
+                id: 1,
+                value: 0,
+                record: 0,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 0, ...span },
+              {
+                kind: "general-value",
+                id: 3,
+                value: 2,
+                type: "reference",
+                ...span,
+              },
+              { kind: "reference-wrap", id: 4, value: 3, ...span },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "reference-none", id: 5, ...span }],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+        ]
+      : [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "general-value",
+                id: 1,
+                value: 0,
+                type: "reference",
+                ...span,
+              },
+              { kind: "reference-wrap", id: 2, value: 1, ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+  };
+  return {
+    records: [
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["general"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      view,
+    ],
+  };
+}
+
+test("bound record views inline their record test and payload read", () => {
+  const viewModule = recordViewModule(true);
+  assert.equal(verify(viewModule).ok, true, JSON.stringify(verify(viewModule)));
+  const inlined = inlineSmallFunctions(viewModule, 10000);
+  assert.ok(inlined);
+  assert.equal(inlined.inlined, 1);
+  assert.equal(
+    verify(inlined.module).ok,
+    true,
+    JSON.stringify(verify(inlined.module)),
+  );
+  const caller = inlined.module.functions[0]!;
+  const operations = caller.blocks.flatMap((block) => block.instructions);
+  assert.ok(operations.some((op) => op.kind === "general-record-is"));
+  assert.ok(!operations.some((op) => op.kind === "call"));
+});
+
 test("single-instruction script cache intrinsics inline past the reference allowance", () => {
   const calls: Array<FunctionIR["blocks"][number]["instructions"][number]> = [
     { kind: "load", id: 0, slot: 0, ...span },

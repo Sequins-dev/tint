@@ -38,6 +38,7 @@ debug_run() {
   : >stdout
   : >stderr
   launcher_status=0
+  report='script p=lldb.process; t=p.GetSelectedThread(); print("TINT_LLDB_EXIT", p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print("TINT_LLDB_SIGNAL", t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None'
   (
     cd "${inferior_cwd:-$batch_dir}"
     timeout -k 1 "$seconds" lldb --no-lldbinit --batch \
@@ -45,15 +46,15 @@ debug_run() {
       -o "process launch --stop-at-entry -o \"$batch_dir/stdout\" -e \"$batch_dir/stderr\"" \
       -o 'script assert lldb.process.GetState() == lldb.eStateStopped; print("TINT_LLDB_AT_ENTRY")' \
       -o continue \
-      -o 'script p=lldb.process; t=p.GetSelectedThread(); print("TINT_LLDB_EXIT", p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print("TINT_LLDB_SIGNAL", t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None' \
+      -o "$report" -k "$report" \
       -- "$@"
   ) </dev/null >debugger-log 2>&1 || launcher_status=$?
   value=
   if [ "$launcher_status" -eq 124 ] || [ "$launcher_status" -eq 137 ]; then
     kind=timed-out
-  elif grep -qx 'TINT_LLDB_AT_ENTRY' debugger-log && [ "$launcher_status" -eq 0 ]; then
+  elif grep -qx 'TINT_LLDB_AT_ENTRY' debugger-log; then
     value=$(sed -n 's/^TINT_LLDB_EXIT \([0-9][0-9]*\)$/\1/p' debugger-log)
-    if [ -n "$value" ]; then
+    if [ -n "$value" ] && [ "$launcher_status" -eq 0 ]; then
       kind=exited
     else
       signal=$(sed -n 's/^TINT_LLDB_SIGNAL \([0-9][0-9]*\)$/\1/p' debugger-log)

@@ -99,6 +99,8 @@ import {
   bindHostOperations,
   bindForeignCalls,
   dynamicForeignCall,
+  dynamicScalarCall,
+  type ForeignOperand,
   type ForeignBinding,
   bindWeakOperations,
   type WeakOperation,
@@ -117,6 +119,21 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
+import {
+  addFixedFfiPlans,
+  ffiMemoryModule,
+  fixedFfiCallArities,
+  fixedFfiCallEntry,
+  mixedFfiCallEntry,
+  recognizeStaticFfi,
+  makeStaticFfiModule,
+  staticFfiEntry,
+  staticFfiModule,
+  staticFfiNumberEntry,
+  hasStaticFfiBytesEntry,
+  hasStaticFfiNumberEntry,
+  staticFfiBytesEntry,
+} from "./foreign/static-ffi.ts";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
@@ -150,6 +167,8 @@ import {
   requestModules,
   type ModuleRequest,
   type SourcePosition,
+  type SourceModuleLoader,
+  type LoadResult,
 } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
@@ -184,6 +203,8 @@ import type {
 import {
   foreignDeclaration,
   foreignCall,
+  foreignRuntimeBindings,
+  foreignRuntimeModules,
   foreignViewRegistry,
   selectX64ForeignRuntime,
   type ForeignLibrary,
@@ -259,6 +280,10 @@ export interface CompileRequest extends ModuleRequest {
   readonly jsConvert?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
+  /** Executable hosts select whether the runtime processes weak slots. */
+  readonly nodeFfiWeakProcessing?: boolean;
+  readonly nodeFfiRealmModules?: ReadonlySet<string>;
+  readonly nodeFfiFixedArities?: readonly number[];
   /** Require the hosted context's optional linear-allocation state at byte 56. */
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
@@ -614,6 +639,7 @@ function stageFailure(
  * linked and intermediate syntax stays in checkTypedProgram's frame. */
 interface NodeErrorNames {
   readonly coded: string | undefined;
+  readonly type: string | undefined;
   readonly range: string | undefined;
   readonly system: string | undefined;
   readonly info: string | undefined;
@@ -658,9 +684,11 @@ type TypedLowering =
  * lowering; the fallback is reported in `general`. */
 /** Loaded C binding modules are trusted runtimes (their stubs are bound
  * below); unloaded ones add nothing to the program. */
-function withForeignRuntimes(request: CompileRequest): CompileRequest {
+function withForeignRuntimes(
+  request: CompileRequest,
+  signedChar: boolean = request.hostABI?.os !== "linux",
+): CompileRequest {
   const libraries = request.foreignLibraries ?? [];
-  if (libraries.length === 0) return request;
   const loader = request.moduleLoader;
   const ids = new Set<string>();
   if (loader !== undefined) {
@@ -669,6 +697,28 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
     for (const module of request.modules)
       if (module !== undefined) ids.add(module.id);
   }
+  let nodeFfi = false,
+    nodeBuffer = false;
+  if (
+    ids.has(foreignRuntimeModules.nodeFfi) ||
+    ids.has(foreignRuntimeModules.nodeBuffer)
+  ) {
+    // The standalone collector can receive the application's source table
+    // too. Authority follows the entry's imports, not source availability.
+    const dependencies = new Map<string, ReadonlyMap<string, string>>();
+    for (const source of request.modules) {
+      if (source === undefined) throw "node source invariant";
+      dependencies.set(source.id, source.dependencies);
+    }
+    const resolve =
+      loader?.sourceDependencies ??
+      ((id: string): ReadonlyMap<string, string> | undefined =>
+        dependencies.get(id));
+    const reachable = sourceDependencyClosure([request.entry], resolve);
+    nodeFfi = reachable.includes(foreignRuntimeModules.nodeFfi);
+    nodeBuffer = reachable.includes(foreignRuntimeModules.nodeBuffer);
+  }
+  if (libraries.length === 0 && !nodeFfi && !nodeBuffer) return request;
   const runtimes: RuntimeSource[] = request.runtimes.slice();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
@@ -702,7 +752,368 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
       retainedExports: retained,
     });
   }
-  return { ...request, runtimes };
+  if (!nodeFfi && !nodeBuffer) return { ...request, runtimes };
+  const included = withNodeRuntimes(
+    request,
+    ids,
+    runtimes,
+    nodeFfi,
+    nodeBuffer,
+  );
+  return nodeFfi ? withStaticFfiRuntimes(included, signedChar) : included;
+}
+
+function withStaticFfiRuntimes(
+  request: CompileRequest,
+  signedChar: boolean,
+): CompileRequest {
+  const loader = request.moduleLoader;
+  const direct = (
+    dependencies: ReadonlyMap<string, string> | undefined,
+  ): boolean => {
+    return dependencies?.get("node:ffi") === foreignRuntimeModules.nodeFfi;
+  };
+  const edges = loader?.sourceDependencies;
+  const sources =
+    loader !== undefined && edges !== undefined
+      ? requestModules(
+          request,
+          loader.ids.filter((id) => id !== undefined && direct(edges(id))),
+        )
+      : requestModules(request).filter(
+          (source) => source !== undefined && direct(source.dependencies),
+        );
+  const weakProcessing = request.nodeFfiWeakProcessing !== false;
+  const literalPlans = weakProcessing
+    ? recognizeStaticFfi(sources, signedChar)
+    : [];
+  const trusted = new Set(request.runtimes.map((runtime) => runtime?.module));
+  const application = generalApplicationModules(
+    request,
+    requestModules(
+      request,
+      edges === undefined
+        ? undefined
+        : sourceDependencyClosure([request.entry], (id) =>
+            trusted.has(id) ? undefined : edges(id),
+          ),
+    ),
+  );
+  const arities =
+    weakProcessing && application.ok
+      ? fixedFfiCallArities(application.value)
+      : [];
+  if (weakProcessing && literalPlans.length === 0 && arities.length === 0)
+    return request;
+  const plans = addFixedFfiPlans(literalPlans, arities);
+  const generated = makeStaticFfiModule(
+    plans,
+    weakProcessing,
+    arities,
+    request.hostABI !== undefined,
+  );
+  function replace(modules: readonly SourceModule[]): SourceModule[] {
+    return modules.map((source) =>
+      source?.id === generated.id ? generated : source,
+    );
+  }
+  let moduleLoader: SourceModuleLoader | undefined;
+  if (loader !== undefined) {
+    const loadWithRoot = loader.loadWithRoot;
+    moduleLoader = {
+      ids: loader.ids,
+      load: (ids): readonly SourceModule[] => replace(loader.load(ids)),
+      ...(edges === undefined ? {} : { sourceDependencies: edges }),
+      ...(loadWithRoot === undefined
+        ? {}
+        : {
+            loadWithRoot: (root: string): LoadResult | undefined => {
+              const loaded = loadWithRoot(root);
+              return loaded?.ok === true
+                ? { ok: true, value: replace(loaded.value) }
+                : loaded;
+            },
+          }),
+    };
+  }
+  const entries: string[] = [];
+  const bindings = request.foreignMemoryBindings?.slice() ?? [];
+  for (let index = 0; index < plans.length; index++) {
+    const plan = plans[index];
+    if (plan === undefined) throw "static FFI plan invariant";
+    if (!plan.typedOnly) {
+      const name = staticFfiEntry(index);
+      entries.push(name);
+      bindings.push({
+        module: staticFfiModule,
+        name,
+        operation: "call-static-scalar",
+        staticSignature: plan.signature,
+      });
+    }
+    if (hasStaticFfiNumberEntry(plan)) {
+      const name = staticFfiNumberEntry(index);
+      entries.push(name);
+      bindings.push({
+        module: staticFfiModule,
+        name,
+        operation: "call-direct-scalar",
+        staticSignature: plan.signature,
+      });
+    }
+    if (arities.includes(1) && hasStaticFfiBytesEntry(plan)) {
+      const name = staticFfiBytesEntry(index);
+      entries.push(name);
+      bindings.push({
+        module: staticFfiModule,
+        name,
+        operation: "call-direct-bytes",
+        staticSignature: plan.signature,
+      });
+    }
+  }
+  const runtime: RuntimeSource = {
+    module: staticFfiModule,
+    namespace: "node-ffi-static",
+    retainedExports: entries,
+  };
+  const runtimes = request.runtimes.slice();
+  runtimes.push(runtime);
+  return {
+    ...request,
+    modules: replace(request.modules),
+    moduleLoader,
+    runtimes,
+    foreignMemoryBindings: bindings,
+    nodeFfiFixedArities: arities,
+  };
+}
+
+/** Resolve the reviewed runtime surfaces only when loaded. Their values pass
+ * directly to the shared realm while byte and weak-slot primitives stay private. */
+function withNodeRuntimes(
+  request: CompileRequest,
+  ids: ReadonlySet<string>,
+  runtimes: RuntimeSource[],
+  nodeFfi: boolean,
+  nodeBuffer: boolean,
+): CompileRequest {
+  function retain(runtime: RuntimeSource): void {
+    if (!runtimes.some((existing) => existing?.module === runtime.module))
+      runtimes.push(runtime);
+  }
+  if (nodeFfi)
+    retain({
+      module: foreignRuntimeModules.nodeFfi,
+      namespace: "node-ffi",
+      retainedExports: [],
+    });
+  if (nodeBuffer)
+    retain({
+      module: foreignRuntimeModules.nodeBuffer,
+      namespace: "node-buffer",
+      retainedExports: [],
+    });
+  const recordBindings = (request.recordBindings ?? []).slice();
+  // General compilation enrolls these same witnesses when that partition
+  // starts. A standalone typed request needs them without a general host.
+  if (request.generalLowering === undefined) {
+    const objects = "packages/js-runtime/src/objects/index.ts";
+    const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
+    retain({
+      module: objects,
+      namespace: "node-object-views",
+      retainedExports: views,
+    });
+    for (const name of views) {
+      if (name === undefined) throw "node runtime view invariant";
+      if (
+        !recordBindings.some(
+          (binding) => binding?.module === objects && binding.name === name,
+        )
+      )
+        recordBindings.push({ module: objects, name, operation: "view" });
+    }
+  }
+  if (!nodeFfi) return { ...request, runtimes, recordBindings };
+  const unaryView = "viewUnaryNumberClosure";
+  retain({
+    module: nativeValueViewsModule,
+    namespace: "native-value-views",
+    retainedExports: [unaryView],
+  });
+  if (
+    !recordBindings.some(
+      (binding) =>
+        binding?.module === nativeValueViewsModule &&
+        binding.name === unaryView,
+    )
+  )
+    recordBindings.push({
+      module: nativeValueViewsModule,
+      name: unaryView,
+      operation: "view",
+    });
+  const finalizerView = "viewWeakRegistryOwner";
+  if (!recordBindings.some((binding) => binding?.name === finalizerView)) {
+    const values = "packages/js-runtime/src/objects/values.ts";
+    retain({
+      module: values,
+      namespace: "node-ffi-finalization",
+      retainedExports: [finalizerView],
+    });
+    recordBindings.push({
+      module: values,
+      name: finalizerView,
+      operation: "view",
+    });
+  }
+
+  const ffi = foreignRuntimeBindings(ids);
+  for (const runtime of ffi.runtimes) {
+    if (runtime === undefined) throw "node FFI runtime invariant";
+    retain(runtime);
+  }
+  const hostBindings = (request.hostBindings ?? []).slice();
+  for (const binding of ffi.hostBindings) {
+    if (binding === undefined) throw "node FFI host binding invariant";
+    if (
+      !hostBindings.some(
+        (entry) =>
+          entry?.module === binding.module && entry.name === binding.name,
+      )
+    )
+      hostBindings.push({
+        module: binding.module,
+        name: binding.name,
+        operation: binding.operation,
+      });
+  }
+  const foreignMemoryBindings = (request.foreignMemoryBindings ?? []).slice();
+  for (const binding of ffi.memoryBindings) {
+    if (binding === undefined) throw "node FFI memory binding invariant";
+    if (
+      !foreignMemoryBindings.some(
+        (entry) =>
+          entry?.module === binding.module && entry.name === binding.name,
+      )
+    )
+      foreignMemoryBindings.push(binding);
+  }
+  const weakBindings = (request.weakBindings ?? []).slice();
+  for (const binding of ffi.weakBindings) {
+    if (binding === undefined) throw "node FFI weak binding invariant";
+    if (
+      !weakBindings.some(
+        (entry) =>
+          entry?.module === binding.module && entry.name === binding.name,
+      )
+    )
+      weakBindings.push({
+        module: binding.module,
+        name: binding.name,
+        operation: binding.operation,
+      });
+  }
+  return {
+    ...request,
+    runtimes,
+    recordBindings,
+    hostBindings,
+    foreignMemoryBindings,
+    weakBindings,
+  };
+}
+function withTypedNodeFfiRealm(request: CompileRequest): CompileRequest {
+  if (!request.runtimes.some((runtime) => runtime?.namespace === "node-ffi"))
+    return request;
+  const values = "packages/js-runtime/src/objects/values.ts";
+  const objects = "packages/js-runtime/src/objects/index.ts";
+  const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
+  const arities = request.nodeFfiFixedArities ?? [];
+  const runtimes: RuntimeSource[] = request.runtimes.map((runtime) => {
+    if (runtime?.module === staticFfiModule && arities.length !== 0) {
+      const retained: string[] = runtime.retainedExports?.slice() ?? [];
+      for (const arity of arities) {
+        if (arity === undefined) throw "fixed FFI arity invariant";
+        retained.push(fixedFfiCallEntry(arity));
+        if (arity !== 0) retained.push(mixedFfiCallEntry(arity));
+      }
+      return {
+        ...runtime,
+        retainedExports: retained,
+      };
+    }
+    if (runtime?.module !== values) return runtime;
+    return {
+      module: values,
+      namespace: "general-object-views",
+      retainedExports: [
+        "viewWeakRegistryOwner",
+        "viewTypeofObject",
+        "generalValueTypeof",
+        "callGeneralValue",
+        "constructGeneralValue",
+      ],
+    };
+  });
+  if (!runtimes.some((runtime) => runtime?.module === objects))
+    runtimes.push({
+      module: objects,
+      namespace: "node-object-views",
+      retainedExports: views,
+    });
+  const recordBindings = request.recordBindings?.slice() ?? [];
+  if (arities.length !== 0) {
+    const witness = "viewTypedFfiCall";
+    runtimes.push({
+      module: ffiMemoryModule,
+      namespace: "node-ffi-memory",
+      retainedExports: [witness],
+    });
+    recordBindings.push({
+      module: ffiMemoryModule,
+      name: witness,
+      operation: "view",
+    });
+  }
+  for (const name of views) {
+    if (name === undefined) throw "node runtime view invariant";
+    if (
+      !recordBindings.some(
+        (binding) => binding?.module === objects && binding.name === name,
+      )
+    )
+      recordBindings.push({ module: objects, name, operation: "view" });
+  }
+  recordBindings.push({
+    module: values,
+    name: "viewTypeofObject",
+    operation: "view",
+  });
+  const dependencies = new Map<string, ReadonlyMap<string, string>>();
+  for (const source of request.modules) {
+    if (source === undefined) throw "node FFI source invariant";
+    dependencies.set(source.id, source.dependencies);
+  }
+  const resolve =
+    request.moduleLoader?.sourceDependencies ??
+    ((id: string): ReadonlyMap<string, string> | undefined =>
+      dependencies.get(id));
+  const application = new Set<string>();
+  for (const id of sourceDependencyClosure([request.entry], resolve))
+    if (id !== undefined) application.add(id);
+  const runtimeModules = sourceDependencyClosure(
+    runtimes.map((source) => source.module),
+    resolve,
+  );
+  for (const id of runtimeModules) if (id !== undefined) application.delete(id);
+  return {
+    ...request,
+    runtimes,
+    recordBindings,
+    nodeFfiRealmModules: application,
+  };
 }
 export type NativeBackendSelection =
   | { readonly ok: true; readonly target: AArch64Target }
@@ -839,7 +1250,7 @@ function expandDynamicObjectRealm(
   const bindings = (request.recordBindings ?? []).slice();
   const retained = names.slice();
   let realmModules = realmTypeofModules;
-  if (callableViews) {
+  if (callableViews && request.nodeFfiRealmModules === undefined) {
     names.push("viewTypeofObject");
     retained.push("viewTypeofObject", "generalValueTypeof", "callGeneralValue");
     if (realmModules === undefined) {
@@ -1025,7 +1436,13 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   let guests: GeneralFallback | undefined = undefined;
   const typed = compileWithTypedWorkerEntry<CompiledProgram>(
     request,
-    (source): Compilation => compileTypedWithProgramRealm(source),
+    (source): Compilation => {
+      const prepared = withTypedNodeFfiRealm(source);
+      return compileTypedWithProgramRealm(
+        prepared,
+        prepared.nodeFfiRealmModules,
+      );
+    },
     (fallback: GeneralFallback): void => {
       guests = fallback;
     },
@@ -2102,7 +2519,32 @@ function checkApplication(
     linkedProgram.ranges,
   );
   if (!specialized.ok) return { ok: false, error: specialized.error };
+  const realmImports = new Map<string, "callable" | "value">();
+  for (const exported of request.nodeFfiRealmModules === undefined
+    ? []
+    : linkedProgram.exports) {
+    if (exported === undefined || exported.namespace !== "value") continue;
+    if (exported.module === foreignRuntimeModules.nodeFfi) {
+      if (exported.name !== "suffix")
+        realmImports.set(
+          exported.linkedName,
+          exported.name === "default" ||
+            exported.name === "types" ||
+            exported.name === "DynamicLibrary"
+            ? "value"
+            : "callable",
+        );
+    } else if (exported.module === foreignRuntimeModules.nodeBuffer) {
+      if (exported.name === "Buffer" || exported.name === "constants")
+        realmImports.set(
+          exported.linkedName,
+          exported.name === "Buffer" ? "callable" : "value",
+        );
+    }
+  }
   const checked = checkClosureModule(specialized.value, {
+    realmImports:
+      request.nodeFfiRealmModules === undefined ? undefined : realmImports,
     cViews: foreignViewRegistry(
       request.foreignLibraries ?? [],
       linkedProgram.exports,
@@ -2161,6 +2603,10 @@ function checkApplication(
     if (!nativeProjections.includes("projectUnaryNumber"))
       nativeProjections.push("projectUnaryNumber");
   });
+  checked.value.nativeCallbackViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNativeCallback"))
+      nativeProjections.push("projectNativeCallback");
+  });
   checked.value.nativeListViews?.forEach((_value, _site) => {
     if (!nativeProjections.includes("projectNumberList"))
       nativeProjections.push("projectNumberList");
@@ -2215,26 +2661,37 @@ function checkApplication(
   let callsGeneral = false;
   if (callHelper !== undefined)
     checked.value.intrinsics.forEach((intrinsic, _expression) => {
-      if (intrinsic === "general-call") callsGeneral = true;
+      if (intrinsic === "general-call" || intrinsic === "general-construct")
+        callsGeneral = true;
     });
   // Carry only linked names across collection preparation. The final checker
   // assigns fresh type IDs, and the observation releases the first graph.
-  function nodeErrorName(name: string): string | undefined {
+  function nodeErrorName(
+    name: string,
+    module: string = "packages/native-runtime/src/node/errors.ts",
+  ): string | undefined {
     return linkedProgram.exports.find(
       (item) =>
         item !== undefined &&
-        item.module === "packages/native-runtime/src/node/errors.ts" &&
+        item.module === module &&
         item.namespace === "type" &&
         item.name === name,
     )?.linkedName;
   }
   const coded = nodeErrorName("NativeCodedError"),
+    type = nodeErrorName(
+      "NativeCodedTypeError",
+      "packages/native-runtime/src/node/type-error.ts",
+    ),
     range = nodeErrorName("NativeCodedRangeError"),
     system = nodeErrorName("NativeSystemError");
   const nodeErrors: NodeErrorNames | undefined =
-    coded === undefined && range === undefined && system === undefined
+    coded === undefined &&
+    type === undefined &&
+    range === undefined &&
+    system === undefined
       ? undefined
-      : { coded, range, system, info: nodeErrorName("SystemErrorInfo") };
+      : { coded, type, range, system, info: nodeErrorName("SystemErrorInfo") };
   return {
     ok: true,
     value: {
@@ -2263,12 +2720,27 @@ function checkTypedProgram(
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
   const callHelper = helpers.get("general-object-views:callGeneralValue");
+  const constructHelper = helpers.get(
+    "general-object-views:constructGeneralValue",
+  );
   const classifierHelper = helpers.get(
     "general-object-views:generalValueTypeof",
   );
+  const fixedFfiHelpers: string[] = [];
+  if (request.nodeFfiRealmModules !== undefined)
+    for (const arity of request.nodeFfiFixedArities ?? []) {
+      if (arity === undefined) throw "fixed FFI arity invariant";
+      const helper = helpers.get("node-ffi-static:" + fixedFfiCallEntry(arity));
+      if (helper !== undefined) fixedFfiHelpers.push(helper);
+      const mixedFfi = helpers.get(
+        "node-ffi-static:" + mixedFfiCallEntry(arity),
+      );
+      if (mixedFfi !== undefined) fixedFfiHelpers.push(mixedFfi);
+    }
   const retainClassifier =
     classifierHelper !== undefined &&
-    helpers.has("dynamic-object:projectUnaryNumber");
+    (helpers.has("dynamic-object:projectUnaryNumber") ||
+      request.nodeFfiRealmModules !== undefined);
   const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
   const callsGeneral = checked.value.callsGeneral,
@@ -2310,7 +2782,9 @@ function checkTypedProgram(
     }
     const retained: string[] = callsGeneral
         ? retainedRuntimeExports.slice()
-        : retainedRuntimeExports.filter((name) => name !== callHelper),
+        : retainedRuntimeExports.filter(
+            (name) => name !== callHelper && name !== constructHelper,
+          ),
       generatedNames = new Set<string>();
     for (const name of generatedRetain) {
       if (name === undefined) throw "surface retain invariant";
@@ -2371,7 +2845,11 @@ function checkTypedProgram(
     }
     const bound = bindModule(module, globals);
     if (!bound.ok) return { ok: false, error: bound.error.message };
-    if ((callsGeneral && callHelper !== undefined) || retainClassifier) {
+    if (
+      (callsGeneral && callHelper !== undefined) ||
+      retainClassifier ||
+      fixedFfiHelpers.length !== 0
+    ) {
       // Realm calls use specialized dependencies. Close the stateless
       // classifier and call entries after specialization.
       const functionNames = new Map<Span, string>();
@@ -2398,8 +2876,10 @@ function checkTypedProgram(
         names.add(target.name);
         if (known === undefined) dependencies.set(name, names);
       }
-      const pending: string[] = [];
+      const pending = fixedFfiHelpers.slice();
       if (callsGeneral && callHelper !== undefined) pending.push(callHelper);
+      if (callsGeneral && constructHelper !== undefined)
+        pending.push(constructHelper);
       if (retainClassifier && classifierHelper !== undefined)
         pending.push(classifierHelper);
       const seen = new Set(pending);
@@ -2812,6 +3292,24 @@ function lowerTypedProgram(
     "general-object-views",
   );
   const callSource = realmHelper("callGeneralValue", "general-object-views");
+  const constructSource = realmHelper(
+    "constructGeneralValue",
+    "general-object-views",
+  );
+  const fixedFfiCalls = new Map<number, number>();
+  const mixedFfiCalls = new Map<number, number>();
+  if (request.nodeFfiRealmModules !== undefined) {
+    for (const arity of request.nodeFfiFixedArities ?? []) {
+      if (arity === undefined) throw "fixed FFI arity invariant";
+      const entry = realmHelper(fixedFfiCallEntry(arity), "node-ffi-static");
+      if (entry !== undefined) fixedFfiCalls.set(arity, entry);
+      const mixedEntry = realmHelper(
+        mixedFfiCallEntry(arity),
+        "node-ffi-static",
+      );
+      if (mixedEntry !== undefined) mixedFfiCalls.set(arity, mixedEntry);
+    }
+  }
   const errorView = realmHelper("nativeErrorReceiver", "general-record-views");
   const errorOperation = realmHelper(
     "realmErrorOperation",
@@ -2853,6 +3351,9 @@ function lowerTypedProgram(
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
             },
       realmCall: callSource,
+      fixedFfiCalls: fixedFfiCalls.size === 0 ? undefined : fixedFfiCalls,
+      mixedFfiCalls: mixedFfiCalls.size === 0 ? undefined : mixedFfiCalls,
+      realmConstruct: constructSource,
       realmErrors:
         realmTypeofModules === undefined ||
         errorView === undefined ||
@@ -2874,6 +3375,7 @@ function lowerTypedProgram(
           ? undefined
           : {
               coded: nodeErrorType(nodeErrors.coded),
+              type: nodeErrorType(nodeErrors.type),
               range: nodeErrorType(nodeErrors.range),
               system: nodeErrorType(nodeErrors.system),
               info: nodeErrorType(nodeErrors.info),
@@ -3234,11 +3736,57 @@ function lowerTypedProgram(
           binding.name,
       );
     const operation = binding.operation;
+    if (
+      operation === "call-direct-scalar" ||
+      operation === "call-direct-bytes"
+    ) {
+      const signature = binding.staticSignature;
+      if (signature === undefined)
+        return stageFailure(
+          "host",
+          "direct FFI call requires a fixed prototype",
+        );
+      const operands: ForeignOperand[] = signature.parameters.map(
+        (_parameter): ForeignOperand =>
+          operation === "call-direct-bytes" ? "bytes" : "number",
+      );
+      foreignBindings.push({
+        function: index,
+        call: {
+          symbol: binding.name,
+          signature,
+          operands,
+          result: signature.result.kind === "void" ? "void" : "number",
+          indirect: true,
+        },
+      });
+      continue;
+    }
+    if (operation === "call-static-scalar") {
+      const signature = binding.staticSignature;
+      if (signature === undefined)
+        return stageFailure(
+          "host",
+          "static FFI call requires a fixed prototype",
+        );
+      foreignBindings.push({
+        function: index,
+        call: dynamicScalarCall(false, signature),
+      });
+      continue;
+    }
     foreignBindings.push(
-      operation === "call" || operation === "call-callbacks"
+      operation === "call" ||
+        operation === "call-callbacks" ||
+        operation === "call-scalar" ||
+        operation === "call-scalar-callbacks"
         ? {
             function: index,
-            call: dynamicForeignCall(operation === "call-callbacks"),
+            call:
+              operation === "call-scalar" ||
+              operation === "call-scalar-callbacks"
+                ? dynamicScalarCall(operation === "call-scalar-callbacks")
+                : dynamicForeignCall(operation === "call-callbacks"),
           }
         : {
             function: index,
@@ -3247,6 +3795,7 @@ function lowerTypedProgram(
               type: { kind: "void" },
               offset: 0,
               minimum: 0,
+              callback: binding.staticSignature,
             },
           },
     );
@@ -3620,21 +4169,30 @@ export function compileX64HostedProgram(
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
-  const source = withForeignRuntimes({
-    ...request,
-    // Recorded in managed-surface directories (the x86-64 emitter takes the
-    // policy from options.generational).
-    generationalBarriers: options.generational === true,
-    moduleLoader: selected.moduleLoader,
-    modules: selected.modules,
-    symbols: true,
-  });
+  const source = withForeignRuntimes(
+    {
+      ...request,
+      // Recorded in managed-surface directories (the x86-64 emitter takes the
+      // policy from options.generational).
+      generationalBarriers: options.generational === true,
+      moduleLoader: selected.moduleLoader,
+      modules: selected.modules,
+      symbols: true,
+    },
+    true,
+  );
   const invokeDirectly = options.runtime !== true && options.threaded !== true;
   function lower(): TypedLowering {
     const typed = compileWithTypedWorkerEntry<TypedProgram>(
       source,
-      (prepared): TypedLowering =>
-        lowerTypedWithProgramRealm(prepared, undefined, invokeDirectly),
+      (input): TypedLowering => {
+        const prepared = withTypedNodeFfiRealm(input);
+        return lowerTypedWithProgramRealm(
+          prepared,
+          prepared.nodeFfiRealmModules,
+          invokeDirectly,
+        );
+      },
       (fallback: GeneralFallback): void =>
         options.onGeneralFallback?.(fallback.modules, fallback.reason),
     );

@@ -269,6 +269,7 @@ export async function runWithWatchdog(
 }
 
 interface DeadlineHandlers {
+  env?: NodeJS.ProcessEnv;
   onTimeout: (pid: number) => void;
   onInterval?: (elapsedMs: number, queued: boolean) => void;
   onClock?: (activeMs: number, waitingMs: number) => void;
@@ -283,6 +284,7 @@ export function runWithDeadline(
   args: string[],
   seconds: number,
   {
+    env,
     onTimeout,
     onInterrupt,
     onLine,
@@ -293,6 +295,7 @@ export function runWithDeadline(
   }: DeadlineHandlers,
 ): Promise<number> {
   const child = spawn(command, args, {
+    env,
     detached: true,
     stdio: ["inherit", onLine ? "pipe" : "inherit", "inherit"],
   });
