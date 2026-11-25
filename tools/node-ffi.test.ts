@@ -5,10 +5,23 @@ import { dirname } from "node:path";
 import test from "node:test";
 import ts from "typescript";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
-import { withDynamicLibrary } from "./native-dynamic-fixtures.ts";
+import { withDynamicLibrary as withSharedDynamicLibrary } from "./native-dynamic-fixtures.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import type { NativeHostBinding } from "@tint/compiler/native";
+
+/** Each test file owns its own stable scratch label so concurrent native
+ * shards do not overwrite one another's temporary shared library. */
+function withDynamicLibrary<T>(
+  body: (library: string) => T,
+  additionalSource = "",
+): T | undefined {
+  return withSharedDynamicLibrary(
+    body,
+    additionalSource,
+    "node-ffi-dynamic-library",
+  );
+}
 
 function source(library: string, generic: boolean): string {
   return `

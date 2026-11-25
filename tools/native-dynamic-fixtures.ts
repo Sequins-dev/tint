@@ -441,8 +441,9 @@ export function run(): number {
 export function withDynamicLibrary<T>(
   body: (library: string) => T,
   additionalSource = "",
+  label = "dynamic-library",
 ): T | undefined {
-  const directory = stableScratchDirectory("dynamic-library");
+  const directory = stableScratchDirectory(label);
   try {
     const library = buildDynamicLibrary(directory, additionalSource);
     return library === undefined ? undefined : body(library);
