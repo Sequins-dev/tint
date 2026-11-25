@@ -10,7 +10,6 @@ import {
   createArrayElementsFromList,
   firstCapacity,
   noNumbers,
-  type ArrayElements,
   type ElementCell,
 } from "./array-elements.ts";
 import { numberValue } from "./coercion.ts";
@@ -20,18 +19,14 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 
-/** Direct compact array allocation for realm-prototype dense literals.
- * `createErrorRealm` marks `realm.arrayPrototype` and initializes
- * `realm.arrayHooks.internalMethods` before any Script executes. */
-function packRealmArray(
+/** Direct fixed-arity dense array literal constructors (0..4 elements) that
+ * read the realm's pre-initialized array shape and exotic methods directly,
+ * avoiding temporary argument lists, loops, and nested helper dispatch. */
+export function createArray0(
   realm: ErrorRealm,
-  elements: ArrayElements<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const methods = realm.arrayHooks.internalMethods;
-  if (methods === undefined) throw "ARRAY_METHODS_INVARIANT";
   return {
-    internalShape:
-      realm.arrayPrototype.internalRareSlots?.internalArrayChildShape,
+    internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
     extensible: true,
     properties: undefined,
@@ -45,8 +40,16 @@ function packRealmArray(
     internalConstruct: undefined,
     internalExecutionContext: undefined,
     internalArrayData: true,
-    internalArrayElements: elements,
-    internalMethods: methods,
+    internalArrayElements: {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 0,
+      numbers: noNumbers,
+      values: undefined,
+      length: 0,
+      lengthWritable: true,
+    },
+    internalMethods: realm.arrayMethods,
     internalRareSlots: undefined,
     internalExoticSlots: undefined,
     internalValue0: undefined,
@@ -60,36 +63,47 @@ function packRealmArray(
   };
 }
 
-/** Direct fixed-arity dense array literal constructors (0..4 elements) that
- * avoid temporary argument lists, loops, and nested helper dispatch. */
-export function createArray0(
-  realm: ErrorRealm,
-): OrdinaryObject<ScriptPropertyKey, unknown> {
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values: undefined,
-    length: 0,
-    lengthWritable: true,
-  });
-}
-
 function createGeneralArray1(
   v0: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const values: ElementCell<unknown>[] = [{ value: v0 }];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 1,
-    lengthWritable: true,
-  });
+  return {
+    internalShape: realm.arrayChildShape,
+    prototype: realm.arrayPrototype,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: true,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: true,
+    internalArrayElements: {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 0,
+      numbers: noNumbers,
+      values,
+      length: 1,
+      lengthWritable: true,
+    },
+    internalMethods: realm.arrayMethods,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
 }
 
 function createGeneralArray2(
@@ -98,15 +112,42 @@ function createGeneralArray2(
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const values: ElementCell<unknown>[] = [{ value: v0 }, { value: v1 }];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 2,
-    lengthWritable: true,
-  });
+  return {
+    internalShape: realm.arrayChildShape,
+    prototype: realm.arrayPrototype,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: true,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: true,
+    internalArrayElements: {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 0,
+      numbers: noNumbers,
+      values,
+      length: 2,
+      lengthWritable: true,
+    },
+    internalMethods: realm.arrayMethods,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
 }
 
 function createGeneralArray3(
@@ -120,15 +161,42 @@ function createGeneralArray3(
     { value: v1 },
     { value: v2 },
   ];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 3,
-    lengthWritable: true,
-  });
+  return {
+    internalShape: realm.arrayChildShape,
+    prototype: realm.arrayPrototype,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: true,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: true,
+    internalArrayElements: {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 0,
+      numbers: noNumbers,
+      values,
+      length: 3,
+      lengthWritable: true,
+    },
+    internalMethods: realm.arrayMethods,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
 }
 
 function createGeneralArray4(
@@ -144,15 +212,42 @@ function createGeneralArray4(
     { value: v2 },
     { value: v3 },
   ];
-  return packRealmArray(realm, {
-    keys: realm.arrayHooks,
-    undefinedValue: undefined,
-    numberCount: 0,
-    numbers: noNumbers,
-    values,
-    length: 4,
-    lengthWritable: true,
-  });
+  return {
+    internalShape: realm.arrayChildShape,
+    prototype: realm.arrayPrototype,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: true,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: true,
+    internalArrayElements: {
+      keys: realm.arrayHooks,
+      undefinedValue: undefined,
+      numberCount: 0,
+      numbers: noNumbers,
+      values,
+      length: 4,
+      lengthWritable: true,
+    },
+    internalMethods: realm.arrayMethods,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
 }
 
 export function createArray1(
@@ -162,15 +257,42 @@ export function createArray1(
   if (typeof v0 === "number") {
     const numbers = new Float64Array(firstCapacity);
     numbers[0] = v0;
-    return packRealmArray(realm, {
-      keys: realm.arrayHooks,
-      undefinedValue: undefined,
-      numberCount: 1,
-      numbers,
-      values: undefined,
-      length: 1,
-      lengthWritable: true,
-    });
+    return {
+      internalShape: realm.arrayChildShape,
+      prototype: realm.arrayPrototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 0,
+      internalChildShape: undefined,
+      internalDictionary: true,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: true,
+      internalArrayElements: {
+        keys: realm.arrayHooks,
+        undefinedValue: undefined,
+        numberCount: 1,
+        numbers,
+        values: undefined,
+        length: 1,
+        lengthWritable: true,
+      },
+      internalMethods: realm.arrayMethods,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: undefined,
+      internalValue1: undefined,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
   }
   return createGeneralArray1(v0, realm);
 }
@@ -184,15 +306,42 @@ export function createArray2(
     const numbers = new Float64Array(firstCapacity);
     numbers[0] = v0;
     numbers[1] = v1;
-    return packRealmArray(realm, {
-      keys: realm.arrayHooks,
-      undefinedValue: undefined,
-      numberCount: 2,
-      numbers,
-      values: undefined,
-      length: 2,
-      lengthWritable: true,
-    });
+    return {
+      internalShape: realm.arrayChildShape,
+      prototype: realm.arrayPrototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 0,
+      internalChildShape: undefined,
+      internalDictionary: true,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: true,
+      internalArrayElements: {
+        keys: realm.arrayHooks,
+        undefinedValue: undefined,
+        numberCount: 2,
+        numbers,
+        values: undefined,
+        length: 2,
+        lengthWritable: true,
+      },
+      internalMethods: realm.arrayMethods,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: undefined,
+      internalValue1: undefined,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
   }
   return createGeneralArray2(v0, v1, realm);
 }
@@ -212,15 +361,42 @@ export function createArray3(
     numbers[0] = v0;
     numbers[1] = v1;
     numbers[2] = v2;
-    return packRealmArray(realm, {
-      keys: realm.arrayHooks,
-      undefinedValue: undefined,
-      numberCount: 3,
-      numbers,
-      values: undefined,
-      length: 3,
-      lengthWritable: true,
-    });
+    return {
+      internalShape: realm.arrayChildShape,
+      prototype: realm.arrayPrototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 0,
+      internalChildShape: undefined,
+      internalDictionary: true,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: true,
+      internalArrayElements: {
+        keys: realm.arrayHooks,
+        undefinedValue: undefined,
+        numberCount: 3,
+        numbers,
+        values: undefined,
+        length: 3,
+        lengthWritable: true,
+      },
+      internalMethods: realm.arrayMethods,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: undefined,
+      internalValue1: undefined,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
   }
   return createGeneralArray3(v0, v1, v2, realm);
 }
@@ -243,15 +419,42 @@ export function createArray4(
     numbers[1] = v1;
     numbers[2] = v2;
     numbers[3] = v3;
-    return packRealmArray(realm, {
-      keys: realm.arrayHooks,
-      undefinedValue: undefined,
-      numberCount: 4,
-      numbers,
-      values: undefined,
-      length: 4,
-      lengthWritable: true,
-    });
+    return {
+      internalShape: realm.arrayChildShape,
+      prototype: realm.arrayPrototype,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 0,
+      internalChildShape: undefined,
+      internalDictionary: true,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: true,
+      internalArrayElements: {
+        keys: realm.arrayHooks,
+        undefinedValue: undefined,
+        numberCount: 4,
+        numbers,
+        values: undefined,
+        length: 4,
+        lengthWritable: true,
+      },
+      internalMethods: realm.arrayMethods,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: undefined,
+      internalValue1: undefined,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
   }
   return createGeneralArray4(v0, v1, v2, v3, realm);
 }

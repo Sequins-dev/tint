@@ -30,6 +30,7 @@ export interface PassStatistics {
     | "propagate-slot-copies"
     | "cache-list-vectors"
     | "cache-element-storage"
+    | "cache-loop-properties"
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"

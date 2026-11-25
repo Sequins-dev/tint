@@ -12,11 +12,16 @@ export {
 } from "./intrinsic-functions.ts";
 export {
   scriptMapGet,
+  scriptMapGetFast,
   scriptMapHas,
+  scriptMapHasFast,
   scriptMapSet,
+  scriptMapSetFast,
   scriptSetAdd,
+  scriptSetAddFast,
 } from "./collection-data.ts";
 export { scriptArrayPush } from "./array-append.ts";
+export { scriptArrayPushFast } from "./array-append.ts";
 export { scriptArrayPop } from "./array-append.ts";
 export { createModuleSourceObject } from "./module-source.ts";
 export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";

@@ -133,6 +133,39 @@ function replaced() {
   }
   globalThis.Math = OriginalMath;
   out.push(midSum, Math.floor(2.9));
+  // Replacing Math.floor mid-loop must invalidate loop-cached property-load.
+  const origFloorLoop = Math.floor;
+  let floorLoopSum = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) Math.floor = (x) => x + 50;
+    floorLoopSum += Math.floor(i + 0.5);
+  }
+  Math.floor = origFloorLoop;
+  out.push(floorLoopSum);
+  // Replacing Map.prototype.set / Set.prototype.add mid-loop must invalidate loop-cached property-load.
+  const origMapSet = Map.prototype.set;
+  const origSetAdd = Set.prototype.add;
+  const loopMap = new Map();
+  let mapIntercepted = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) Map.prototype.set = function (k, v) { mapIntercepted += k + v; return this; };
+    loopMap.set(i, i * 2);
+  }
+  Map.prototype.set = origMapSet;
+  const loopSet = new Set();
+  let setIntercepted = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) Set.prototype.add = function (v) { setIntercepted += v + 10; return this; };
+    loopSet.add(i);
+  }
+  Set.prototype.add = origSetAdd;
+  out.push(loopMap.size, mapIntercepted, loopSet.size, setIntercepted);
+  // Hot-loop charCodeAt edge indices (-0, fractional, negative, >= 2^31, NaN, Infinity).
+  const ccStr = "abcdef";
+  const ccIdxs = [0, -0, 1.9, 5, -1, 2147483648, 4294967296, NaN, Infinity, -Infinity];
+  const ccOut = [];
+  for (let i = 0; i < ccIdxs.length; i++) ccOut.push(show(ccStr.charCodeAt(ccIdxs[i])));
+  out.push(ccOut.join("/"));
   return out.join(",");
 }
 function collections() {
@@ -204,6 +237,38 @@ function collections() {
     if (v === 1) cleared.clear();
   }
   out.push(seenSet.join("/"), cleared.size);
+  // Direct-mapped numeric fast table: in-place numeric updates, non-number transition,
+  // -0/NaN, live cursor sync, structuredClone sync, delete, and clear.
+  const fastMap = new Map();
+  for (let i = 0; i < 16; i++) fastMap.set(i, i);
+  for (let i = 0; i < 16; i++) fastMap.set(i, i * 10 + 1);
+  fastMap.set(-0, 999);
+  fastMap.set(3, "str");
+  fastMap.set(4, undefined);
+  fastMap.set(NaN, 123);
+  const fastReads = [];
+  for (let i = 0; i < 6; i++) fastReads.push(String(fastMap.get(i)));
+  fastReads.push(String(fastMap.get(-0)), String(fastMap.get(NaN)), String(fastMap.has(3)), String(fastMap.has(99)));
+  const cursorSeen = [];
+  for (const [k, v] of fastMap) {
+    if (k < 5 || k !== k) cursorSeen.push(String(k) + "=" + String(v));
+  }
+  const cloned = structuredClone(fastMap);
+  fastMap.set(1, 555);
+  fastMap.delete(2);
+  out.push(
+    fastReads.join("/"),
+    cursorSeen.join("/"),
+    cloned.get(0),
+    cloned.get(1),
+    cloned.get(3),
+    String(cloned.get(4)),
+    fastMap.get(1),
+    fastMap.has(2),
+    fastMap.size,
+  );
+  fastMap.clear();
+  out.push(fastMap.size, fastMap.has(0));
   return out.join(",");
 }
 export function sections() {

@@ -959,6 +959,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/property-cache.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/reachability.ts",
       packageId: "ir",
     },

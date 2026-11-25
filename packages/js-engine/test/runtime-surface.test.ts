@@ -57,9 +57,9 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 210);
+  assert.equal(surface.length, 215);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 210);
+  assert.equal(names.size, 215);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,

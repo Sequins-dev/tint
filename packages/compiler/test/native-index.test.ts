@@ -422,6 +422,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "select-array-access",
       "split-optional-numbers",
       "shadow-general-numbers",
+      "cache-loop-properties",
       "thread-branches",
       // Before the late sweep (folded read guards), then after it.
       "simplify-control-flow",

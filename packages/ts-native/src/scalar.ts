@@ -2138,6 +2138,114 @@ export function lowerFunction(
     if (slots[left] === "general" || slots[right] === "general") {
       if (operator !== "===" && operator !== "!==")
         throw "unsupported general operation";
+      const generalSlot = slots[left] === "general" ? left : right,
+        otherSlot = slots[left] === "general" ? right : left,
+        otherType = slots[otherSlot];
+      if (otherType === "reference" || otherType === "optional-reference") {
+        const result = temporary("boolean"),
+          checkTag = block(),
+          checkPointer = block(),
+          mismatch = block(),
+          done = block();
+        let targetRef: number | undefined = undefined;
+        if (otherType === "optional-reference") {
+          const isAbsent = block(),
+            noneRef = nextValue++,
+            present = nextValue++;
+          emit({
+            kind: "reference-none",
+            id: noneRef,
+            start: node.start,
+            end: node.end,
+          });
+          emit({
+            kind: "binary",
+            id: present,
+            operator: "!==",
+            left: load(otherSlot, node),
+            right: noneRef,
+            start: node.start,
+            end: node.end,
+          });
+          choose(present, checkTag, isAbsent, node);
+          current = isAbsent;
+          const isUndef = nextValue++;
+          emit({
+            kind: "general-is",
+            id: isUndef,
+            value: load(generalSlot, node),
+            type: "undefined",
+            start: node.start,
+            end: node.end,
+          });
+          store(result, isUndef, node);
+          jump(done.id, node);
+          current = checkTag;
+        } else {
+          jump(checkTag.id, node);
+          current = checkTag;
+        }
+        const isObj = nextValue++;
+        emit({
+          kind: "general-is",
+          id: isObj,
+          value: load(generalSlot, node),
+          type: "object",
+          start: node.start,
+          end: node.end,
+        });
+        choose(isObj, checkPointer, mismatch, node);
+        current = checkPointer;
+        const payload = nextValue++;
+        emit({
+          kind: "general-value",
+          id: payload,
+          value: load(generalSlot, node),
+          type: "reference",
+          unchecked: true,
+          start: node.start,
+          end: node.end,
+        });
+        if (otherType === "optional-reference") {
+          targetRef = nextValue++;
+          emit({
+            kind: "reference-value",
+            id: targetRef,
+            value: load(otherSlot, node),
+            start: node.start,
+            end: node.end,
+          });
+        } else {
+          targetRef = load(otherSlot, node);
+        }
+        const eq = nextValue++;
+        emit({
+          kind: "binary",
+          id: eq,
+          operator: "===",
+          left: payload,
+          right: targetRef,
+          start: node.start,
+          end: node.end,
+        });
+        store(result, eq, node);
+        jump(done.id, node);
+        current = mismatch;
+        const no = nextValue++;
+        emit({
+          kind: "constant",
+          id: no,
+          value: false,
+          start: node.start,
+          end: node.end,
+        });
+        store(result, no, node);
+        jump(done.id, node);
+        current = done;
+        return operator === "==="
+          ? result
+          : unarySlot("!", result, "boolean", node);
+      }
       const a = save(
           coerce(load(left, node), "general", node),
           "general",

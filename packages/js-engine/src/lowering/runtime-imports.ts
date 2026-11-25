@@ -313,10 +313,15 @@ export function scriptRuntimeImports(
         ...(usesIntrinsicCalls || declarations === "all"
           ? [
               "scriptMapGet",
+              "scriptMapGetFast",
               "scriptMapHas",
+              "scriptMapHasFast",
               "scriptMapSet",
+              "scriptMapSetFast",
               "scriptSetAdd",
+              "scriptSetAddFast",
               "scriptArrayPush",
+              "scriptArrayPushFast",
               "scriptArrayPop",
             ]
           : []),

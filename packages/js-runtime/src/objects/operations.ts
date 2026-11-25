@@ -2441,6 +2441,27 @@ function hasCustomPropertyGet<Key, Value>(
       methods.getPrototype !== undefined)
   );
 }
+/** Ensure and return the shared empty shape for packed arrays inheriting from
+ * `prototype`. Stored on `prototype.internalRareSlots` so plain objects keep
+ * using `prototype.internalChildShape`. */
+export function ensureArrayChildShape(prototype: ScriptObject): ScriptShape {
+  const rare = ensureRareSlots<ScriptPropertyKey, unknown>(prototype);
+  const existing = rare.internalArrayChildShape;
+  if (existing !== undefined) return existing;
+  const created: ScriptShape = {
+    keys: [],
+    kinds: [],
+    hash: emptyPropertyShapeHash ^ 0x41525259,
+    shared: false,
+    firstSuccessor: undefined,
+    nextSibling: undefined,
+    successors: 0,
+    undefinedValue: undefined,
+    index: undefined,
+  };
+  rare.internalArrayChildShape = created;
+  return created;
+}
 /** Shared empty shape for packed arrays with `prototype` and no expando
  * properties. Stored on `prototype.internalRareSlots` so plain objects keep
  * using `prototype.internalChildShape`. */
@@ -2448,23 +2469,7 @@ function arrayEmptyShape(object: ScriptObject): ScriptShape | undefined {
   const prototype = object.prototype;
   if (prototype === undefined || object.internalUsedAsPrototype)
     return undefined;
-  const rare = ensureRareSlots<ScriptPropertyKey, unknown>(prototype);
-  let shape: ScriptShape | undefined = rare.internalArrayChildShape;
-  if (shape === undefined) {
-    const created: ScriptShape = {
-      keys: [],
-      kinds: [],
-      hash: emptyPropertyShapeHash ^ 0x41525259,
-      shared: false,
-      firstSuccessor: undefined,
-      nextSibling: undefined,
-      successors: 0,
-      undefinedValue: undefined,
-      index: undefined,
-    };
-    rare.internalArrayChildShape = created;
-    shape = created;
-  }
+  const shape = ensureArrayChildShape(prototype);
   object.internalShape = shape;
   return shape;
 }

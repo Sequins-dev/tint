@@ -33,6 +33,7 @@ import {
 } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureArrayChildShape,
   ensureExoticSlots,
   exoticSlots,
   createObject,
@@ -47,8 +48,11 @@ import {
   markPrototype,
   makePrototypeImmutable,
   defineOwnProperty,
+  propertyEpoch,
   type OrdinaryObject,
+  type OrdinaryPropertyShape,
   type ObjectHooks,
+  type ObjectInternalMethods,
   type ObjectExecutionContext,
 } from "./operations.ts";
 import { viewObjectValue, viewTypeofObject } from "./values.ts";
@@ -250,6 +254,16 @@ export interface ErrorRealm {
   readonly stringPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly arrayPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly arrayHooks: ArrayObjectHooks<ScriptPropertyKey, unknown>;
+  /** Pre-initialized empty shape for dense arrays inheriting from arrayPrototype. */
+  readonly arrayChildShape: OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
+  /** Pre-initialized exotic methods shared by arrays in this realm. */
+  readonly arrayMethods: ObjectInternalMethods<ScriptPropertyKey, unknown>;
+  /** Last propertyEpoch at which arrayPrototype/objectPrototype satisfied the
+   * fast packed-append prototype-chain invariant (-1 when unverified). */
+  cleanArrayPushEpoch: number;
+  /** Shared property structure epoch cell, exposed on the realm so inlineable
+   * fast helpers can validate epochs without capturing module globals. */
+  readonly propertyEpoch: { value: number };
   readonly throwTypeError: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly functionPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   ordinaryHasInstanceMethod: unknown;
@@ -449,6 +463,9 @@ export function createErrorRealm(
     hooks,
   );
   markPrototype<ScriptPropertyKey, unknown>(arrayPrototype);
+  const arrayChildShape = ensureArrayChildShape(arrayPrototype);
+  const arrayMethods = arrayHooks.internalMethods;
+  if (arrayMethods === undefined) throw "ARRAY_METHODS_INVARIANT";
   const iteratorPrototype = createObject<ScriptPropertyKey, unknown>(
     objectPrototype,
   );
@@ -646,6 +663,10 @@ export function createErrorRealm(
     ),
     arrayPrototype,
     arrayHooks,
+    arrayChildShape,
+    arrayMethods,
+    cleanArrayPushEpoch: -1,
+    propertyEpoch,
     throwTypeError,
     prototypes,
     constructors: new Map<string, OrdinaryObject<ScriptPropertyKey, unknown>>(),

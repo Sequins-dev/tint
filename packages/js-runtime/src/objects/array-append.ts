@@ -1,16 +1,41 @@
 import {
   arrayElementCount,
-  readArrayElement,
   truncateArrayElements,
   writeArrayElement,
 } from "./array-elements.ts";
-import type { OrdinaryObject } from "./operations.ts";
+import { propertyEpoch, type OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { ErrorRealm } from "./errors.ts";
-import { viewObjectValue } from "./values.ts";
+import { viewTypeofObject } from "./values.ts";
 
 // Indices above this are not array indices or would push length past 2^32 - 1.
 const lastAppendIndex = 4294967294;
+// Largest Float64Array extent below the native allocator's aligned uint32 bound.
+const maxNumberCapacity = 536870906;
+// First grown capacity when pushing into an empty number array (`[]`).
+const firstPushCapacity = 8;
+
+function hasCleanArrayPushPrototypes(realm: ErrorRealm): boolean {
+  const epoch = propertyEpoch.value;
+  if (realm.cleanArrayPushEpoch === epoch) return true;
+  const arrayPrototype = realm.arrayPrototype;
+  const inherited = arrayPrototype.internalArrayElements;
+  if (
+    inherited === undefined ||
+    inherited.values !== undefined ||
+    inherited.numberCount !== 0
+  )
+    return false;
+  const objectPrototype = arrayPrototype.prototype;
+  if (
+    objectPrototype === undefined ||
+    objectPrototype !== realm.objectPrototype ||
+    objectPrototype.internalDictionary
+  )
+    return false;
+  realm.cleanArrayPushEpoch = epoch;
+  return true;
+}
 
 /** Append `value` as element `count` of a packed array when [[Set]] there can
  * only create that element: the array is extensible, its prototype is the
@@ -39,19 +64,7 @@ export function appendPackedElement(
   const arrayPrototype = object.prototype;
   if (arrayPrototype === undefined || arrayPrototype !== realm.arrayPrototype)
     return false;
-  const inherited = arrayPrototype.internalArrayElements;
-  if (
-    inherited === undefined ||
-    arrayElementCount<ScriptPropertyKey, unknown>(inherited) !== 0
-  )
-    return false;
-  const objectPrototype = arrayPrototype.prototype;
-  if (
-    objectPrototype === undefined ||
-    objectPrototype !== realm.objectPrototype ||
-    objectPrototype.internalDictionary
-  )
-    return false;
+  if (!hasCleanArrayPushPrototypes(realm)) return false;
   writeArrayElement<ScriptPropertyKey, unknown>(elements, count, value);
   if (growing) elements.length = count + 1;
   return true;
@@ -68,11 +81,25 @@ export function popPackedElement(
   const elements = object.internalArrayElements;
   if (elements === undefined || !elements.lengthWritable)
     return realm.arrayPopMiss;
-  const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
+  const values = elements.values;
+  if (values === undefined) {
+    const count = elements.numberCount;
+    if (elements.length !== count) return realm.arrayPopMiss;
+    if (count === 0) return undefined;
+    const last = count - 1;
+    const result = elements.numbers[last];
+    if (result === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
+    elements.numberCount = last;
+    elements.length = last;
+    return result;
+  }
+  const count = values.length;
   if (elements.length !== count) return realm.arrayPopMiss;
   if (count === 0) return undefined;
   const last = count - 1;
-  const result = readArrayElement<ScriptPropertyKey, unknown>(elements, last);
+  const cell = values[last];
+  if (cell === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
+  const result = cell.value;
   truncateArrayElements<ScriptPropertyKey, unknown>(elements, last);
   elements.length = last;
   return result;
@@ -86,7 +113,7 @@ export function scriptArrayPush(
   item: unknown,
   realm: ErrorRealm,
 ): number {
-  const object = viewObjectValue(value, realm.objectPrototype);
+  const object = viewTypeofObject(value);
   if (object === undefined) return -1;
   const elements = object.internalArrayElements;
   if (elements === undefined || !object.extensible || !elements.lengthWritable)
@@ -94,28 +121,35 @@ export function scriptArrayPush(
   const arrayPrototype = object.prototype;
   if (arrayPrototype === undefined || arrayPrototype !== realm.arrayPrototype)
     return -1;
-  const inherited = arrayPrototype.internalArrayElements;
   if (
-    inherited === undefined ||
-    inherited.values !== undefined ||
-    inherited.numberCount !== 0
+    propertyEpoch.value !== realm.cleanArrayPushEpoch &&
+    !hasCleanArrayPushPrototypes(realm)
   )
     return -1;
-  const objectPrototype = arrayPrototype.prototype;
-  if (
-    objectPrototype === undefined ||
-    objectPrototype !== realm.objectPrototype ||
-    objectPrototype.internalDictionary
-  )
-    return -1;
-  // Fast steady-state path: append a Number directly into existing capacity
-  // without helper or hook closure dispatch.
-  if (elements.values === undefined) {
+  // Fast steady-state path: append a Number directly into existing or freshly
+  // grown capacity without helper or hook closure dispatch.
+  if (elements.values === undefined && typeof item === "number") {
     const count = elements.numberCount;
-    if (elements.length === count && typeof item === "number") {
-      const numbers = elements.numbers;
+    if (elements.length === count) {
+      let numbers = elements.numbers;
       if (count < numbers.length) {
         numbers[count] = item;
+        const next = count + 1;
+        elements.numberCount = next;
+        elements.length = next;
+        return next;
+      }
+      if (count < maxNumberCapacity) {
+        const capacity =
+          numbers.length < firstPushCapacity
+            ? firstPushCapacity
+            : numbers.length > maxNumberCapacity / 2
+              ? maxNumberCapacity
+              : numbers.length * 2;
+        const grown = new Float64Array(capacity);
+        grown.set(numbers);
+        grown[count] = item;
+        elements.numbers = grown;
         const next = count + 1;
         elements.numberCount = next;
         elements.length = next;
@@ -127,10 +161,45 @@ export function scriptArrayPush(
   return elements.length;
 }
 
+/** Zero-capture inlineable fast path for steady-state numeric Array.prototype.push.
+ * Appends `item` into existing Float64Array capacity when the receiver is an
+ * extensible packed array inheriting from the realm's clean Array.prototype,
+ * returning the new length, or -1 to fall back to `scriptArrayPush`. */
+export function scriptArrayPushFast(
+  object: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  item: number,
+  realm: ErrorRealm,
+): number {
+  if (
+    object !== undefined &&
+    object.extensible &&
+    object.prototype === realm.arrayPrototype &&
+    realm.propertyEpoch.value === realm.cleanArrayPushEpoch
+  ) {
+    const elements = object.internalArrayElements;
+    if (
+      elements !== undefined &&
+      elements.values === undefined &&
+      elements.lengthWritable
+    ) {
+      const count = elements.numberCount;
+      const numbers = elements.numbers;
+      if (elements.length === count && count < numbers.length) {
+        numbers[count] = item;
+        const next = count + 1;
+        elements.numberCount = next;
+        elements.length = next;
+        return next;
+      }
+    }
+  }
+  return -1;
+}
+
 /** Array.prototype.pop's result for a dense packed array (see
  * popPackedElement), else `realm.arrayPopMiss` with nothing changed. */
 export function scriptArrayPop(value: unknown, realm: ErrorRealm): unknown {
-  const object = viewObjectValue(value, realm.objectPrototype);
+  const object = viewTypeofObject(value);
   if (object === undefined) return realm.arrayPopMiss;
   return popPackedElement(object, realm);
 }

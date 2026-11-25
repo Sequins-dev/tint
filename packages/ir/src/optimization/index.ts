@@ -27,6 +27,8 @@ import { cacheListVectors } from "./list-vectors.ts";
 export { cacheListVectors } from "./list-vectors.ts";
 import { cacheElementStorage } from "./element-cache.ts";
 export { cacheElementStorage } from "./element-cache.ts";
+import { cacheLoopProperties } from "./property-cache.ts";
+export { cacheLoopProperties } from "./property-cache.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
@@ -1499,6 +1501,35 @@ export function optimizeModuleVersion(
     );
   used += shadows.visited;
   if (completed("shadow-general-numbers", shadows, false)) return stop();
+  // Loop-invariant global-cell and property-load accesses cache their results
+  // in the loop preheader and refresh after cold invalidating calls/writes.
+  // Running before thread-branches, cleanup, sink-environment-loads and
+  // compact-slots lets those passes remove dead IC operands and compact slots.
+  const cachedProperties = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = cacheLoopProperties(fn, version.module, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (cachedProperties.exhausted)
+    return exhausted(
+      "cache-loop-properties",
+      maxInstructions - used - accessVisited,
+    );
+  used += cachedProperties.visited;
+  if (completed("cache-loop-properties", cachedProperties, false))
+    return stop();
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
   const threaded = rewriteFunctions(

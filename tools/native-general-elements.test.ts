@@ -619,6 +619,35 @@ function cachedLoops() {
     }
   }
   out.push(s1, s2);
+  // Mid-loop Array.prototype / Object.prototype mutation invalidating cleanArrayPushEpoch.
+  const protoPush = [];
+  let protoSetCount = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) {
+      Object.defineProperty(Array.prototype, 3, {
+        set(v) { protoSetCount += v; },
+        get() { return 777; },
+        configurable: true,
+      });
+    }
+    protoPush.push(i);
+  }
+  delete Array.prototype[3];
+  out.push(protoPush.length, Object.hasOwn(protoPush, 3), protoPush[4], protoSetCount);
+  // Mid-loop Object.prototype indexed property invalidates fast push as well.
+  const objProtoPush = [];
+  let objProtoSeen = 0;
+  for (let i = 0; i < 5; i++) {
+    if (i === 2) {
+      Object.defineProperty(Object.prototype, 2, {
+        set(v) { objProtoSeen += v + 10; },
+        configurable: true,
+      });
+    }
+    objProtoPush.push(i);
+  }
+  delete Object.prototype[2];
+  out.push(objProtoPush.length, Object.hasOwn(objProtoPush, 2), objProtoPush[3], objProtoSeen);
   return out.join(",");
 }
 export function sections() {
@@ -651,7 +680,7 @@ test("element access keeps JavaScript semantics on every receiver and key", asyn
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 10);
+  assert.equal(expected.length, 11);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;
