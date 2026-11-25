@@ -10,6 +10,7 @@ import { isCallableObject } from "./call.ts";
 import { numberValue, stringValue } from "./coercion.ts";
 import { lengthOfArrayLike } from "./array-like.ts";
 import {
+  exoticSlots,
   createObject,
   createDataProperty,
   ownKeys,
@@ -83,7 +84,9 @@ export function stringifyJSON(
       const item = get(replacer, String(i));
       const object = viewObjectValue(item, realm.objectPrototype);
       const data =
-        object === undefined ? undefined : object.internalPrimitiveData;
+        object === undefined
+          ? undefined
+          : exoticSlots(object).internalPrimitiveData;
       if (
         typeof item !== "string" &&
         typeof item !== "number" &&
@@ -101,7 +104,9 @@ export function stringifyJSON(
   let spacing = space;
   const spaceObject = viewObjectValue(spacing, realm.objectPrototype);
   const spaceData =
-    spaceObject === undefined ? undefined : spaceObject.internalPrimitiveData;
+    spaceObject === undefined
+      ? undefined
+      : exoticSlots(spaceObject).internalPrimitiveData;
   if (spaceData !== undefined) {
     if (spaceData.kind === "number") spacing = number(spacing);
     else if (spaceData.kind === "string") spacing = string(spacing);
@@ -126,7 +131,10 @@ export function stringifyJSON(
     }
     if (hasReplacer) current = call(replacer, holder, [key, current]);
     const boxed = viewObjectValue(current, realm.objectPrototype);
-    const data = boxed === undefined ? undefined : boxed.internalPrimitiveData;
+    const data =
+      boxed === undefined
+        ? undefined
+        : exoticSlots(boxed).internalPrimitiveData;
     if (data !== undefined) {
       if (data.kind === "number") current = number(current);
       else if (data.kind === "string") current = string(current);
@@ -143,7 +151,8 @@ export function stringifyJSON(
       throw createRuntimeError(realm, "type");
     const object = viewObjectValue(current, realm.objectPrototype);
     if (object === undefined) return undefined;
-    if (object.internalRawJSON !== undefined) return object.internalRawJSON;
+    if (exoticSlots(object).internalRawJSON !== undefined)
+      return exoticSlots(object).internalRawJSON;
     if (callable(current)) return undefined;
     if (stack.includes(object)) throw createRuntimeError(realm, "type");
     stack.push(object);

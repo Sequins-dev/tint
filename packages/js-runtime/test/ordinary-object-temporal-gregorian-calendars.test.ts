@@ -5,6 +5,7 @@ import {
   objects,
   type ObjectValue,
 } from "./ordinary-object-temporal-fixture.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 
 test("Gregorian-family PlainDate conversion preserves calendar identity and era fields", () => {
   const f = fixture();
@@ -18,7 +19,7 @@ test("Gregorian-family PlainDate conversion preserves calendar identity and era 
       "PlainDate",
       f.bag({ calendar, year, era, eraYear, month: 2, day: 29 }),
     );
-    assert.deepEqual(value.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(value).internalTemporalPlainDate, {
       year: 2024,
       month: 2,
       day: 29,
@@ -103,7 +104,7 @@ test("Gregorian-family arithmetic and replacement retain identity across era tra
     f.bag({ calendar: "buddhist", year: 2566, month: 1, day: 31 }),
   );
   const feb = f.call(bud, "add", [f.bag({ months: 1 })]) as ObjectValue;
-  assert.deepEqual(feb.internalTemporalPlainDate, {
+  assert.deepEqual(exoticSlots(feb).internalTemporalPlainDate, {
     year: 2023,
     month: 2,
     day: 28,
@@ -171,7 +172,7 @@ test("Gregorian-family partial dates preserve arithmetic years and canonical ref
     assert.equal(f.get(next, "calendarId"), calendar);
     assert.equal(f.get(next, "year"), year + 1);
     const date = f.call(ym, "toPlainDate", [f.bag({ day: 29 })]) as ObjectValue;
-    assert.deepEqual(date.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(date).internalTemporalPlainDate, {
       year: 2024,
       month: 2,
       day: 29,
@@ -184,7 +185,7 @@ test("Gregorian-family partial dates preserve arithmetic years and canonical ref
     assert.equal(f.get(md, "calendarId"), calendar);
     assert.equal(f.call(md, "toString"), `1972-02-29[u-ca=${calendar}]`);
     const plain = f.call(md, "toPlainDate", [f.bag({ year })]) as ObjectValue;
-    assert.deepEqual(plain.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(plain).internalTemporalPlainDate, {
       year: 2024,
       month: 2,
       day: 29,
@@ -282,7 +283,7 @@ test("non-ISO MonthDay.toPlainDate accepts an era/year pair without reading unre
     const date = f.call(md, "toPlainDate", [
       f.bag({ era, eraYear }),
     ]) as ObjectValue;
-    assert.deepEqual(date.internalTemporalPlainDate, {
+    assert.deepEqual(exoticSlots(date).internalTemporalPlainDate, {
       year: 2024,
       month: 2,
       day: 29,

@@ -27,14 +27,15 @@ test("async generator objects have private lazy state and distinct prototype cha
     realm.asyncGeneratorPrototype.prototype === realm.asyncIteratorPrototype,
   );
   assert.ok(realm.asyncIteratorPrototype.prototype === root);
-  assert.equal(generator.properties.size, 0);
+  assert.equal(generator.properties?.size ?? 0, 0);
   assert.equal(
-    generator.internalAsyncGeneratorData?.record.state,
+    generator.internalExoticSlots?.internalAsyncGeneratorData?.record.state,
     "suspended-start",
   );
-  assert.equal(generator.internalGeneratorData, undefined);
+  assert.equal(generator.internalExoticSlots?.internalGeneratorData, undefined);
   assert.equal(
-    realm.asyncGeneratorPrototype.internalAsyncGeneratorData,
+    realm.asyncGeneratorPrototype.internalExoticSlots
+      ?.internalAsyncGeneratorData,
     undefined,
   );
 });

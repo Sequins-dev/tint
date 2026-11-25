@@ -28,6 +28,12 @@ const transparent = 0,
  * path from entry reaches it through a copy store B = A with no later store to
  * A or B; the copy stores then die in store cleanup.
  *
+ * Inlined calls chain copies (C = B, B = A). Each copy is processed before
+ * its source, and a load rewritten to read B is then a load of B for B's own
+ * rewrite, so equal values resolve to the chain's root wherever every hop is
+ * valid. Rewriting one hop at a time would leave a descriptor check reading B
+ * and the read it guards reading A's copy, breaking the record read proof.
+ *
  * Validity is decided per copy slot over the blocks between its loads and the
  * stores that reach them (a backward region, like sparse liveness), so work
  * follows live ranges rather than blocks x slots. Slots written by
@@ -232,6 +238,40 @@ function propagationRound(
   }
   if (candidates.length === 0)
     return { fn, visited, rewritten: 0, chained: false };
+  // Copies before their sources: order by the number of candidate hops down
+  // to the chain's root (a cycle of copies is cut where it closes).
+  const candidate = new Uint8Array(slotCount),
+    depths = new Uint32Array(slotCount),
+    depthState = new Uint8Array(slotCount),
+    chain: number[] = [];
+  for (const slot of candidates) {
+    if (slot === undefined) throw "copy candidate invariant";
+    candidate[slot] = 1;
+  }
+  for (const slot of candidates) {
+    if (slot === undefined) throw "copy candidate invariant";
+    chain.length = 0;
+    let cursor = slot;
+    while (candidate[cursor] === 1 && depthState[cursor] === 0) {
+      depthState[cursor] = 1;
+      chain.push(cursor);
+      cursor = (sources[cursor] ?? 0) - 1;
+    }
+    let depth =
+      candidate[cursor] === 1 && depthState[cursor] === 2
+        ? (depths[cursor] ?? 0) + 1
+        : 0;
+    for (let index = chain.length - 1; index >= 0; index--) {
+      const link = chain[index] ?? 0;
+      depths[link] = depth++;
+      depthState[link] = 2;
+    }
+    visited += chain.length;
+  }
+  candidates.sort((a: number, b: number): number => {
+    const order = (depths[b] ?? 0) - (depths[a] ?? 0);
+    return order !== 0 ? order : a - b;
+  });
 
   // Predecessors (CSR) with an exception-edge flag; successors likewise.
   const predecessorCounts = new Uint32Array(blockCount + 1),
@@ -289,7 +329,8 @@ function propagationRound(
   visited += blockCount + edgeCount * 2;
   if (visited > budget) return undefined;
 
-  // Per-slot blocks holding loads and stores, for candidate and source slots.
+  // Per-slot blocks holding loads and stores, for candidate and source slots;
+  // blocks holding loads rewritten to read a slot are added as they occur.
   const interest = new Uint8Array(slotCount);
   for (const slot of candidates) {
     if (slot === undefined) throw "copy candidate invariant";
@@ -297,6 +338,7 @@ function propagationRound(
     interest[(sources[slot] ?? 0) - 1] = 1;
   }
   const loadBlocks: number[][] = [],
+    rewrittenBlocks: number[][] = [],
     storeBlocks: number[][] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "copy block invariant";
@@ -319,6 +361,7 @@ function propagationRound(
 
   // Per-candidate scratch, reset by generation stamps.
   const storeStamp = new Uint32Array(blockCount),
+    listedStamp = new Uint32Array(blockCount),
     localStamp = new Uint32Array(blockCount),
     localState = new Uint8Array(blockCount),
     regionStamp = new Uint32Array(blockCount),
@@ -328,6 +371,23 @@ function propagationRound(
   // Rewritten loads: value id -> source slot + 1.
   const replacements = new Uint32Array(maximum + 1);
   let rewritten = 0;
+  /** The slot load `op` of `slot` reads after the rewrites so far. */
+  function loaded(op: number, slot: number): number {
+    const replacement = replacements[op] ?? 0;
+    return replacement === 0 ? slot : replacement - 1;
+  }
+  /** Make a load (in `block`) read `source`, a load of it from now on. */
+  function replace(op: number, block: number, source: number): void {
+    if ((replacements[op] ?? 0) === 0) rewritten++;
+    replacements[op] = source + 1;
+    if (candidate[source] !== 1) return;
+    let list = rewrittenBlocks[source];
+    if (list === undefined) {
+      list = [];
+      rewrittenBlocks[source] = list;
+    }
+    if (list[list.length - 1] !== block) list.push(block);
+  }
 
   /** The state just before `end` in a block, scanning backward: the copy is
    * valid (reached a copy store), invalid (a store to the source, or another
@@ -380,6 +440,19 @@ function propagationRound(
     const source = (sources[slot] ?? 0) - 1,
       refined = refinedCopy(slot, source);
     generation++;
+    // Blocks reading the slot: its own loads and loads rewritten to it.
+    const loadList: number[] = [];
+    for (const id of loadBlocks[slot] ?? []) {
+      if (id === undefined) throw "copy load block invariant";
+      listedStamp[id] = generation;
+      loadList.push(id);
+    }
+    for (const id of rewrittenBlocks[slot] ?? []) {
+      if (id === undefined) throw "copy load block invariant";
+      if (listedStamp[id] === generation) continue;
+      listedStamp[id] = generation;
+      loadList.push(id);
+    }
     for (const id of storeBlocks[slot] ?? [])
       if (id !== undefined) storeStamp[id] = generation;
     for (const id of storeBlocks[source] ?? [])
@@ -388,7 +461,6 @@ function propagationRound(
     // within their own block, backward through transparent predecessors.
     const pendingLoads: number[] = [],
       pendingBlocks: number[] = [];
-    const loadList = loadBlocks[slot] ?? [];
     stack.length = 0;
     for (const id of loadList) {
       if (id === undefined) throw "copy load block invariant";
@@ -397,16 +469,14 @@ function propagationRound(
       for (let index = 0; index < block.instructions.length; index++) {
         const op = block.instructions[index];
         if (op === undefined) throw "copy instruction invariant";
-        if (op.kind !== "load" || op.slot !== slot) continue;
+        if (op.kind !== "load" || loaded(op.id, op.slot) !== slot) continue;
         if (refined && guarded[op.id] !== 1) continue;
         const state =
           storeStamp[id] === generation
             ? scan(block, index, slot, source)
             : transparent;
-        if (state === valid) {
-          replacements[op.id] = source + 1;
-          rewritten++;
-        } else if (state === transparent) {
+        if (state === valid) replace(op.id, id, source);
+        else if (state === transparent) {
           pendingLoads.push(op.id);
           pendingBlocks.push(id);
           if (regionStamp[id] !== generation) {
@@ -485,14 +555,10 @@ function propagationRound(
     for (let index = 0; index < pendingLoads.length; index++) {
       const load = pendingLoads[index] ?? 0,
         block = pendingBlocks[index] ?? 0;
-      if (falseStamp[block] === generation) continue;
-      replacements[load] = source + 1;
-      rewritten++;
+      if (falseStamp[block] !== generation) replace(load, block, source);
     }
   }
   if (rewritten === 0) return { fn, visited, rewritten: 0, chained: false };
-  const candidate = new Uint8Array(slotCount);
-  for (const slot of candidates) candidate[slot] = 1;
   let chained = false,
     nextValue = maximum + 1;
   const blocks: Block[] = [];

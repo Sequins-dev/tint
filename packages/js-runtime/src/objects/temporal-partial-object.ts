@@ -1,4 +1,5 @@
 import {
+  exoticSlots,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
@@ -16,12 +17,12 @@ export function requirePartialTemporalObject(
   const object = viewObjectValue(value, realm.objectPrototype);
   if (
     object === undefined ||
-    object.internalTemporalPlainDate !== undefined ||
-    object.internalTemporalPlainDateTime !== undefined ||
-    object.internalTemporalPlainMonthDay !== undefined ||
-    object.internalTemporalPlainTime !== undefined ||
-    object.internalTemporalPlainYearMonth !== undefined ||
-    object.internalTemporalZonedDateTime !== undefined
+    exoticSlots(object).internalTemporalPlainDate !== undefined ||
+    exoticSlots(object).internalTemporalPlainDateTime !== undefined ||
+    exoticSlots(object).internalTemporalPlainMonthDay !== undefined ||
+    exoticSlots(object).internalTemporalPlainTime !== undefined ||
+    exoticSlots(object).internalTemporalPlainYearMonth !== undefined ||
+    exoticSlots(object).internalTemporalZonedDateTime !== undefined
   )
     throw createRuntimeError(realm, "type");
   if (

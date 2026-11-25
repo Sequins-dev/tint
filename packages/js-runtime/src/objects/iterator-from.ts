@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   hasPrototype,
   type OrdinaryObject,
@@ -41,7 +43,7 @@ export function installIteratorFrom(
           const record =
             object === undefined
               ? undefined
-              : object.internalWrappedIteratorData;
+              : exoticSlots(object).internalWrappedIteratorData;
           if (record === undefined) throw createRuntimeError(realm, "type");
           let method = record.nextMethod;
           if (name === "return") {
@@ -103,7 +105,8 @@ export function installIteratorFrom(
         )
           return object;
         const wrapper = createObject<ScriptPropertyKey, unknown>(prototype);
-        wrapper.internalWrappedIteratorData = iterator.record;
+        ensureExoticSlots(wrapper).internalWrappedIteratorData =
+          iterator.record;
         return wrapper;
       },
       hooks,

@@ -4,6 +4,7 @@ import { checkPrimitiveContract, scriptBoolean } from "./values.ts";
 import {
   createSourceExecutionContext,
   createFunctionRealmContext,
+  functionExecutionContext,
   enterSourceCall,
   enterRegisterSourceCall,
   exitSourceCall,
@@ -23,6 +24,8 @@ import {
   createObject,
   createCallableObject,
   createConstructorObject,
+  ensureExoticSlots,
+  ensureRareSlots,
   getProperty,
   hasPrototype,
   type ObjectCall,
@@ -173,6 +176,8 @@ export function constructorPrototype(
     : selected;
 }
 
+export { createSourceInstance } from "./values.ts";
+
 /** Source execution receives the actual function object, independently of its
  * mutable source binding. Calls pass undefined newTarget; construction preserves
  * the actual target independently of the function identity. */
@@ -255,9 +260,13 @@ export function createSourceFunction(
   );
 }
 
+/** A source function with a native script entry (`scriptInvoke`) and its
+ * list bridge (`implementation`). A body with tail calls requests them
+ * from its list invocation's trampoline (`tailCalls`). */
 export function createNativeSourceFunction(
   implementation: SourceFunctionCall,
   scriptInvoke: ObjectScriptCall<unknown>,
+  tailCalls: boolean,
   constructible: boolean,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
@@ -274,12 +283,14 @@ export function createNativeSourceFunction(
     name,
     length,
     home,
-    false,
+    tailCalls,
     callerPolicy,
   );
-  const active = realm.agent.activeContext;
   fn.internalRegisterCall = {
-    context: { realm, scriptOrModule: active?.scriptOrModule },
+    context: functionExecutionContext(realm),
+    traceName: name,
+    callerPolicy,
+    constructible,
     invoke: undefined,
     invokeWide: undefined,
     scriptInvoke,
@@ -292,17 +303,6 @@ export function sourceArgumentCount(): number {
   throw "SOURCE_ARGUMENT_INTRINSIC";
 }
 export function sourceArgument(_index: number): unknown {
-  throw "SOURCE_ARGUMENT_INTRINSIC";
-}
-export function sourceArgumentArea(): number {
-  throw "SOURCE_ARGUMENT_INTRINSIC";
-}
-export function sourceArgumentFromFrame(
-  _index: number,
-  _count: number,
-  _registers: number,
-  _stack: number,
-): unknown {
   throw "SOURCE_ARGUMENT_INTRINSIC";
 }
 
@@ -320,7 +320,6 @@ export function createRegisterSourceFunction(
   callerPolicy: SourceCallerPolicy,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const agent = realm.agent;
-  const active = agent.activeContext;
   const fn = createSourceFunction(
     (receiver, args, callee, newTarget): unknown =>
       implementation(
@@ -340,11 +339,12 @@ export function createRegisterSourceFunction(
     callerPolicy,
   );
   fn.internalRegisterCall = {
-    context: {
-      realm,
-      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
-    },
+    context: functionExecutionContext(realm),
+    traceName: name,
+    callerPolicy,
+    constructible,
     invokeWide: undefined,
+    scriptInvoke: undefined,
     invoke: (callee, receiver, newTarget, count, first, second): unknown => {
       const trace = enterExecutionName(agent, name);
       const depth = enterRegisterSourceCall(
@@ -385,7 +385,6 @@ export function createWideRegisterSourceFunction(
   callerPolicy: SourceCallerPolicy,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const agent = realm.agent;
-  const active = agent.activeContext;
   const fn = createSourceFunction(
     (receiver, args, callee, newTarget): unknown =>
       implementation(
@@ -441,10 +440,10 @@ export function createWideRegisterSourceFunction(
     }
   };
   fn.internalRegisterCall = {
-    context: {
-      realm,
-      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
-    },
+    context: functionExecutionContext(realm),
+    traceName: name,
+    callerPolicy,
+    constructible,
     invoke: (callee, receiver, newTarget, count, first, second): unknown =>
       invoke(
         callee,
@@ -459,6 +458,7 @@ export function createWideRegisterSourceFunction(
         undefined,
       ),
     invokeWide: invoke,
+    scriptInvoke: undefined,
   };
   return fn;
 }
@@ -593,7 +593,10 @@ function sourceFunction(
         metadata,
       );
   if (tailCalls)
-    fn.internalTailDispatch = (receiver, args) =>
+    ensureRareSlots<ScriptPropertyKey, unknown>(fn).internalTailDispatch = (
+      receiver,
+      args,
+    ) =>
       runSourceTailCallStep(
         (): unknown => execute(receiver, args, identity.value, undefined),
         context,
@@ -703,7 +706,8 @@ export function ordinaryHasInstance(
   const fn = viewObjectValue(constructor, realm.objectPrototype);
   if (fn === undefined || fn.internalCall === undefined)
     return { error: "none", value: false };
-  const boundTarget = fn.internalBoundTarget;
+  const rare = fn.internalRareSlots;
+  const boundTarget = rare === undefined ? undefined : rare.internalBoundTarget;
   if (boundTarget !== undefined)
     return instanceOfValue(value, boundTarget, hooks, realm, nativePrototype);
   const object = viewObjectValue(value, realm.objectPrototype);
@@ -803,6 +807,6 @@ export function retainFunctionSource(
   fn: OrdinaryObject<ScriptPropertyKey, unknown>,
   source: string,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  fn.internalSourceText = source;
+  ensureExoticSlots(fn).internalSourceText = source;
   return fn;
 }

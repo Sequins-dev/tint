@@ -8,6 +8,8 @@ import {
 import { createScriptIteratorHooks } from "./iteration.ts";
 import { lengthOfArrayLike } from "./array-like.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   getProperty,
   setProperty,
@@ -45,7 +47,7 @@ export function allocateTypedArray(
   const buffer = createObject<ScriptPropertyKey, unknown>(
     realm.arrayBufferPrototype,
   );
-  buffer.internalArrayBufferData = allocated.value;
+  ensureExoticSlots(buffer).internalArrayBufferData = allocated.value;
   return createTypedArrayView(
     prototype,
     { buffer, storage: allocated.value, byteOffset: 0, length, kind, endian },
@@ -80,7 +82,7 @@ export function typedArrayFromObject(
   hooks: ObjectHooks<unknown>,
   endian: Endian,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const sourceData = source.internalTypedArrayData;
+  const sourceData = exoticSlots(source).internalTypedArrayData;
   if (sourceData !== undefined) {
     const window = typedArrayWindow(sourceData);
     if (window === undefined) throw createRuntimeError(realm, "type");
@@ -92,7 +94,7 @@ export function typedArrayFromObject(
       hooks,
       endian,
     );
-    const data = target.internalTypedArrayData;
+    const data = exoticSlots(target).internalTypedArrayData;
     if (data === undefined) throw "TYPED_ARRAY_INITIALIZE_INVARIANT";
     if (kind === sourceData.kind) {
       copyTypedArrayElements(sourceData, data, 0, 0, window.length, true);

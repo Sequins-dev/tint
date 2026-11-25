@@ -28,7 +28,10 @@ test("AsyncDisposableStack has its own brand and an async disposal method identi
     "AsyncDisposableStack",
   );
   const prototype = realm.asyncDisposableStackPrototype;
-  assert.equal(prototype.internalAsyncDisposableStack, undefined);
+  assert.equal(
+    objects.exoticSlots(prototype).internalAsyncDisposableStack,
+    undefined,
+  );
   assert.notEqual(prototype, realm.disposableStackPrototype);
   assert.equal(
     objects.getOwnProperty(prototype, "disposeAsync")?.value,

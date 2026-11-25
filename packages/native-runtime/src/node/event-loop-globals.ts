@@ -5,6 +5,8 @@ import {
   createRuntimeError,
   createObject,
   enqueueScriptJob,
+  ensureExoticSlots,
+  exoticSlots,
   isCallableObject,
   numberValue,
   rejectUnsupportedExecution,
@@ -86,7 +88,7 @@ export function installNodeEventLoopGlobals(
       realm.objectPrototype,
     );
     const id = realm.agent.nextObjectIdentity++;
-    handle.internalIdentity = id;
+    ensureExoticSlots(handle).internalIdentity = id;
     const callback = (): void => {
       try {
         invoke(fn, handle, parameters);
@@ -121,7 +123,7 @@ export function installNodeEventLoopGlobals(
   function clear(value: unknown, immediate: boolean): void {
     const object = viewObjectValue(value, global);
     let id = 0;
-    if (object !== undefined) id = object.internalIdentity;
+    if (object !== undefined) id = exoticSlots(object).internalIdentity;
     else if (!immediate && typeof value === "number") id = value;
     else if (!immediate && typeof value === "string") id = Number(value);
     if (!Number.isInteger(id) || id <= 0) return;

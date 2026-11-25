@@ -10,6 +10,7 @@ import {
 } from "./signature-groups.ts";
 export type { LocalSignatureBinding } from "./signature-groups.ts";
 import {
+  nativeActivationTopOffset,
   nativeContextDomainOffset,
   nativeGenerationalNurseryAddressOffset,
   nativeGenerationalStateWords,
@@ -119,6 +120,11 @@ import {
   type NestedSelect,
   type SelectArm,
 } from "./block-entries.ts";
+import {
+  fusedPropertyAccesses,
+  knownObjectTagAccesses,
+  scriptEntryCalleeValues,
+} from "../../scalar/property-fusion.ts";
 import {
   createWordBuffer,
   appendWord,
@@ -238,6 +244,7 @@ import {
   typedArrayLayout,
   typedArrayMarker,
   typedArrayScale,
+  activationFieldType,
   type LoopForest,
   type SlotLiveness,
   type WordFacts,
@@ -298,6 +305,11 @@ import {
   type Condition,
 } from "../isa.ts";
 import {
+  activationArgumentsOffset,
+  activationCalleeOffset,
+  activationCountOffset,
+  activationFrameOffset,
+  activationRecordBytes,
   signatureLayout,
   scriptArgumentLayout,
   scriptFirstActualRegister,
@@ -912,6 +924,9 @@ export type CodegenAnalysis =
 
 export interface EmissionOptions {
   readonly workerFunctions?: ReadonlySet<string> | undefined;
+  /** The target implements FEAT_JSCVT (every Apple silicon core does), so
+   * ToInt32 of an unproven binary64 is one FJCVTZS. */
+  readonly jsConvert?: boolean | undefined;
   readonly maxByteLength?: number | undefined;
   /** Ahead-of-time builds: lift the work limits of codegen analyses (each
    * of which otherwise falls back to slower, conservative code on large
@@ -3053,6 +3068,7 @@ function emitModuleForms(
   // Fixups already patched in place to a nearby veneer (branchIsland).
   const resolvedFixups = new Set<number>();
   const imports: NativeImportReference[] = [];
+  const jsConvert = options.jsConvert === true;
   const throwTraces = options.throwTraces ?? false,
     startupCalls: NativeStartupCall[] = [];
   const managedRequests: NativeManagedPointerImport[] = [],
@@ -3101,12 +3117,16 @@ function emitModuleForms(
    * Objects at or above the nursery's start need no remembering, which is
    * exactly when the helper would return at once, so that test is inline:
    * the generational state (context +56, zero until published) holds the
-   * nursery's offset from the managed base (context +8) at +8. Clobbers
-   * x10..x16 like the helper. */
+   * nursery's offset from the managed base (context +8) at +8. For an old
+   * object, `unneeded` (when given) may first prove the store created no
+   * edge to a managed object: it emits code using x12..x14 and returns the
+   * sites of `b.ne` branches that skip the helper. Clobbers x10..x16 like
+   * the helper. */
   function rememberObject(
     defer?: (emitSlow: () => void) => void,
     objReg: number = 9,
     loadContext?: () => void,
+    unneeded?: () => readonly number[],
   ): void {
     if (cachedNurseryBaseInX16 && defer !== undefined) {
       emit({
@@ -3130,6 +3150,7 @@ function emitModuleForms(
           condition: "cc",
           displacement: (instructions.length - old) * 4,
         });
+        const skips = unneeded === undefined ? [] : unneeded();
         if (objReg !== 9)
           emit({
             op: "orr-reg",
@@ -3140,6 +3161,13 @@ function emitModuleForms(
           });
         if (loadContext !== undefined) loadContext();
         callHelper("remember-object");
+        const back = instructions.length;
+        for (const skip of skips)
+          patchInstruction(skip, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (back - skip) * 4,
+          });
         emit({ op: "b", displacement: (done - instructions.length) * 4 });
       });
       return;
@@ -3185,15 +3213,30 @@ function emitModuleForms(
           condition: "cc",
           displacement: (instructions.length - old) * 4,
         });
+        const skips = unneeded === undefined ? [] : unneeded();
         callHelper("remember-object");
+        const back = instructions.length;
+        for (const skip of skips)
+          patchInstruction(skip, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (back - skip) * 4,
+          });
         emit({ op: "b", displacement: (done - instructions.length) * 4 });
       });
       return;
     }
     const young = instructions.length;
     emit({ op: "b.cond", condition: "cs", displacement: 0 });
+    const skips = unneeded === undefined ? [] : unneeded();
     callHelper("remember-object");
     const done = instructions.length;
+    for (const skip of skips)
+      patchInstruction(skip, {
+        op: "b.cond",
+        condition: "ne",
+        displacement: (done - skip) * 4,
+      });
     patchInstruction(unpublished, {
       op: "cbz",
       width: 64,
@@ -3205,6 +3248,41 @@ function emitModuleForms(
       condition: "cs",
       displacement: (done - young) * 4,
     });
+  }
+  /** For rememberObject: a `b.ne` site taken when the general value whose
+   * tag word is at frame `offset` refers to no managed object. Only tags
+   * 3, 5, 6 and 7 carry a reference (the collectors' general scan); the
+   * others (undefined, number, boolean, null) need no remembering. */
+  function nonReferenceTag(offset: number): number[] {
+    rawLoad(13, offset);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate: 5,
+      shift: 0,
+      setFlags: true,
+    });
+    const reference = instructions.length;
+    emit({ op: "b.cond", condition: "cs", displacement: 0 });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate: 3,
+      shift: 0,
+      setFlags: true,
+    });
+    const skip = instructions.length;
+    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    patchInstruction(reference, {
+      op: "b.cond",
+      condition: "cs",
+      displacement: (instructions.length - reference) * 4,
+    });
+    return [skip];
   }
   /** x9/x10 string or optional-string objects -> w9 (1 equal, 0 different), or
    * direct branches to `branchTargets.equal` / `branchTargets.different`.
@@ -3572,6 +3650,41 @@ function emitModuleForms(
   function conditionalOverflow(fn: number): void {
     if (islandsBefore.has(fn)) forms.longBranches.add(fn);
     else forms.islands.add(fn);
+  }
+  /** Code placed after the function body, before its shared trap: stubs
+   * reached only from uncommon branches, so the common path keeps falling
+   * through. Each stub patches its own entry branch. Functions emitted with
+   * trap islands or long branches keep such code inline instead
+   * (coldStubsAvailable). */
+  let coldStubs: (() => void)[] = [];
+  function coldStubsAvailable(): boolean {
+    const owner = functionId;
+    return (
+      owner !== undefined &&
+      !forms.islands.has(owner) &&
+      !forms.longBranches.has(owner)
+    );
+  }
+  function flushColdStubs(): void {
+    while (coldStubs.length !== 0) {
+      const stubs = coldStubs;
+      coldStubs = [];
+      for (const stub of stubs) stub();
+    }
+  }
+  /** A branch between the body and its cold stubs: one beyond reach marks
+   * the function for re-emission with islands, where stubs stay inline. */
+  function farBranch(index: number, instruction: Instruction): void {
+    const encoded = encode(instruction);
+    if (!encoded.ok) {
+      const owner = functionId;
+      if (encoded.error !== "OUT_OF_RANGE" || owner === undefined)
+        fail("ENCODING", encoded.error);
+      compactOverflow = true;
+      conditionalOverflow(owner);
+      return;
+    }
+    patchInstruction(index, instruction);
   }
   function fail(code: Diagnostic["code"], message: string): never {
     failure = { code, message, function: functionId, block: blockId, span };
@@ -4970,6 +5083,26 @@ function emitModuleForms(
   /** Copy storage bits without crossing register banks. This is a bitwise move,
    * including references, signed zero and NaN payloads; register eligibility and
    * GC visibility remain entirely the existing allocation planner's decision. */
+  /** Copy a two-word value: one LDP/STP pair when all four words are frame
+   * memory, else word by word. */
+  function copyGeneralPair(source: number, target: number): void {
+    if (source === target) return;
+    const homes = scalarRegisters;
+    if (
+      source <= 504 &&
+      target <= 504 &&
+      (homes?.[source / 8] ?? 0) === 0 &&
+      (homes?.[source / 8 + 1] ?? 0) === 0 &&
+      (homes?.[target / 8] ?? 0) === 0 &&
+      (homes?.[target / 8 + 1] ?? 0) === 0
+    ) {
+      generalPair(9, source, true);
+      generalPair(9, target, false);
+      return;
+    }
+    copyRawWord(source, target);
+    copyRawWord(source + 8, target + 8);
+  }
   function copyRawWord(source: number, target: number): void {
     if (source === target) return;
     const registers = scalarRegisters,
@@ -5864,15 +5997,20 @@ function emitModuleForms(
         // 6/7: a bounded safe integer, without/with possible NaN. Magnitudes
         // prove signed-64 conversion safe, but do not imply valid array indices.
         if (!integerFactsKnown) {
-          cachedIntegerFacts = stableSlots
-            ? provenWordFacts(
-                fn,
-                work(1000000),
-                wordReturns,
-                provenIntegerSlots(fn, work(200000)),
-                wordArguments === undefined ? undefined : wordArguments[fn.id],
-              )
-            : undefined;
+          cachedIntegerFacts =
+            stableSlots ||
+            (fn.environment === undefined &&
+              fn.name.includes("__tint_spec_loop_"))
+              ? provenWordFacts(
+                  fn,
+                  work(1000000),
+                  wordReturns,
+                  provenIntegerSlots(fn, work(200000)),
+                  wordArguments === undefined
+                    ? undefined
+                    : wordArguments[fn.id],
+                )
+              : undefined;
           integerFactsKnown = true;
         }
         const integerFacts = cachedIntegerFacts;
@@ -6090,6 +6228,7 @@ function emitModuleForms(
               } else if (
                 (op.kind === "load" && nonNegativeZeroSlots[op.slot] === 1) ||
                 op.kind === "array-length" ||
+                op.kind === "element-count" ||
                 op.kind === "string-length" ||
                 op.kind === "string-code-unit" ||
                 (op.kind === "unary" &&
@@ -6165,6 +6304,25 @@ function emitModuleForms(
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
             rejected = new Uint8Array(resultBound);
+          let hasScriptOps = fn.scriptEntry === true;
+          if (!hasScriptOps) {
+            for (const b of fn.blocks) {
+              if (b === undefined) continue;
+              for (const op of b.instructions) {
+                if (
+                  op !== undefined &&
+                  (op.kind === "element-load" ||
+                    op.kind === "element-store" ||
+                    op.kind === "property-load" ||
+                    op.kind === "property-store")
+                ) {
+                  hasScriptOps = true;
+                  break;
+                }
+              }
+              if (hasScriptOps) break;
+            }
+          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "integer use block invariant";
             visitTerminatorOperands(block.terminator, (id) => {
@@ -6205,11 +6363,15 @@ function emitModuleForms(
                 op.kind === "array-fill" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
+                // Packed element accesses compare integer indices and cached
+                // counts directly when kept in int64 registers.
+                op.kind === "element-load" ||
+                op.kind === "element-store" ||
                 // Inline code units index with an int64 (the helper path
                 // converts with floatLoad).
                 op.kind === "string-code-unit" ||
-                // Slice bounds load through floatLoad, and optional
-                // payloads and record number fields convert when stored.
+                // Slice bounds load through floatLoad, and optional/general
+                // payloads and record number fields convert when stored/wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
                 op.kind === "record-new" ||
@@ -6227,6 +6389,7 @@ function emitModuleForms(
                 op.kind === "string-from-utf8" ||
                 // A raw window's bounds load like latin1Index's.
                 op.kind === "string-flatten-into" ||
+                (hasScriptOps && op.kind === "general-wrap") ||
                 // C integer arguments convert from an int64 directly
                 // (numberToInteger); C double arguments through floatLoad.
                 op.kind === "c-call" ||
@@ -6509,6 +6672,7 @@ function emitModuleForms(
           } else if (
             op.kind === "string-length" ||
             op.kind === "array-length" ||
+            op.kind === "element-count" ||
             (op.kind === "string-code-unit" && op.inBounds === true) ||
             (op.kind === "unary" && op.operator === "uint32") ||
             (op.kind === "binary" && op.operator === ">>>") ||
@@ -6724,6 +6888,9 @@ function emitModuleForms(
           // reference-none and string-none: one zero word. Used only as an
           // equality operand, they fold into a test of the other side.
           noneValues = new Uint8Array(resultBound),
+          // Values whose every word is zero (none values, general-none,
+          // boolean-none, false and +0): record-new stores them as XZR.
+          zeroValues = new Uint8Array(resultBound),
           // `typedArray[i] ?? 0`: an out-of-range read already yields an
           // all-zero element word, so a read whose only use is an
           // optional-value-or with fallback +0 writes that result directly
@@ -6783,6 +6950,21 @@ function emitModuleForms(
             uses = valueUses,
             folded = new Uint32Array(resultBound);
           for (const block of fn.blocks) {
+            if (block === undefined) throw "zero value block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "zero value instruction invariant";
+              if (
+                op.kind === "reference-none" ||
+                op.kind === "string-none" ||
+                op.kind === "general-none" ||
+                op.kind === "boolean-none" ||
+                (op.kind === "constant" &&
+                  (op.value === false || (op.value === 0 && 1 / op.value > 0)))
+              )
+                zeroValues[valueIds.intern(op.id)] = 1;
+            }
+          }
+          for (const block of fn.blocks) {
             if (block === undefined) throw "constant use block invariant";
             visitTerminatorOperands(block.terminator, (id) => {
               const index = valueIds.intern(id);
@@ -6792,7 +6974,8 @@ function emitModuleForms(
             // host operations take them as immediates (wordKinds 3, set as
             // each constant is emitted) and never read their frame words.
             const wordImmediates = new Set<number>(),
-              float64Arrays = new Set<number>();
+              float64Arrays = new Set<number>(),
+              scriptArgImmediates = new Set<number>();
             for (const op of block.instructions) {
               if (op === undefined) throw "constant use instruction invariant";
               if (
@@ -6805,7 +6988,10 @@ function emitModuleForms(
                 const constant = op.value;
                 if (typeof constant === "number") {
                   numericConstants[valueIds.intern(op.id)] = 1;
-                  if (constant >>> 0 === constant) wordImmediates.add(op.id);
+                  if (constant >>> 0 === constant) {
+                    wordImmediates.add(op.id);
+                    if (constant < 2048) scriptArgImmediates.add(op.id);
+                  }
                   if (constant === 0) zeroConstants[valueIds.intern(op.id)] = 1;
                 }
               }
@@ -6823,6 +7009,49 @@ function emitModuleForms(
                 const index = valueIds.intern(id);
                 uses[index] = (uses[index] ?? 0) + 1;
               });
+              // A constant field of a new record is stored as XZR or the
+              // absent number's bits, not read from its frame word.
+              if (op.kind === "record-new")
+                for (const argument of op.arguments) {
+                  if (argument === undefined) continue;
+                  const index = valueIds.intern(argument);
+                  if (zeroValues[index] === 1 || undefinedValues[index] === 1)
+                    folded[index] = (folded[index] ?? 0) + 1;
+                }
+              // Constant script-argument positions (< 2048) are folded directly
+              // into the frame offset (see case "script-argument").
+              if (
+                op.kind === "script-argument" &&
+                scriptArgImmediates.has(op.index)
+              ) {
+                const index = valueIds.intern(op.index);
+                folded[index] = (folded[index] ?? 0) + 1;
+              }
+              // Zero header/register actual operands of a native script call
+              // are loaded as immediates instead of materialized to the frame.
+              if (op.kind === "call-indirect") {
+                const scriptArgs = op.scriptArguments;
+                if (scriptArgs !== undefined) {
+                  for (let i = 2; i < op.arguments.length; i++) {
+                    const argument = op.arguments[i];
+                    if (argument === undefined) continue;
+                    const index = valueIds.intern(argument);
+                    if (zeroValues[index] === 1)
+                      folded[index] = (folded[index] ?? 0) + 1;
+                  }
+                  for (
+                    let i = 0;
+                    i < scriptActualRegisterPairs && i < scriptArgs.length;
+                    i++
+                  ) {
+                    const argument = scriptArgs[i];
+                    if (argument === undefined) continue;
+                    const index = valueIds.intern(argument);
+                    if (zeroValues[index] === 1)
+                      folded[index] = (folded[index] ?? 0) + 1;
+                  }
+                }
+              }
               if (
                 (op.kind === "array-store" ||
                   op.kind === "array-element" ||
@@ -6966,18 +7195,17 @@ function emitModuleForms(
                     )
                       continue;
                     const argIdx = valueIds.intern(arg);
-                    if (zeroRefValues[argIdx] === 1) {
-                      folded[argIdx] = (folded[argIdx] ?? 0) + 1;
-                    } else if (field.type === "number") {
+                    if (
+                      zeroValues[argIdx] !== 1 &&
+                      undefinedValues[argIdx] !== 1 &&
+                      field.type === "number"
+                    ) {
                       const constant = numberConstant(arg);
-                      if (constant !== undefined) {
-                        const bits = encodeFloat64(constant);
-                        if (
-                          (bits.lo === 0 && bits.hi === 0) ||
-                          float64Immediate(constant) !== undefined
-                        )
-                          folded[argIdx] = (folded[argIdx] ?? 0) + 1;
-                      }
+                      if (
+                        constant !== undefined &&
+                        float64Immediate(constant) !== undefined
+                      )
+                        folded[argIdx] = (folded[argIdx] ?? 0) + 1;
                     }
                   }
               }
@@ -7234,6 +7462,7 @@ function emitModuleForms(
               (numericConstants[index] === 1 ||
                 undefinedValues[index] === 1 ||
                 noneValues[index] === 1 ||
+                zeroValues[index] === 1 ||
                 literalValues[index] === 1) &&
               (folded[index] ?? 0) > 0 &&
               (uses[index] ?? 0) === (folded[index] ?? 0)
@@ -7281,6 +7510,7 @@ function emitModuleForms(
         const tracker = debugSpans ? createDebugTracker(fn) : undefined;
         trapSites = [];
         const deferredAllocSlowPaths: (() => void)[] = [];
+        coldStubs = [];
         // Calls that may reach a collection, by return offset: each gets a
         // stack map of the frame words live while it runs (see stack-maps.ts).
         const callSites: { offset: number; block: number; index: number }[] =
@@ -7454,8 +7684,13 @@ function emitModuleForms(
             fn.closureEnvironment === undefined
               ? borrowedEnvironmentOffset
               : localsBase,
-          scriptCountOffset =
+          // A script entry's activation record, then its actual count and
+          // register actuals (abi.ts activationRecordBytes).
+          activationOffset =
             localsBase + (fn.closureEnvironment === undefined ? 0 : 8),
+          scriptCountOffset =
+            activationOffset +
+            (fn.scriptEntry === true ? activationRecordBytes : 0),
           scriptArgumentsOffset = scriptCountOffset + 8,
           localsOffset =
             fn.scriptEntry === true
@@ -7759,9 +7994,12 @@ function emitModuleForms(
                 type = "general";
                 break;
               case "script-argument-count":
-              case "script-argument-area":
                 id = op.id;
                 type = "number";
+                break;
+              case "activation-read":
+                id = op.id;
+                type = activationFieldType(op.field);
                 break;
               case "general-value":
                 id = op.id;
@@ -7854,6 +8092,8 @@ function emitModuleForms(
               case "string-reference":
               case "string-split-cached":
               case "function-environment":
+              case "script-entry":
+              case "global-cell":
                 id = op.id;
                 type = "optional-reference";
                 break;
@@ -7895,6 +8135,35 @@ function emitModuleForms(
                 type = field.type;
                 break;
               }
+              case "record-slot-read": {
+                const field = module.records?.[op.record]?.fields[op.field];
+                if (field === undefined) throw "record slot layout invariant";
+                id = op.id;
+                type = field.type;
+                break;
+              }
+              case "property-load":
+                id = op.id;
+                type = "general";
+                break;
+              case "property-store":
+              case "element-store":
+                id = op.id;
+                type = "boolean";
+                break;
+              case "element-load":
+              case "element-length":
+                id = op.id;
+                type = "general";
+                break;
+              case "element-storage":
+                id = op.id;
+                type = "optional-reference";
+                break;
+              case "element-count":
+                id = op.id;
+                type = "number";
+                break;
               case "error-is":
               case "general-equal":
               case "record-has":
@@ -8538,6 +8807,8 @@ function emitModuleForms(
             });
         }
         let throwExit = false;
+        // The block whose tail call left the frame (it emits no return).
+        let tailExitBlock = -1;
         const interruptible =
           options.workerFunctions?.has(
             fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
@@ -8686,8 +8957,29 @@ function emitModuleForms(
               );
           }
         }
-        function epilogue(): void {
+        /** Pop the frame. A return keeps its completion in x0-x2; a tail
+         * call keeps the callee's operands in x0-x15 and its entry in x17,
+         * with the context in x0. */
+        function teardown(tail: boolean): void {
           endFrameRange();
+          // Unlink the activation record.
+          if (fn.scriptEntry === true) {
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 16,
+              rn: "sp",
+              offset: activationOffset,
+            });
+            if (!tail) rawLoad(17, contextOffset);
+            emit({
+              op: "str",
+              width: 64,
+              rt: 16,
+              rn: tail ? 0 : 17,
+              offset: nativeActivationTopOffset,
+            });
+          }
           calleeSaves(true);
           adjust("add-imm", frameBytes);
           emit({
@@ -8699,6 +8991,9 @@ function emitModuleForms(
             offset: 16,
             mode: "post",
           });
+        }
+        function epilogue(): void {
+          teardown(false);
           emit({ op: "ret", rn: 30 });
           // Later blocks are entered with this frame still live, not by falling
           // through the preceding return. Their scopes begin after its teardown.
@@ -9105,15 +9400,14 @@ function emitModuleForms(
         if (fn.scriptEntry === true) {
           const listSlot = fn.parameters[3];
           if (listSlot === undefined) throw "script entry header invariant";
-          emit({ op: "ubfm", width: 64, rd: 16, rn: 2, immr: 0, imms: 0 });
           emit({
-            op: "sub-imm",
+            op: "ands-imm",
             width: 64,
             rd: "zr",
-            rn: 16,
-            immediate: 0,
-            shift: 0,
-            setFlags: true,
+            rn: 2,
+            n: 1,
+            immr: 0,
+            imms: 0,
           });
           emit({
             op: "csel",
@@ -9139,6 +9433,46 @@ function emitModuleForms(
             const register = scriptFirstActualRegister + i * 2;
             generalPair(register, offset, false);
           }
+          // Link the activation record (abi.ts activationRecordBytes): the
+          // callee pair is a root from here on; the kind is x2's list bit.
+          const record = activationOffset;
+          if (record + activationCalleeOffset + 8 > 504)
+            fail("FRAME_LIMIT", "activation record beyond pair reach");
+          emit({
+            op: "stp",
+            width: 64,
+            rt: 4,
+            rt2: 5,
+            rn: "sp",
+            offset: record + activationCalleeOffset,
+            mode: "offset",
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 16,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
+          emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 0, imms: 0 });
+          emit({ op: "orr-reg", width: 64, rd: 17, rn: 17, rm: 29 });
+          emit({
+            op: "stp",
+            width: 64,
+            rt: 16,
+            rt2: 17,
+            rn: "sp",
+            offset: record,
+            mode: "offset",
+          });
+          address(16, record);
+          emit({
+            op: "str",
+            width: 64,
+            rt: 16,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
         }
         frameStart = instructions.length * 4;
         // Words the prologue stores below before publishing the frame record
@@ -9583,7 +9917,7 @@ function emitModuleForms(
           if (kind === 1 || kind === 3) imm(9, wordConstants[index] ?? 0);
           else if (kind === 2 || kind === 5 || kind === 6 || kind === 7)
             emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
-          else if (options.hostABI?.javascriptConversion?.kind === "baseline")
+          else if (jsConvert)
             // FJCVTZS is ECMAScript ToInt32 (truncation modulo 2^32, NaN and
             // infinities to 0); its low 32 bits are ToUint32's too.
             emit({ op: "fjcvtzs", rd: 9, rn: floatOperand(id, 0) });
@@ -12578,6 +12912,166 @@ function emitModuleForms(
           const exception = block.exception;
           if (exception !== undefined) viewEntries.set(exception.target, -1);
         }
+        // Cached property misses branch to their block's slow successor
+        // directly (not with C view tokens, which follow block ends).
+        const fusedAccesses = viewAccesses
+          ? undefined
+          : fusedPropertyAccesses(fn);
+        const knownObjectTag = knownObjectTagAccesses(fn, fusedAccesses);
+        const scriptEntryCallees = scriptEntryCalleeValues(fn);
+        // For pure-leaf outlined numeric loop kernels (`__tint_spec_loop_*`),
+        // hoist up to two immutable Float64Array parameter data pointers into
+        // scratch registers x14 and x15 once at function entry so inner
+        // array-element/array-store operations index directly without reloading
+        // `[array, #nativeArrayDataOffset]` on every access.
+        const hoistedArrayDataValues = new Map<number, number>();
+        if (
+          fn.environment === undefined &&
+          fn.name.includes("__tint_spec_loop_") &&
+          fn.blocks[0]?.id === fn.entry
+        ) {
+          let pureLeaf = true;
+          const storedSlots = new Uint8Array(fn.slots.length);
+          for (const block of fn.blocks) {
+            if (block === undefined) {
+              pureLeaf = false;
+              break;
+            }
+            const t = block.terminator;
+            if (
+              t.kind !== "jump" &&
+              t.kind !== "branch" &&
+              t.kind !== "return"
+            ) {
+              pureLeaf = false;
+              break;
+            }
+            if (block.exception !== undefined) {
+              pureLeaf = false;
+              break;
+            }
+            for (const op of block.instructions) {
+              if (op === undefined) {
+                pureLeaf = false;
+                break;
+              }
+              if (op.kind === "store") {
+                storedSlots[op.slot] = 1;
+              } else if (
+                op.kind === "binary" &&
+                (op.operator === "%" ||
+                  op.operator === ">>>" ||
+                  op.operator === "**")
+              ) {
+                pureLeaf = false;
+                break;
+              } else if (
+                op.kind !== "load" &&
+                op.kind !== "constant" &&
+                op.kind !== "unary" &&
+                op.kind !== "binary" &&
+                op.kind !== "array-element" &&
+                op.kind !== "array-store" &&
+                op.kind !== "array-length" &&
+                op.kind !== "array-valid"
+              ) {
+                pureLeaf = false;
+                break;
+              }
+            }
+            if (!pureLeaf) break;
+          }
+          if (pureLeaf) {
+            // Rank immutable Float64Array parameters by loop-weighted
+            // array-element/store frequency so the two hottest inner-loop
+            // arrays (e.g. `x` and `x0` in lin_solve, `d0` and `u` in advect)
+            // get hoisted into x14 and x15 rather than epilogue out-buffers.
+            const loadSlot = new Map<number, number>();
+            const slotUseCount = new Map<number, number>();
+            const loopForest = naturalLoops(fn, work(100000));
+            const blockDepth = new Uint8Array(fn.blocks.length);
+            if (loopForest !== undefined) {
+              for (const loop of loopForest.loops) {
+                if (loop === undefined) continue;
+                for (const id of loop.body) {
+                  if (id !== undefined && id < blockDepth.length)
+                    blockDepth[id] = Math.min(4, (blockDepth[id] ?? 0) + 1);
+                }
+              }
+            }
+            for (const block of fn.blocks) {
+              if (block === undefined) continue;
+              const weight = 1 << ((blockDepth[block.id] ?? 0) * 3);
+              for (const op of block.instructions) {
+                if (op === undefined) continue;
+                if (op.kind === "load") {
+                  if (
+                    fn.slots[op.slot] === "Float64Array" &&
+                    storedSlots[op.slot] === 0
+                  )
+                    loadSlot.set(op.id, op.slot);
+                } else if (
+                  op.kind === "array-element" ||
+                  op.kind === "array-store"
+                ) {
+                  const s = loadSlot.get(op.array);
+                  if (s !== undefined)
+                    slotUseCount.set(s, (slotUseCount.get(s) ?? 0) + weight);
+                }
+              }
+            }
+            let firstParam = -1,
+              firstCount = 0,
+              secondParam = -1,
+              secondCount = 0;
+            for (const param of fn.parameters) {
+              if (
+                param !== undefined &&
+                fn.slots[param] === "Float64Array" &&
+                storedSlots[param] === 0
+              ) {
+                const count = slotUseCount.get(param) ?? 0;
+                if (count > firstCount) {
+                  secondParam = firstParam;
+                  secondCount = firstCount;
+                  firstParam = param;
+                  firstCount = count;
+                } else if (count > secondCount) {
+                  secondParam = param;
+                  secondCount = count;
+                }
+              }
+            }
+            const hoistedSlots = new Map<number, number>();
+            const top: number[] = [];
+            if (firstParam >= 0) top.push(firstParam);
+            if (secondParam >= 0) top.push(secondParam);
+            const regs = [14, 15];
+            for (let i = 0; i < top.length && i < regs.length; i++) {
+              const param = top[i];
+              const reg = regs[i];
+              if (param === undefined || reg === undefined) continue;
+              const offset = slotOffsets[param];
+              if (offset !== undefined) {
+                rawLoad(reg, offset);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: reg,
+                  rn: reg,
+                  offset: nativeArrayDataOffset,
+                });
+                hoistedSlots.set(param, reg);
+              }
+            }
+            if (hoistedSlots.size > 0) {
+              for (const [id, s] of loadSlot) {
+                const reg = hoistedSlots.get(s);
+                if (reg !== undefined) hoistedArrayDataValues.set(id, reg);
+              }
+            }
+          }
+        }
         /** The token of Uint8Array value `id` (fresh when unknown). */
         function viewValueToken(id: number): number {
           const known = viewValueTokens.get(id);
@@ -12801,6 +13295,7 @@ function emitModuleForms(
             if (
               candidate !== undefined &&
               (candidate.kind === "binary" ||
+                candidate.kind === "general-is" ||
                 candidate.kind === "optional-present") &&
               candidate.id === condId &&
               nestedSafe
@@ -12810,6 +13305,7 @@ function emitModuleForms(
             }
           }
           let comparisonBranch: Condition | "emitted" | undefined = undefined;
+          const fusion = fusedAccesses?.get(b.id);
           const presentOp = trailingStringPresent(b),
             foldedPresentOp =
               presentOp !== undefined &&
@@ -13615,6 +14111,7 @@ function emitModuleForms(
             } else if (
               op.kind === "array-length" ||
               op.kind === "string-length" ||
+              op.kind === "element-count" ||
               (op.kind === "string-code-unit" && op.inBounds === true)
             )
               wordKinds[valueIds.intern(op.id)] = 2;
@@ -13923,6 +14420,8 @@ function emitModuleForms(
             }
             commitRun();
           }
+          let fusedNumberElement = -1;
+          const wrappedNumberValues = new Map<number, number>();
           for (
             let operationIndex = 0;
             operationIndex < b.instructions.length;
@@ -14086,6 +14585,47 @@ function emitModuleForms(
                 break;
               }
               case "general-is": {
+                if (op.type === "absent") {
+                  // property-load's miss: undefined's tag with payload 1. A
+                  // fused test is the load's own miss branches.
+                  if (fusion !== undefined && fusion.test === op.id) break;
+                  rawValue(9, op.value);
+                  rawLoad(10, value(op.value).offset + 8);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({
+                    op: "ccmp-imm",
+                    width: 64,
+                    rn: 10,
+                    immediate: 1,
+                    nzcv: 0,
+                    condition: "eq",
+                  });
+                  if (op.id === comparisonValue) comparisonBranch = "eq";
+                  else {
+                    const target = rawTarget(op.id, 12);
+                    emit({ op: "cset", rd: target, condition: "eq" });
+                    saveRaw(target, op.id);
+                  }
+                  break;
+                }
+                if (
+                  op.type === "number" &&
+                  fusedNumberElement === op.value &&
+                  op.id !== comparisonValue
+                ) {
+                  const target = rawTarget(op.id, 12);
+                  imm(target, 1);
+                  saveRaw(target, op.id);
+                  break;
+                }
                 const tag =
                   op.type === "undefined"
                     ? 0
@@ -14095,11 +14635,10 @@ function emitModuleForms(
                         ? 2
                         : op.type === "string"
                           ? 3
-                          : op.type === "null"
+                          : op.type === "null" || op.type === "nullish"
                             ? 4
                             : 5;
                 rawValue(9, op.value);
-                imm(12, 0);
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -14109,12 +14648,30 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
+                // Undefined and null are tags 0 and 4. If the null
+                // comparison already matched, preserve Z instead of
+                // comparing the tag with undefined.
+                if (op.type === "nullish")
+                  emit({
+                    op: "ccmp-imm",
+                    width: 64,
+                    rn: 9,
+                    immediate: 0,
+                    nzcv: 4,
+                    condition: "ne",
+                  });
                 const marker = typedArrayMarker(op.type);
                 if (marker === 0) {
-                  emit({ op: "cset", rd: 12, condition: "eq" });
-                  saveRaw(12, op.id);
+                  if (op.branch === true && op.id === comparisonValue)
+                    comparisonBranch = "eq";
+                  else {
+                    const target = rawTarget(op.id, 12);
+                    emit({ op: "cset", rd: target, condition: "eq" });
+                    saveRaw(target, op.id);
+                  }
                   break;
                 }
+                imm(12, 0);
                 // An object whose header marker (bits 0-47) is 2: a typed
                 // array of 1-byte elements, as general-value checks.
                 const nonObject = instructions.length;
@@ -14483,6 +15040,8 @@ function emitModuleForms(
               }
               case "general-null":
               case "general-none":
+                // Folded into the record-new fields that are its only uses.
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 imm(9, op.kind === "general-null" ? 4 : 0);
                 saveRaw(9, op.id);
                 rawStore("zr", value(op.id).offset + 8);
@@ -14492,28 +15051,202 @@ function emitModuleForms(
                 emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                 floatStore(0, op.id);
                 break;
-              case "script-argument-area":
-                if (op.area === "registers") address(9, scriptArgumentsOffset);
-                else
+              case "activation-read": {
+                // Records: abi.ts activationRecordBytes.
+                const record = op.record;
+                if (record === undefined) {
+                  rawLoad(9, contextOffset);
                   emit({
-                    op: "add-imm",
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeActivationTopOffset,
+                  });
+                } else
+                  emit({
+                    op: "fcvtzs-x-d",
+                    rd: 9,
+                    rn: floatOperand(record, 0),
+                  });
+                if (op.field === "callee" || op.field === "argument") {
+                  const index = op.index;
+                  if (index === undefined) {
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 9,
+                      rt2: 10,
+                      rn: 9,
+                      offset: activationCalleeOffset,
+                      mode: "offset",
+                    });
+                  } else {
+                    // Missing actuals read undefined; the first ones are
+                    // in the record, the rest above the frame record.
+                    emit({
+                      op: "fcvtzs-x-d",
+                      rd: 11,
+                      rn: floatOperand(index, 1),
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: 9,
+                      offset: activationCountOffset,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const absent = instructions.length;
+                    emit({ op: "b.cond", condition: "cs", displacement: 0 });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 13,
+                      rn: 9,
+                      immediate: activationArgumentsOffset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      immediate: scriptActualRegisterPairs,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    const inRecord = instructions.length;
+                    emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 13,
+                      rn: 9,
+                      offset: activationFrameOffset,
+                    });
+                    // Clear the kind bits: frame pointer + 16.
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immr: 4,
+                      imms: 63,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immr: 60,
+                      imms: 59,
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immediate: 16,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: scriptActualRegisterPairs,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    patchInstruction(inRecord, {
+                      op: "b.cond",
+                      condition: "cc",
+                      displacement: (instructions.length - inRecord) * 4,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 4,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 9,
+                      rt2: 10,
+                      rn: 13,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                    const loaded = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(absent, {
+                      op: "b.cond",
+                      condition: "cs",
+                      displacement: (instructions.length - absent) * 4,
+                    });
+                    imm(9, 0);
+                    imm(10, 0);
+                    patchInstruction(loaded, {
+                      op: "b",
+                      displacement: (instructions.length - loaded) * 4,
+                    });
+                  }
+                  saveRaw(9, op.id);
+                  rawStore(10, value(op.id).offset + 8);
+                  break;
+                }
+                if (op.field === "previous")
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
+                else if (op.field === "kind") {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: activationFrameOffset,
+                  });
+                  emit({
+                    op: "ubfm",
                     width: 64,
                     rd: 9,
-                    rn: 29,
-                    immediate: 16,
-                    shift: 0,
-                    setFlags: false,
+                    rn: 9,
+                    immr: 0,
+                    imms: 3,
+                  });
+                } else if (op.field === "count")
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: activationCountOffset,
                   });
                 emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                 floatStore(0, op.id);
                 break;
+              }
               case "script-argument": {
-                const frame = op.frame;
                 const fact = valueIds.intern(op.index);
                 const position =
                   wordKinds[fact] === 3 ? wordConstants[fact] : undefined;
                 if (
-                  frame === undefined &&
                   position !== undefined &&
                   position < scriptActualRegisterPairs
                 ) {
@@ -14523,11 +15256,7 @@ function emitModuleForms(
                   rawStore(10, value(op.id).offset + 8);
                   break;
                 }
-                if (
-                  frame === undefined &&
-                  position !== undefined &&
-                  position < 2048
-                ) {
+                if (position !== undefined && position < 2048) {
                   const offset =
                     16 + (position - scriptActualRegisterPairs) * 16;
                   rawLoad(9, scriptCountOffset);
@@ -14567,23 +15296,6 @@ function emitModuleForms(
                   rawStore(10, value(op.id).offset + 8);
                   break;
                 }
-                if (frame !== undefined) {
-                  emit({
-                    op: "fcvtzs-x-d",
-                    rd: 12,
-                    rn: floatOperand(frame.count, 0),
-                  });
-                  emit({
-                    op: "fcvtzs-x-d",
-                    rd: 13,
-                    rn: floatOperand(frame.registers, 0),
-                  });
-                  emit({
-                    op: "fcvtzs-x-d",
-                    rd: 14,
-                    rn: floatOperand(frame.stack, 0),
-                  });
-                }
                 const input = floatOperand(op.index, 0);
                 const exact = input === 1 ? 0 : 1;
                 emit({ op: "fcvtzs-x-d", rd: 9, rn: input });
@@ -14591,22 +15303,20 @@ function emitModuleForms(
                 emit({ op: "fcmp", rn: input, rm: exact });
                 const nonInteger = instructions.length;
                 emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                if (frame === undefined) rawLoad(10, scriptCountOffset);
+                rawLoad(10, scriptCountOffset);
                 emit({
                   op: "sub-reg",
                   width: 64,
                   rd: "zr",
                   rn: 9,
-                  rm: frame === undefined ? 10 : 12,
+                  rm: 10,
                   shift: "lsl",
                   amount: 0,
                   setFlags: true,
                 });
                 const absent = instructions.length;
                 emit({ op: "b.cond", condition: "cs", displacement: 0 });
-                if (frame === undefined) address(11, scriptArgumentsOffset);
-                else
-                  emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: 13 });
+                address(11, scriptArgumentsOffset);
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -14618,18 +15328,15 @@ function emitModuleForms(
                 });
                 const inRegister = instructions.length;
                 emit({ op: "b.cond", condition: "cc", displacement: 0 });
-                if (frame === undefined)
-                  emit({
-                    op: "add-imm",
-                    width: 64,
-                    rd: 11,
-                    rn: 29,
-                    immediate: 16,
-                    shift: 0,
-                    setFlags: false,
-                  });
-                else
-                  emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: 14 });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 11,
+                  rn: 29,
+                  immediate: 16,
+                  shift: 0,
+                  setFlags: false,
+                });
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -14688,6 +15395,7 @@ function emitModuleForms(
               }
               case "general-wrap": {
                 const t = value(op.value).type;
+                if (t === "number") wrappedNumberValues.set(op.id, op.value);
                 const tag =
                   t === "number"
                     ? 1
@@ -14696,14 +15404,18 @@ function emitModuleForms(
                       : t === "string"
                         ? 3
                         : 5;
-                rawValue(9, op.value);
+                if (t === "number" && storedAsInteger(op.value)) {
+                  floatLoad(0, op.value);
+                  emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                } else {
+                  rawValue(9, op.value);
+                }
                 rawStore(9, value(op.id).offset + 8);
                 imm(9, tag);
                 saveRaw(9, op.id);
                 break;
               }
               case "general-value": {
-                rawValue(9, op.value);
                 const tag =
                   op.type === "number"
                     ? 1
@@ -14712,16 +15424,19 @@ function emitModuleForms(
                       : op.type === "string"
                         ? 3
                         : 5;
-                emit({
-                  op: "sub-imm",
-                  width: 64,
-                  rd: "zr",
-                  rn: 9,
-                  immediate: tag,
-                  shift: 0,
-                  setFlags: true,
-                });
-                trapIf({ op: "b.cond", condition: "ne" });
+                if (op.unchecked !== true) {
+                  rawValue(9, op.value);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: tag,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                }
                 rawLoad(9, value(op.value).offset + 8);
                 const marker = typedArrayMarker(op.type);
                 if (marker !== 0) {
@@ -18126,16 +18841,44 @@ function emitModuleForms(
                 );
                 descriptorPointer(op.record);
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
+                /** x9 + offset in x12 when STR cannot reach it. */
+                function fieldBase(offset: number): number {
+                  if (offset <= 32760) return 9;
+                  imm(12, offset);
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: 9,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  return 12;
+                }
+                // Zero words are stored last, adjacent pairs with one STP.
+                const zeroWords: number[] = [];
                 for (let i = 0; i < layout.fields.length; i++) {
                   const field = layout.fields[i],
                     arg = op.arguments[i];
                   if (field === undefined) throw "record field invariant";
+                  const argIndex =
+                    arg === undefined ? -1 : valueIds.intern(arg);
                   for (
                     let word = 0;
                     word < scalarByteLength(field.type);
                     word += 8
                   ) {
                     const offset = field.offset + word;
+                    // A missing optional number is `undefined`, not +0.
+                    if (
+                      (arg === undefined && field.type !== "optional-number") ||
+                      (argIndex >= 0 && zeroValues[argIndex] === 1)
+                    ) {
+                      zeroWords.push(offset);
+                      continue;
+                    }
                     const nextNumField =
                         word === 0 &&
                         field.type === "number" &&
@@ -18197,13 +18940,7 @@ function emitModuleForms(
                       if (constant !== undefined) {
                         const bits = encodeFloat64(constant);
                         if (bits.lo === 0 && bits.hi === 0) {
-                          emit({
-                            op: "str",
-                            width: 64,
-                            rt: "zr",
-                            rn: 9,
-                            offset,
-                          });
+                          zeroWords.push(offset);
                           continue;
                         }
                         const immediate = float64Immediate(constant);
@@ -18224,23 +18961,13 @@ function emitModuleForms(
                         emit({ op: "str-d", rt: 0, rn: 9, offset });
                       else {
                         emit({ op: "fmov-x-d", rd: 10, rn: 0 });
-                        imm(12, offset);
-                        emit({
-                          op: "add-reg",
-                          width: 64,
-                          rd: 12,
-                          rn: 9,
-                          rm: 12,
-                          shift: "lsl",
-                          amount: 0,
-                          setFlags: false,
-                        });
+                        const base = fieldBase(offset);
                         emit({
                           op: "str",
                           width: 64,
                           rt: 10,
-                          rn: 12,
-                          offset: 0,
+                          rn: base,
+                          offset: base === 9 ? offset : 0,
                         });
                       }
                       continue;
@@ -18250,16 +18977,9 @@ function emitModuleForms(
                     if (
                       arg !== undefined &&
                       word === 0 &&
-                      offset <= 32760 &&
                       zeroRefValues[valueIds.intern(arg)] === 1
                     ) {
-                      emit({
-                        op: "str",
-                        width: 64,
-                        rt: "zr",
-                        rn: 9,
-                        offset,
-                      });
+                      zeroWords.push(offset);
                       continue;
                     }
                     const home =
@@ -18280,11 +19000,12 @@ function emitModuleForms(
                         });
                       continue;
                     }
-                    // A missing optional number is `undefined`, not +0.
                     let srcReg = 10;
-                    if (arg === undefined && field.type === "optional-number")
+                    if (
+                      arg === undefined ||
+                      (argIndex >= 0 && undefinedValues[argIndex] === 1)
+                    )
                       absentNumber(10);
-                    else if (arg === undefined) imm(10, 0);
                     else {
                       const srcOff = value(arg).offset + word,
                         cached = stackWords.get(srcOff);
@@ -18324,28 +19045,14 @@ function emitModuleForms(
                       i++;
                       continue;
                     }
-                    if (offset <= 32760)
-                      emit({ op: "str", width: 64, rt: srcReg, rn: 9, offset });
-                    else {
-                      imm(12, offset);
-                      emit({
-                        op: "add-reg",
-                        width: 64,
-                        rd: 12,
-                        rn: 9,
-                        rm: 12,
-                        shift: "lsl",
-                        amount: 0,
-                        setFlags: false,
-                      });
-                      emit({
-                        op: "str",
-                        width: 64,
-                        rt: srcReg,
-                        rn: 12,
-                        offset: 0,
-                      });
-                    }
+                    const base = fieldBase(offset);
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: srcReg,
+                      rn: base,
+                      offset: base === 9 ? offset : 0,
+                    });
                   }
                   const stateOffset = field.stateOffset ?? field.presenceOffset;
                   if (stateOffset !== undefined) {
@@ -18366,6 +19073,72 @@ function emitModuleForms(
                     });
                     emit({ op: "strb", rt: 10, rn: 12, offset: 0 });
                   }
+                }
+                zeroWords.sort((a: number, b: number): number => a - b);
+                // Pairs beyond STP's reach from x9 address from x12 = x9 +
+                // pairBase (-1 until materialized).
+                let pairBase = -1;
+                for (let index = 0; index < zeroWords.length; index++) {
+                  const offset = zeroWords[index];
+                  if (offset === undefined) throw "record zero invariant";
+                  if (zeroWords[index + 1] !== offset + 8) {
+                    const base = fieldBase(offset);
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: "zr",
+                      rn: base,
+                      offset: base === 9 ? offset : 0,
+                    });
+                    // fieldBase may have replaced x12.
+                    if (base === 12) pairBase = -1;
+                    continue;
+                  }
+                  let rn = 9,
+                    relative = offset;
+                  if (offset > 504) {
+                    if (
+                      pairBase < 0 ||
+                      offset - pairBase > 504 ||
+                      offset < pairBase
+                    ) {
+                      if (offset > 4095) {
+                        imm(12, offset);
+                        emit({
+                          op: "add-reg",
+                          width: 64,
+                          rd: 12,
+                          rn: 9,
+                          rm: 12,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      } else
+                        emit({
+                          op: "add-imm",
+                          width: 64,
+                          rd: 12,
+                          rn: 9,
+                          immediate: offset,
+                          shift: 0,
+                          setFlags: false,
+                        });
+                      pairBase = offset;
+                    }
+                    rn = 12;
+                    relative = offset - pairBase;
+                  }
+                  emit({
+                    op: "stp",
+                    width: 64,
+                    rt: "zr",
+                    rt2: "zr",
+                    rn,
+                    offset: relative,
+                    mode: "offset",
+                  });
+                  index++;
                 }
                 // No safepoint occurs between allocation, initialization and root publication.
                 const nextAfterRecord = b.instructions[operationIndex + 1];
@@ -18521,6 +19294,1962 @@ function emitModuleForms(
                   }
                 break;
               }
+              case "record-slot-read": {
+                const field = module.records?.[op.record]?.fields[op.field];
+                if (field === undefined) throw "record slot field invariant";
+                const bytes = scalarByteLength(field.type);
+                // The index must be an integer in [0, count).
+                if (storedAsInteger(op.index)) rawValue(10, op.index);
+                else {
+                  const index = floatOperand(op.index, 0);
+                  emit({ op: "fcvtzs-x-d", rd: 10, rn: index });
+                  emit({ op: "scvtf-d-x", rd: 1, rn: 10 });
+                  emit({ op: "fcmp", rn: index, rm: 1 });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                }
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: op.count,
+                  shift: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "cs" });
+                rawValue(9, op.object);
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: bytes === 16 ? 4 : 3,
+                  setFlags: false,
+                });
+                let offset = field.offset;
+                if (offset > 32768 - bytes) {
+                  imm(12, offset);
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  offset = 0;
+                }
+                const home = homeOf(op.id);
+                if (bytes === 8 && home >= 32)
+                  emit({ op: "ldr", width: 64, rt: home - 32, rn: 9, offset });
+                else if (bytes === 8 && home !== 0)
+                  emit({ op: "ldr-d", rt: home, rn: 9, offset });
+                else
+                  for (let word = 0; word < bytes; word += 8) {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: 9,
+                      offset: offset + word,
+                    });
+                    rawStore(10, value(op.id).offset + word);
+                  }
+                break;
+              }
+              case "property-load":
+              case "property-store": {
+                const fields = module.records?.[op.record]?.fields,
+                  siteFields = module.records?.[op.siteRecord]?.fields;
+                const shapeField = fields?.[0],
+                  siteShape = siteFields?.[op.siteField];
+                if (
+                  shapeField === undefined ||
+                  siteShape === undefined ||
+                  siteShape.offset > 472
+                )
+                  throw "property cache layout invariant";
+                // A fused miss leaves for the block's slow successor; an
+                // unfused one produces the absent value (loads) or false.
+                const fusedMiss =
+                  fusion !== undefined && fusion.access === op.id
+                    ? fusion.miss
+                    : undefined;
+                const misses: number[] = [];
+                function miss(): void {
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition: "ne" }, fn.id, fusedMiss);
+                  else {
+                    misses.push(instructions.length);
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  }
+                }
+                function compare(left: number, right: number): void {
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: left,
+                    rm: right,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  miss();
+                }
+                // The receiver's tag (x9) and payload (x10), then its first
+                // word (x9) against the site's entry shapes (x12; the verified
+                // site layout pairs each with its word index, x13). Inherited
+                // loads also accept string primitives (tag 3) via the site's
+                // stringShape sentinel and cache inherited values directly in
+                // the site entry (slot === 0).
+                const stride =
+                  op.kind === "property-load" && op.inherited ? 32 : 16;
+                const epochAt =
+                  op.kind === "property-load" && op.inherited
+                    ? siteShape.offset + op.entries * stride
+                    : 0;
+                const useColdStubs =
+                  coldStubsAvailable() &&
+                  (fusedMiss === undefined ||
+                    offsets[fusedMiss * 2] === undefined);
+                const tagKnown = knownObjectTag?.has(op.id) === true;
+                const stringCold =
+                  !tagKnown &&
+                  op.kind === "property-load" &&
+                  op.inherited &&
+                  useColdStubs;
+                let site = 0;
+                let stringBranch = -1,
+                  shapeReadyAt = -1;
+                if (tagKnown) {
+                  if (
+                    op.kind === "property-load" &&
+                    op.inherited &&
+                    epochAt + 16 > 4088
+                  )
+                    throw "property cache layout invariant";
+                  rawLoad(10, value(op.object).offset + 8);
+                  site = rawRegister(op.site, 11);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 10,
+                    offset: shapeField.offset,
+                  });
+                } else {
+                  generalPair(9, value(op.object).offset, true);
+                  if (op.kind === "property-load" && op.inherited) {
+                    if (epochAt + 16 > 4088)
+                      throw "property cache layout invariant";
+                    site = rawRegister(op.site, 11);
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 5,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    if (stringCold) {
+                      if (fusedMiss !== undefined)
+                        forwardable.delete(fusedMiss);
+                      stringBranch = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: 10,
+                        offset: shapeField.offset,
+                      });
+                      shapeReadyAt = instructions.length;
+                      stackWords.clear();
+                    } else {
+                      const isObj = instructions.length;
+                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 9,
+                        immediate: 3,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                      miss();
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: site,
+                        offset: epochAt + 16,
+                      });
+                      const doneShape = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(isObj, {
+                        op: "b.cond",
+                        condition: "eq",
+                        displacement: (instructions.length - isObj) * 4,
+                      });
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: 10,
+                        offset: shapeField.offset,
+                      });
+                      patchInstruction(doneShape, {
+                        op: "b",
+                        displacement: (instructions.length - doneShape) * 4,
+                      });
+                      stackWords.clear();
+                    }
+                  } else {
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 5,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    miss();
+                    site = rawRegister(op.site, 11);
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 10,
+                      offset: shapeField.offset,
+                    });
+                  }
+                }
+                /** x12/x13 = the shape and word index of the entry at `at`. */
+                function entryPair(at: number): void {
+                  emit({
+                    op: "ldp",
+                    width: 64,
+                    rt: 12,
+                    rt2: 13,
+                    rn: site,
+                    offset: at,
+                    mode: "offset",
+                  });
+                }
+                if (op.kind === "property-load") {
+                  const spillFieldIndex = op.spillField,
+                    spillRecordIndex = op.spillRecord;
+                  const spillField =
+                    spillFieldIndex === undefined
+                      ? undefined
+                      : fields?.[spillFieldIndex];
+                  const spillNext =
+                    spillRecordIndex === undefined
+                      ? undefined
+                      : module.records?.[spillRecordIndex]?.fields[0];
+                  if (
+                    spillFieldIndex !== undefined &&
+                    (spillField === undefined || spillNext === undefined)
+                  )
+                    throw "property cache layout invariant";
+                  if (op.inherited) {
+                    // The receiver's shape implies its prototype; direct
+                    // inherited values are current while the epoch they were
+                    // found under (x12) is the epoch record's value (x15).
+                    const epochField =
+                      module.records?.[op.epochRecord]?.fields[op.epochField];
+                    if (epochField === undefined)
+                      throw "property cache layout invariant";
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 15,
+                      rn: site,
+                      offset: epochAt + 8,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 15,
+                      rn: 15,
+                      offset: epochField.offset,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: site,
+                      offset: epochAt,
+                    });
+                    compare(15, 12);
+                  }
+                  // Entry 0 first, falling through to the hit with the word
+                  // index in x13 (and the direct inherited value address in
+                  // x14). Further entries are tested in a cold stub after the
+                  // function body that branches back to the hit, so a
+                  // single-shape site keeps its fallthrough; without cold
+                  // stubs they are tested inline. The last entry's mismatch is
+                  // the miss.
+                  function valueAddressOf(at: number): void {
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 14,
+                      rn: site,
+                      immediate: at + 16,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                  }
+                  function compareShape(): void {
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                  }
+                  if (siteShape.offset + (op.entries - 1) * stride > 496)
+                    throw "property cache layout invariant";
+                  const cold = op.entries > 1 && useColdStubs;
+                  if (cold && fusedMiss !== undefined)
+                    forwardable.delete(fusedMiss);
+                  let further = -1;
+                  const hits: number[] = [];
+                  if (cold || op.entries === 1) {
+                    entryPair(siteShape.offset);
+                    if (cold) {
+                      compareShape();
+                      further = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    } else compare(9, 12);
+                    if (op.inherited) valueAddressOf(siteShape.offset);
+                  } else
+                    for (let entry = 0; entry < op.entries; entry++) {
+                      const at = siteShape.offset + entry * stride;
+                      entryPair(at);
+                      if (entry === op.entries - 1) {
+                        compare(9, 12);
+                        if (op.inherited) valueAddressOf(at);
+                        break;
+                      }
+                      compareShape();
+                      const next = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                      if (op.inherited) valueAddressOf(at);
+                      hits.push(instructions.length);
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(next, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - next) * 4,
+                      });
+                    }
+                  for (const at of hits)
+                    patchInstruction(at, {
+                      op: "b",
+                      displacement: (instructions.length - at) * 4,
+                    });
+                  const hitAt = instructions.length;
+                  // A join: the further entries branch here.
+                  if (cold) stackWords.clear();
+                  const spillCold =
+                    spillField !== undefined && coldStubsAvailable();
+                  let spillBranch = -1,
+                    spillJump = -1;
+                  function emitSpillWalk(): void {
+                    if (spillField === undefined || spillNext === undefined)
+                      throw "property cache layout invariant";
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 10,
+                      offset: spillField.offset,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 12,
+                      rn: 13,
+                      immr: 16,
+                      imms: 31,
+                    });
+                    const done = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
+                    const loop = instructions.length;
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 9,
+                      offset: spillNext.offset,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (loop - instructions.length) * 4,
+                    });
+                    patchInstruction(done, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 12,
+                      displacement: (instructions.length - done) * 4,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immr: 0,
+                      imms: 15,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 9,
+                      rn: 9,
+                      rm: 13,
+                      shift: "lsl",
+                      amount: 3,
+                      setFlags: false,
+                    });
+                  }
+                  if (spillField !== undefined) {
+                    if (spillCold) {
+                      spillBranch = instructions.length;
+                      emit({
+                        op: "tbnz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: 0,
+                      });
+                    } else {
+                      const notSpill = instructions.length;
+                      emit({
+                        op: "tbz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: 0,
+                      });
+                      emitSpillWalk();
+                      spillJump = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(notSpill, {
+                        op: "tbz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: (instructions.length - notSpill) * 4,
+                      });
+                    }
+                  }
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 10,
+                    rm: 13,
+                    shift: "lsl",
+                    amount: 3,
+                    setFlags: false,
+                  });
+                  if (op.inherited) {
+                    // Slot 0 carries a direct inherited value in the cache
+                    // entry (x14); positive slots are own receiver words (x9).
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 13,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: 9,
+                      rn: 14,
+                      rm: 9,
+                      condition: "eq",
+                    });
+                  }
+                  if (spillJump >= 0)
+                    patchInstruction(spillJump, {
+                      op: "b",
+                      displacement: (instructions.length - spillJump) * 4,
+                    });
+                  const loadValueAt = instructions.length;
+                  if (spillField !== undefined) stackWords.clear();
+                  const offset = value(op.id).offset,
+                    tagHome = scalarRegisters?.[offset / 8] ?? 0,
+                    payloadHome = scalarRegisters?.[offset / 8 + 1] ?? 0;
+                  if (tagHome >= 32 && payloadHome >= 32)
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: tagHome - 32,
+                      rt2: payloadHome - 32,
+                      rn: 9,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                  else {
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 9,
+                      rt2: 10,
+                      rn: 9,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                    generalPair(9, offset, false);
+                  }
+                  // The absent value (unfused) follows the hit's jump.
+                  let absentAt = -1;
+                  if (fusedMiss === undefined) {
+                    const hit = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    absentAt = instructions.length;
+                    for (const site of misses)
+                      patchInstruction(site, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - site) * 4,
+                      });
+                    // The absent value: undefined's tag with payload 1.
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 9,
+                      rn: "zr",
+                      rm: "zr",
+                    });
+                    imm(10, 1);
+                    generalPair(9, offset, false);
+                    patchInstruction(hit, {
+                      op: "b",
+                      displacement: (instructions.length - hit) * 4,
+                    });
+                  }
+                  const owner = fn.id;
+                  if (stringCold) {
+                    const siteReg = site,
+                      stringShapeOffset = epochAt + 16;
+                    coldStubs.push((): void => {
+                      farBranch(stringBranch, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - stringBranch) * 4,
+                      });
+                      stackWords.clear();
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 9,
+                        immediate: 3,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                      if (fusedMiss !== undefined)
+                        branch(
+                          { op: "b.cond", condition: "ne" },
+                          owner,
+                          fusedMiss,
+                        );
+                      else {
+                        const missed = instructions.length;
+                        emit({
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: 0,
+                        });
+                        farBranch(missed, {
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: (absentAt - missed) * 4,
+                        });
+                      }
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 9,
+                        rn: siteReg,
+                        offset: stringShapeOffset,
+                      });
+                      const back = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      farBranch(back, {
+                        op: "b",
+                        displacement: (shapeReadyAt - back) * 4,
+                      });
+                    });
+                  }
+                  if (cold) {
+                    const entries = op.entries,
+                      inherited = op.inherited,
+                      first = siteShape.offset;
+                    coldStubs.push((): void => {
+                      farBranch(further, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - further) * 4,
+                      });
+                      stackWords.clear();
+                      for (let entry = 1; entry < entries; entry++) {
+                        const at = first + entry * stride;
+                        entryPair(at);
+                        compareShape();
+                        let next = -1;
+                        if (entry < entries - 1) {
+                          next = instructions.length;
+                          emit({
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: 0,
+                          });
+                        } else if (fusedMiss !== undefined)
+                          branch(
+                            { op: "b.cond", condition: "ne" },
+                            owner,
+                            fusedMiss,
+                          );
+                        else {
+                          const missed = instructions.length;
+                          emit({
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: 0,
+                          });
+                          farBranch(missed, {
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: (absentAt - missed) * 4,
+                          });
+                        }
+                        if (inherited) valueAddressOf(at);
+                        const back = instructions.length;
+                        emit({ op: "b", displacement: 0 });
+                        farBranch(back, {
+                          op: "b",
+                          displacement: (hitAt - back) * 4,
+                        });
+                        if (next >= 0)
+                          patchInstruction(next, {
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: (instructions.length - next) * 4,
+                          });
+                      }
+                    });
+                  }
+                  if (spillCold)
+                    coldStubs.push((): void => {
+                      farBranch(spillBranch, {
+                        op: "tbnz",
+                        rt: 13,
+                        bit: 63,
+                        displacement: (instructions.length - spillBranch) * 4,
+                      });
+                      stackWords.clear();
+                      emitSpillWalk();
+                      const back = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      farBranch(back, {
+                        op: "b",
+                        displacement: (loadValueAt - back) * 4,
+                      });
+                    });
+                  break;
+                }
+                entryPair(siteShape.offset);
+                compare(9, 12);
+                const epochField =
+                  module.records?.[op.epochRecord]?.fields[op.epochField];
+                if (epochField === undefined)
+                  throw "property cache layout invariant";
+                // A transition (x14) also needs the epoch it was found under
+                // (x9) to be current.
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 9,
+                  rn: site,
+                  offset: siteShape.offset + 16,
+                  mode: "offset",
+                });
+                const existing = instructions.length;
+                emit({ op: "cbz", width: 64, rt: 14, displacement: 0 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 15,
+                  rn: site,
+                  offset: siteShape.offset + 32,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 15,
+                  rn: 15,
+                  offset: epochField.offset,
+                });
+                compare(15, 9);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 14,
+                  rn: 10,
+                  offset: shapeField.offset,
+                });
+                patchInstruction(existing, {
+                  op: "cbz",
+                  width: 64,
+                  rt: 14,
+                  displacement: (instructions.length - existing) * 4,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 10,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 3,
+                  setFlags: false,
+                });
+                generalPair(14, value(op.value).offset, true);
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 15,
+                  rn: 13,
+                  offset: 0,
+                  mode: "offset",
+                });
+                if (generationalBarriers) {
+                  // An old object may now refer to a young value or shape:
+                  // remember it unless no transition was stored (the site
+                  // register is intact) and the value is no reference.
+                  emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: 10 });
+                  rawLoad(10, contextOffset);
+                  const transitionOffset = siteShape.offset + 16,
+                    valueOffset = value(op.value).offset;
+                  rememberObject(
+                    undefined,
+                    9,
+                    undefined,
+                    (): readonly number[] => {
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 13,
+                        rn: site,
+                        offset: transitionOffset,
+                      });
+                      const transition = instructions.length;
+                      emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                      const skips = nonReferenceTag(valueOffset);
+                      patchInstruction(transition, {
+                        op: "cbnz",
+                        width: 64,
+                        rt: 13,
+                        displacement: (instructions.length - transition) * 4,
+                      });
+                      return skips;
+                    },
+                  );
+                }
+                if (fusedMiss !== undefined) break;
+                const target = rawTarget(op.id, 12);
+                imm(target, 1);
+                const stored = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                for (const site of misses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (instructions.length - site) * 4,
+                  });
+                imm(target, 0);
+                patchInstruction(stored, {
+                  op: "b",
+                  displacement: (instructions.length - stored) * 4,
+                });
+                saveRaw(target, op.id);
+                break;
+              }
+              case "script-entry": {
+                const realmFields = module.records?.[op.realmRecord]?.fields,
+                  agentFields = module.records?.[op.agentRecord]?.fields,
+                  objectFields = module.records?.[op.objectRecord]?.fields,
+                  entryFields = module.records?.[op.entryRecord]?.fields,
+                  contextFields = module.records?.[op.contextRecord]?.fields;
+                const agent = realmFields?.[op.agentField],
+                  activeField = agentFields?.[op.activeField],
+                  registerCall = objectFields?.[op.registerCallField],
+                  invoke = entryFields?.[op.invokeField],
+                  context = entryFields?.[op.contextField],
+                  constructible = entryFields?.[op.constructibleField],
+                  realm = contextFields?.[op.realmField],
+                  scriptOrModule = contextFields?.[op.scriptOrModuleField];
+                if (
+                  agent === undefined ||
+                  activeField === undefined ||
+                  registerCall === undefined ||
+                  invoke === undefined ||
+                  context === undefined ||
+                  constructible === undefined ||
+                  realm === undefined ||
+                  scriptOrModule === undefined ||
+                  agent.offset > 32760 ||
+                  activeField.offset > 32760 ||
+                  registerCall.offset > 32760 ||
+                  invoke.offset > 32760 ||
+                  context.offset > 32760 ||
+                  constructible.offset > 32760 ||
+                  realm.offset > 32760 ||
+                  scriptOrModule.offset > 496
+                )
+                  throw "script entry layout invariant";
+                const neMisses: number[] = [];
+                const cbzMisses: {
+                  readonly index: number;
+                  readonly rt: number;
+                }[] = [];
+                function missNe(): void {
+                  neMisses.push(instructions.length);
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                }
+                function missZero(rt: number): void {
+                  cbzMisses.push({ index: instructions.length, rt });
+                  emit({ op: "cbz", width: 64, rt, displacement: 0 });
+                }
+                // x9 = callee.tag, x10 = callee.payload
+                generalPair(9, value(op.callee).offset, true);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                missNe();
+                missZero(10);
+                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                descriptorPointer(op.objectRecord);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 10,
+                  offset: registerCall.offset,
+                });
+                missZero(12);
+                if (op.construct) {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 12,
+                    offset: constructible.offset,
+                  });
+                  missZero(9);
+                }
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: 12,
+                  offset: invoke.offset,
+                });
+                missZero(11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 9,
+                  rn: 12,
+                  offset: context.offset,
+                });
+                const realmReg = rawRegister(op.realm, 10);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: realmReg,
+                  offset: agent.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: activeField.offset,
+                });
+                const active = 10;
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: active,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const contextCheck = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                if (coldStubsAvailable()) {
+                  const doneAt = instructions.length;
+                  stackWords.clear();
+                  saveRaw(11, op.id);
+                  const realmOffset = realm.offset,
+                    scriptOrModuleOffset = scriptOrModule.offset;
+                  coldStubs.push((): void => {
+                    farBranch(contextCheck, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - contextCheck) * 4,
+                    });
+                    stackWords.clear();
+                    const slowCbz = instructions.length;
+                    emit({
+                      op: "cbz",
+                      width: 64,
+                      rt: active,
+                      displacement: 0,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: 9,
+                      offset: realmOffset,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 13,
+                      rn: active,
+                      offset: realmOffset,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      rm: 13,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const realmNe = instructions.length;
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 12,
+                      rt2: 13,
+                      rn: 9,
+                      offset: scriptOrModuleOffset,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 14,
+                      rt2: 15,
+                      rn: active,
+                      offset: scriptOrModuleOffset,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      rm: 14,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const somTagNe = instructions.length;
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 13,
+                      rm: 15,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const hitSlow = instructions.length;
+                    emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                    farBranch(hitSlow, {
+                      op: "b.cond",
+                      condition: "eq",
+                      displacement: (doneAt - hitSlow) * 4,
+                    });
+                    const missAt = instructions.length;
+                    for (const site of neMisses)
+                      farBranch(site, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (missAt - site) * 4,
+                      });
+                    for (const site of cbzMisses)
+                      farBranch(site.index, {
+                        op: "cbz",
+                        width: 64,
+                        rt: site.rt,
+                        displacement: (missAt - site.index) * 4,
+                      });
+                    patchInstruction(slowCbz, {
+                      op: "cbz",
+                      width: 64,
+                      rt: active,
+                      displacement: (missAt - slowCbz) * 4,
+                    });
+                    patchInstruction(realmNe, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (missAt - realmNe) * 4,
+                    });
+                    patchInstruction(somTagNe, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (missAt - somTagNe) * 4,
+                    });
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: "zr",
+                      rm: "zr",
+                    });
+                    const back = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    farBranch(back, {
+                      op: "b",
+                      displacement: (doneAt - back) * 4,
+                    });
+                  });
+                  break;
+                }
+                const hitFast = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                // Distinct context records with the same realm and
+                // scriptOrModule still match the caller's execution context.
+                patchInstruction(contextCheck, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - contextCheck) * 4,
+                });
+                missZero(active);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 9,
+                  offset: realm.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: active,
+                  offset: realm.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 12,
+                  rt2: 13,
+                  rn: 9,
+                  offset: scriptOrModule.offset,
+                  mode: "offset",
+                });
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 15,
+                  rn: active,
+                  offset: scriptOrModule.offset,
+                  mode: "offset",
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 13,
+                  rm: 15,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const hitSlow = instructions.length;
+                emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                const missAt = instructions.length;
+                for (const site of neMisses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (missAt - site) * 4,
+                  });
+                for (const site of cbzMisses)
+                  patchInstruction(site.index, {
+                    op: "cbz",
+                    width: 64,
+                    rt: site.rt,
+                    displacement: (missAt - site.index) * 4,
+                  });
+                emit({
+                  op: "orr-reg",
+                  width: 64,
+                  rd: 11,
+                  rn: "zr",
+                  rm: "zr",
+                });
+                const doneAt = instructions.length;
+                patchInstruction(hitFast, {
+                  op: "b",
+                  displacement: (doneAt - hitFast) * 4,
+                });
+                patchInstruction(hitSlow, {
+                  op: "b.cond",
+                  condition: "eq",
+                  displacement: (doneAt - hitSlow) * 4,
+                });
+                saveRaw(11, op.id);
+                break;
+              }
+              case "global-cell": {
+                const scopeFields = module.records?.[op.scopeRecord]?.fields,
+                  globalFields = module.records?.[op.globalRecord]?.fields,
+                  globalObjectFields =
+                    module.records?.[op.globalObjectRecord]?.fields,
+                  cacheFields = module.records?.[op.cacheRecord]?.fields;
+                const declarative = scopeFields?.[op.declarativeField],
+                  object = scopeFields?.[op.objectField],
+                  global = scopeFields?.[op.globalField],
+                  lexicalEpoch = globalFields?.[op.lexicalEpochField],
+                  globalObject = globalFields?.[op.globalObjectField],
+                  propertyEpoch = globalObjectFields?.[op.propertyEpochField],
+                  cacheGlobal = cacheFields?.[op.cacheGlobalField],
+                  cacheLexicalEpoch = cacheFields?.[op.cacheLexicalEpochField],
+                  cacheObjectEpoch = cacheFields?.[op.cacheObjectEpochField],
+                  cacheCell = cacheFields?.[op.cacheCellField];
+                if (
+                  declarative === undefined ||
+                  object === undefined ||
+                  global === undefined ||
+                  lexicalEpoch === undefined ||
+                  globalObject === undefined ||
+                  propertyEpoch === undefined ||
+                  cacheGlobal === undefined ||
+                  cacheLexicalEpoch === undefined ||
+                  cacheObjectEpoch === undefined ||
+                  cacheCell === undefined ||
+                  declarative.offset > 32760 ||
+                  object.offset > 32760 ||
+                  global.offset > 32760 ||
+                  lexicalEpoch.offset > 32760 ||
+                  globalObject.offset > 32760 ||
+                  propertyEpoch.offset > 32760 ||
+                  cacheGlobal.offset > 32760 ||
+                  cacheLexicalEpoch.offset > 32760 ||
+                  cacheObjectEpoch.offset > 32760 ||
+                  cacheCell.offset > 32760
+                )
+                  throw "global cell layout invariant";
+                const cbnzMisses: {
+                  readonly index: number;
+                  readonly rt: number;
+                }[] = [];
+                const neMisses: number[] = [];
+                function missNonZero(rt: number): void {
+                  cbnzMisses.push({ index: instructions.length, rt });
+                  emit({ op: "cbnz", width: 64, rt, displacement: 0 });
+                }
+                function missNe(): void {
+                  neMisses.push(instructions.length);
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                }
+                const scopeReg = rawRegister(op.scope, 9);
+                const cacheReg = rawRegister(op.cache, 10);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: scopeReg,
+                  offset: declarative.offset,
+                });
+                missNonZero(11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: scopeReg,
+                  offset: object.offset,
+                });
+                missNonZero(11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: scopeReg,
+                  offset: global.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: cacheReg,
+                  offset: cacheGlobal.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 11,
+                  rm: 12,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 11,
+                  offset: lexicalEpoch.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: cacheReg,
+                  offset: cacheLexicalEpoch.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: 11,
+                  offset: globalObject.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 11,
+                  offset: propertyEpoch.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: cacheReg,
+                  offset: cacheObjectEpoch.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                const target = rawTarget(op.id, 11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: target,
+                  rn: cacheReg,
+                  offset: cacheCell.offset,
+                });
+                const doneJump = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                const missAt = instructions.length;
+                for (const site of cbnzMisses)
+                  patchInstruction(site.index, {
+                    op: "cbnz",
+                    width: 64,
+                    rt: site.rt,
+                    displacement: (missAt - site.index) * 4,
+                  });
+                for (const site of neMisses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (missAt - site) * 4,
+                  });
+                emit({
+                  op: "orr-reg",
+                  width: 64,
+                  rd: target,
+                  rn: "zr",
+                  rm: "zr",
+                });
+                patchInstruction(doneJump, {
+                  op: "b",
+                  displacement: (instructions.length - doneJump) * 4,
+                });
+                saveRaw(target, op.id);
+                break;
+              }
+              case "element-load":
+              case "element-store": {
+                const elementsField =
+                    module.records?.[op.record]?.fields[op.field],
+                  elementFields = module.records?.[op.elementsRecord]?.fields;
+                const countField = elementFields?.[op.countField],
+                  storageField = elementFields?.[op.storageField];
+                if (
+                  elementsField === undefined ||
+                  countField === undefined ||
+                  storageField === undefined
+                )
+                  throw "element access layout invariant";
+                // A fused miss leaves for the block's slow successor; an
+                // unfused one produces the absent value (loads) or false.
+                const fusedMiss =
+                  fusion !== undefined && fusion.access === op.id
+                    ? fusion.miss
+                    : undefined;
+                // Unfused miss branches: "ne" sites, "lt" sites, "cs" (unsigned
+                // higher or same) sites, and cbz sites, patched at the miss.
+                const misses: number[] = [];
+                const ltMisses: number[] = [];
+                const boundMisses: number[] = [];
+                const cbzMisses: number[] = [];
+                function missUnless(bound: boolean): void {
+                  const condition = bound ? "cs" : "ne";
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition }, fn.id, fusedMiss);
+                  else {
+                    (bound ? boundMisses : misses).push(instructions.length);
+                    emit({ op: "b.cond", condition, displacement: 0 });
+                  }
+                }
+                function missIfNegative(): void {
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition: "lt" }, fn.id, fusedMiss);
+                  else {
+                    ltMisses.push(instructions.length);
+                    emit({ op: "b.cond", condition: "lt", displacement: 0 });
+                  }
+                }
+                function patchMisses(): void {
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of ltMisses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "lt",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of boundMisses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "cs",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                }
+                const wrappedNumber =
+                  op.kind === "element-store"
+                    ? wrappedNumberValues.get(op.value)
+                    : undefined;
+                if (
+                  op.kind === "element-store" &&
+                  wrappedNumber === undefined
+                ) {
+                  // Only a Number (tag 1) overwrites a binary64 element.
+                  rawLoad(13, value(op.value).offset);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 13,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  missUnless(false);
+                }
+                const cachedStorage = op.cachedStorage,
+                  cachedCount = op.cachedCount;
+                const cached =
+                  cachedStorage !== undefined && cachedCount !== undefined;
+                if (!cached) {
+                  // The object's tag (x9) and payload (x10); its record's
+                  // descriptor; its elements (x10), or none.
+                  generalPair(9, value(op.object).offset, true);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 5,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  missUnless(false);
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                  descriptorPointer(op.record);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  missUnless(false);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 10,
+                    offset: elementsField.offset,
+                  });
+                  if (fusedMiss !== undefined)
+                    branch({ op: "cbz", width: 64, rt: 10 }, fn.id, fusedMiss);
+                  else {
+                    cbzMisses.push(instructions.length);
+                    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                  }
+                }
+                // The index as an unsigned integer (x12) below the count
+                // (d1 or cachedCount): an exact integer compares unsigned
+                // (negative ones are huge), any other number must convert back
+                // exactly.
+                let index = 12;
+                if (exactInteger(op.index)) {
+                  index = intRegister(op.index, 12);
+                  let countInt = 11;
+                  if (cachedCount !== undefined && exactInteger(cachedCount)) {
+                    countInt = intRegister(cachedCount, 11);
+                  } else {
+                    let countReg = 1;
+                    if (cachedCount !== undefined)
+                      countReg = floatOperand(cachedCount, 1);
+                    else
+                      emit({
+                        op: "ldr-d",
+                        rt: 1,
+                        rn: 10,
+                        offset: countField.offset,
+                      });
+                    emit({ op: "fcvtzu-x-d", rd: 11, rn: countReg });
+                  }
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: index,
+                    rm: countInt,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  missUnless(true);
+                } else if (jsConvert) {
+                  const number = floatOperand(op.index, 0);
+                  // FEAT_JSCVT: Z=1 iff exact int32 and not -0.0; non-negative
+                  // int32 zero-extends into x12 directly with no ucvtf round-trip.
+                  emit({ op: "fjcvtzs", rd: 12, rn: number });
+                  missUnless(false);
+                  emit({
+                    op: "sub-imm",
+                    width: 32,
+                    rd: "zr",
+                    rn: 12,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  missIfNegative();
+                  if (cachedCount !== undefined && exactInteger(cachedCount)) {
+                    const countInt = intRegister(cachedCount, 11);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      rm: countInt,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    missUnless(true);
+                  } else {
+                    let countReg = 1;
+                    if (cachedCount !== undefined)
+                      countReg = floatOperand(cachedCount, 1);
+                    else
+                      emit({
+                        op: "ldr-d",
+                        rt: 1,
+                        rn: 10,
+                        offset: countField.offset,
+                      });
+                    emit({ op: "fcmp", rn: number, rm: countReg });
+                    missUnless(true);
+                  }
+                } else {
+                  const number = floatOperand(op.index, 0);
+                  emit({ op: "fcvtzu-x-d", rd: 12, rn: number });
+                  // -0 converts to 0 and compares equal: element 0.
+                  emit({ op: "ucvtf-d-x", rd: 1, rn: 12 });
+                  emit({ op: "fcmp", rn: 1, rm: number });
+                  missUnless(false);
+                  let countReg = 1;
+                  if (cachedCount !== undefined)
+                    countReg = floatOperand(cachedCount, 1);
+                  else
+                    emit({
+                      op: "ldr-d",
+                      rt: 1,
+                      rn: 10,
+                      offset: countField.offset,
+                    });
+                  // Unordered (NaN) also sets C; NaN failed above anyway.
+                  emit({ op: "fcmp", rn: number, rm: countReg });
+                  missUnless(true);
+                }
+                // The storage's data words.
+                if (cachedStorage !== undefined) {
+                  rawValue(10, cachedStorage);
+                } else {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 10,
+                    offset: storageField.offset,
+                  });
+                }
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
+                if (op.kind === "element-store") {
+                  if (wrappedNumber !== undefined) {
+                    const fpVal = floatOperand(wrappedNumber, 0);
+                    emit({
+                      op: "str-indexed",
+                      size: 3,
+                      fp: true,
+                      rt: fpVal,
+                      rn: 10,
+                      rm: index,
+                      scaled: true,
+                    });
+                  } else {
+                    rawLoad(13, value(op.value).offset + 8);
+                    emit({
+                      op: "str-indexed",
+                      size: 3,
+                      fp: false,
+                      rt: 13,
+                      rn: 10,
+                      rm: index,
+                      scaled: true,
+                    });
+                  }
+                  if (fusedMiss !== undefined) break;
+                  const target = rawTarget(op.id, 12);
+                  imm(target, 1);
+                  const stored = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchMisses();
+                  imm(target, 0);
+                  patchInstruction(stored, {
+                    op: "b",
+                    displacement: (instructions.length - stored) * 4,
+                  });
+                  saveRaw(target, op.id);
+                  break;
+                }
+                emit({
+                  op: "ldr-indexed",
+                  size: 3,
+                  fp: false,
+                  rt: 10,
+                  rn: 10,
+                  rm: index,
+                  scaled: true,
+                });
+                // A Number: tag 1 and the element's bits.
+                imm(9, 1);
+                const offset = value(op.id).offset;
+                generalPair(9, offset, false);
+                if (fusedMiss !== undefined) {
+                  fusedNumberElement = op.id;
+                  break;
+                }
+                const hit = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchMisses();
+                // The absent value: undefined's tag with payload 1.
+                emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: "zr" });
+                imm(10, 1);
+                generalPair(9, offset, false);
+                patchInstruction(hit, {
+                  op: "b",
+                  displacement: (instructions.length - hit) * 4,
+                });
+                break;
+              }
+              case "element-length": {
+                const elementsField =
+                    module.records?.[op.record]?.fields[op.field],
+                  lengthField =
+                    module.records?.[op.elementsRecord]?.fields[op.lengthField];
+                if (elementsField === undefined || lengthField === undefined)
+                  throw "element length layout invariant";
+                const fusedMiss =
+                  fusion !== undefined && fusion.access === op.id
+                    ? fusion.miss
+                    : undefined;
+                const misses: number[] = [];
+                const cbzMisses: number[] = [];
+                function missNe(): void {
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition: "ne" }, fn.id, fusedMiss);
+                  else {
+                    misses.push(instructions.length);
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  }
+                }
+                // Check general tag 5 (reference), record descriptor, non-null
+                // elements, then read the 64-bit IEEE-754 length bits directly
+                // into GP registers (zero FP register usage).
+                generalPair(9, value(op.object).offset, true);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                descriptorPointer(op.record);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: elementsField.offset,
+                });
+                if (fusedMiss !== undefined)
+                  branch({ op: "cbz", width: 64, rt: 10 }, fn.id, fusedMiss);
+                else {
+                  cbzMisses.push(instructions.length);
+                  emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                }
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: lengthField.offset,
+                });
+                imm(9, 1);
+                const offset = value(op.id).offset;
+                generalPair(9, offset, false);
+                if (fusedMiss !== undefined) {
+                  fusedNumberElement = op.id;
+                  break;
+                }
+                const hit = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                for (const site of misses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (instructions.length - site) * 4,
+                  });
+                for (const site of cbzMisses)
+                  patchInstruction(site, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 10,
+                    displacement: (instructions.length - site) * 4,
+                  });
+                emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: "zr" });
+                imm(10, 1);
+                generalPair(9, offset, false);
+                patchInstruction(hit, {
+                  op: "b",
+                  displacement: (instructions.length - hit) * 4,
+                });
+                break;
+              }
+              case "element-storage":
+              case "element-count": {
+                const elementsField =
+                    module.records?.[op.record]?.fields[op.field],
+                  elementFields = module.records?.[op.elementsRecord]?.fields,
+                  countField = elementFields?.[op.countField],
+                  storageField = elementFields?.[op.storageField];
+                if (
+                  elementsField === undefined ||
+                  countField === undefined ||
+                  storageField === undefined
+                )
+                  throw "element cache layout invariant";
+                const misses: number[] = [];
+                const cbzMisses: number[] = [];
+                generalPair(9, value(op.object).offset, true);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                misses.push(instructions.length);
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                descriptorPointer(op.record);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                misses.push(instructions.length);
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: elementsField.offset,
+                });
+                cbzMisses.push(instructions.length);
+                emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                if (op.kind === "element-storage") {
+                  const target = rawTarget(op.id, 10);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: target,
+                    rn: 10,
+                    offset: storageField.offset,
+                  });
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: target,
+                    rn: "zr",
+                    rm: "zr",
+                  });
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  saveRaw(target, op.id);
+                } else if (wantsInteger(op.id)) {
+                  const target = intTarget(op.id, 12);
+                  emit({
+                    op: "ldr-d",
+                    rt: 0,
+                    rn: 10,
+                    offset: countField.offset,
+                  });
+                  emit({ op: "fcvtzu-x-d", rd: target, rn: 0 });
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: target,
+                    rn: "zr",
+                    rm: "zr",
+                  });
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  markInteger(op.id);
+                  saveRaw(target, op.id);
+                } else {
+                  const target = floatTarget(op.id, 0);
+                  emit({
+                    op: "ldr-d",
+                    rt: target,
+                    rn: 10,
+                    offset: countField.offset,
+                  });
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  emit({ op: "fmov-d-x", rd: target, rn: "zr" });
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  floatStore(target, op.id);
+                }
+                break;
+              }
               case "record-has": {
                 const field = module.records?.[op.record]?.fields[op.field];
                 if (field === undefined) throw "record presence invariant";
@@ -18589,6 +21318,7 @@ function emitModuleForms(
                 break;
               }
               case "boolean-none":
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 rawStore("zr", value(op.id).offset);
                 rawStore("zr", value(op.id).offset + 8);
                 break;
@@ -22725,8 +25455,11 @@ function emitModuleForms(
                     emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
                   }
                 }
+                const hoistedBase = hoistedArrayDataValues.get(op.array);
                 let dataReg = 10;
-                if (cachedArrayDataVal === op.array) {
+                if (hoistedBase !== undefined) {
+                  dataReg = hoistedBase;
+                } else if (cachedArrayDataVal === op.array) {
                   dataReg = 15;
                 } else {
                   const arrReg = rawRegister(op.array, 10);
@@ -22758,7 +25491,7 @@ function emitModuleForms(
                     scale === 3 &&
                     constIdx !== undefined &&
                     constIdx * 8 <= 504 &&
-                    dataReg === 15
+                    (dataReg === 15 || hoistedBase !== undefined)
                   ) {
                     let nextStoreIdx = operationIndex + 1;
                     while (nextStoreIdx < b.instructions.length) {
@@ -23041,6 +25774,12 @@ function emitModuleForms(
                   tracker.saved(op.id, instructions.length * 4);
                 break;
               case "store": {
+                // A copy only a fused miss test would read.
+                if (
+                  fusion !== undefined &&
+                  fusion.skipped.indexOf(operationIndex) >= 0
+                )
+                  break;
                 const storeSrc = elidedStoreSource.get(op.value) ?? op.value;
                 if (emittedDirectStore[valueIds.intern(storeSrc)] === 1) break;
                 if (integerSlots[op.slot] === 1) {
@@ -23064,16 +25803,14 @@ function emitModuleForms(
                     );
                   break;
                 }
-                copyRawWord(value(storeSrc).offset, slotOffset(op.slot));
                 if (
                   value(storeSrc).type === "general" ||
                   value(storeSrc).type === "optional-boolean"
                 ) {
-                  copyRawWord(
-                    value(storeSrc).offset + 8,
-                    slotOffset(op.slot) + 8,
-                  );
+                  copyGeneralPair(value(storeSrc).offset, slotOffset(op.slot));
+                  break;
                 }
+                copyRawWord(value(storeSrc).offset, slotOffset(op.slot));
                 break;
               }
               case "unary": {
@@ -25646,6 +28383,7 @@ function emitModuleForms(
                   rawLoad(1, environmentOffset);
                 else if (
                   op.kind !== "call-indirect" &&
+                  actuals === undefined &&
                   (directCallee === undefined ||
                     directCallee.import === true ||
                     directCallee.environment !== undefined ||
@@ -25655,71 +28393,98 @@ function emitModuleForms(
                 if (op.receiver !== undefined)
                   address(2, value(op.receiver).offset);
                 else if (
-                  directCallee === undefined ||
-                  directCallee.import === true ||
-                  directCallee.receiverSlot !== undefined
+                  actuals === undefined &&
+                  (directCallee === undefined ||
+                    directCallee.import === true ||
+                    directCallee.receiverSlot !== undefined)
                 )
                   imm(2, 0);
-                address(3, resultOffset);
+                // A tail call completes into this entry's own completion
+                // area (abi.ts) and returns to this entry's caller.
+                const tailCall =
+                  op.kind === "call-indirect" && op.tail === true;
+                if (
+                  tailCall &&
+                  (actuals === undefined ||
+                    actuals.length > scriptActualRegisterPairs ||
+                    fn.scriptEntry !== true)
+                )
+                  fail(
+                    "UNSUPPORTED",
+                    "tail calls pass register actuals between script entries",
+                  );
+                if (tailCall) rawLoad(3, resultPointerOffset);
+                else address(3, resultOffset);
                 if (op.kind === "call-indirect") {
                   rawValue(12, op.callee);
-                  guardDescriptor(12, functionRecord);
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: 10,
-                    rn: 12,
-                    offset: nativeFunctionSignatureOffset,
-                  });
-                  functionSignaturePointer(11, op.target);
-                  const alternate =
-                    op.discardResult === true &&
-                    !signatureImports.has(op.target) &&
-                    (localSignatures.byFunction[op.target] ?? 0) === 0
-                      ? discardResultTargets.get(parameterKeys[op.target] ?? "")
-                      : undefined;
-                  emit({
-                    op: "sub-reg",
-                    width: 64,
-                    rd: "zr",
-                    rn: 10,
-                    rm: 11,
-                    shift: "lsl",
-                    amount: 0,
-                    setFlags: true,
-                  });
-                  if (alternate === undefined)
-                    trapIf({ op: "b.cond", condition: "ne" });
-                  else {
-                    // The callee writes its normal result into the same
-                    // completion buffer. A void call consumes only the status.
-                    const matching: number[] = [];
-                    for (const candidate of alternate) {
-                      if (candidate === undefined)
-                        throw "discarded result signature invariant";
-                      matching.push(instructions.length);
-                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
-                      functionSignaturePointer(11, candidate);
-                      emit({
-                        op: "sub-reg",
-                        width: 64,
-                        rd: "zr",
-                        rn: 10,
-                        rm: 11,
-                        shift: "lsl",
-                        amount: 0,
-                        setFlags: true,
-                      });
-                    }
-                    trapIf({ op: "b.cond", condition: "ne" });
-                    for (const match of matching) {
-                      if (match === undefined)
-                        throw "discarded result branch invariant";
-                      patchInstruction(match, {
-                        op: "b.cond",
-                        condition: "eq",
-                        displacement: (instructions.length - match) * 4,
-                      });
+                  if (
+                    actuals === undefined ||
+                    scriptEntryCallees?.has(op.callee) !== true
+                  ) {
+                    guardDescriptor(12, functionRecord);
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: 12,
+                      offset: nativeFunctionSignatureOffset,
+                    });
+                    functionSignaturePointer(11, op.target);
+                    const alternate =
+                      op.discardResult === true &&
+                      !signatureImports.has(op.target) &&
+                      (localSignatures.byFunction[op.target] ?? 0) === 0
+                        ? discardResultTargets.get(
+                            parameterKeys[op.target] ?? "",
+                          )
+                        : undefined;
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    if (alternate === undefined)
+                      trapIf({ op: "b.cond", condition: "ne" });
+                    else {
+                      // The callee writes its normal result into the same
+                      // completion buffer. A void call consumes only the status.
+                      const matching: number[] = [];
+                      for (const candidate of alternate) {
+                        if (candidate === undefined)
+                          throw "discarded result signature invariant";
+                        matching.push(instructions.length);
+                        emit({
+                          op: "b.cond",
+                          condition: "eq",
+                          displacement: 0,
+                        });
+                        functionSignaturePointer(11, candidate);
+                        emit({
+                          op: "sub-reg",
+                          width: 64,
+                          rd: "zr",
+                          rn: 10,
+                          rm: 11,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: true,
+                        });
+                      }
+                      trapIf({ op: "b.cond", condition: "ne" });
+                      for (const match of matching) {
+                        if (match === undefined)
+                          throw "discarded result branch invariant";
+                        patchInstruction(match, {
+                          op: "b.cond",
+                          condition: "eq",
+                          displacement: (instructions.length - match) * 4,
+                        });
+                      }
                     }
                   }
                   emit({
@@ -25753,11 +28518,25 @@ function emitModuleForms(
                       generalPair(9, source, true);
                       generalPair(9, target, false);
                     }
+                    let listFolded = false;
                     for (let i = 0; i < op.arguments.length; i++) {
                       const argument = op.arguments[i],
                         location = target.parameters[i];
                       if (argument === undefined || location === undefined)
                         throw "script call header invariant";
+                      if (
+                        i >= 2 &&
+                        zeroValues[valueIds.intern(argument)] === 1
+                      ) {
+                        if (location.kind === "pair") {
+                          imm(location.index, 0);
+                          imm(location.index + 1, 0);
+                        } else {
+                          imm(location.index, actuals.length * 2 + 1);
+                          listFolded = true;
+                        }
+                        continue;
+                      }
                       const offset = value(argument).offset;
                       if (location.kind === "pair")
                         generalPair(location.index, offset, true);
@@ -25766,7 +28545,10 @@ function emitModuleForms(
                     for (let i = 0; i < scriptActualRegisterPairs; i++) {
                       const register = scriptFirstActualRegister + i * 2;
                       const argument = actuals[i];
-                      if (argument === undefined) {
+                      if (
+                        argument === undefined ||
+                        zeroValues[valueIds.intern(argument)] === 1
+                      ) {
                         imm(register, 0);
                         imm(register + 1, 0);
                       } else {
@@ -25774,15 +28556,33 @@ function emitModuleForms(
                         generalPair(register, offset, true);
                       }
                     }
-                    const list = instructions.length;
-                    emit({ op: "cbnz", width: 64, rt: 2, displacement: 0 });
-                    imm(2, actuals.length * 2 + 1);
-                    patchInstruction(list, {
-                      op: "cbnz",
+                    if (!listFolded) {
+                      const list = instructions.length;
+                      emit({ op: "cbnz", width: 64, rt: 2, displacement: 0 });
+                      imm(2, actuals.length * 2 + 1);
+                      patchInstruction(list, {
+                        op: "cbnz",
+                        width: 64,
+                        rt: 2,
+                        displacement: (instructions.length - list) * 4,
+                      });
+                    }
+                  }
+                  if (tailCall) {
+                    // The callee replaces this frame: no safepoint, no
+                    // completion check, no return of our own.
+                    emit({
+                      op: "orr-reg",
                       width: 64,
-                      rt: 2,
-                      displacement: (instructions.length - list) * 4,
+                      rd: 17,
+                      rn: "zr",
+                      rm: 16,
                     });
+                    teardown(true);
+                    emit({ op: "br", rn: 17 });
+                    frameStart = instructions.length * 4;
+                    tailExitBlock = b.id;
+                    break;
                   }
                   emit({ op: "blr", rn: 16 });
                 } else if (importedEntry !== undefined) {
@@ -25859,7 +28659,9 @@ function emitModuleForms(
               instructions.length * 4,
             );
           span = { start: t.start, end: t.end };
-          if (t.kind === "trap") emit({ op: "brk", immediate: 0 });
+          if (tailExitBlock === b.id) {
+            // The tail call already left this frame.
+          } else if (t.kind === "trap") emit({ op: "brk", immediate: 0 });
           else if (t.kind === "throw") {
             rawValue(9, t.value);
             rawStore(9, resultOffset + 16);
@@ -25882,6 +28684,14 @@ function emitModuleForms(
             exceptionalBranch({ op: "b" });
           } else if (t.kind === "jump") {
             if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
+          } else if (
+            t.kind === "branch" &&
+            fusion !== undefined &&
+            fusion.test !== undefined
+          ) {
+            // The access branched to its miss successor already.
+            if (fusion.hit !== nextBlock)
+              branch({ op: "b" }, fn.id, fusion.hit);
           } else if (t.kind === "branch") {
             const diamond = selects.diamonds.get(b.id);
             if (comparisonBranch === "emitted") {
@@ -26184,7 +28994,15 @@ function emitModuleForms(
             ) {
               rawValue(9, t.object);
               rawLoad(10, contextOffset);
-              rememberObject(deferRememberSlow());
+              const written = slotOffset(t.slot);
+              rememberObject(
+                deferRememberSlow(),
+                9,
+                undefined,
+                field.type === "general"
+                  ? (): readonly number[] => nonReferenceTag(written)
+                  : undefined,
+              );
             }
             if (t.consequent !== nextBlock)
               branch({ op: "b" }, fn.id, t.consequent);
@@ -26325,7 +29143,15 @@ function emitModuleForms(
                   if (managed(field.type) || field.type === "general") {
                     rawValue(9, t.object);
                     rawLoad(10, contextOffset);
-                    rememberObject(deferRememberSlow());
+                    const written = slotOffset(t.slot);
+                    rememberObject(
+                      deferRememberSlow(),
+                      9,
+                      undefined,
+                      field.type === "general"
+                        ? (): readonly number[] => nonReferenceTag(written)
+                        : undefined,
+                    );
                   }
                 }
                 if (t.consequent !== nextBlock)
@@ -26358,8 +29184,17 @@ function emitModuleForms(
                 if (managed(field.type) || field.type === "general") {
                   rawValue(9, t.object);
                   rawLoad(10, contextOffset);
-                  // The barrier preserves the cell helper's w0 completion status.
-                  rememberObject(deferRememberSlow());
+                  // The barrier (and its tag filter, x12..x14) preserves the
+                  // cell helper's w0 completion status.
+                  const written = slotOffset(t.slot);
+                  rememberObject(
+                    deferRememberSlow(),
+                    9,
+                    undefined,
+                    field.type === "general"
+                      ? (): readonly number[] => nonReferenceTag(written)
+                      : undefined,
+                  );
                 }
               }
               branch({ op: "cbz", width: 32, rt: 0 }, fn.id, t.consequent);
@@ -26570,6 +29405,7 @@ function emitModuleForms(
           emit({ op: "str", width: 32, rt: 0, rn: 10, offset: 0 });
           epilogue();
         }
+        flushColdStubs();
         flushTraps();
         endFrameRange();
         // Every branch into a seeded block start must be one whose words
@@ -26832,9 +29668,11 @@ function emitModuleForms(
               if (offset === undefined) throw "site reference invariant";
               references.push(offset);
             }
-            if (fn.scriptEntry === true)
+            if (fn.scriptEntry === true) {
+              generals.push(activationOffset + activationCalleeOffset);
               for (let i = 0; i < scriptActualRegisterPairs; i++)
                 generals.push(scriptArgumentsOffset + i * 16);
+            }
             const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
             for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
             const map: number[] = [frameBytes];

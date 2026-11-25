@@ -142,10 +142,11 @@ test("Error intrinsics expose realm-local constructors and standard property att
     assert.equal(objects.getOwnProperty(global, name!)?.enumerable, false);
     assert.equal(objects.getOwnProperty(global, name!)?.writable, true);
     assert.equal(
-      objects.createRuntimeError(realm, kind!).internalErrorData,
+      objects.exoticSlots(objects.createRuntimeError(realm, kind!))
+        .internalErrorData,
       true,
     );
-    assert.equal(prototype.internalErrorData, false);
+    assert.equal(objects.exoticSlots(prototype).internalErrorData, false);
   }
 });
 
@@ -186,8 +187,9 @@ test("each realm owns one non-extensible ThrowTypeError intrinsic", () => {
     realm.prototypes.get("type"),
   );
   assert.equal(
-    (first as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
-      .internalErrorData,
+    objects.exoticSlots(
+      first as objects.OrdinaryObject<ScriptPropertyKey, unknown>,
+    ).internalErrorData,
     true,
   );
 });
@@ -229,7 +231,7 @@ test("SuppressedError owns a ternary constructor and non-enumerable failure valu
     [19, 42],
   ) as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(error.prototype, realm.prototypes.get("suppressed"));
-  assert.equal(error.internalErrorData, true);
+  assert.equal(objects.exoticSlots(error).internalErrorData, true);
   assert.equal(objects.getOwnProperty(error, "message"), undefined);
   assert.equal(objects.getOwnProperty(error, "cause"), undefined);
   for (const [key, value] of [

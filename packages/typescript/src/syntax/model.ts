@@ -188,6 +188,8 @@ export type Expression = Span &
       }
     | {
         readonly kind: "unary";
+        /** Compiler-generated typeof guard on the raw general carrier. */
+        readonly generalTag?: true | undefined;
         readonly operator: string;
         readonly operand: Expression;
       }
@@ -224,9 +226,11 @@ export type Expression = Span &
         readonly kind: "call";
         /** The first four operands form the fixed Script entry header. */
         readonly scriptCall?: true;
+        /** A Script call in tail position: its completion is the enclosing
+         * entry's, which returns it at once (a proper tail call). */
+        readonly scriptTail?: true;
         /** Compiler-generated access to the current entry's actuals. */
-        readonly scriptArgument?:
-          "index" | "count" | "registers" | "stack" | "load-frame";
+        readonly scriptArgument?: "index" | "count";
         readonly optional?: boolean;
         readonly typeArguments?: readonly TypeNode[];
         readonly callee: Expression;

@@ -594,7 +594,6 @@ export function lowerFunction(
       case "string-code-unit":
       case "string-index-of":
       case "script-argument-count":
-      case "script-argument-area":
         type = "number";
         break;
       case "array-subarray":
@@ -2222,6 +2221,11 @@ export function lowerFunction(
       end: node.end,
     });
   }
+  function builtinUndefined(node: Expression): boolean {
+    if (node.kind !== "identifier" || node.name !== "undefined") return false;
+    const checked = info(node);
+    return checked.local === undefined && checked.realmGlobal === undefined;
+  }
   function chooseExpression(test: Expression, yes: Builder, no: Builder): void {
     // A condition needs only truthiness, not the selected operand value. Keep
     // short-circuit evaluation in the CFG without a result slot and merge.
@@ -2233,10 +2237,55 @@ export function lowerFunction(
       chooseExpression(test.operand, no, yes);
       return;
     }
+    if (generalObjectViews && test.kind === "conditional") {
+      const consequent = block(),
+        alternate = block();
+      chooseExpression(test.test, consequent, alternate);
+      current = consequent;
+      chooseExpression(test.consequent, yes, no);
+      current = alternate;
+      chooseExpression(test.alternate, yes, no);
+      return;
+    }
     if (
       test.kind === "binary" &&
       (test.operator === "&&" || test.operator === "||")
     ) {
+      const first = test.left,
+        second = test.right;
+      if (
+        generalObjectViews &&
+        test.operator === "||" &&
+        first.kind === "binary" &&
+        first.operator === "===" &&
+        second.kind === "binary" &&
+        second.operator === "===" &&
+        first.left.kind === "identifier" &&
+        second.left.kind === "identifier" &&
+        first.right.kind === "null" &&
+        builtinUndefined(second.right) &&
+        info(first.left).type === "general" &&
+        info(second.left).type === "general"
+      ) {
+        // The checked local read has no effects, so both comparisons can
+        // share a single load and observe only the general carrier tag.
+        const local = info(first.left).local;
+        if (local !== undefined && local === info(second.left).local) {
+          const operand = value(first.left);
+          const match = nextValue++;
+          emit({
+            kind: "general-is",
+            id: match,
+            value: load(operand, first.left),
+            type: "nullish",
+            branch: true,
+            start: test.start,
+            end: test.end,
+          });
+          choose(match, yes, no, test);
+          return;
+        }
+      }
       const right = block();
       if (test.operator === "&&") chooseExpression(test.left, right, no);
       else chooseExpression(test.left, yes, right);
@@ -2297,6 +2346,114 @@ export function lowerFunction(
     if (slots[left] === "general" || slots[right] === "general") {
       if (operator !== "===" && operator !== "!==")
         throw "unsupported general operation";
+      const generalSlot = slots[left] === "general" ? left : right,
+        otherSlot = slots[left] === "general" ? right : left,
+        otherType = slots[otherSlot];
+      if (otherType === "reference" || otherType === "optional-reference") {
+        const result = temporary("boolean"),
+          checkTag = block(),
+          checkPointer = block(),
+          mismatch = block(),
+          done = block();
+        let targetRef: number | undefined = undefined;
+        if (otherType === "optional-reference") {
+          const isAbsent = block(),
+            noneRef = nextValue++,
+            present = nextValue++;
+          emit({
+            kind: "reference-none",
+            id: noneRef,
+            start: node.start,
+            end: node.end,
+          });
+          emit({
+            kind: "binary",
+            id: present,
+            operator: "!==",
+            left: load(otherSlot, node),
+            right: noneRef,
+            start: node.start,
+            end: node.end,
+          });
+          choose(present, checkTag, isAbsent, node);
+          current = isAbsent;
+          const isUndef = nextValue++;
+          emit({
+            kind: "general-is",
+            id: isUndef,
+            value: load(generalSlot, node),
+            type: "undefined",
+            start: node.start,
+            end: node.end,
+          });
+          store(result, isUndef, node);
+          jump(done.id, node);
+          current = checkTag;
+        } else {
+          jump(checkTag.id, node);
+          current = checkTag;
+        }
+        const isObj = nextValue++;
+        emit({
+          kind: "general-is",
+          id: isObj,
+          value: load(generalSlot, node),
+          type: "object",
+          start: node.start,
+          end: node.end,
+        });
+        choose(isObj, checkPointer, mismatch, node);
+        current = checkPointer;
+        const payload = nextValue++;
+        emit({
+          kind: "general-value",
+          id: payload,
+          value: load(generalSlot, node),
+          type: "reference",
+          unchecked: true,
+          start: node.start,
+          end: node.end,
+        });
+        if (otherType === "optional-reference") {
+          targetRef = nextValue++;
+          emit({
+            kind: "reference-value",
+            id: targetRef,
+            value: load(otherSlot, node),
+            start: node.start,
+            end: node.end,
+          });
+        } else {
+          targetRef = load(otherSlot, node);
+        }
+        const eq = nextValue++;
+        emit({
+          kind: "binary",
+          id: eq,
+          operator: "===",
+          left: payload,
+          right: targetRef,
+          start: node.start,
+          end: node.end,
+        });
+        store(result, eq, node);
+        jump(done.id, node);
+        current = mismatch;
+        const no = nextValue++;
+        emit({
+          kind: "constant",
+          id: no,
+          value: false,
+          start: node.start,
+          end: node.end,
+        });
+        store(result, no, node);
+        jump(done.id, node);
+        current = done;
+        return operator === "==="
+          ? result
+          : unarySlot("!", result, "boolean", node);
+      }
       const a = save(
           coerce(load(left, node), "general", node),
           "general",
@@ -4457,6 +4614,7 @@ export function lowerFunction(
     receiver: number | undefined,
     node: Expression,
     scriptArguments?: readonly number[],
+    tail: boolean = false,
   ): number | undefined {
     const signature = signatures[target];
     if (signature === undefined) throw "call signature invariant";
@@ -4568,22 +4726,51 @@ export function lowerFunction(
     if (calleeSlot === undefined) emit({ kind: "call", ...call });
     else {
       const operation = callValue(load(calleeSlot, node), call.arguments);
-      emit({
-        kind: "call-indirect",
-        ...call,
-        ...(info(node).discardCallResult === true
-          ? { discardResult: true }
-          : {}),
-        callee: operation.callee,
-        arguments: operation.arguments,
-        ...(scriptArguments === undefined
-          ? {}
-          : {
-              scriptArguments: scriptArguments.map((slot) =>
-                coerce(load(slot, node), "general", node),
-              ),
-            }),
-      });
+      if (tail) {
+        if (scriptArguments === undefined) throw "script tail call invariant";
+        emit({
+          kind: "call-indirect",
+          ...call,
+          callee: operation.callee,
+          arguments: operation.arguments,
+          scriptArguments: scriptArguments.map((slot) =>
+            coerce(load(slot, node), "general", node),
+          ),
+          tail: true,
+        });
+      } else
+        emit({
+          kind: "call-indirect",
+          ...call,
+          ...(info(node).discardCallResult === true
+            ? { discardResult: true }
+            : {}),
+          callee: operation.callee,
+          arguments: operation.arguments,
+          ...(scriptArguments === undefined
+            ? {}
+            : {
+                scriptArguments: scriptArguments.map((slot) =>
+                  coerce(load(slot, node), "general", node),
+                ),
+              }),
+        });
+      if (tail) {
+        // The entry returns the callee's completion at once; the source's
+        // own return of this value follows in an unreachable block.
+        if (id === undefined || finalizer !== undefined)
+          throw "script tail call outside a returning position";
+        finish({ kind: "return", value: id, start: node.start, end: node.end });
+        current = block();
+        const absent = nextValue++;
+        emit({
+          kind: "general-none",
+          id: absent,
+          start: node.start,
+          end: node.end,
+        });
+        return save(absent, "general", node);
+      }
     }
     if (type === "void") return undefined;
     if (id !== undefined) return save(id, type, node);
@@ -7267,7 +7454,8 @@ export function lowerFunction(
             type = info(node.operand).type;
           if (type === "general") {
             if (operand === undefined) throw "general typeof operand invariant";
-            const classifier = info(node).realmTypeof;
+            const classifier =
+              node.generalTag === true ? undefined : info(node).realmTypeof;
             if (classifier !== undefined)
               return save(
                 primitiveCall(classifier, [load(operand, node)], node),
@@ -7739,26 +7927,37 @@ export function lowerFunction(
           (node.operator === "===" || node.operator === "!==")
         ) {
           const literal =
-            node.left.kind === "null" || node.left.kind === "string"
+            node.left.kind === "null" ||
+            node.left.kind === "string" ||
+            builtinUndefined(node.left)
               ? node.left
               : node.right;
           const compared = literal === node.left ? node.right : node.left;
           let tested = compared;
           let category:
-            "null" | "number" | "boolean" | "string" | "undefined" | undefined;
+            | "null"
+            | "number"
+            | "boolean"
+            | "string"
+            | "undefined"
+            | "object"
+            | undefined;
           if (literal.kind === "null") category = "null";
+          else if (builtinUndefined(literal)) category = "undefined";
           else if (
             literal.kind === "string" &&
             compared.kind === "unary" &&
             compared.operator === "typeof" &&
-            info(compared).realmTypeof === undefined
+            (compared.generalTag === true ||
+              info(compared).realmTypeof === undefined)
           ) {
             const name = literal.value;
             if (
               name === "number" ||
               name === "boolean" ||
               name === "string" ||
-              name === "undefined"
+              name === "undefined" ||
+              (name === "object" && compared.generalTag === true)
             ) {
               category = name;
               tested = compared.operand;
@@ -7774,6 +7973,7 @@ export function lowerFunction(
               id,
               value: coerce(load(operand, tested), "general", tested),
               type: category,
+              branch: true,
               start: node.start,
               end: node.end,
             });
@@ -8354,55 +8554,15 @@ export function lowerFunction(
           });
           return save(id, "number", node);
         }
-        if (
-          node.scriptArgument === "registers" ||
-          node.scriptArgument === "stack"
-        ) {
-          const id = nextValue++;
-          emit({
-            kind: "script-argument-area",
-            id,
-            area: node.scriptArgument,
-            start: node.start,
-            end: node.end,
-          });
-          return save(id, "number", node);
-        }
-        if (
-          node.scriptArgument === "index" ||
-          node.scriptArgument === "load-frame"
-        ) {
+        if (node.scriptArgument === "index") {
           const argument = node.arguments[0];
           if (argument === undefined) throw "script argument index invariant";
-          const indexSlot = value(argument);
-          let frame:
-            { count: number; registers: number; stack: number } | undefined;
-          if (node.scriptArgument === "load-frame") {
-            const count = node.arguments[1],
-              registers = node.arguments[2],
-              stack = node.arguments[3];
-            if (
-              count === undefined ||
-              registers === undefined ||
-              stack === undefined
-            )
-              throw "script argument frame invariant";
-            const size = value(count),
-              reg = value(registers),
-              overflow = value(stack);
-            frame = {
-              count: load(size, node),
-              registers: load(reg, node),
-              stack: load(overflow, node),
-            };
-          }
-          const index = load(indexSlot, node),
+          const index = load(value(argument), node),
             id = nextValue++;
           emit({
             kind: "script-argument",
             id,
             index,
-            ...(frame === undefined ? {} : { frame }),
             start: node.start,
             end: node.end,
           });
@@ -11202,6 +11362,7 @@ export function lowerFunction(
             undefined,
             node,
             args.slice(4).map(value),
+            node.scriptTail === true,
           );
         }
         const prepared = callArguments(args, target, node);

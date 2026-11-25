@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -149,7 +151,7 @@ function requireFormatter(
     data =
       object === undefined
         ? undefined
-        : viewDurationFormatter(object.internalIntlFormatData);
+        : viewDurationFormatter(exoticSlots(object).internalIntlFormatData);
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -168,12 +170,8 @@ export function installDurationFormatIntrinsic(
         const object = createObject<ScriptPropertyKey, unknown>(
           constructorPrototype(target, "intl-duration-format", realm, hooks),
         );
-        object.internalIntlFormatData = configureDurationFormatter(
-          args[0],
-          args[1],
-          realm,
-          hooks,
-        );
+        ensureExoticSlots(object).internalIntlFormatData =
+          configureDurationFormatter(args[0], args[1], realm, hooks);
         return object;
       },
     );

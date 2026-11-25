@@ -9,6 +9,7 @@ import { awaitScriptValue } from "./await.ts";
 import { createPromiseObject, createScriptPromiseHooks } from "./promises.ts";
 import {
   createCallableObject,
+  exoticSlots,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
@@ -208,7 +209,7 @@ function createAsyncFunction(
         failure = error;
       }
       const promise = createPromiseObject(realm.promisePrototype);
-      const record = promise.internalPromiseData;
+      const record = exoticSlots(promise).internalPromiseData;
       if (record === undefined) throw "ASYNC_PROMISE_INVARIANT";
       const functions = createResolvingFunctions<unknown>(
         record,

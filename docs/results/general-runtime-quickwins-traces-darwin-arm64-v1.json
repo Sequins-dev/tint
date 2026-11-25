@@ -1,0 +1,403 @@
+{
+ "kind": "tint-warm-call-traces",
+ "tool": "tools/general-call-bench/count_call.py",
+ "call": 501,
+ "cpu": "Apple M5 Max",
+ "note": "Cumulative variants; S2/F2/Z2 include the shadow cost-model follow-up 7d59ed497. Instruction counts are one warm call (entry to return, callees included); bytes are the function's own code.",
+ "probes": {
+  "neon": "var STATE_HELD = 4;\nvar STATE_SUSPENDED = 2;\nfunction Box(v) { this.v = v; }\nBox.prototype.get = function () { return this.v; };\nfunction method(o) { const r = o.get(); return r; }\nfunction make(v) { const b = new Box(v); return b; }\nfunction Vec(x, y, z) { this.x = x; this.y = y; this.z = z; }\nVec.prototype.dot = function (other) { return this.x * other.x + this.y * other.y + this.z * other.z; };\nfunction dot(a, b) { return a.dot(b); }\nfunction Base() {}\nBase.prototype.deepGet = function () { return 7; };\nfunction Mid() {}\nMid.prototype = Object.create(Base.prototype);\nfunction Sub() {}\nSub.prototype = Object.create(Mid.prototype);\nfunction callDeep(s) { return s.deepGet(); }\nfunction Task(state, next) { this.state = state; this.next = next; }\nTask.prototype.isHeldOrSuspended = function () {\n  return (this.state & STATE_HELD) != 0 || this.state == STATE_SUSPENDED;\n};\nfunction walk(t) {\n  let n = 0;\n  for (let cur = t; cur != null; cur = cur.next) if (cur.isHeldOrSuspended()) n++;\n  return n;\n}\nfunction setState(t, v) { t.state = v; return v; }\nexport function run() {\n  let s = 0;\n  const o = new Box(1);\n  const a = new Vec(1, 2, 3), b = new Vec(4, 5, 6);\n  const sub = new Sub();\n  const t = new Task(0, new Task(4, new Task(2, null)));\n  for (let i = 0; i < 1000; i++) {\n    s += method(o) + make(i).v + dot(a, b) + callDeep(sub) + walk(t) + setState(t, i & 1);\n  }\n  return s > 0 ? 42 : 1;\n}\n",
+  "call3": "function add(a, b) { return a + b; }\nfunction caller(a, b) { const r = add(a, b); return r; }\nfunction Box(v) { this.v = v; }\nBox.prototype.get = function () { return this.v; };\nfunction method(o) { const r = o.get(); return r; }\nfunction tail(a, b) { return add(a, b); }\nfunction make(v) { const b = new Box(v); return b; }\nexport function run() {\n  let s = 0;\n  const o = new Box(1);\n  for (let i = 0; i < 1000; i++) {\n    s += caller(i, 1) + method(o) + tail(i, 2) + make(i).v;\n  }\n  return s > 0 ? 42 : 1;\n}\n",
+  "oldstore": "function Task(state, next) { this.state = state; this.next = next; }\nfunction setState(t, v) { t.state = v; return v; }\nfunction setNext(t, n) { t.next = n; return 0; }\nexport function run() {\n  const t = new Task(0, null);\n  // Survive several minor collections so t is old before the timed calls.\n  let keep = null;\n  for (let i = 0; i < 200000; i++) keep = new Task(i, keep === null || i % 64 === 0 ? null : keep);\n  let s = 0;\n  for (let i = 0; i < 1000; i++) s += setState(t, i & 1) + setNext(t, keep);\n  return s >= 0 ? 42 : 1;\n}\n"
+ },
+ "variants": {
+  "base": {
+   "revision": "99e9cd83a",
+   "images": {
+    "neon": {
+     "sha256": "f9632e442e8fd5010c9e9114ca47f6dce7afecad0190065295e5557b58de75bc"
+    },
+    "call3": {
+     "sha256": "686bd8ce1c8037171334643dca8358b3b1ca4294d09674f5bebda2711618b3ff"
+    }
+   },
+   "traces": {
+    "neon:method": {
+     "instructions": 334,
+     "bytes": 3360
+    },
+    "neon:make": {
+     "instructions": 1203,
+     "bytes": 3940
+    },
+    "neon:dot": {
+     "instructions": 639,
+     "bytes": 4960
+    },
+    "neon:callDeep": {
+     "instructions": 937,
+     "bytes": 4788
+    },
+    "neon:walk": {
+     "instructions": 1584,
+     "bytes": 4916
+    },
+    "neon:setState": {
+     "instructions": 119,
+     "bytes": 948
+    },
+    "neon:Box.prototype.get": {
+     "instructions": 90,
+     "bytes": 668
+    },
+    "neon:Vec.prototype.dot": {
+     "instructions": 396,
+     "bytes": 13824
+    },
+    "call3:caller": {
+     "instructions": 383,
+     "bytes": 3512
+    },
+    "call3:method": {
+     "instructions": 334,
+     "bytes": 3360
+    },
+    "call3:tail": {
+     "instructions": 371,
+     "bytes": 5008
+    },
+    "call3:make": {
+     "instructions": 1203,
+     "bytes": 3940
+    }
+   }
+  },
+  "L": {
+   "revision": "3dbb0957e",
+   "images": {
+    "neon": {
+     "sha256": "769f93f1cfb92e4bdad19b478e3178407d46bfa2489e34448020ee920432ce1c"
+    },
+    "call3": {
+     "sha256": "5c72d12d4d689b5abe0e39f283030deee913f52b8c2050c6d8e783ed76bf1c23"
+    }
+   },
+   "traces": {
+    "neon:method": {
+     "instructions": 330,
+     "bytes": 3352
+    },
+    "neon:make": {
+     "instructions": 1201,
+     "bytes": 3936
+    },
+    "neon:dot": {
+     "instructions": 625,
+     "bytes": 4952
+    },
+    "neon:callDeep": {
+     "instructions": 939,
+     "bytes": 4780
+    },
+    "neon:walk": {
+     "instructions": 1562,
+     "bytes": 4904
+    },
+    "neon:setState": {
+     "instructions": 119,
+     "bytes": 948
+    },
+    "neon:Box.prototype.get": {
+     "instructions": 88,
+     "bytes": 664
+    },
+    "neon:Vec.prototype.dot": {
+     "instructions": 384,
+     "bytes": 13800
+    },
+    "call3:caller": {
+     "instructions": 383,
+     "bytes": 3512
+    },
+    "call3:method": {
+     "instructions": 330,
+     "bytes": 3352
+    },
+    "call3:tail": {
+     "instructions": 371,
+     "bytes": 5008
+    },
+    "call3:make": {
+     "instructions": 1201,
+     "bytes": 3936
+    }
+   }
+  },
+  "B": {
+   "revision": "8443f20b7",
+   "images": {
+    "neon": {
+     "sha256": "3c6867469ed4f722fa86de51fb3f05385a24e60911729e3b287e72452023d197"
+    },
+    "call3": {
+     "sha256": "9654c5fc9629d13b5b3cd819df74b8c9d66f276f8dc404b4d2e6eb594d151160"
+    }
+   },
+   "traces": {
+    "neon:method": {
+     "instructions": 330,
+     "bytes": 3352
+    },
+    "neon:make": {
+     "instructions": 1201,
+     "bytes": 3936
+    },
+    "neon:dot": {
+     "instructions": 625,
+     "bytes": 4952
+    },
+    "neon:callDeep": {
+     "instructions": 939,
+     "bytes": 4780
+    },
+    "neon:walk": {
+     "instructions": 1562,
+     "bytes": 4904
+    },
+    "neon:setState": {
+     "instructions": 119,
+     "bytes": 976
+    },
+    "neon:Box.prototype.get": {
+     "instructions": 88,
+     "bytes": 664
+    },
+    "neon:Vec.prototype.dot": {
+     "instructions": 384,
+     "bytes": 13800
+    },
+    "call3:caller": {
+     "instructions": 383,
+     "bytes": 3512
+    },
+    "call3:method": {
+     "instructions": 330,
+     "bytes": 3352
+    },
+    "call3:tail": {
+     "instructions": 371,
+     "bytes": 5008
+    },
+    "call3:make": {
+     "instructions": 1201,
+     "bytes": 3936
+    }
+   }
+  },
+  "S2": {
+   "revision": "4961cdb97 + 7d59ed497",
+   "images": {
+    "neon": {
+     "sha256": "c1a230fede9ab537dc28b39a53cc1b30954e4bdaea307113881614613a1bae73"
+    },
+    "call3": {
+     "sha256": "29cd0b4ec7901becd5abc3470eed40a5bf61c177262867f365ef0bca74f416ca"
+    }
+   },
+   "traces": {
+    "neon:method": {
+     "instructions": 330,
+     "bytes": 3352
+    },
+    "neon:make": {
+     "instructions": 1201,
+     "bytes": 3936
+    },
+    "neon:dot": {
+     "instructions": 625,
+     "bytes": 4952
+    },
+    "neon:callDeep": {
+     "instructions": 939,
+     "bytes": 4780
+    },
+    "neon:walk": {
+     "instructions": 1547,
+     "bytes": 4904
+    },
+    "neon:setState": {
+     "instructions": 119,
+     "bytes": 976
+    },
+    "neon:Box.prototype.get": {
+     "instructions": 88,
+     "bytes": 664
+    },
+    "neon:Vec.prototype.dot": {
+     "instructions": 384,
+     "bytes": 13800
+    },
+    "call3:caller": {
+     "instructions": 383,
+     "bytes": 3512
+    },
+    "call3:method": {
+     "instructions": 330,
+     "bytes": 3352
+    },
+    "call3:tail": {
+     "instructions": 371,
+     "bytes": 5008
+    },
+    "call3:make": {
+     "instructions": 1201,
+     "bytes": 3936
+    }
+   }
+  },
+  "F2": {
+   "revision": "a99a2f610 + 7d59ed497",
+   "images": {
+    "neon": {
+     "sha256": "fc14330458a0414dd58c6ce5f076b66660d1a5dd80b53ce8e81ce7fbfc99b8da"
+    },
+    "call3": {
+     "sha256": "7e4ce11b8c5932c58d665f0b6cff109ea58ca1ca6e9f111da497a8a57c07b29f"
+    }
+   },
+   "traces": {
+    "neon:method": {
+     "instructions": 329,
+     "bytes": 2924
+    },
+    "neon:make": {
+     "instructions": 1203,
+     "bytes": 3500
+    },
+    "neon:dot": {
+     "instructions": 586,
+     "bytes": 4552
+    },
+    "neon:callDeep": {
+     "instructions": 943,
+     "bytes": 4380
+    },
+    "neon:walk": {
+     "instructions": 1534,
+     "bytes": 4468
+    },
+    "neon:setState": {
+     "instructions": 119,
+     "bytes": 976
+    },
+    "neon:Box.prototype.get": {
+     "instructions": 88,
+     "bytes": 664
+    },
+    "neon:Vec.prototype.dot": {
+     "instructions": 342,
+     "bytes": 6724
+    },
+    "call3:caller": {
+     "instructions": 372,
+     "bytes": 3044
+    },
+    "call3:method": {
+     "instructions": 329,
+     "bytes": 2924
+    },
+    "call3:tail": {
+     "instructions": 367,
+     "bytes": 4584
+    },
+    "call3:make": {
+     "instructions": 1203,
+     "bytes": 3500
+    }
+   }
+  },
+  "Z2": {
+   "revision": "e67013afb + 7d59ed497",
+   "images": {
+    "neon": {
+     "sha256": "2f58d967825d71a6cdae59a53321e0eb08a8e0a91afee2cdc2e61cbc37ef3cdb"
+    },
+    "call3": {
+     "sha256": "47f9ed7d9da57a643eb1e4ddc08e5a7cccf13131f6e3247eef2bd30616f024dc"
+    }
+   },
+   "traces": {
+    "neon:method": {
+     "instructions": 329,
+     "bytes": 2892
+    },
+    "neon:make": {
+     "instructions": 906,
+     "bytes": 3468
+    },
+    "neon:dot": {
+     "instructions": 586,
+     "bytes": 4488
+    },
+    "neon:callDeep": {
+     "instructions": 943,
+     "bytes": 4316
+    },
+    "neon:walk": {
+     "instructions": 1534,
+     "bytes": 4436
+    },
+    "neon:setState": {
+     "instructions": 119,
+     "bytes": 976
+    },
+    "neon:Box.prototype.get": {
+     "instructions": 88,
+     "bytes": 664
+    },
+    "neon:Vec.prototype.dot": {
+     "instructions": 342,
+     "bytes": 6724
+    },
+    "call3:caller": {
+     "instructions": 372,
+     "bytes": 3012
+    },
+    "call3:method": {
+     "instructions": 329,
+     "bytes": 2892
+    },
+    "call3:tail": {
+     "instructions": 367,
+     "bytes": 4520
+    },
+    "call3:make": {
+     "instructions": 906,
+     "bytes": 3468
+    }
+   }
+  }
+ },
+ "oldObjectStores": {
+  "note": "oldstore.js: the Task is promoted by 200,000 allocations before the timed calls; setState stores a number, setNext a reference.",
+  "base": {
+   "setState": {
+    "instructions": 146,
+    "rememberObjectHelper": 26
+   },
+   "setNext": {
+    "instructions": 151,
+    "rememberObjectHelper": 26
+   }
+  },
+  "B": {
+   "setState": {
+    "instructions": 126,
+    "rememberObjectHelper": 0
+   },
+   "setNext": {
+    "instructions": 156,
+    "rememberObjectHelper": 26
+   }
+  }
+ }
+}

@@ -68,10 +68,13 @@ test("source import of JavaScript rejects with SyntaxError without linking or ev
     "source",
   );
   objects.drainScriptJobs(realm.agent, () => assert.fail("job failed"));
-  assert.equal(promise.internalPromiseData?.state, "rejected");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "rejected",
+  );
   assert.equal(
     objects.viewObjectValue(
-      promise.internalPromiseData?.result,
+      promise.internalExoticSlots?.internalPromiseData?.result,
       realm.objectPrototype,
     )?.prototype,
     realm.prototypes.get("syntax"),
@@ -100,8 +103,14 @@ test("source phase reaches the loader after coercion and preserves its host sour
     realm,
     "source",
   );
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
-  assert.equal(promise.internalPromiseData?.result, source);
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.result,
+    source,
+  );
   assert.deepEqual(log, []);
 });
 test("static source edges load only their target and initialize an immutable source binding", () => {
@@ -136,7 +145,10 @@ test("static source edges load only their target and initialize an immutable sou
     });
   };
   const loading = modules.loadRequestedModules(importer, hooks, undefined);
-  assert.equal(loading.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    loading.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   assert.deepEqual(loads, ["target"]);
   assert.equal(target.status, "new");
   assert.deepEqual(modules.linkModule(importer), { ok: true });

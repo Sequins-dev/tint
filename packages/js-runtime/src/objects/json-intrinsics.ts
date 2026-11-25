@@ -6,6 +6,8 @@ import { createRuntimeError, rejectUnsupportedExecution } from "./errors.ts";
 import { parseJSON } from "./json-parse.ts";
 import { stringifyJSON } from "./json-stringify.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createDataProperty,
   type OrdinaryObject,
@@ -84,7 +86,7 @@ export function installJSONIntrinsics(
         )
           throw createRuntimeError(realm, "syntax");
         const object = createObject<ScriptPropertyKey, unknown>(undefined);
-        object.internalRawJSON = source;
+        ensureExoticSlots(object).internalRawJSON = source;
         createDataProperty<ScriptPropertyKey, unknown>(
           object,
           "rawJSON",
@@ -117,7 +119,10 @@ export function installJSONIntrinsics(
       1,
       (receiver, args): unknown => {
         const object = viewObjectValue(args[0], realm.objectPrototype);
-        return object !== undefined && object.internalRawJSON !== undefined;
+        return (
+          object !== undefined &&
+          exoticSlots(object).internalRawJSON !== undefined
+        );
       },
       hooks,
     ),

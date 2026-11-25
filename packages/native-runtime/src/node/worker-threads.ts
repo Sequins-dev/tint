@@ -10,6 +10,8 @@ import {
   createDataProperty,
   createObject,
   createRuntimeError,
+  ensureExoticSlots,
+  exoticSlots,
   getProperty,
   isCallableObject,
   newPromiseCapability,
@@ -202,12 +204,16 @@ export function createNodeWorkerThreads(
     return object;
   }
   function ensurePort(value: unknown): Endpoint {
-    const port = portObjects.get(ensureObject(value).internalIdentity);
+    const port = portObjects.get(
+      exoticSlots(ensureObject(value)).internalIdentity,
+    );
     if (port === undefined) return typeError("Invalid MessagePort receiver");
     return port;
   }
   function ensureWorker(value: unknown): WorkerState {
-    const worker = workerObjects.get(ensureObject(value).internalIdentity);
+    const worker = workerObjects.get(
+      exoticSlots(ensureObject(value)).internalIdentity,
+    );
     if (worker === undefined) return typeError("Invalid Worker receiver");
     return worker;
   }
@@ -326,7 +332,8 @@ export function createNodeWorkerThreads(
   }
   function makePort(port: NativeMessagePort): ScriptObject {
     const object = createObject<ScriptPropertyKey, unknown>(portPrototype);
-    object.internalIdentity = realm.agent.nextObjectIdentity++;
+    const id = realm.agent.nextObjectIdentity++;
+    ensureExoticSlots(object).internalIdentity = id;
     const endpoint: Endpoint = {
       object,
       port,
@@ -352,7 +359,7 @@ export function createNodeWorkerThreads(
         }
       },
     };
-    portObjects.set(object.internalIdentity, endpoint);
+    portObjects.set(id, endpoint);
     endpoints.push(endpoint);
     return object;
   }
@@ -369,7 +376,7 @@ export function createNodeWorkerThreads(
     backing,
     ports,
     portForObject: (object): NativeMessagePort | undefined =>
-      portObjects.get(object.internalIdentity)?.port,
+      portObjects.get(exoticSlots(object).internalIdentity)?.port,
     objectForPort: makePort,
   });
   realm.bufferAllocator = backing.allocate;
@@ -528,7 +535,8 @@ export function createNodeWorkerThreads(
     property(boot, "limits", limitsObject(plan.resourceLimits));
     const pair = ports.create();
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
-    object.internalIdentity = realm.agent.nextObjectIdentity++;
+    const id = realm.agent.nextObjectIdentity++;
+    ensureExoticSlots(object).internalIdentity = id;
     const endpoint: Endpoint = {
       object,
       port: pair.first,
@@ -544,7 +552,7 @@ export function createNodeWorkerThreads(
     let failure: string | undefined;
     function complete(): void {
       if (!eof || status === undefined) return;
-      const worker = workerObjects.get(object.internalIdentity);
+      const worker = workerObjects.get(id);
       if (worker === undefined || worker.exited) return;
       worker.exited = true;
       try {
@@ -583,7 +591,7 @@ export function createNodeWorkerThreads(
       else ports.discard(grant);
       throw error;
     }
-    workerObjects.set(object.internalIdentity, {
+    workerObjects.set(id, {
       endpoint,
       child,
       terminations: [],

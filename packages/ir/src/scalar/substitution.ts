@@ -51,7 +51,6 @@ export function substituteInstructionValues(
     case "general-null":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
     case "boolean-none":
     case "string-none":
     case "reference-none":
@@ -107,6 +106,94 @@ export function substituteInstructionValues(
     }
     case "record-read":
     case "record-has": {
+      const object = substitutedValue(values, op.object);
+      return object === op.object ? op : { ...op, object };
+    }
+    case "record-slot-read": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index);
+      return object === op.object && index === op.index
+        ? op
+        : { ...op, object, index };
+    }
+    case "property-load": {
+      const object = substitutedValue(values, op.object),
+        site = substitutedValue(values, op.site);
+      return object === op.object && site === op.site
+        ? op
+        : { ...op, object, site };
+    }
+    case "property-store": {
+      const object = substitutedValue(values, op.object),
+        value = substitutedValue(values, op.value),
+        site = substitutedValue(values, op.site);
+      return object === op.object && value === op.value && site === op.site
+        ? op
+        : { ...op, object, value, site };
+    }
+    case "script-entry": {
+      const callee = substitutedValue(values, op.callee),
+        realm = substitutedValue(values, op.realm);
+      return callee === op.callee && realm === op.realm
+        ? op
+        : { ...op, callee, realm };
+    }
+    case "global-cell": {
+      const scope = substitutedValue(values, op.scope),
+        cache = substitutedValue(values, op.cache);
+      return scope === op.scope && cache === op.cache
+        ? op
+        : { ...op, scope, cache };
+    }
+    case "element-load": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index),
+        cachedStorage =
+          op.cachedStorage === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedStorage),
+        cachedCount =
+          op.cachedCount === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedCount);
+      if (
+        object === op.object &&
+        index === op.index &&
+        cachedStorage === op.cachedStorage &&
+        cachedCount === op.cachedCount
+      )
+        return op;
+      return cachedStorage !== undefined && cachedCount !== undefined
+        ? { ...op, object, index, cachedStorage, cachedCount }
+        : { ...op, object, index };
+    }
+    case "element-store": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index),
+        value = substitutedValue(values, op.value),
+        cachedStorage =
+          op.cachedStorage === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedStorage),
+        cachedCount =
+          op.cachedCount === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedCount);
+      if (
+        object === op.object &&
+        index === op.index &&
+        value === op.value &&
+        cachedStorage === op.cachedStorage &&
+        cachedCount === op.cachedCount
+      )
+        return op;
+      return cachedStorage !== undefined && cachedCount !== undefined
+        ? { ...op, object, index, value, cachedStorage, cachedCount }
+        : { ...op, object, index, value };
+    }
+    case "element-length":
+    case "element-storage":
+    case "element-count": {
       const object = substitutedValue(values, op.object);
       return object === op.object ? op : { ...op, object };
     }
@@ -353,20 +440,22 @@ export function substituteInstructionValues(
             ...(actuals === undefined ? {} : { scriptArguments: actuals }),
           };
     }
+    case "activation-read": {
+      // Only top names no record; only argument takes an index.
+      const record = op.record,
+        index = op.index;
+      if (record === undefined) return op;
+      const renamedRecord = substitutedValue(values, record);
+      if (index === undefined)
+        return renamedRecord === record ? op : { ...op, record: renamedRecord };
+      const renamedIndex = substitutedValue(values, index);
+      return renamedRecord === record && renamedIndex === index
+        ? op
+        : { ...op, record: renamedRecord, index: renamedIndex };
+    }
     case "script-argument": {
       const index = substitutedValue(values, op.index);
-      const frame = op.frame;
-      if (frame === undefined)
-        return index === op.index ? op : { ...op, index };
-      const count = substitutedValue(values, frame.count),
-        registers = substitutedValue(values, frame.registers),
-        stack = substitutedValue(values, frame.stack);
-      return index === op.index &&
-        count === frame.count &&
-        registers === frame.registers &&
-        stack === frame.stack
-        ? op
-        : { ...op, index, frame: { count, registers, stack } };
+      return index === op.index ? op : { ...op, index };
     }
     case "record-new": {
       const args = optionalList(op.arguments, values),

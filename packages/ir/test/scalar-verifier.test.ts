@@ -5,6 +5,9 @@ import {
   instructionResult,
   type FunctionIR,
   type Block,
+  type ModuleIR,
+  type RecordField,
+  type RecordLayout,
 } from "@tint/ir/scalar";
 const span = { start: 0, end: 1 };
 test("function environment extraction requires a reference and returns an optional reference", () => {
@@ -2396,4 +2399,564 @@ test("locally established initialization needs no fixed-point bit matrices", () 
   } finally {
     Uint32Array.prototype.fill = original;
   }
+});
+
+test("activation reads name a record except top and an index only for actuals", () => {
+  const read = (
+    instructions: FunctionIR["blocks"][number]["instructions"],
+    returned: number,
+    returnType: FunctionIR["returnType"],
+  ) =>
+    verify({
+      functions: [
+        {
+          id: 0,
+          name: "activation",
+          exported: true,
+          parameters: [0],
+          slots: ["number"],
+          returnType,
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: returned, ...span },
+            },
+          ],
+        },
+      ],
+    });
+  const record = { kind: "load", id: 0, slot: 0, ...span } as const;
+  assert.equal(
+    read(
+      [{ kind: "activation-read", id: 1, field: "top", ...span }],
+      1,
+      "number",
+    ).ok,
+    true,
+  );
+  assert.equal(
+    read(
+      [
+        record,
+        { kind: "activation-read", id: 1, field: "callee", record: 0, ...span },
+      ],
+      1,
+      "general",
+    ).ok,
+    true,
+  );
+  assert.equal(
+    read(
+      [record, { kind: "activation-read", id: 1, field: "previous", ...span }],
+      1,
+      "number",
+    ).ok,
+    false,
+  );
+  assert.equal(
+    read(
+      [
+        record,
+        {
+          kind: "activation-read",
+          id: 1,
+          field: "count",
+          record: 0,
+          index: 0,
+          ...span,
+        },
+      ],
+      1,
+      "number",
+    ).ok,
+    false,
+  );
+  assert.equal(
+    read(
+      [
+        record,
+        {
+          kind: "activation-read",
+          id: 1,
+          field: "argument",
+          record: 0,
+          index: 0,
+          ...span,
+        },
+      ],
+      1,
+      "general",
+    ).ok,
+    true,
+  );
+});
+
+test("a tail call is a script entry's returned last call", () => {
+  const entry = (
+    id: number,
+    instructions: FunctionIR["blocks"][number]["instructions"],
+    returned: number,
+  ): FunctionIR => ({
+    id,
+    name: "entry" + id,
+    exported: false,
+    scriptEntry: true,
+    parameters: [0, 1, 2, 3],
+    slots: ["general", "general", "general", "optional-reference"],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { kind: "return", value: returned, ...span },
+      },
+    ],
+  });
+  const module = (returned: number) => ({
+    functions: [
+      entry(0, [{ kind: "load", id: 0, slot: 0, ...span }], 0),
+      entry(
+        1,
+        [
+          { kind: "function-new", id: 0, target: 0, ...span },
+          { kind: "general-none", id: 1, ...span },
+          { kind: "reference-none", id: 2, ...span },
+          {
+            kind: "call-indirect",
+            id: 3,
+            target: 0,
+            callee: 0,
+            arguments: [1, 1, 1, 2],
+            scriptArguments: [],
+            tail: true,
+            ...span,
+          },
+        ],
+        returned,
+      ),
+    ],
+  });
+  assert.deepEqual(verify(module(3)), { ok: true });
+  const other = verify(module(1));
+  assert.ok(
+    !other.ok && other.error.message.includes("tail call"),
+    JSON.stringify(other),
+  );
+});
+
+test("property loads verify every entry of their site layout", () => {
+  // Object record 1 (shape, one value), epoch record 3, and site record 2
+  // with four inherited entries (shape, word index, general value) then the
+  // epoch, its record, and stringShape.
+  const siteFields: RecordField[] = [];
+  for (let entry = 0; entry < 4; entry++)
+    siteFields.push(
+      { offset: 8 + entry * 32, type: "reference", mutable: true },
+      { offset: 16 + entry * 32, type: "number", mutable: true },
+      { offset: 24 + entry * 32, type: "general", mutable: true },
+    );
+  siteFields.push(
+    { offset: 136, type: "number", mutable: true },
+    { offset: 144, type: "reference", mutable: false },
+    { offset: 152, type: "reference", mutable: false },
+  );
+  const records: RecordLayout[] = [
+    { byteLength: 16, fields: [] },
+    {
+      byteLength: 32,
+      fields: [
+        { offset: 8, type: "optional-reference", mutable: true },
+        { offset: 16, type: "general", mutable: true },
+      ],
+    },
+    { byteLength: 160, fields: siteFields },
+    { byteLength: 16, fields: [{ offset: 8, type: "number", mutable: true }] },
+  ];
+  const load = (
+    entries: number,
+    inherited: boolean,
+    siteField: number = 0,
+  ): ModuleIR => ({
+    records,
+    functions: [
+      {
+        id: 0,
+        name: "read",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "property-load",
+                id: 2,
+                object: 0,
+                site: 1,
+                record: 1,
+                field: 1,
+                count: 1,
+                siteRecord: 2,
+                siteField,
+                inherited,
+                entries,
+                epochRecord: 3,
+                epochField: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(verify(load(4, true)).ok, true);
+  assert.equal(verify(load(1, true, 9)).ok, true);
+  // Five entries run past the layout; zero is no cache.
+  assert.equal(verify(load(5, true)).ok, false);
+  assert.equal(verify(load(0, true)).ok, false);
+  // Own entries take two fields each: the third field is a holder, not a
+  // shape, so a two-entry own load over this layout is rejected.
+  assert.equal(verify(load(1, false)).ok, true);
+  assert.equal(verify(load(2, false)).ok, false);
+});
+
+test("element access requires an elements reference with a number count and Float64Array storage", () => {
+  function module(
+    elementsType: "optional-reference" | "number",
+    countType: "number" | "general",
+    storageType: "Float64Array" | "reference",
+    indexType: "number" | "general",
+    store: boolean,
+  ) {
+    const instructions: Block["instructions"][number][] = [
+      { kind: "load", id: 0, slot: 0, ...span },
+      { kind: "load", id: 1, slot: 1, ...span },
+    ];
+    const layout = {
+      record: 0,
+      field: 1,
+      elementsRecord: 1,
+      countField: 0,
+      storageField: 1,
+    };
+    instructions.push(
+      store
+        ? {
+            kind: "element-store",
+            id: 2,
+            object: 0,
+            index: 1,
+            value: 0,
+            ...layout,
+            ...span,
+          }
+        : {
+            kind: "element-load",
+            id: 2,
+            object: 0,
+            index: 1,
+            ...layout,
+            ...span,
+          },
+    );
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "element",
+          exported: true,
+          parameters: [0, 1],
+          slots: ["general", indexType],
+          returnType: store ? "boolean" : "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: 2, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: elementsType, mutable: true },
+          ],
+        },
+        {
+          byteLength: 32,
+          fields: [
+            {
+              offset: 8,
+              type: countType,
+              mutable: true,
+            },
+            {
+              offset: countType === "general" ? 24 : 16,
+              type: storageType,
+              mutable: true,
+            },
+          ],
+        },
+      ],
+    });
+  }
+  for (const store of [false, true]) {
+    const valid = module(
+      "optional-reference",
+      "number",
+      "Float64Array",
+      "number",
+      store,
+    );
+    assert.ok(valid.ok, JSON.stringify(valid));
+    assert.equal(
+      module("number", "number", "Float64Array", "number", store).ok,
+      false,
+    );
+    assert.equal(
+      module("optional-reference", "general", "Float64Array", "number", store)
+        .ok,
+      false,
+    );
+    assert.equal(
+      module("optional-reference", "number", "reference", "number", store).ok,
+      false,
+    );
+    assert.equal(
+      module("optional-reference", "number", "Float64Array", "general", store)
+        .ok,
+      false,
+    );
+  }
+
+  function lengthModule(
+    elementsType: "optional-reference" | "number",
+    lengthType: "number" | "general",
+    objectType: "general" | "reference",
+  ) {
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "length",
+          exported: true,
+          parameters: [0],
+          slots: [objectType],
+          returnType: "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                {
+                  kind: "element-length",
+                  id: 1,
+                  object: 0,
+                  record: 0,
+                  field: 1,
+                  elementsRecord: 1,
+                  lengthField: 0,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 1, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: elementsType, mutable: true },
+          ],
+        },
+        {
+          byteLength: 24,
+          fields: [{ offset: 8, type: lengthType, mutable: true }],
+        },
+      ],
+    });
+  }
+  const validLength = lengthModule("optional-reference", "number", "general");
+  assert.ok(validLength.ok, JSON.stringify(validLength));
+  assert.equal(lengthModule("number", "number", "general").ok, false);
+  assert.equal(
+    lengthModule("optional-reference", "general", "general").ok,
+    false,
+  );
+  assert.equal(
+    lengthModule("optional-reference", "number", "reference").ok,
+    false,
+  );
+
+  function cachedModule(
+    storageType: "optional-reference" | "reference",
+    countType: "number" | "boolean",
+    includeCount: boolean,
+    store: boolean,
+  ) {
+    const layout = {
+      record: 0,
+      field: 1,
+      elementsRecord: 1,
+      countField: 0,
+      storageField: 1,
+    };
+    const instructions: Block["instructions"][number][] = [
+      { kind: "load", id: 0, slot: 0, ...span },
+      { kind: "load", id: 1, slot: 1, ...span },
+      { kind: "load", id: 2, slot: 2, ...span },
+      { kind: "load", id: 3, slot: 3, ...span },
+      store
+        ? {
+            kind: "element-store",
+            id: 4,
+            object: 0,
+            index: 1,
+            value: 0,
+            ...layout,
+            cachedStorage: 2,
+            ...(includeCount ? { cachedCount: 3 } : {}),
+            ...span,
+          }
+        : {
+            kind: "element-load",
+            id: 4,
+            object: 0,
+            index: 1,
+            ...layout,
+            cachedStorage: 2,
+            ...(includeCount ? { cachedCount: 3 } : {}),
+            ...span,
+          },
+    ];
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "cachedElement",
+          exported: true,
+          parameters: [0, 1, 2, 3],
+          slots: ["general", "number", storageType, countType],
+          returnType: store ? "boolean" : "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: 4, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: "optional-reference", mutable: true },
+          ],
+        },
+        {
+          byteLength: 32,
+          fields: [
+            { offset: 8, type: "number", mutable: true },
+            { offset: 16, type: "Float64Array", mutable: true },
+          ],
+        },
+      ],
+    });
+  }
+  for (const store of [false, true]) {
+    const ok = cachedModule("optional-reference", "number", true, store);
+    assert.ok(ok.ok, JSON.stringify(ok));
+    assert.equal(cachedModule("reference", "number", true, store).ok, false);
+    assert.equal(
+      cachedModule("optional-reference", "boolean", true, store).ok,
+      false,
+    );
+    assert.equal(
+      cachedModule("optional-reference", "number", false, store).ok,
+      false,
+    );
+  }
+  const cacheReads = verify({
+    functions: [
+      {
+        id: 0,
+        name: "cacheReads",
+        exported: true,
+        parameters: [0],
+        slots: ["general", "optional-reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "element-storage",
+                id: 1,
+                object: 0,
+                record: 0,
+                field: 1,
+                elementsRecord: 1,
+                countField: 0,
+                storageField: 1,
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 1, ...span },
+              {
+                kind: "element-count",
+                id: 2,
+                object: 0,
+                record: 0,
+                field: 1,
+                elementsRecord: 1,
+                countField: 0,
+                storageField: 1,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+    records: [
+      {
+        byteLength: 24,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "optional-reference", mutable: true },
+        ],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "number", mutable: true },
+          { offset: 16, type: "Float64Array", mutable: true },
+        ],
+      },
+    ],
+  });
+  assert.ok(cacheReads.ok, JSON.stringify(cacheReads));
 });

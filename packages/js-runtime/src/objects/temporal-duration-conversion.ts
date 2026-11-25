@@ -5,7 +5,7 @@ import {
   type Duration,
 } from "@tint/foundation/chrono/temporal-duration";
 import { numberValue } from "./coercion.ts";
-import { getProperty, type ObjectHooks } from "./operations.ts";
+import { exoticSlots, getProperty, type ObjectHooks } from "./operations.ts";
 import {
   createRuntimeError,
   rejectUnsupportedExecution,
@@ -43,7 +43,7 @@ export function durationFrom(
     if (result === undefined) throw createRuntimeError(realm, "range");
     return result;
   }
-  const branded = object.internalTemporalDuration;
+  const branded = exoticSlots(object).internalTemporalDuration;
   if (branded !== undefined) return branded;
   return durationWith(undefined, item, realm, hooks);
 }

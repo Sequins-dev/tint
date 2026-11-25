@@ -16,13 +16,28 @@ export const nativeGenerationalStateWords = 20;
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
  * Realms within one context share this token; it is not an agent identifier. */
-export const nativeContextDomainOffset = 88;
+export const nativeContextDomainOffset = 96;
+/** Innermost native activation record (a script entry's frame record, see
+ * docs/design-general-runtime-rearchitecture.md, "Activation records"), or 0.
+ * Script entries link and unlink their record; the runtime walks the chain
+ * for stack-trace names and legacy caller and arguments reflection. */
+export const nativeActivationTopOffset = 88;
+/** A script entry's activation record in its frame: the previous record,
+ * the frame pointer with the kind in its low four bits (1 with actual
+ * operands, 0 with a materialized list), the callee's general pair, then the
+ * actual count and the target's register actuals (general pairs). Stack
+ * actuals follow the frame record (frame pointer + 16). */
+export const nativeActivationRecordBytes = 32;
+export const nativeActivationFrameOffset = 8;
+export const nativeActivationCalleeOffset = 16;
+export const nativeActivationCountOffset = nativeActivationRecordBytes;
+export const nativeActivationArgumentsOffset = nativeActivationCountOffset + 8;
 
 /** One atomic pipe write from a Tint isolate to the Node launch broker.
  * The argument is an unsigned little-endian word, followed by a reply fd. */
 export const nodeWorkerLaunchRecordBytes = 12;
 export const nodeWorkerLaunchReplyOffset = 8;
-export const nativeHostedContextByteLength = 96;
+export const nativeHostedContextByteLength = 104;
 /** The hosted entry sends this to its allocator only after the mutator
  * has returned, before reclaiming the collector's permanent storage. */
 export const nativeAllocatorShutdownRequest = -1;

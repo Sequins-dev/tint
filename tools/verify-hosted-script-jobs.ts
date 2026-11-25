@@ -40,7 +40,7 @@ export function run():number{
   if(active===undefined||active.realm!==a||active.scriptOrModule!==generatorSource)throw "generator context";
   return {kind:"return",value:42};
  },a));
- const record=generator.internalGeneratorData;
+ const record=generator.internalExoticSlots?.internalGeneratorData;
  if(record===undefined)return 3;
  const result=runScriptContext<unknown>(agent,{realm:b,scriptOrModule:consumer},():unknown=>resumeGenerator<unknown>(record,"next",undefined,{
   undefinedValue:undefined,typeError:():unknown=>19,iteratorResult:(value,done):unknown=>{

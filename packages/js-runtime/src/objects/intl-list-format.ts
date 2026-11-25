@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -97,7 +99,10 @@ function resolveLocale(requested: readonly string[]): string {
 
 function requireFormatter(value: unknown, realm: ErrorRealm): ListFormatter {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalListFormatData;
+  const data =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalListFormatData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -171,7 +176,7 @@ export function installListFormatIntrinsic(
       );
       const formatter = createListFormatter(locale, type, style);
       if (formatter === undefined) throw "LIST_FORMAT_DATA_INVARIANT";
-      object.internalListFormatData = formatter;
+      ensureExoticSlots(object).internalListFormatData = formatter;
       return object;
     },
   );

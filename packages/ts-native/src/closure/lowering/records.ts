@@ -737,6 +737,8 @@ export interface RecordContracts extends RecordOperations {
   /** The hidden field of a viewed record layout that holds the record's
    * JavaScript view (the value bridge), or undefined. */
   readonly viewSlot: (record: number) => number | undefined;
+  /** The index of a record's field by source name, or undefined. */
+  readonly fieldIndex: (record: number, name: string) => number | undefined;
   /** Debugging: the record a type's values statically use, among layouts
    * already planned (never plans one), and a record's source names. */
   readonly plannedRecord: (type: number) => number | undefined;
@@ -1858,6 +1860,12 @@ export function createRecordContracts(
     },
     forType: record,
     viewSlot: (record: number): number | undefined => viewSlots[record],
+    fieldIndex: (record: number, name: string): number | undefined => {
+      const fields = names[record];
+      if (fields === undefined) return undefined;
+      const index = fields.indexOf(name);
+      return index < 0 ? undefined : index;
+    },
     plannedRecord: (type) => {
       const shapes = classShapes[type];
       if (shapes !== undefined)

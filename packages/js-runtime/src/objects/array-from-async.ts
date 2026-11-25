@@ -20,6 +20,7 @@ import { toObjectValue } from "./boxing.ts";
 import { lengthOfArrayLike } from "./array-like.ts";
 import { getObjectValueProperty } from "./values.ts";
 import {
+  exoticSlots,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
@@ -207,7 +208,7 @@ export function installArrayFromAsync(
     1,
     (receiver, args): unknown => {
       const promise = createPromiseObject(realm.promisePrototype),
-        record = promise.internalPromiseData;
+        record = exoticSlots(promise).internalPromiseData;
       if (record === undefined) throw "ASYNC_ARRAY_PROMISE_INVARIANT";
       const protocol = createScriptPromiseHooks(
         realm,

@@ -1,4 +1,5 @@
 import {
+  ensureRareSlots,
   isExtensible,
   type OrdinaryObject,
   type ObjectHooks,
@@ -38,7 +39,9 @@ function findPrivateElement<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   name: PrivateName,
 ): PrivateElement<Value> | undefined {
-  const elements = object.internalPrivateElements;
+  const rare = object.internalRareSlots;
+  const elements =
+    rare === undefined ? undefined : rare.internalPrivateElements;
   if (elements === undefined) return undefined;
   for (const element of elements) {
     if (element === undefined) throw "PRIVATE_ELEMENT_INVARIANT";
@@ -59,10 +62,11 @@ function addPrivateElement<Key, Value>(
   element: PrivateElement<Value>,
 ): "none" | "type" {
   if (hasPrivateElement<Key, Value>(object, element.name)) return "type";
-  let elements = object.internalPrivateElements;
+  const rare = ensureRareSlots<Key, Value>(object);
+  let elements = rare.internalPrivateElements;
   if (elements === undefined) {
     elements = [];
-    object.internalPrivateElements = elements;
+    rare.internalPrivateElements = elements;
   }
   elements.push(element);
   return "none";

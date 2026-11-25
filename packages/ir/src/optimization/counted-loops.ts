@@ -18,6 +18,7 @@ import {
   type SlotBinding,
   type Terminator,
 } from "../scalar/index.ts";
+import { compactReachableBlocks, hasScriptOperations } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 
 export interface CountedLoopBounds {
@@ -102,7 +103,8 @@ export function boundCountedLoops(
   // bound: the bound's own facts (such as string-length relations) matter.
   const proven = provenInductionWords(fn);
   let current = fn,
-    bounded = 0;
+    bounded = 0,
+    guardedBounded = false;
   const touched = new Uint8Array(count);
   for (const loop of loops) {
     if (loop === undefined) throw "counted loop invariant";
@@ -177,9 +179,12 @@ export function boundCountedLoops(
     );
     visited += result.visited;
     if (visited > budget) return undefined;
-    // The copy's exits join the loop's: a record read proven along the
-    // unique-predecessor chain through an exit must stay proven.
-    if (joined && !recordReadsKept(current, result.fn)) {
+    // The copy's exits join the loop's, and a guarded preheader joins two
+    // branches into the cold entry: keep every proven record read intact.
+    if (
+      (joined || candidate.guard !== undefined) &&
+      !recordReadsKept(current, result.fn)
+    ) {
       missed("cold copy would join a proven record read's path");
       continue;
     }
@@ -191,6 +196,7 @@ export function boundCountedLoops(
     current = result.fn;
     nextValue = result.nextValue;
     bounded++;
+    if (candidate.guard !== undefined) guardedBounded = true;
     // The copy's exits gain predecessors: a loop headed there is stale.
     for (const id of loop.body) if (id !== undefined) touched[id] = 1;
     for (const id of candidate.exits) if (id !== undefined) touched[id] = 1;
@@ -209,6 +215,16 @@ export function boundCountedLoops(
           String(candidate.bound) +
           ")",
       });
+  }
+  if (guardedBounded) {
+    const compacted = compactReachableBlocks(
+      current,
+      current.blocks,
+      budget - visited,
+    );
+    if (compacted === undefined) return undefined;
+    current = compacted.fn;
+    visited += compacted.visited;
   }
   const promoted = promoteBitwiseAccumulators(
     current,
@@ -600,7 +616,11 @@ interface CountedLoop {
   readonly preheader: number;
   readonly counter: number;
   readonly bound: number;
-  /** The header's condition and its block position. */
+  /** Optional loop-invariant boolean guard slot tested at `loop.header`
+   * before entering `testBlock` (`i < bound`). */
+  readonly guard: number | undefined;
+  readonly testBlock: number;
+  /** The test block's `<` condition value ID. */
   readonly condition: number;
   /** Blocks outside the loop that its blocks branch to. */
   readonly exits: readonly number[];
@@ -630,7 +650,40 @@ function countedLoop(
     preheader.exception !== undefined
   )
     return undefined;
-  const term = header.terminator;
+  const hasGeneral = hasScriptOperations(fn);
+  let guardSlot: number | undefined;
+  let testBlock = header;
+  const headerTerm = header.terminator;
+  if (headerTerm.kind !== "branch") return undefined;
+  if (
+    hasGeneral &&
+    header.exception === undefined &&
+    header.instructions.length === 1 &&
+    loop.body.has(headerTerm.consequent)
+  ) {
+    const only = header.instructions[0];
+    if (
+      only !== undefined &&
+      only.kind === "load" &&
+      only.id === headerTerm.condition &&
+      fn.slots[only.slot] === "boolean" &&
+      !loop.writes.has(only.slot)
+    ) {
+      const next = fn.blocks[headerTerm.consequent];
+      const nextPreds = predecessors[headerTerm.consequent] ?? [];
+      if (
+        next !== undefined &&
+        next.id !== header.id &&
+        next.exception === undefined &&
+        nextPreds.length === 1 &&
+        nextPreds[0] === header.id
+      ) {
+        guardSlot = only.slot;
+        testBlock = next;
+      }
+    }
+  }
+  const term = testBlock.terminator;
   // The body runs only while the test holds.
   if (
     term.kind !== "branch" ||
@@ -640,7 +693,7 @@ function countedLoop(
     return undefined;
   let condition: Instruction | undefined;
   const loaded = new Map<number, number>();
-  for (const op of header.instructions) {
+  for (const op of testBlock.instructions) {
     if (op === undefined) throw "counted loop instruction invariant";
     if (op.kind === "load") loaded.set(op.id, op.slot);
     if (instructionResult(op) === term.condition) condition = op;
@@ -675,7 +728,7 @@ function countedLoop(
     const t = block.terminator;
     if (
       (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
-      (t.slot === counter || t.slot === bound)
+      (t.slot === counter || t.slot === bound || t.slot === guardSlot)
     )
       return undefined;
     for (const target of successors(t)) {
@@ -692,6 +745,8 @@ function countedLoop(
     preheader: preheaderId,
     counter,
     bound,
+    guard: guardSlot,
+    testBlock: testBlock.id,
     condition: term.condition,
     exits,
     start: condition.start,
@@ -905,37 +960,39 @@ function boundLoop(
     instructions: hot,
     terminator: { kind: "jump", target: loop.header, start: start0, end: end0 },
   });
-  // The preheader enters the cold copy only for bounds above 2^32 - 1.
+  // The preheader enters the cold copy when the optional guard is false or for
+  // bounds above 2^32 - 1.
   const preheader = fn.blocks[candidate.preheader];
   if (preheader === undefined) throw "counted loop preheader invariant";
   const tested = nextValue++,
     limit = nextValue++,
     above = nextValue++;
-  const guard: Instruction[] = preheader.instructions.slice();
-  guard.push({
-    kind: "load",
-    id: tested,
-    slot: candidate.bound,
-    start: start0,
-    end: end0,
-  });
-  guard.push({
-    kind: "constant",
-    id: limit,
-    value: maxWordBound,
-    start: start0,
-    end: end0,
-  });
-  guard.push({
-    kind: "binary",
-    id: above,
-    operator: ">",
-    left: tested,
-    right: limit,
-    start: start0,
-    end: end0,
-  });
-  const branch: Terminator = {
+  const boundGuardOps: Instruction[] = [
+    {
+      kind: "load",
+      id: tested,
+      slot: candidate.bound,
+      start: start0,
+      end: end0,
+    },
+    {
+      kind: "constant",
+      id: limit,
+      value: maxWordBound,
+      start: start0,
+      end: end0,
+    },
+    {
+      kind: "binary",
+      id: above,
+      operator: ">",
+      left: tested,
+      right: limit,
+      start: start0,
+      end: end0,
+    },
+  ];
+  const boundBranch: Terminator = {
     kind: "branch",
     condition: above,
     consequent: coldEntry,
@@ -944,41 +1001,120 @@ function boundLoop(
     end: end0,
   };
   const exception = preheader.exception;
-  blocks[candidate.preheader] =
-    exception === undefined
-      ? { id: preheader.id, instructions: guard, terminator: branch }
-      : {
-          id: preheader.id,
-          instructions: guard,
-          terminator: branch,
-          exception,
-        };
+  const guardSlot = candidate.guard;
+  if (guardSlot !== undefined) {
+    const boundCheckId = blocks.length;
+    blocks.push({
+      id: boundCheckId,
+      instructions: boundGuardOps,
+      terminator: boundBranch,
+    });
+    const guardLoaded = nextValue++;
+    const preOps = preheader.instructions.slice();
+    preOps.push({
+      kind: "load",
+      id: guardLoaded,
+      slot: guardSlot,
+      start: start0,
+      end: end0,
+    });
+    const guardBranch: Terminator = {
+      kind: "branch",
+      condition: guardLoaded,
+      consequent: boundCheckId,
+      alternate: coldEntry,
+      start: start0,
+      end: end0,
+    };
+    blocks[candidate.preheader] =
+      exception === undefined
+        ? { id: preheader.id, instructions: preOps, terminator: guardBranch }
+        : {
+            id: preheader.id,
+            instructions: preOps,
+            terminator: guardBranch,
+            exception,
+          };
+  } else {
+    const guard: Instruction[] = preheader.instructions.slice();
+    for (const op of boundGuardOps) {
+      if (op !== undefined) guard.push(op);
+    }
+    blocks[candidate.preheader] =
+      exception === undefined
+        ? { id: preheader.id, instructions: guard, terminator: boundBranch }
+        : {
+            id: preheader.id,
+            instructions: guard,
+            terminator: boundBranch,
+            exception,
+          };
+  }
   // The header compares the counter with the word bound.
   const header = fn.blocks[loop.header];
-  if (header === undefined) throw "counted loop header invariant";
+  const testBlock = fn.blocks[candidate.testBlock];
+  if (header === undefined || testBlock === undefined)
+    throw "counted loop header invariant";
   const reloaded = nextValue++,
     instructions: Instruction[] = [];
-  for (const op of header.instructions) {
-    if (op === undefined) throw "counted loop instruction invariant";
-    if (op.kind === "binary" && op.id === candidate.condition) {
-      instructions.push({
-        kind: "load",
-        id: reloaded,
-        slot: wordBound,
-        start: start0,
-        end: end0,
-      });
-      instructions.push({ ...op, right: reloaded });
-    } else instructions.push(op);
+  let headerTerminator = testBlock.terminator;
+  if (guardSlot !== undefined) {
+    const substitution = new Uint32Array(firstValue);
+    for (const op of testBlock.instructions) {
+      if (op === undefined) throw "counted loop instruction invariant";
+      const substituted = substituteInstructionValues(op, substitution),
+        result = instructionResult(op);
+      let copied = substituted;
+      if (result !== undefined) {
+        const renamed = nextValue++;
+        substitution[result] = renamed + 1;
+        copied = renumberInstructionResult(substituted, renamed);
+      }
+      if (op.kind === "binary" && op.id === candidate.condition) {
+        instructions.push({
+          kind: "load",
+          id: reloaded,
+          slot: wordBound,
+          start: start0,
+          end: end0,
+        });
+        if (copied.kind === "binary")
+          instructions.push({ ...copied, right: reloaded });
+        else instructions.push(copied);
+      } else instructions.push(copied);
+    }
+    headerTerminator = substituteTerminatorValues(
+      testBlock.terminator,
+      substitution,
+    );
+    blocks[candidate.testBlock] = {
+      id: candidate.testBlock,
+      instructions: [],
+      terminator: { kind: "trap", start: start0, end: end0 },
+    };
+  } else {
+    for (const op of header.instructions) {
+      if (op === undefined) throw "counted loop instruction invariant";
+      if (op.kind === "binary" && op.id === candidate.condition) {
+        instructions.push({
+          kind: "load",
+          id: reloaded,
+          slot: wordBound,
+          start: start0,
+          end: end0,
+        });
+        instructions.push({ ...op, right: reloaded });
+      } else instructions.push(op);
+    }
   }
   const headerException = header.exception;
   blocks[loop.header] =
     headerException === undefined
-      ? { id: header.id, instructions, terminator: header.terminator }
+      ? { id: header.id, instructions, terminator: headerTerminator }
       : {
           id: header.id,
           instructions,
-          terminator: header.terminator,
+          terminator: headerTerminator,
           exception: headerException,
         };
   // The copy's counter is the same source variable.

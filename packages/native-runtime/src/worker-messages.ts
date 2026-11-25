@@ -8,6 +8,8 @@ import {
   type SharedBlockService,
 } from "@tint/js-runtime/bytes/shared";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   deserializeWorkerValue,
   serializeWorkerValue,
@@ -152,9 +154,12 @@ export function createNativeWorkerMessages(
 ): NativeWorkerMessages {
   const { realm, shared, backing, ports } = options;
   function identity(object: ObjectValue): number {
-    if (object.internalIdentity === 0)
-      object.internalIdentity = realm.agent.nextObjectIdentity++;
-    return object.internalIdentity;
+    let id = exoticSlots(object).internalIdentity;
+    if (id === 0) {
+      id = realm.agent.nextObjectIdentity++;
+      ensureExoticSlots(object).internalIdentity = id;
+    }
+    return id;
   }
   function discardGrant(grant: Grant): void {
     if (grant.kind === "a") backing.discard(grant.backing);
@@ -198,7 +203,7 @@ export function createNativeWorkerMessages(
       const id = identity(object);
       if (indices.has(id)) return error("Duplicate object in transfer list");
       indices.set(id, grants.length);
-      const storage = object.internalArrayBufferData;
+      const storage = exoticSlots(object).internalArrayBufferData;
       if (storage !== undefined) {
         const grant = backing.inspect(storage);
         if (grant === undefined)
@@ -238,14 +243,14 @@ export function createNativeWorkerMessages(
           if (options.portForObject(object) !== undefined)
             return error("A MessagePort must be listed in the transfer list");
           const index = grants.length;
-          const buffer = object.internalArrayBufferData;
+          const buffer = exoticSlots(object).internalArrayBufferData;
           if (buffer !== undefined) {
             const copy = cloneBuffer(buffer);
             copies.push(copy);
             grants.push({ kind: "a", backing: copy });
             return index;
           }
-          const storage = object.internalSharedArrayBufferData;
+          const storage = exoticSlots(object).internalSharedArrayBufferData;
           if (storage === undefined) return undefined;
           if (shared === undefined || storage.engineId !== shared.engineId)
             return error("The SharedArrayBuffer belongs to another engine");
@@ -306,7 +311,7 @@ export function createNativeWorkerMessages(
             const object = createObject<ScriptPropertyKey, unknown>(
               realm.arrayBufferPrototype,
             );
-            object.internalArrayBufferData = backing.adopt(
+            ensureExoticSlots(object).internalArrayBufferData = backing.adopt(
               grant.backing,
               realm.bufferMaxBytes,
             );
@@ -330,7 +335,8 @@ export function createNativeWorkerMessages(
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.sharedArrayBufferPrototype,
           );
-          object.internalSharedArrayBufferData = storage.value;
+          ensureExoticSlots(object).internalSharedArrayBufferData =
+            storage.value;
           used.add(index);
           return object;
         },

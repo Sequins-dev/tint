@@ -9,6 +9,7 @@ import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import { typedArrayElementWidth } from "./typed-array-data.ts";
 import { viewObjectValue } from "./values.ts";
+import { exoticSlots } from "./operations.ts";
 
 export interface ArrayBufferViewRange {
   readonly kind: "ordinary" | "shared" | "detached";
@@ -26,8 +27,8 @@ export function projectArrayBufferViewRange(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   order: SharedOrder = "seq-cst",
 ): ArrayBufferViewRange | undefined {
-  const array = object.internalTypedArrayData;
-  const view = object.internalDataViewData;
+  const array = exoticSlots(object).internalTypedArrayData;
+  const view = exoticSlots(object).internalDataViewData;
   const data = array ?? view;
   if (data === undefined) return undefined;
   const storage = data.storage;

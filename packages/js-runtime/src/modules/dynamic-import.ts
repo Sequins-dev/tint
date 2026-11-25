@@ -7,6 +7,7 @@ import { canonicalModuleRequest } from "@tint/foundation/modules";
 import { stringValue } from "../objects/coercion.ts";
 import { viewObjectValue } from "../objects/values.ts";
 import {
+  exoticSlots,
   getProperty,
   getOwnProperty,
   ownKeys,
@@ -73,7 +74,7 @@ function allModuleEvaluations(
   );
   for (const evaluation of evaluations) {
     if (evaluation === undefined) throw "MODULE_PROMISE_INVARIANT";
-    const promise = evaluation.internalPromiseData;
+    const promise = exoticSlots(evaluation).internalPromiseData;
     if (promise === undefined) throw "MODULE_PROMISE_INVARIANT";
     performPromiseThen<unknown>(
       promise,
@@ -117,7 +118,9 @@ export function continueDynamicImport(
         current.promiseRejectionTracker(promise, operation),
     ),
     module = completion.module,
-    load = loadRequestedModules(module, hooks, undefined).internalPromiseData;
+    load = exoticSlots(
+      loadRequestedModules(module, hooks, undefined),
+    ).internalPromiseData;
   if (load === undefined) throw "MODULE_PROMISE_INVARIANT";
   const onRejected = builtinFunction(
     current.functionPrototype,
@@ -170,7 +173,7 @@ export function continueDynamicImport(
         }
         evaluated = allModuleEvaluations(evaluations, current, hooks);
       } else evaluated = evaluateModule(module, hooks);
-      const evaluation = evaluated.internalPromiseData;
+      const evaluation = exoticSlots(evaluated).internalPromiseData;
       if (evaluation === undefined) throw "MODULE_PROMISE_INVARIANT";
       performPromiseThen<unknown>(
         evaluation,

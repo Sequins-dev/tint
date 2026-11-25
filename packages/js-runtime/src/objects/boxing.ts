@@ -1,6 +1,6 @@
 import { viewSymbolValue } from "./symbols.ts";
 import { viewBigIntValue } from "./bigints.ts";
-import { createObject } from "./operations.ts";
+import { ensureExoticSlots, createObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
 import { createPrimitiveObject } from "./boxed-primitives.ts";
@@ -42,13 +42,19 @@ export function toObjectValue(
   const symbol = viewSymbolValue(value);
   if (symbol !== undefined) {
     const box = createObject<ScriptPropertyKey, unknown>(realm.symbolPrototype);
-    box.internalPrimitiveData = { kind: "symbol", value: symbol };
+    ensureExoticSlots(box).internalPrimitiveData = {
+      kind: "symbol",
+      value: symbol,
+    };
     return box;
   }
   const bigint = viewBigIntValue(value);
   if (bigint !== undefined) {
     const box = createObject<ScriptPropertyKey, unknown>(realm.bigIntPrototype);
-    box.internalPrimitiveData = { kind: "bigint", value: bigint };
+    ensureExoticSlots(box).internalPrimitiveData = {
+      kind: "bigint",
+      value: bigint,
+    };
     return box;
   }
   return rejectUnsupportedExecution(realm);

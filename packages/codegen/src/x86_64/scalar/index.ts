@@ -14,6 +14,10 @@ import {
   type SysVCallLayout as CCallLayout,
 } from "@tint/abi/c/sysv";
 import {
+  nativeActivationCalleeOffset,
+  nativeActivationCountOffset,
+  nativeActivationFrameOffset,
+  nativeActivationTopOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayLengthOffset,
@@ -55,6 +59,7 @@ import {
   writeWord64,
 } from "@tint/foundation/binary/bytes";
 import type { Word64 } from "@tint/foundation/binary/word64";
+import { scriptEntryCalleeValues } from "../../scalar/property-fusion.ts";
 import {
   instructionResult,
   optionalNumberAbsentHigh,
@@ -675,6 +680,7 @@ export function emitModule(
 
   function body(fn: FunctionIR): void {
     assembler.beginScope();
+    const scriptEntryCallees = scriptEntryCalleeValues(fn);
     const fnLabel = functionLabel(fn.id);
     const interruptible =
       workerFunctions?.has(
@@ -961,29 +967,37 @@ export function emitModule(
       if (callee.import === true && imported === undefined)
         fail("UNSUPPORTED", "unsupported managed import " + callee.name);
       if (op.kind === "call-indirect") {
-        guardRecord(op.callee, functionRecord, trapLabel);
-        emit({
-          op: "mov",
-          dst: rax,
-          src: mem(9, nativeFunctionSignatureOffset),
-        });
-        address(scratch, signature(op.target));
-        emit({ op: "cmp", dst: rax, src: scratch });
-        if (op.discardResult === true && !signatureImports.has(op.target)) {
-          const shape = signatures[op.target];
-          if (shape === undefined) throw "discarded result signature invariant";
-          const valid = fnLabel + ":signature:" + String(instructionCount);
-          const matches = discardSignatures.get(shape.parameters);
-          if (matches !== undefined)
-            for (const match of matches) {
-              if (match === undefined || match === shape.name) continue;
-              branch(emit, "e", valid);
-              emit({ op: "lea", dst: scratch, src: rip(match) });
-              emit({ op: "cmp", dst: rax, src: scratch });
-            }
-          branch(emit, "ne", trapLabel);
-          emit({ op: "label", name: valid });
-        } else branch(emit, "ne", trapLabel);
+        if (
+          op.scriptArguments !== undefined &&
+          scriptEntryCallees?.has(op.callee) === true
+        )
+          emit({ op: "mov", dst: r9, src: frame(home(op.callee)) });
+        else {
+          guardRecord(op.callee, functionRecord, trapLabel);
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(9, nativeFunctionSignatureOffset),
+          });
+          address(scratch, signature(op.target));
+          emit({ op: "cmp", dst: rax, src: scratch });
+          if (op.discardResult === true && !signatureImports.has(op.target)) {
+            const shape = signatures[op.target];
+            if (shape === undefined)
+              throw "discarded result signature invariant";
+            const valid = fnLabel + ":signature:" + String(instructionCount);
+            const matches = discardSignatures.get(shape.parameters);
+            if (matches !== undefined)
+              for (const match of matches) {
+                if (match === undefined || match === shape.name) continue;
+                branch(emit, "e", valid);
+                emit({ op: "lea", dst: scratch, src: rip(match) });
+                emit({ op: "cmp", dst: rax, src: scratch });
+              }
+            branch(emit, "ne", trapLabel);
+            emit({ op: "label", name: valid });
+          } else branch(emit, "ne", trapLabel);
+        }
         emit({
           op: "mov",
           dst: environment,
@@ -4203,6 +4217,502 @@ export function emitModule(
           types.set(op.id, field.type);
           return;
         }
+        case "record-slot-read": {
+          const field = recordField(op.record, op.field);
+          // The index must be an integer in [0, count).
+          exactInteger(emit, frame(home(op.index)), r9, trapLabel);
+          emit({ op: "cmp", dst: r9, src: imm(op.count) });
+          branch(emit, "ae", trapLabel);
+          emit({
+            op: "shl",
+            dst: r9,
+            count: scalarByteLength(field.type) === 16 ? 4 : 3,
+          });
+          emit({ op: "add", dst: r9, src: frame(home(op.object)) });
+          transferField(field, home(op.id), true);
+          types.set(op.id, field.type);
+          return;
+        }
+        case "property-load":
+        case "property-store": {
+          // See the AArch64 emission: the receiver's first word against the
+          // site's shape, then the value at the site's raw word index.
+          const shape = recordField(op.record, 0);
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done",
+            hit = site + ":hit";
+          if (op.kind === "property-load") {
+            const inherited = op.inherited,
+              stride = inherited ? 3 : 2,
+              loadValue = site + ":load";
+            emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
+            emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+            if (inherited) {
+              const isObject = site + ":obj",
+                shapeReady = site + ":shape";
+              const epoch = recordField(
+                  op.siteRecord,
+                  op.siteField + op.entries * 3,
+                ),
+                epochRecord = recordField(
+                  op.siteRecord,
+                  op.siteField + op.entries * 3 + 1,
+                ),
+                stringShape = recordField(
+                  op.siteRecord,
+                  op.siteField + op.entries * 3 + 2,
+                ),
+                current = recordField(op.epochRecord, op.epochField);
+              branch(emit, "e", isObject);
+              emit({ op: "cmp", dst: frame(home(op.object)), src: imm(3) });
+              branch(emit, "ne", missed);
+              emit({ op: "mov", dst: rax, src: mem(10, stringShape.offset) });
+              emit({ op: "jmp", target: label(shapeReady) });
+              emit({ op: "label", name: isObject });
+              emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+              emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+              emit({ op: "label", name: shapeReady });
+              // Direct inherited values are current while the epoch they were
+              // found under is the epoch record's value.
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(10, epochRecord.offset),
+              });
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(11, current.offset),
+              });
+              emit({ op: "cmp", dst: scratch, src: mem(10, epoch.offset) });
+              branch(emit, "ne", missed);
+            } else {
+              branch(emit, "ne", missed);
+              emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+              emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+            }
+            // Every entry but the last branches to its own hit tail, which
+            // loads the word index into rax (and the direct inherited value
+            // address into r11).
+            for (let entry = 0; entry < op.entries; entry++) {
+              const first = op.siteField + entry * stride,
+                entryShape = recordField(op.siteRecord, first);
+              emit({ op: "cmp", dst: rax, src: mem(10, entryShape.offset) });
+              const last = entry === op.entries - 1;
+              const matched = site + ":entry" + String(entry);
+              branch(emit, last ? "ne" : "e", last ? missed : matched);
+            }
+            const lastEntry = op.siteField + (op.entries - 1) * stride;
+            if (inherited)
+              emit({
+                op: "lea",
+                dst: scratch,
+                src: mem(10, recordField(op.siteRecord, lastEntry + 2).offset),
+              });
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(10, recordField(op.siteRecord, lastEntry + 1).offset),
+            });
+            if (op.entries > 1) emit({ op: "jmp", target: label(hit) });
+            for (let entry = 0; entry < op.entries - 1; entry++) {
+              const first = op.siteField + entry * stride;
+              emit({ op: "label", name: site + ":entry" + String(entry) });
+              if (inherited)
+                emit({
+                  op: "lea",
+                  dst: scratch,
+                  src: mem(10, recordField(op.siteRecord, first + 2).offset),
+                });
+              emit({
+                op: "mov",
+                dst: rax,
+                src: mem(10, recordField(op.siteRecord, first + 1).offset),
+              });
+              if (entry < op.entries - 2)
+                emit({ op: "jmp", target: label(hit) });
+            }
+            if (op.entries > 1) emit({ op: "label", name: hit });
+            const spillFieldIndex = op.spillField,
+              spillRecordIndex = op.spillRecord;
+            const hasSpill =
+              spillFieldIndex !== undefined && spillRecordIndex !== undefined;
+            const spillLabel = site + ":spill";
+            if (hasSpill || inherited) emit({ op: "test", dst: rax, src: rax });
+            if (hasSpill) branch(emit, "s", spillLabel);
+            if (inherited) branch(emit, "e", loadValue);
+            emit({
+              op: "lea",
+              dst: scratch,
+              src: {
+                kind: "mem",
+                width: 64,
+                address: { kind: "base", base: 9, index: 0, scale: 8, disp: 0 },
+              },
+            });
+            if (
+              spillFieldIndex !== undefined &&
+              spillRecordIndex !== undefined
+            ) {
+              const spillField = recordField(op.record, spillFieldIndex),
+                spillNext = recordField(spillRecordIndex, 0),
+                spillLoop = site + ":spillLoop",
+                spillDone = site + ":spillDone";
+              emit({ op: "jmp", target: label(loadValue) });
+              emit({ op: "label", name: spillLabel });
+              emit({ op: "mov", dst: r9, src: mem(9, spillField.offset) });
+              emit({ op: "mov", dst: scratch, src: rax });
+              emit({ op: "shr", dst: scratch, count: 16 });
+              emit({ op: "and", dst: scratch, src: imm(0xffff) });
+              emit({ op: "test", dst: scratch, src: scratch });
+              branch(emit, "e", spillDone);
+              emit({ op: "label", name: spillLoop });
+              emit({ op: "mov", dst: r9, src: mem(9, spillNext.offset) });
+              emit({ op: "dec", dst: scratch });
+              branch(emit, "ne", spillLoop);
+              emit({ op: "label", name: spillDone });
+              emit({ op: "and", dst: rax, src: imm(0xffff) });
+              emit({
+                op: "lea",
+                dst: scratch,
+                src: {
+                  kind: "mem",
+                  width: 64,
+                  address: {
+                    kind: "base",
+                    base: 9,
+                    index: 0,
+                    scale: 8,
+                    disp: 0,
+                  },
+                },
+              });
+            }
+            emit({ op: "label", name: loadValue });
+            emit({ op: "mov", dst: gpr(10), src: mem(11, 8) });
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: gpr(10) });
+            emit({ op: "mov", dst: rax, src: mem(11, 0) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            // The absent value: undefined's tag with payload 1.
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "label", name: done });
+            define(op.id, "general");
+            return;
+          }
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
+          const siteShape = recordField(op.siteRecord, op.siteField);
+          emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
+          branch(emit, "ne", missed);
+          const transition = recordField(op.siteRecord, op.siteField + 2),
+            epoch = recordField(op.siteRecord, op.siteField + 3),
+            epochRecord = recordField(op.siteRecord, op.siteField + 4),
+            current = recordField(op.epochRecord, op.epochField);
+          const existing = site + ":existing";
+          emit({ op: "mov", dst: scratch, src: mem(10, transition.offset) });
+          emit({ op: "test", dst: scratch, src: scratch });
+          branch(emit, "e", existing);
+          emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
+          emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
+          emit({ op: "label", name: existing });
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(10, recordField(op.siteRecord, op.siteField + 1).offset),
+          });
+          const word = (disp: number): Memory<64> => ({
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 9, index: 0, scale: 8, disp },
+          });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.value)) });
+          emit({ op: "mov", dst: word(0), src: scratch });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.value) + 8) });
+          emit({ op: "mov", dst: word(8), src: scratch });
+          // An old object may now refer to a young value or shape.
+          remember();
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "boolean");
+          return;
+        }
+        case "script-entry": {
+          const agent = recordField(op.realmRecord, op.agentField),
+            activeField = recordField(op.agentRecord, op.activeField),
+            registerCall = recordField(op.objectRecord, op.registerCallField),
+            invoke = recordField(op.entryRecord, op.invokeField),
+            context = recordField(op.entryRecord, op.contextField),
+            constructible = recordField(op.entryRecord, op.constructibleField),
+            realm = recordField(op.contextRecord, op.realmField),
+            scriptOrModule = recordField(
+              op.contextRecord,
+              op.scriptOrModuleField,
+            );
+          const site = fnLabel + ":script-entry:" + String(op.id);
+          const hit = site + ":hit",
+            miss = site + ":miss",
+            done = site + ":done";
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "cmp", dst: frame(home(op.callee)), src: imm(5) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: frame(home(op.callee) + 8) });
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "e", done);
+          address(scratch, descriptor(op.objectRecord));
+          emit({ op: "cmp", dst: mem(9, 0), src: scratch });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: mem(9, registerCall.offset) });
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "e", done);
+          if (op.construct) {
+            emit({ op: "cmp", dst: mem(9, constructible.offset), src: imm(0) });
+            branch(emit, "e", done);
+          }
+          emit({ op: "mov", dst: gpr(10), src: mem(9, invoke.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", done);
+          emit({ op: "mov", dst: r9, src: mem(9, context.offset) });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.realm)) });
+          emit({ op: "mov", dst: scratch, src: mem(11, agent.offset) });
+          emit({ op: "mov", dst: scratch, src: mem(11, activeField.offset) });
+          emit({ op: "cmp", dst: r9, src: scratch });
+          branch(emit, "e", hit);
+          emit({ op: "test", dst: scratch, src: scratch });
+          branch(emit, "e", done);
+          emit({ op: "mov", dst: rax, src: mem(9, realm.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(11, realm.offset) });
+          branch(emit, "ne", miss);
+          emit({ op: "mov", dst: rax, src: mem(9, scriptOrModule.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(11, scriptOrModule.offset) });
+          branch(emit, "ne", miss);
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(9, scriptOrModule.offset + 8),
+          });
+          emit({
+            op: "cmp",
+            dst: rax,
+            src: mem(11, scriptOrModule.offset + 8),
+          });
+          branch(emit, "ne", miss);
+          emit({ op: "label", name: hit });
+          emit({ op: "mov", dst: rax, src: gpr(10) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: miss });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "optional-reference");
+          return;
+        }
+        case "global-cell": {
+          const declarative = recordField(op.scopeRecord, op.declarativeField),
+            object = recordField(op.scopeRecord, op.objectField),
+            global = recordField(op.scopeRecord, op.globalField),
+            lexicalEpoch = recordField(op.globalRecord, op.lexicalEpochField),
+            globalObject = recordField(op.globalRecord, op.globalObjectField),
+            propertyEpoch = recordField(
+              op.globalObjectRecord,
+              op.propertyEpochField,
+            ),
+            cacheGlobal = recordField(op.cacheRecord, op.cacheGlobalField),
+            cacheLexicalEpoch = recordField(
+              op.cacheRecord,
+              op.cacheLexicalEpochField,
+            ),
+            cacheObjectEpoch = recordField(
+              op.cacheRecord,
+              op.cacheObjectEpochField,
+            ),
+            cacheCell = recordField(op.cacheRecord, op.cacheCellField);
+          const done = fnLabel + ":global-cell:" + String(op.id) + ":done";
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "mov", dst: r9, src: frame(home(op.scope)) });
+          emit({ op: "cmp", dst: mem(9, declarative.offset), src: imm(0) });
+          branch(emit, "ne", done);
+          emit({ op: "cmp", dst: mem(9, object.offset), src: imm(0) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: mem(9, global.offset) });
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.cache)) });
+          emit({ op: "cmp", dst: r9, src: mem(10, cacheGlobal.offset) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: scratch, src: mem(9, lexicalEpoch.offset) });
+          emit({
+            op: "cmp",
+            dst: scratch,
+            src: mem(10, cacheLexicalEpoch.offset),
+          });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: mem(9, globalObject.offset) });
+          emit({ op: "mov", dst: scratch, src: mem(9, propertyEpoch.offset) });
+          emit({
+            op: "cmp",
+            dst: scratch,
+            src: mem(10, cacheObjectEpoch.offset),
+          });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: rax, src: mem(10, cacheCell.offset) });
+          emit({ op: "label", name: done });
+          define(op.id, "optional-reference");
+          return;
+        }
+        case "element-load":
+        case "element-store": {
+          // See the AArch64 emission: the object's record descriptor, its
+          // elements, the index as an integer below the number count, then
+          // the binary64 element.
+          const elements = recordField(op.record, op.field),
+            count = recordField(op.elementsRecord, op.countField),
+            storage = recordField(op.elementsRecord, op.storageField);
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          if (op.kind === "element-store") {
+            // Only a Number (tag 1) overwrites a binary64 element.
+            emit({ op: "cmp", dst: frame(home(op.value)), src: imm(1) });
+            branch(emit, "ne", missed);
+          }
+          const cachedStorage = op.cachedStorage,
+            cachedCount = op.cachedCount;
+          if (cachedStorage !== undefined && cachedCount !== undefined) {
+            exactInteger(emit, frame(home(op.index)), r9, missed);
+            emit({
+              op: "movsd",
+              dst: xmm(1),
+              src: frame(home(cachedCount)),
+            });
+            emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
+            emit({ op: "cmp", dst: r9, src: rax });
+            branch(emit, "ae", missed);
+            emit({
+              op: "mov",
+              dst: gpr(10),
+              src: frame(home(cachedStorage)),
+            });
+          } else {
+            emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+            address(scratch, descriptor(op.record));
+            emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+            emit({ op: "test", dst: gpr(10), src: gpr(10) });
+            branch(emit, "e", missed);
+            // An exact integer (R9) compares unsigned: negative ones are huge.
+            exactInteger(emit, frame(home(op.index)), r9, missed);
+            emit({ op: "movsd", dst: xmm(1), src: mem(10, count.offset) });
+            emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
+            emit({ op: "cmp", dst: r9, src: rax });
+            branch(emit, "ae", missed);
+            emit({ op: "mov", dst: gpr(10), src: mem(10, storage.offset) });
+          }
+          emit({
+            op: "mov",
+            dst: gpr(10),
+            src: mem(10, nativeArrayDataOffset),
+          });
+          const element: Memory<64> = {
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 10, index: 9, scale: 8, disp: 0 },
+          };
+          if (op.kind === "element-store") {
+            emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
+            emit({ op: "mov", dst: element, src: rax });
+            emit({ op: "mov", dst: eax, src: imm(1) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "label", name: done });
+            define(op.id, "boolean");
+            return;
+          }
+          emit({ op: "mov", dst: rax, src: element });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: rax });
+          // A Number: tag 1 and the element's bits.
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          // The absent value: undefined's tag with payload 1.
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "general");
+          return;
+        }
+        case "element-length": {
+          const elements = recordField(op.record, op.field),
+            length = recordField(op.elementsRecord, op.lengthField);
+          const site = fnLabel + ":element-length:" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+          address(scratch, descriptor(op.record));
+          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", missed);
+          emit({ op: "mov", dst: rax, src: mem(10, length.offset) });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: rax });
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "general");
+          return;
+        }
+        case "element-storage":
+        case "element-count": {
+          const elements = recordField(op.record, op.field),
+            count = recordField(op.elementsRecord, op.countField),
+            storage = recordField(op.elementsRecord, op.storageField);
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+          address(scratch, descriptor(op.record));
+          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", missed);
+          if (op.kind === "element-storage") {
+            emit({ op: "mov", dst: rax, src: mem(10, storage.offset) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "label", name: done });
+            define(op.id, "optional-reference");
+          } else {
+            emit({ op: "movsd", dst: xmm(0), src: mem(10, count.offset) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            emit({ op: "xorpd", dst: xmm(0), src: xmm(0) });
+            emit({ op: "label", name: done });
+            define(op.id, "number");
+          }
+          return;
+        }
         case "record-has": {
           const field = recordField(op.record, op.field);
           const site = fnLabel + ":record-has:" + String(op.id);
@@ -4321,6 +4831,84 @@ export function emitModule(
             scalarByteLength(typeOf(op.value)),
           );
           return;
+        case "activation-read": {
+          // Records: @tint/abi/host nativeActivationRecordBytes. This target
+          // has no script entries yet, so the chain stays empty; the reads
+          // follow the shared layout with no register actuals.
+          const record = op.record;
+          if (record === undefined) {
+            emit({ op: "mov", dst: rax, src: frame(savedContext) });
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(0, nativeActivationTopOffset),
+            });
+          } else emit({ op: "cvttsd2si", dst: r9, src: frame(home(record)) });
+          if (op.field === "callee" || op.field === "argument") {
+            const index = op.index;
+            const done = fnLabel + ":activation:" + String(op.id);
+            if (index === undefined) {
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(9, nativeActivationCalleeOffset + 8),
+              });
+              emit({
+                op: "mov",
+                dst: rax,
+                src: mem(9, nativeActivationCalleeOffset),
+              });
+            } else {
+              // Missing actuals read undefined; the rest follow the frame
+              // record (frame pointer + 16).
+              const missing = done + ":missing";
+              emit({ op: "cvttsd2si", dst: r10, src: frame(home(index)) });
+              emit({
+                op: "cmp",
+                dst: r10,
+                src: mem(9, nativeActivationCountOffset),
+              });
+              branch(emit, "ae", missing);
+              emit({
+                op: "mov",
+                dst: r9,
+                src: mem(9, nativeActivationFrameOffset),
+              });
+              emit({ op: "shr", dst: r9, count: 4 });
+              emit({ op: "shl", dst: r9, count: 4 });
+              emit({ op: "shl", dst: r10, count: 4 });
+              emit({ op: "add", dst: r9, src: r10 });
+              emit({ op: "mov", dst: scratch, src: mem(9, 24) });
+              emit({ op: "mov", dst: rax, src: mem(9, 16) });
+              emit({ op: "jmp", target: label(done) });
+              emit({ op: "label", name: missing });
+              emit({ op: "xor", dst: rax, src: rax });
+              emit({ op: "xor", dst: scratch, src: scratch });
+              emit({ op: "label", name: done });
+            }
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: scratch });
+            define(op.id, "general");
+            return;
+          }
+          if (op.field === "previous")
+            emit({ op: "mov", dst: rax, src: mem(9, 0) });
+          else if (op.field === "kind") {
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(9, nativeActivationFrameOffset),
+            });
+            emit({ op: "and", dst: rax, src: imm(15) });
+          } else if (op.field === "count")
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(9, nativeActivationCountOffset),
+            });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
         case "closure-environment":
           if (savedEnvironment === undefined)
             throw "closure environment invariant";
@@ -4518,6 +5106,26 @@ export function emitModule(
           return;
         case "general-is": {
           const type = op.type;
+          if (type === "absent") {
+            // property-load's miss: undefined's tag with payload 1.
+            const done = fnLabel + ":absent:" + String(op.id);
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "cmp", dst: frame(home(op.value)), src: imm(0) });
+            branch(emit, "ne", done);
+            emit({ op: "cmp", dst: frame(home(op.value) + 8), src: imm(1) });
+            setBoolean(emit, "e", 0);
+            emit({ op: "label", name: done });
+            define(op.id, "boolean");
+            return;
+          }
+          if (type === "nullish") {
+            // Clear the only bit that differs between the two nullish tags.
+            emit({ op: "mov", dst: r9, src: frame(home(op.value)) });
+            emit({ op: "test", dst: r9, src: imm(-5) });
+            setBoolean(emit, "e", 0);
+            define(op.id, "boolean");
+            return;
+          }
           const targetTag =
             type === "undefined" ? 0 : type === "null" ? 4 : generalTag(type);
           const array = typedArrayMarker(type);
@@ -4540,12 +5148,14 @@ export function emitModule(
           return;
         }
         case "general-value": {
-          emit({
-            op: "cmp",
-            dst: frame(home(op.value)),
-            src: imm(generalTag(op.type)),
-          });
-          branch(emit, "ne", trapLabel);
+          if (op.unchecked !== true) {
+            emit({
+              op: "cmp",
+              dst: frame(home(op.value)),
+              src: imm(generalTag(op.type)),
+            });
+            branch(emit, "ne", trapLabel);
+          }
           emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
           const array = typedArrayMarker(op.type);
           if (array !== 0) {

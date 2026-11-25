@@ -1,7 +1,7 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 verifyHostedFixture(
   `
-import {type ScriptPropertyKey,createArgumentsObject,createSourceFunction,callObjectValue,createErrorRealm,viewObjectValue,createObject,getOwnProperty,getProperty,setProperty,deleteProperty,setIntegrityLevel,type ArgumentsIntrinsics,type ObjectHooks,type DataAlias} from "object";
+import {type ScriptPropertyKey,createArgumentsObject,createSourceFunction,callObjectValue,createErrorRealm,viewObjectValue,createObject,getOwnProperty,getProperty,setProperty,deleteProperty,setIntegrityLevel,exoticSlots,ensureRareSlots,type ArgumentsIntrinsics,type ObjectHooks,type DataAlias} from "object";
 import {instantiateFunctionArguments,type FunctionArgumentsPlan} from "global-environment";
 import {createDeclarativeEnvironment,createMutableBinding,initializeBinding,getBindingValue,setMutableBinding} from "environment-record";
 const hooks:ObjectHooks<number>={undefinedValue:0,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):number=>{if(callee===99)throw 17;throw 18;}};
@@ -11,7 +11,7 @@ export function run():number{
  let parameter=2;
  const binding=(name:string):DataAlias<number> =>({get:():number=>parameter,set:(value:number):void=>{parameter=value;}});
  const mapped=createArgumentsObject<number,number>([1,2,3],{names:["a","a"],callee:97,binding},intrinsics,hooks);
- if(!mapped.internalArgumentsData||root.internalArgumentsData)return 1;
+ if(!(mapped.internalRareSlots?.internalArgumentsData??false)||(root.internalRareSlots?.internalArgumentsData??false))return 1;
  parameter=42;
  if(getProperty<number,number>(mapped,0,1,hooks)!==1||getProperty<number,number>(mapped,1,1,hooks)!==42)return 2;
  if(!setProperty<number,number>(mapped,1,7,{value:1,object:mapped},hooks)||parameter!==7)return 3;
@@ -27,7 +27,7 @@ export function run():number{
  const unmapped=createArgumentsObject<number,number>([3,0],undefined,intrinsics,hooks);
  const poison=getOwnProperty<number,number>(unmapped,101);
  if(poison===undefined||!poison.accessor||poison.get!==99||poison.set!==99||poison.enumerable||poison.configurable)return 8;
- if(!unmapped.internalArgumentsData||deleteProperty<number,number>(unmapped,101))return 9;
+ if(!(unmapped.internalRareSlots?.internalArgumentsData??false)||deleteProperty<number,number>(unmapped,101))return 9;
  let caught=0;
  try{getProperty<number,number>(unmapped,101,3,hooks);}catch(error){if(error===17)caught=1;}
  if(caught!==1)return 10;
@@ -42,11 +42,11 @@ export function run():number{
  let threw=false;
  try{throwCall(undefined,[]);}catch(error){
   const object=viewObjectValue(error,objectPrototype);
-  if(object!==undefined&&object.internalErrorData&&object.prototype===realm.prototypes.get("type"))threw=true;
+  if(object!==undefined&&exoticSlots(object).internalErrorData&&object.prototype===realm.prototypes.get("type"))threw=true;
  }
  if(!threw)return 17;
  const tagged=createObject<ScriptPropertyKey,unknown>(objectPrototype);
- tagged.internalArgumentsData=true;
+ ensureRareSlots<ScriptPropertyKey,unknown>(tagged).internalArgumentsData=true;
  const stringifier=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(objectPrototype,"toString",objectPrototype,unknownHooks),objectPrototype);
  if(stringifier===undefined)return 12;
  const invoke=stringifier.internalCall;

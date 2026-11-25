@@ -21,6 +21,7 @@ import {
   createConstructorObject,
   createDataProperty,
   defineOwnProperty,
+  ensureExoticSlots,
   isExtensible,
   type OrdinaryObject,
   type ObjectHooks,
@@ -322,7 +323,8 @@ export function createClassMethod(
     implementation,
   );
   functionMetadata(method, name, length, hooks);
-  method.internalSourceText = source;
+  if (source !== undefined)
+    ensureExoticSlots(method).internalSourceText = source;
   makeMethod<ScriptPropertyKey, unknown>(method, home);
   return method;
 }

@@ -442,6 +442,8 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "select-array-access",
       "scalarize-stencil-loops",
       "split-optional-numbers",
+      "shadow-general-numbers",
+      "cache-loop-properties",
       "thread-branches",
       // Before the late sweep (folded read guards), the sweep of the lowered
       // read's function, then after it.
@@ -449,11 +451,14 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "fold-constants",
       "function-local-cleanup",
       "simplify-control-flow",
+      "sink-environment-loads",
       "compact-slots",
       "cache-list-vectors",
+      "cache-element-storage",
       "bound-counted-loops",
       "version-nonzero-divisors",
       "version-string-loops",
+      "layout-blocks",
     ],
   );
   // The first run of each scalar cleanup pass rewrites the arithmetic

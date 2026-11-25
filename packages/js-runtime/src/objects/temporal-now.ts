@@ -10,6 +10,7 @@ import { temporalEpochFromMilliseconds } from "./temporal-epoch.ts";
 import { createBigIntValue, type BigIntValue } from "./bigints.ts";
 import { createTemporalInstantObject } from "./temporal-instant-construction.ts";
 import {
+  ensureExoticSlots,
   createObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -98,17 +99,17 @@ export function installTemporalNow(
                 : realm.temporalPlainDateTimePrototype;
           const object = createObject<ScriptPropertyKey, unknown>(parent);
           if (name === "plainTimeISO")
-            object.internalTemporalPlainTime = {
+            ensureExoticSlots(object).internalTemporalPlainTime = {
               hour: data.hour,
               minute: data.minute,
               second: data.second,
               nanosecond: data.nanosecond,
             };
           else {
-            object.internalTemporalCalendar = "iso8601";
+            ensureExoticSlots(object).internalTemporalCalendar = "iso8601";
             if (name === "plainDateISO")
-              object.internalTemporalPlainDate = data.date;
-            else object.internalTemporalPlainDateTime = data;
+              ensureExoticSlots(object).internalTemporalPlainDate = data.date;
+            else ensureExoticSlots(object).internalTemporalPlainDateTime = data;
           }
           return object;
         },

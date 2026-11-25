@@ -43,7 +43,22 @@ import {
   type DynamicObjectRuntime,
 } from "./dynamic-objects.ts";
 import type { RecordOperation } from "./record-bindings.ts";
-import { bindRecordOperation } from "./record-bindings.ts";
+import {
+  activationOperationField,
+  bindActivationRead,
+  bindFieldWord,
+  bindPropertyLoad,
+  bindPropertyStore,
+  bindAbsentTest,
+  bindArrayElement,
+  bindArrayStore,
+  bindElementLoad,
+  bindElementStore,
+  bindElementLength,
+  bindRecordOperation,
+  bindScriptEntry,
+  bindGlobalCell,
+} from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
 import {
   checkedPropertyName,
@@ -114,6 +129,7 @@ import {
 import {
   verify,
   instructionResult,
+  activationFieldType,
   type ModuleIR,
   type FunctionIR,
   type Block,
@@ -222,6 +238,17 @@ export interface ModuleEntryOptions {
 export interface RecordBinding {
   readonly function: number;
   readonly operation: RecordOperation;
+  /** slot-read and the property cache operations: the first slot field's
+   * name and the slot count; field-word: the field's name. */
+  readonly field?: string | undefined;
+  readonly count?: number | undefined;
+  /** Property cache operations: the site record's first cache field (see
+   * the IR property-load and property-store). Element operations (`field`
+   * names the witness's elements field): the elements record's count field,
+   * which its storage field immediately follows. */
+  readonly siteField?: string | undefined;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number | undefined;
 }
 export function lowerModuleEntries(
   checked: CheckedClosures,
@@ -4313,6 +4340,805 @@ function lowerEntries(
         fail("record binding requires a module function");
       const first = fn.parameters[0],
         second = fn.parameters[1];
+      const span = { start: body.node.start, end: body.node.end };
+      if (binding.operation === "field-word") {
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const name = binding.field;
+        const field =
+          record === undefined || name === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, name);
+        const placed =
+          record === undefined || field === undefined
+            ? undefined
+            : recordContracts.records[record]?.fields[field];
+        if (
+          first === undefined ||
+          fn.parameters.length !== 1 ||
+          fn.slots[first] !== "reference" ||
+          fn.returnType !== "number" ||
+          placed === undefined ||
+          placed.offset % 8 !== 0 ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail("field word bindings take a record witness with a named field");
+        functions[fn.id] = bindFieldWord(fn, placed.offset / 8, span);
+        continue;
+      }
+      const activationField = activationOperationField(binding.operation);
+      if (activationField !== undefined) {
+        // top takes no parameters; argument a record and an index; the
+        // other fields a record. Records and indexes are numbers.
+        const arity =
+          activationField === "top"
+            ? 0
+            : activationField === "argument"
+              ? 2
+              : 1;
+        let numbers: boolean = true;
+        for (const slot of fn.parameters)
+          if (slot === undefined || fn.slots[slot] !== "number")
+            numbers = false;
+        if (
+          fn.parameters.length !== arity ||
+          !numbers ||
+          fn.returnType !== activationFieldType(activationField) ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "activation bindings take numeric record and index parameters and return their field",
+          );
+        functions[fn.id] = bindActivationRead(fn, activationField, span);
+        continue;
+      }
+      if (binding.operation === "absent-test") {
+        if (
+          first === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "general" ||
+          fn.returnType !== "boolean" ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail("absent test bindings take an unknown value and a cache site");
+        functions[fn.id] = bindAbsentTest(fn, first, span);
+        continue;
+      }
+      if (
+        binding.operation === "script-call-entry" ||
+        binding.operation === "script-construct-entry"
+      ) {
+        const unwrapObjectType = (
+          typeId: number | undefined,
+        ): number | undefined => {
+          if (typeId === undefined) return undefined;
+          const current = checked.types[typeId];
+          if (current?.kind === "object") return typeId;
+          if (current?.kind === "union") {
+            for (const member of current.members) {
+              if (
+                member !== undefined &&
+                checked.types[member]?.kind === "object"
+              )
+                return member;
+            }
+          }
+          return undefined;
+        };
+        const propertyType = (
+          objectTypeId: number | undefined,
+          name: string,
+        ): number | undefined => {
+          if (objectTypeId === undefined) return undefined;
+          const object = checked.types[objectTypeId];
+          if (object?.kind !== "object") return undefined;
+          for (const property of object.properties) {
+            if (property !== undefined && property.name === name)
+              return property.type;
+          }
+          return undefined;
+        };
+        const realmType = unwrapObjectType(
+          checked.bindingTypes[bindingId(body.parameters[1])],
+        );
+        const realmRecord =
+          realmType === undefined
+            ? undefined
+            : recordContracts.forType(realmType);
+        const agentField =
+          realmRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(realmRecord, "agent");
+        const agentType = unwrapObjectType(propertyType(realmType, "agent"));
+        const agentRecord =
+          agentType === undefined
+            ? undefined
+            : recordContracts.forType(agentType);
+        const activeField =
+          agentRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(agentRecord, "activeContext");
+        const activeType = unwrapObjectType(
+          propertyType(agentType, "activeContext"),
+        );
+        const contextRecord =
+          activeType === undefined
+            ? undefined
+            : recordContracts.forType(activeType);
+        const realmField =
+          contextRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(contextRecord, "realm");
+        const scriptOrModuleField =
+          contextRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(contextRecord, "scriptOrModule");
+        const objectType = unwrapObjectType(
+          propertyType(realmType, "objectPrototype"),
+        );
+        const objectRecord =
+          objectType === undefined
+            ? undefined
+            : recordContracts.forType(objectType);
+        const registerCallField =
+          objectRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(objectRecord, "internalRegisterCall");
+        const entryType = unwrapObjectType(
+          propertyType(objectType, "internalRegisterCall"),
+        );
+        const entryRecord =
+          entryType === undefined
+            ? undefined
+            : recordContracts.forType(entryType);
+        const invokeField =
+          entryRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(entryRecord, "scriptInvoke");
+        const contextField =
+          entryRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(entryRecord, "context");
+        const constructibleField =
+          entryRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(entryRecord, "constructible");
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "general" ||
+          fn.slots[second] !== "reference" ||
+          fn.returnType !== "optional-reference" ||
+          realmRecord === undefined ||
+          agentField === undefined ||
+          agentRecord === undefined ||
+          activeField === undefined ||
+          objectRecord === undefined ||
+          registerCallField === undefined ||
+          entryRecord === undefined ||
+          invokeField === undefined ||
+          contextField === undefined ||
+          constructibleField === undefined ||
+          contextRecord === undefined ||
+          realmField === undefined ||
+          scriptOrModuleField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "script entry bindings take a callee value and a realm with agent.activeContext",
+          );
+        functions[fn.id] = bindScriptEntry(
+          fn,
+          first,
+          second,
+          binding.operation === "script-construct-entry",
+          {
+            realmRecord,
+            agentField,
+            agentRecord,
+            activeField,
+            objectRecord,
+            registerCallField,
+            entryRecord,
+            invokeField,
+            contextField,
+            constructibleField,
+            contextRecord,
+            realmField,
+            scriptOrModuleField,
+          },
+          span,
+        );
+        continue;
+      }
+      if (binding.operation === "global-cell") {
+        const unwrapObjectType = (
+          typeId: number | undefined,
+        ): number | undefined => {
+          if (typeId === undefined) return undefined;
+          const current = checked.types[typeId];
+          if (current?.kind === "object") return typeId;
+          if (current?.kind === "union") {
+            for (const member of current.members) {
+              if (
+                member !== undefined &&
+                checked.types[member]?.kind === "object"
+              )
+                return member;
+            }
+          }
+          return undefined;
+        };
+        const propertyType = (
+          objectTypeId: number | undefined,
+          name: string,
+        ): number | undefined => {
+          if (objectTypeId === undefined) return undefined;
+          const object = checked.types[objectTypeId];
+          if (object?.kind !== "object") return undefined;
+          for (const property of object.properties) {
+            if (property !== undefined && property.name === name)
+              return property.type;
+          }
+          return undefined;
+        };
+        const scopeType = unwrapObjectType(
+          checked.bindingTypes[bindingId(body.parameters[0])],
+        );
+        const cacheType = unwrapObjectType(
+          checked.bindingTypes[bindingId(body.parameters[1])],
+        );
+        const scopeRecord =
+          scopeType === undefined
+            ? undefined
+            : recordContracts.forType(scopeType);
+        const declarativeField =
+          scopeRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(scopeRecord, "declarative");
+        const objectField =
+          scopeRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(scopeRecord, "object");
+        const globalField =
+          scopeRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(scopeRecord, "global");
+        const globalType = unwrapObjectType(propertyType(scopeType, "global"));
+        const globalRecord =
+          globalType === undefined
+            ? undefined
+            : recordContracts.forType(globalType);
+        const lexicalEpochField =
+          globalRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(globalRecord, "lexicalEpoch");
+        const globalObjectField =
+          globalRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(globalRecord, "object");
+        const globalObjectType = unwrapObjectType(
+          propertyType(globalType, "object"),
+        );
+        const globalObjectRecord =
+          globalObjectType === undefined
+            ? undefined
+            : recordContracts.forType(globalObjectType);
+        const propertyEpochField =
+          globalObjectRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(
+                globalObjectRecord,
+                "internalPropertyEpoch",
+              );
+        const cacheRecord =
+          cacheType === undefined
+            ? undefined
+            : recordContracts.forType(cacheType);
+        const cacheGlobalField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "global");
+        const cacheLexicalEpochField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "lexicalEpoch");
+        const cacheObjectEpochField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "objectEpoch");
+        const cacheCellField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "cell");
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "reference" ||
+          fn.returnType !== "optional-reference" ||
+          scopeRecord === undefined ||
+          declarativeField === undefined ||
+          objectField === undefined ||
+          globalField === undefined ||
+          globalRecord === undefined ||
+          lexicalEpochField === undefined ||
+          globalObjectField === undefined ||
+          globalObjectRecord === undefined ||
+          propertyEpochField === undefined ||
+          cacheRecord === undefined ||
+          cacheGlobalField === undefined ||
+          cacheLexicalEpochField === undefined ||
+          cacheObjectEpochField === undefined ||
+          cacheCellField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "global cell bindings take an environment scope and a global identifier cache",
+          );
+        functions[fn.id] = bindGlobalCell(
+          fn,
+          first,
+          second,
+          {
+            scopeRecord,
+            declarativeField,
+            objectField,
+            globalField,
+            globalRecord,
+            lexicalEpochField,
+            globalObjectField,
+            globalObjectRecord,
+            propertyEpochField,
+            cacheRecord,
+            cacheGlobalField,
+            cacheLexicalEpochField,
+            cacheObjectEpochField,
+            cacheCellField,
+          },
+          span,
+        );
+        continue;
+      }
+      if (
+        binding.operation === "property-load" ||
+        binding.operation === "inherited-property-load" ||
+        binding.operation === "property-store"
+      ) {
+        const store = binding.operation === "property-store";
+        const siteParameter = store ? 2 : 1;
+        const siteType =
+          checked.bindingTypes[bindingId(body.parameters[siteParameter])];
+        const siteRecord =
+          siteType === undefined
+            ? undefined
+            : recordContracts.forType(siteType);
+        const valueName = binding.field,
+          siteName = binding.siteField,
+          count = binding.count,
+          entries = binding.entries ?? 1;
+        // Read the object record layout from `site.witnessObject`
+        // (`OrdinaryObject | undefined`) and the epoch record from
+        // `site.epoch` so callers pass no dead witness argument.
+        let record: number | undefined = undefined,
+          objectTypeId: number | undefined = undefined,
+          epochRecord: number | undefined = undefined,
+          epochField: number | undefined = undefined;
+        const site =
+          siteType === undefined ? undefined : checked.types[siteType];
+        if (site?.kind === "object") {
+          const witness = site.properties.find(
+            (property) =>
+              property !== undefined && property.name === "witnessObject",
+          );
+          const witnessType =
+            witness === undefined ? undefined : checked.types[witness.type];
+          if (witness !== undefined && witnessType?.kind === "object") {
+            objectTypeId = witness.type;
+            record = recordContracts.forType(witness.type);
+          } else if (witnessType?.kind === "union") {
+            for (const member of witnessType.members) {
+              if (
+                member !== undefined &&
+                checked.types[member]?.kind === "object"
+              ) {
+                objectTypeId = member;
+                record = recordContracts.forType(member);
+                break;
+              }
+            }
+          }
+          const epoch = site.properties.find(
+            (property) => property !== undefined && property.name === "epoch",
+          );
+          epochRecord =
+            epoch === undefined
+              ? undefined
+              : recordContracts.forType(epoch.type);
+          epochField =
+            epochRecord === undefined
+              ? undefined
+              : recordContracts.fieldIndex(epochRecord, "value");
+        }
+        let spillRecord: number | undefined = undefined,
+          spillField: number | undefined = undefined;
+        if (!store && record !== undefined && objectTypeId !== undefined) {
+          const candidateSpillField = recordContracts.fieldIndex(
+            record,
+            "internalValues",
+          );
+          const objectType = checked.types[objectTypeId];
+          if (
+            candidateSpillField !== undefined &&
+            objectType?.kind === "object"
+          ) {
+            const valuesProp = objectType.properties.find(
+              (property) =>
+                property !== undefined && property.name === "internalValues",
+            );
+            const valuesType =
+              valuesProp === undefined
+                ? undefined
+                : checked.types[valuesProp.type];
+            let spillTypeId: number | undefined = undefined;
+            if (valuesProp !== undefined && valuesType?.kind === "object")
+              spillTypeId = valuesProp.type;
+            else if (valuesType?.kind === "union") {
+              for (const member of valuesType.members) {
+                if (
+                  member !== undefined &&
+                  checked.types[member]?.kind === "object"
+                ) {
+                  spillTypeId = member;
+                  break;
+                }
+              }
+            }
+            const candidateSpillRecord =
+              spillTypeId === undefined
+                ? undefined
+                : recordContracts.forType(spillTypeId);
+            if (candidateSpillRecord !== undefined) {
+              spillRecord = candidateSpillRecord;
+              spillField = candidateSpillField;
+            }
+          }
+        }
+        const field =
+            record === undefined || valueName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(record, valueName),
+          siteField =
+            siteRecord === undefined || siteName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(siteRecord, siteName);
+        const parameters = store ? 3 : 2;
+        const target = fn.parameters[siteParameter];
+        if (
+          first === undefined ||
+          second === undefined ||
+          target === undefined ||
+          fn.parameters.length !== parameters ||
+          fn.slots[first] !== "general" ||
+          (store && fn.slots[second] !== "general") ||
+          fn.slots[target] !== "reference" ||
+          fn.returnType !== (store ? "boolean" : "general") ||
+          record === undefined ||
+          siteRecord === undefined ||
+          field === undefined ||
+          siteField === undefined ||
+          count === undefined ||
+          !Number.isSafeInteger(count) ||
+          count < 1 ||
+          !Number.isSafeInteger(entries) ||
+          entries < 1 ||
+          entries > 4 ||
+          (store && entries !== 1) ||
+          epochRecord === undefined ||
+          epochField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "property cache bindings take unknown values and a cache site with named object and epoch fields",
+          );
+        const layout = {
+          record,
+          field,
+          count,
+          siteRecord,
+          siteField,
+          ...(spillRecord !== undefined && spillField !== undefined
+            ? { spillRecord, spillField }
+            : {}),
+        };
+        functions[fn.id] = store
+          ? bindPropertyStore(
+              fn,
+              first,
+              second,
+              target,
+              layout,
+              epochRecord,
+              epochField,
+              span,
+            )
+          : bindPropertyLoad(
+              fn,
+              first,
+              target,
+              layout,
+              binding.operation === "inherited-property-load",
+              entries,
+              epochRecord,
+              epochField,
+              span,
+            );
+        continue;
+      }
+      if (
+        binding.operation === "array-element" ||
+        binding.operation === "array-store"
+      ) {
+        const store = binding.operation === "array-store";
+        const third = fn.parameters[2];
+        if (
+          first === undefined ||
+          second === undefined ||
+          (store && third === undefined) ||
+          fn.parameters.length !== (store ? 3 : 2) ||
+          fn.slots[first] !== "Float64Array" ||
+          fn.slots[second] !== "number" ||
+          (store && third !== undefined && fn.slots[third] !== "number") ||
+          fn.returnType !== (store ? "void" : "number") ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "array element bindings take a Float64Array, a number index, and (for stores) a number value",
+          );
+        functions[fn.id] =
+          store && third !== undefined
+            ? bindArrayStore(fn, first, second, third, span)
+            : bindArrayElement(fn, first, second, span);
+        continue;
+      }
+      if (
+        binding.operation === "element-load" ||
+        binding.operation === "element-store"
+      ) {
+        const store = binding.operation === "element-store";
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          countName = binding.siteField;
+        // Accept either OrdinaryObject or ErrorRealm (extracting
+        // objectPrototype's record type) as parameter 0 so call sites can
+        // pass $errors directly without loading $errors.objectPrototype.
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const field =
+          record === undefined || elementsName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, elementsName);
+        // The elements field holds `Elements | undefined`.
+        const property =
+          witness?.kind === "object" && elementsName !== undefined
+            ? witness.properties.find(
+                (item) => item !== undefined && item.name === elementsName,
+              )
+            : undefined;
+        let elementsType: number | undefined = undefined;
+        const declared =
+          property === undefined ? undefined : checked.types[property.type];
+        if (declared?.kind === "union") {
+          for (const member of declared.members) {
+            if (member === undefined) throw "element binding union invariant";
+            if (checked.types[member]?.kind === "undefined") continue;
+            elementsType = elementsType === undefined ? member : -1;
+          }
+        } else if (property !== undefined) elementsType = property.type;
+        const elementsRecord =
+          elementsType === undefined || elementsType < 0
+            ? undefined
+            : recordContracts.forType(elementsType);
+        const countField =
+          elementsRecord === undefined || countName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, countName);
+        const third = fn.parameters[2],
+          fourth = fn.parameters[3];
+        if (
+          first === undefined ||
+          second === undefined ||
+          third === undefined ||
+          (store && fourth === undefined) ||
+          fn.parameters.length !== (store ? 4 : 3) ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.slots[third] !== "number" ||
+          (store && fourth !== undefined && fn.slots[fourth] !== "general") ||
+          fn.returnType !== (store ? "boolean" : "general") ||
+          record === undefined ||
+          field === undefined ||
+          elementsRecord === undefined ||
+          countField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "element bindings take a record witness with an elements field, an unknown value and a number index",
+          );
+        const layout = {
+          record,
+          field,
+          elementsRecord,
+          countField,
+          storageField: countField + 1,
+        };
+        functions[fn.id] =
+          store && fourth !== undefined
+            ? bindElementStore(fn, second, third, fourth, layout, span)
+            : bindElementLoad(fn, second, third, layout, span);
+        continue;
+      }
+      if (binding.operation === "element-length") {
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          lengthName = binding.siteField;
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const field =
+          record === undefined || elementsName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, elementsName);
+        const property =
+          witness?.kind === "object" && elementsName !== undefined
+            ? witness.properties.find(
+                (item) => item !== undefined && item.name === elementsName,
+              )
+            : undefined;
+        let elementsType: number | undefined = undefined;
+        const declared =
+          property === undefined ? undefined : checked.types[property.type];
+        if (declared?.kind === "union") {
+          for (const member of declared.members) {
+            if (member === undefined) throw "element binding union invariant";
+            if (checked.types[member]?.kind === "undefined") continue;
+            elementsType = elementsType === undefined ? member : -1;
+          }
+        } else if (property !== undefined) elementsType = property.type;
+        const elementsRecord =
+          elementsType === undefined || elementsType < 0
+            ? undefined
+            : recordContracts.forType(elementsType);
+        const lengthField =
+          elementsRecord === undefined || lengthName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, lengthName);
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.returnType !== "general" ||
+          record === undefined ||
+          field === undefined ||
+          elementsRecord === undefined ||
+          lengthField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "element-length binding takes a record witness with an elements field and an unknown value",
+          );
+        functions[fn.id] = bindElementLength(
+          fn,
+          second,
+          { record, field, elementsRecord, lengthField },
+          span,
+        );
+        continue;
+      }
+      if (binding.operation === "slot-read") {
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const name = binding.field,
+          count = binding.count;
+        const field =
+          record === undefined || name === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, name);
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "number" ||
+          record === undefined ||
+          field === undefined ||
+          count === undefined ||
+          !Number.isSafeInteger(count) ||
+          count < 1 ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "slot read bindings take a record with named consecutive slot fields and a number index",
+          );
+        functions[fn.id] = bindRecordOperation(
+          fn,
+          first,
+          record,
+          "slot-read",
+          { start: body.node.start, end: body.node.end },
+          field,
+          count,
+          second,
+        );
+        continue;
+      }
       if (
         binding.operation === "view-slot" ||
         binding.operation === "set-view-slot"

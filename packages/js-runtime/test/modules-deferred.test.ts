@@ -144,7 +144,10 @@ test("deferred edges are linked but synchronous bodies wait until first namespac
     root = f.make("root", [target], ["defer"]);
   f.link(root);
   const promise = modules.evaluateModule(root, f.hooks);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   assert.deepEqual(f.log, ["root"]);
   const ns = modules.getModuleNamespace(target, "defer");
   assert.equal(objects.getProperty(ns, "value", ns, f.hooks), 42);
@@ -159,11 +162,17 @@ test("a deferred edge eagerly evaluates asynchronous transitive dependencies but
   f.link(root);
   const promise = modules.evaluateModule(root, f.hooks);
   assert.deepEqual(f.log, ["async:start"]);
-  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "pending",
+  );
   f.pending.get("async")!.functions.resolve(undefined);
   f.drain();
   assert.deepEqual(f.log, ["async:start", "root"]);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   const ns = modules.getModuleNamespace(target, "defer");
   objects.getProperty(ns, "value", ns, f.hooks);
   assert.deepEqual(f.log, ["async:start", "root", "sync", "target"]);
@@ -225,9 +234,12 @@ test("import.defer resolves a deferred namespace without assimilating an exporte
     "defer",
   );
   f.drain();
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   assert.deepEqual(f.log, []);
-  const namespace = promise.internalPromiseData?.result;
+  const namespace = promise.internalExoticSlots?.internalPromiseData?.result;
   assert.equal(namespace, modules.getModuleNamespace(target, "defer"));
 });
 
@@ -249,11 +261,17 @@ test("import.defer waits for asynchronous leaves and resolves before executing s
   );
   f.drain();
   assert.deepEqual(f.log, ["leaf:start"]);
-  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "pending",
+  );
   f.pending.get("leaf")!.functions.resolve(undefined);
   f.drain();
   assert.deepEqual(f.log, ["leaf:start"]);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
 });
 
 test("successful source, deferred and ordinary loads cannot change a resource's module identity", async () => {
@@ -304,7 +322,10 @@ test("static requests of different phases share one successful load and still tr
     });
   };
   const promise = modules.loadRequestedModules(root, f.hooks, undefined);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   assert.equal(loads, 1);
   assert.equal(target.status, "unlinked");
 });

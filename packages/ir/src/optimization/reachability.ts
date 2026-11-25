@@ -87,9 +87,39 @@ export function traceModuleReferences(
           op.kind === "general-record-descriptor" ||
           op.kind === "record-descriptor-address" ||
           op.kind === "record-has" ||
-          op.kind === "record-read"
+          op.kind === "record-read" ||
+          op.kind === "record-slot-read"
         )
           includeRecord(op.record);
+        else if (op.kind === "property-load" || op.kind === "property-store") {
+          includeRecord(op.record);
+          includeRecord(op.siteRecord);
+          includeRecord(op.epochRecord);
+          if (op.kind === "property-load") {
+            const spillRecord = op.spillRecord;
+            if (spillRecord !== undefined) includeRecord(spillRecord);
+          }
+        } else if (op.kind === "script-entry") {
+          includeRecord(op.realmRecord);
+          includeRecord(op.agentRecord);
+          includeRecord(op.objectRecord);
+          includeRecord(op.entryRecord);
+          includeRecord(op.contextRecord);
+        } else if (op.kind === "global-cell") {
+          includeRecord(op.scopeRecord);
+          includeRecord(op.globalRecord);
+          includeRecord(op.globalObjectRecord);
+          includeRecord(op.cacheRecord);
+        } else if (
+          op.kind === "element-load" ||
+          op.kind === "element-store" ||
+          op.kind === "element-length" ||
+          op.kind === "element-storage" ||
+          op.kind === "element-count"
+        ) {
+          includeRecord(op.record);
+          includeRecord(op.elementsRecord);
+        }
       }
       const t = block.terminator;
       if (t.kind === "record" || t.kind === "record-cell")

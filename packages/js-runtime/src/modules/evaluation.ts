@@ -7,10 +7,18 @@ import { runScriptContext } from "../objects/jobs.ts";
 import { builtinFunction } from "../objects/intrinsics.ts";
 import { createScriptPromiseHooks } from "../objects/promises.ts";
 import { performPromiseThen } from "../promises/index.ts";
-import type { ObjectHooks, OrdinaryObject } from "../objects/operations.ts";
+import {
+  exoticSlots,
+  type ObjectHooks,
+  type OrdinaryObject,
+} from "../objects/operations.ts";
 import type { ScriptPropertyKey } from "../objects/symbols.ts";
 import { createModuleCapability } from "./loading.ts";
-import { loadedModule, type ModuleRecord } from "./records.ts";
+import {
+  loadedModule,
+  moduleExecutionContext,
+  type ModuleRecord,
+} from "./records.ts";
 interface EvaluationStack {
   readonly modules: ModuleRecord[];
   depth: number;
@@ -109,7 +117,7 @@ function runSynchronousBody(
   try {
     runScriptContext<void>(
       module.realm.agent,
-      { realm: module.realm, scriptOrModule: module },
+      moduleExecutionContext(module),
       module.execute,
     );
     return undefined;
@@ -221,7 +229,7 @@ function executeAsync(module: ModuleRecord, hooks: ObjectHooks<unknown>): void {
   const active = module.realm.agent.activeContext,
     realm = active === undefined ? module.realm : active.realm,
     capability = createModuleCapability(realm, hooks),
-    record = capability.promise.internalPromiseData;
+    record = exoticSlots(capability.promise).internalPromiseData;
   if (record === undefined) throw "MODULE_PROMISE_INVARIANT";
   const fulfilled = builtinFunction(
     realm.functionPrototype,
@@ -264,7 +272,7 @@ function executeAsync(module: ModuleRecord, hooks: ObjectHooks<unknown>): void {
   // A synchronous throw here is an embedding invariant, never a JS rejection.
   runScriptContext<void>(
     module.realm.agent,
-    { realm: module.realm, scriptOrModule: module },
+    moduleExecutionContext(module),
     (): void => execute(capability),
   );
 }
@@ -421,7 +429,7 @@ export function settledModulePromise(
   promise: OrdinaryObject<ScriptPropertyKey, unknown>,
   realm: ErrorRealm,
 ): HostModuleOutcome {
-  const record = promise.internalPromiseData;
+  const record = exoticSlots(promise).internalPromiseData;
   if (record === undefined) throw "MODULE_PROMISE_INVARIANT";
   if (record.state === "pending") return { kind: "pending" };
   if (record.state === "fulfilled") return { kind: "fulfilled" };

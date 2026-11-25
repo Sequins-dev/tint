@@ -19,6 +19,8 @@ import {
   type ISOTime,
 } from "@tint/foundation/chrono/iso-date-time";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -38,7 +40,9 @@ import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 function requireTime(value: unknown, realm: ErrorRealm): ISOTime {
   const object = viewObjectValue(value, realm.objectPrototype);
   const time =
-    object === undefined ? undefined : object.internalTemporalPlainTime;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTemporalPlainTime;
   if (time === undefined) throw createRuntimeError(realm, "type");
   return time;
 }
@@ -83,7 +87,7 @@ export function installTemporalPlainTime(
       const object = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "temporal-plain-time", realm, hooks),
       );
-      object.internalTemporalPlainTime = {
+      ensureExoticSlots(object).internalTemporalPlainTime = {
         hour,
         minute,
         second,
@@ -94,7 +98,7 @@ export function installTemporalPlainTime(
   );
   function make(time: ISOTime): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
-    object.internalTemporalPlainTime = time;
+    ensureExoticSlots(object).internalTemporalPlainTime = time;
     return object;
   }
   builtinProperty(
@@ -171,7 +175,7 @@ export function installTemporalPlainTime(
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,
           );
-          object.internalTemporalDuration = duration;
+          ensureExoticSlots(object).internalTemporalDuration = duration;
           return object;
         },
         hooks,

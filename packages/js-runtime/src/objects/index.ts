@@ -1,4 +1,30 @@
 export { viewWeakRegistryOwner } from "./values.ts";
+export {
+  packedNumberElement,
+  absentElementValue,
+  storePackedNumberElement,
+  packedArrayLength,
+  readCachedLengthValue,
+  readFloat64Element,
+  writeFloat64Element,
+} from "./element-access.ts";
+export {
+  createIntrinsicFunctions,
+  type IntrinsicFunctions,
+} from "./intrinsic-functions.ts";
+export {
+  scriptMapGet,
+  scriptMapGetFast,
+  scriptMapHas,
+  scriptMapHasFast,
+  scriptMapSet,
+  scriptMapSetFast,
+  scriptSetAdd,
+  scriptSetAddFast,
+} from "./collection-data.ts";
+export { scriptArrayPush } from "./array-append.ts";
+export { scriptArrayPushFast } from "./array-append.ts";
+export { scriptArrayPop } from "./array-append.ts";
 export { createModuleSourceObject } from "./module-source.ts";
 export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";
@@ -48,6 +74,11 @@ export type {
 export { runGeneratorSteps } from "../iterators/index.ts";
 export { createIteratorResult } from "./iterator-intrinsics.ts";
 export {
+  createArray0,
+  createArray1,
+  createArray2,
+  createArray3,
+  createArray4,
   createArrayFromList,
   lengthOfArrayLike,
   arrayLikeValues,
@@ -135,6 +166,13 @@ export {
   createConstructorObject,
   createDataProperty,
   createAccessorProperty,
+  createObjectLiteralSite,
+  createLiteralObject,
+  createLiteralObject1,
+  createLiteralObject2,
+  createLiteralObject3,
+  createLiteralObject4,
+  type ObjectLiteralSite,
   getOwnProperty,
   defineOwnProperty,
   deleteProperty,
@@ -146,15 +184,23 @@ export {
   findOrdinaryProperty,
   createPropertyCellCache,
   createScriptPropertyCache,
+  ensureExoticSlots,
+  exoticSlots,
+  ensureRareSlots,
+  useDictionaryProperties,
+  ordinaryHasOwnProperty,
   cachedPropertyCell,
   refreshPropertyCell,
   writePropertyCell,
+  propertyEpoch,
   type PropertyCellCache,
   hasPrototype,
   getProperty,
   setProperty,
   ownKeys,
   type OrdinaryObject,
+  type OrdinaryRareSlots,
+  type ExoticObjectSlots,
   type DataAlias,
   type ObjectHooks,
   type ObjectCall,
@@ -172,7 +218,7 @@ export {
   type NativeViewCache,
 } from "./native-views.ts";
 export { objectValueHasProperty } from "./membership.ts";
-export { looselyEqual } from "./equality.ts";
+export { looselyEqual, looselyEqualOrThrow } from "./equality.ts";
 export { installPrimitiveIntrinsics } from "./primitive-intrinsics.ts";
 export { installMathIntrinsics } from "./math-intrinsics.ts";
 export { toObjectValue, requireObjectCoercible } from "./boxing.ts";
@@ -198,6 +244,9 @@ export {
 } from "./intl-format-views.ts";
 export {
   viewObjectValue,
+  isOrdinaryObject,
+  resolveScriptCallEntry,
+  resolveScriptConstructEntry,
   objectValueTypeof,
   objectTypeof,
   generalValueTypeof,
@@ -205,6 +254,16 @@ export {
   checkPrimitiveRestArguments,
   viewTypeofObject,
   scriptBoolean,
+  scriptIsHTMLDDA,
+  propertySlotWord,
+  readPropertyValueSlot,
+  writePropertyValueSlot,
+  cachedOwnPropertyValue,
+  cachedInheritedPropertyValue,
+  absentPropertyValue,
+  cachedPropertyStore,
+  markHTMLDDAObject,
+  excludeHTMLDDAObjects,
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,
@@ -271,8 +330,6 @@ export {
   createNativeSourceFunction,
   sourceArgumentCount,
   sourceArgument,
-  sourceArgumentArea,
-  sourceArgumentFromFrame,
   createRegisterSourceFunction,
   createWideRegisterSourceFunction,
   createTailSourceFunction,
@@ -281,18 +338,20 @@ export {
   constructorPrototype,
   retainFunctionSource,
   createRetainedSourceFunction,
+  createSourceInstance,
   type SourceFunctionCall,
   constructObjectValue,
   ordinaryHasInstance,
   instanceOfValue,
 } from "./functions.ts";
 export {
-  enterSourceCall,
-  enterNativeSourceCall,
-  exitSourceCall,
-  enterExecutionName,
-  leaveExecutionName,
-} from "./jobs.ts";
+  activationTop,
+  activationPrevious,
+  activationKind,
+  activationCallee,
+  activationArgumentCount,
+  activationArgument,
+} from "./activations.ts";
 export {
   primitiveToNumber,
   primitiveToString,

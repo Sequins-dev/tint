@@ -129,7 +129,7 @@ function buffer(f: ReturnType<typeof fixture>) {
     (length) => new Uint8Array(length),
   );
   assert.ok(storage.ok);
-  object.internalArrayBufferData = storage.value;
+  o.ensureExoticSlots(object).internalArrayBufferData = storage.value;
   return { object, bytes, storage: storage.value };
 }
 
@@ -159,13 +159,13 @@ test("worker messages put cloned buffer bytes in a mapping and preserve aliases"
   const left = o.getOwnProperty(copy, "left")?.value as ObjectValue;
   assert.equal(o.getOwnProperty(copy, "right")?.value, left);
   assert.notEqual(left, original.object);
-  assert.equal(left.internalArrayBufferData?.resizable, true);
+  assert.equal(o.exoticSlots(left).internalArrayBufferData?.resizable, true);
   assert.equal(
-    left.internalArrayBufferData?.maxByteLength,
+    o.exoticSlots(left).internalArrayBufferData?.maxByteLength,
     original.bytes.length * 2,
   );
-  assert.equal(left.internalArrayBufferData?.data?.[0], 42);
-  assert.equal(left.internalArrayBufferData?.data?.at(-1), 69);
+  assert.equal(o.exoticSlots(left).internalArrayBufferData?.data?.[0], 42);
+  assert.equal(o.exoticSlots(left).internalArrayBufferData?.data?.at(-1), 69);
   assert.equal(byteStorageData(original.storage), original.bytes);
 });
 

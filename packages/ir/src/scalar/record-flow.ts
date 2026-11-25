@@ -285,6 +285,40 @@ export function provenRecordFacts(
               // A proven read observes the field like a checked read terminator.
               edge(field(op.record, op.field), result);
               break;
+            case "record-slot-read":
+            case "property-load":
+              for (let slot = 0; slot < op.count; slot++)
+                edge(field(op.record, op.field + slot), result);
+              if (op.kind === "property-load") {
+                if (op.inherited)
+                  for (let entry = 0; entry < op.entries; entry++)
+                    edge(
+                      field(op.siteRecord, op.siteField + entry * 3 + 2),
+                      result,
+                    );
+                const spillRecord = op.spillRecord;
+                if (spillRecord !== undefined)
+                  for (let slot = 1; slot <= 16; slot++)
+                    edge(field(spillRecord, slot), result);
+              }
+              break;
+            case "global-cell":
+              edge(field(op.cacheRecord, op.cacheCellField), result);
+              break;
+            case "element-load":
+            case "element-store":
+            case "element-length":
+            case "element-storage":
+            case "element-count":
+              // Numbers (or the absent value) and booleans: binary64
+              // elements hold no record, so nothing flows in or out.
+              break;
+            case "property-store":
+              for (let slot = 0; slot < op.count; slot++)
+                edge(value(fn.id, op.value), field(op.record, op.field + slot));
+              // A transition stores the site's shape in the object's first field.
+              edge(field(op.siteRecord, op.siteField + 2), field(op.record, 0));
+              break;
             case "store":
               edge(value(fn.id, op.value), slot(fn.id, op.slot));
               break;

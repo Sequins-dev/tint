@@ -41,6 +41,137 @@ function environments(text: string): number {
   return runtimeCalls(text, "createDeclarativeEnvironment");
 }
 
+test("literal nullish equality bypasses general equality completions", () => {
+  const source =
+    "function f(x) { return x == null || null != x || x == void 0; }";
+  assert.equal(runtimeCalls(source, "looselyEqual"), 0);
+  assert.equal(
+    countExpressions(
+      source,
+      (node) => node.kind === "unary" && node.generalTag === true,
+    ),
+    3,
+  );
+});
+
+test("hosts without IsHTMLDDA objects lower null equality to a tag test", () => {
+  const source = "function f(x) { return x == null || void 0 != x; }";
+  function lowered(htmlDDAObjects: boolean) {
+    const parsed = parseScript(createSourceTextView(source));
+    assert.ok(parsed.ok);
+    const result = lowerScript(parsed.value, source, { htmlDDAObjects });
+    assert.ok(result.ok, JSON.stringify(result));
+    const imported = new Set(
+      result.value.imports.flatMap((declaration) =>
+        declaration.bindings.map((binding) => binding.imported),
+      ),
+    );
+    let checks = 0,
+      exclusions = 0;
+    rewriteModule(result.value, {
+      expression: (mapped) => {
+        if (mapped.kind === "call" && mapped.callee.kind === "identifier") {
+          if (mapped.callee.name === "scriptIsHTMLDDA") checks++;
+          if (mapped.callee.name === "excludeHTMLDDAObjects") exclusions++;
+        }
+        return mapped;
+      },
+    });
+    return { imported, checks, exclusions };
+  }
+  const hosted = lowered(true);
+  assert.equal(hosted.checks, 2);
+  assert.equal(hosted.exclusions, 0);
+  assert.ok(!hosted.imported.has("excludeHTMLDDAObjects"));
+  const plain = lowered(false);
+  assert.equal(plain.checks, 0);
+  assert.equal(plain.exclusions, 1);
+  assert.ok(plain.imported.has("excludeHTMLDDAObjects"));
+  assert.ok(!plain.imported.has("scriptIsHTMLDDA"));
+});
+
+test("null equality without IsHTMLDDA objects keeps operand order and identity", () => {
+  const realm = createLoweredRealm((script, text) =>
+    lowerScript(script, text, { htmlDDAObjects: false }),
+  );
+  assert.equal(
+    realm.run(`
+      const order = [];
+      function at(name, value) { order.push(name); return value; }
+      print(String(at("a", null) == at("b", void 0)));
+      print(String(at("c", {}) == null) + " " + String(null != at("d", function () {})));
+      print(String(0 == null) + " " + String("" == void 0) + " " + String(0n != null));
+      with ({ undefined: 1 }) print(String(undefined == null));
+      print(order.join(""));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true",
+    "false true",
+    "false false true",
+    "false",
+    "abcd",
+  ]);
+});
+
+test("numeric loose equality guards a scalar comparison", () => {
+  const source = "function f(x, y) { if (x == y) return 1; return 0; }";
+  assert.equal(runtimeCalls(source, "looselyEqual"), 0);
+  assert.equal(runtimeCalls(source, "looselyEqualOrThrow"), 1);
+});
+
+test("primitive typeof predicates bypass the object classifier", () => {
+  for (const category of ["number", "boolean", "string"])
+    assert.equal(
+      runtimeCalls(
+        'function f(x) { return typeof x === "' + category + '"; }',
+        "objectValueTypeof",
+      ),
+      0,
+    );
+});
+
+test("nullish comparisons and typeof predicates preserve evaluation boundaries", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      let reads = 0;
+      let x = {
+        get value() { reads++; return undefined; },
+        valueOf() { throw "nullish equality must not coerce"; }
+      };
+      print(String(x.value == null) + " " + String(null == x) + " " + String(reads));
+      print(String(false != null) + " " + String(0 == void 0) + " " + String(null == void 0));
+      print(String(1n == null) + " " + String(Symbol() != null));
+      print(String(typeof missing === "number"));
+      print(String(typeof -0 === "number") + " " + String("number" !== typeof NaN));
+      try { typeof notInitialized === "boolean"; } catch (error) { print(error.name); }
+      let notInitialized = true;
+      with ({undefined: 3}) print(String(3 == undefined));
+      print(String(NaN == NaN) + " " + String(-0 == 0));
+      print(String(5 == { valueOf() { print("coerce"); return "5"; } }));
+      try {
+        null == { get bad() { throw "getter"; } }.bad;
+      } catch (error) { print(error); }
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true false 1",
+    "true false true",
+    "false true",
+    "false",
+    "true false",
+    "ReferenceError",
+    "true",
+    "false true",
+    "coerce",
+    "true",
+    "getter",
+  ]);
+});
+
 test("blocks without lexically scoped declarations create no environment", () => {
   const base = environments("0;");
   assert.equal(environments("{}{}{ {f();} }"), base);
@@ -175,7 +306,8 @@ test("general arithmetic in a slot-backed loop emits a guarded numeric operation
       (node) => node.kind === "binary" && node.operator === "+",
     ) > 0,
   );
-  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 2);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 1);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperationOrThrow"), 1);
 });
 
 test("for-let captures keep distinct initialization and iteration environments", () => {
@@ -813,7 +945,17 @@ test("an inline property store checks the shape after evaluating its RHS", () =>
 test("computed writes use the indexed path after evaluating the value", () => {
   const source = "function store(o, key, value) { o[key] = value(); }";
   assert.equal(runtimeCalls(source, "writeObjectValuePropertyKey"), 1);
+  assert.equal(runtimeCalls(source, "storePackedNumberElement"), 1);
   assert.equal(runtimeCalls(source, "objectPropertyKey"), 0);
+});
+
+test("calls named like inline builtins keep the register call when the guard misses", () => {
+  // o.add and o.get may be Set.prototype.add and Map.prototype.get; when
+  // they are not, the evaluated operands go to the ordinary register call.
+  const source = "function f(o){return o.add(1) + o.get(2) + Math.floor(o)}";
+  assert.equal(runtimeCalls(source, "callRegisterObjectValue"), 3);
+  assert.equal(runtimeCalls(source, "callObjectValue"), 0);
+  assert.equal(runtimeCalls(source, "scriptStrictEqual"), 0);
 });
 
 test("fixed-arity calls construct one argument list after evaluating operands", () => {
@@ -1088,15 +1230,131 @@ test("polymorphic sites keep receivers and follow a replaced prototype", () => {
   ]);
 });
 
-test("a named load uses the one-link primary cache shape", () => {
-  const source = "function read(object) { return object.value; }";
+test("a named load reads the receiver's value, a method call its inherited entries, and a named store uses the store cache", () => {
+  const read = "function read(object) { return object.value; }",
+    call = "function call(object) { return object.method(1); }",
+    write = "function write(object) { object.value = 1; }";
+  // A named load probes own slots first and checks inherited entries on an own
+  // miss before falling back to the helper.
+  assert.equal(runtimeCalls(read, "cachedOwnPropertyValue"), 1);
+  assert.equal(runtimeCalls(read, "cachedInheritedPropertyValue"), 1);
+  assert.equal(runtimeCalls(read, "absentPropertyValue"), 2);
+  // A method site keeps the receiver's own methods among its inherited
+  // entries, so it has one inline read.
+  assert.equal(runtimeCalls(call, "cachedInheritedPropertyValue"), 1);
+  assert.equal(runtimeCalls(call, "cachedOwnPropertyValue"), 0);
+  assert.equal(runtimeCalls(call, "absentPropertyValue"), 1);
+  assert.equal(runtimeCalls(write, "cachedPropertyStore"), 1);
+  assert.equal(runtimeCalls(write, "writeCachedObjectValueProperty"), 1);
+  // Optional chains read callees as methods too (1 inherited probe for `.a`
+  // miss + 1 direct inherited read for `.method`).
   assert.equal(
-    countExpressions(
-      source,
-      (node) => node.kind === "member" && node.property === "inlineReceiver",
+    runtimeCalls(
+      "function call(object) { return object?.a.method(); }",
+      "cachedInheritedPropertyValue",
     ),
-    1,
+    2,
   );
+});
+
+test("cached stores add properties through transitions and respect prototype changes", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function Point(x, y) { this.x = x; this.y = y; }
+    function make(i) { return new Point(i, i + 1); }
+    const points = [];
+    for (let i = 0; i < 4; i++) points.push(make(i));
+    print(String(points[3].x + points[3].y));
+    print(Object.keys(points[2]).join());
+    // A setter on the prototype chain takes the ordinary path.
+    let seen = 0;
+    Object.defineProperty(Point.prototype, "y", { set(v) { seen = v; }, configurable: true });
+    const p = make(10);
+    print(String(p.y) + " " + String(seen) + " " + String(Object.keys(p).join()));
+    // A read-only inherited property rejects the store.
+    delete Point.prototype.y;
+    Object.defineProperty(Point.prototype, "x", { value: 0, writable: false, configurable: true });
+    const q = make(20);
+    print(String(q.x) + " " + Object.keys(q).join());
+    // Frozen objects reject writes; non-extensible ones reject additions.
+    delete Point.prototype.x;
+    const r = make(30);
+    Object.freeze(r);
+    function set(o) { o.x = 99; o.z = 1; }
+    set(r);
+    print(String(r.x) + " " + String(r.z));
+    const s = make(40);
+    set(s); set(s);
+    print(String(s.x) + " " + String(s.z) + " " + Object.keys(s).join());
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "7",
+    "x,y",
+    "undefined 11 x",
+    "0 y",
+    "30 undefined",
+    "99 1 x,y,z",
+  ]);
+});
+
+test("cached transitions add own properties over inherited writable data", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function Color(r) { this.red = r; }
+    Color.prototype = { red: 0, mix() { return this.red; } };
+    const a = new Color(1), b = new Color(2);
+    print(String(a.red + b.red) + " " + Object.keys(b).join());
+    Object.defineProperty(Color.prototype, "red", { value: 9, writable: false, configurable: true });
+    const c = new Color(3);
+    print(String(c.red) + " " + Object.keys(c).join());
+    Object.defineProperty(Color.prototype, "red", { get() { return "g"; }, set(v) { this.seen = v; }, configurable: true });
+    const d = new Color(4);
+    print(String(d.red) + " " + String(d.seen) + " " + Object.keys(d).join());
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["3 red", "9 ", "g 4 seen"]);
+});
+
+test("cached reads of primitive receivers follow their prototypes", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function at(s) { return s.charAt(1); }
+    function len(s) { return s.length; }
+    function fixed(n) { return n.toFixed(1); }
+    function flag(b) { return b.toString(); }
+    print(at("abc")); print(at("xyz")); print(String(len("abcd")));
+    print(fixed(2.5)); print(flag(true));
+    const original = String.prototype.charAt;
+    String.prototype.charAt = function () { return "patched " + this; };
+    print(at("abc"));
+    Object.defineProperty(String.prototype, "charAt", { get() { return () => "getter"; }, configurable: true });
+    print(at("abc"));
+    Object.defineProperty(String.prototype, "charAt", { value: original, writable: true, configurable: true });
+    print(at("qrs"));
+    Number.prototype.toFixed = function () { return "nf " + typeof this; };
+    print(fixed(3));
+    print(String(len("")));
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "b",
+    "y",
+    "4",
+    "2.5",
+    "true",
+    "patched abc",
+    "getter",
+    "r",
+    "nf object",
+    "0",
+  ]);
 });
 
 test("multi-level cached prototype reads follow intermediate changes", () => {
@@ -1430,5 +1688,25 @@ test("integer reductions guard the accumulator's range and retain exact doubles 
     "2000000000",
     "2500000000",
     "-Infinity",
+  ]);
+});
+
+test("sloppy receivers keep objects and convert nullish and primitive values", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function who() { return this; }
+      function kind() { return typeof this; }
+      const o = { who };
+      print(String(o.who() === o) + " " + String(who.call(null) === globalThis) + " " + String(who.call(undefined) === globalThis));
+      print(kind.call(1) + " " + kind.call("s") + " " + kind.call(true) + " " + kind.call(Symbol()) + " " + kind.call(1n) + " " + kind.call(o));
+      print(String(who.call(5) instanceof Number) + " " + String(who.call(5) !== who.call(5)));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true true true",
+    "object object object object object object",
+    "true true",
   ]);
 });

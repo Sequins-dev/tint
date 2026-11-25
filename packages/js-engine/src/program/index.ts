@@ -19,7 +19,15 @@ import {
   typeOnlyDeclarations,
 } from "@tint/typescript/syntax";
 import type { SourceModule } from "@tint/typescript/modules/model";
-import { lowerSourceTextModule } from "../lowering/index.ts";
+import {
+  lowerSourceTextModule,
+  propertyCacheBindings,
+  propertyCacheNames,
+  activationBindings,
+  activationNames,
+  globalCellBindings,
+  globalCellNames,
+} from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 import {
   planFunctionFallback,
@@ -38,6 +46,13 @@ export interface GeneralRuntimeModules {
 export interface GeneralLoweringOptions {
   readonly runtime: GeneralRuntimeModules;
   readonly nativeScriptCalls?: boolean;
+  /** The Annex B [[IsHTMLDDA]] host capability (B.3.6): true when the host
+   * creates such objects, as Test262's `$262.IsHTMLDDA` does. General
+   * program hosts create none, so by default their modules lower `x == null`
+   * as a tag test without the brand check and exclude such objects when
+   * they initialize: a host that marks one beside them (markHTMLDDAObject)
+   * fails instead of changing loose equality. */
+  readonly htmlDDAObjects?: boolean;
   /** Enables the limited function fallback route for validated fixtures. */
   readonly functionFallback?: boolean;
   /** A host function `(fd: number, bytes: Uint8Array) => number`, exposed to
@@ -121,6 +136,16 @@ export function createGeneralLowering(
   const recordBindings: NativeRecordBinding[] = [];
   for (const name of objectViews)
     recordBindings.push({ module: runtime.objects, name, operation: "view" });
+  // Generated property caches compare shapes and load and store values
+  // inline.
+  for (const binding of propertyCacheBindings(runtime.objects))
+    recordBindings.push(binding);
+  // Native script entries keep activation records in their frames.
+  for (const binding of activationBindings(runtime.objects))
+    recordBindings.push(binding);
+  // Cached global identifier reads check epochs inline.
+  for (const binding of globalCellBindings(runtime.globalEnvironment))
+    recordBindings.push(binding);
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
   return {
@@ -143,10 +168,17 @@ export function createGeneralLowering(
         retainedExports: referrerViews,
       },
       {
+        module: runtime.globalEnvironment,
+        namespace: "general-global-views",
+        retainedExports: [...globalCellNames],
+      },
+      {
         module: runtime.objects,
         namespace: "general-object-views",
         retainedExports: [
           ...objectViews,
+          ...propertyCacheNames,
+          ...activationNames,
           "objectTypeof",
           "generalValueTypeof",
           "callGeneralValue",
@@ -369,6 +401,7 @@ function lowerGeneralProgram(
       checkMethodCalls,
       source.module,
       options.nativeScriptCalls === true,
+      options.htmlDDAObjects === true,
     );
     if (!lowered.ok)
       return {
@@ -1311,7 +1344,7 @@ export function $tintCallUnit(${signature}):number {
  ${
    workers === undefined
      ? ""
-     : `const promise=viewObjectValue(value,object)?.internalPromiseData;
+     : `const promise=viewObjectValue(value,object)?.internalExoticSlots?.internalPromiseData;
  if(promise!==undefined){
   if(promise.state==="rejected"){report(promise.result);return 1;}
   if(promise.state==="pending"){emit(2,"entry promise did not settle\\n");return 1;}

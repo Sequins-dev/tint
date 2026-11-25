@@ -13,53 +13,53 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "fd6d9a33d12c50d6419f0254d2d469489f3b7a73bc43b5ffd35dbe97d98fe487",
+    sha256: "be47641d3d121ce8750491a18c5f1704ec0c5bf8ae569987ff73ad9366e0b75f",
   },
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "c40bb531c0f5502fce4c4ff7043b73f1317e83739a61790944fb2e40e4f00cb0",
+    sha256: "5ed39d620af1b0d6a48002a1c699a1d62eab48fab09fb2411eb2f6522b9e2bf5",
   },
   {
     source:
       "class A{#p=1;static m(){return 1}get g(){return this.#p}}class B extends A{constructor(){super();this.q=super.g}}",
-    sha256: "6365b869c72053fdb91c608cb47ff0ddc4eeff97c66c02721285b97f67f590fa",
+    sha256: "9427401649eef6a7139961abf04774f6e6c680d68bd2e1b629fc7c39e833790d",
   },
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "f5126756faa0aa7c85baec2cfe54fe16d6c6578b4bebc27f072d645d18f7822c",
+    sha256: "1a7fe56006b5440f04e5b5b023eb806bf857044fd5f535b180f0652ec62ef5cf",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "e8a140858de8d2c0fe78d9346021c0b35b3b93f2a42c3d2e46ecc73f6680d76f",
+    sha256: "2976ad6cc224418b396d9f7886e8d9dee89cc8c10a967a4bfc47f64d056dc75b",
   },
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "4cb579493069c0aab4912f1089b73e467d4c1d9c30c9c562db5dbb0f7e082d17",
+    sha256: "8a7c0a1980af44ea4de57e00ffd1f39f74f67be1002311214a0f619251000e3a",
   },
   {
     source:
       "{using resource=null;}async function f(){await using resource=null;}",
-    sha256: "a37cce410ba13ba2baae6e76c9ce1cf0b803a5a26797910db40d72ba6ba3729b",
+    sha256: "2bb8d14916b3ca963286fb47ba3f3a7fe12508c110d9da0b5d2aea19a7019a52",
   },
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "ddf9f1d037cb46a9de53576039712b28d45aded75c63aa29d260910bbfad13e7",
+    sha256: "611f9f2a5b7aabc9956815f6ef29c9f10c72bf849cb0f5a9d92f9f547c5e44aa",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
-    sha256: "a48c8597375c4e3dabed9c815eb2c5d9d8385c349f266b4326c713f5591a4f14",
+    sha256: "36e902164212c5d70802fa04809d8026b281a3f8e1cf1cceb4eb0a579814b070",
   },
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 174);
+  assert.equal(surface.length, 219);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 174);
+  assert.equal(names.size, 219);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "33c60cf020ebf5c6a3007ec8e07da56c31bee3696498b22b1d77ecb6da259401",
+    "188204b25ec56f2c146a62226f2d06ae1b87e61d7c4bebcd7fa121e07bf3c337",
   );
 });
