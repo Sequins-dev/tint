@@ -12,13 +12,11 @@ import {
   setProperty,
   isOrdinaryPrototypeChain,
   findOrdinaryProperty,
-  createPropertyCellCache,
-  cachedPropertyCell,
-  refreshPropertyCell,
   writePropertyCell,
+  propertyEpoch,
   throwIfRuntimeError,
   type ErrorRealm,
-  type PropertyCellCache,
+  type ScriptPropertyKey,
 } from "../../objects/index.ts";
 import type { Descriptor } from "../../descriptors/index.ts";
 import {
@@ -62,7 +60,8 @@ export interface BindingReference<Key, Value> {
 export interface GlobalIdentifierCache<Key, Value> {
   global: GlobalEnvironment<Key, Value> | undefined;
   lexicalEpoch: number;
-  readonly cell: PropertyCellCache<Key, Value>;
+  objectEpoch: number;
+  cell: Descriptor<Value> | undefined;
   /** The site's reference to the global record, reused while it names the
    * same scope; a cache belongs to one site, so name and strictness agree. */
   reference: BindingReference<Key, Value> | undefined;
@@ -74,7 +73,8 @@ export function createGlobalIdentifierCache<
   return {
     global: undefined,
     lexicalEpoch: 0,
-    cell: createPropertyCellCache<Key, Value>(),
+    objectEpoch: 0,
+    cell: undefined,
     reference: undefined,
   };
 }
@@ -85,8 +85,10 @@ function cachedGlobalCell<Key, Value>(
   global: GlobalEnvironment<Key, Value>,
   cache: GlobalIdentifierCache<Key, Value>,
 ): Descriptor<Value> | undefined {
-  return cache.global === global && cache.lexicalEpoch === global.lexicalEpoch
-    ? cachedPropertyCell<Key, Value>(global.object, cache.cell)
+  return cache.global === global &&
+    cache.lexicalEpoch === global.lexicalEpoch &&
+    cache.objectEpoch === global.object.internalPropertyEpoch
+    ? cache.cell
     : undefined;
 }
 /** A reference to the global record for a cached site. References are
@@ -134,15 +136,30 @@ function recordGlobalCell<Key, Value>(
   key: Key,
   cache: GlobalIdentifierCache<Key, Value>,
 ): void {
+  const object = global.object;
+  const rare = object.internalRareSlots;
   if (
-    refreshPropertyCell<Key, Value>(global.object, key, cache.cell) ===
-    undefined
+    !object.internalDictionary ||
+    object.internalMethods !== undefined ||
+    (rare !== undefined &&
+      (rare.internalDataAliases !== undefined ||
+        rare.internalPropertyContract !== undefined))
   ) {
     cache.global = undefined;
+    cache.cell = undefined;
+    return;
+  }
+  const properties = object.properties;
+  const descriptor = properties === undefined ? undefined : properties.get(key);
+  if (descriptor === undefined || descriptor.accessor) {
+    cache.global = undefined;
+    cache.cell = undefined;
     return;
   }
   cache.global = global;
   cache.lexicalEpoch = global.lexicalEpoch;
+  cache.objectEpoch = object.internalPropertyEpoch;
+  cache.cell = descriptor;
 }
 export function createGlobalScope<Key, Value>(
   global: GlobalEnvironment<Key, Value>,
@@ -246,6 +263,7 @@ export function putBindingReference<Key, Value>(
       const cell = cachedGlobalCell<Key, Value>(scope.global, cache);
       if (cell !== undefined && cell.writable) {
         writePropertyCell<Value>(cell, value);
+        if (scope.global.object.internalUsedAsPrototype) propertyEpoch.value++;
         return "none";
       }
     }
@@ -303,15 +321,15 @@ export function getBindingReferenceForTypeof<Key, Value>(
  * abrupt results complete exactly as lowered result checks do. */
 /** The cached global data cell of a site whose scope is the global record
  * itself, as getIdentifierValue checks first; undefined when the cache is
- * cold or stale, and the caller then calls getIdentifierValue. Small enough
- * to inline into generated code. */
-export function cachedGlobalIdentifierCell<Key, Value>(
-  start: EnvironmentScope<Key, Value>,
-  cache: GlobalIdentifierCache<Key, Value>,
-): Descriptor<Value> | undefined {
+ * cold or stale, and the caller then calls getIdentifierValue. Native code
+ * binds this to IR global-cell. */
+export function cachedGlobalIdentifierCell(
+  start: EnvironmentScope<ScriptPropertyKey, unknown>,
+  cache: GlobalIdentifierCache<ScriptPropertyKey, unknown>,
+): Descriptor<unknown> | undefined {
   if (start.declarative !== undefined || start.object !== undefined)
     return undefined;
-  return cachedGlobalCell<Key, Value>(start.global, cache);
+  return cachedGlobalCell<ScriptPropertyKey, unknown>(start.global, cache);
 }
 export function getIdentifierValue<Key, Value>(
   start: EnvironmentScope<Key, Value>,

@@ -528,6 +528,26 @@ export function encodeInstruction(
       writeSigned(writer, op.realmField);
       writeSigned(writer, op.scriptOrModuleField);
       return true;
+    case "global-cell":
+      writePrefix(writer, 90, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.scope);
+      writeSigned(writer, op.cache);
+      writeSigned(writer, op.scopeRecord);
+      writeSigned(writer, op.declarativeField);
+      writeSigned(writer, op.objectField);
+      writeSigned(writer, op.globalField);
+      writeSigned(writer, op.globalRecord);
+      writeSigned(writer, op.lexicalEpochField);
+      writeSigned(writer, op.globalObjectField);
+      writeSigned(writer, op.globalObjectRecord);
+      writeSigned(writer, op.propertyEpochField);
+      writeSigned(writer, op.cacheRecord);
+      writeSigned(writer, op.cacheGlobalField);
+      writeSigned(writer, op.cacheLexicalEpochField);
+      writeSigned(writer, op.cacheObjectEpochField);
+      writeSigned(writer, op.cacheCellField);
+      return true;
     case "element-load":
     case "element-store":
       writePrefix(writer, op.kind === "element-load" ? 120 : 121, op, 0);
@@ -1506,6 +1526,46 @@ export function decodeInstruction(
         contextRecord,
         realmField,
         scriptOrModuleField,
+        ...span,
+      };
+    }
+    case 90: {
+      const id = readSigned(reader),
+        scope = readSigned(reader),
+        cache = readSigned(reader),
+        scopeRecord = readSigned(reader),
+        declarativeField = readSigned(reader),
+        objectField = readSigned(reader),
+        globalField = readSigned(reader),
+        globalRecord = readSigned(reader),
+        lexicalEpochField = readSigned(reader),
+        globalObjectField = readSigned(reader),
+        globalObjectRecord = readSigned(reader),
+        propertyEpochField = readSigned(reader),
+        cacheRecord = readSigned(reader),
+        cacheGlobalField = readSigned(reader),
+        cacheLexicalEpochField = readSigned(reader),
+        cacheObjectEpochField = readSigned(reader),
+        cacheCellField = readSigned(reader);
+      return {
+        kind: "global-cell",
+        id,
+        scope,
+        cache,
+        scopeRecord,
+        declarativeField,
+        objectField,
+        globalField,
+        globalRecord,
+        lexicalEpochField,
+        globalObjectField,
+        globalObjectRecord,
+        propertyEpochField,
+        cacheRecord,
+        cacheGlobalField,
+        cacheLexicalEpochField,
+        cacheObjectEpochField,
+        cacheCellField,
         ...span,
       };
     }

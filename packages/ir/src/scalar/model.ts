@@ -222,6 +222,32 @@ export type Instruction = Span &
         readonly scriptOrModuleField: number;
       }
     | {
+        /** Read the cached global data property cell at `cache` when `start`
+         * is the global scope itself (declarative and object are absent),
+         * `cache.global === start.global`, `cache.lexicalEpoch ===
+         * start.global.lexicalEpoch`, and `cache.objectEpoch ===
+         * start.global.object.internalPropertyEpoch`; returns reference-none
+         * (0) on miss. */
+        readonly kind: "global-cell";
+        readonly id: number;
+        readonly scope: number;
+        readonly cache: number;
+        readonly scopeRecord: number;
+        readonly declarativeField: number;
+        readonly objectField: number;
+        readonly globalField: number;
+        readonly globalRecord: number;
+        readonly lexicalEpochField: number;
+        readonly globalObjectField: number;
+        readonly globalObjectRecord: number;
+        readonly propertyEpochField: number;
+        readonly cacheRecord: number;
+        readonly cacheGlobalField: number;
+        readonly cacheLexicalEpochField: number;
+        readonly cacheObjectEpochField: number;
+        readonly cacheCellField: number;
+      }
+    | {
         /** A packed binary64 element of a JavaScript array (js-runtime
          * array elements), or the absent value (see property-load). It is
          * the element unless the general value `object` is object-tagged

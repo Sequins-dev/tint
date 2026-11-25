@@ -58,7 +58,28 @@ export type RecordOperation =
    * ObjectScriptCall<unknown> | undefined`: resolve a native script entry
    * closure for a direct call or ordinary construction (IR script-entry). */
   | "script-call-entry"
-  | "script-construct-entry";
+  | "script-construct-entry"
+  /** `(start: EnvironmentScope, cache: GlobalIdentifierCache):
+   * Descriptor | undefined`: read a cached global data cell (IR global-cell). */
+  | "global-cell";
+
+/** The record fields a global-cell binding reads (IR global-cell). */
+export interface GlobalCellLayout {
+  readonly scopeRecord: number;
+  readonly declarativeField: number;
+  readonly objectField: number;
+  readonly globalField: number;
+  readonly globalRecord: number;
+  readonly lexicalEpochField: number;
+  readonly globalObjectField: number;
+  readonly globalObjectRecord: number;
+  readonly propertyEpochField: number;
+  readonly cacheRecord: number;
+  readonly cacheGlobalField: number;
+  readonly cacheLexicalEpochField: number;
+  readonly cacheObjectEpochField: number;
+  readonly cacheCellField: number;
+}
 
 /** The record fields a script-entry binding reads (IR script-entry). */
 export interface ScriptEntryLayout {
@@ -408,6 +429,43 @@ export function bindScriptEntry(
       contextRecord: layout.contextRecord,
       realmField: layout.realmField,
       scriptOrModuleField: layout.scriptOrModuleField,
+    }),
+    span,
+  );
+}
+/** The body of a global-cell binding: one IR global-cell over its scope and
+ * cache parameters. */
+export function bindGlobalCell(
+  fn: FunctionIR,
+  scope: number,
+  cache: number,
+  layout: GlobalCellLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [scope, cache],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "global-cell",
+      id: loaded.length,
+      scope: loaded[0] ?? -1,
+      cache: loaded[1] ?? -1,
+      scopeRecord: layout.scopeRecord,
+      declarativeField: layout.declarativeField,
+      objectField: layout.objectField,
+      globalField: layout.globalField,
+      globalRecord: layout.globalRecord,
+      lexicalEpochField: layout.lexicalEpochField,
+      globalObjectField: layout.globalObjectField,
+      globalObjectRecord: layout.globalObjectRecord,
+      propertyEpochField: layout.propertyEpochField,
+      cacheRecord: layout.cacheRecord,
+      cacheGlobalField: layout.cacheGlobalField,
+      cacheLexicalEpochField: layout.cacheLexicalEpochField,
+      cacheObjectEpochField: layout.cacheObjectEpochField,
+      cacheCellField: layout.cacheCellField,
     }),
     span,
   );

@@ -24,6 +24,8 @@ function transparent(op: Instruction): boolean {
     // Element loads and stores use x9..x13, d0 and d1 only.
     op.kind === "element-load" ||
     op.kind === "element-store" ||
+    // A cached global cell check uses x9..x13 only.
+    op.kind === "global-cell" ||
     op.kind === "record-has" ||
     op.kind === "reference-vector-is" ||
     op.kind === "reference-vector-length" ||

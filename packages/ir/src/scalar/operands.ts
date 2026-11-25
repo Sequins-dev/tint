@@ -82,6 +82,10 @@ export function visitInstructionOperands(
       visit(op.callee);
       visit(op.realm);
       return;
+    case "global-cell":
+      visit(op.scope);
+      visit(op.cache);
+      return;
     case "element-load":
       visit(op.object);
       visit(op.index);

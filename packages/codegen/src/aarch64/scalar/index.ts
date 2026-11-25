@@ -4920,6 +4920,7 @@ function emitModuleForms(
               case "string-reference":
               case "function-environment":
               case "script-entry":
+              case "global-cell":
                 id = op.id;
                 type = "optional-reference";
                 break;
@@ -11868,6 +11869,196 @@ function emitModuleForms(
                   displacement: (doneAt - hitSlow) * 4,
                 });
                 saveRaw(11, op.id);
+                break;
+              }
+              case "global-cell": {
+                const scopeFields = module.records?.[op.scopeRecord]?.fields,
+                  globalFields = module.records?.[op.globalRecord]?.fields,
+                  globalObjectFields =
+                    module.records?.[op.globalObjectRecord]?.fields,
+                  cacheFields = module.records?.[op.cacheRecord]?.fields;
+                const declarative = scopeFields?.[op.declarativeField],
+                  object = scopeFields?.[op.objectField],
+                  global = scopeFields?.[op.globalField],
+                  lexicalEpoch = globalFields?.[op.lexicalEpochField],
+                  globalObject = globalFields?.[op.globalObjectField],
+                  propertyEpoch = globalObjectFields?.[op.propertyEpochField],
+                  cacheGlobal = cacheFields?.[op.cacheGlobalField],
+                  cacheLexicalEpoch = cacheFields?.[op.cacheLexicalEpochField],
+                  cacheObjectEpoch = cacheFields?.[op.cacheObjectEpochField],
+                  cacheCell = cacheFields?.[op.cacheCellField];
+                if (
+                  declarative === undefined ||
+                  object === undefined ||
+                  global === undefined ||
+                  lexicalEpoch === undefined ||
+                  globalObject === undefined ||
+                  propertyEpoch === undefined ||
+                  cacheGlobal === undefined ||
+                  cacheLexicalEpoch === undefined ||
+                  cacheObjectEpoch === undefined ||
+                  cacheCell === undefined ||
+                  declarative.offset > 32760 ||
+                  object.offset > 32760 ||
+                  global.offset > 32760 ||
+                  lexicalEpoch.offset > 32760 ||
+                  globalObject.offset > 32760 ||
+                  propertyEpoch.offset > 32760 ||
+                  cacheGlobal.offset > 32760 ||
+                  cacheLexicalEpoch.offset > 32760 ||
+                  cacheObjectEpoch.offset > 32760 ||
+                  cacheCell.offset > 32760
+                )
+                  throw "global cell layout invariant";
+                const cbnzMisses: {
+                  readonly index: number;
+                  readonly rt: number;
+                }[] = [];
+                const neMisses: number[] = [];
+                function missNonZero(rt: number): void {
+                  cbnzMisses.push({ index: instructions.length, rt });
+                  emit({ op: "cbnz", width: 64, rt, displacement: 0 });
+                }
+                function missNe(): void {
+                  neMisses.push(instructions.length);
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                }
+                const scopeReg = rawRegister(op.scope, 9);
+                const cacheReg = rawRegister(op.cache, 10);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: scopeReg,
+                  offset: declarative.offset,
+                });
+                missNonZero(11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: scopeReg,
+                  offset: object.offset,
+                });
+                missNonZero(11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: scopeReg,
+                  offset: global.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: cacheReg,
+                  offset: cacheGlobal.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 11,
+                  rm: 12,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 11,
+                  offset: lexicalEpoch.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: cacheReg,
+                  offset: cacheLexicalEpoch.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: 11,
+                  offset: globalObject.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 11,
+                  offset: propertyEpoch.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: cacheReg,
+                  offset: cacheObjectEpoch.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                const target = rawTarget(op.id, 11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: target,
+                  rn: cacheReg,
+                  offset: cacheCell.offset,
+                });
+                const doneJump = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                const missAt = instructions.length;
+                for (const site of cbnzMisses)
+                  patchInstruction(site.index, {
+                    op: "cbnz",
+                    width: 64,
+                    rt: site.rt,
+                    displacement: (missAt - site.index) * 4,
+                  });
+                for (const site of neMisses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (missAt - site) * 4,
+                  });
+                emit({
+                  op: "orr-reg",
+                  width: 64,
+                  rd: target,
+                  rn: "zr",
+                  rm: "zr",
+                });
+                patchInstruction(doneJump, {
+                  op: "b",
+                  displacement: (instructions.length - doneJump) * 4,
+                });
+                saveRaw(target, op.id);
                 break;
               }
               case "element-load":

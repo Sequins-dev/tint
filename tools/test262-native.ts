@@ -35,6 +35,8 @@ import {
   propertyCacheNames,
   activationBindings,
   activationNames,
+  globalCellBindings,
+  globalCellNames,
 } from "@tint/js-engine/lowering";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -3137,6 +3139,10 @@ function createNativeImageRequest(
   const storage = functionStorageFromEnvironment();
   const target = nativeTestTarget;
   const x64 = target.arch === "x86_64";
+  const hasGlobalCell =
+    capturedModuleExports(workspaceModules([globalModule], snapshot))
+      .get(globalModule)
+      ?.has("cachedGlobalIdentifierCell") === true;
   let emissionForms: Parameters<
     typeof buildMacOSProgram
   >[0]["emissionFormHints"];
@@ -3506,6 +3512,15 @@ function createNativeImageRequest(
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
         },
+        ...(hasGlobalCell
+          ? [
+              {
+                module: globalModule,
+                namespace: "global-cell",
+                retainedExports: [...globalCellNames],
+              },
+            ]
+          : []),
       ],
       weakBindings:
         weakProvider === undefined
@@ -3561,6 +3576,7 @@ function createNativeImageRequest(
         ...propertyCacheBindings(objectModule),
         // Native script entries keep activation records in their frames.
         ...activationBindings(objectModule),
+        ...(hasGlobalCell ? globalCellBindings(globalModule) : []),
         ...intlFormatRecordBindings(objectModule),
         ...(finalizationRegistry
           ? [

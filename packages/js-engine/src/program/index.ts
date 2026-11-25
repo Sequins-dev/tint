@@ -25,6 +25,8 @@ import {
   propertyCacheNames,
   activationBindings,
   activationNames,
+  globalCellBindings,
+  globalCellNames,
 } from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 import {
@@ -141,6 +143,9 @@ export function createGeneralLowering(
   // Native script entries keep activation records in their frames.
   for (const binding of activationBindings(runtime.objects))
     recordBindings.push(binding);
+  // Cached global identifier reads check epochs inline.
+  for (const binding of globalCellBindings(runtime.globalEnvironment))
+    recordBindings.push(binding);
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
   return {
@@ -161,6 +166,11 @@ export function createGeneralLowering(
         module: runtime.modules,
         namespace: "general-module-views",
         retainedExports: referrerViews,
+      },
+      {
+        module: runtime.globalEnvironment,
+        namespace: "general-global-views",
+        retainedExports: [...globalCellNames],
       },
       {
         module: runtime.objects,

@@ -172,6 +172,7 @@ export {
   cachedPropertyCell,
   refreshPropertyCell,
   writePropertyCell,
+  propertyEpoch,
   type PropertyCellCache,
   hasPrototype,
   getProperty,

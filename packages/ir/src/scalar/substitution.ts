@@ -138,6 +138,13 @@ export function substituteInstructionValues(
         ? op
         : { ...op, callee, realm };
     }
+    case "global-cell": {
+      const scope = substitutedValue(values, op.scope),
+        cache = substitutedValue(values, op.cache);
+      return scope === op.scope && cache === op.cache
+        ? op
+        : { ...op, scope, cache };
+    }
     case "element-load": {
       const object = substitutedValue(values, op.object),
         index = substitutedValue(values, op.index);

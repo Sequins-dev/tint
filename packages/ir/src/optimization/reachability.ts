@@ -101,6 +101,11 @@ export function traceModuleReferences(
           includeRecord(op.objectRecord);
           includeRecord(op.entryRecord);
           includeRecord(op.contextRecord);
+        } else if (op.kind === "global-cell") {
+          includeRecord(op.scopeRecord);
+          includeRecord(op.globalRecord);
+          includeRecord(op.globalObjectRecord);
+          includeRecord(op.cacheRecord);
         } else if (op.kind === "element-load" || op.kind === "element-store") {
           includeRecord(op.record);
           includeRecord(op.elementsRecord);

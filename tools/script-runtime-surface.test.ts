@@ -214,7 +214,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 172, types: 27, genericFunctions: 35, genericTypes: 12 },
+    { functions: 172, types: 27, genericFunctions: 34, genericTypes: 12 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -243,7 +243,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     typeExports,
   );
   assert.ok(selections.ok, JSON.stringify(selections));
-  assert.equal(selections.value.roots.length, 35);
+  assert.equal(selections.value.roots.length, 34);
   const specialized = specializeModule(normalized.value, rebound.value, {
     roots: selections.value.roots,
     maxSpecializations: 4096,
@@ -332,7 +332,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Fixed binding slots, positional entries, and dense array/object literal
   // helpers reduce generic applications. Global identifier caches keep their
   // surface applications.
-  assert.deepEqual(erased, [7, 18, 28, 17]);
+  assert.deepEqual(erased, [6, 14, 25, 14]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));

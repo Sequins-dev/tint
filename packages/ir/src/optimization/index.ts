@@ -1773,6 +1773,7 @@ function removable(op: Instruction): boolean {
     case "script-argument-count":
     case "activation-read":
     case "script-entry":
+    case "global-cell":
     case "general-null":
     case "general-wrap":
     case "load":

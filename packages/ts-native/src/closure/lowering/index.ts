@@ -46,6 +46,7 @@ import {
   bindElementStore,
   bindRecordOperation,
   bindScriptEntry,
+  bindGlobalCell,
 } from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
 import {
@@ -4419,6 +4420,158 @@ function lowerEntries(
             contextRecord,
             realmField,
             scriptOrModuleField,
+          },
+          span,
+        );
+        continue;
+      }
+      if (binding.operation === "global-cell") {
+        const unwrapObjectType = (
+          typeId: number | undefined,
+        ): number | undefined => {
+          if (typeId === undefined) return undefined;
+          const current = checked.types[typeId];
+          if (current?.kind === "object") return typeId;
+          if (current?.kind === "union") {
+            for (const member of current.members) {
+              if (
+                member !== undefined &&
+                checked.types[member]?.kind === "object"
+              )
+                return member;
+            }
+          }
+          return undefined;
+        };
+        const propertyType = (
+          objectTypeId: number | undefined,
+          name: string,
+        ): number | undefined => {
+          if (objectTypeId === undefined) return undefined;
+          const object = checked.types[objectTypeId];
+          if (object?.kind !== "object") return undefined;
+          for (const property of object.properties) {
+            if (property !== undefined && property.name === name)
+              return property.type;
+          }
+          return undefined;
+        };
+        const scopeType = unwrapObjectType(
+          checked.bindingTypes[bindingId(body.parameters[0])],
+        );
+        const cacheType = unwrapObjectType(
+          checked.bindingTypes[bindingId(body.parameters[1])],
+        );
+        const scopeRecord =
+          scopeType === undefined
+            ? undefined
+            : recordContracts.forType(scopeType);
+        const declarativeField =
+          scopeRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(scopeRecord, "declarative");
+        const objectField =
+          scopeRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(scopeRecord, "object");
+        const globalField =
+          scopeRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(scopeRecord, "global");
+        const globalType = unwrapObjectType(propertyType(scopeType, "global"));
+        const globalRecord =
+          globalType === undefined
+            ? undefined
+            : recordContracts.forType(globalType);
+        const lexicalEpochField =
+          globalRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(globalRecord, "lexicalEpoch");
+        const globalObjectField =
+          globalRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(globalRecord, "object");
+        const globalObjectType = unwrapObjectType(
+          propertyType(globalType, "object"),
+        );
+        const globalObjectRecord =
+          globalObjectType === undefined
+            ? undefined
+            : recordContracts.forType(globalObjectType);
+        const propertyEpochField =
+          globalObjectRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(
+                globalObjectRecord,
+                "internalPropertyEpoch",
+              );
+        const cacheRecord =
+          cacheType === undefined
+            ? undefined
+            : recordContracts.forType(cacheType);
+        const cacheGlobalField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "global");
+        const cacheLexicalEpochField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "lexicalEpoch");
+        const cacheObjectEpochField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "objectEpoch");
+        const cacheCellField =
+          cacheRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(cacheRecord, "cell");
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "reference" ||
+          fn.returnType !== "optional-reference" ||
+          scopeRecord === undefined ||
+          declarativeField === undefined ||
+          objectField === undefined ||
+          globalField === undefined ||
+          globalRecord === undefined ||
+          lexicalEpochField === undefined ||
+          globalObjectField === undefined ||
+          globalObjectRecord === undefined ||
+          propertyEpochField === undefined ||
+          cacheRecord === undefined ||
+          cacheGlobalField === undefined ||
+          cacheLexicalEpochField === undefined ||
+          cacheObjectEpochField === undefined ||
+          cacheCellField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "global cell bindings take an environment scope and a global identifier cache",
+          );
+        functions[fn.id] = bindGlobalCell(
+          fn,
+          first,
+          second,
+          {
+            scopeRecord,
+            declarativeField,
+            objectField,
+            globalField,
+            globalRecord,
+            lexicalEpochField,
+            globalObjectField,
+            globalObjectRecord,
+            propertyEpochField,
+            cacheRecord,
+            cacheGlobalField,
+            cacheLexicalEpochField,
+            cacheObjectEpochField,
+            cacheCellField,
           },
           span,
         );

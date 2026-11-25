@@ -159,6 +159,24 @@ function pruneTracedModule(
               entryRecord,
               contextRecord,
             };
+        } else if (op.kind === "global-cell") {
+          const scopeRecord = recordId(op.scopeRecord),
+            globalRecord = recordId(op.globalRecord),
+            globalObjectRecord = recordId(op.globalObjectRecord),
+            cacheRecord = recordId(op.cacheRecord);
+          if (
+            scopeRecord !== op.scopeRecord ||
+            globalRecord !== op.globalRecord ||
+            globalObjectRecord !== op.globalObjectRecord ||
+            cacheRecord !== op.cacheRecord
+          )
+            rewritten = {
+              ...op,
+              scopeRecord,
+              globalRecord,
+              globalObjectRecord,
+              cacheRecord,
+            };
         } else if (op.kind === "element-load" || op.kind === "element-store") {
           const record = recordId(op.record),
             elementsRecord = recordId(op.elementsRecord);

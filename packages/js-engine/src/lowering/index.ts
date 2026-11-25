@@ -141,7 +141,8 @@ export interface PropertyCacheBinding {
     | "activation-count"
     | "activation-argument"
     | "script-call-entry"
-    | "script-construct-entry";
+    | "script-construct-entry"
+    | "global-cell";
   readonly field?: string;
   readonly count?: number;
   readonly siteField?: string;
@@ -249,6 +250,19 @@ export function activationBindings(
       name: "resolveScriptConstructEntry",
       operation: "script-construct-entry",
     },
+  ];
+}
+/** The runtime global-environment module's cached global cell lookup, retained
+ * for its native binding (IR global-cell). */
+export const globalCellNames: readonly string[] = [
+  "cachedGlobalIdentifierCell",
+];
+/** Native binding of cachedGlobalIdentifierCell (IR global-cell). */
+export function globalCellBindings(
+  module: string,
+): readonly PropertyCacheBinding[] {
+  return [
+    { module, name: "cachedGlobalIdentifierCell", operation: "global-cell" },
   ];
 }
 /** Immutable numeric imports proved by the hosted function planner. */
@@ -1109,6 +1123,8 @@ function lowerScriptEntry(
       !dynamicBindings
     )
       extended[0] = id("$scope");
+    else if (entryKind === "module" && !dynamicBindings)
+      extended[0] = id("$globalScope");
     extended.push(slotField("$gc", index, span));
     return extended;
   }
@@ -11600,6 +11616,23 @@ function lowerScriptEntry(
     };
     const factoryStatements: Statement[] = [];
     appendStatements(factoryStatements, htmlDDAExclusion);
+    if (globalCacheInitializers.length !== 0 && !dynamicBindings) {
+      immutableTemporaries.add("$globalScope");
+      factoryStatements.push({
+        ...generated,
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            ...generated,
+            name: "$globalScope",
+            type: undefined,
+            initializer: call("createGlobalScope", [id("$global")], generated),
+          },
+        ],
+      });
+    }
     appendStatements(factoryStatements, globalCacheDeclarations());
     appendStatements(factoryStatements, fixedCellTable());
     // Each Module Record owns its parsed template sites even when the host

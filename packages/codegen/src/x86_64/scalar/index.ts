@@ -2747,6 +2747,57 @@ export function emitModule(
           define(op.id, "optional-reference");
           return;
         }
+        case "global-cell": {
+          const declarative = recordField(op.scopeRecord, op.declarativeField),
+            object = recordField(op.scopeRecord, op.objectField),
+            global = recordField(op.scopeRecord, op.globalField),
+            lexicalEpoch = recordField(op.globalRecord, op.lexicalEpochField),
+            globalObject = recordField(op.globalRecord, op.globalObjectField),
+            propertyEpoch = recordField(
+              op.globalObjectRecord,
+              op.propertyEpochField,
+            ),
+            cacheGlobal = recordField(op.cacheRecord, op.cacheGlobalField),
+            cacheLexicalEpoch = recordField(
+              op.cacheRecord,
+              op.cacheLexicalEpochField,
+            ),
+            cacheObjectEpoch = recordField(
+              op.cacheRecord,
+              op.cacheObjectEpochField,
+            ),
+            cacheCell = recordField(op.cacheRecord, op.cacheCellField);
+          const done = fnLabel + ":global-cell:" + String(op.id) + ":done";
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "mov", dst: r9, src: frame(home(op.scope)) });
+          emit({ op: "cmp", dst: mem(9, declarative.offset), src: imm(0) });
+          branch(emit, "ne", done);
+          emit({ op: "cmp", dst: mem(9, object.offset), src: imm(0) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: mem(9, global.offset) });
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.cache)) });
+          emit({ op: "cmp", dst: r9, src: mem(10, cacheGlobal.offset) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: scratch, src: mem(9, lexicalEpoch.offset) });
+          emit({
+            op: "cmp",
+            dst: scratch,
+            src: mem(10, cacheLexicalEpoch.offset),
+          });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: mem(9, globalObject.offset) });
+          emit({ op: "mov", dst: scratch, src: mem(9, propertyEpoch.offset) });
+          emit({
+            op: "cmp",
+            dst: scratch,
+            src: mem(10, cacheObjectEpoch.offset),
+          });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: rax, src: mem(10, cacheCell.offset) });
+          emit({ op: "label", name: done });
+          define(op.id, "optional-reference");
+          return;
+        }
         case "element-load":
         case "element-store": {
           // See the AArch64 emission: the object's record descriptor, its

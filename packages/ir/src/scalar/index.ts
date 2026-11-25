@@ -954,6 +954,58 @@ export function verify(
               define(op.id, "optional-reference");
               break;
             }
+            case "global-cell": {
+              hasRecordReads = true;
+              equal(use(op.scope), "reference");
+              equal(use(op.cache), "reference");
+              const scopeFields = module.records?.[op.scopeRecord]?.fields,
+                globalFields = module.records?.[op.globalRecord]?.fields,
+                globalObjectFields =
+                  module.records?.[op.globalObjectRecord]?.fields,
+                cacheFields = module.records?.[op.cacheRecord]?.fields;
+              const declarative = scopeFields?.[op.declarativeField],
+                object = scopeFields?.[op.objectField],
+                global = scopeFields?.[op.globalField],
+                lexicalEpoch = globalFields?.[op.lexicalEpochField],
+                globalObject = globalFields?.[op.globalObjectField],
+                propertyEpoch = globalObjectFields?.[op.propertyEpochField],
+                cacheGlobal = cacheFields?.[op.cacheGlobalField],
+                cacheLexicalEpoch = cacheFields?.[op.cacheLexicalEpochField],
+                cacheObjectEpoch = cacheFields?.[op.cacheObjectEpochField],
+                cacheCell = cacheFields?.[op.cacheCellField];
+              if (
+                !natural(op.scopeRecord) ||
+                !natural(op.declarativeField) ||
+                !natural(op.objectField) ||
+                !natural(op.globalField) ||
+                !natural(op.globalRecord) ||
+                !natural(op.lexicalEpochField) ||
+                !natural(op.globalObjectField) ||
+                !natural(op.globalObjectRecord) ||
+                !natural(op.propertyEpochField) ||
+                !natural(op.cacheRecord) ||
+                !natural(op.cacheGlobalField) ||
+                !natural(op.cacheLexicalEpochField) ||
+                !natural(op.cacheObjectEpochField) ||
+                !natural(op.cacheCellField) ||
+                !plainRecordField(declarative, "optional-reference") ||
+                !plainRecordField(object, "optional-reference") ||
+                !plainRecordField(global, "reference") ||
+                !plainRecordField(lexicalEpoch, "number") ||
+                !plainRecordField(globalObject, "reference") ||
+                !plainRecordField(propertyEpoch, "number") ||
+                !plainRecordField(cacheGlobal, "optional-reference") ||
+                !plainRecordField(cacheLexicalEpoch, "number") ||
+                !plainRecordField(cacheObjectEpoch, "number") ||
+                !plainRecordField(cacheCell, "optional-reference")
+              )
+                fail(
+                  "TYPE",
+                  "global cell resolution requires scope, global, global-object and cache fields",
+                );
+              define(op.id, "optional-reference");
+              break;
+            }
             case "element-load":
             case "element-store": {
               hasRecordReads = true;

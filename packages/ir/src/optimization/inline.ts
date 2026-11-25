@@ -135,6 +135,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     // sequence; its write keeps heap effects (see instructionEffects).
     case "property-store":
     case "script-entry":
+    case "global-cell":
     // Element loads and stores are inline, nonallocating and nonthrowing.
     case "element-load":
     case "element-store":
@@ -984,6 +985,17 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   callee: value(instruction.callee),
                   realm: value(instruction.realm),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "global-cell":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  scope: value(instruction.scope),
+                  cache: value(instruction.cache),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

@@ -356,7 +356,6 @@ export function scriptRuntimeImports(
         "createDeclarativeScope",
         "resolveBinding",
         "getIdentifierValue",
-        // Module code keeps uncached global lookups (see globalIdentifierSites).
         "createGlobalIdentifierCache",
         "cachedGlobalIdentifierCell",
         "getBindingReference",
@@ -466,7 +465,6 @@ export function scriptRuntimeTypeArguments(name: string): readonly string[] {
     case "createDeclarativeScope":
     case "resolveBinding":
     case "getIdentifierValue":
-    case "cachedGlobalIdentifierCell":
     case "createGlobalIdentifierCache":
     case "getBindingReference":
     case "getBindingReferenceForTypeof":
