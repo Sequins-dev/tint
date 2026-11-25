@@ -347,6 +347,24 @@ export type Instruction = Span &
         readonly string: number;
         readonly value: number;
       }
+    /** The string-split cache (nativeStringSplitCacheWord): the cached
+     * immutable snapshot list matching `(string, separator)` with the same
+     * record header as `template`, or none (0). */
+    | {
+        readonly kind: "string-split-cached";
+        readonly id: number;
+        readonly string: number;
+        readonly separator: number;
+        readonly template: number;
+      }
+    /** Caches `value` (an immutable snapshot list) for `(string, separator)`,
+     * allocating the table when the runtime has none since the last GC. */
+    | {
+        readonly kind: "string-split-cache";
+        readonly string: number;
+        readonly separator: number;
+        readonly value: number;
+      }
     /** `string` with each ASCII letter mapped to upper case (`upper`) or
      * lower case, every other unit unchanged: a new string of the same
      * length and kind (asciiUppercase and asciiLowercase). */

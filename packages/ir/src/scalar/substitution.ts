@@ -409,6 +409,26 @@ export function substituteInstructionValues(
         ? op
         : { ...op, string, value };
     }
+    case "string-split-cached": {
+      const string = substitutedValue(values, op.string),
+        separator = substitutedValue(values, op.separator),
+        template = substitutedValue(values, op.template);
+      return string === op.string &&
+        separator === op.separator &&
+        template === op.template
+        ? op
+        : { ...op, string, separator, template };
+    }
+    case "string-split-cache": {
+      const string = substitutedValue(values, op.string),
+        separator = substitutedValue(values, op.separator),
+        value = substitutedValue(values, op.value);
+      return string === op.string &&
+        separator === op.separator &&
+        value === op.value
+        ? op
+        : { ...op, string, separator, value };
+    }
   }
   throw "unsupported instruction substitution";
 }
@@ -462,6 +482,7 @@ export function renumberInstructionResult(
     case "string-write":
     case "number-string-cache":
     case "string-index-cache":
+    case "string-split-cache":
       return op;
     default:
       return { ...op, id };

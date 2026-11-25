@@ -94,6 +94,59 @@ function digit(code: number): number {
   if (code >= 97 && code <= 122) return code - 87;
   return -1;
 }
+/** Exact IEEE-754 binary64 power 10^exponent for exponent in [0, 22]. */
+function powerOfTen(exponent: number): number {
+  switch (exponent) {
+    case 0:
+      return 1;
+    case 1:
+      return 1e1;
+    case 2:
+      return 1e2;
+    case 3:
+      return 1e3;
+    case 4:
+      return 1e4;
+    case 5:
+      return 1e5;
+    case 6:
+      return 1e6;
+    case 7:
+      return 1e7;
+    case 8:
+      return 1e8;
+    case 9:
+      return 1e9;
+    case 10:
+      return 1e10;
+    case 11:
+      return 1e11;
+    case 12:
+      return 1e12;
+    case 13:
+      return 1e13;
+    case 14:
+      return 1e14;
+    case 15:
+      return 1e15;
+    case 16:
+      return 1e16;
+    case 17:
+      return 1e17;
+    case 18:
+      return 1e18;
+    case 19:
+      return 1e19;
+    case 20:
+      return 1e20;
+    case 21:
+      return 1e21;
+    case 22:
+      return 1e22;
+    default:
+      return 1;
+  }
+}
 /** StringNumericLiteral conversion; no Number(), parseFloat(), BigInt or host parser. */
 export function stringToNumber(text: string): number {
   // A string that is the canonical decimal of an array index may carry it.
@@ -117,13 +170,21 @@ export function stringToNumber(text: string): number {
     else if (value === -2 && point < 0) point = index;
     else break;
   }
-  if (index === length && length - begin !== (point < 0 ? 0 : 1)) {
-    // Leading zeros, and a point among them, are not significant.
-    let first: number = begin;
-    while (first < length && (first === point || text.charCodeAt(first) === 48))
-      first++;
+  const digits = length - begin - (point < 0 ? 0 : 1);
+  if (index === length && digits !== 0) {
     const fraction = point < 0 ? 0 : length - point - 1;
-    if (length - first - (point > first ? 1 : 0) <= 15 && fraction <= 22) {
+    let significant = digits;
+    if (digits > 15) {
+      // Leading zeros, and a point among them, are not significant.
+      let first: number = begin;
+      while (
+        first < length &&
+        (first === point || text.charCodeAt(first) === 48)
+      )
+        first++;
+      significant = length - first - (point > first ? 1 : 0);
+    }
+    if (significant <= 15 && fraction <= 22) {
       // A canonical array index (digits only, no leading zero but "0"
       // itself) below 2^20 caches its value in the string.
       if (
@@ -133,9 +194,8 @@ export function stringToNumber(text: string): number {
         (length === 1 || text.charCodeAt(0) !== 48)
       )
         cacheArrayIndex(text, mantissa);
-      let power = 1;
-      for (let i = 0; i < fraction; i++) power *= 10;
-      const result = mantissa / power;
+      const result =
+        fraction === 0 ? mantissa : mantissa / powerOfTen(fraction);
       return begin === 1 ? -result : result;
     }
   }
@@ -247,8 +307,7 @@ function generalStringToNumber(text: string): number {
       const code = text.charCodeAt(i);
       if (code !== 46) mantissa = mantissa * 10 + (code - 48);
     }
-    let power = 1;
-    for (let i = exponent < 0 ? -exponent : exponent; i > 0; i--) power *= 10;
+    const power = powerOfTen(exponent < 0 ? -exponent : exponent);
     const result = exponent < 0 ? mantissa / power : mantissa * power;
     return negative ? -result : result;
   }
@@ -483,6 +542,195 @@ function exactProduct(a: number, b: number, product: number): boolean {
     bl = b - bh;
   return ah * bh - product + ah * bl + al * bh + al * bl === 0;
 }
+/** Nonnegative integer below 10^8 followed by "." and one digit, in one string. */
+function decimalPoint1(whole: number, f0: number): string {
+  if (whole < 10) return String.fromCharCode(48 + whole, 46, f0);
+  if (whole < 10000) {
+    const tens = Math.floor(whole * 0.1),
+      ones = whole - tens * 10;
+    if (whole < 100) return String.fromCharCode(48 + tens, 48 + ones, 46, f0);
+    const hundreds = Math.floor(tens * 0.1),
+      second = tens - hundreds * 10;
+    if (whole < 1000)
+      return String.fromCharCode(48 + hundreds, 48 + second, 48 + ones, 46, f0);
+    const thousands = Math.floor(hundreds * 0.1);
+    return String.fromCharCode(
+      48 + thousands,
+      48 + hundreds - thousands * 10,
+      48 + second,
+      48 + ones,
+      46,
+      f0,
+    );
+  }
+  const high = Math.floor(whole * 0.0001),
+    low = whole - high * 10000;
+  const tens = Math.floor(low * 0.1),
+    hundreds = Math.floor(tens * 0.1),
+    thousands = Math.floor(hundreds * 0.1);
+  const d4 = 48 + thousands,
+    d5 = 48 + hundreds - thousands * 10,
+    d6 = 48 + tens - hundreds * 10,
+    d7 = 48 + low - tens * 10;
+  const highTens = Math.floor(high * 0.1),
+    highHundreds = Math.floor(highTens * 0.1),
+    highThousands = Math.floor(highHundreds * 0.1);
+  const d3 = 48 + high - highTens * 10;
+  if (high < 10) return String.fromCharCode(d3, d4, d5, d6, d7, 46, f0);
+  const d2 = 48 + highTens - highHundreds * 10;
+  if (high < 100) return String.fromCharCode(d2, d3, d4, d5, d6, d7, 46, f0);
+  const d1 = 48 + highHundreds - highThousands * 10;
+  if (high < 1000)
+    return String.fromCharCode(d1, d2, d3, d4, d5, d6, d7, 46, f0);
+  return String.fromCharCode(
+    48 + highThousands,
+    d1,
+    d2,
+    d3,
+    d4,
+    d5,
+    d6,
+    d7,
+    46,
+    f0,
+  );
+}
+/** Nonnegative integer below 10^8 followed by "." and two digits, in one string. */
+function decimalPoint2(whole: number, f0: number, f1: number): string {
+  if (whole < 10) return String.fromCharCode(48 + whole, 46, f0, f1);
+  if (whole < 10000) {
+    const tens = Math.floor(whole * 0.1),
+      ones = whole - tens * 10;
+    if (whole < 100)
+      return String.fromCharCode(48 + tens, 48 + ones, 46, f0, f1);
+    const hundreds = Math.floor(tens * 0.1),
+      second = tens - hundreds * 10;
+    if (whole < 1000)
+      return String.fromCharCode(
+        48 + hundreds,
+        48 + second,
+        48 + ones,
+        46,
+        f0,
+        f1,
+      );
+    const thousands = Math.floor(hundreds * 0.1);
+    return String.fromCharCode(
+      48 + thousands,
+      48 + hundreds - thousands * 10,
+      48 + second,
+      48 + ones,
+      46,
+      f0,
+      f1,
+    );
+  }
+  const high = Math.floor(whole * 0.0001),
+    low = whole - high * 10000;
+  const tens = Math.floor(low * 0.1),
+    hundreds = Math.floor(tens * 0.1),
+    thousands = Math.floor(hundreds * 0.1);
+  const d4 = 48 + thousands,
+    d5 = 48 + hundreds - thousands * 10,
+    d6 = 48 + tens - hundreds * 10,
+    d7 = 48 + low - tens * 10;
+  const highTens = Math.floor(high * 0.1),
+    highHundreds = Math.floor(highTens * 0.1),
+    highThousands = Math.floor(highHundreds * 0.1);
+  const d3 = 48 + high - highTens * 10;
+  if (high < 10) return String.fromCharCode(d3, d4, d5, d6, d7, 46, f0, f1);
+  const d2 = 48 + highTens - highHundreds * 10;
+  if (high < 100)
+    return String.fromCharCode(d2, d3, d4, d5, d6, d7, 46, f0, f1);
+  const d1 = 48 + highHundreds - highThousands * 10;
+  if (high < 1000)
+    return String.fromCharCode(d1, d2, d3, d4, d5, d6, d7, 46, f0, f1);
+  return String.fromCharCode(
+    48 + highThousands,
+    d1,
+    d2,
+    d3,
+    d4,
+    d5,
+    d6,
+    d7,
+    46,
+    f0,
+    f1,
+  );
+}
+/** Nonnegative integer below 10^8 followed by "." and three digits, in one string. */
+function decimalPoint3(
+  whole: number,
+  f0: number,
+  f1: number,
+  f2: number,
+): string {
+  if (whole < 10) return String.fromCharCode(48 + whole, 46, f0, f1, f2);
+  if (whole < 10000) {
+    const tens = Math.floor(whole * 0.1),
+      ones = whole - tens * 10;
+    if (whole < 100)
+      return String.fromCharCode(48 + tens, 48 + ones, 46, f0, f1, f2);
+    const hundreds = Math.floor(tens * 0.1),
+      second = tens - hundreds * 10;
+    if (whole < 1000)
+      return String.fromCharCode(
+        48 + hundreds,
+        48 + second,
+        48 + ones,
+        46,
+        f0,
+        f1,
+        f2,
+      );
+    const thousands = Math.floor(hundreds * 0.1);
+    return String.fromCharCode(
+      48 + thousands,
+      48 + hundreds - thousands * 10,
+      48 + second,
+      48 + ones,
+      46,
+      f0,
+      f1,
+      f2,
+    );
+  }
+  const high = Math.floor(whole * 0.0001),
+    low = whole - high * 10000;
+  const tens = Math.floor(low * 0.1),
+    hundreds = Math.floor(tens * 0.1),
+    thousands = Math.floor(hundreds * 0.1);
+  const d4 = 48 + thousands,
+    d5 = 48 + hundreds - thousands * 10,
+    d6 = 48 + tens - hundreds * 10,
+    d7 = 48 + low - tens * 10;
+  const highTens = Math.floor(high * 0.1),
+    highHundreds = Math.floor(highTens * 0.1),
+    highThousands = Math.floor(highHundreds * 0.1);
+  const d3 = 48 + high - highTens * 10;
+  if (high < 10) return String.fromCharCode(d3, d4, d5, d6, d7, 46, f0, f1, f2);
+  const d2 = 48 + highTens - highHundreds * 10;
+  if (high < 100)
+    return String.fromCharCode(d2, d3, d4, d5, d6, d7, 46, f0, f1, f2);
+  const d1 = 48 + highHundreds - highThousands * 10;
+  if (high < 1000)
+    return String.fromCharCode(d1, d2, d3, d4, d5, d6, d7, 46, f0, f1, f2);
+  return String.fromCharCode(
+    48 + highThousands,
+    d1,
+    d2,
+    d3,
+    d4,
+    d5,
+    d6,
+    d7,
+    46,
+    f0,
+    f1,
+    f2,
+  );
+}
 /** The shortest decimal text of a positive finite non-integer `value`
  * whose exact decimal expansion has at most 15 significant digits, else "".
  * Every decimal of at most 15 significant digits round-trips through
@@ -500,10 +748,26 @@ function shortExactDecimal(value: number): string {
       // last nonzero as k is least: whole * scale is at most scaled, so
       // both it and the fraction's units are exact integers.
       if (value >= 1) {
-        const whole = Math.floor(value);
-        return (
-          decimalInteger(whole) + "." + paddedDigits(scaled - whole * scale, k)
-        );
+        const whole = Math.floor(value),
+          fraction = scaled - whole * scale;
+        if (whole < 100000000) {
+          if (k === 1) return decimalPoint1(whole, 48 + fraction);
+          if (k === 2) {
+            const tens = Math.floor(fraction * 0.1);
+            return decimalPoint2(whole, 48 + tens, 48 + fraction - tens * 10);
+          }
+          if (k === 3) {
+            const tens = Math.floor(fraction * 0.1),
+              hundreds = Math.floor(tens * 0.1);
+            return decimalPoint3(
+              whole,
+              48 + hundreds,
+              48 + tens - hundreds * 10,
+              48 + fraction - tens * 10,
+            );
+          }
+        }
+        return decimalInteger(whole) + "." + paddedDigits(fraction, k);
       }
       const digits = decimalInteger(scaled);
       return decimalLayout(digits, digits.length - k);

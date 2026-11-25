@@ -3363,7 +3363,7 @@ test("optional string equality skips the complete helper call for absent values"
   for (let offset = 24; offset < helper.offset; offset += 4) {
     if (!relativeCallMatches(view, offset, helper.offset)) continue;
     const absentBranches = new Set<number>();
-    for (let at = offset - 4; at >= Math.max(0, offset - 64); at -= 4) {
+    for (let at = offset - 4; at >= Math.max(0, offset - 128); at -= 4) {
       const word = view.getUint32(at, true);
       if ((word & 0xff000000) >>> 0 !== 0xb4000000) continue;
       const register = word & 31,
@@ -3671,4 +3671,48 @@ test("published tagged calls retain general roots across the opaque code boundar
     false,
     "raw executable calls do not grant the tracked-write proof",
   );
+});
+
+test("length-only string slices compute bounds without allocating or rooting a slice", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "sliceLength",
+          exported: true,
+          parameters: [0, 1, 2],
+          slots: ["string", "number", "optional-number"],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "load", id: 1, slot: 1, ...span },
+                { kind: "load", id: 2, slot: 2, ...span },
+                {
+                  kind: "string-slice",
+                  id: 3,
+                  string: 0,
+                  begin: 1,
+                  limit: 2,
+                  ...span,
+                },
+                { kind: "string-length", id: 4, string: 3, ...span },
+              ],
+              terminator: { kind: "return", value: 4, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(frameRoots(result.value)[0]?.offsets.length, 2);
+  assert.ok(result.value.helpers.some((h) => h.kind === "string-slice-bounds"));
+  assert.ok(!result.value.helpers.some((h) => h.kind === "string-slice-copy"));
+  assert.ok(!result.value.helpers.some((h) => h.kind === "string-slice-kind"));
 });

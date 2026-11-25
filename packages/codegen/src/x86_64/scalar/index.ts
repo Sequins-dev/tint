@@ -3872,6 +3872,16 @@ export function emitModule(
         case "number-string-cache":
           if (host === undefined) break;
           return;
+        // The string-split cache holds nothing on x86-64: every lookup misses
+        // (none) and stores are dropped.
+        case "string-split-cached":
+          if (host === undefined) break;
+          emit({ op: "mov", dst: rax, src: imm(0) });
+          define(op.id, "optional-reference");
+          return;
+        case "string-split-cache":
+          if (host === undefined) break;
+          return;
         // A string's index field (nativeStringIndexFieldOffset): bit 0 set
         // when an array index is cached in the bits above.
         case "string-index-cached": {

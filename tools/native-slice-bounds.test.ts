@@ -28,11 +28,22 @@ const kernelSource = `function bounds(): number {
       const a = values[i] ?? 0;
       const tail = text.slice(a) + "|" + text.substring(a);
       checksum = (Math.imul(checksum, 31) + tail.length) | 0;
+      // Length-only non-escaping slices must agree with Node on every bound.
+      checksum =
+        (Math.imul(checksum, 31) +
+          text.slice(a).length * 64 +
+          text.substring(a).length) |
+        0;
       for (let j = 0; j < values.length; j++) {
         const b = values[j] ?? 0;
         const sliced = text.slice(a, b),
           sub = text.substring(a, b);
         checksum = (Math.imul(checksum, 31) + sliced.length * 64 + sub.length) | 0;
+        checksum =
+          (Math.imul(checksum, 31) +
+            text.slice(a, b).length * 64 +
+            text.substring(a, b).length) |
+          0;
         if (sliced.length > 0)
           checksum = (Math.imul(checksum, 31) + sliced.charCodeAt(sliced.length - 1)) | 0;
         if (sub.length > 0)

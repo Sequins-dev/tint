@@ -565,6 +565,19 @@ export function encodeInstruction(
       writeSigned(writer, op.string);
       writeSigned(writer, op.value);
       return true;
+    case "string-split-cached":
+      writePrefix(writer, 101, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.separator);
+      writeSigned(writer, op.template);
+      return true;
+    case "string-split-cache":
+      writePrefix(writer, 102, op, 0);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.separator);
+      writeSigned(writer, op.value);
+      return true;
     case "string-utf8-length":
       writePrefix(writer, 94, op, 0);
       writeSigned(writer, op.id);
@@ -1473,6 +1486,26 @@ export function decodeInstruction(
       const string = readSigned(reader),
         value = readSigned(reader);
       return { kind: "string-index-cache", string, value, ...span };
+    }
+    case 101: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        separator = readSigned(reader),
+        template = readSigned(reader);
+      return {
+        kind: "string-split-cached",
+        id,
+        string,
+        separator,
+        template,
+        ...span,
+      };
+    }
+    case 102: {
+      const string = readSigned(reader),
+        separator = readSigned(reader),
+        value = readSigned(reader);
+      return { kind: "string-split-cache", string, separator, value, ...span };
     }
     case 94: {
       const id = readSigned(reader),

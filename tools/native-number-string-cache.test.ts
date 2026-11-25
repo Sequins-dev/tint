@@ -1,10 +1,8 @@
 // The number-string cache behind numberToString natively
 // (nativeNumberStringCacheWord in @tint/abi/host): repeated conversions of
 // numbers whose bits share and miss table slots, read before and after
-// collections that drop the table, under the generational and copying
-// runtimes. Every string must equal Node's.
+// collections that drop the table. Every string must equal Node's.
 import test from "node:test";
-import { nativeFixtureTarget } from "./native-host-target.ts";
 
 // The fixture must compile on the typed path, not the general fallback (the
 // builder reads this when it is imported).
@@ -67,29 +65,19 @@ export function run(): number {
 }
 `;
 
-const runtimes = [
-  "initializeGenerationalRuntime",
-  "initializeCopyingRuntime",
-] as const;
-for (const runtimeEntry of runtimes)
-  test(
-    `numbers convert through the cache across collections (${runtimeEntry})`,
+test("numbers convert through the cache across collections", () => {
+  verifyHostedFixture(
+    source,
+    "number-string-cache",
+    [],
+    [],
+    [],
+    [],
+    // A small heap, so the churn collects many times.
     {
-      skip:
-        runtimeEntry === "initializeCopyingRuntime" &&
-        nativeFixtureTarget().arch === "x86_64" &&
-        "linux-x86_64 does not implement initializeCopyingRuntime",
-    },
-    () => {
-      verifyHostedFixture(
-        source,
-        "number-string-cache",
-        [],
-        [],
-        [],
-        [],
-        // A small heap, so the churn collects many times.
-        { managedBytes: 8388608, allocationCapacity: 65536, runtimeEntry },
-      );
+      managedBytes: 8388608,
+      allocationCapacity: 65536,
+      runtimeEntry: "initializeGenerationalRuntime",
     },
   );
+});

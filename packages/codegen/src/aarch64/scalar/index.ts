@@ -36,6 +36,8 @@ import {
   nativeStringSlicedMinimumLength,
   nativeNumberStringCacheWord,
   nativeNumberStringCacheEntries,
+  nativeStringSplitCacheWord,
+  nativeStringSplitCacheEntries,
   nativeArrayLengthOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
@@ -104,7 +106,11 @@ export type {
   NativeInlineRange,
 } from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
-import { fallsThrough, forwardableEntries } from "./block-entries.ts";
+import {
+  fallsThrough,
+  forwardableEntries,
+  orderBlocks,
+} from "./block-entries.ts";
 import {
   createWordBuffer,
   appendWord,
@@ -225,6 +231,7 @@ import {
   type RecordLayout,
   type ScalarType,
   type Span,
+  type Block as IRBlock,
   type Instruction as IRInstruction,
   type Terminator as IRTerminator,
   type ForeignCall,
@@ -232,7 +239,10 @@ import {
   effectAllocate as irEffectAllocate,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
-import type { BaseRegister } from "../isa.ts";
+import type {
+  BaseRegister,
+  Instruction as MachineInstruction,
+} from "../isa.ts";
 import {
   classifyCCall,
   cTypeName,
@@ -642,6 +652,50 @@ function provenIntegerSlots(
  * invalidate it. Reads must use direct references (the vector itself marks a
  * stored undefined; string lists store each string's word the same way);
  * has accessors answer whether the element is non-null. */
+function trailingStringPresent(block: IRBlock):
+  | {
+      readonly id: number;
+      readonly value: number;
+      readonly index: number;
+    }
+  | undefined {
+  const terminator = block.terminator;
+  if (terminator.kind !== "branch") return undefined;
+  let index = block.instructions.length - 1;
+  while (index >= 0) {
+    const trailing = block.instructions[index];
+    if (trailing === undefined || trailing.kind !== "store") break;
+    index--;
+  }
+  const op = block.instructions[index];
+  return op !== undefined &&
+    op.kind === "string-present" &&
+    op.id === terminator.condition
+    ? { id: op.id, value: op.value, index }
+    : undefined;
+}
+function presentSourceSurvivesTrailingStores(
+  block: IRBlock,
+  afterIndex: number,
+  sourceOffset: number,
+  sourceHome: number,
+  slotOffsets: readonly number[],
+  registers: Uint8Array | undefined,
+): boolean {
+  for (let i = afterIndex + 1; i < block.instructions.length; i++) {
+    const op = block.instructions[i];
+    if (op === undefined || op.kind !== "store") return false;
+    const dstOffset = slotOffsets[op.slot];
+    if (dstOffset === undefined || dstOffset === sourceOffset) return false;
+    if (
+      sourceHome !== 0 &&
+      registers !== undefined &&
+      sourceHome === (registers[dstOffset / 8] ?? 0)
+    )
+      return false;
+  }
+  return true;
+}
 interface ListReadShape {
   readonly header: number;
   readonly field: number;
@@ -651,7 +705,8 @@ interface ListReadShape {
 }
 function listReadShape(fn: FunctionIR): ListReadShape | undefined {
   if (fn.name.startsWith(cachedListReadPrefix))
-    return fn.returnType === "optional-reference" &&
+    return (fn.returnType === "optional-reference" ||
+      fn.returnType === "optional-string") &&
       fn.parameters.length === 3 &&
       fn.slots[0] === "optional-reference" &&
       fn.slots[1] === "reference" &&
@@ -1095,6 +1150,1816 @@ function describeForms(
   if (!forms.far && forms.farBranches.size === 0) return hints;
   return { ...hints, farBranches: names(forms.farBranches), far: forms.far };
 }
+/** Single-store integer slots used as a remainder divisor keep a precomputed
+ * floor(2^32 / d) reciprocal word in the frame (0 when d <= 0 or d > 2^32),
+ * hoisted to the outermost single-store integer copy origin when one exists. */
+function planReciprocalOffsets(
+  fn: FunctionIR,
+  integerSlots: Uint8Array,
+  baseCursor: number,
+): {
+  readonly storeOffsets: Uint32Array;
+  readonly divisorOffsets: Uint32Array;
+  readonly extraBytes: number;
+} {
+  const storeOffsets = new Uint32Array(fn.slots.length),
+    divisorOffsets = new Uint32Array(fn.slots.length);
+  const storeCount = new Uint32Array(fn.slots.length),
+    copySource = new Uint32Array(fn.slots.length),
+    divisorUse = new Uint8Array(fn.slots.length),
+    parameterSlot = new Uint8Array(fn.slots.length);
+  for (const p of fn.parameters) if (p !== undefined) parameterSlot[p] = 1;
+  for (const block of fn.blocks) {
+    if (block === undefined) continue;
+    const loadSlot = new Map<number, number>();
+    for (const op of block.instructions) {
+      if (op === undefined) continue;
+      if (op.kind === "load") loadSlot.set(op.id, op.slot);
+      else if (op.kind === "store") {
+        storeCount[op.slot] = (storeCount[op.slot] ?? 0) + 1;
+        const src = loadSlot.get(op.value);
+        copySource[op.slot] =
+          src !== undefined && src !== op.slot ? src + 1 : 0;
+      } else if (op.kind === "binary" && op.operator === "%") {
+        const s = loadSlot.get(op.right);
+        if (s !== undefined) divisorUse[s] = 1;
+      }
+    }
+    const t = block.terminator;
+    if (
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+      t.operation === "read"
+    )
+      storeCount[t.slot] = (storeCount[t.slot] ?? 0) + 1;
+    if (block.exception !== undefined)
+      storeCount[block.exception.slot] =
+        (storeCount[block.exception.slot] ?? 0) + 1;
+  }
+  let extraBytes = 0;
+  for (let slot = 0; slot < fn.slots.length; slot++) {
+    if (
+      integerSlots[slot] === 1 &&
+      parameterSlot[slot] !== 1 &&
+      storeCount[slot] === 1 &&
+      divisorUse[slot] === 1
+    ) {
+      let root = slot;
+      for (let hop = 0; hop < 4; hop++) {
+        const parent = (copySource[root] ?? 0) - 1;
+        if (
+          parent < 0 ||
+          integerSlots[parent] !== 1 ||
+          parameterSlot[parent] === 1 ||
+          storeCount[parent] !== 1
+        )
+          break;
+        root = parent;
+      }
+      let offset = storeOffsets[root] ?? 0;
+      if (offset === 0) {
+        if (baseCursor + extraBytes > 32752) continue;
+        offset = baseCursor + extraBytes;
+        storeOffsets[root] = offset;
+        extraBytes += 8;
+      }
+      divisorOffsets[slot] = offset;
+    }
+  }
+  return { storeOffsets, divisorOffsets, extraBytes };
+}
+/** Stores floor(2^32 / d) at frame offset `recip` (clamped to 0 for d <= 0
+ * or d > 2^32 so the remainder fast path falls back cleanly to sdiv). */
+function emitStoreReciprocal(
+  emit: (instruction: MachineInstruction) => void,
+  rawLoad: (rt: number, offset: number) => void,
+  rawStore: (rt: number | "zr", offset: number) => void,
+  slotWordOffset: number,
+  recip: number,
+): void {
+  rawLoad(9, slotWordOffset);
+  emit({ op: "movz", width: 64, rd: 11, immediate: 1, shift: 32 });
+  emit({ op: "sdiv", width: 64, rd: 11, rn: 11, rm: 9 });
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 11,
+    immediate: 0,
+    shift: 0,
+    setFlags: true,
+  });
+  emit({ op: "csel", width: 64, rd: 11, rn: 11, rm: "zr", condition: "gt" });
+  rawStore(11, recip);
+}
+/** Zero-spill inline nursery allocator for a 32-byte sliced-string view
+ * (x9 source, x10 source header, x12 byte start, x13 count, x14 view header).
+ * When `fastViews` is provided, jumps over an inline slow path; otherwise
+ * falls straight through and returns the slow-path branch sites for a cold
+ * slice stub. */
+function emitSliceFastNurseryView(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  rawLoad: (rt: number, offset: number) => void,
+  instructions: { readonly length: number },
+  contextOffset: number,
+  fastViews: number[] | undefined,
+): { readonly noState: number; readonly viewFull: number } {
+  rawLoad(15, contextOffset);
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 15,
+    rn: 15,
+    offset: nativeAllocationStateOffset,
+  });
+  const noState = instructions.length;
+  emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 32,
+    rt: 16,
+    rt2: 17,
+    rn: 15,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "add-imm",
+    width: 64,
+    rd: 11,
+    rn: 16,
+    immediate: nativeStringSlicedByteLength,
+    shift: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "sub-reg",
+    width: 64,
+    rd: "zr",
+    rn: 11,
+    rm: 17,
+    shift: "lsl",
+    amount: 0,
+    setFlags: true,
+  });
+  const viewFull = instructions.length;
+  emit({ op: "b.cond", condition: "hi", displacement: 0 });
+  emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 15,
+    rn: 15,
+    offset: nativeGenerationalNurseryAddressOffset,
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 15,
+    rn: 15,
+    rm: 16,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 14,
+    rt2: 13,
+    rn: 15,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 12,
+    rt2: 9,
+    rn: 15,
+    offset: nativeStringSlicedStartOffset,
+    mode: "offset",
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 9,
+    rn: "zr",
+    rm: 15,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  if (fastViews !== undefined) {
+    fastViews.push(instructions.length);
+    emit({ op: "b", displacement: 0 });
+    const viewSlow = instructions.length;
+    patchInstruction(noState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (viewSlow - noState) * 4,
+    });
+    patchInstruction(viewFull, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (viewSlow - viewFull) * 4,
+    });
+  }
+  return { noState, viewFull };
+}
+/** Branchless UTF-16 code unit read for in-bounds integer index `indexReg` on
+ * string `x9` with header high word `w11` and length `w15`. Avoids branch
+ * mispredictions on mixed one-byte/two-byte and flat/sliced strings; writes
+ * the unit (0..65535) to `w11`. */
+function emitBranchlessCodeUnit(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  instructions: { readonly length: number },
+  indexReg: number,
+): void {
+  emit({ op: "orr-reg", width: 64, rd: 10, rn: "zr", rm: 9 });
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 15,
+    immediate: nativeStringSlicedMinimumLength,
+    shift: 0,
+    setFlags: true,
+  });
+  const shortFlat = instructions.length;
+  emit({ op: "b.cond", condition: "cc", displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 13,
+    rt2: 14,
+    rn: 9,
+    offset: nativeStringSlicedStartOffset,
+    mode: "offset",
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 14,
+    rn: 14,
+    rm: 13,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "ands-imm",
+    width: 32,
+    rd: "zr",
+    rn: 11,
+    n: 0,
+    immr: 15,
+    imms: 0,
+  });
+  emit({ op: "csel", width: 64, rd: 10, rn: 14, rm: 9, condition: "ne" });
+  patchInstruction(shortFlat, {
+    op: "b.cond",
+    condition: "cc",
+    displacement: (instructions.length - shortFlat) * 4,
+  });
+  emit({
+    op: "add-imm",
+    width: 64,
+    rd: 10,
+    rn: 10,
+    immediate: nativeStringDataOffset,
+    shift: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "ands-imm",
+    width: 32,
+    rd: "zr",
+    rn: 11,
+    n: 0,
+    immr: 16,
+    imms: 0,
+  });
+  emit({ op: "cset", rd: 13, condition: "eq" });
+  emit({ op: "lslv", width: 64, rd: 14, rn: indexReg, rm: 13 });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 10,
+    rn: 10,
+    rm: 14,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({ op: "ldrb", rt: 11, rn: 10, offset: 0 });
+  emit({
+    op: "ldr-indexed",
+    size: 0,
+    fp: false,
+    rt: 14,
+    rn: 10,
+    rm: 13,
+    scaled: false,
+  });
+  emit({ op: "csel", width: 32, rd: 14, rn: 14, rm: "zr", condition: "eq" });
+  emit({
+    op: "add-reg",
+    width: 32,
+    rd: 11,
+    rn: 11,
+    rm: 14,
+    shift: "lsl",
+    amount: 8,
+    setFlags: false,
+  });
+}
+/** Inline probe for flat two-byte slices of length >= 9. Tests the last 8
+ * units before the first 8 for long slices (> 40), and covers 9..40 units
+ * completely with overlapping 8-unit loads before a single wide-unit test.
+ * Preserves x9, x10, x12 and x13; sets x14 = 1 before branching to
+ * narrowExact/narrowCall on ASCII matches. */
+function emitSliceFastTwoByteProbe(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  callHelper: (kind: LeafHelperKind) => void,
+  instructions: { readonly length: number },
+): {
+  readonly narrowExact: number;
+  readonly narrowCall: number;
+} {
+  const sliced = instructions.length;
+  emit({ op: "tbnz", rt: 10, bit: slicedBit, displacement: 0 });
+  emit({
+    op: "add-imm",
+    width: 64,
+    rd: 15,
+    rn: 9,
+    immediate: nativeStringDataOffset,
+    shift: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 15,
+    rn: 15,
+    rm: 12,
+    shift: "lsl",
+    amount: 1,
+    setFlags: false,
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 11,
+    rn: 15,
+    rm: 13,
+    shift: "lsl",
+    amount: 1,
+    setFlags: false,
+  });
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 13,
+    immediate: 40,
+    shift: 0,
+    setFlags: true,
+  });
+  const shortMid = instructions.length;
+  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 14,
+    rt2: 17,
+    rn: 11,
+    offset: -16,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 14, rm: 17 });
+  emit({
+    op: "ands-imm",
+    width: 64,
+    rd: "zr",
+    rn: 16,
+    n: 0,
+    immr: 8,
+    imms: 39,
+  });
+  const longWideEnd = instructions.length;
+  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 14,
+    rt2: 17,
+    rn: 15,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 14, rm: 17 });
+  emit({
+    op: "ands-imm",
+    width: 64,
+    rd: "zr",
+    rn: 16,
+    n: 0,
+    immr: 8,
+    imms: 39,
+  });
+  const longWideStart = instructions.length;
+  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+  patchInstruction(sliced, {
+    op: "tbnz",
+    rt: 10,
+    bit: slicedBit,
+    displacement: (instructions.length - sliced) * 4,
+  });
+  callHelper("string-slice-kind");
+  const narrowCall = instructions.length;
+  emit({ op: "cbnz", width: 64, rt: 14, displacement: 0 });
+  const longDone = instructions.length;
+  emit({ op: "b", displacement: 0 });
+  patchInstruction(shortMid, {
+    op: "b.cond",
+    condition: "ls",
+    displacement: (instructions.length - shortMid) * 4,
+  });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 16,
+    rt2: 17,
+    rn: 15,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 17 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 14,
+    rt2: 17,
+    rn: 11,
+    offset: -16,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 17 });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 14 });
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 13,
+    immediate: 16,
+    shift: 0,
+    setFlags: true,
+  });
+  const exact16 = instructions.length;
+  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 14,
+    rt2: 17,
+    rn: 15,
+    offset: 16,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 17 });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 14 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 14,
+    rt2: 17,
+    rn: 11,
+    offset: -32,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 17 });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 14 });
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 13,
+    immediate: 32,
+    shift: 0,
+    setFlags: true,
+  });
+  const exact32 = instructions.length;
+  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 14,
+    rt2: 17,
+    rn: 15,
+    offset: 32,
+    mode: "offset",
+  });
+  emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 17 });
+  emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 14 });
+  const exactTest = instructions.length;
+  patchInstruction(exact16, {
+    op: "b.cond",
+    condition: "ls",
+    displacement: (exactTest - exact16) * 4,
+  });
+  patchInstruction(exact32, {
+    op: "b.cond",
+    condition: "ls",
+    displacement: (exactTest - exact32) * 4,
+  });
+  emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
+  emit({
+    op: "ands-imm",
+    width: 64,
+    rd: "zr",
+    rn: 16,
+    n: 0,
+    immr: 8,
+    imms: 39,
+  });
+  const narrowExact = instructions.length;
+  emit({ op: "b.cond", condition: "eq", displacement: 0 });
+  const wideDone = instructions.length;
+  patchInstruction(longWideEnd, {
+    op: "b.cond",
+    condition: "ne",
+    displacement: (wideDone - longWideEnd) * 4,
+  });
+  patchInstruction(longWideStart, {
+    op: "b.cond",
+    condition: "ne",
+    displacement: (wideDone - longWideStart) * 4,
+  });
+  patchInstruction(longDone, {
+    op: "b",
+    displacement: (wideDone - longDone) * 4,
+  });
+  return { narrowExact, narrowCall };
+}
+/** Zero-spill inline nursery allocator for a narrowed one-byte slice
+ * (x9 two-byte source, x12 begin, x13 count >= 9, x14 = 1). */
+function emitSliceFastNurseryNarrow(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  rawLoad: (rt: number, offset: number) => void,
+  callHelper: (kind: LeafHelperKind) => void,
+  instructions: { readonly length: number },
+  contextOffset: number,
+  narrow: {
+    readonly narrowExact: number;
+    readonly narrowCall: number;
+  },
+  fastViews: number[],
+): void {
+  const shortSlow = instructions.length;
+  emit({ op: "b", displacement: 0 });
+  const narrowTarget = instructions.length;
+  patchInstruction(narrow.narrowExact, {
+    op: "b.cond",
+    condition: "eq",
+    displacement: (narrowTarget - narrow.narrowExact) * 4,
+  });
+  patchInstruction(narrow.narrowCall, {
+    op: "cbnz",
+    width: 64,
+    rt: 14,
+    displacement: (narrowTarget - narrow.narrowCall) * 4,
+  });
+  emit({
+    op: "add-imm",
+    width: 64,
+    rd: 11,
+    rn: 13,
+    immediate: nativeStringDataOffset + 7,
+    shift: 0,
+    setFlags: false,
+  });
+  emit({ op: "ubfm", width: 64, rd: 11, rn: 11, immr: 3, imms: 63 });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 11,
+    rn: "zr",
+    rm: 11,
+    shift: "lsl",
+    amount: 3,
+    setFlags: false,
+  });
+  rawLoad(15, contextOffset);
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 15,
+    rn: 15,
+    offset: nativeAllocationStateOffset,
+  });
+  const narrowNoState = instructions.length;
+  emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+  emit({
+    op: "ldp",
+    width: 32,
+    rt: 16,
+    rt2: 17,
+    rn: 15,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 11,
+    rn: 16,
+    rm: 11,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "sub-reg",
+    width: 64,
+    rd: "zr",
+    rn: 11,
+    rm: 17,
+    shift: "lsl",
+    amount: 0,
+    setFlags: true,
+  });
+  const narrowFull = instructions.length;
+  emit({ op: "b.cond", condition: "hi", displacement: 0 });
+  emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 15,
+    rn: 15,
+    offset: nativeGenerationalNurseryAddressOffset,
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 15,
+    rn: 15,
+    rm: 16,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 10,
+    rn: "zr",
+    rm: 9,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({
+    op: "add-reg",
+    width: 64,
+    rd: 9,
+    rn: "zr",
+    rm: 15,
+    shift: "lsl",
+    amount: 0,
+    setFlags: false,
+  });
+  emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
+  emit({ op: "movk", width: 64, rd: 14, immediate: 1, shift: 48 });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 14,
+    rt2: 13,
+    rn: 9,
+    offset: 0,
+    mode: "offset",
+  });
+  callHelper("string-slice-narrow");
+  fastViews.push(instructions.length);
+  emit({ op: "b", displacement: 0 });
+  const narrowSlow = instructions.length;
+  patchInstruction(shortSlow, {
+    op: "b",
+    displacement: (narrowSlow - shortSlow) * 4,
+  });
+  patchInstruction(narrowNoState, {
+    op: "cbz",
+    width: 64,
+    rt: 15,
+    displacement: (narrowSlow - narrowNoState) * 4,
+  });
+  patchInstruction(narrowFull, {
+    op: "b.cond",
+    condition: "hi",
+    displacement: (narrowSlow - narrowFull) * 4,
+  });
+}
+interface ColdSliceStub {
+  readonly short: number;
+  readonly narrowExact: number;
+  readonly narrowCall: number;
+  readonly noState: number;
+  readonly viewFull: number;
+  readonly string: number;
+  readonly block: number;
+  readonly index: number;
+  readonly resume: number;
+}
+function emitColdSliceStubs(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  rawLoad: (rt: number, offset: number) => void,
+  rawStore: (rt: number | "zr", offset: number) => void,
+  rawValue: (rt: number, id: number) => void,
+  imm: (rd: number, value: number) => void,
+  prepareStringSize: (oneByte: number) => void,
+  allocate: (prepare: () => void, size: (rd: number) => void) => void,
+  callHelper: (kind: LeafHelperKind) => void,
+  setSite: (block: number, index: number) => void,
+  clearStackWords: () => void,
+  instructions: { readonly length: number },
+  contextOffset: number,
+  allocationOffset: number,
+  stubs: readonly ColdSliceStub[],
+): void {
+  for (const stub of stubs) {
+    if (stub === undefined) continue;
+    clearStackWords();
+    setSite(stub.block, stub.index);
+    // Narrow path: two-byte source, count >= 9, x14 = 1.
+    // Flat 9..16 hits narrowExact with x15 = source + 16 + (begin << 1):
+    // allocate 32 bytes and write two aligned non-overlapping 8-byte stores
+    // without calling string-slice-narrow.
+    const narrowExactTarget = instructions.length;
+    patchInstruction(stub.narrowExact, {
+      op: "b.cond",
+      condition: "eq",
+      displacement: (narrowExactTarget - stub.narrowExact) * 4,
+    });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate: 16,
+      shift: 0,
+      setFlags: true,
+    });
+    const narrowExactLong = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 10,
+      rn: "zr",
+      rm: 15,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    rawLoad(15, contextOffset);
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeAllocationStateOffset,
+    });
+    const narrow16NoState = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+    emit({
+      op: "ldp",
+      width: 32,
+      rt: 16,
+      rt2: 17,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 11,
+      rn: 16,
+      immediate: nativeStringSlicedByteLength,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 17,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const narrow16Full = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeGenerationalNurseryAddressOffset,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 9,
+      rn: 15,
+      rm: 16,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
+    emit({ op: "movk", width: 64, rd: 14, immediate: 1, shift: 48 });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 14,
+      rt2: 13,
+      rn: 9,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "ldr-q", qt: 0, rn: 10, offset: 0 });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "str-d", rt: 0, rn: 9, offset: nativeStringDataOffset });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 14,
+      rn: 10,
+      rm: 13,
+      shift: "lsl",
+      amount: 1,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 14,
+      rn: 14,
+      immediate: 16,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "ldr-q", qt: 0, rn: 14, offset: 0 });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "fmov-x-d", rd: 16, rn: 0 });
+    emit({ op: "movz", width: 64, rd: 11, immediate: 16, shift: 0 });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 11,
+      rn: 11,
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 11,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    emit({ op: "lsrv", width: 64, rd: 16, rn: 16, rm: 11 });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 16,
+      rn: 9,
+      offset: nativeStringDataOffset + 8,
+    });
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    const narrowTarget = instructions.length;
+    patchInstruction(narrowExactLong, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (narrowTarget - narrowExactLong) * 4,
+    });
+    patchInstruction(stub.narrowCall, {
+      op: "cbnz",
+      width: 64,
+      rt: 14,
+      displacement: (narrowTarget - stub.narrowCall) * 4,
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 11,
+      rn: 13,
+      immediate: nativeStringDataOffset + 7,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "ubfm", width: 64, rd: 11, rn: 11, immr: 3, imms: 63 });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 11,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    rawLoad(15, contextOffset);
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeAllocationStateOffset,
+    });
+    const narrowNoState = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+    emit({
+      op: "ldp",
+      width: 32,
+      rt: 16,
+      rt2: 17,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: 16,
+      rm: 11,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 17,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const narrowFull = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeGenerationalNurseryAddressOffset,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 15,
+      rn: 15,
+      rm: 16,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 10,
+      rn: "zr",
+      rm: 9,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 9,
+      rn: "zr",
+      rm: 15,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
+    emit({ op: "movk", width: 64, rd: 14, immediate: 1, shift: 48 });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 14,
+      rt2: 13,
+      rn: 9,
+      offset: 0,
+      mode: "offset",
+    });
+    callHelper("string-slice-narrow");
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    // Short path: count < 9. Inline flat count === 8 in the nursery before
+    // falling back to the general flat-copy path.
+    clearStackWords();
+    const shortTarget = instructions.length;
+    patchInstruction(stub.short, {
+      op: "b.cond",
+      condition: "cc",
+      displacement: (shortTarget - stub.short) * 4,
+    });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate: 8,
+      shift: 0,
+      setFlags: true,
+    });
+    const shortNotEight = instructions.length;
+    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    const shortSliced = instructions.length;
+    emit({ op: "tbnz", rt: 10, bit: slicedBit, displacement: 0 });
+    const shortEightOneByte = instructions.length;
+    emit({ op: "tbnz", rt: 10, bit: nativeHeaderFlagsShift, displacement: 0 });
+    // Flat two-byte count === 8: probe 8 units, allocate 24 (narrow) or 32 (wide).
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 14,
+      rn: 9,
+      immediate: nativeStringDataOffset,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 14,
+      rn: 14,
+      rm: 12,
+      shift: "lsl",
+      amount: 1,
+      setFlags: false,
+    });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 16,
+      rt2: 17,
+      rn: 14,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "ldr-q", qt: 0, rn: 14, offset: 0 });
+    emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 17 });
+    emit({
+      op: "ands-imm",
+      width: 64,
+      rd: "zr",
+      rn: 16,
+      n: 0,
+      immr: 8,
+      imms: 39,
+    });
+    const shortEightWide = instructions.length;
+    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    rawLoad(15, contextOffset);
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeAllocationStateOffset,
+    });
+    const short8NarrowNoState = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+    emit({
+      op: "ldp",
+      width: 32,
+      rt: 16,
+      rt2: 17,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 11,
+      rn: 16,
+      immediate: nativeStringDataOffset + 8,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 17,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const short8NarrowFull = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeGenerationalNurseryAddressOffset,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 9,
+      rn: 15,
+      rm: 16,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
+    emit({ op: "movk", width: 64, rd: 14, immediate: 1, shift: 48 });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 14,
+      rt2: 13,
+      rn: 9,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "str-d", rt: 0, rn: 9, offset: nativeStringDataOffset });
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    patchInstruction(shortEightWide, {
+      op: "b.cond",
+      condition: "ne",
+      displacement: (instructions.length - shortEightWide) * 4,
+    });
+    rawLoad(15, contextOffset);
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeAllocationStateOffset,
+    });
+    const short8WideNoState = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+    emit({
+      op: "ldp",
+      width: 32,
+      rt: 16,
+      rt2: 17,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 11,
+      rn: 16,
+      immediate: nativeStringDataOffset + 16,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 17,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const short8WideFull = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeGenerationalNurseryAddressOffset,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 9,
+      rn: 15,
+      rm: 16,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 10,
+      rt2: 13,
+      rn: 9,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "str-q", qt: 0, rn: 9, offset: nativeStringDataOffset });
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    patchInstruction(shortEightOneByte, {
+      op: "tbnz",
+      rt: 10,
+      bit: nativeHeaderFlagsShift,
+      displacement: (instructions.length - shortEightOneByte) * 4,
+    });
+    // Flat one-byte count === 8: allocate 24 bytes and copy one 8-byte word.
+    rawLoad(15, contextOffset);
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeAllocationStateOffset,
+    });
+    const short8OneNoState = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+    emit({
+      op: "ldp",
+      width: 32,
+      rt: 16,
+      rt2: 17,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 11,
+      rn: 16,
+      immediate: nativeStringDataOffset + 8,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 17,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const short8OneFull = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({ op: "str", width: 32, rt: 11, rn: 15, offset: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeGenerationalNurseryAddressOffset,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 15,
+      rn: 15,
+      rm: 16,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 14,
+      rn: 9,
+      immediate: nativeStringDataOffset,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "ldr-indexed",
+      size: 3,
+      fp: false,
+      rt: 16,
+      rn: 14,
+      rm: 12,
+      scaled: false,
+    });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 10,
+      rt2: 13,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 16,
+      rn: 15,
+      offset: nativeStringDataOffset,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 9,
+      rn: "zr",
+      rm: 15,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    const shortGeneral = instructions.length;
+    patchInstruction(shortNotEight, {
+      op: "b.cond",
+      condition: "ne",
+      displacement: (shortGeneral - shortNotEight) * 4,
+    });
+    patchInstruction(shortSliced, {
+      op: "tbnz",
+      rt: 10,
+      bit: slicedBit,
+      displacement: (shortGeneral - shortSliced) * 4,
+    });
+    patchInstruction(short8NarrowNoState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (shortGeneral - short8NarrowNoState) * 4,
+    });
+    patchInstruction(short8NarrowFull, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (shortGeneral - short8NarrowFull) * 4,
+    });
+    patchInstruction(short8WideNoState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (shortGeneral - short8WideNoState) * 4,
+    });
+    patchInstruction(short8WideFull, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (shortGeneral - short8WideFull) * 4,
+    });
+    patchInstruction(short8OneNoState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (shortGeneral - short8OneNoState) * 4,
+    });
+    patchInstruction(short8OneFull, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (shortGeneral - short8OneFull) * 4,
+    });
+    emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
+    const oneByteShort = instructions.length;
+    emit({
+      op: "tbnz",
+      rt: 10,
+      bit: nativeHeaderFlagsShift,
+      displacement: 0,
+    });
+    callHelper("string-slice-kind");
+    const flatSlow = instructions.length;
+    patchInstruction(oneByteShort, {
+      op: "tbnz",
+      rt: 10,
+      bit: nativeHeaderFlagsShift,
+      displacement: (flatSlow - oneByteShort) * 4,
+    });
+    patchInstruction(narrow16NoState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (flatSlow - narrow16NoState) * 4,
+    });
+    patchInstruction(narrow16Full, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (flatSlow - narrow16Full) * 4,
+    });
+    patchInstruction(narrowNoState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (flatSlow - narrowNoState) * 4,
+    });
+    patchInstruction(narrowFull, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (flatSlow - narrowFull) * 4,
+    });
+    clearStackWords();
+    rawStore(13, allocationOffset + 16);
+    rawStore(12, allocationOffset + 8);
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    prepareStringSize(14);
+    const flatSized = instructions.length;
+    emit({ op: "b", displacement: 0 });
+    // View slow path: nursery exhausted or uninitialized for 32-byte view.
+    clearStackWords();
+    const viewSlow = instructions.length;
+    patchInstruction(stub.noState, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (viewSlow - stub.noState) * 4,
+    });
+    patchInstruction(stub.viewFull, {
+      op: "b.cond",
+      condition: "hi",
+      displacement: (viewSlow - stub.viewFull) * 4,
+    });
+    rawStore(13, allocationOffset + 16);
+    rawStore(14, allocationOffset + 24);
+    rawStore(12, allocationOffset + 8);
+    imm(12, nativeStringSlicedByteLength);
+    rawStore(12, allocationOffset);
+    patchInstruction(flatSized, {
+      op: "b",
+      displacement: (instructions.length - flatSized) * 4,
+    });
+    clearStackWords();
+    allocate(
+      () => {},
+      (rd) => rawLoad(rd, allocationOffset),
+    );
+    clearStackWords();
+    rawValue(10, stub.string);
+    rawLoad(11, allocationOffset + 8);
+    rawLoad(12, allocationOffset + 16);
+    rawLoad(13, allocationOffset + 24);
+    const flat = instructions.length;
+    emit({ op: "tbz", rt: 13, bit: slicedBit, displacement: 0 });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 13,
+      rt2: 12,
+      rn: 9,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 0 });
+    emit({ op: "tbz", rt: 14, bit: slicedBit, displacement: 8 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 10,
+      rn: 10,
+      offset: nativeStringParentOffset,
+    });
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 11,
+      rt2: 10,
+      rn: 9,
+      offset: nativeStringSlicedStartOffset,
+      mode: "offset",
+    });
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    patchInstruction(flat, {
+      op: "tbz",
+      rt: 13,
+      bit: slicedBit,
+      displacement: (instructions.length - flat) * 4,
+    });
+    callHelper("string-slice-copy");
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+  }
+}
+interface ColdReciprocalStub {
+  readonly wideDividend: number;
+  readonly noRecip: number;
+  readonly target: number;
+  readonly resume: number;
+  readonly zeroSentinel: boolean;
+}
+interface ColdNaNStub {
+  readonly branchSite: number;
+  readonly target: number;
+  readonly resume: number;
+  readonly word: boolean;
+}
+interface ColdListReadStub {
+  readonly slow: readonly { readonly site: number; readonly branch: Branch }[];
+  readonly targetFn: number;
+  readonly vecReg: number;
+  readonly vecOffset: number;
+  readonly listReg: number;
+  readonly listOffset: number;
+  readonly idxReg: number;
+  readonly idxOffset: number;
+  readonly resultReg: number;
+  readonly resultOffset: number;
+  readonly block: number;
+  readonly index: number;
+  readonly resume: number;
+}
+/** Fast Barrett remainder for 0 <= x9 < 2^32 and 1 <= x10 <= 2^32 using
+ * precomputed floor(2^32 / d) at frame offset `recip`, falling back to sdiv. */
+function emitReciprocalRemainder(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  rawLoad: (rt: number, offset: number) => void,
+  instructions: { readonly length: number },
+  target: number,
+  recip: number,
+  coldStubs?: ColdReciprocalStub[],
+  zeroSentinel: boolean = false,
+): void {
+  emit({ op: "ubfm", width: 64, rd: 11, rn: 9, immr: 32, imms: 63 });
+  const wideDividend = instructions.length;
+  emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+  rawLoad(11, recip);
+  const noRecip = instructions.length;
+  emit({ op: "cbz", width: 64, rt: 11, displacement: 0 });
+  emit({ op: "madd", width: 64, rd: 11, rn: 9, rm: 11, ra: "zr" });
+  emit({ op: "ubfm", width: 64, rd: 11, rn: 11, immr: 32, imms: 63 });
+  emit({ op: "msub", width: 64, rd: target, rn: 11, rm: 10, ra: 9 });
+  emit({
+    op: "sub-reg",
+    width: 64,
+    rd: 12,
+    rn: target,
+    rm: 10,
+    shift: "lsl",
+    amount: 0,
+    setFlags: true,
+  });
+  emit({
+    op: "csel",
+    width: 64,
+    rd: target,
+    rn: 12,
+    rm: target,
+    condition: "cs",
+  });
+  if (coldStubs !== undefined) {
+    coldStubs.push({
+      wideDividend,
+      noRecip,
+      target,
+      resume: instructions.length,
+      zeroSentinel,
+    });
+    return;
+  }
+  const done = instructions.length;
+  emit({ op: "b", displacement: 0 });
+  const slow = instructions.length;
+  patchInstruction(wideDividend, {
+    op: "cbnz",
+    width: 64,
+    rt: 11,
+    displacement: (slow - wideDividend) * 4,
+  });
+  patchInstruction(noRecip, {
+    op: "cbz",
+    width: 64,
+    rt: 11,
+    displacement: (slow - noRecip) * 4,
+  });
+  if (zeroSentinel) {
+    const zeroDiv = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+    emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+    emit({ op: "msub", width: 64, rd: target, rn: 11, rm: 10, ra: 9 });
+    const slowDone = instructions.length;
+    emit({ op: "b", displacement: 0 });
+    patchInstruction(zeroDiv, {
+      op: "cbz",
+      width: 64,
+      rt: 10,
+      displacement: (instructions.length - zeroDiv) * 4,
+    });
+    emit({
+      op: "movz",
+      width: 64,
+      rd: target,
+      immediate: 0x6000,
+      shift: 48,
+    });
+    patchInstruction(slowDone, {
+      op: "b",
+      displacement: (instructions.length - slowDone) * 4,
+    });
+  } else {
+    emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+    emit({ op: "msub", width: 64, rd: target, rn: 11, rm: 10, ra: 9 });
+  }
+  patchInstruction(done, {
+    op: "b",
+    displacement: (instructions.length - done) * 4,
+  });
+}
+function emitColdReciprocalStubs(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  instructions: { readonly length: number },
+  stubs: readonly ColdReciprocalStub[],
+): void {
+  for (const stub of stubs) {
+    if (stub === undefined) continue;
+    const slow = instructions.length;
+    patchInstruction(stub.wideDividend, {
+      op: "cbnz",
+      width: 64,
+      rt: 11,
+      displacement: (slow - stub.wideDividend) * 4,
+    });
+    patchInstruction(stub.noRecip, {
+      op: "cbz",
+      width: 64,
+      rt: 11,
+      displacement: (slow - stub.noRecip) * 4,
+    });
+    if (stub.zeroSentinel) {
+      const zeroDiv = instructions.length;
+      emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+      emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+      emit({ op: "msub", width: 64, rd: stub.target, rn: 11, rm: 10, ra: 9 });
+      emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+      patchInstruction(zeroDiv, {
+        op: "cbz",
+        width: 64,
+        rt: 10,
+        displacement: (instructions.length - zeroDiv) * 4,
+      });
+      emit({
+        op: "movz",
+        width: 64,
+        rd: stub.target,
+        immediate: 0x6000,
+        shift: 48,
+      });
+      emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    } else {
+      emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+      emit({ op: "msub", width: 64, rd: stub.target, rn: 11, rm: 10, ra: 9 });
+      emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+    }
+  }
+}
+function emitColdNaNStubs(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  instructions: { readonly length: number },
+  stubs: readonly ColdNaNStub[],
+): void {
+  for (const stub of stubs) {
+    if (stub === undefined) continue;
+    patchInstruction(stub.branchSite, {
+      op: "b.cond",
+      condition: "cs",
+      displacement: (instructions.length - stub.branchSite) * 4,
+    });
+    if (stub.word) {
+      emit({
+        op: "movz",
+        width: 64,
+        rd: stub.target,
+        immediate: 0x6000,
+        shift: 48,
+      });
+    } else {
+      emit({ op: "movz", width: 64, rd: 11, immediate: 0x7ff8, shift: 48 });
+      emit({ op: "fmov-d-x", rd: stub.target, rn: 11 });
+    }
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+  }
+}
+function emitColdListReadStubs(
+  emit: (instruction: MachineInstruction) => void,
+  patchInstruction: (index: number, instruction: MachineInstruction) => void,
+  branch: (instruction: Branch, fn: number, block: number | undefined) => void,
+  setSite: (block: number, index: number) => void,
+  safepoint: () => void,
+  exceptionalBranch: (condition: Branch) => void,
+  instructions: { readonly length: number },
+  contextOffset: number,
+  stubs: readonly ColdListReadStub[],
+): void {
+  for (const stub of stubs) {
+    if (stub === undefined) continue;
+    setSite(stub.block, stub.index);
+    const slowAt = instructions.length;
+    for (const entry of stub.slow) {
+      if (entry === undefined) continue;
+      patchInstruction(
+        entry.site,
+        branchAt(entry.branch, (slowAt - entry.site) * 4),
+      );
+    }
+    if (stub.vecReg >= 32)
+      emit({
+        op: "orr-reg",
+        width: 64,
+        rd: 4,
+        rn: "zr",
+        rm: stub.vecReg - 32,
+      });
+    else
+      emit({ op: "ldr", width: 64, rt: 4, rn: "sp", offset: stub.vecOffset });
+    if (stub.listReg >= 32)
+      emit({
+        op: "orr-reg",
+        width: 64,
+        rd: 5,
+        rn: "zr",
+        rm: stub.listReg - 32,
+      });
+    else
+      emit({ op: "ldr", width: 64, rt: 5, rn: "sp", offset: stub.listOffset });
+    if (stub.idxReg >= 32)
+      emit({ op: "scvtf-d-x", rd: 0, rn: stub.idxReg - 32 });
+    else {
+      emit({ op: "ldr", width: 64, rt: 17, rn: "sp", offset: stub.idxOffset });
+      emit({ op: "scvtf-d-x", rd: 0, rn: 17 });
+    }
+    emit({ op: "ldr", width: 64, rt: 0, rn: "sp", offset: contextOffset });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 3,
+      rn: "sp",
+      immediate: 0,
+      shift: 0,
+      setFlags: false,
+    });
+    branch({ op: "bl" }, stub.targetFn, undefined);
+    safepoint();
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    });
+    exceptionalBranch({ op: "b.cond", condition: "ne" });
+    if (stub.resultReg >= 32)
+      emit({
+        op: "orr-reg",
+        width: 64,
+        rd: stub.resultReg - 32,
+        rn: "zr",
+        rm: 1,
+      });
+    else
+      emit({
+        op: "str",
+        width: 64,
+        rt: 1,
+        rn: "sp",
+        offset: stub.resultOffset,
+      });
+    emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
+  }
+}
 function emitModuleForms(
   module: ModuleIR,
   bodies: EmissionBodies,
@@ -1238,10 +3103,22 @@ function emitModuleForms(
       displacement: (done - young) * 4,
     });
   }
-  /** x9/x10 string objects -> w9 (1 equal, 0 different). Identical objects
-   * are equal, and different headers (kinds) or lengths unequal without the
-   * content helper, which covers most discriminant comparisons. */
-  function stringEqual(): void {
+  /** x9/x10 string or optional-string objects -> w9 (1 equal, 0 different), or
+   * direct branches to `branchTargets.equal` / `branchTargets.different`.
+   * Identical values (including both absent) are equal; if either operand may
+   * be absent, a zero word after the identity test is unequal. Different
+   * lengths or incompatible kinds are unequal, and flat one-byte strings of
+   * 1..8 units compare inline in one word without calling the content helper. */
+  function stringEqual(
+    leftPresent: boolean = true,
+    rightPresent: boolean = true,
+    branchTargets?: {
+      readonly fnId: number;
+      readonly equal: number;
+      readonly different: number;
+      readonly nextBlock: number | undefined;
+    },
+  ): void {
     emit({
       op: "sub-reg",
       width: 64,
@@ -1252,13 +3129,52 @@ function emitModuleForms(
       amount: 0,
       setFlags: true,
     });
-    const same = instructions.length;
-    emit({ op: "b.cond", condition: "eq", displacement: 0 });
+    let same = -1,
+      absentLeft = -1,
+      absentRight = -1,
+      lengths = -1,
+      differentKind = -1,
+      inlineDone = -1;
+    if (branchTargets !== undefined)
+      branch(
+        { op: "b.cond", condition: "eq" },
+        branchTargets.fnId,
+        branchTargets.equal,
+      );
+    else {
+      same = instructions.length;
+      emit({ op: "b.cond", condition: "eq", displacement: 0 });
+    }
+    if (!leftPresent) {
+      if (branchTargets !== undefined)
+        branch(
+          { op: "cbz", width: 64, rt: 9 },
+          branchTargets.fnId,
+          branchTargets.different,
+        );
+      else {
+        absentLeft = instructions.length;
+        emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+      }
+    }
+    if (!rightPresent) {
+      if (branchTargets !== undefined)
+        branch(
+          { op: "cbz", width: 64, rt: 10 },
+          branchTargets.fnId,
+          branchTargets.different,
+        );
+      else {
+        absentRight = instructions.length;
+        emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+      }
+    }
     // The header's high word (the kind flags) and the length word of each:
     // equal strings have equal lengths and kinds (canonical). Unequal
-    // lengths differ at once; equal high words go to the helper, and
-    // otherwise the strings differ unless one is sliced (bit 17 of the
-    // high word): a slice may equal a flat string of its kind.
+    // lengths differ at once; flat one-byte pairs of 1..8 units compare
+    // their single data word inline (every string allocates at least eight
+    // data bytes). Equal headers outside that range, or pairs differing
+    // only in the sliced flag (bit 17), call the content helper.
     emit({
       op: "ldp",
       width: 32,
@@ -1277,33 +3193,177 @@ function emitModuleForms(
       offset: 4,
       mode: "offset",
     });
-    function compareWords(left: number, right: number): void {
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 12,
+      rm: 14,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    if (branchTargets !== undefined)
+      branch(
+        { op: "b.cond", condition: "ne" },
+        branchTargets.fnId,
+        branchTargets.different,
+      );
+    else {
+      lengths = instructions.length;
+      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    }
+    // Both flat one-byte iff both header high words equal 0x10000 (0x10 << 12).
+    const flatOneByteHigh = nativeHeaderFlagUnit / 4294967296 / 4096;
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 14,
+      rn: 11,
+      immediate: flatOneByteHigh,
+      shift: 12,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 15,
+      rn: 13,
+      immediate: flatOneByteHigh,
+      shift: 12,
+      setFlags: false,
+    });
+    emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 15 });
+    const nonFlatOneByte = instructions.length;
+    emit({ op: "cbnz", width: 64, rt: 14, displacement: 0 });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 15,
+      rn: 12,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 15,
+      immediate: 7,
+      shift: 0,
+      setFlags: true,
+    });
+    const outOfInlineRange = instructions.length;
+    emit({ op: "b.cond", condition: "hi", displacement: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 14,
+      rn: 9,
+      offset: nativeStringDataOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 10,
+      offset: nativeStringDataOffset,
+    });
+    emit({ op: "eor-reg", width: 64, rd: 14, rn: 14, rm: 15 });
+    // (-length * 8) mod 64 = (8 - length) * 8 for length in 1..8.
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 13,
+      rn: "zr",
+      rm: 12,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    emit({ op: "lslv", width: 64, rd: 14, rn: 14, rm: 13 });
+    if (branchTargets !== undefined) {
+      branch(
+        { op: "cbz", width: 64, rt: 14 },
+        branchTargets.fnId,
+        branchTargets.equal,
+      );
+      branch({ op: "b" }, branchTargets.fnId, branchTargets.different);
+    } else {
       emit({
-        op: "sub-reg",
+        op: "sub-imm",
         width: 64,
         rd: "zr",
-        rn: left,
-        rm: right,
-        shift: "lsl",
-        amount: 0,
+        rn: 14,
+        immediate: 0,
+        shift: 0,
         setFlags: true,
       });
+      emit({ op: "cset", rd: 9, condition: "eq" });
+      inlineDone = instructions.length;
+      emit({ op: "b", displacement: 0 });
     }
-    compareWords(12, 14);
-    const lengths = instructions.length;
-    emit({ op: "b.cond", condition: "ne", displacement: 0 });
-    compareWords(11, 13);
-    const kinds = instructions.length;
-    emit({ op: "b.cond", condition: "eq", displacement: 0 });
-    emit({ op: "orr-reg", width: 64, rd: 15, rn: 11, rm: 13 });
-    const flatPair = instructions.length;
-    emit({ op: "tbz", rt: 15, bit: slicedHighBit, displacement: 0 });
-    patchInstruction(kinds, {
+    patchInstruction(nonFlatOneByte, {
+      op: "cbnz",
+      width: 64,
+      rt: 14,
+      displacement: (instructions.length - nonFlatOneByte) * 4,
+    });
+    emit({ op: "eor-reg", width: 64, rd: 15, rn: 11, rm: 13 });
+    const sameKind = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 15, displacement: 0 });
+    // Only bit 17 (slicedHighBit, 0x20000 = 0x20 << 12) may differ between
+    // equal strings of the same kind.
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 15,
+      immediate: 0x20,
+      shift: 12,
+      setFlags: true,
+    });
+    if (branchTargets !== undefined)
+      branch(
+        { op: "b.cond", condition: "ne" },
+        branchTargets.fnId,
+        branchTargets.different,
+      );
+    else {
+      differentKind = instructions.length;
+      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    }
+    patchInstruction(sameKind, {
+      op: "cbz",
+      width: 64,
+      rt: 15,
+      displacement: (instructions.length - sameKind) * 4,
+    });
+    patchInstruction(outOfInlineRange, {
       op: "b.cond",
-      condition: "eq",
-      displacement: (instructions.length - kinds) * 4,
+      condition: "hi",
+      displacement: (instructions.length - outOfInlineRange) * 4,
     });
     callHelper("string-equal");
+    if (branchTargets !== undefined) {
+      if (branchTargets.equal === branchTargets.nextBlock)
+        branch(
+          { op: "cbz", width: 64, rt: 9 },
+          branchTargets.fnId,
+          branchTargets.different,
+        );
+      else {
+        branch(
+          { op: "cbnz", width: 64, rt: 9 },
+          branchTargets.fnId,
+          branchTargets.equal,
+        );
+        if (branchTargets.different !== branchTargets.nextBlock)
+          branch({ op: "b" }, branchTargets.fnId, branchTargets.different);
+      }
+      return;
+    }
     const compared = instructions.length;
     emit({ op: "b", displacement: 0 });
     patchInstruction(same, {
@@ -1314,18 +3374,35 @@ function emitModuleForms(
     emit({ op: "movz", width: 64, rd: 9, immediate: 1, shift: 0 });
     const equalDone = instructions.length;
     emit({ op: "b", displacement: 0 });
+    if (absentLeft >= 0)
+      patchInstruction(absentLeft, {
+        op: "cbz",
+        width: 64,
+        rt: 9,
+        displacement: (instructions.length - absentLeft) * 4,
+      });
+    if (absentRight >= 0)
+      patchInstruction(absentRight, {
+        op: "cbz",
+        width: 64,
+        rt: 10,
+        displacement: (instructions.length - absentRight) * 4,
+      });
     patchInstruction(lengths, {
       op: "b.cond",
       condition: "ne",
       displacement: (instructions.length - lengths) * 4,
     });
-    patchInstruction(flatPair, {
-      op: "tbz",
-      rt: 15,
-      bit: slicedHighBit,
-      displacement: (instructions.length - flatPair) * 4,
+    patchInstruction(differentKind, {
+      op: "b.cond",
+      condition: "ne",
+      displacement: (instructions.length - differentKind) * 4,
     });
     emit({ op: "movz", width: 64, rd: 9, immediate: 0, shift: 0 });
+    patchInstruction(inlineDone, {
+      op: "b",
+      displacement: (instructions.length - inlineDone) * 4,
+    });
     patchInstruction(compared, {
       op: "b",
       displacement: (instructions.length - compared) * 4,
@@ -3588,6 +5665,7 @@ function emitModuleForms(
                   op.kind === "string-from-utf8" ||
                   op.kind === "string-ascii-case" ||
                   op.kind === "number-string-cache" ||
+                  op.kind === "string-split-cache" ||
                   ((op.kind === "call" || op.kind === "call-indirect") &&
                     op.id !== undefined &&
                     (managed(module.functions[op.target]?.returnType ?? "") ||
@@ -4107,14 +6185,138 @@ function emitModuleForms(
             ? consumer
             : undefined;
         }
+        // Values whose every consumer is a low-32-bit bitwise/imul operator or
+        // a +/- chain feeding only such operators. Unchecked code units and
+        // exact +/- chains over them keep 64-bit integer words with bit63!=bit62
+        // (0x6000<<48) as a NaN sentinel, eliminating FP round-trips.
+        const low32Tree = new Uint8Array(resultBound),
+          low32TreeUses = low32UseCounts.slice();
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "low32 tree block invariant";
+          for (let i = block.instructions.length - 1; i >= 0; i--) {
+            const op = block.instructions[i];
+            if (op === undefined) continue;
+            const id = instructionResult(op);
+            if (id === undefined) continue;
+            const index = valueIds.intern(id),
+              total = useCounts[index] ?? 0;
+            if (total > 0 && (low32TreeUses[index] ?? 0) === total) {
+              low32Tree[index] = 1;
+              if (
+                op.kind === "binary" &&
+                (op.operator === "+" || op.operator === "-")
+              ) {
+                const l = valueIds.intern(op.left),
+                  r = valueIds.intern(op.right);
+                low32TreeUses[l] = (low32TreeUses[l] ?? 0) + 1;
+                low32TreeUses[r] = (low32TreeUses[r] ?? 0) + 1;
+              }
+            }
+          }
+        }
+        // Values whose every consumer safely decodes a 0x6000<<48 NaN-sentinel
+        // int64 word: low32 ops, string-slice bounds (including immediately
+        // folded optional-wrap limits), and numeric ALU (+, -, *, /, min, max),
+        // which either propagate the sentinel in GP registers or decode via
+        // floatOperand/floatLoad.
+        const nanSentinelSafe = new Uint8Array(resultBound),
+          nanSentinelSafeUses = low32UseCounts.slice();
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "nan sentinel block invariant";
+          for (let i = 0; i < block.instructions.length; i++) {
+            const op = block.instructions[i];
+            if (op === undefined) continue;
+            if (op.kind === "string-slice") {
+              const bIdx = valueIds.intern(op.begin);
+              nanSentinelSafeUses[bIdx] = (nanSentinelSafeUses[bIdx] ?? 0) + 1;
+            } else if (op.kind === "optional-wrap") {
+              const nextOp = block.instructions[i + 1],
+                wrapIdx = valueIds.intern(op.id);
+              if (
+                (useCounts[wrapIdx] ?? 0) === 1 &&
+                nextOp !== undefined &&
+                nextOp.kind === "string-slice" &&
+                nextOp.limit === op.id
+              ) {
+                const vIdx = valueIds.intern(op.value);
+                nanSentinelSafeUses[vIdx] =
+                  (nanSentinelSafeUses[vIdx] ?? 0) + 1;
+              }
+            } else if (
+              op.kind === "binary" &&
+              ["+", "-", "*", "/", "min", "max"].includes(op.operator)
+            ) {
+              const l = valueIds.intern(op.left),
+                r = valueIds.intern(op.right);
+              nanSentinelSafeUses[l] = (nanSentinelSafeUses[l] ?? 0) + 1;
+              nanSentinelSafeUses[r] = (nanSentinelSafeUses[r] ?? 0) + 1;
+            }
+          }
+        }
+        for (let i = 0; i < resultBound; i++) {
+          const total = useCounts[i] ?? 0;
+          if (total > 0 && (nanSentinelSafeUses[i] ?? 0) === total)
+            nanSentinelSafe[i] = 1;
+        }
+        // Non-escaping string slices whose only uses are string-length: compute
+        // the exact clamped length in an untraced integer word and skip heap
+        // allocation and character scanning.
+        const lengthOnlySlices = new Uint8Array(resultBound);
+        {
+          const sliceLengthUses = new Uint32Array(resultBound);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "slice length block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) continue;
+              if (op.kind === "string-length") {
+                const sIdx = valueIds.intern(op.string);
+                sliceLengthUses[sIdx] = (sliceLengthUses[sIdx] ?? 0) + 1;
+              }
+            }
+          }
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "slice length mark invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) continue;
+              if (op.kind === "string-slice") {
+                const idx = valueIds.intern(op.id),
+                  total = useCounts[idx] ?? 0;
+                if (total > 0 && (sliceLengthUses[idx] ?? 0) === total)
+                  lengthOnlySlices[idx] = 1;
+              }
+            }
+          }
+        }
         // Optional numbers that are wrapped numbers, so present: a slice
-        // limit among them needs no absence test.
-        const wrappedNumbers = new Uint8Array(resultBound);
+        // limit among them needs no absence test (and when immediately
+        // consumed by string-slice from an integer value, skips boxing).
+        // Optional strings that are wrapped strings need no absence test in
+        // equality comparisons.
+        const wrappedNumbers = new Uint8Array(resultBound),
+          wrappedNumberSources = new Uint32Array(resultBound),
+          foldedOptionalWraps = new Uint8Array(resultBound),
+          wrappedStrings = new Uint8Array(resultBound),
+          wrappedStringSources = new Uint32Array(resultBound),
+          foldedStringWraps = new Uint8Array(resultBound),
+          // Remainders with non-negative integer dividend and possibly-zero
+          // integer divisor whose sole consumer is a dense list read: stored
+          // as int64 with -1 for NaN (fails unsigned bounds check; floatLoad
+          // decodes -1 back to NaN for the fallback call).
+          nanSentinelRemainders = new Uint8Array(resultBound);
         for (const block of fn.blocks) {
           if (block === undefined) throw "wrapped number block invariant";
-          for (const op of block.instructions)
-            if (op !== undefined && op.kind === "optional-wrap")
-              wrappedNumbers[valueIds.intern(op.id)] = 1;
+          for (const op of block.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "optional-wrap") {
+              const idx = valueIds.intern(op.id);
+              wrappedNumbers[idx] = 1;
+              wrappedNumberSources[idx] = op.value;
+            } else if (op.kind === "string-wrap") {
+              const idx = valueIds.intern(op.id);
+              wrappedStrings[idx] = 1;
+              wrappedStringSources[idx] = op.value;
+            }
+          }
         }
         const foldedConstants = new Uint8Array(resultBound),
           // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
@@ -4322,6 +6524,12 @@ function emitModuleForms(
                 if (!zero) fusedFallbacks.set(op.value, fallbackConstant);
                 const fallback = valueIds.intern(op.fallback);
                 folded[fallback] = (folded[fallback] ?? 0) + 1;
+              } else if (
+                op.kind === "string-slice" &&
+                undefinedValues[valueIds.intern(op.limit)] === 1
+              ) {
+                const limit = valueIds.intern(op.limit);
+                folded[limit] = (folded[limit] ?? 0) + 1;
               }
             }
           }
@@ -4389,7 +6597,13 @@ function emitModuleForms(
           });
         }
         forwardSites = [];
-        const forwardable = forwardableEntries(fn),
+        const orderedBlocks = orderBlocks(fn),
+          forwardable = forwardableEntries(fn, orderedBlocks),
+          coldReciprocals: ColdReciprocalStub[] = [],
+          coldNaNs: ColdNaNStub[] = [],
+          coldListReads: ColdListReadStub[] = [],
+          coldSlices: ColdSliceStub[] = [],
+          allowColdStubs = !forms.far && fn.blocks.length <= 512,
           functionFixups = fixups.length;
         edgeWords.clear();
         edgeBranches.clear();
@@ -4483,6 +6697,7 @@ function emitModuleForms(
                   op.kind === "string-from-utf8" ||
                   op.kind === "string-ascii-case" ||
                   op.kind === "number-string-cache" ||
+                  op.kind === "string-split-cache" ||
                   op.kind === "array-new" ||
                   op.kind === "weak-slot-new" ||
                   op.kind === "reference-vector-new" ||
@@ -4880,6 +7095,7 @@ function emitModuleForms(
               case "reference-wrap":
               case "reference-vector-read":
               case "string-reference":
+              case "string-split-cached":
               case "function-environment":
                 id = op.id;
                 type = "optional-reference";
@@ -5019,6 +7235,7 @@ function emitModuleForms(
                 const key =
                   String(scalarByteLength(type)) +
                   (type === "boolean" ||
+                  lengthOnlySlices[valueIds.intern(id)] === 1 ||
                   (type === "number" &&
                     (integerUses[valueIds.intern(id)] === 1 ||
                       (leafWords !== undefined && leafWords[id] === 1)))
@@ -5079,10 +7296,11 @@ function emitModuleForms(
                 !aliasedLoad(id)
               ) {
                 const type = value(id).type;
-                // Booleans and numbers whose every use wants an integer live
-                // in GP homes (x19..x28): no bank moves at their uses.
+                // Booleans, length-only slices, and numbers whose every use
+                // wants an integer live in GP homes (x19..x28): no bank moves.
                 if (
                   type === "boolean" ||
+                  lengthOnlySlices[valueIds.intern(id)] === 1 ||
                   (type === "number" &&
                     integerUses[valueIds.intern(id)] === 1 &&
                     !floatWords.has(id))
@@ -5111,9 +7329,12 @@ function emitModuleForms(
                       (irInstructionEffects(op) & irEffectAllocate) !== 0,
           );
         }
+        function isManagedValue(id: number, type: ScalarType): boolean {
+          return managed(type) && lengthOnlySlices[valueIds.intern(id)] !== 1;
+        }
         function referenceTemporary(id: number): number {
           const type = value(id).type;
-          return managed(type) && type !== "primitive"
+          return isManagedValue(id, type) && type !== "primitive"
             ? (transientRegisters?.[id] ?? 0)
             : 0;
         }
@@ -5137,7 +7358,7 @@ function emitModuleForms(
                 classes[id] =
                   referenceTemporary(id) !== 0
                     ? 0
-                    : managed(type)
+                    : isManagedValue(id, type)
                       ? 1
                       : type === "general"
                         ? 2
@@ -5167,7 +7388,7 @@ function emitModuleForms(
               if (register !== 0) {
                 if (referenceHomes[register - 36] === 0)
                   referenceHomes[register - 36] = ++registerReferenceCount;
-              } else if (managed(type)) references++;
+              } else if (isManagedValue(id, type)) references++;
               else if (type === "general") generals++;
             }
             if (temporaryPlan !== undefined) {
@@ -5242,7 +7463,7 @@ function emitModuleForms(
                     registerReferenceOffset +
                     ((referenceHomes[register - 36] ?? 0) - 1) * 8,
                 };
-              } else if (managed(type)) {
+              } else if (isManagedValue(id, type)) {
                 values[valueIds.intern(id)] = {
                   type,
                   offset:
@@ -5268,6 +7489,14 @@ function emitModuleForms(
             maximumCursor = Math.max(maximumCursor, cursor);
           }
         }
+        const reciprocalPlan = planReciprocalOffsets(
+            fn,
+            integerSlots,
+            maximumCursor,
+          ),
+          reciprocalStoreOffsets = reciprocalPlan.storeOffsets,
+          reciprocalDivisorOffsets = reciprocalPlan.divisorOffsets;
+        maximumCursor += reciprocalPlan.extraBytes;
         const rootSlots: number[] = [],
           generalSlots: number[] = [];
         if (hasRoots) {
@@ -5395,6 +7624,7 @@ function emitModuleForms(
               occupy(
                 storage.offset,
                 storage.type === "boolean" ||
+                  lengthOnlySlices[valueIds.intern(id)] === 1 ||
                   (storage.type === "number" &&
                     (integerUses[valueIds.intern(id)] === 1 ||
                       (leafWordStorage !== undefined &&
@@ -6397,7 +8627,8 @@ function emitModuleForms(
             rawStore(9, offset);
           }
         }
-        if (fn.blocks[0]?.id !== fn.entry) branch({ op: "b" }, fn.id, fn.entry);
+        if (orderedBlocks[0]?.id !== fn.entry)
+          branch({ op: "b" }, fn.id, fn.entry);
         const nonNullValues = new Uint8Array(values.length),
           // Numbers whose bits are never a signalling NaN, so wrapping them
           // as optional numbers needs no quieting: FP arithmetic results
@@ -6407,6 +8638,7 @@ function emitModuleForms(
           wordKinds = new Uint8Array(values.length),
           // Loads of nonzero slots: divisors that are never 0.
           nonzeroValues = new Uint8Array(values.length),
+          scalarLoadedSlot = new Uint32Array(values.length),
           wordConstants = new Uint32Array(values.length),
           wordMagnitudes = new Float64Array(values.length),
           slotWordBlocks = new Uint32Array(fn.slots.length),
@@ -6427,7 +8659,13 @@ function emitModuleForms(
             value(id).type === "number"
           );
         }
-        const integerStorage = new Uint8Array(values.length);
+        const integerStorage = new Uint8Array(values.length),
+          // 64-bit integer words holding either an exact safe integer
+          // (|x| <= 2^53, so bit 63 == bit 62) or a NaN sentinel starting at
+          // 0x6000<<48 (bit 63 != bit 62, preserved across safe +/-).
+          nanSentinelWords = new Uint8Array(values.length),
+          nanSentinelMagnitudes = new Float64Array(values.length),
+          nanSentinelNonNegative = new Uint8Array(values.length);
         function storedAsInteger(id: number): boolean {
           return integerStorage[valueIds.intern(id)] === 1;
         }
@@ -6451,6 +8689,7 @@ function emitModuleForms(
         function truncatableAddend(id: number): boolean {
           const index = valueIds.intern(id),
             kind = wordKinds[index] ?? 0;
+          if (nanSentinelWords[index] === 1) return false;
           if (kind === 2 || kind === 3) return true;
           const constant = numberConstant(id),
             limit = 9007197107257344;
@@ -6464,8 +8703,10 @@ function emitModuleForms(
         /** Proven integral without NaN: int64 storage, a 32-bit integer or
          * exact uint32 constant, or a bounded safe integer. */
         function exactInteger(id: number): boolean {
+          const index = valueIds.intern(id);
+          if (nanSentinelWords[index] === 1) return false;
           if (storedAsInteger(id)) return true;
-          const kind = wordKinds[valueIds.intern(id)] ?? 0;
+          const kind = wordKinds[index] ?? 0;
           return kind === 2 || kind === 3 || kind === 6;
         }
         function wordMagnitude(index: number): number {
@@ -6479,6 +8720,28 @@ function emitModuleForms(
           return -1;
         }
         function wordValue(id: number): void {
+          if (nanSentinelWords[valueIds.intern(id)] === 1) {
+            const src = rawRegister(id, 9);
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: "zr",
+              rn: src,
+              rm: src,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            emit({
+              op: "csel",
+              width: 32,
+              rd: 9,
+              rn: "zr",
+              rm: src,
+              condition: "vs",
+            });
+            return;
+          }
           if (storedAsWord(id) || storedAsInteger(id)) {
             rawLoad(9, value(id).offset);
             return;
@@ -6521,6 +8784,28 @@ function emitModuleForms(
          * the GP home of a word or int64 value, else `scratch` (computed
          * through x9 by wordValue, which may call the conversion helper). */
         function wordOperand(id: number, scratch: number): number {
+          if (nanSentinelWords[valueIds.intern(id)] === 1) {
+            const src = rawRegister(id, scratch);
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: "zr",
+              rn: src,
+              rm: src,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            emit({
+              op: "csel",
+              width: 32,
+              rd: scratch,
+              rn: "zr",
+              rm: src,
+              condition: "vs",
+            });
+            return scratch;
+          }
           if (storedAsWord(id) || storedAsInteger(id)) {
             const home = homeOf(id);
             if (home >= 32) return home - 32;
@@ -6535,9 +8820,72 @@ function emitModuleForms(
           id: number,
           byteOffset: number = 0,
         ): void {
+          if (byteOffset === 0 && nanSentinelWords[valueIds.intern(id)] === 1) {
+            const reg = rawRegister(id, 17);
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: "zr",
+              rn: reg,
+              rm: reg,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            const finite = instructions.length;
+            emit({ op: "b.cond", condition: "vc", displacement: 0 });
+            emit({
+              op: "movz",
+              width: 64,
+              rd: 17,
+              immediate: 0x7ff8,
+              shift: 48,
+            });
+            emit({ op: "fmov-d-x", rd: rt, rn: 17 });
+            const done = instructions.length;
+            emit({ op: "b", displacement: 0 });
+            patchInstruction(finite, {
+              op: "b.cond",
+              condition: "vc",
+              displacement: (instructions.length - finite) * 4,
+            });
+            emit({ op: "scvtf-d-x", rd: rt, rn: reg });
+            patchInstruction(done, {
+              op: "b",
+              displacement: (instructions.length - done) * 4,
+            });
+            return;
+          }
           if (byteOffset === 0 && storedAsInteger(id)) {
+            const reg = rawRegister(id, 17);
+            if (nanSentinelRemainders[valueIds.intern(id)] === 1) {
+              const nonNegativeValue = instructions.length;
+              emit({ op: "tbz", rt: reg, bit: 63, displacement: 0 });
+              emit({
+                op: "movz",
+                width: 64,
+                rd: 17,
+                immediate: 0x7ff8,
+                shift: 48,
+              });
+              emit({ op: "fmov-d-x", rd: rt, rn: 17 });
+              const done = instructions.length;
+              emit({ op: "b", displacement: 0 });
+              patchInstruction(nonNegativeValue, {
+                op: "tbz",
+                rt: reg,
+                bit: 63,
+                displacement: (instructions.length - nonNegativeValue) * 4,
+              });
+              emit({ op: "scvtf-d-x", rd: rt, rn: reg });
+              patchInstruction(done, {
+                op: "b",
+                displacement: (instructions.length - done) * 4,
+              });
+              return;
+            }
             // Exact (|x| < 2^53), so the conversion is too.
-            emit({ op: "scvtf-d-x", rd: rt, rn: rawRegister(id, 17) });
+            emit({ op: "scvtf-d-x", rd: rt, rn: reg });
             return;
           }
           const storage = scalarRegisters,
@@ -6651,7 +8999,12 @@ function emitModuleForms(
           const storage = scalarRegisters,
             offset = value(id).offset,
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
-          if (register !== 0 && register < 32 && !storedAsInteger(id))
+          if (
+            register !== 0 &&
+            register < 32 &&
+            !storedAsInteger(id) &&
+            nanSentinelWords[valueIds.intern(id)] !== 1
+          )
             return register;
           floatLoad(scratch, id);
           return scratch;
@@ -8084,36 +10437,49 @@ function emitModuleForms(
               displacement: (instructions.length - fastDone) * 4,
             });
         }
-        /** string-slice-bounds' contract (x9 the source, d0 begin, d1
-         * limit, x10 1 when the limit is present -> x12 begin, x13 count),
-         * inline when the bounds are integers: relative bounds clamped to
-         * [0, length] in integer arithmetic. Other bounds (NaN, infinities,
-         * fractions) call the helper, which clamps doubles. */
+        /** string-slice-bounds' contract (x9 the source -> x12 begin, x13
+         * count), inline when the bounds are integers: relative bounds clamped
+         * to [0, length] in integer arithmetic. Other bounds (NaN, infinities,
+         * fractions) fall back to the helper, which clamps doubles. */
         function sliceBounds(
+          string: number,
           begin: number,
           limit: number,
+          limitAbsent: boolean,
           limitPresent: boolean,
+          limitSource: number,
         ): void {
           const slow: { index: number; branch: Branch }[] = [];
           const toSlow = (branch: Branch): void => {
             slow.push({ index: instructions.length, branch });
             emit(branchAt(branch, 0));
           };
-          /** rd = the integer value of `id`, whose double is in `register`
-           * (d0 and d1 stay intact for the helper), or slow. */
-          const integerBound = (
-            id: number,
-            register: number,
-            rd: number,
-          ): void => {
+          /** rd = the integer value of `id`, or slow. */
+          const integerBound = (id: number, rd: number): void => {
+            if (nanSentinelWords[valueIds.intern(id)] === 1) {
+              rawValue(rd, id);
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: "zr",
+                rn: rd,
+                rm: rd,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              toSlow({ op: "b.cond", condition: "vs" });
+              return;
+            }
             if (storedAsInteger(id)) {
               rawValue(rd, id);
               return;
             }
-            emit({ op: "fcvtzs-x-d", rd, rn: register });
+            const fp = floatOperand(id, 0);
+            emit({ op: "fcvtzs-x-d", rd, rn: fp });
             if (exactInteger(id)) return;
             emit({ op: "scvtf-d-x", rd: 2, rn: rd });
-            emit({ op: "fcmp", rn: register, rm: 2 });
+            emit({ op: "fcmp", rn: fp, rm: 2 });
             toSlow({ op: "b.cond", condition: "ne" });
           };
           const compareZero = (register: number): void => {
@@ -8129,35 +10495,40 @@ function emitModuleForms(
           };
           /** rd = clamp(rd < 0 ? rd + length : rd, 0, length), length in
            * x11. Clobbers x14. */
-          const clampRelative = (rd: number): void => {
-            compareZero(rd);
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: 14,
-              rn: rd,
-              rm: 11,
-              shift: "lsl",
-              amount: 0,
-              setFlags: false,
-            });
-            emit({
-              op: "csel",
-              width: 64,
-              rd,
-              rn: 14,
-              rm: rd,
-              condition: "lt",
-            });
-            compareZero(rd);
-            emit({
-              op: "csel",
-              width: 64,
-              rd,
-              rn: "zr",
-              rm: rd,
-              condition: "lt",
-            });
+          const clampRelative = (rd: number, id: number): void => {
+            if (
+              !nonNegative(id) &&
+              nanSentinelNonNegative[valueIds.intern(id)] !== 1
+            ) {
+              compareZero(rd);
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 14,
+                rn: rd,
+                rm: 11,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+              emit({
+                op: "csel",
+                width: 64,
+                rd,
+                rn: 14,
+                rm: rd,
+                condition: "lt",
+              });
+              compareZero(rd);
+              emit({
+                op: "csel",
+                width: 64,
+                rd,
+                rn: "zr",
+                rm: rd,
+                condition: "lt",
+              });
+            }
             emit({
               op: "sub-reg",
               width: 64,
@@ -8177,7 +10548,7 @@ function emitModuleForms(
               condition: "gt",
             });
           };
-          integerBound(begin, 0, 12);
+          integerBound(begin, 12);
           emit({
             op: "ldr",
             width: 32,
@@ -8185,63 +10556,97 @@ function emitModuleForms(
             rn: 9,
             offset: nativeStringLengthOffset,
           });
-          // An absent limit is the length.
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 13,
-            rn: "zr",
-            rm: 11,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
-          const absent = instructions.length;
-          if (!limitPresent)
-            emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
-          integerBound(limit, 1, 13);
-          clampRelative(13);
-          if (!limitPresent)
-            patchInstruction(absent, {
-              op: "cbz",
+          // An absent limit is the length, so length - begin is non-negative
+          // after begin is clamped to [0, length].
+          if (limitAbsent) {
+            clampRelative(12, begin);
+            emit({
+              op: "sub-reg",
               width: 64,
-              rt: 10,
-              displacement: (instructions.length - absent) * 4,
+              rd: 13,
+              rn: 11,
+              rm: 12,
+              shift: "lsl",
+              amount: 0,
+              setFlags: false,
             });
-          clampRelative(12);
-          // The count: limit - begin, at least zero.
-          emit({
-            op: "sub-reg",
-            width: 64,
-            rd: 13,
-            rn: 13,
-            rm: 12,
-            shift: "lsl",
-            amount: 0,
-            setFlags: true,
-          });
-          emit({
-            op: "csel",
-            width: 64,
-            rd: 13,
-            rn: "zr",
-            rm: 13,
-            condition: "lt",
-          });
-          const done = instructions.length;
-          emit({ op: "b", displacement: 0 });
-          for (const site of slow) {
-            if (site === undefined) throw "slice bounds invariant";
-            patchInstruction(
-              site.index,
-              branchAt(site.branch, (instructions.length - site.index) * 4),
-            );
+          } else {
+            if (!limitPresent)
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 13,
+                rn: "zr",
+                rm: 11,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+            let absent = -1;
+            if (!limitPresent) {
+              rawValue(10, limit);
+              absentFlags(10, 10);
+              absent = instructions.length;
+              emit({ op: "b.cond", condition: "eq", displacement: 0 });
+            }
+            integerBound(limitSource, 13);
+            clampRelative(13, limitSource);
+            if (absent >= 0)
+              patchInstruction(absent, {
+                op: "b.cond",
+                condition: "eq",
+                displacement: (instructions.length - absent) * 4,
+              });
+            clampRelative(12, begin);
+            // The count: limit - begin, at least zero.
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: 13,
+              rn: 13,
+              rm: 12,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            emit({
+              op: "csel",
+              width: 64,
+              rd: 13,
+              rn: "zr",
+              rm: 13,
+              condition: "lt",
+            });
           }
-          callHelper("string-slice-bounds");
-          patchInstruction(done, {
-            op: "b",
-            displacement: (instructions.length - done) * 4,
-          });
+          if (slow.length > 0) {
+            const done = instructions.length;
+            emit({ op: "b", displacement: 0 });
+            for (const site of slow) {
+              if (site === undefined) throw "slice bounds invariant";
+              patchInstruction(
+                site.index,
+                branchAt(site.branch, (instructions.length - site.index) * 4),
+              );
+            }
+            floatLoad(0, begin);
+            if (limitAbsent) imm(10, 0);
+            else {
+              floatLoad(1, limitSource);
+              if (limitPresent) imm(10, 1);
+              else {
+                rawValue(10, limit);
+                absentFlags(10, 10);
+                emit({ op: "cset", rd: 10, condition: "ne" });
+              }
+            }
+            // floatLoad may clobber x9 when converting spilled integers.
+            rawValue(9, string);
+            callHelper("string-slice-bounds");
+            patchInstruction(done, {
+              op: "b",
+              displacement: (instructions.length - done) * 4,
+            });
+          }
         }
         // Combined code-unit count in x11; checked rounded extent saved across allocation.
         /** Code-unit count in x11 and the kind in `oneByte` (a register
@@ -8837,9 +11242,20 @@ function emitModuleForms(
           viewValueTokens.set(id, token);
           return token;
         }
-        for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
-          const b = fn.blocks[blockIndex],
-            nextBlock = fn.blocks[blockIndex + 1]?.id;
+        for (
+          let blockIndex = 0;
+          blockIndex < orderedBlocks.length;
+          blockIndex++
+        ) {
+          const b = orderedBlocks[blockIndex];
+          let nextBlockIndex = blockIndex + 1;
+          while (nextBlockIndex < orderedBlocks.length) {
+            const candidate = orderedBlocks[nextBlockIndex];
+            if (candidate === undefined || dispatch?.fused[candidate.id] !== 1)
+              break;
+            nextBlockIndex++;
+          }
+          const nextBlock = orderedBlocks[nextBlockIndex]?.id;
           if (b === undefined) throw "block invariant";
           deferredIntegers.clear();
           // Fused dispatch continuations are unreachable; their head tests
@@ -9009,7 +11425,25 @@ function emitModuleForms(
             )
               comparisonValue = finalInstruction.id;
           }
-          let comparisonBranch: Condition | undefined = undefined;
+          let comparisonBranch: Condition | "emitted" | undefined = undefined;
+          const presentOp = trailingStringPresent(b),
+            foldedPresentOp =
+              presentOp !== undefined &&
+              (useCounts[valueIds.intern(presentOp.id)] ?? 0) === 1 &&
+              presentSourceSurvivesTrailingStores(
+                b,
+                presentOp.index,
+                value(presentOp.value).offset,
+                homeOf(presentOp.value),
+                slotOffsets,
+                scalarRegisters,
+              )
+                ? presentOp
+                : undefined,
+            foldedPresent =
+              foldedPresentOp === undefined ? undefined : foldedPresentOp.id,
+            foldedPresentSource =
+              foldedPresentOp === undefined ? undefined : foldedPresentOp.value;
           for (
             let operationIndex = 0;
             operationIndex < b.instructions.length;
@@ -9051,23 +11485,30 @@ function emitModuleForms(
                 instructions.length * 4,
               );
             span = { start: op.start, end: op.end };
-            if (op.kind === "load" && slotIntegerFacts !== undefined) {
-              const mask = slotIntegerFacts[op.slot] ?? 0,
-                index = valueIds.intern(op.id),
-                safeBound = safeSlotBounds[op.slot] ?? 0;
+            if (op.kind === "load") {
+              const index = valueIds.intern(op.id);
+              if (slotIntegerFacts !== undefined) {
+                const mask = slotIntegerFacts[op.slot] ?? 0,
+                  safeBound = safeSlotBounds[op.slot] ?? 0;
+                if (fn.slots[op.slot] === "number") {
+                  if (mask === 1) wordKinds[index] = 2;
+                  else if (safeBound > 0) {
+                    wordKinds[index] = 6;
+                    wordMagnitudes[index] = safeBound;
+                  } else if (mask !== 0 && (mask & ~3) === 0)
+                    wordKinds[index] = 5;
+                } else if (
+                  fn.slots[op.slot] === "optional-number" &&
+                  mask !== 0 &&
+                  (mask & ~9) === 0
+                )
+                  wordKinds[index] = 4;
+              }
               if (fn.slots[op.slot] === "number") {
-                if (mask === 1) wordKinds[index] = 2;
-                else if (safeBound > 0) {
-                  wordKinds[index] = 6;
-                  wordMagnitudes[index] = safeBound;
-                } else if (mask !== 0 && (mask & ~3) === 0)
-                  wordKinds[index] = 5;
-              } else if (
-                fn.slots[op.slot] === "optional-number" &&
-                mask !== 0 &&
-                (mask & ~9) === 0
-              )
-                wordKinds[index] = 4;
+                if (integerSlots[op.slot] === 1)
+                  scalarLoadedSlot[index] = op.slot + 1;
+                if (nonzeroSlots[op.slot] === 1) nonzeroValues[index] = 1;
+              }
             }
             if (stableLayouts) {
               if (
@@ -9139,6 +11580,7 @@ function emitModuleForms(
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
               op.kind === "array-length" ||
+              op.kind === "string-length" ||
               (op.kind === "string-code-unit" && op.inBounds === true)
             )
               wordKinds[valueIds.intern(op.id)] = 2;
@@ -9187,45 +11629,69 @@ function emitModuleForms(
               wordConstants[index] = wordConstants[stored] ?? 0;
               wordMagnitudes[index] = wordMagnitudes[stored] ?? 0;
             }
-            if (
-              op.kind === "binary" &&
-              (op.operator === "+" ||
-                op.operator === "-" ||
-                op.operator === "*")
-            ) {
-              const left = valueIds.intern(op.left),
-                right = valueIds.intern(op.right),
-                leftBound = wordMagnitude(left),
-                rightBound = wordMagnitude(right),
-                bound =
-                  op.operator === "*"
-                    ? leftBound * rightBound
-                    : leftBound + rightBound;
+            if (op.kind === "binary") {
               if (
-                leftBound >= 0 &&
-                rightBound >= 0 &&
-                bound <= 9007199254740991
+                op.operator === "+" ||
+                op.operator === "-" ||
+                op.operator === "*"
               ) {
-                const index = valueIds.intern(op.id),
-                  leftKind = wordKinds[left],
-                  rightKind = wordKinds[right];
-                wordKinds[index] =
-                  leftKind === 5 ||
-                  leftKind === 7 ||
-                  rightKind === 5 ||
-                  rightKind === 7
-                    ? 7
-                    : 6;
-                wordMagnitudes[index] = Math.max(1, bound);
+                const left = valueIds.intern(op.left),
+                  right = valueIds.intern(op.right),
+                  leftBound = wordMagnitude(left),
+                  rightBound = wordMagnitude(right),
+                  bound =
+                    op.operator === "*"
+                      ? leftBound * rightBound
+                      : leftBound + rightBound;
+                if (
+                  leftBound >= 0 &&
+                  rightBound >= 0 &&
+                  bound <= 9007199254740991
+                ) {
+                  const index = valueIds.intern(op.id),
+                    leftKind = wordKinds[left],
+                    rightKind = wordKinds[right];
+                  wordKinds[index] =
+                    leftKind === 5 ||
+                    leftKind === 7 ||
+                    rightKind === 5 ||
+                    rightKind === 7
+                      ? 7
+                      : 6;
+                  wordMagnitudes[index] = Math.max(1, bound);
+                }
+              } else if (op.operator === "%") {
+                // An exact integer modulo a nonzero integer constant d is an
+                // integer below |d| in magnitude (-0 aside, as for sums); one
+                // modulo a nonzero slot's value is below that value's bound,
+                // and no larger than the dividend.
+                const divisor = numberConstant(op.right),
+                  index = valueIds.intern(op.id);
+                if (
+                  divisor !== undefined &&
+                  Number.isSafeInteger(divisor) &&
+                  divisor !== 0 &&
+                  exactInteger(op.left)
+                ) {
+                  wordKinds[index] = 6;
+                  wordMagnitudes[index] = Math.max(1, Math.abs(divisor) - 1);
+                } else if (
+                  nonzeroValues[valueIds.intern(op.right)] === 1 &&
+                  exactInteger(op.left) &&
+                  exactInteger(op.right)
+                ) {
+                  const left = wordMagnitude(valueIds.intern(op.left)),
+                    right = wordMagnitude(valueIds.intern(op.right));
+                  if (left >= 0 && right >= 0) {
+                    wordKinds[index] = 6;
+                    wordMagnitudes[index] = Math.max(
+                      1,
+                      Math.min(left, right - 1),
+                    );
+                  }
+                }
               }
-            }
-            if (
-              op.kind === "load" &&
-              nonzeroSlots[op.slot] === 1 &&
-              fn.slots[op.slot] === "number"
-            )
-              nonzeroValues[valueIds.intern(op.id)] = 1;
-            if (
+            } else if (
               op.kind === "unary" &&
               (op.operator === "trunc" || op.operator === "ceil") &&
               exactInteger(op.operand)
@@ -9236,37 +11702,6 @@ function emitModuleForms(
                 const index = valueIds.intern(op.id);
                 wordKinds[index] = 6;
                 wordMagnitudes[index] = Math.max(1, magnitude);
-              }
-            }
-            if (op.kind === "binary" && op.operator === "%") {
-              // An exact integer modulo a nonzero integer constant d is an
-              // integer below |d| in magnitude (-0 aside, as for sums); one
-              // modulo a nonzero slot's value is below that value's bound,
-              // and no larger than the dividend.
-              const divisor = numberConstant(op.right),
-                index = valueIds.intern(op.id);
-              if (
-                divisor !== undefined &&
-                Number.isSafeInteger(divisor) &&
-                divisor !== 0 &&
-                exactInteger(op.left)
-              ) {
-                wordKinds[index] = 6;
-                wordMagnitudes[index] = Math.max(1, Math.abs(divisor) - 1);
-              } else if (
-                nonzeroValues[valueIds.intern(op.right)] === 1 &&
-                exactInteger(op.left) &&
-                exactInteger(op.right)
-              ) {
-                const left = wordMagnitude(valueIds.intern(op.left)),
-                  right = wordMagnitude(valueIds.intern(op.right));
-                if (left >= 0 && right >= 0) {
-                  wordKinds[index] = 6;
-                  wordMagnitudes[index] = Math.max(
-                    1,
-                    Math.min(left, right - 1),
-                  );
-                }
               }
             }
             // Binary operations keep an immediate operand deferred, and
@@ -10396,6 +12831,32 @@ function emitModuleForms(
                 break;
               }
               case "string-length": {
+                if (lengthOnlySlices[valueIds.intern(op.string)] === 1) {
+                  // The slice was not materialized: its home holds the exact
+                  // uint32 count computed by sliceBounds.
+                  const count = rawRegister(op.string, 9);
+                  if (wantsInteger(op.id)) {
+                    const target = rawTarget(op.id, count);
+                    if (target !== count)
+                      emit({
+                        op: "orr-reg",
+                        width: 64,
+                        rd: target,
+                        rn: "zr",
+                        rm: count,
+                      });
+                    saveRaw(target, op.id);
+                    markInteger(op.id);
+                    break;
+                  }
+                  emit({
+                    op: "ucvtf-d-w",
+                    rd: floatTarget(op.id, 0),
+                    rn: count,
+                  });
+                  floatStore(floatTarget(op.id, 0), op.id);
+                  break;
+                }
                 // A uint32 length: an exact int64 for integer uses.
                 const string = rawRegister(op.string, 9);
                 if (wantsInteger(op.id)) {
@@ -10609,8 +13070,7 @@ function emitModuleForms(
                   floatStore(target, op.id);
                   break;
                 }
-                const indexFact = valueIds.intern(op.index),
-                  target = floatTarget(op.id, 0);
+                const indexFact = valueIds.intern(op.index);
                 rawValue(9, op.string);
                 if (storedAsInteger(op.index) || wordKinds[indexFact] === 3) {
                   // An exact integer index reads the unit inline after an
@@ -10619,51 +13079,113 @@ function emitModuleForms(
                   if (storedAsInteger(op.index))
                     index = intRegister(op.index, 12);
                   else imm(12, wordConstants[indexFact] ?? 0);
-                  emit({ op: "ldr", width: 32, rt: 11, rn: 9, offset: 4 });
                   emit({
-                    op: "ldr",
+                    op: "ldp",
                     width: 32,
-                    rt: 10,
+                    rt: 11,
+                    rt2: 15,
                     rn: 9,
-                    offset: nativeStringLengthOffset,
+                    offset: 4,
+                    mode: "offset",
                   });
                   emit({
                     op: "sub-reg",
                     width: 64,
                     rd: "zr",
                     rn: index,
-                    rm: 10,
+                    rm: 15,
                     shift: "lsl",
                     amount: 0,
                     setFlags: true,
                   });
                   const outside = instructions.length;
                   emit({ op: "b.cond", condition: "cs", displacement: 0 });
-                  emit({
-                    op: "add-imm",
-                    width: 64,
-                    rd: 10,
-                    rn: 9,
-                    immediate: nativeStringDataOffset,
-                    shift: 0,
-                    setFlags: false,
-                  });
-                  loadUnit(11, index, 9);
+                  emitBranchlessCodeUnit(
+                    emit,
+                    patchInstruction,
+                    instructions,
+                    index,
+                  );
+                  const idIndex = valueIds.intern(op.id);
+                  if (low32Tree[idIndex] === 1) {
+                    const target = rawTarget(op.id, 11);
+                    if (target !== 11)
+                      emit({
+                        op: "orr-reg",
+                        width: 64,
+                        rd: target,
+                        rn: "zr",
+                        rm: 11,
+                      });
+                    if (
+                      allowColdStubs &&
+                      instructions.length - start / 4 < 131072
+                    ) {
+                      coldNaNs.push({
+                        branchSite: outside,
+                        target,
+                        resume: instructions.length,
+                        word: true,
+                      });
+                    } else {
+                      const done = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(outside, {
+                        op: "b.cond",
+                        condition: "cs",
+                        displacement: (instructions.length - outside) * 4,
+                      });
+                      emit({
+                        op: "movz",
+                        width: 64,
+                        rd: target,
+                        immediate: 0x6000,
+                        shift: 48,
+                      });
+                      patchInstruction(done, {
+                        op: "b",
+                        displacement: (instructions.length - done) * 4,
+                      });
+                    }
+                    saveRaw(target, op.id);
+                    nanSentinelWords[idIndex] = 1;
+                    nanSentinelMagnitudes[idIndex] = 65535;
+                    nanSentinelNonNegative[idIndex] = 1;
+                    break;
+                  }
+                  const target = floatTarget(op.id, 0);
                   emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
-                  const done = instructions.length;
-                  emit({ op: "b", displacement: 0 });
-                  patchInstruction(outside, {
-                    op: "b.cond",
-                    condition: "cs",
-                    displacement: (instructions.length - outside) * 4,
-                  });
-                  floatLoad(0, op.index);
-                  callHelper("string-code-unit");
-                  if (target !== 0) emit({ op: "fmov-d-d", rd: target, rn: 0 });
-                  patchInstruction(done, {
-                    op: "b",
-                    displacement: (instructions.length - done) * 4,
-                  });
+                  if (
+                    allowColdStubs &&
+                    instructions.length - start / 4 < 131072
+                  ) {
+                    coldNaNs.push({
+                      branchSite: outside,
+                      target,
+                      resume: instructions.length,
+                      word: false,
+                    });
+                  } else {
+                    const done = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(outside, {
+                      op: "b.cond",
+                      condition: "cs",
+                      displacement: (instructions.length - outside) * 4,
+                    });
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 11,
+                      immediate: 0x7ff8,
+                      shift: 48,
+                    });
+                    emit({ op: "fmov-d-x", rd: target, rn: 11 });
+                    patchInstruction(done, {
+                      op: "b",
+                      displacement: (instructions.length - done) * 4,
+                    });
+                  }
                   floatStore(target, op.id);
                   break;
                 }
@@ -10890,23 +13412,160 @@ function emitModuleForms(
                 break;
               }
               case "string-slice": {
+                const limitIndex = valueIds.intern(op.limit),
+                  absent = undefinedValues[limitIndex] === 1,
+                  present = wrappedNumbers[limitIndex] === 1,
+                  limitSource =
+                    foldedOptionalWraps[limitIndex] === 1
+                      ? (wrappedNumberSources[limitIndex] ?? op.limit)
+                      : op.limit;
+                if (lengthOnlySlices[valueIds.intern(op.id)] === 1) {
+                  rawValue(9, op.string);
+                  sliceBounds(
+                    op.string,
+                    op.begin,
+                    op.limit,
+                    absent,
+                    present,
+                    limitSource,
+                  );
+                  const target = rawTarget(op.id, 13);
+                  if (target !== 13)
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: target,
+                      rn: "zr",
+                      rm: 13,
+                    });
+                  saveRaw(target, op.id);
+                  break;
+                }
+                if (
+                  linearAllocation &&
+                  generationalBarriers &&
+                  allowColdStubs &&
+                  instructions.length - start / 4 < 131072
+                ) {
+                  pollWorkerStop();
+                  rawValue(9, op.string);
+                  sliceBounds(
+                    op.string,
+                    op.begin,
+                    op.limit,
+                    absent,
+                    present,
+                    limitSource,
+                  );
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 13,
+                    immediate: nativeStringSlicedMinimumLength,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const short = instructions.length;
+                  emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                  const oneByteView = instructions.length;
+                  emit({
+                    op: "tbnz",
+                    rt: 10,
+                    bit: nativeHeaderFlagsShift,
+                    displacement: 0,
+                  });
+                  const narrow = emitSliceFastTwoByteProbe(
+                    emit,
+                    patchInstruction,
+                    callHelper,
+                    instructions,
+                  );
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: 12,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  patchInstruction(oneByteView, {
+                    op: "tbnz",
+                    rt: 10,
+                    bit: nativeHeaderFlagsShift,
+                    displacement: (instructions.length - oneByteView) * 4,
+                  });
+                  emit({
+                    op: "movz",
+                    width: 64,
+                    rd: 14,
+                    immediate: nativeStringSlicedFlag,
+                    shift: 48,
+                  });
+                  emit({ op: "orr-reg", width: 64, rd: 14, rn: 10, rm: 14 });
+                  emit({
+                    op: "tbz",
+                    rt: 10,
+                    bit: slicedBit,
+                    displacement: 12,
+                  });
+                  emit({
+                    op: "ldp",
+                    width: 64,
+                    rt: 15,
+                    rt2: 9,
+                    rn: 9,
+                    offset: nativeStringSlicedStartOffset,
+                    mode: "offset",
+                  });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: 12,
+                    rm: 15,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  const view = emitSliceFastNurseryView(
+                    emit,
+                    patchInstruction,
+                    rawLoad,
+                    instructions,
+                    contextOffset,
+                    undefined,
+                  );
+                  stackWords.clear();
+                  coldSlices.push({
+                    short,
+                    narrowExact: narrow.narrowExact,
+                    narrowCall: narrow.narrowCall,
+                    noState: view.noState,
+                    viewFull: view.viewFull,
+                    string: op.string,
+                    block: b.id,
+                    index: siteIndex,
+                    resume: instructions.length,
+                  });
+                  saveRaw(9, op.id);
+                  break;
+                }
+                const fastViews: number[] = [];
                 allocate(
                   () => {
                     rawValue(9, op.string);
-                    floatLoad(0, op.begin);
-                    floatLoad(1, op.limit);
-                    const present =
-                      wrappedNumbers[valueIds.intern(op.limit)] === 1;
-                    // The helper reads presence from x10.
-                    if (present) imm(10, 1);
-                    else {
-                      rawValue(10, op.limit);
-                      absentFlags(10, 10);
-                      emit({ op: "cset", rd: 10, condition: "ne" });
-                    }
-                    sliceBounds(op.begin, op.limit, present);
-                    rawStore(12, allocationOffset + 8);
-                    rawStore(13, allocationOffset + 16);
+                    sliceBounds(
+                      op.string,
+                      op.begin,
+                      op.limit,
+                      absent,
+                      present,
+                      limitSource,
+                    );
                     // A result of at least the minimum length in its
                     // source's kind views the source's units: a 32-byte
                     // sliced string (docs/design-one-byte-strings.md). A
@@ -10933,10 +13592,22 @@ function emitModuleForms(
                       bit: nativeHeaderFlagsShift,
                       displacement: 0,
                     });
-                    callHelper("string-slice-kind");
-                    const narrow = instructions.length;
-                    emit({ op: "cbnz", width: 64, rt: 14, displacement: 0 });
-                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    const narrow = emitSliceFastTwoByteProbe(
+                      emit,
+                      patchInstruction,
+                      callHelper,
+                      instructions,
+                    );
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
                     patchInstruction(oneByteView, {
                       op: "tbnz",
                       rt: 10,
@@ -10954,23 +13625,6 @@ function emitModuleForms(
                       shift: 48,
                     });
                     emit({ op: "orr-reg", width: 64, rd: 14, rn: 10, rm: 14 });
-                    rawStore(14, allocationOffset + 24);
-                    emit({
-                      op: "tbnz",
-                      rt: 10,
-                      bit: nativeHeaderFlagsShift,
-                      displacement: 8,
-                    });
-                    emit({
-                      op: "add-reg",
-                      width: 64,
-                      rd: 12,
-                      rn: 12,
-                      rm: 12,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: false,
-                    });
                     emit({
                       op: "tbz",
                       rt: 10,
@@ -10978,11 +13632,13 @@ function emitModuleForms(
                       displacement: 12,
                     });
                     emit({
-                      op: "ldr",
+                      op: "ldp",
                       width: 64,
                       rt: 15,
+                      rt2: 9,
                       rn: 9,
                       offset: nativeStringSlicedStartOffset,
+                      mode: "offset",
                     });
                     emit({
                       op: "add-reg",
@@ -10994,6 +13650,20 @@ function emitModuleForms(
                       amount: 0,
                       setFlags: false,
                     });
+                    // Fast inline nursery view allocation: avoids all stack
+                    // spills/reloads and the post-allocate flat/view branch
+                    // when the 32-byte view fits in the nursery.
+                    if (linearAllocation && generationalBarriers)
+                      emitSliceFastNurseryView(
+                        emit,
+                        patchInstruction,
+                        rawLoad,
+                        instructions,
+                        contextOffset,
+                        fastViews,
+                      );
+                    rawStore(13, allocationOffset + 16);
+                    rawStore(14, allocationOffset + 24);
                     rawStore(12, allocationOffset + 8);
                     imm(12, nativeStringSlicedByteLength);
                     rawStore(12, allocationOffset);
@@ -11025,12 +13695,33 @@ function emitModuleForms(
                       bit: nativeHeaderFlagsShift,
                       displacement: (instructions.length - oneByteCopy) * 4,
                     });
-                    patchInstruction(narrow, {
-                      op: "cbnz",
-                      width: 64,
-                      rt: 14,
-                      displacement: (instructions.length - narrow) * 4,
-                    });
+                    if (linearAllocation && generationalBarriers)
+                      emitSliceFastNurseryNarrow(
+                        emit,
+                        patchInstruction,
+                        rawLoad,
+                        callHelper,
+                        instructions,
+                        contextOffset,
+                        narrow,
+                        fastViews,
+                      );
+                    else {
+                      const narrowTarget = instructions.length;
+                      patchInstruction(narrow.narrowExact, {
+                        op: "b.cond",
+                        condition: "eq",
+                        displacement: (narrowTarget - narrow.narrowExact) * 4,
+                      });
+                      patchInstruction(narrow.narrowCall, {
+                        op: "cbnz",
+                        width: 64,
+                        rt: 14,
+                        displacement: (narrowTarget - narrow.narrowCall) * 4,
+                      });
+                    }
+                    rawStore(13, allocationOffset + 16);
+                    rawStore(12, allocationOffset + 8);
                     emit({
                       op: "add-reg",
                       width: 64,
@@ -11098,6 +13789,12 @@ function emitModuleForms(
                   op: "b",
                   displacement: (instructions.length - viewed) * 4,
                 });
+                for (const fastView of fastViews)
+                  if (fastView !== undefined)
+                    patchInstruction(fastView, {
+                      op: "b",
+                      displacement: (instructions.length - fastView) * 4,
+                    });
                 saveRaw(9, op.id);
                 break;
               }
@@ -12041,6 +14738,290 @@ function emitModuleForms(
                 patchExits();
                 break;
               }
+              case "string-split-cached":
+              case "string-split-cache": {
+                // Direct-mapped 16-entry cache of 1-argument string.split(sep)
+                // snapshots (nativeStringSplitCacheWord), cleared on every GC.
+                // Each 32-byte entry holds (string, separator, snapshot, 0).
+                const indexBits = entryBits(nativeStringSplitCacheEntries),
+                  stateWord = nativeStringSplitCacheWord * 4;
+                const exits: { site: number; rt: number }[] = [];
+                function splitExitIf(rt: number): void {
+                  exits.push({ site: instructions.length, rt });
+                  emit({ op: "cbz", width: 64, rt, displacement: 0 });
+                }
+                function patchSplitExits(): void {
+                  for (const exit of exits) {
+                    if (exit === undefined) throw "split cache exit invariant";
+                    const displacement = (instructions.length - exit.site) * 4;
+                    patchInstruction(
+                      exit.site,
+                      exit.rt < 0
+                        ? { op: "b.cond", condition: "ne", displacement }
+                        : { op: "cbz", width: 64, rt: exit.rt, displacement },
+                    );
+                  }
+                }
+                /** x13 = table entry pointer for (x9 = string, x10 = separator),
+                 * given x13 = table managed offset; preserves x9, x10; clobbers
+                 * x11, x14, x15. */
+                function splitEntry(): void {
+                  rawLoad(14, contextOffset);
+                  emit({ op: "ldr", width: 64, rt: 14, rn: 14, offset: 8 });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 13,
+                    rn: 14,
+                    rm: 13,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 9,
+                    immr: 4,
+                    imms: 63,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 15,
+                    rn: 10,
+                    immr: 4,
+                    imms: 63,
+                  });
+                  emit({ op: "eor-reg", width: 64, rd: 11, rn: 11, rm: 15 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 15,
+                    rn: 11,
+                    immr: 4,
+                    imms: 63,
+                  });
+                  emit({ op: "eor-reg", width: 64, rd: 11, rn: 11, rm: 15 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    immr: 0,
+                    imms: indexBits - 1,
+                  });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 13,
+                    rn: 13,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 5,
+                    setFlags: false,
+                  });
+                }
+                rawLoad(9, contextOffset);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 9,
+                  offset: nativeAllocationStateOffset,
+                });
+                splitExitIf(12);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 13,
+                  rn: 12,
+                  offset: stateWord,
+                });
+                if (op.kind === "string-split-cached") {
+                  splitExitIf(13);
+                  rawValue(9, op.string);
+                  rawValue(10, op.separator);
+                  splitEntry();
+                  emit({
+                    op: "ldp",
+                    width: 64,
+                    rt: 15,
+                    rt2: 16,
+                    rn: 13,
+                    offset: nativeStringDataOffset,
+                    mode: "offset",
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 15,
+                    rm: 9,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  exits.push({ site: instructions.length, rt: -1 });
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 16,
+                    rm: 10,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  exits.push({ site: instructions.length, rt: -1 });
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 16,
+                    rn: 13,
+                    offset: nativeStringDataOffset + 16,
+                  });
+                  splitExitIf(16);
+                  rawValue(11, op.template);
+                  emit({ op: "ldr", width: 64, rt: 14, rn: 16, offset: 0 });
+                  emit({ op: "ldr", width: 64, rt: 15, rn: 11, offset: 0 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 14,
+                    rm: 15,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  exits.push({ site: instructions.length, rt: -1 });
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  saveRaw(16, op.id);
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchSplitExits();
+                  imm(9, 0);
+                  saveRaw(9, op.id);
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  break;
+                }
+                const have = instructions.length;
+                emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                const tableUnits = nativeStringSplitCacheEntries * 32;
+                allocate(
+                  () => {
+                    imm(11, tableUnits);
+                    imm(14, 1);
+                    prepareStringSize(14);
+                  },
+                  (rd) => rawLoad(rd, allocationOffset),
+                );
+                rawLoad(10, allocationOffset + 24);
+                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                imm(11, tableUnits);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 11,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 10,
+                  rn: 9,
+                  immediate: nativeStringDataOffset,
+                  shift: 0,
+                  setFlags: false,
+                });
+                imm(11, nativeStringSplitCacheEntries * 2);
+                const zero = instructions.length;
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: "zr",
+                  rt2: "zr",
+                  rn: 10,
+                  offset: 16,
+                  mode: "post",
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: 11,
+                  rn: 11,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (zero - instructions.length) * 4,
+                });
+                rawLoad(10, contextOffset);
+                emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 8 });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 9,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 10,
+                  offset: nativeAllocationStateOffset,
+                });
+                emit({
+                  op: "str",
+                  width: 32,
+                  rt: 13,
+                  rn: 12,
+                  offset: stateWord,
+                });
+                patchInstruction(have, {
+                  op: "cbnz",
+                  width: 64,
+                  rt: 13,
+                  displacement: (instructions.length - have) * 4,
+                });
+                rawValue(9, op.string);
+                rawValue(10, op.separator);
+                splitEntry();
+                rawValue(16, op.value);
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 9,
+                  rt2: 10,
+                  rn: 13,
+                  offset: nativeStringDataOffset,
+                  mode: "offset",
+                });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 16,
+                  rn: 13,
+                  offset: nativeStringDataOffset + 16,
+                });
+                patchSplitExits();
+                break;
+              }
               case "string-ascii-case": {
                 // A string of the same length and kind, its letters mapped
                 // by the helper.
@@ -12628,6 +15609,7 @@ function emitModuleForms(
                 latin1Count(op.id);
                 break;
               case "string-present":
+                if (op.id === foldedPresent) break;
                 rawValue(9, op.value);
                 emit({
                   op: "sub-imm",
@@ -12648,7 +15630,27 @@ function emitModuleForms(
                 imm(9, 0);
                 saveRaw(9, op.id);
                 break;
-              case "string-wrap":
+              case "string-wrap": {
+                const wrapIndex = valueIds.intern(op.id),
+                  nextOp = b.instructions[operationIndex + 1];
+                if (
+                  (useCounts[wrapIndex] ?? 0) === 1 &&
+                  nextOp !== undefined &&
+                  nextOp.kind === "binary" &&
+                  (nextOp.operator === "===" ||
+                    nextOp.operator === "!==" ||
+                    nextOp.operator === "==" ||
+                    nextOp.operator === "!=") &&
+                  (nextOp.left === op.id || nextOp.right === op.id)
+                ) {
+                  foldedStringWraps[wrapIndex] = 1;
+                  break;
+                }
+                // A verified `string` value is non-null by IR invariant.
+                rawValue(9, op.value);
+                saveRaw(9, op.id);
+                break;
+              }
               case "string-value":
               case "reference-wrap":
               case "reference-value":
@@ -12968,7 +15970,21 @@ function emitModuleForms(
                 imm(10, 1);
                 rawStore(10, value(op.id).offset + 8);
                 break;
-              case "optional-wrap":
+              case "optional-wrap": {
+                const wrapIndex = valueIds.intern(op.id),
+                  nextOp = b.instructions[operationIndex + 1];
+                if (
+                  (storedAsInteger(op.value) ||
+                    nanSentinelWords[valueIds.intern(op.value)] === 1) &&
+                  (useCounts[wrapIndex] ?? 0) === 1 &&
+                  nextOp !== undefined &&
+                  nextOp.kind === "string-slice" &&
+                  nextOp.limit === op.id
+                ) {
+                  // Consumed immediately by string-slice as an integer limit.
+                  foldedOptionalWraps[wrapIndex] = 1;
+                  break;
+                }
                 if (storedAsInteger(op.value) || quietValue(op.value)) {
                   // Exact integers (converted) and quiet values (see
                   // quietValues) never have the `undefined` bits.
@@ -12983,8 +15999,9 @@ function emitModuleForms(
                   quietNumber(target, floatOperand(op.value, 0));
                   floatStore(target, op.id);
                 }
-                quietValues[valueIds.intern(op.id)] = 1;
+                quietValues[wrapIndex] = 1;
                 break;
+              }
               case "boolean-present":
                 rawLoad(9, value(op.value).offset + 8);
                 saveRaw(9, op.id);
@@ -16932,6 +19949,15 @@ function emitModuleForms(
                     intOperand(op.value, 9);
                     rawStore(9, slotOffset(op.slot));
                   }
+                  const recip = reciprocalStoreOffsets[op.slot] ?? 0;
+                  if (recip > 0)
+                    emitStoreReciprocal(
+                      emit,
+                      rawLoad,
+                      rawStore,
+                      slotOffset(op.slot),
+                      recip,
+                    );
                   break;
                 }
                 copyRawWord(value(op.value).offset, slotOffset(op.slot));
@@ -17335,46 +20361,129 @@ function emitModuleForms(
                   typeOf(op.left) === "string" ||
                   typeOf(op.left) === "optional-string"
                 ) {
-                  rawValue(9, op.left);
-                  rawValue(10, op.right);
-                  if (typeOf(op.left) === "optional-string") {
-                    // Both present: compare content. Either absent: compare the zero sentinels.
-                    const absentLeft = instructions.length;
-                    emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
-                    const absentRight = instructions.length;
-                    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
-                    stringEqual();
-                    emit({ op: "b", displacement: 12 });
-                    patchInstruction(absentLeft, {
-                      op: "cbz",
-                      width: 64,
-                      rt: 9,
-                      displacement: (instructions.length - absentLeft) * 4,
+                  const leftIdx = valueIds.intern(op.left),
+                    rightIdx = valueIds.intern(op.right),
+                    leftId =
+                      foldedStringWraps[leftIdx] === 1
+                        ? (wrappedStringSources[leftIdx] ?? op.left)
+                        : op.left,
+                    rightId =
+                      foldedStringWraps[rightIdx] === 1
+                        ? (wrappedStringSources[rightIdx] ?? op.right)
+                        : op.right;
+                  rawValue(9, leftId);
+                  rawValue(10, rightId);
+                  const leftPresent =
+                      typeOf(op.left) === "string" ||
+                      wrappedStrings[leftIdx] === 1,
+                    rightPresent =
+                      typeOf(op.right) === "string" ||
+                      wrappedStrings[rightIdx] === 1,
+                    equality = op.operator === "===" || op.operator === "==";
+                  const branchTerminator = b.terminator;
+                  if (
+                    op.id === comparisonValue &&
+                    branchTerminator.kind === "branch"
+                  ) {
+                    stringEqual(leftPresent, rightPresent, {
+                      fnId: fn.id,
+                      equal: equality
+                        ? branchTerminator.consequent
+                        : branchTerminator.alternate,
+                      different: equality
+                        ? branchTerminator.alternate
+                        : branchTerminator.consequent,
+                      nextBlock,
                     });
-                    patchInstruction(absentRight, {
-                      op: "cbz",
-                      width: 64,
-                      rt: 10,
-                      displacement: (instructions.length - absentRight) * 4,
-                    });
-                    emit({
-                      op: "sub-reg",
-                      width: 64,
-                      rd: "zr",
-                      rn: 9,
-                      rm: 10,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: true,
-                    });
-                    emit({ op: "cset", rd: 9, condition: "eq" });
-                  } else stringEqual();
-                  if (op.operator === "!==" || op.operator === "!=") {
-                    imm(10, 1);
-                    emit({ op: "eor-reg", width: 32, rd: 9, rn: 9, rm: 10 });
+                    comparisonBranch = "emitted";
+                  } else {
+                    stringEqual(leftPresent, rightPresent);
+                    if (!equality) {
+                      imm(10, 1);
+                      emit({ op: "eor-reg", width: 32, rd: 9, rn: 9, rm: 10 });
+                    }
+                    saveRaw(9, op.id);
                   }
-                  saveRaw(9, op.id);
                   break;
+                }
+                const leftSentinelIdx = valueIds.intern(op.left),
+                  rightSentinelIdx = valueIds.intern(op.right),
+                  leftSentinel = nanSentinelWords[leftSentinelIdx] === 1,
+                  rightSentinel = nanSentinelWords[rightSentinelIdx] === 1;
+                if (
+                  (op.operator === "+" || op.operator === "-") &&
+                  (low32Tree[valueIds.intern(op.id)] === 1 ||
+                    nanSentinelSafe[valueIds.intern(op.id)] === 1) &&
+                  leftSentinel !== rightSentinel
+                ) {
+                  const sentIdx = leftSentinel
+                      ? leftSentinelIdx
+                      : rightSentinelIdx,
+                    otherId = leftSentinel ? op.right : op.left,
+                    otherIdx = leftSentinel
+                      ? rightSentinelIdx
+                      : leftSentinelIdx,
+                    otherBound =
+                      exactInteger(otherId) &&
+                      nanSentinelRemainders[otherIdx] !== 1
+                        ? wordMagnitude(otherIdx)
+                        : -1,
+                    sentBound = nanSentinelMagnitudes[sentIdx] ?? 0,
+                    totalBound = sentBound + otherBound;
+                  if (otherBound >= 0 && totalBound <= 9007199254740991) {
+                    const otherConst =
+                      immediate === otherId
+                        ? deferredIntegers.get(otherId)
+                        : undefined;
+                    const target = rawTarget(op.id, 9);
+                    if (
+                      leftSentinel &&
+                      otherConst !== undefined &&
+                      otherConst >= 0 &&
+                      otherConst <= 4095
+                    ) {
+                      const leftReg = rawRegister(op.left, 9);
+                      emit({
+                        op: op.operator === "+" ? "add-imm" : "sub-imm",
+                        width: 64,
+                        rd: target,
+                        rn: leftReg,
+                        immediate: otherConst,
+                        shift: 0,
+                        setFlags: false,
+                      });
+                    } else {
+                      if (immediate !== undefined)
+                        materializeInteger(immediate);
+                      const leftReg = leftSentinel
+                          ? rawRegister(op.left, 9)
+                          : intRegister(op.left, 9),
+                        rightReg = rightSentinel
+                          ? rawRegister(op.right, 10)
+                          : intRegister(op.right, 10);
+                      emit({
+                        op: op.operator === "+" ? "add-reg" : "sub-reg",
+                        width: 64,
+                        rd: target,
+                        rn: leftReg,
+                        rm: rightReg,
+                        shift: "lsl",
+                        amount: 0,
+                        setFlags: false,
+                      });
+                    }
+                    saveRaw(target, op.id);
+                    const idIdx = valueIds.intern(op.id);
+                    nanSentinelWords[idIdx] = 1;
+                    nanSentinelMagnitudes[idIdx] = Math.max(1, totalBound);
+                    if (
+                      op.operator === "+" &&
+                      nanSentinelNonNegative[sentIdx] === 1 &&
+                      nonNegative(otherId)
+                    )
+                      nanSentinelNonNegative[idIdx] = 1;
+                    break;
+                  }
                 }
                 if (truncatedSums[valueIds.intern(op.id)] === 1) {
                   // A product's only use, read only in its low word: a
@@ -17557,24 +20666,173 @@ function emitModuleForms(
                         4294967296;
                     imm64(10, lo, hi);
                   }
+                  const consumer = soleConsumers[valueIds.intern(op.id)],
+                    listReadConsumer =
+                      (useCounts[valueIds.intern(op.id)] ?? 0) === 1 &&
+                      consumer !== undefined &&
+                      consumer.kind === "call" &&
+                      consumer.id !== undefined &&
+                      consumer.environment === undefined &&
+                      !entryImports.has(consumer.target)
+                        ? listReadShapes(consumer.target)
+                        : undefined,
+                    listReadIndex =
+                      listReadConsumer !== undefined &&
+                      consumer !== undefined &&
+                      consumer.kind === "call" &&
+                      consumer.arguments[
+                        listReadConsumer.mode === "cached" ? 2 : 1
+                      ] === op.id;
                   if (
-                    nonzeroDivisor &&
                     nonNegative(op.left) &&
-                    wantsInteger(op.id)
+                    (nonzeroDivisor ? wantsInteger(op.id) : listReadIndex)
                   ) {
                     const target = intTarget(op.id, 11);
-                    emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
-                    emit({
-                      op: "msub",
-                      width: 64,
-                      rd: target,
-                      rn: 11,
-                      rm: 10,
-                      ra: 9,
-                    });
+                    if (nonzeroDivisor) {
+                      const divisorSlot =
+                          constant === undefined
+                            ? (scalarLoadedSlot[valueIds.intern(op.right)] ?? 0)
+                            : 0,
+                        recip =
+                          divisorSlot > 0
+                            ? (reciprocalDivisorOffsets[divisorSlot - 1] ?? 0)
+                            : 0;
+                      if (recip > 0)
+                        emitReciprocalRemainder(
+                          emit,
+                          patchInstruction,
+                          rawLoad,
+                          instructions,
+                          target,
+                          recip,
+                          allowColdStubs &&
+                            instructions.length - start / 4 < 131072
+                            ? coldReciprocals
+                            : undefined,
+                        );
+                      else {
+                        emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                        emit({
+                          op: "msub",
+                          width: 64,
+                          rd: target,
+                          rn: 11,
+                          rm: 10,
+                          ra: 9,
+                        });
+                      }
+                    } else {
+                      const zeroDivisor = instructions.length;
+                      emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                      emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                      emit({
+                        op: "msub",
+                        width: 64,
+                        rd: target,
+                        rn: 11,
+                        rm: 10,
+                        ra: 9,
+                      });
+                      const done = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(zeroDivisor, {
+                        op: "cbz",
+                        width: 64,
+                        rt: 10,
+                        displacement: (instructions.length - zeroDivisor) * 4,
+                      });
+                      emit({
+                        op: "orn-reg",
+                        width: 64,
+                        rd: target,
+                        rn: "zr",
+                        rm: "zr",
+                      });
+                      patchInstruction(done, {
+                        op: "b",
+                        displacement: (instructions.length - done) * 4,
+                      });
+                      nanSentinelRemainders[valueIds.intern(op.id)] = 1;
+                    }
                     saveRaw(target, op.id);
                     markInteger(op.id);
                     break;
+                  }
+                  const remIdIdx = valueIds.intern(op.id);
+                  if (
+                    !nonzeroDivisor &&
+                    nonNegative(op.left) &&
+                    nanSentinelSafe[remIdIdx] === 1 &&
+                    !exactInteger(op.id)
+                  ) {
+                    const leftBound = wordMagnitude(valueIds.intern(op.left)),
+                      rightBound = wordMagnitude(valueIds.intern(op.right)),
+                      remBound =
+                        leftBound >= 0 && rightBound >= 0
+                          ? Math.min(leftBound, rightBound)
+                          : Math.max(leftBound, rightBound);
+                    if (remBound >= 0 && remBound <= 9007199254740991) {
+                      const target = rawTarget(op.id, 11),
+                        divisorSlot =
+                          constant === undefined
+                            ? (scalarLoadedSlot[valueIds.intern(op.right)] ?? 0)
+                            : 0,
+                        recip =
+                          divisorSlot > 0
+                            ? (reciprocalDivisorOffsets[divisorSlot - 1] ?? 0)
+                            : 0;
+                      if (recip > 0)
+                        emitReciprocalRemainder(
+                          emit,
+                          patchInstruction,
+                          rawLoad,
+                          instructions,
+                          target,
+                          recip,
+                          allowColdStubs &&
+                            instructions.length - start / 4 < 131072
+                            ? coldReciprocals
+                            : undefined,
+                          true,
+                        );
+                      else {
+                        const zeroDivisor = instructions.length;
+                        emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                        emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                        emit({
+                          op: "msub",
+                          width: 64,
+                          rd: target,
+                          rn: 11,
+                          rm: 10,
+                          ra: 9,
+                        });
+                        const done = instructions.length;
+                        emit({ op: "b", displacement: 0 });
+                        patchInstruction(zeroDivisor, {
+                          op: "cbz",
+                          width: 64,
+                          rt: 10,
+                          displacement: (instructions.length - zeroDivisor) * 4,
+                        });
+                        emit({
+                          op: "movz",
+                          width: 64,
+                          rd: target,
+                          immediate: 0x6000,
+                          shift: 48,
+                        });
+                        patchInstruction(done, {
+                          op: "b",
+                          displacement: (instructions.length - done) * 4,
+                        });
+                      }
+                      saveRaw(target, op.id);
+                      nanSentinelWords[remIdIdx] = 1;
+                      nanSentinelMagnitudes[remIdIdx] = Math.max(1, remBound);
+                      nanSentinelNonNegative[remIdIdx] = 1;
+                      break;
+                    }
                   }
                   const target = floatTarget(op.id, 0);
                   let zeroDivisor = -1;
@@ -18694,7 +21952,64 @@ function emitModuleForms(
                       condition: "eq",
                     });
                   }
+                  const p0 = target.parameters[0],
+                    p1 = target.parameters[1],
+                    p2 = target.parameters[2],
+                    vecId = op.arguments[0],
+                    listId = op.arguments[1],
+                    canColdListRead =
+                      allowColdStubs &&
+                      instructions.length - start / 4 < 131072 &&
+                      !interruptible &&
+                      b.exception === undefined &&
+                      listShape.mode === "cached" &&
+                      op.arguments.length === 3 &&
+                      vecId !== undefined &&
+                      listId !== undefined &&
+                      directReturns !== undefined &&
+                      directReturns[op.target] === 1 &&
+                      p0 !== undefined &&
+                      p0.kind === "integer" &&
+                      p0.index === 4 &&
+                      p1 !== undefined &&
+                      p1.kind === "integer" &&
+                      p1.index === 5 &&
+                      p2 !== undefined &&
+                      p2.kind === "float" &&
+                      p2.index === 0 &&
+                      storedAsInteger(index) &&
+                      nanSentinelRemainders[indexFact] !== 1 &&
+                      foldedConstants[indexFact] !== 1 &&
+                      contextOffset <= 32760 &&
+                      value(vecId).offset <= 32760 &&
+                      value(listId).offset <= 32760 &&
+                      value(index).offset <= 32760 &&
+                      value(listResult).offset <= 32760;
                   saveRaw(resultRegister, listResult);
+                  if (
+                    canColdListRead &&
+                    vecId !== undefined &&
+                    listId !== undefined
+                  ) {
+                    const resultReg = homeOf(listResult);
+                    if (resultReg < 32) stackWords.clear();
+                    coldListReads.push({
+                      slow,
+                      targetFn: op.target,
+                      vecReg: homeOf(vecId),
+                      vecOffset: value(vecId).offset,
+                      listReg: homeOf(listId),
+                      listOffset: value(listId).offset,
+                      idxReg: homeOf(index),
+                      idxOffset: value(index).offset,
+                      resultReg,
+                      resultOffset: value(listResult).offset,
+                      block: b.id,
+                      index: operationIndex,
+                      resume: instructions.length,
+                    });
+                    break;
+                  }
                   listReadDone = instructions.length;
                   emit({ op: "b", displacement: 0 });
                   for (const entry of slow) {
@@ -18998,7 +22313,9 @@ function emitModuleForms(
           } else if (t.kind === "jump") {
             if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
           } else if (t.kind === "branch") {
-            if (comparisonBranch !== undefined) {
+            if (comparisonBranch === "emitted") {
+              // The final comparison already branched to consequent/alternate.
+            } else if (comparisonBranch !== undefined) {
               if (t.consequent === nextBlock)
                 branch(
                   {
@@ -19018,7 +22335,13 @@ function emitModuleForms(
                   branch({ op: "b" }, fn.id, t.alternate);
               }
             } else {
-              const condition = rawRegister(t.condition, 9);
+              const condition = rawRegister(
+                foldedPresentSource !== undefined &&
+                  t.condition === foldedPresent
+                  ? foldedPresentSource
+                  : t.condition,
+                9,
+              );
               if (t.consequent === nextBlock)
                 branch(
                   { op: "cbz", width: 64, rt: condition },
@@ -19421,6 +22744,58 @@ function emitModuleForms(
                   leafBase[value(id).offset / 8] ?? 0;
             }
         }
+        if (coldReciprocals.length > 0) {
+          stackWords.clear();
+          emitColdReciprocalStubs(
+            emit,
+            patchInstruction,
+            instructions,
+            coldReciprocals,
+          );
+        }
+        if (coldNaNs.length > 0) {
+          stackWords.clear();
+          emitColdNaNStubs(emit, patchInstruction, instructions, coldNaNs);
+        }
+        if (coldListReads.length > 0) {
+          stackWords.clear();
+          emitColdListReadStubs(
+            emit,
+            patchInstruction,
+            branch,
+            (coldBlock, coldIndex) => {
+              blockId = coldBlock;
+              siteIndex = coldIndex;
+            },
+            safepoint,
+            exceptionalBranch,
+            instructions,
+            contextOffset,
+            coldListReads,
+          );
+        }
+        if (coldSlices.length > 0) {
+          emitColdSliceStubs(
+            emit,
+            patchInstruction,
+            rawLoad,
+            rawStore,
+            rawValue,
+            imm,
+            prepareStringSize,
+            allocate,
+            callHelper,
+            (coldBlock, coldIndex) => {
+              blockId = coldBlock;
+              siteIndex = coldIndex;
+            },
+            () => stackWords.clear(),
+            instructions,
+            contextOffset,
+            allocationOffset,
+            coldSlices,
+          );
+        }
         for (const block of fn.blocks) {
           if (block === undefined) throw "exception block invariant";
           const handler = block.exception;
@@ -19525,8 +22900,8 @@ function emitModuleForms(
           // Labels laid out after a seeded block that emitted nothing share
           // its address but get their own entry state.
           const seededStarts = new Set<number>();
-          for (let index = fn.blocks.length - 1; index >= 0; index--) {
-            const block = fn.blocks[index];
+          for (let index = orderedBlocks.length - 1; index >= 0; index--) {
+            const block = orderedBlocks[index];
             if (block === undefined) throw "block invariant";
             const start = offsets[block.id * 2];
             if (start === undefined) continue;

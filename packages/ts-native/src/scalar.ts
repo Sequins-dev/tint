@@ -9301,6 +9301,95 @@ export function lowerFunction(
               });
               separator = save(extracted, "string", node);
             }
+            const cacheable =
+                inputLimit === undefined && slots[list] === "reference",
+              finish = cacheable ? block() : done;
+            function copySplitList(
+              source: number,
+              target: number,
+              count: number,
+              after: Builder,
+            ): void {
+              listCall(runtime, "resize", [target, count], node);
+              const copyIndex = numberSlot(0, node),
+                copyOne = numberSlot(1, node),
+                copyHead = block(),
+                copyVisit = block(),
+                copyBody = block(),
+                copyStep = block();
+              jump(copyHead.id, node);
+              current = copyHead;
+              choose(
+                load(binarySlot("<", copyIndex, count, node), node),
+                copyVisit,
+                after,
+                node,
+              );
+              current = copyVisit;
+              choose(
+                load(
+                  listValue(runtime, "has", [source, copyIndex], node),
+                  node,
+                ),
+                copyBody,
+                copyStep,
+                node,
+              );
+              current = copyBody;
+              const item = listValue(
+                runtime,
+                "read",
+                [source, copyIndex],
+                node,
+              );
+              listCall(runtime, "write", [target, copyIndex, item], node);
+              jump(copyStep.id, node);
+              current = copyStep;
+              store(
+                copyIndex,
+                load(binarySlot("+", copyIndex, copyOne, node), node),
+                node,
+              );
+              jump(copyHead.id, node);
+            }
+            if (cacheable) {
+              const cachedId = nextValue++;
+              emit({
+                kind: "string-split-cached",
+                id: cachedId,
+                string: load(string, node),
+                separator: load(separator, node),
+                template: load(list, node),
+                start: node.start,
+                end: node.end,
+              });
+              const cached = save(cachedId, "optional-reference", node),
+                hitCheck = nextValue++;
+              emit({
+                kind: "unary",
+                id: hitCheck,
+                operator: "truthy",
+                operand: load(cached, node),
+                start: node.start,
+                end: node.end,
+              });
+              const hit = block(),
+                miss = block();
+              choose(hitCheck, hit, miss, node);
+              current = hit;
+              const unwrapped = nextValue++;
+              emit({
+                kind: "reference-value",
+                id: unwrapped,
+                value: load(cached, node),
+                start: node.start,
+                end: node.end,
+              });
+              const snapshot = save(unwrapped, "reference", node),
+                cachedLength = listValue(runtime, "length", [snapshot], node);
+              copySplitList(snapshot, list, cachedLength, done);
+              current = miss;
+            }
             function lengthOf(input: number): number {
               const id = nextValue++;
               emit({
@@ -9346,7 +9435,7 @@ export function lowerFunction(
             choose(
               load(binarySlot("<", index, length, node), node),
               unitLimit,
-              done,
+              finish,
               node,
             );
             current = unitLimit;
@@ -9361,7 +9450,7 @@ export function lowerFunction(
                 node,
               ),
               unitBody,
-              done,
+              finish,
               node,
             );
             current = unitBody;
@@ -9408,7 +9497,7 @@ export function lowerFunction(
                 ),
                 node,
               ),
-              done,
+              finish,
               resume,
               node,
             );
@@ -9421,7 +9510,41 @@ export function lowerFunction(
             jump(head.id, node);
             current = tail;
             append(start, length);
-            jump(done.id, node);
+            jump(finish.id, node);
+            if (cacheable) {
+              current = finish;
+              const count = listValue(runtime, "length", [list], node),
+                maxCached = numberSlot(256, node),
+                storeCheck = block(),
+                storeCache = block(),
+                commitCache = block();
+              choose(
+                load(binarySlot(">", count, zero, node), node),
+                storeCheck,
+                done,
+                node,
+              );
+              current = storeCheck;
+              choose(
+                load(binarySlot("<=", count, maxCached, node), node),
+                storeCache,
+                done,
+                node,
+              );
+              current = storeCache;
+              const snapshot = listValue(runtime, "create", [zero], node);
+              copySplitList(list, snapshot, count, commitCache);
+              current = commitCache;
+              emit({
+                kind: "string-split-cache",
+                string: load(string, node),
+                separator: load(separator, node),
+                value: load(snapshot, node),
+                start: node.start,
+                end: node.end,
+              });
+              jump(done.id, node);
+            }
             current = done;
             return list;
           }
@@ -9822,8 +9945,47 @@ export function lowerFunction(
           }
           if (builtin === "string-substring") {
             const string = value(target.object),
-              args = node.arguments.map(value),
-              lengthId = nextValue++;
+              args = node.arguments.map(value);
+            if (args[1] === undefined) {
+              const first = args[0],
+                start =
+                  first === undefined
+                    ? numberSlot(0, node)
+                    : save(numericInput(first, node), "number", node);
+              if (first !== undefined) {
+                const clamp = block(),
+                  done = block();
+                choose(
+                  load(binarySlot(">", start, numberSlot(0, node), node), node),
+                  done,
+                  clamp,
+                  node,
+                );
+                current = clamp;
+                store(start, load(numberSlot(0, node), node), node);
+                jump(done.id, node);
+                current = done;
+              }
+              const limit = nextValue++;
+              emit({
+                kind: "undefined",
+                id: limit,
+                start: node.start,
+                end: node.end,
+              });
+              const id = nextValue++;
+              emit({
+                kind: "string-slice",
+                id,
+                string: load(string, node),
+                begin: load(start, node),
+                limit,
+                start: node.start,
+                end: node.end,
+              });
+              return save(id, "string", node);
+            }
+            const lengthId = nextValue++;
             emit({
               kind: "string-length",
               id: lengthId,

@@ -187,6 +187,16 @@ export function visitInstructionOperands(
       visit(op.string);
       visit(op.value);
       return;
+    case "string-split-cached":
+      visit(op.string);
+      visit(op.separator);
+      visit(op.template);
+      return;
+    case "string-split-cache":
+      visit(op.string);
+      visit(op.separator);
+      visit(op.value);
+      return;
     case "string-from-code-units":
       for (const id of op.values) {
         if (id === undefined) throw "operand invariant";
@@ -301,7 +311,8 @@ export function instructionResult(
     instruction.kind === "reference-vector-copy" ||
     instruction.kind === "string-write" ||
     instruction.kind === "number-string-cache" ||
-    instruction.kind === "string-index-cache"
+    instruction.kind === "string-index-cache" ||
+    instruction.kind === "string-split-cache"
   )
     return undefined;
   return instruction.id;

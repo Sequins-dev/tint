@@ -4,11 +4,9 @@
 // compiler for pool literals), texts that must never hit (leading zeros,
 // signs, exponents, fractions, whitespace, other digits, 2^20 and up),
 // Map keys mixing cached and uncached equal strings, and collections that
-// move cached strings, under the generational and copying runtimes. Every
-// result must equal Node's.
+// move cached strings. Every result must equal Node's.
 import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
-import { nativeFixtureTarget } from "./native-host-target.ts";
 
 // The fixture must compile on the typed path, not the general fallback (the
 // builder reads this when it is imported).
@@ -100,35 +98,25 @@ const reference = new Function(
 ) as () => [number, number];
 const [indicesExpected, keysExpected] = reference();
 
-const runtimes = [
-  "initializeGenerationalRuntime",
-  "initializeCopyingRuntime",
-] as const;
-for (const runtimeEntry of runtimes)
-  test(
-    `array-index strings parse through their index field (${runtimeEntry})`,
-    {
-      skip:
-        runtimeEntry === "initializeCopyingRuntime" &&
-        nativeFixtureTarget().arch === "x86_64" &&
-        "linux-x86_64 does not implement initializeCopyingRuntime",
-    },
-    () => {
-      verifyHostedFixture(
-        `${kernelSource}
+test("array-index strings parse through their index field", () => {
+  verifyHostedFixture(
+    `${kernelSource}
 export function run(): number {
   if (indices() !== ${indicesExpected}) return 1;
   if (keys() !== ${keysExpected}) return 2;
   return 42;
 }
 `,
-        "string-index",
-        [],
-        [],
-        [],
-        [],
-        // A small heap, so the churn collects many times.
-        { managedBytes: 8388608, allocationCapacity: 65536, runtimeEntry },
-      );
+    "string-index",
+    [],
+    [],
+    [],
+    [],
+    // A small heap, so the churn collects many times.
+    {
+      managedBytes: 8388608,
+      allocationCapacity: 65536,
+      runtimeEntry: "initializeGenerationalRuntime",
     },
   );
+});

@@ -19,7 +19,7 @@ test(
   {
     skip:
       nativeFixtureTarget().arch === "x86_64" &&
-      "linux-x86_64 does not implement initializeCopyingRuntime",
+      "linux-x86_64 does not implement initializeRuntime",
   },
   () => {
     verifyHostedFixture(
@@ -53,7 +53,7 @@ test(
         managedBytes: 4194304,
         allocationCapacity: 65536,
         // Raw windows leave the closed world the generational mutator needs.
-        runtimeEntry: "initializeCopyingRuntime",
+        runtimeEntry: "initializeRuntime",
         hostBindings: [
           { module: memory, name: "mapMemory", operation: "memory-map" },
           { module: memory, name: "unmapMemory", operation: "memory-unmap" },

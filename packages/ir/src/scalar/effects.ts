@@ -50,6 +50,7 @@ export function instructionEffects(op: Instruction): number {
     case "string-utf8-length":
     // The cache lives outside the managed heap, but its entries change.
     case "number-string-cached":
+    case "string-split-cached":
     // A string's index field changes once, from unset to its index.
     case "string-index-cached":
       return effectReadHeap;
@@ -114,6 +115,7 @@ export function instructionEffects(op: Instruction): number {
       return effectReadHeap | effectWriteHeap;
     // The first store after a collection allocates the table.
     case "number-string-cache":
+    case "string-split-cache":
       return effectThrow | effectAllocate | effectReadHeap | effectWriteHeap;
     case "function-address":
     case "record-descriptor-address":

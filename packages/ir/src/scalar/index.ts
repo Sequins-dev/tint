@@ -198,6 +198,7 @@ export function instructionMayThrow(op: Instruction): boolean {
     case "string-from-utf8":
     case "string-ascii-case":
     case "number-string-cache":
+    case "string-split-cache":
       return true;
     default:
       return false;
@@ -1138,6 +1139,17 @@ export function verify(
             case "string-index-cache":
               equal(use(op.string), "string");
               equal(use(op.value), "number");
+              break;
+            case "string-split-cached":
+              equal(use(op.string), "string");
+              equal(use(op.separator), "string");
+              equal(use(op.template), "reference");
+              define(op.id, "optional-reference");
+              break;
+            case "string-split-cache":
+              equal(use(op.string), "string");
+              equal(use(op.separator), "string");
+              equal(use(op.value), "reference");
               break;
             case "string-flatten-into":
               equal(use(op.address), "number");

@@ -18,6 +18,7 @@ export type StringHelper =
   | "string-slice-bounds"
   | "string-slice-kind"
   | "string-slice-copy"
+  | "string-slice-narrow"
   | "string-index-of"
   | "string-last-index-of"
   | "string-ascii-prefix"
@@ -390,22 +391,107 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     emit({ op: "movz", width: 64, rd: 15, immediate: 0, shift: 0 });
   }
   /** Two-byte units at x13, each at most 0xFF, into one byte each at x14;
-   * x15 units. Eight at a time through v0 (XTN), then four, two and one by
-   * the remaining count's bits. Leaves x13 and x14 past the units and x15
-   * zero; clobbers x16 and v0. */
+   * x15 units. Writes aligned non-overlapping 8-byte stores into the 8-byte
+   * padded string buffer for every count >= 8 (avoiding overlapping-store
+   * forwarding stalls on immediate reads); counts below 8 narrow four, two
+   * and one by the count's bits. Leaves x13 and x14 past the units and x15
+   * zero; clobbers x11, x16 and v0. */
   function narrowUnits(prefix: string): void {
-    compareImmediate(15, 8);
-    branch(prefix + "-tail", "cc");
+    compareImmediate(15, 16);
+    branch(prefix + "-less16", "cc");
     label(prefix + "-vectors");
     emit({ op: "ldr-q", qt: 0, rn: 13, offset: 0 });
     emit({ op: "xtn-8b", vd: 0, vn: 0 });
     emit({ op: "str-d", rt: 0, rn: 14, offset: 0 });
+    emit({ op: "ldr-q", qt: 0, rn: 13, offset: 16 });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "str-d", rt: 0, rn: 14, offset: 8 });
+    advance(13, 32);
+    advance(14, 16);
+    decrement(15, 16);
+    compareImmediate(15, 16);
+    branch(prefix + "-vectors", "cs");
+    compareImmediate(15, 0);
+    branch(prefix + "-done", "eq");
+    // 1..15 units remain after at least 16 were already narrowed: the source
+    // has >= 16 bytes before the end, so load the final 8 units and shift
+    // right into aligned non-overlapping 8-byte stores.
+    compareImmediate(15, 8);
+    branch(prefix + "-rem-high", "hi");
+    addShifted(13, 13, 15, 1);
+    subtractImmediate(16, 13, 16);
+    emit({ op: "ldr-q", qt: 0, rn: 16, offset: 0 });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "fmov-x-d", rd: 16, rn: 0 });
+    emit({ op: "movz", width: 64, rd: 11, immediate: 8, shift: 0 });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 11,
+      rn: 11,
+      rm: 15,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 11,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    emit({ op: "lsrv", width: 64, rd: 16, rn: 16, rm: 11 });
+    emit({ op: "str", width: 64, rt: 16, rn: 14, offset: 0 });
+    addShifted(14, 14, 15, 0);
+    branch(prefix + "-done");
+    label(prefix + "-less16");
+    compareImmediate(15, 8);
+    branch(prefix + "-tail", "cc");
+    label(prefix + "-rem-high");
+    emit({ op: "ldr-q", qt: 0, rn: 13, offset: 0 });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "str-d", rt: 0, rn: 14, offset: 0 });
+    compareImmediate(15, 8);
+    branch(prefix + "-eight-done", "eq");
+    addShifted(13, 13, 15, 1);
+    subtractImmediate(16, 13, 16);
+    emit({ op: "ldr-q", qt: 0, rn: 16, offset: 0 });
+    emit({ op: "xtn-8b", vd: 0, vn: 0 });
+    emit({ op: "fmov-x-d", rd: 16, rn: 0 });
+    emit({ op: "movz", width: 64, rd: 11, immediate: 16, shift: 0 });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 11,
+      rn: 11,
+      rm: 15,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 11,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    emit({ op: "lsrv", width: 64, rd: 16, rn: 16, rm: 11 });
+    emit({ op: "str", width: 64, rt: 16, rn: 14, offset: 8 });
+    addShifted(14, 14, 15, 0);
+    branch(prefix + "-done");
+    label(prefix + "-eight-done");
     advance(13, 16);
     advance(14, 8);
-    decrement(15, 8);
-    compareImmediate(15, 8);
-    branch(prefix + "-vectors", "cs");
-    // Fewer than eight remain: four, two and one by the count's bits,
+    branch(prefix + "-done");
+    // Fewer than eight total: four, two and one by the count's bits,
     // reading and writing only those units (no loop).
     label(prefix + "-tail");
     asm.testBit(prefix + "-two", 15, 2, false);
@@ -929,62 +1015,264 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     emit({ op: "ret", rn: 30 });
   } else if (kind === "string-slice-kind") {
     // x9 source, x12 begin, x13 count -> x14 1 when the slice is one-byte,
-    // else 0. Preserves x9, x12 and x13; clobbers x10, x11, x15, x16, v0,
-    // v1 and flags. A one-byte source and an empty slice are one-byte; a
-    // two-byte source's units are scanned for one above 0xFF: eight at a
-    // time by their high bytes (SHRN), then four, then one.
-    emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
-    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+    // else 0. Preserves x9, x10, x12 and x13; clobbers x11, x15, x16, x17
+    // and flags. A one-byte source and an empty slice are one-byte; a
+    // two-byte source's units are scanned for one above 0xFF in pure GPRs
+    // using the bitmask immediate 0xff00ff00ff00ff00 (n=0, immr=8, imms=39),
+    // 32 units (64 bytes) per iteration with branchless overlapping tails
+    // for 32/16/8/4-unit ranges.
+    emit({ op: "ldr", width: 64, rt: 11, rn: 9, offset: 0 });
+    asm.testBit("one-byte", 11, nativeHeaderFlagsShift, true);
     // A sliced source is read through a flattened copy of its pointer.
     move(15, 9);
-    flattenBase("source", 15, 10, 11);
-    testTwoByte(10);
-    branch("done", "ne");
+    flattenBase("source", 15, 11, 14);
     dataAddress(15, 15, 12, 1);
     move(16, 13);
-    compareImmediate(16, 8);
-    branch("quads", "cc");
+    compareImmediate(16, 32);
+    branch("less32", "cc");
+    branch("last32", "eq");
     label("vectors");
-    emit({ op: "ldr-q", qt: 0, rn: 15, offset: 0 });
-    emit({ op: "shrn-8b-8", vd: 1, vn: 0 });
-    emit({ op: "fmov-x-d", rd: 10, rn: 1 });
-    compareImmediate(10, 0);
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 11,
+      rt2: 14,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: 16,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: 32,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: 48,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ands-imm",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      n: 0,
+      immr: 8,
+      imms: 39,
+    });
     branch("wide", "ne");
-    advance(15, 16);
-    decrement(16, 8);
+    advance(15, 64);
+    decrement(16, 32);
+    compareImmediate(16, 32);
+    branch("vectors", "hi");
+    label("last32");
+    addShifted(15, 15, 16, 1);
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 11,
+      rt2: 14,
+      rn: 15,
+      offset: -64,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: -48,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: -32,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: -16,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ands-imm",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      n: 0,
+      immr: 8,
+      imms: 39,
+    });
+    emit({ op: "cset", rd: 14, condition: "eq" });
+    emit({ op: "ret", rn: 30 });
+    label("less32");
+    compareImmediate(16, 16);
+    branch("less16", "cc");
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 11,
+      rt2: 14,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: 16,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    addShifted(15, 15, 16, 1);
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: -32,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: -16,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ands-imm",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      n: 0,
+      immr: 8,
+      imms: 39,
+    });
+    emit({ op: "cset", rd: 14, condition: "eq" });
+    emit({ op: "ret", rn: 30 });
+    label("less16");
     compareImmediate(16, 8);
-    branch("vectors", "cs");
-    label("quads");
-    // The high byte of each of four units.
-    emit({ op: "movz", width: 64, rd: 11, immediate: 0xff00, shift: 0 });
-    emit({ op: "movk", width: 64, rd: 11, immediate: 0xff00, shift: 16 });
-    emit({ op: "movk", width: 64, rd: 11, immediate: 0xff00, shift: 32 });
-    emit({ op: "movk", width: 64, rd: 11, immediate: 0xff00, shift: 48 });
+    branch("short", "cc");
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 11,
+      rt2: 14,
+      rn: 15,
+      offset: 0,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    addShifted(15, 15, 16, 1);
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 14,
+      rt2: 17,
+      rn: 15,
+      offset: -16,
+      mode: "offset",
+    });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 17 });
+    emit({
+      op: "ands-imm",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      n: 0,
+      immr: 8,
+      imms: 39,
+    });
+    emit({ op: "cset", rd: 14, condition: "eq" });
+    emit({ op: "ret", rn: 30 });
+    label("short");
     compareImmediate(16, 4);
     branch("tail", "cc");
-    label("words");
-    emit({ op: "ldr", width: 64, rt: 10, rn: 15, offset: 0 });
-    emit({ op: "and-reg", width: 64, rd: 10, rn: 10, rm: 11 });
-    compareImmediate(10, 0);
-    branch("wide", "ne");
-    advance(15, 8);
-    decrement(16, 4);
-    compareImmediate(16, 4);
-    branch("words", "cs");
+    emit({ op: "ldr", width: 64, rt: 11, rn: 15, offset: 0 });
+    addShifted(15, 15, 16, 1);
+    subtractImmediate(15, 15, 8);
+    emit({ op: "ldr", width: 64, rt: 14, rn: 15, offset: 0 });
+    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 14 });
+    emit({
+      op: "ands-imm",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      n: 0,
+      immr: 8,
+      imms: 39,
+    });
+    emit({ op: "cset", rd: 14, condition: "eq" });
+    emit({ op: "ret", rn: 30 });
     label("tail");
     compareImmediate(16, 0);
-    branch("done", "eq");
+    branch("one-byte", "eq");
     label("units");
-    emit({ op: "ldrh", rt: 10, rn: 15, offset: 0 });
-    compareImmediate(10, 0xff);
+    emit({ op: "ldrh", rt: 11, rn: 15, offset: 0 });
+    compareImmediate(11, 0xff);
     branch("wide", "hi");
     advance(15, 2);
     decrement(16, 1);
     branch("units", "ne");
+    label("one-byte");
+    emit({ op: "movz", width: 64, rd: 14, immediate: 1, shift: 0 });
     emit({ op: "ret", rn: 30 });
     label("wide");
     emit({ op: "movz", width: 64, rd: 14, immediate: 0, shift: 0 });
-    label("done");
     emit({ op: "ret", rn: 30 });
   } else if (kind === "string-slice-copy") {
     // x9 fresh destination, x10 source, x11 begin, x12 count, x13 the
@@ -1024,6 +1312,25 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     emit({ op: "ret", rn: 30 });
     label("narrow");
     dataAddress(13, 10, 11, 1);
+    narrowUnits("narrow");
+    emit({ op: "ret", rn: 30 });
+  } else if (kind === "string-slice-narrow") {
+    // x9 fresh one-byte destination (header and length already written),
+    // x10 two-byte source (flat or sliced), x12 begin, x13 count (all units
+    // <= 0xFF). Preserves x9; clobbers x10, x11, x13-x16 and v0.
+    emit({ op: "ldr", width: 64, rt: 16, rn: 10, offset: 0 });
+    flattenBase("source", 10, 16, 14);
+    move(15, 13);
+    dataAddress(13, 10, 12, 1);
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 14,
+      rn: 9,
+      immediate: nativeStringDataOffset,
+      shift: 0,
+      setFlags: false,
+    });
     narrowUnits("narrow");
     emit({ op: "ret", rn: 30 });
   } else if (kind === "string-concat-copy") {
@@ -1202,22 +1509,20 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     advance(10, nativeStringDataOffset);
     compareImmediate(12, 8);
     branch("long", "hi");
-    // n <= 8: one word, shifted left by (8 - n) * 8 to drop padding bytes.
+    // n <= 8 (and n >= 1): one word, shifted left by (-n * 8) mod 64 = (8 - n) * 8.
     emit({ op: "ldr", width: 64, rt: 14, rn: 9, offset: 0 });
     emit({ op: "ldr", width: 64, rt: 15, rn: 10, offset: 0 });
     emit({ op: "eor-reg", width: 64, rd: 14, rn: 14, rm: 15 });
-    emit({ op: "movz", width: 64, rd: 13, immediate: 8, shift: 0 });
     emit({
       op: "sub-reg",
       width: 64,
       rd: 13,
-      rn: 13,
+      rn: "zr",
       rm: 12,
       shift: "lsl",
-      amount: 0,
+      amount: 3,
       setFlags: false,
     });
-    emit({ op: "ubfm", width: 64, rd: 13, rn: 13, immr: 61, imms: 60 });
     emit({ op: "lslv", width: 64, rd: 14, rn: 14, rm: 13 });
     compareImmediate(14, 0);
     branch("equal", "eq");
@@ -1636,13 +1941,17 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     asm.zeroBranch("two-scalar", 10, true);
     advance(9, 4);
     step(8, 4, 0, 0);
-    branch("two-pairs");
+    branch("two-scalar");
     label("two-scalar");
     compareImmediate(15, 0);
     branch("done", "eq");
     emit({ op: "ldrh", rt: 16, rn: 13, offset: 0 });
     compareImmediate(16, 0x80);
-    branch("two-one", "cc");
+    branch("two-multi", "cs");
+    advance(9, 1);
+    step(2, 1, 0, 0);
+    branch("two-scalar");
+    label("two-multi");
     compareImmediate(16, 0x800);
     branch("two-two", "cc");
     // x10 = unit - 0xD800: a high surrogate is below 0x400.
@@ -1663,9 +1972,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     label("two-three");
     advance(9, 1);
     label("two-two");
-    advance(9, 1);
-    label("two-one");
-    advance(9, 1);
+    advance(9, 2);
     step(2, 1, 0, 0);
     branch("two-pairs");
     label("done");
@@ -1701,7 +2008,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     asm.zeroBranch("done", 12, false);
     emit({ op: "strb", rt: 16, rn: 14, offset: 0 });
     step(1, 1, 1, 1);
-    branch("one-words");
+    branch("one-unit");
     label("one-two");
     compareImmediate(12, 2);
     branch("done", "cc");
@@ -1745,7 +2052,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     asm.zeroBranch("done", 12, false);
     emit({ op: "strb", rt: 16, rn: 14, offset: 0 });
     step(2, 1, 1, 1);
-    branch("two-vectors");
+    branch("two-unit");
     label("two-multi");
     compareImmediate(16, 0x800);
     branch("two-wide", "cs");
@@ -1847,7 +2154,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     asm.zeroBranch("byte", 16, true);
     advance(11, 8);
     step(8, 8, 0, 0);
-    branch("pairs");
+    branch("byte");
     label("byte");
     asm.zeroBranch("end", 15, false);
     emit({ op: "ldrb", rt: 16, rn: 13, offset: 0 });
@@ -1855,7 +2162,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     branch("lead", "cs");
     advance(11, 1);
     step(1, 1, 0, 0);
-    branch("pairs");
+    branch("byte");
     label("lead");
     subtractImmediate(9, 16, 0xc2);
     compareImmediate(9, 0xdf - 0xc2);
@@ -1971,7 +2278,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     branch("one-pair", "cs");
     emit({ op: "strb", rt: 16, rn: 14, offset: 0 });
     step(1, 1, 1, 1, 11);
-    branch("one-words");
+    branch("one-unit");
     // A C2 or C3 lead: the unit's low byte is (lead << 6) + payload.
     label("one-pair");
     compareImmediate(15, 2);
@@ -2026,7 +2333,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     emit({ op: "uxtl-8h", vd: 0, vn: 0 });
     emit({ op: "str-q", qt: 0, rn: 14, offset: 0 });
     step(8, 8, 16, 8, 11);
-    branch("two-pairs");
+    branch("two-unit");
     label("two-unit");
     asm.zeroBranch("two-pad", 15, false);
     asm.zeroBranch("done", 11, false);
@@ -2035,7 +2342,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     branch("two-multi", "cs");
     emit({ op: "strh", rt: 16, rn: 14, offset: 0 });
     step(1, 1, 2, 1, 11);
-    branch("two-pairs");
+    branch("two-unit");
     label("two-multi");
     compareImmediate(16, 0xe0);
     branch("two-three", "cs");
