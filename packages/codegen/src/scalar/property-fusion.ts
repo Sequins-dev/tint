@@ -303,14 +303,16 @@ export function scriptEntryCalleeValues(
   const ineligible = new Set<number>();
   for (const param of fn.parameters)
     if (param !== undefined) ineligible.add(param);
-  if (fn.receiverSlot !== undefined) ineligible.add(fn.receiverSlot);
-  if (fn.closureEnvironment !== undefined)
-    ineligible.add(fn.closureEnvironment);
+  const receiverSlot = fn.receiverSlot;
+  if (receiverSlot !== undefined) ineligible.add(receiverSlot);
+  const closureEnvironment = fn.closureEnvironment;
+  if (closureEnvironment !== undefined) ineligible.add(closureEnvironment);
   const slotStores = new Map<number, number[]>();
   const proven = new Set<number>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "script entry analysis block invariant";
-    if (block.exception !== undefined) ineligible.add(block.exception.slot);
+    const exception = block.exception;
+    if (exception !== undefined) ineligible.add(exception.slot);
     const t = block.terminator;
     if (
       (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&

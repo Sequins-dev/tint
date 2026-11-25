@@ -910,20 +910,20 @@ export function verify(
                 op.kind === "property-load" &&
                 (op.spillRecord !== undefined || op.spillField !== undefined)
               ) {
+                const spillRecordId = op.spillRecord,
+                  spillFieldId = op.spillField;
                 const spillRef =
-                  op.spillField === undefined
-                    ? undefined
-                    : fields[op.spillField];
+                  spillFieldId === undefined ? undefined : fields[spillFieldId];
                 const spillFields =
-                  op.spillRecord === undefined
+                  spillRecordId === undefined
                     ? undefined
-                    : module.records?.[op.spillRecord]?.fields;
+                    : module.records?.[spillRecordId]?.fields;
                 const spillNext = spillFields?.[0];
                 let validSpill =
-                  op.spillRecord !== undefined &&
-                  op.spillField !== undefined &&
-                  natural(op.spillRecord) &&
-                  natural(op.spillField) &&
+                  spillRecordId !== undefined &&
+                  spillFieldId !== undefined &&
+                  natural(spillRecordId) &&
+                  natural(spillFieldId) &&
                   plainRecordField(spillRef, "optional-reference") &&
                   spillFields !== undefined &&
                   plainRecordField(spillNext, "optional-reference") &&

@@ -132,15 +132,15 @@ function pruneTracedModule(
           const record = recordId(op.record),
             siteRecord = recordId(op.siteRecord),
             epochRecord = recordId(op.epochRecord),
+            originalSpill =
+              op.kind === "property-load" ? op.spillRecord : undefined,
             spillRecord =
-              op.kind === "property-load" && op.spillRecord !== undefined
-                ? recordId(op.spillRecord)
-                : undefined;
+              originalSpill === undefined ? undefined : recordId(originalSpill);
           if (
             record !== op.record ||
             siteRecord !== op.siteRecord ||
             epochRecord !== op.epochRecord ||
-            (op.kind === "property-load" && spillRecord !== op.spillRecord)
+            (op.kind === "property-load" && spillRecord !== originalSpill)
           )
             rewritten =
               op.kind === "property-load" && spillRecord !== undefined

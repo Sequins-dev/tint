@@ -293,9 +293,10 @@ export function provenRecordFacts(
                       field(op.siteRecord, op.siteField + entry * 3 + 2),
                       result,
                     );
-                if (op.spillRecord !== undefined)
+                const spillRecord = op.spillRecord;
+                if (spillRecord !== undefined)
                   for (let slot = 1; slot <= 16; slot++)
-                    edge(field(op.spillRecord, slot), result);
+                    edge(field(spillRecord, slot), result);
               }
               break;
             case "global-cell":

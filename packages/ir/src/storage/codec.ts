@@ -481,13 +481,15 @@ export function encodeInstruction(
       writeSigned(writer, op.count);
       writeSigned(writer, op.index);
       return true;
-    case "property-load":
+    case "property-load": {
+      const spillRecord = op.spillRecord,
+        spillField = op.spillField;
       writePrefix(
         writer,
         86,
         op,
         bit(op.inherited, 2) |
-          bit(op.spillRecord !== undefined && op.spillField !== undefined, 4),
+          bit(spillRecord !== undefined && spillField !== undefined, 4),
       );
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
@@ -500,11 +502,12 @@ export function encodeInstruction(
       writeSigned(writer, op.entries);
       writeSigned(writer, op.epochRecord);
       writeSigned(writer, op.epochField);
-      if (op.spillRecord !== undefined && op.spillField !== undefined) {
-        writeSigned(writer, op.spillRecord);
-        writeSigned(writer, op.spillField);
+      if (spillRecord !== undefined && spillField !== undefined) {
+        writeSigned(writer, spillRecord);
+        writeSigned(writer, spillField);
       }
       return true;
+    }
     case "property-store":
       writePrefix(writer, 87, op, 0);
       writeSigned(writer, op.id);

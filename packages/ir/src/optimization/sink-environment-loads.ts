@@ -315,11 +315,12 @@ export function sinkEnvironmentLoads(
     }
 
     function isFusableMissTestBlock(block: Block, blockId: number): boolean {
+      const term = block.terminator;
       if (
         (predCount[blockId] ?? 0) !== 1 ||
         block.exception !== undefined ||
-        block.terminator.kind !== "branch" ||
-        block.terminator.consequent === block.terminator.alternate
+        term.kind !== "branch" ||
+        term.consequent === term.alternate
       )
         return false;
       const last = block.instructions[block.instructions.length - 1];
@@ -327,7 +328,7 @@ export function sinkEnvironmentLoads(
         last !== undefined &&
         last.kind === "general-is" &&
         last.type === "absent" &&
-        last.id === block.terminator.condition
+        last.id === term.condition
       );
     }
 

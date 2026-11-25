@@ -2648,8 +2648,10 @@ export function emitModule(
                 emit({ op: "jmp", target: label(hit) });
             }
             if (op.entries > 1) emit({ op: "label", name: hit });
+            const spillFieldIndex = op.spillField,
+              spillRecordIndex = op.spillRecord;
             const hasSpill =
-              op.spillField !== undefined && op.spillRecord !== undefined;
+              spillFieldIndex !== undefined && spillRecordIndex !== undefined;
             const spillLabel = site + ":spill";
             if (hasSpill || inherited) emit({ op: "test", dst: rax, src: rax });
             if (hasSpill) branch(emit, "s", spillLabel);
@@ -2663,9 +2665,12 @@ export function emitModule(
                 address: { kind: "base", base: 9, index: 0, scale: 8, disp: 0 },
               },
             });
-            if (hasSpill) {
-              const spillField = recordField(op.record, op.spillField!),
-                spillNext = recordField(op.spillRecord!, 0),
+            if (
+              spillFieldIndex !== undefined &&
+              spillRecordIndex !== undefined
+            ) {
+              const spillField = recordField(op.record, spillFieldIndex),
+                spillNext = recordField(spillRecordIndex, 0),
                 spillLoop = site + ":spillLoop",
                 spillDone = site + ":spillDone";
               emit({ op: "jmp", target: label(loadValue) });

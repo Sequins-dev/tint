@@ -254,6 +254,8 @@ export function bindPropertyLoad(
   epochField: number,
   span: Span,
 ): FunctionIR {
+  const spillRecord = layout.spillRecord,
+    spillField = layout.spillField;
   return boundBody(
     fn,
     [value, site],
@@ -273,8 +275,8 @@ export function bindPropertyLoad(
       entries,
       epochRecord,
       epochField,
-      ...(layout.spillRecord !== undefined && layout.spillField !== undefined
-        ? { spillRecord: layout.spillRecord, spillField: layout.spillField }
+      ...(spillRecord !== undefined && spillField !== undefined
+        ? { spillRecord, spillField }
         : {}),
     }),
     span,

@@ -11244,7 +11244,7 @@ function emitModuleForms(
                 const stringCold =
                   op.kind === "property-load" && op.inherited && useColdStubs;
                 generalPair(9, value(op.object).offset, true);
-                let site: number;
+                let site = 0;
                 let stringBranch = -1,
                   shapeReadyAt = -1;
                 if (op.kind === "property-load" && op.inherited) {
@@ -11346,16 +11346,18 @@ function emitModuleForms(
                   });
                 }
                 if (op.kind === "property-load") {
+                  const spillFieldIndex = op.spillField,
+                    spillRecordIndex = op.spillRecord;
                   const spillField =
-                    op.spillField === undefined
+                    spillFieldIndex === undefined
                       ? undefined
-                      : fields?.[op.spillField];
+                      : fields?.[spillFieldIndex];
                   const spillNext =
-                    op.spillRecord === undefined
+                    spillRecordIndex === undefined
                       ? undefined
-                      : module.records?.[op.spillRecord]?.fields[0];
+                      : module.records?.[spillRecordIndex]?.fields[0];
                   if (
-                    op.spillField !== undefined &&
+                    spillFieldIndex !== undefined &&
                     (spillField === undefined || spillNext === undefined)
                   )
                     throw "property cache layout invariant";
