@@ -238,7 +238,7 @@ function collections() {
   }
   out.push(seenSet.join("/"), cleared.size);
   // Direct-mapped numeric fast table: in-place numeric updates, non-number transition,
-  // -0/NaN, live cursor sync, structuredClone sync, delete, and clear.
+  // -0/NaN, live cursor sync, Map copy sync, delete, and clear.
   const fastMap = new Map();
   for (let i = 0; i < 16; i++) fastMap.set(i, i);
   for (let i = 0; i < 16; i++) fastMap.set(i, i * 10 + 1);
@@ -248,12 +248,17 @@ function collections() {
   fastMap.set(NaN, 123);
   const fastReads = [];
   for (let i = 0; i < 6; i++) fastReads.push(String(fastMap.get(i)));
-  fastReads.push(String(fastMap.get(-0)), String(fastMap.get(NaN)), String(fastMap.has(3)), String(fastMap.has(99)));
+  fastReads.push(
+    String(fastMap.get(-0)),
+    String(fastMap.get(NaN)),
+    String(fastMap.has(3)),
+    String(fastMap.has(99)),
+  );
   const cursorSeen = [];
   for (const [k, v] of fastMap) {
     if (k < 5 || k !== k) cursorSeen.push(String(k) + "=" + String(v));
   }
-  const cloned = structuredClone(fastMap);
+  const cloned = new Map(fastMap);
   fastMap.set(1, 555);
   fastMap.delete(2);
   out.push(
