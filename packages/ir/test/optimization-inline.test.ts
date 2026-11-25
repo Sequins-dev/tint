@@ -1460,7 +1460,7 @@ test("callees with local string slots inline", () => {
   );
 });
 test("single-instruction script cache intrinsics inline past the reference allowance", () => {
-  const calls: FunctionIR["blocks"][number]["instructions"] = [
+  const calls: Array<FunctionIR["blocks"][number]["instructions"][number]> = [
     { kind: "load", id: 0, slot: 0, ...span },
     { kind: "load", id: 1, slot: 1, ...span },
   ];
