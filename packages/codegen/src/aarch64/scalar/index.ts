@@ -2989,6 +2989,240 @@ function emitColdListReadStubs(
     emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
   }
 }
+/** Non-script functions with no calls, allocations, throws, or activation
+ * reads cannot observe nativeActivationTop or trigger GC: lazyActivation
+ * callers can invoke them directly without linking or zeroing extra actuals.
+ * Skip completely when the module has no script entries (preserving zero work
+ * on typed-only builds) or when `provenNoSafepoints` hit its budget. */
+function computePureLeafNoActivation(
+  module: ModuleIR,
+  bodies: EmissionBodies,
+  noSafepoints: Uint8Array | undefined,
+): Uint8Array {
+  const result = new Uint8Array(module.functions.length);
+  if (noSafepoints === undefined) return result;
+  let hasScriptEntry = false;
+  for (let id = 0; id < module.functions.length; id++) {
+    if (module.functions[id]?.scriptEntry === true) {
+      hasScriptEntry = true;
+      break;
+    }
+  }
+  if (!hasScriptEntry) return result;
+  for (let id = 0; id < module.functions.length; id++) {
+    const header = module.functions[id];
+    if (
+      header === undefined ||
+      header.import === true ||
+      header.scriptEntry === true ||
+      noSafepoints[id] !== 1
+    )
+      continue;
+    const f = bodies.get(id);
+    try {
+      if (f !== undefined && f.blocks.length > 0) {
+        let pure: boolean = true;
+        for (const block of f.blocks) {
+          if (block === undefined) {
+            pure = false;
+            break;
+          }
+          const tk = block.terminator.kind;
+          if (tk === "throw" || tk === "throw-literal") {
+            pure = false;
+            break;
+          }
+          for (const op of block.instructions) {
+            if (
+              op === undefined ||
+              op.kind === "call" ||
+              op.kind === "call-indirect" ||
+              op.kind === "c-call" ||
+              op.kind === "host-call" ||
+              op.kind === "activation-read" ||
+              (irInstructionEffects(op) & irEffectAllocate) !== 0
+            ) {
+              pure = false;
+              break;
+            }
+          }
+          if (!pure) break;
+        }
+        if (pure) result[id] = 1;
+      }
+    } finally {
+      bodies.release(id);
+    }
+  }
+  return result;
+}
+function hasCViewAccesses(fn: FunctionIR): boolean {
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "view entry invariant";
+    for (const op of block.instructions) {
+      if (op === undefined) throw "view access invariant";
+      if (
+        op.kind === "c-memory" &&
+        (op.access.operation === "load" || op.access.operation === "store")
+      )
+        return true;
+    }
+  }
+  return false;
+}
+interface ScriptEntryPlan {
+  readonly hasCalls: boolean;
+  readonly callCount: number;
+  readonly hasHostOrCCall: boolean;
+  readonly hasActivationRead: boolean;
+  readonly hasNonCallSafepoint: boolean;
+  readonly hasLoopCall: boolean;
+  readonly usesArgCount: boolean;
+  readonly readsDynamicArg: boolean;
+  readonly maxConstArg: number;
+  readonly readsParam0: boolean;
+  readonly readsParam1: boolean;
+  readonly readsParam2: boolean;
+  readonly readsParam3: boolean;
+}
+const noScriptEntryPlan: ScriptEntryPlan = {
+  hasCalls: false,
+  callCount: 0,
+  hasHostOrCCall: false,
+  hasActivationRead: false,
+  hasNonCallSafepoint: false,
+  hasLoopCall: false,
+  usesArgCount: false,
+  readsDynamicArg: false,
+  maxConstArg: -1,
+  readsParam0: false,
+  readsParam1: false,
+  readsParam2: false,
+  readsParam3: false,
+};
+function scriptPlanReadsParam(plan: ScriptEntryPlan, index: number): boolean {
+  if (index === 0) return plan.readsParam0;
+  if (index === 1) return plan.readsParam1;
+  if (index === 2) return plan.readsParam2;
+  if (index === 3) return plan.readsParam3;
+  return false;
+}
+function analyzeScriptEntryFunction(
+  fn: FunctionIR,
+  entryImports: ReadonlyMap<number, number>,
+  listShapes: readonly (ListReadShape | undefined)[],
+  writeShapes: readonly (ListWriteShape | undefined)[],
+  vectorShapes: readonly (number | undefined)[],
+  maxLoopWork: number,
+): ScriptEntryPlan {
+  const loopBlocks = new Uint8Array(fn.blocks.length);
+  const scriptLoops = naturalLoops(fn, maxLoopWork);
+  if (scriptLoops === undefined) {
+    for (let bi = 0; bi < loopBlocks.length; bi++) loopBlocks[bi] = 1;
+  } else if (scriptLoops.loops.length > 0) {
+    for (const loop of scriptLoops.loops) {
+      if (loop === undefined) continue;
+      for (const id of loop.body)
+        if (id !== undefined && id < loopBlocks.length) loopBlocks[id] = 1;
+    }
+  }
+  const p0 = fn.parameters[0],
+    p1 = fn.parameters[1],
+    p2 = fn.parameters[2],
+    p3 = fn.parameters[3];
+  const constNumbers = new Map<number, number>();
+  let hasCalls: boolean = false,
+    callCount: number = 0,
+    hasHostOrCCall: boolean = false,
+    hasActivationRead: boolean = false,
+    hasNonCallSafepoint: boolean = false,
+    hasLoopCall: boolean = false,
+    usesArgCount: boolean = false,
+    readsDynamicArg: boolean = false,
+    maxConstArg: number = -1,
+    readsParam0: boolean = false,
+    readsParam1: boolean = false,
+    readsParam2: boolean = false,
+    readsParam3: boolean = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "script entry analysis block invariant";
+    const inLoop = loopBlocks[block.id] === 1;
+    const t = block.terminator;
+    if (
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+      t.operation !== "read"
+    ) {
+      const slot = t.slot;
+      if (slot === p0) readsParam0 = true;
+      else if (slot === p1) readsParam1 = true;
+      else if (slot === p2) readsParam2 = true;
+      else if (slot === p3) readsParam3 = true;
+    }
+    for (const op of block.instructions) {
+      if (op === undefined) throw "script entry analysis instruction invariant";
+      if (op.kind === "constant") {
+        const constant = op.value;
+        if (typeof constant === "number") constNumbers.set(op.id, constant);
+      } else if (op.kind === "load") {
+        const slot = op.slot;
+        if (slot === p0) readsParam0 = true;
+        else if (slot === p1) readsParam1 = true;
+        else if (slot === p2) readsParam2 = true;
+        else if (slot === p3) readsParam3 = true;
+      } else if (op.kind === "script-argument-count") {
+        usesArgCount = true;
+      } else if (op.kind === "script-argument") {
+        const c = constNumbers.get(op.index);
+        if (c !== undefined) {
+          if (c >>> 0 === c && c < 2048) {
+            if (c > maxConstArg) maxConstArg = c;
+          } else readsDynamicArg = true;
+        } else readsDynamicArg = true;
+      } else if (op.kind === "activation-read") {
+        hasActivationRead = true;
+      } else if (op.kind === "call") {
+        hasCalls = true;
+        callCount++;
+        if (inLoop) hasLoopCall = true;
+        if (
+          op.environment === undefined &&
+          !entryImports.has(op.target) &&
+          (listShapes[op.target] !== undefined ||
+            writeShapes[op.target] !== undefined ||
+            vectorShapes[op.target] !== undefined)
+        )
+          hasNonCallSafepoint = true;
+      } else if (op.kind === "call-indirect") {
+        hasCalls = true;
+        callCount++;
+        if (inLoop) hasLoopCall = true;
+      } else if (op.kind === "c-call" || op.kind === "host-call") {
+        hasHostOrCCall = true;
+      }
+      if (
+        op.kind !== "call" &&
+        op.kind !== "call-indirect" &&
+        (irInstructionEffects(op) & irEffectAllocate) !== 0
+      )
+        hasNonCallSafepoint = true;
+    }
+  }
+  return {
+    hasCalls,
+    callCount,
+    hasHostOrCCall,
+    hasActivationRead,
+    hasNonCallSafepoint,
+    hasLoopCall,
+    usesArgCount,
+    readsDynamicArg,
+    maxConstArg,
+    readsParam0,
+    readsParam1,
+    readsParam2,
+    readsParam3,
+  };
+}
 function emitModuleForms(
   module: ModuleIR,
   bodies: EmissionBodies,
@@ -5698,58 +5932,13 @@ function emitModuleForms(
       facts.directReturnsKnown = true;
     }
     const directReturns = facts.directReturns;
-    // Non-script functions with no calls, allocations, throws, or activation
-    // reads cannot observe nativeActivationTop or trigger GC: lazyActivation
-    // callers can invoke them directly without linking or zeroing extra actuals.
-    // Read bodies from `bodies` because `frameModule` strips `module.functions`
-    // to headers (empty `blocks`).
     let pureLeafNoActivation = facts.pureLeafNoActivation;
     if (pureLeafNoActivation === undefined) {
-      pureLeafNoActivation = new Uint8Array(module.functions.length);
-      for (let id = 0; id < module.functions.length; id++) {
-        const header = module.functions[id];
-        if (
-          header === undefined ||
-          header.import === true ||
-          header.scriptEntry === true
-        )
-          continue;
-        if (noSafepoints !== undefined && noSafepoints[id] !== 1) continue;
-        const f = bodies.get(id);
-        try {
-          if (f === undefined || f.blocks.length === 0) continue;
-          let pure: boolean = true;
-          for (const block of f.blocks) {
-            if (block === undefined) {
-              pure = false;
-              break;
-            }
-            const tk = block.terminator.kind;
-            if (tk === "throw" || tk === "throw-literal") {
-              pure = false;
-              break;
-            }
-            for (const op of block.instructions) {
-              if (
-                op === undefined ||
-                op.kind === "call" ||
-                op.kind === "call-indirect" ||
-                op.kind === "c-call" ||
-                op.kind === "host-call" ||
-                op.kind === "activation-read" ||
-                (irInstructionEffects(op) & irEffectAllocate) !== 0
-              ) {
-                pure = false;
-                break;
-              }
-            }
-            if (!pure) break;
-          }
-          if (pure) pureLeafNoActivation[id] = 1;
-        } finally {
-          bodies.release(id);
-        }
-      }
+      pureLeafNoActivation = computePureLeafNoActivation(
+        module,
+        bodies,
+        noSafepoints,
+      );
       facts.pureLeafNoActivation = pureLeafNoActivation;
     }
     const signatures = module.functions.map((fn): SignatureLayout => {
@@ -6992,25 +7181,9 @@ function emitModuleForms(
           safepointAt(instructions.length);
         }
         forwardSites = [];
-        let hasViewAccesses = false;
-        for (const block of fn.blocks) {
-          if (block === undefined) throw "view entry invariant";
-          for (const op of block.instructions) {
-            if (op === undefined) throw "view access invariant";
-            if (
-              op.kind === "c-memory" &&
-              (op.access.operation === "load" ||
-                op.access.operation === "store")
-            ) {
-              hasViewAccesses = true;
-              break;
-            }
-          }
-          if (hasViewAccesses) break;
-        }
         // Cached property misses branch to their block's slow successor
         // directly (not with C view tokens, which follow block ends).
-        const fusedAccesses = hasViewAccesses
+        const fusedAccesses = hasCViewAccesses(fn)
           ? undefined
           : fusedPropertyAccesses(fn);
         const orderedBlocks = orderBlocks(fn, fusedAccesses),
@@ -7141,125 +7314,41 @@ function emitModuleForms(
             fn.scriptEntry === true
               ? scriptArgumentsOffset + scriptActualRegisterPairs * 16
               : scriptCountOffset;
-        let scriptHasCalls: boolean = false,
-          scriptCallCount: number = 0,
-          scriptHasHostOrCCall: boolean = false,
-          scriptHasActivationRead: boolean = false,
-          scriptHasNonCallSafepoint: boolean = false,
-          scriptHasLoopCall: boolean = false,
-          scriptUsesArgCount: boolean = false,
-          scriptReadsDynamicArg: boolean = false,
-          scriptMaxConstArg: number = -1;
-        const scriptReadsParam = new Uint8Array(4);
-        if (fn.scriptEntry === true) {
-          const loopBlocks = new Uint8Array(fn.blocks.length);
-          const scriptLoops = naturalLoops(fn, work(100000));
-          if (scriptLoops === undefined) {
-            for (let bi = 0; bi < loopBlocks.length; bi++) loopBlocks[bi] = 1;
-          } else if (scriptLoops.loops.length > 0) {
-            for (const loop of scriptLoops.loops) {
-              if (loop === undefined) continue;
-              for (const id of loop.body)
-                if (id !== undefined && id < loopBlocks.length)
-                  loopBlocks[id] = 1;
-            }
-          }
-          const p0 = fn.parameters[0],
-            p1 = fn.parameters[1],
-            p2 = fn.parameters[2],
-            p3 = fn.parameters[3];
-          const constNumbers = new Map<number, number>();
-          for (const block of fn.blocks) {
-            if (block === undefined)
-              throw "script entry analysis block invariant";
-            const inLoop = loopBlocks[block.id] === 1;
-            const t = block.terminator;
-            if (
-              (t.kind === "record" ||
-                t.kind === "record-cell" ||
-                t.kind === "cell") &&
-              t.operation !== "read"
-            ) {
-              const slot = t.slot;
-              if (slot === p0) scriptReadsParam[0] = 1;
-              else if (slot === p1) scriptReadsParam[1] = 1;
-              else if (slot === p2) scriptReadsParam[2] = 1;
-              else if (slot === p3) scriptReadsParam[3] = 1;
-            }
-            for (const op of block.instructions) {
-              if (op === undefined)
-                throw "script entry analysis instruction invariant";
-              if (op.kind === "constant") {
-                const constant = op.value;
-                if (typeof constant === "number")
-                  constNumbers.set(op.id, constant);
-              } else if (op.kind === "load") {
-                const slot = op.slot;
-                if (slot === p0) scriptReadsParam[0] = 1;
-                else if (slot === p1) scriptReadsParam[1] = 1;
-                else if (slot === p2) scriptReadsParam[2] = 1;
-                else if (slot === p3) scriptReadsParam[3] = 1;
-              } else if (op.kind === "script-argument-count") {
-                scriptUsesArgCount = true;
-              } else if (op.kind === "script-argument") {
-                const c = constNumbers.get(op.index);
-                if (c !== undefined) {
-                  if (c >>> 0 === c && c < 2048) {
-                    if (c > scriptMaxConstArg) scriptMaxConstArg = c;
-                  } else scriptReadsDynamicArg = true;
-                } else scriptReadsDynamicArg = true;
-              } else if (op.kind === "activation-read") {
-                scriptHasActivationRead = true;
-              } else if (op.kind === "call") {
-                scriptHasCalls = true;
-                scriptCallCount++;
-                if (inLoop) scriptHasLoopCall = true;
-                if (
-                  op.environment === undefined &&
-                  !entryImports.has(op.target) &&
-                  (listReadShapes(op.target) !== undefined ||
-                    writeShapes[op.target] !== undefined ||
-                    vectorShapes[op.target] !== undefined)
-                )
-                  scriptHasNonCallSafepoint = true;
-              } else if (op.kind === "call-indirect") {
-                scriptHasCalls = true;
-                scriptCallCount++;
-                if (inLoop) scriptHasLoopCall = true;
-              } else if (op.kind === "c-call" || op.kind === "host-call") {
-                scriptHasHostOrCCall = true;
-              }
-              if (
-                op.kind !== "call" &&
-                op.kind !== "call-indirect" &&
-                (irInstructionEffects(op) & irEffectAllocate) !== 0
+        const scriptPlan =
+          fn.scriptEntry === true
+            ? analyzeScriptEntryFunction(
+                fn,
+                entryImports,
+                listShapes,
+                writeShapes,
+                vectorShapes,
+                work(100000),
               )
-                scriptHasNonCallSafepoint = true;
-            }
-          }
-        }
+            : noScriptEntryPlan;
         const elideActivation =
           fn.scriptEntry === true &&
-          !scriptHasCalls &&
-          !scriptHasHostOrCCall &&
-          !scriptHasActivationRead &&
-          !scriptHasNonCallSafepoint;
+          !scriptPlan.hasCalls &&
+          !scriptPlan.hasHostOrCCall &&
+          !scriptPlan.hasActivationRead &&
+          !scriptPlan.hasNonCallSafepoint;
         const lazyActivation =
           fn.scriptEntry === true &&
           !elideActivation &&
-          !scriptHasHostOrCCall &&
-          !scriptHasActivationRead &&
-          !scriptHasLoopCall &&
-          scriptCallCount <= 64 &&
+          !scriptPlan.hasHostOrCCall &&
+          !scriptPlan.hasActivationRead &&
+          !scriptPlan.hasLoopCall &&
+          scriptPlan.callCount <= 64 &&
           scriptArgumentsOffset + (scriptActualRegisterPairs - 1) * 16 <= 504;
         const readsExtraActuals =
           fn.scriptEntry === true &&
-          (scriptReadsDynamicArg ||
-            scriptMaxConstArg >= scriptGpActualRegisterPairs);
+          (scriptPlan.readsDynamicArg ||
+            scriptPlan.maxConstArg >= scriptGpActualRegisterPairs);
         const needsExtraActualSlots =
           fn.scriptEntry === true && (!elideActivation || readsExtraActuals);
         const deferExtraActualZeroing =
-          lazyActivation && !readsExtraActuals && !scriptHasNonCallSafepoint;
+          lazyActivation &&
+          !readsExtraActuals &&
+          !scriptPlan.hasNonCallSafepoint;
         let cursor = localsOffset;
         const slotOffsets: number[] = [];
         // Frames share offsets between same-typed slots whose live ranges
@@ -8986,17 +9075,67 @@ function emitModuleForms(
             });
           }
         }
+        function linkLazyActivation(): void {
+          // x17 is free here; x0 holds context, x16 holds callee entry (if any).
+          if (deferExtraActualZeroing) {
+            rawLoad(17, scriptCountOffset);
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn: 17,
+              immediate: scriptGpActualRegisterPairs,
+              shift: 0,
+              setFlags: true,
+            });
+            const alreadySpilled = instructions.length;
+            emit({ op: "b.cond", condition: "hi", displacement: 0 });
+            for (
+              let i: number = scriptGpActualRegisterPairs;
+              i < scriptActualRegisterPairs;
+              i++
+            )
+              zeroScriptActualSlot(i);
+            patchInstruction(alreadySpilled, {
+              op: "b.cond",
+              condition: "hi",
+              displacement: (instructions.length - alreadySpilled) * 4,
+            });
+          }
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 17,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 17,
+            rn: "sp",
+            offset: activationOffset,
+          });
+          address(17, activationOffset);
+          emit({
+            op: "str",
+            width: 64,
+            rt: 17,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
+        }
         rawStore(0, contextOffset);
         rawStore(3, resultPointerOffset);
         if (fn.scriptEntry === true) {
           const listSlot = fn.parameters[3];
           if (listSlot === undefined) throw "script entry header invariant";
-          const needsListSlot = !elideActivation || scriptReadsParam[3] === 1;
+          const needsListSlot = !elideActivation || scriptPlan.readsParam3;
           const needsCount =
             !elideActivation ||
-            scriptUsesArgCount ||
-            scriptReadsDynamicArg ||
-            scriptMaxConstArg >= scriptGpActualRegisterPairs;
+            scriptPlan.usesArgCount ||
+            scriptPlan.readsDynamicArg ||
+            scriptPlan.maxConstArg >= scriptGpActualRegisterPairs;
           if (needsListSlot || needsCount) {
             emit({
               op: "ands-imm",
@@ -9033,16 +9172,19 @@ function emitModuleForms(
           }
           const gpSpillCount = !elideActivation
             ? scriptGpActualRegisterPairs
-            : scriptReadsDynamicArg
+            : scriptPlan.readsDynamicArg
               ? scriptGpActualRegisterPairs
-              : Math.min(scriptGpActualRegisterPairs, scriptMaxConstArg + 1);
+              : Math.min(
+                  scriptGpActualRegisterPairs,
+                  scriptPlan.maxConstArg + 1,
+                );
           for (let i = 0; i < gpSpillCount; i++) {
             const offset = scriptArgumentsOffset + i * 16;
             const register = scriptFirstActualRegister + i * 2;
             generalPair(register, offset, false);
           }
           if (needsExtraActualSlots) {
-            const emitSpillCascade = (baseOffset: number): void => {
+            const emitSpillCascade = (): void => {
               const zeroJumps: number[] = [];
               for (
                 let i: number = scriptGpActualRegisterPairs;
@@ -9060,7 +9202,7 @@ function emitModuleForms(
                 });
                 zeroJumps.push(instructions.length);
                 emit({ op: "b.cond", condition: "cc", displacement: 0 });
-                scriptActualPair(i, baseOffset + i * 16, false, 16);
+                scriptActualPair(i, scriptArgumentsOffset + i * 16, false, 16);
               }
               const done = instructions.length;
               emit({ op: "b", displacement: 0 });
@@ -9077,30 +9219,7 @@ function emitModuleForms(
                   condition: "cc",
                   displacement: (instructions.length - jumpAt) * 4,
                 });
-                const off =
-                  baseOffset + (scriptGpActualRegisterPairs + idx) * 16;
-                if (off <= 504)
-                  emit({
-                    op: "stp",
-                    width: 64,
-                    rt: "zr",
-                    rt2: "zr",
-                    rn: "sp",
-                    offset: off,
-                    mode: "offset",
-                  });
-                else {
-                  address(16, off);
-                  emit({
-                    op: "stp",
-                    width: 64,
-                    rt: "zr",
-                    rt2: "zr",
-                    rn: 16,
-                    offset: 0,
-                    mode: "offset",
-                  });
-                }
+                zeroScriptActualSlot(scriptGpActualRegisterPairs + idx);
               }
               patchInstruction(done, {
                 op: "b",
@@ -9108,7 +9227,7 @@ function emitModuleForms(
               });
             };
             if (readsExtraActuals || !coldStubsAvailable()) {
-              emitSpillCascade(scriptArgumentsOffset);
+              emitSpillCascade();
             } else {
               emit({
                 op: "sub-imm",
@@ -9131,7 +9250,6 @@ function emitModuleForms(
               }
               const resumeAt = instructions.length;
               stackWords.clear();
-              const spillBaseOffset = scriptArgumentsOffset;
               coldStubs.push((): void => {
                 farBranch(spillExtraBranch, {
                   op: "b.cond",
@@ -9139,7 +9257,7 @@ function emitModuleForms(
                   displacement: (instructions.length - spillExtraBranch) * 4,
                 });
                 stackWords.clear();
-                emitSpillCascade(spillBaseOffset);
+                emitSpillCascade();
                 const back = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 farBranch(back, {
@@ -9222,7 +9340,7 @@ function emitModuleForms(
             fn.scriptEntry === true &&
             i < 3 &&
             safepointLiveness !== undefined &&
-            scriptReadsParam[i] !== 1
+            !scriptPlanReadsParam(scriptPlan, i)
           )
             continue;
           const type = fn.slots[parameter];
@@ -9433,7 +9551,7 @@ function emitModuleForms(
             fn.scriptEntry === true &&
             i < 3 &&
             safepointLiveness !== undefined &&
-            scriptReadsParam[i] !== 1
+            !scriptPlanReadsParam(scriptPlan, i)
           )
             continue;
           const offset = slotOffset(slot);
@@ -27544,65 +27662,7 @@ function emitModuleForms(
                     tailExitBlock = b.id;
                     break;
                   }
-                  if (lazyActivation) {
-                    // x17 is free here; x0 holds context, x16 holds callee entry.
-                    if (deferExtraActualZeroing) {
-                      rawLoad(17, scriptCountOffset);
-                      emit({
-                        op: "sub-imm",
-                        width: 64,
-                        rd: "zr",
-                        rn: 17,
-                        immediate: scriptGpActualRegisterPairs,
-                        shift: 0,
-                        setFlags: true,
-                      });
-                      const alreadySpilled = instructions.length;
-                      emit({ op: "b.cond", condition: "hi", displacement: 0 });
-                      for (
-                        let i: number = scriptGpActualRegisterPairs;
-                        i < scriptActualRegisterPairs;
-                        i++
-                      )
-                        emit({
-                          op: "stp",
-                          width: 64,
-                          rt: "zr",
-                          rt2: "zr",
-                          rn: "sp",
-                          offset: scriptArgumentsOffset + i * 16,
-                          mode: "offset",
-                        });
-                      patchInstruction(alreadySpilled, {
-                        op: "b.cond",
-                        condition: "hi",
-                        displacement:
-                          (instructions.length - alreadySpilled) * 4,
-                      });
-                    }
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 17,
-                      rn: 0,
-                      offset: nativeActivationTopOffset,
-                    });
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: 17,
-                      rn: "sp",
-                      offset: activationOffset,
-                    });
-                    address(17, activationOffset);
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: 17,
-                      rn: 0,
-                      offset: nativeActivationTopOffset,
-                    });
-                  }
+                  if (lazyActivation) linkLazyActivation();
                   emit({ op: "blr", rn: 16 });
                 } else {
                   const needsLazyLink =
@@ -27611,64 +27671,7 @@ function emitModuleForms(
                       importedEntry === undefined &&
                       pureLeafNoActivation[op.target] === 1
                     );
-                  if (needsLazyLink) {
-                    if (deferExtraActualZeroing) {
-                      rawLoad(17, scriptCountOffset);
-                      emit({
-                        op: "sub-imm",
-                        width: 64,
-                        rd: "zr",
-                        rn: 17,
-                        immediate: scriptGpActualRegisterPairs,
-                        shift: 0,
-                        setFlags: true,
-                      });
-                      const alreadySpilled = instructions.length;
-                      emit({ op: "b.cond", condition: "hi", displacement: 0 });
-                      for (
-                        let i: number = scriptGpActualRegisterPairs;
-                        i < scriptActualRegisterPairs;
-                        i++
-                      )
-                        emit({
-                          op: "stp",
-                          width: 64,
-                          rt: "zr",
-                          rt2: "zr",
-                          rn: "sp",
-                          offset: scriptArgumentsOffset + i * 16,
-                          mode: "offset",
-                        });
-                      patchInstruction(alreadySpilled, {
-                        op: "b.cond",
-                        condition: "hi",
-                        displacement:
-                          (instructions.length - alreadySpilled) * 4,
-                      });
-                    }
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 17,
-                      rn: 0,
-                      offset: nativeActivationTopOffset,
-                    });
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: 17,
-                      rn: "sp",
-                      offset: activationOffset,
-                    });
-                    address(17, activationOffset);
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: 17,
-                      rn: 0,
-                      offset: nativeActivationTopOffset,
-                    });
-                  }
+                  if (needsLazyLink) linkLazyActivation();
                   if (importedEntry !== undefined) {
                     managedPointer(16, importedEntry);
                     emit({ op: "blr", rn: 16 });

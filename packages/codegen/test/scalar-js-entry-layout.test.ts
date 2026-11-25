@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { scriptArgumentLayout } from "../src/aarch64/scalar/abi.ts";
-import { decodeStackMaps, emitModule } from "../src/aarch64/scalar/index.ts";
-import { verify, type ModuleIR } from "@tint/ir/scalar";
+import {
+  decodeStackMaps,
+  emitModule,
+  emitModuleFromStore,
+} from "../src/aarch64/scalar/index.ts";
+import { verify, type FunctionIR, type ModuleIR } from "@tint/ir/scalar";
 
 test("a JavaScript entry takes an arbitrary actual count in register pairs and stack words", () => {
   assert.equal(scriptArgumentLayout(0).stackBytes, 0);
@@ -410,4 +414,68 @@ test("lazy-activation direct calls link around non-leaf helpers and preserve x9 
       `unexpected fmov x9, dN (0x${word.toString(16)}) at +${off - fn4.offset}`,
     );
   }
+});
+
+test("typed-only modules skip pureLeafNoActivation body sweeps", () => {
+  const leaf: FunctionIR = {
+    id: 0,
+    name: "typedLeaf",
+    exported: true,
+    parameters: [0],
+    slots: ["number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: { kind: "return", value: 0, ...span },
+      },
+    ],
+  };
+  const scriptFn: FunctionIR = {
+    id: 1,
+    name: "scriptCaller",
+    exported: false,
+    scriptEntry: true,
+    parameters: [0, 1, 2, 3],
+    slots: ["general", "general", "general", "optional-reference"],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: { kind: "return", value: 0, ...span },
+      },
+    ],
+  };
+  const countGets = (mod: ModuleIR): number => {
+    assert.ok(verify(mod).ok);
+    let gets = 0;
+    const stored = [...mod.functions];
+    const bodies = {
+      get: (id: number): FunctionIR => {
+        if (id === 0) gets++;
+        return stored[id]!;
+      },
+      put: (fn: FunctionIR): void => {
+        stored[fn.id] = fn;
+      },
+      release: (): void => {},
+    };
+    const emitted = emitModuleFromStore(mod, bodies, {
+      closedRoots: [0],
+      compactAddresses: false,
+    });
+    assert.ok(emitted.ok, JSON.stringify(emitted));
+    return gets;
+  };
+  const typedGets = countGets({ functions: [leaf] });
+  const mixedGets = countGets({ functions: [leaf, scriptFn] });
+  assert.equal(
+    mixedGets,
+    typedGets + 1,
+    `expected typed-only emission (${typedGets}) to skip the pureLeafNoActivation sweep done for mixed modules (${mixedGets})`,
+  );
 });
