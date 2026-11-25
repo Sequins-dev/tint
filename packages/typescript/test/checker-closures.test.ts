@@ -3857,3 +3857,26 @@ test("typed Atomics run inline on native integer arrays only", () => {
   );
   assert.ok(shadowed.ok);
 });
+test("instanceof and checked downcast narrow unknown to SharedArrayBuffer", () => {
+  const narrowed = check(`
+    function take(buffer: SharedArrayBuffer): number {
+      return buffer.byteLength;
+    }
+    function inspect(value: unknown): number {
+      if (value instanceof SharedArrayBuffer) {
+        const direct: SharedArrayBuffer = value;
+        const words = new Uint32Array(value, 0, 1);
+        return value.byteLength + take(value) + direct.byteLength + words.length;
+      }
+      return -1;
+    }
+    function cast(value: unknown): number {
+      const buffer = value as SharedArrayBuffer;
+      return buffer.byteLength;
+    }
+  `);
+  assert.ok(narrowed.ok, JSON.stringify(narrowed));
+  const intrinsics = indexValues(narrowed.value.intrinsics);
+  assert.ok(intrinsics.includes("shared-buffer-instanceof"));
+  assert.equal(indexValues(narrowed.value.downcasts!).length, 1);
+});

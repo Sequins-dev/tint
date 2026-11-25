@@ -192,6 +192,7 @@ export type ClosureIntrinsic =
   | "realm-global"
   | "realm-instanceof"
   | "array-instanceof"
+  | "shared-buffer-instanceof"
   | "error-is"
   | "error-property"
   | "literal-property-has"
@@ -2608,13 +2609,18 @@ function checkClosureModuleLayout(
       if (truth && types[declared]?.kind === "object") selected.push(candidate);
       else return undefined;
     }
-    if (truth && declared !== instance && isArray(instance)) {
+    if (
+      truth &&
+      declared !== instance &&
+      (isArray(instance) || types[instance]?.kind === "SharedArrayBuffer")
+    ) {
       const kind = types[instance]?.kind;
       if (
         kind === "Uint8Array" ||
         kind === "Uint16Array" ||
         kind === "Uint32Array" ||
-        kind === "Float64Array"
+        kind === "Float64Array" ||
+        kind === "SharedArrayBuffer"
       ) {
         const known = arrayFlowTypes.get(kind);
         const flow =
@@ -4058,6 +4064,7 @@ function checkClosureModuleLayout(
       case "undefined":
       case "null":
       case "Uint8Array":
+      case "SharedArrayBuffer":
       case "TypeError":
       case "RangeError":
       case "Error":
@@ -8160,6 +8167,7 @@ function checkClosureModuleLayout(
             ) {
               if (
                 isErrorKind(target.name) ||
+                target.name === "SharedArrayBuffer" ||
                 (candidate !== undefined &&
                   isArray(candidate) &&
                   types[candidate]?.kind !== "object")
@@ -8173,7 +8181,9 @@ function checkClosureModuleLayout(
                       ? "range-error-is"
                       : target.name === "Error"
                         ? "error-is"
-                        : "array-instanceof",
+                        : target.name === "SharedArrayBuffer"
+                          ? "shared-buffer-instanceof"
+                          : "array-instanceof",
                 );
               } else intrinsics.set(node, "realm-instanceof");
             } else intrinsics.set(node, "realm-instanceof");

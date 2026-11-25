@@ -205,6 +205,10 @@ export interface ModuleEntryOptions {
    * address (native-runtime shared-buffers newSharedBlock): typed
    * `new SharedArrayBuffer` needs it. */
   readonly sharedBlock?: number;
+  /** A checked `(array: Uint8Array) => boolean` testing whether a borrowed
+   * byte array views a block of the isolate's shared block service
+   * (native-runtime shared-buffers isNativeSharedArrayBuffer). */
+  readonly sharedBlockCheck?: number;
   readonly lists?: readonly ListRuntimeBinding[];
   readonly sets?: readonly SetRuntimeBinding[];
   readonly maps?: readonly MapRuntimeBinding[];
@@ -301,7 +305,8 @@ export function lowerModuleEntries(
   }
   const numberToString = options?.numberToString,
     numberFromString = options?.numberFromString,
-    sharedBlock = options?.sharedBlock;
+    sharedBlock = options?.sharedBlock,
+    sharedBlockCheck = options?.sharedBlockCheck;
   return lowerEntries(checked, expanded, undefined, undefined, {
     target,
     maxBytes,
@@ -325,6 +330,7 @@ export function lowerModuleEntries(
     ...(numberToString === undefined ? {} : { numberToString }),
     ...(numberFromString === undefined ? {} : { numberFromString }),
     ...(sharedBlock === undefined ? {} : { sharedBlock }),
+    ...(sharedBlockCheck === undefined ? {} : { sharedBlockCheck }),
   });
 }
 interface Initializer {
@@ -342,6 +348,7 @@ function lowerEntries(
     numberFromString?: number;
     numberToString?: number;
     sharedBlock?: number;
+    sharedBlockCheck?: number;
     lists: readonly ListRuntimeBinding[] | undefined;
     sets: readonly SetRuntimeBinding[] | undefined;
     maps: readonly MapRuntimeBinding[] | undefined;
@@ -415,9 +422,11 @@ function lowerEntries(
     const cached = scalarEncodings[id];
     if (cached !== undefined) return cached;
     const bigint = bigIntType(checked, id);
+    const checkedType = checked.types[id];
     const buffer =
-      checked.types[id]?.kind === "ArrayBuffer" ||
-      checked.types[id]?.kind === "SharedArrayBuffer";
+      checkedType?.kind === "ArrayBuffer" ||
+      (checkedType?.kind === "SharedArrayBuffer" &&
+        checkedType.arrayFlow !== true);
     let type: SourceScalarType | undefined = buffer
       ? "reference"
       : bigint !== undefined
@@ -1170,6 +1179,24 @@ function lowerEntries(
         fail(
           "SharedArrayBuffer requires the shared buffer runtime (native-shared-buffer)",
         );
+      return target;
+    }
+    function sharedBlockChecker(): number | undefined {
+      const source = recordTarget?.sharedBlockCheck;
+      if (source === undefined) return undefined;
+      const target = targetIds[source];
+      const signature = target === undefined ? undefined : signatures[target];
+      const helper = checked.bindings.functions[source];
+      if (
+        target === undefined ||
+        signature?.returnType !== "boolean" ||
+        signature.parameters.length !== 1 ||
+        signature.parameters[0] !== "Uint8Array" ||
+        helper === undefined ||
+        helper.parent !== undefined ||
+        helper.captures.length !== 0
+      )
+        return undefined;
       return target;
     }
     function runtimeHelpers(
@@ -1950,6 +1977,9 @@ function lowerEntries(
               speculativeString: dynamicAliases.get("speculativeString"),
               speculativeUnary: dynamicAliases.get("speculativeUnary"),
               projectTypedArray: dynamicAliases.get("projectNativeTypedArray"),
+              projectSharedArrayBuffer: dynamicAliases.get(
+                "projectNativeSharedArrayBuffer",
+              ),
               stringConstructor: dynamicAliases.get("stringConstructor"),
             };
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
@@ -2108,6 +2138,7 @@ function lowerEntries(
         let realmMember = false;
         let realmInstanceOf: number | undefined;
         let arrayInstance: ExpressionInfo["arrayInstance"];
+        let sharedBufferInstance = false;
         let generalCall: ExpressionInfo["generalCall"];
         if (viewUse !== undefined) {
           if (node.kind === "member") expr(node.object);
@@ -2548,6 +2579,13 @@ function lowerEntries(
                 )
                   fail("typed-array kind invariant");
                 arrayInstance = name;
+                realmGlobal = dynamicAliases.get("realmGlobal");
+                realmInstanceOf = dynamicAliases.get("realmInstanceOf");
+                expr(node.left);
+                break;
+              }
+              if (intrinsic === "shared-buffer-instanceof") {
+                sharedBufferInstance = true;
                 realmGlobal = dynamicAliases.get("realmGlobal");
                 realmInstanceOf = dynamicAliases.get("realmInstanceOf");
                 expr(node.left);
@@ -3423,6 +3461,11 @@ function lowerEntries(
             : representations.arrayElement(restCall.list);
         if (restCall !== undefined && restElement === undefined)
           fail("rest parameter requires a supported list runtime");
+        const checkedNodeType =
+          checkedType === undefined ? undefined : checked.types[checkedType];
+        const sharedBufferFlow =
+          checkedNodeType?.kind === "SharedArrayBuffer" &&
+          checkedNodeType.arrayFlow === true;
         expressions.set(node, {
           ...(propertyKey === undefined ? {} : { propertyKey }),
           rest:
@@ -3440,6 +3483,8 @@ function lowerEntries(
           realmMember: realmMember ? true : undefined,
           realmInstanceOf,
           arrayInstance,
+          sharedBufferInstance: sharedBufferInstance ? true : undefined,
+          sharedBufferFlow: sharedBufferFlow ? true : undefined,
           arrayReceiver,
           arraySetSource,
           arrayMethod: dynamicAliases.get("invokeArrayMethod"),
@@ -3541,6 +3586,7 @@ function lowerEntries(
             readonly records: readonly number[];
             readonly errors?:
               readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
+            readonly sharedBuffer?: boolean | undefined;
           }
         | undefined {
         const target = checked.downcasts?.get(node);
@@ -3548,6 +3594,7 @@ function lowerEntries(
         const tests: DowncastTest[] = [],
           records: number[] = [],
           errors: ("Error" | "TypeError" | "RangeError")[] = [];
+        let sharedBuffer = false;
         function visit(member: number): void {
           const type = checked.types[member];
           if (type === undefined) fail("downcast type invariant");
@@ -3577,6 +3624,9 @@ function lowerEntries(
             case "Uint8Array":
               if (!tests.includes(type.kind)) tests.push(type.kind);
               return;
+            case "SharedArrayBuffer":
+              sharedBuffer = true;
+              return;
             case "object": {
               const record = recordContracts?.forType(member);
               if (record === undefined)
@@ -3598,7 +3648,12 @@ function lowerEntries(
           }
         }
         visit(target);
-        return { tests, records, errors };
+        return {
+          tests,
+          records,
+          errors,
+          ...(sharedBuffer ? { sharedBuffer: true } : {}),
+        };
       }
       function bindingPlan(site: Span): void {
         const plan = checked.bindingInitializations?.get(site);
@@ -4132,6 +4187,7 @@ function lowerEntries(
         realmErrors,
         nodeErrors,
         generalObjectViews,
+        sharedBlockChecker(),
       );
       recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters

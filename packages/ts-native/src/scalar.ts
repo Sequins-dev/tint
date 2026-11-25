@@ -72,6 +72,8 @@ function atomicOperation(property: string): ArrayAtomicOperation {
 }
 const nativeArrayArgumentMessage: string =
   "Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view";
+const nativeSharedArrayBufferMessage: string =
+  "Passing a realm SharedArrayBuffer to a native SharedArrayBuffer requires a fixed-length SharedArrayBuffer";
 
 /** Where a C view member lives (docs/native-ffi.md, "C views"): the root
  * view (a slot), a constant byte offset into it and, for array elements, a
@@ -426,6 +428,7 @@ export function lowerFunction(
   realmErrorBindings?: RealmErrorRuntime,
   nodeErrors?: NodeErrorRecords,
   generalObjectViews: boolean = false,
+  sharedBlockCheck?: number,
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings,
@@ -445,6 +448,8 @@ export function lowerFunction(
   // source locals. Union-valued merge slots are not inferred from a branch store.
   const speculativeSlots: number[] = [],
     speculativeValues: number[] = [];
+  const sharedBufferFlowSlots: number[] = [],
+    sharedBufferFlowValues: number[] = [];
   const undefinedValues: number[] = [],
     undefinedSlots: number[] = [],
     // Slots holding BigInts (references to BigIntValue, possibly absent).
@@ -700,6 +705,14 @@ export function lowerFunction(
       const input = save(id, "general", node);
       requireSpeculativeContract(input, type, node);
       id = load(input, node);
+    }
+    if (
+      sourceType === "general" &&
+      sharedBufferFlowValues[id] === 1 &&
+      type === "reference"
+    ) {
+      const input = save(id, "general", node);
+      return load(nativeSharedArrayBufferArgument(input, node), node);
     }
     if (sourceType === "general" && type === "primitive") {
       if (primitives === undefined) throw "primitive runtime invariant";
@@ -1240,11 +1253,13 @@ export function lowerFunction(
     emit({ kind: "load", id, slot, start: node.start, end: node.end });
     if (undefinedSlots[slot] === 1) undefinedValues[id] = 1;
     if (speculativeSlots[slot] === 1) speculativeValues[id] = 1;
+    if (sharedBufferFlowSlots[slot] === 1) sharedBufferFlowValues[id] = 1;
     return id;
   }
   function store(slot: number, value: number, node: IRSpan): void {
     // A saved undefined literal is constant only until its slot is overwritten.
     undefinedSlots[slot] = 0;
+    sharedBufferFlowSlots[slot] = 0;
     emit({
       kind: "store",
       slot,
@@ -1268,7 +1283,7 @@ export function lowerFunction(
   function cellAccess(
     local: number,
     operation: "read" | "write" | "initialize",
-    node: Span,
+    node: IRSpan,
   ): void {
     const cell = ownedCells.find((c) => c !== undefined && c.local === local);
     if (cell === undefined) return;
@@ -1317,7 +1332,7 @@ export function lowerFunction(
     finish({ kind: "trap", start: node.start, end: node.end });
     current = success;
   }
-  function readLocal(local: number, node: Span): number {
+  function readLocal(local: number, node: IRSpan): number {
     cellAccess(local, "read", node);
     return load(local, node);
   }
@@ -1451,6 +1466,8 @@ export function lowerFunction(
     const slot = temporary(type);
     store(slot, id, node);
     if (undefinedValues[id] === 1) undefinedSlots[slot] = 1;
+    if (type === "general" && sharedBufferFlowValues[id] === 1)
+      sharedBufferFlowSlots[slot] = 1;
     return slot;
   }
   const expressionOverrides = createKeyIndex<Expression, number>(syntaxHash);
@@ -3510,21 +3527,56 @@ export function lowerFunction(
     if (slots[operand] !== "general")
       throw "downcast operand representation invariant";
     // Values are block-local: each test block reloads the operand slot.
+    const matched =
+      downcast.sharedBuffer === true
+        ? save(coerce(load(operand, node), "general", node), "general", node)
+        : operand;
     const accepted = block();
     for (const test of downcast.tests) {
       if (test === undefined) throw "downcast test invariant";
-      const id = nextValue++;
-      emit({
-        kind: "general-is",
-        id,
-        value: load(operand, node),
-        type: test,
-        start: node.start,
-        end: node.end,
-      });
+      let matchId: number;
+      if (test === "Uint8Array")
+        matchId = load(isNativeTypedArray(operand, "Uint8Array", node), node);
+      else {
+        matchId = nextValue++;
+        emit({
+          kind: "general-is",
+          id: matchId,
+          value: load(operand, node),
+          type: test,
+          start: node.start,
+          end: node.end,
+        });
+      }
       const next = block();
-      choose(id, accepted, next, node);
+      choose(matchId, accepted, next, node);
       current = next;
+    }
+    if (downcast.sharedBuffer === true) {
+      const next = block();
+      choose(
+        load(nativeSharedArrayBufferTest(operand, node), node),
+        accepted,
+        next,
+        node,
+      );
+      current = next;
+      const project = dynamicObjects?.projectSharedArrayBuffer;
+      if (project !== undefined) {
+        const projected = dynamicResult(project, [operand], node);
+        const acceptProjected = block(),
+          rejectProjected = block();
+        choose(
+          load(nativeArrayTest(projected, "Uint8Array", node), node),
+          acceptProjected,
+          rejectProjected,
+          node,
+        );
+        current = acceptProjected;
+        store(matched, load(projected, node), node);
+        jump(accepted.id, node);
+        current = rejectProjected;
+      }
     }
     for (const record of downcast.records) {
       if (record === undefined) throw "downcast record invariant";
@@ -3580,7 +3632,7 @@ export function lowerFunction(
     );
     current = accepted;
     const type = scalarType(node);
-    return save(coerce(load(operand, node), type, node), type, node);
+    return save(coerce(load(matched, node), type, node), type, node);
   }
   function requireRange(condition: number, node: Span): void {
     requireCondition(condition, "RangeError", "Invalid range", node);
@@ -3733,11 +3785,15 @@ export function lowerFunction(
       offsetArgument = node.arguments[1],
       lengthArgument = node.arguments[2];
     if (source === undefined) throw "array view buffer invariant";
-    const buffer = value(source),
+    const rawBuffer = value(source),
       offsetInput =
         offsetArgument === undefined ? undefined : value(offsetArgument),
       lengthInput =
-        lengthArgument === undefined ? undefined : value(lengthArgument);
+        lengthArgument === undefined ? undefined : value(lengthArgument),
+      buffer =
+        slots[rawBuffer] === "general"
+          ? nativeSharedArrayBufferArgument(rawBuffer, node)
+          : rawBuffer;
     const zero = numberSlot(0, node),
       elementBytes = numberSlot(width, node);
     const offset = argumentIndex(offsetInput, () => zero, node);
@@ -4739,7 +4795,7 @@ export function lowerFunction(
   function runtimeCall(
     target: number,
     args: readonly number[],
-    node: Span,
+    node: IRSpan,
     callee?: number,
   ): number | undefined {
     const type = signatures[target]?.returnType;
@@ -5329,6 +5385,8 @@ export function lowerFunction(
       bigIntSlots[result] = 1;
     if (result !== undefined && info(node).speculative === true)
       speculativeSlots[result] = 1;
+    if (result !== undefined && info(node).sharedBufferFlow === true)
+      sharedBufferFlowSlots[result] = 1;
     return result;
   }
   function chainExpression(node: Expression): number | undefined {
@@ -5440,7 +5498,7 @@ export function lowerFunction(
   function dynamicCall(
     callee: number,
     args: readonly number[],
-    node: Span,
+    node: IRSpan,
   ): number | undefined {
     const target = dynamicSignatures[callee];
     if (target === undefined) throw "dynamic object signature invariant";
@@ -5449,7 +5507,7 @@ export function lowerFunction(
   function dynamicResult(
     target: number,
     args: readonly number[],
-    node: Span,
+    node: IRSpan,
   ): number {
     const result = dynamicCall(target, args, node);
     if (result === undefined) throw "dynamic object result invariant";
@@ -5808,7 +5866,7 @@ export function lowerFunction(
   function nativeArrayTest(
     slot: number,
     kind: NativeTypedArray,
-    node: Span,
+    node: IRSpan,
   ): number {
     const packed = coerce(load(slot, node), "general", node);
     const test = nextValue++;
@@ -5821,6 +5879,133 @@ export function lowerFunction(
       end: node.end,
     });
     return save(test, "boolean", node);
+  }
+  /** True when `operand` is a native typed SharedArrayBuffer (a borrowed
+   * Uint8Array viewing a published block of the isolate's shared block
+   * service). */
+  function nativeSharedArrayBufferTest(operand: number, node: IRSpan): number {
+    const checker = sharedBlockCheck;
+    if (checker === undefined) return booleanSlot(false, node);
+    const general = save(
+      coerce(load(operand, node), "general", node),
+      "general",
+      node,
+    );
+    const result = temporary("boolean");
+    const check = block(),
+      notBuffer = block(),
+      done = block();
+    choose(
+      load(nativeArrayTest(general, "Uint8Array", node), node),
+      check,
+      notBuffer,
+      node,
+    );
+    current = check;
+    const array = save(
+      coerce(load(general, node), "Uint8Array", node),
+      "Uint8Array",
+      node,
+    );
+    const args: number[] = [load(array, node)];
+    const id = nextValue++;
+    emit({
+      kind: "call",
+      id,
+      target: checker,
+      arguments: args,
+      start: node.start,
+      end: node.end,
+    });
+    store(result, id, node);
+    jump(done.id, node);
+    current = notBuffer;
+    store(result, load(booleanSlot(false, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  /** True when `operand` is a native typed array of `kind`, excluding native
+   * typed SharedArrayBuffers (which share the Uint8Array tag). */
+  function isNativeTypedArray(
+    operand: number,
+    kind: NativeTypedArray,
+    node: IRSpan,
+  ): number {
+    if (kind !== "Uint8Array" || sharedBlockCheck === undefined)
+      return nativeArrayTest(operand, kind, node);
+    const result = temporary("boolean");
+    const check = block(),
+      notArray = block(),
+      done = block();
+    choose(
+      load(nativeArrayTest(operand, kind, node), node),
+      check,
+      notArray,
+      node,
+    );
+    current = check;
+    store(
+      result,
+      load(
+        unarySlot(
+          "!",
+          nativeSharedArrayBufferTest(operand, node),
+          "boolean",
+          node,
+        ),
+        node,
+      ),
+      node,
+    );
+    jump(done.id, node);
+    current = notArray;
+    store(result, load(booleanSlot(false, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  /** A general value consumed as a native SharedArrayBuffer: a native typed
+   * SharedArrayBuffer or a fixed-length realm SharedArrayBuffer projected to
+   * its borrowed byte array (projectNativeSharedArrayBuffer), else TypeError. */
+  function nativeSharedArrayBufferArgument(slot: number, node: IRSpan): number {
+    const source = save(
+      coerce(load(slot, node), "general", node),
+      "general",
+      node,
+    );
+    const accepted = block(),
+      projecting = block();
+    choose(
+      load(nativeSharedArrayBufferTest(source, node), node),
+      accepted,
+      projecting,
+      node,
+    );
+    current = projecting;
+    const project = dynamicObjects?.projectSharedArrayBuffer;
+    if (project !== undefined) {
+      const projected = dynamicResult(project, [source], node);
+      const acceptProjected = block(),
+        reject = block();
+      choose(
+        load(nativeArrayTest(projected, "Uint8Array", node), node),
+        acceptProjected,
+        reject,
+        node,
+      );
+      current = acceptProjected;
+      store(source, load(projected, node), node);
+      jump(accepted.id, node);
+      current = reject;
+    }
+    throwNativeError("TypeError", nativeSharedArrayBufferMessage, node);
+    current = accepted;
+    return save(
+      coerce(load(source, node), "reference", node),
+      "reference",
+      node,
+    );
   }
   /** A general value passed to a native typed-array parameter: a native
    * array of `kind`, or a realm typed array of that kind viewed natively
@@ -5837,7 +6022,7 @@ export function lowerFunction(
       const native = block(),
         projecting = block();
       choose(
-        load(nativeArrayTest(slot, kind, node), node),
+        load(isNativeTypedArray(slot, kind, node), node),
         native,
         projecting,
         node,
@@ -5852,7 +6037,7 @@ export function lowerFunction(
       jump(native.id, node);
       current = native;
     }
-    const test = nativeArrayTest(source, kind, node);
+    const test = isNativeTypedArray(source, kind, node);
     requireCondition(test, "TypeError", nativeArrayArgumentMessage, node);
     return save(coerce(load(source, node), kind, node), kind, node);
   }
@@ -5862,15 +6047,34 @@ export function lowerFunction(
     metadata: ExpressionInfo,
   ): number {
     const operand = value(node.left);
-    const test = nativeArrayTest(operand, kind, node);
     const global = metadata.realmGlobal,
       instance = metadata.realmInstanceOf;
-    if (global === undefined || instance === undefined) return test;
+    if (global === undefined || instance === undefined)
+      return isNativeTypedArray(operand, kind, node);
     const constructor = dynamicResult(
       global,
       [
         stringSlot(kind, node.right),
         stringSlot("installTypedArrayIntrinsics", node.right),
+      ],
+      node.right,
+    );
+    return callRealmInstanceOf(instance, operand, constructor, node);
+  }
+  function sharedBufferInstanceOf(
+    node: Expression & { readonly kind: "binary" },
+    metadata: ExpressionInfo,
+  ): number {
+    const operand = value(node.left);
+    const global = metadata.realmGlobal,
+      instance = metadata.realmInstanceOf;
+    if (global === undefined || instance === undefined)
+      return nativeSharedArrayBufferTest(operand, node);
+    const constructor = dynamicResult(
+      global,
+      [
+        stringSlot("SharedArrayBuffer", node.right),
+        stringSlot("installSharedArrayBufferIntrinsics", node.right),
       ],
       node.right,
     );
@@ -5886,6 +6090,20 @@ export function lowerFunction(
       realmErrors === undefined ? operand : exposedError(operand, node);
     const kind = temporary("string"),
       done = block();
+    if (sharedBlockCheck !== undefined) {
+      const yes = block(),
+        no = block();
+      choose(
+        load(nativeSharedArrayBufferTest(left, node), node),
+        yes,
+        no,
+        node,
+      );
+      current = yes;
+      store(kind, load(stringSlot("SharedArrayBuffer", node), node), node);
+      jump(done.id, node);
+      current = no;
+    }
     const arrays: NativeTypedArray[] = [
       "Uint8Array",
       "Uint16Array",
@@ -7100,7 +7318,11 @@ export function lowerFunction(
         }
         const metadata = info(node).builtin;
         if (metadata === "array-buffer-byte-length") {
-          const buffer = value(node.object),
+          const rawBuffer = value(node.object),
+            buffer =
+              slots[rawBuffer] === "general"
+                ? nativeSharedArrayBufferArgument(rawBuffer, node)
+                : rawBuffer,
             id = nextValue++;
           emit({
             kind: "array-buffer-byte-length",
@@ -7156,6 +7378,8 @@ export function lowerFunction(
         const metadata = info(node);
         const array = metadata.arrayInstance;
         if (array !== undefined) return arrayInstanceOf(node, array, metadata);
+        if (metadata.sharedBufferInstance === true)
+          return sharedBufferInstanceOf(node, metadata);
         const instance = metadata.realmInstanceOf;
         if (instance !== undefined && metadata.builtin === undefined) {
           const left = value(node.left);

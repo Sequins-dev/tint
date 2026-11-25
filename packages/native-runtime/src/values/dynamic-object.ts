@@ -381,6 +381,8 @@ export function realmInstanceOf(
     prototype = core.realm.prototypes.get("type");
   else if (nativeKind === "RangeError")
     prototype = core.realm.prototypes.get("range");
+  else if (nativeKind === "SharedArrayBuffer")
+    prototype = core.realm.sharedArrayBufferPrototype;
   else if (nativeKind !== "") {
     installProgramTypedArrayIntrinsics(core);
     prototype = core.realm.typedArrayPrototypes.get(nativeKind.slice(0, -5));
@@ -461,6 +463,16 @@ export function projectNativeTypedArray(
     };
   }
   return view;
+}
+/** A realm SharedArrayBuffer as the borrowed native byte array that views
+ * its shared block payload, for typed code. Growable shared buffers have
+ * no fixed native window and return undefined (throwing TypeError). */
+export function projectNativeSharedArrayBuffer(value: unknown): unknown {
+  const core = programRealmCore();
+  const object = viewObjectValue(value, core.realm.objectPrototype);
+  const storage = object?.internalSharedArrayBufferData;
+  if (storage === undefined || storage.growable) return undefined;
+  return storage.service.bytes(storage.handle);
 }
 /** A native typed array of `nativeKind` over `bytes` from `byteOffset`. */
 function nativeView(

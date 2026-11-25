@@ -1059,6 +1059,13 @@ function prepareCollectionPass(
                 ),
               }
             : {}),
+          ...(helpers.has("native-shared-buffer:isNativeSharedArrayBuffer")
+            ? {
+                sharedBlockCheck: functionId(
+                  helper("native-shared-buffer", "isNativeSharedArrayBuffer"),
+                ),
+              }
+            : {}),
           lists,
           sets,
           maps,

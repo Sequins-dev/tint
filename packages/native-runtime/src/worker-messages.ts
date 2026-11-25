@@ -27,7 +27,7 @@ import {
 } from "./agent-messages.ts";
 import type { NativePacketMemory } from "./packet-memory.ts";
 import type { NativeSharedStrings } from "./shared-strings.ts";
-import { externalAddress } from "./ffi/primitives.ts";
+import { externalBufferAddress } from "./ffi/primitives.ts";
 import type {
   NativeWorkerBacking,
   NativeWorkerBackingGrant,
@@ -342,15 +342,15 @@ export function createNativeWorkerMessages(
       },
       encodeNativeBuffer: (buffer): number | undefined => {
         const lookup = options.sharedBlockAt;
-        // A typed buffer is the byte array that roots it; only a typed
-        // SharedArrayBuffer's is borrowed over a block payload.
+        // A typed SharedArrayBuffer is a borrowed byte array viewing a
+        // published shared block payload.
         if (
           lookup === undefined ||
           shared === undefined ||
-          !(buffer instanceof Uint8Array)
+          !(buffer instanceof SharedArrayBuffer)
         )
           return undefined;
-        const address = externalAddress(buffer);
+        const address = externalBufferAddress(buffer);
         if (address < 0) return undefined;
         const handle = lookup(address);
         if (handle === 0) return undefined;

@@ -1,3 +1,12 @@
+import {
+  sharedBlockAddressOffset,
+  sharedBlockDescriptorBytes,
+  sharedBlockPublished,
+  sharedBlockStateOffset,
+  sharedRegistryHeaderBytes,
+  sharedRegistryPublishedCountOffset,
+} from "@tint/abi/shared-block";
+import { externalAddress } from "./ffi/primitives.ts";
 import { currentContextDomain } from "./intrinsics/memory.ts";
 import {
   attachNativeSharedBlockService,
@@ -85,4 +94,43 @@ export function newSharedBlock(length: number): number {
   const created = shared.create(length, length, false);
   if (!created.ok) throw new RangeError("Array buffer allocation failed");
   return shared.address(created.value.handle);
+}
+/** True when `array` is a typed SharedArrayBuffer (a borrowed byte array
+ * viewing a published block of this isolate's shared block service). Never
+ * creates a service on an isolate that does not already have one. */
+export function isNativeSharedArrayBuffer(array: Uint8Array): boolean {
+  const address = externalAddress(array);
+  if (address < 0) return false;
+  const memory = nativeSharedMemoryHost(),
+    page = identityPage(),
+    scratch = new Uint32Array(2),
+    base = readNumber(memory, page, 0, scratch);
+  if (base <= 0) return false;
+  const registry: NativeSharedBlockRegistry = {
+    base,
+    byteLength: readNumber(memory, page, 8, scratch),
+    engineId: base,
+  };
+  const count = readNumber(
+    memory,
+    registry,
+    sharedRegistryPublishedCountOffset,
+    scratch,
+  );
+  for (let handle = 1; handle <= count; handle++) {
+    const offset =
+      sharedRegistryHeaderBytes + (handle - 1) * sharedBlockDescriptorBytes;
+    if (
+      readNumber(memory, registry, offset + sharedBlockStateOffset, scratch) ===
+        sharedBlockPublished &&
+      readNumber(
+        memory,
+        registry,
+        offset + sharedBlockAddressOffset,
+        scratch,
+      ) === address
+    )
+      return true;
+  }
+  return false;
 }

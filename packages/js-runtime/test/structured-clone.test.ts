@@ -588,3 +588,47 @@ test("native typed arrays keep later references aligned and share a shared block
   // Two indices per native view kept the later alias aligned.
   assert.equal(read("left"), read("right"));
 });
+
+test("native SharedArrayBuffer shares its block with views and preserves aliases", () => {
+  const source = isolate();
+  const target = isolate();
+  const block = new SharedArrayBuffer(16);
+  const words = new Uint32Array(block, 4, 2);
+  const inner = o.createObject(source.root);
+  const outer = o.createObject(source.root);
+  o.createDataProperty(outer, "buffer", block, source.hooks);
+  o.createDataProperty(outer, "words", words, source.hooks);
+  o.createDataProperty(outer, "left", inner, source.hooks);
+  o.createDataProperty(outer, "right", inner, source.hooks);
+  const encoded = serialize(outer, source.realm, {
+    encodeNativeBuffer: (buffer) => (buffer === block ? 9 : undefined),
+  });
+  const shared = o.createObject<objects.ScriptPropertyKey, unknown>(
+    target.realm.sharedArrayBufferPrototype,
+  );
+  shared.internalArrayBufferData = {
+    kind: "ordinary" as const,
+    data: new Uint8Array(16),
+    immutable: false,
+    maxByteLength: 16,
+    resizable: false,
+    allocationLimit: 16,
+  };
+  let decoded = 0;
+  const copy = deserialize(encoded, target.realm, {
+    decode: (index) => {
+      assert.equal(index, 9);
+      decoded++;
+      return shared;
+    },
+  }) as ObjectValue;
+  assert.equal(decoded, 1);
+  const read = (name: string): ObjectValue =>
+    o.getProperty(copy, name, copy, target.hooks) as ObjectValue;
+  assert.equal(read("buffer"), shared);
+  const wordView = read("words").internalTypedArrayData;
+  assert.equal(wordView?.buffer, shared);
+  assert.equal(wordView?.byteOffset, 4);
+  assert.equal(wordView?.length, 2);
+  assert.equal(read("left"), read("right"));
+});

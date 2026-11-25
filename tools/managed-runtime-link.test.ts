@@ -37,6 +37,7 @@ const globals = [
   "String",
   "Boolean",
   "ArrayBuffer",
+  "SharedArrayBuffer",
   "DataView",
   "TextEncoder",
   "TextDecoder",

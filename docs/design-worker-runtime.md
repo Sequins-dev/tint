@@ -257,21 +257,20 @@ byte displacement like any view.
   it reads as. A typed `SharedArrayBuffer`, or a view of one, shares its
   block: the Worker host finds the block by the buffer's payload address.
   Other buffers are copied.
-- **Receiving.** A realm typed array passed to a native typed-array
-  parameter, or narrowed by `instanceof` before `Atomics`, is viewed
-  natively (`projectNativeTypedArray`): over an ordinary buffer's backing
-  or over a shared block's payload. A view over an ordinary buffer observes
+- **Receiving.** A realm typed array or fixed-length `SharedArrayBuffer`
+  passed to typed code — via `instanceof` narrowing, a checked `as` downcast,
+  or a typed parameter — is viewed natively (`projectNativeTypedArray`,
+  `projectNativeSharedArrayBuffer`): over an ordinary buffer's backing or
+  over a shared block's payload. A view over an ordinary buffer observes
   the buffer's detachment, by a transfer to a Worker or by
   `ArrayBuffer.prototype.transfer`, as a realm typed array does: its length
   becomes 0, element reads give undefined, writes are ignored, and `Atomics`
   and the validating methods throw TypeError (docs/unified-pipeline.md).
-  Shared-block views never detach and stay direct. Resizable buffers,
-  length-tracking views and growable shared buffers have no fixed native
-  window and keep the TypeError.
+  Shared-block views and buffers never detach and stay direct. Resizable
+  buffers, length-tracking views and growable shared buffers have no fixed
+  native window and keep the TypeError.
 - Still open: the signed element types (`Int8Array` to `BigUint64Array`,
-  PR #17) and with them typed `Atomics.wait` and `notify`; and narrowing an
-  `unknown` to the typed `SharedArrayBuffer` type, so typed code receives a
-  realm SharedArrayBuffer itself rather than a typed array over it.
+  PR #17) and with them typed `Atomics.wait` and `notify`.
 
 **Shared string bodies.** A string of at least 32,768 units (64 KiB of
 UTF-16) travels without a copy into the receiver's heap. Strings are flat,

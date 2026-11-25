@@ -413,13 +413,19 @@ function serializeWorkerGraph(
       );
     }
   }
-  /** A typed program's native typed array (a realm sees it as an opaque
-   * reference): serialized as the realm typed array it reads as. A view of
-   * a shared block shares it, and a typed SharedArrayBuffer (the byte
-   * array that is its own buffer) is that block's realm SharedArrayBuffer;
-   * any other buffer is copied whole, so the receiver gets the same
-   * window. */
+  /** A typed program's native typed array or SharedArrayBuffer (a realm sees
+   * it as an opaque reference): serialized as the realm typed array or
+   * SharedArrayBuffer it reads as. A typed SharedArrayBuffer, or a view of
+   * one, shares its block; any other buffer is copied whole, so the receiver
+   * gets the same window. */
   function nativeTypedArray(value: unknown): boolean {
+    const encodeNative = attachments?.encodeNativeBuffer;
+    if (encodeNative !== undefined && value instanceof SharedArrayBuffer) {
+      const grant = encodeNative(value);
+      if (grant === undefined) return false;
+      sharedBuffer(grant);
+      return true;
+    }
     let kind = -1,
       byteOffset = 0,
       length = 0,
@@ -451,11 +457,7 @@ function serializeWorkerGraph(
       data = new Uint8Array(value.buffer);
     }
     if (data === undefined) return false;
-    const grant = attachments?.encodeNativeBuffer?.(buffer);
-    if (grant !== undefined && buffer === value) {
-      sharedBuffer(grant);
-      return true;
-    }
+    const grant = encodeNative?.(buffer);
     tag(tagTypedArray);
     tag(kind);
     tag(0);

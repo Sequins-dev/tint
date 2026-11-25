@@ -10,10 +10,17 @@ import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import {
+  workerFixtureOptions,
+  workerFixtureRuntimes,
+} from "./worker-fixture-options.ts";
 
 const trusted = "fixture:trusted";
+const sharedTrusted = "fixture:trusted-shared";
 const unsupported =
   "Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view";
+const unsupportedShared =
+  "Passing a realm SharedArrayBuffer to a native SharedArrayBuffer requires a fixed-length SharedArrayBuffer";
 
 test(
   "typed code views realm typed arrays natively",
@@ -179,6 +186,189 @@ export function run(): number {
         },
       ],
       {
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+        onGeneralFallback(modules) {
+          partition = modules;
+        },
+      },
+    );
+    assert.deepEqual(partition, ["fixture"]);
+  },
+);
+
+test(
+  "typed code views realm SharedArrayBuffers natively",
+  {
+    skip:
+      nativeFixtureTarget().arch === "x86_64"
+        ? "mixed realm programs need the x86-64 program realm runtime"
+        : false,
+  },
+  () => {
+    const parsed = parseModule(
+      createSourceTextView(`
+function churn(rounds: number): number {
+  let total = 0;
+  for (let round = 0; round < rounds; round++) {
+    const garbage = new Float64Array(64);
+    garbage[round % 64] = round;
+    total += garbage.length;
+  }
+  return total;
+}
+function acceptBuffer(buffer: SharedArrayBuffer): number {
+  if (churn(2000) !== 128000) return -2;
+  const words = new Uint32Array(buffer, 4, 2);
+  return Atomics.add(words, 0, 5) * 100 + buffer.byteLength;
+}
+function acceptBytes(view: Uint8Array): number {
+  return view.length;
+}
+function passthrough(buffer: SharedArrayBuffer): SharedArrayBuffer {
+  return buffer;
+}
+let kept: SharedArrayBuffer | undefined = undefined;
+export function isShared(value: unknown): boolean {
+  return value instanceof SharedArrayBuffer;
+}
+export function isBytes(value: unknown): boolean {
+  return value instanceof Uint8Array;
+}
+export function lengthOf(value: unknown): number {
+  if (value instanceof SharedArrayBuffer) return value.byteLength;
+  return -1;
+}
+export function bumpDirect(value: unknown): number {
+  if (value instanceof SharedArrayBuffer) {
+    const words = new Uint32Array(value, 4, 2);
+    return Atomics.add(words, 1, 7) * 100 + value.byteLength;
+  }
+  return -1;
+}
+export function bumpParam(value: unknown): number {
+  if (value instanceof SharedArrayBuffer) return acceptBuffer(value);
+  return -1;
+}
+export function keepShared(value: unknown): number {
+  if (!(value instanceof SharedArrayBuffer)) return -1;
+  const direct: SharedArrayBuffer = passthrough(value);
+  kept = direct;
+  return direct.byteLength;
+}
+export function readKept(): number {
+  const buffer = kept;
+  if (buffer === undefined) return -1;
+  return new Uint32Array(buffer, 4, 2)[0] ?? -2;
+}
+export function castBuffer(value: unknown): number {
+  const buffer = value as SharedArrayBuffer;
+  const bytes = new Uint8Array(buffer);
+  bytes[0] = (bytes[0] ?? 0) + 1;
+  return buffer.byteLength;
+}
+export function checkNativeSelf(): number {
+  const sab = new SharedArrayBuffer(16);
+  const words = new Uint32Array(sab, 4, 2);
+  words[0] = 30;
+  const boxed: unknown = sab;
+  if (!(boxed instanceof SharedArrayBuffer)) return 1;
+  if (boxed instanceof Uint8Array) return 2;
+  const view: unknown = words;
+  if (view instanceof SharedArrayBuffer) return 3;
+  const byteView: unknown = new Uint8Array(sab);
+  if (byteView instanceof SharedArrayBuffer) return 4;
+  if (!(byteView instanceof Uint8Array)) return 5;
+  const ordinary: unknown = new ArrayBuffer(16);
+  if (ordinary instanceof SharedArrayBuffer) return 6;
+  if (bumpParam(boxed) !== 3016) return 7;
+  if (words[0] !== 35) return 8;
+  if (castBuffer(boxed) !== 16) return 9;
+  if (new Uint8Array(sab)[0] !== 1) return 10;
+  // A native SharedArrayBuffer boxed as unknown must not pass as Uint8Array.
+  const unnarrowed: unknown = sab;
+  let rejected = false;
+  try {
+    const asBytes = unnarrowed as Uint8Array;
+    acceptBytes(asBytes);
+  } catch (error) {
+    rejected = error instanceof TypeError;
+  }
+  if (!rejected) return 11;
+  return 0;
+}
+`),
+    );
+    assert.ok(parsed.ok, JSON.stringify(parsed));
+    let partition: readonly string[] | undefined;
+    verifyHostedFixture(
+      `
+import {
+  isShared,
+  isBytes,
+  lengthOf,
+  bumpDirect,
+  bumpParam,
+  keepShared,
+  readKept,
+  castBuffer,
+  checkNativeSelf,
+} from "./trusted-shared.ts";
+function rejects(make, message) {
+  try { make(); } catch (e) {
+    return e instanceof TypeError && (message === undefined || e.message === message);
+  }
+  return false;
+}
+export function run(): number {
+  if (checkNativeSelf() !== 0) return 1;
+  const sab = new SharedArrayBuffer(16);
+  const words = new Uint32Array(sab, 4, 2);
+  words[0] = 37;
+  words[1] = 10;
+  if (!isShared(sab) || isBytes(sab)) return 2;
+  if (lengthOf(sab) !== 16) return 3;
+  if (bumpDirect(sab) !== 1016 || words[1] !== 17) return 4;
+  if (bumpParam(sab) !== 3716 || words[0] !== 42) return 5;
+  if (keepShared(sab) !== 16 || readKept() !== 42) return 6;
+  words[0] = 77;
+  if (readKept() !== 77) return 7;
+  if (castBuffer(sab) !== 16 || new Uint8Array(sab)[0] !== 1) return 8;
+  // Growable SharedArrayBuffer: instanceof is true, native projection rejects.
+  const growable = new SharedArrayBuffer(8, { maxByteLength: 32 });
+  if (!isShared(growable)) return 9;
+  if (!rejects(() => lengthOf(growable), ${JSON.stringify(unsupportedShared)})) return 10;
+  if (!rejects(() => bumpDirect(growable), ${JSON.stringify(unsupportedShared)})) return 11;
+  if (!rejects(() => bumpParam(growable), ${JSON.stringify(unsupportedShared)})) return 12;
+  if (!rejects(() => castBuffer(growable))) return 13;
+  // Spoofed prototype: instanceof is true, native projection rejects.
+  const spoofed = new Proxy({}, { getPrototypeOf() { return SharedArrayBuffer.prototype; } });
+  if (!isShared(spoofed)) return 14;
+  if (!rejects(() => lengthOf(spoofed), ${JSON.stringify(unsupportedShared)})) return 15;
+  if (!rejects(() => bumpParam(spoofed), ${JSON.stringify(unsupportedShared)})) return 16;
+  if (!rejects(() => castBuffer(spoofed))) return 17;
+  // Non-SharedArrayBuffers: instanceof is false, downcast rejects.
+  const ab = new ArrayBuffer(16);
+  const bytes = new Uint8Array(sab);
+  if (isShared(ab) || isShared(bytes) || isShared(words) || isShared(123)) return 18;
+  if (!rejects(() => castBuffer(ab)) || !rejects(() => castBuffer(bytes))) return 19;
+  return 42;
+}
+`,
+      "realm-shared-buffer-native-projection",
+      [["./trusted-shared.ts", sharedTrusted]],
+      [{ id: sharedTrusted, module: parsed.value, dependencies: new Map() }],
+      [],
+      [
+        {
+          module: sharedTrusted,
+          namespace: "trusted-shared-projection",
+          retainedExports: [],
+        },
+        ...workerFixtureRuntimes,
+      ],
+      {
+        ...workerFixtureOptions([]),
         managedBytes: 67108864,
         allocationCapacity: 1048576,
         onGeneralFallback(modules) {

@@ -12,7 +12,8 @@ export function run(peer: string): number {
   const rounds = 20000,
     workers = 2;
   const buffer = new SharedArrayBuffer(16);
-  // A view of the buffer: posting it shares the buffer.
+  // A view of the buffer: posting either the view or the buffer itself shares
+  // the underlying block across Workers.
   const counters = new Uint32Array(buffer, 4, 2);
   let replies = 0;
   for (let index = 0; index < workers; index++) {
@@ -26,9 +27,13 @@ export function run(peer: string): number {
         check(Atomics.load(counters, 1) === workers, "arrivals");
         // The Workers wrote the buffer's own bytes.
         check(new Uint8Array(buffer)[8] === workers, "shared bytes");
+        // Worker 0 received the SharedArrayBuffer directly and stamped byte 12.
+        check(new Uint8Array(buffer)[12] === 99, "shared buffer direct write");
       }
     });
-    worker.postMessage(counters);
+    // Worker 0 receives the SharedArrayBuffer itself; Worker 1 receives a view.
+    if (index === 0) worker.postMessage(buffer);
+    else worker.postMessage(counters);
   }
   // The main isolate adds while the Workers do.
   for (let round = 0; round < rounds; round++) Atomics.add(counters, 0, 1);

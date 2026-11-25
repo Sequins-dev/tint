@@ -61,6 +61,7 @@ export function realmConstructorInstance(name: string): string | undefined {
     case "TypeError":
     case "RangeError":
     case "ArrayBuffer":
+    case "SharedArrayBuffer":
     case "Uint8Array":
     case "Uint16Array":
     case "Uint32Array":

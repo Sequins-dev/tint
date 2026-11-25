@@ -121,6 +121,11 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       name: "externalAddress",
       operation: "address",
     },
+    {
+      module: modules.primitives,
+      name: "externalBufferAddress",
+      operation: "address",
+    },
     { module: modules.primitives, name: "adoptExternal", operation: "adopt" },
     {
       module: modules.primitives,

@@ -22,6 +22,7 @@ const globals = [
   "Uint32Array",
   "Float64Array",
   "ArrayBuffer",
+  "SharedArrayBuffer",
   "DataView",
   "TextEncoder",
   "TextDecoder",

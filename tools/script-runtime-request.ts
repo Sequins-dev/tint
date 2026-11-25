@@ -120,6 +120,7 @@ export const scriptRuntimeGlobals = [
   "Uint32Array",
   "Float64Array",
   "ArrayBuffer",
+  "SharedArrayBuffer",
   "DataView",
   "TextEncoder",
   "TextDecoder",

@@ -71,6 +71,7 @@ test("managed JIT preparation resolves wrapper, view and aliases in the final co
         "String",
         "Boolean",
         "ArrayBuffer",
+        "SharedArrayBuffer",
         "DataView",
         "Math",
         "Number",

@@ -148,7 +148,10 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
   // prototypes even when no source names their constructors (typed code
   // tests received arrays against the same intrinsics).
   const core = programRealmCore();
-  if (core.realm === realm) installProgramTypedArrayIntrinsics(core);
+  if (core.realm === realm) {
+    core.installed.add("installSharedArrayBufferIntrinsics");
+    installProgramTypedArrayIntrinsics(core);
+  }
   function nextThreadId(): number {
     let previous = readNumber(memory, sequence, 0, scratch);
     for (;;) {

@@ -1266,7 +1266,13 @@ export function verify(
                   parameter = parameters[index];
                 if (argument === undefined || parameter === undefined)
                   fail("TYPE", "c-memory argument invariant");
-                equal(use(argument), parameter);
+                const actual = use(argument);
+                if (!(
+                  op.access.operation === "address" &&
+                  index === 0 &&
+                  actual === "reference"
+                ))
+                  equal(actual, parameter);
               }
               const resultType = types.value.result;
               if (resultType === "void") {

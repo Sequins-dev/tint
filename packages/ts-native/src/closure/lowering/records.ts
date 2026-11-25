@@ -160,7 +160,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
     type?.kind === "Uint8Array" ||
     type?.kind === "Uint16Array" ||
     type?.kind === "Uint32Array" ||
-    type?.kind === "Float64Array"
+    type?.kind === "Float64Array" ||
+    type?.kind === "SharedArrayBuffer"
   )
     return type.arrayFlow === true;
   if (type?.kind !== "union") return false;
@@ -219,9 +220,18 @@ function generalType(checked: CheckedClosures, id: number): boolean {
       current?.kind === "Float64Array" ||
       current?.kind === "ArrayBuffer" ||
       current?.kind === "SharedArrayBuffer"
-    )
-      reference = true;
-    else supported = false;
+    ) {
+      if (
+        (current.kind === "Uint8Array" ||
+          current.kind === "Uint16Array" ||
+          current.kind === "Uint32Array" ||
+          current.kind === "Float64Array" ||
+          current.kind === "SharedArrayBuffer") &&
+        current.arrayFlow === true
+      )
+        unknown = true;
+      else reference = true;
+    } else supported = false;
   }
   visit(id);
   const heterogeneous =
@@ -554,9 +564,10 @@ export function entryType(
   if (checked.types[id]?.kind === "Error") return "reference";
   if (checked.types[id]?.kind === "RangeError") return "reference";
   if (checked.types[id]?.kind === "TypeError") return "reference";
+  const entry = checked.types[id];
   if (
-    checked.types[id]?.kind === "ArrayBuffer" ||
-    checked.types[id]?.kind === "SharedArrayBuffer"
+    entry?.kind === "ArrayBuffer" ||
+    (entry?.kind === "SharedArrayBuffer" && entry.arrayFlow !== true)
   )
     return "reference";
   const bigint = bigIntType(checked, id);

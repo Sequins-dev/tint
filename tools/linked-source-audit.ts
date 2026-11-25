@@ -224,33 +224,32 @@ export function auditLinkedSources(
       dependencies: new Map(imports.map((i) => [i.specifier, i.specifier])),
     });
   }
-  const linked = linkModules(
-    inputs,
-    linkEntry,
-    [
-      "undefined",
-      "NaN",
-      "Infinity",
-      "Array",
-      "Boolean",
-      "String",
-      "Number",
-      "Math",
-      "Map",
-      "Set",
-      "Uint8Array",
-      "Uint16Array",
-      "Uint32Array",
-      "Float64Array",
-      "ArrayBuffer",
-      "DataView",
-      "TextEncoder",
-      "TextDecoder",
-      "TypeError",
-      "RangeError",
-    ],
-    { evaluation: "instance" },
-  );
+  const auditGlobals: readonly string[] = [
+    "undefined",
+    "NaN",
+    "Infinity",
+    "Array",
+    "Boolean",
+    "String",
+    "Number",
+    "Math",
+    "Map",
+    "Set",
+    "Uint8Array",
+    "Uint16Array",
+    "Uint32Array",
+    "Float64Array",
+    "ArrayBuffer",
+    "SharedArrayBuffer",
+    "DataView",
+    "TextEncoder",
+    "TextDecoder",
+    "TypeError",
+    "RangeError",
+  ];
+  const linked = linkModules(inputs, linkEntry, auditGlobals, {
+    evaluation: "instance",
+  });
   if (!linked.ok)
     return {
       ...base,
@@ -271,26 +270,7 @@ export function auditLinkedSources(
   let normalizedModule = linked.value.module;
   let checkedModule = normalizedModule;
   if (options?.specialize || options?.runtime) {
-    const bound = bindModule(checkedModule, [
-      "undefined",
-      "NaN",
-      "Infinity",
-      "Array",
-      "Boolean",
-      "String",
-      "Number",
-      "Math",
-      "Map",
-      "Set",
-      "Uint8Array",
-      "Uint16Array",
-      "Uint32Array",
-      "Float64Array",
-      "TextEncoder",
-      "TextDecoder",
-      "TypeError",
-      "RangeError",
-    ]);
+    const bound = bindModule(checkedModule, auditGlobals);
     if (!bound.ok)
       return {
         ...base,
@@ -316,28 +296,7 @@ export function auditLinkedSources(
       normalizedModule = normalized.value;
       checkedModule = normalized.value;
     }
-    const rebound = bindModule(checkedModule, [
-      "undefined",
-      "NaN",
-      "Infinity",
-      "Array",
-      "Boolean",
-      "String",
-      "Number",
-      "Math",
-      "Map",
-      "Set",
-      "Uint8Array",
-      "Uint16Array",
-      "Uint32Array",
-      "Float64Array",
-      "ArrayBuffer",
-      "DataView",
-      "TextEncoder",
-      "TextDecoder",
-      "TypeError",
-      "RangeError",
-    ]);
+    const rebound = bindModule(checkedModule, auditGlobals);
     if (!rebound.ok)
       return {
         ...base,
@@ -426,24 +385,7 @@ export function auditLinkedSources(
                   ),
               )
               .map((item) => ({ name: item.name, local: item.linkedName }));
-            const bound = bindModule(module, [
-              "undefined",
-              "NaN",
-              "Infinity",
-              "Number",
-              "String",
-              "Math",
-              "Map",
-              "Set",
-              "Uint8Array",
-              "Uint16Array",
-              "Uint32Array",
-              "Float64Array",
-              "TextEncoder",
-              "TextDecoder",
-              "TypeError",
-              "RangeError",
-            ]);
+            const bound = bindModule(module, auditGlobals);
             if (!bound.ok) return { ok: false, error: bound.error.message };
             const initialized = prepareModuleInstance(
               module,
