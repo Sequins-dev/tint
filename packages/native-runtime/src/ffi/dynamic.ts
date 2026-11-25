@@ -751,6 +751,20 @@ export function closeLibrary(handle: LibraryHandle): void {
 /** Opened optional libraries by image name, and those that failed. */
 const optionalLibraries = new Map<string, LibraryHandle>(),
   absentLibraries = new Set<string>();
+/** Publish a runtime-selected handle after validating its ABI and symbols.
+ * Callers retain it for the lifetime of the importing isolate. */
+export function registerOptionalLibrary(
+  image: string,
+  handle: LibraryHandle,
+): void {
+  if (
+    isNull(handle) ||
+    optionalLibraries.has(image) ||
+    absentLibraries.has(image)
+  )
+    throw new TypeError("invalid optional library registration");
+  optionalLibraries.set(image, handle);
+}
 /** The address of `name` in optional library `image`, opened (once) with
  * dlopen at first use, or -1 when the library or the symbol is absent
  * (docs/native-ffi.md, "Optional libraries"): what ELF images use where

@@ -2803,6 +2803,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/openssl3.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/zlib.d.ts",
       packageId: "native-runtime",
     },
@@ -2923,6 +2927,18 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/crypto-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-jobs.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-public.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/crypto.ts",
       packageId: "native-runtime",
     },
@@ -2952,6 +2968,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/ffi.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/openssl.ts",
       packageId: "native-runtime",
     },
     {

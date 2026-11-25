@@ -116,9 +116,25 @@ function view(
   );
 }
 
+// The isolate has one program realm. Cache its Buffer prototype so result
+// adoption skips the brand registry lookup.
+let prototypeCore: ProgramRealmCore | undefined = undefined;
+let cachedPrototype: RealmObject | undefined = undefined;
+
+function bufferPrototype(core: ProgramRealmCore): RealmObject | undefined {
+  if (prototypeCore === core && cachedPrototype !== undefined)
+    return cachedPrototype;
+  const prototype = core.realm.prototypes.get(bufferBrand);
+  if (prototype !== undefined) {
+    prototypeCore = core;
+    cachedPrototype = prototype;
+  }
+  return prototype;
+}
+
 /** Buffer identity is shared between the host constructor and FFI results. */
 export function isNodeBuffer(core: ProgramRealmCore, value: unknown): boolean {
-  const prototype = core.realm.prototypes.get(bufferBrand);
+  const prototype = bufferPrototype(core);
   const object = viewObjectValue(value, core.object);
   return (
     prototype !== undefined &&
@@ -132,9 +148,13 @@ export function adoptNodeBuffer(
   core: ProgramRealmCore,
   bytes: Uint8Array,
 ): RealmObject {
-  installNodeBuffer(core);
-  const prototype = core.realm.prototypes.get(bufferBrand);
-  const buffer = adoptArrayBuffer(bytes, core.realm);
+  const realm = core.realm;
+  let prototype = bufferPrototype(core);
+  if (prototype === undefined) {
+    installNodeBuffer(core);
+    prototype = bufferPrototype(core);
+  }
+  const buffer = adoptArrayBuffer(bytes, realm);
   const storage = exoticSlots(buffer).internalArrayBufferData;
   if (prototype === undefined || storage === undefined)
     throw "BUFFER_ADOPTION_INVARIANT";
@@ -183,9 +203,10 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
         "Expected a string, ArrayBuffer, Array, or array-like object",
         "ERR_INVALID_ARG_TYPE",
       );
-    const slots = exoticSlots(object);
+    const objectSlots = exoticSlots(object);
     const backing =
-      slots.internalArrayBufferData ?? slots.internalSharedArrayBufferData;
+      objectSlots.internalArrayBufferData ??
+      objectSlots.internalSharedArrayBufferData;
     if (backing !== undefined) {
       const offset = integer(core, encoding);
       const total = bufferStorageByteLength(backing);

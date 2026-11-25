@@ -1,4 +1,10 @@
 import {
+  asciiEndOfBytes,
+  asciiLowercase,
+  copyLatin1,
+  latin1Text,
+} from "@tint/foundation/text/latin1";
+import {
   decodeBase64Into,
   decodeHexInto,
   encodeBase64,
@@ -21,12 +27,7 @@ export type NodeBufferEncoding =
 /** Node's encoding aliases are ASCII case-insensitive. */
 export function bufferEncoding(name: string): NodeBufferEncoding | undefined {
   if (name.length > 9) return undefined;
-  let lower = "";
-  for (let index = 0; index < name.length; index++) {
-    const code = name.charCodeAt(index);
-    lower += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);
-  }
-  switch (lower) {
+  switch (asciiLowercase(name)) {
     case "utf8":
     case "utf-8":
       return "utf8";
@@ -93,6 +94,8 @@ export function bufferBytes(
   }
   const width = encoding === "utf16le" ? 2 : 1;
   const bytes = new Uint8Array(text.length * width);
+  if (width === 1 && copyLatin1(text, 0, text.length, bytes, 0) === text.length)
+    return bytes;
   for (let index = 0; index < text.length; index++) {
     const code = text.charCodeAt(index);
     bytes[index * width] = code & 255;
@@ -108,6 +111,12 @@ export function bufferText(
   switch (encoding) {
     case "utf8":
       return decodeUTF8(createUTF8Decoder(false, true), bytes) ?? "";
+    case "latin1":
+      return latin1Text(bytes, 0, bytes.length);
+    case "ascii":
+      if (asciiEndOfBytes(bytes, 0, bytes.length) === bytes.length)
+        return latin1Text(bytes, 0, bytes.length);
+      break;
     case "hex":
       return encodeHex(bytes, 0, bytes.length) ?? "";
     case "base64":

@@ -187,6 +187,8 @@ export interface OrdinaryRareSlots<Key, Value> {
    * expando properties, kept distinct from internalChildShape so numeric/length
    * sites never conflate plain objects with packed arrays. */
   internalArrayChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
+  /** Opaque host-owned digest lifetime slot, read only through a checked view. */
+  internalCryptoDigest: unknown;
 }
 /** Internal slots present only on specific builtin, exotic, error or host
  * objects. Kept out of OrdinaryObject so ordinary instances stay compact. */
@@ -717,6 +719,7 @@ export function ensureRareSlots<Key, Value>(
     internalHomeObject: undefined,
     internalDataAliases: undefined,
     internalArrayChildShape: undefined,
+    internalCryptoDigest: undefined,
   };
   object.internalRareSlots = created;
   return created;
@@ -948,6 +951,7 @@ function allocateObject<Key, Value>(
           internalHomeObject: undefined,
           internalDataAliases,
           internalArrayChildShape: undefined,
+          internalCryptoDigest: undefined,
         };
   return {
     // A fast object starts at its prototype's root shape once one exists.

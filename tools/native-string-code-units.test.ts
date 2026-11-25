@@ -221,3 +221,72 @@ test("code-unit conversions agree with Node at integer and double boundaries", a
 test("typed native code units preserve conversions and evaluation order", () => {
   verifyHostedFixture(fromCharCodeSource, "string-code-unit-integer");
 });
+
+test("typed native UTF-8 encoding resumes without splitting a surrogate pair", () => {
+  const text = "abcdefg😀abcdefghijklmno\ud800!\udc00\0é雪";
+  const expected = new TextEncoder().encode(text);
+  const suffix = "😀\ud800x\udc00" + "b".repeat(17);
+  const suffixBytes = new TextEncoder().encode(suffix);
+  verifyHostedFixture(
+    `import { encodeUTF8, encodeUTF8Into } from "text-encoding";
+     export function run(): number {
+       const text = ${JSON.stringify(text)};
+       const expected = new Uint8Array([${expected.join(",")}]);
+       for (let size = 4; size <= 64; size += 13) {
+         const storage = new Uint8Array(size + 2);
+         storage[0] = 204;
+         storage[size + 1] = 204;
+         const scratch = storage.subarray(1, size + 1);
+         let offset = 0;
+         let written = 0;
+         while (offset < text.length) {
+           const chunk = encodeUTF8Into(text, scratch, offset);
+           if (chunk.read === 0) return 1;
+           for (let i = 0; i < chunk.written; i++) {
+             if (scratch[i] !== expected[written + i]) return 2;
+           }
+           offset += chunk.read;
+           written += chunk.written;
+         }
+         if (written !== expected.length ||
+             storage[0] !== 204 || storage[size + 1] !== 204) return 3;
+         if (encodeUTF8Into(text, scratch, -1).read !== 0 ||
+             encodeUTF8Into(text, scratch, 0.5).read !== 0 ||
+             encodeUTF8Into(text, scratch, text.length).read !== 0) return 4;
+       }
+       const ascii = "abcdefghijklmnopq";
+       for (let length = 0; length <= 17; length++) {
+         const encoded = encodeUTF8(ascii.slice(0, length));
+         if (encoded.length !== length) return 5;
+         for (let i = 0; i < length; i++) {
+           if (encoded[i] !== 97 + i) return 6;
+         }
+       }
+       const prefix = ${JSON.stringify("a".repeat(4097))};
+       const tail = ${JSON.stringify(suffix)};
+       const tailBytes = new Uint8Array([${suffixBytes.join(",")}]);
+       for (let length = 4093; length <= 4097; length++) {
+         const encoded = encodeUTF8(prefix.slice(0, length) + tail);
+         if (encoded.length !== length + tailBytes.length) return 7;
+         for (let i = 0; i < length; i++) {
+           if (encoded[i] !== 97) return 8;
+         }
+         for (let i = 0; i < tailBytes.length; i++) {
+           if (encoded[length + i] !== tailBytes[i]) return 9;
+         }
+       }
+       return 42;
+     }`,
+    "string-utf8-chunks",
+    [["text-encoding", "packages/foundation/src/text/text-encoding/index.ts"]],
+    [],
+    [],
+    [],
+    {
+      requireTyped: true,
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+      rootCapacity: 65536,
+    },
+  );
+});

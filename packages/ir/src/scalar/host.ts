@@ -136,6 +136,7 @@ export type HostOperation =
    * string-from-utf8 with `whole`). */
   | "string-utf8-length"
   | "string-write-utf8"
+  | "string-write-utf8-bytes"
   | "string-from-utf8"
   | "string-from-utf8-whole"
   /** The number-string cache (foundation's numeric/number-string-cache.ts),
@@ -293,6 +294,7 @@ export function hostParameters(
       return ["Uint8Array", "number", "number"];
     case "string-copy-latin1":
     case "string-write-utf8":
+    case "string-write-utf8-bytes":
       return ["string", "number", "number", "Uint8Array", "number"];
     case "string-ascii-prefix":
     case "string-utf8-length":
@@ -396,6 +398,19 @@ export function hostInstruction(
         limit: third,
         bytes: args[3] ?? 0,
         offset: args[4] ?? 0,
+        start: 0,
+        end: 0,
+      };
+    case "string-write-utf8-bytes":
+      return {
+        kind: "string-write-utf8",
+        id,
+        string: first,
+        begin: second,
+        limit: third,
+        bytes: args[3] ?? 0,
+        offset: args[4] ?? 0,
+        written: true,
         start: 0,
         end: 0,
       };

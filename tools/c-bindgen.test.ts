@@ -702,6 +702,7 @@ test("checked-in modules are emitted byte-identically from the checked-in facts"
       "libsystem",
       "linux-os",
       "memory",
+      "openssl3",
       "zlib",
     ],
   );

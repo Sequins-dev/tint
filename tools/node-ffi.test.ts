@@ -862,9 +862,16 @@ export function run() {
   );
 });
 
-test("node:ffi diagnoses weak FFI ownership in the region runtime", () => {
-  verifyHostedFixture(
-    `import ffi from "node:ffi";
+test(
+  "node:ffi diagnoses weak FFI ownership in the region runtime",
+  {
+    skip:
+      nativeFixtureTarget().arch === "x86_64" &&
+      "linux-x86_64 does not implement initializeRuntime",
+  },
+  () => {
+    verifyHostedFixture(
+      `import ffi from "node:ffi";
 export function run() {
   for (const open of [() => ffi.dlopen(null), () => new ffi.DynamicLibrary(null)]) {
     try { open(); return 1; }
@@ -876,18 +883,19 @@ export function run() {
   }
   return ffi.toString(0n) === null ? 42 : 3;
 }`,
-    "node-ffi-region-weak-ownership",
-    [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
-    [],
-    [],
-    [],
-    {
-      runtimeEntry: "initializeRuntime",
-      managedBytes: 67108864,
-      allocationCapacity: 1048576,
-    },
-  );
-});
+      "node-ffi-region-weak-ownership",
+      [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+      [],
+      [],
+      [],
+      {
+        runtimeEntry: "initializeRuntime",
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+      },
+    );
+  },
+);
 
 const abortLibrary = `
 #include <pthread.h>

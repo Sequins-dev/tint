@@ -53,6 +53,7 @@ export {
   openLibrary,
   openProgram,
   optionalSymbol,
+  registerOptionalLibrary,
   resultBoolean,
   resultHigh,
   resultLow,

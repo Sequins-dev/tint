@@ -125,6 +125,7 @@ export {
   addPrivateField,
   addPrivateMethod,
   addPrivateAccessor,
+  findPrivateElement,
   getPrivateElement,
   setPrivateElement,
   type PrivateName,
@@ -210,6 +211,7 @@ export {
   type ObjectHooks,
   type ObjectCall,
   type ObjectCallDispatch,
+  type ObjectRegisterCall,
   type ObjectExecutionContext,
   type ObjectConstruct,
   type ObjectScriptCall,
@@ -489,12 +491,6 @@ export {
   bufferStorageByteLength,
   type BufferStorage,
 } from "./buffer-storage.ts";
-export {
-  builtinAccessor,
-  builtinFunction,
-  builtinFunctionMetadata,
-  builtinProperty,
-} from "./intrinsics.ts";
 
 export { installSharedArrayBufferIntrinsics } from "./shared-array-buffer.ts";
 export {
@@ -628,4 +624,11 @@ export {
   throwWorkerCloneError,
   type WorkerCloneAttachments,
 } from "./structured-clone.ts";
+export {
+  builtinAccessor,
+  builtinFunction,
+  builtinRegisterFunction,
+  builtinFunctionMetadata,
+  builtinProperty,
+} from "./intrinsics.ts";
 export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";

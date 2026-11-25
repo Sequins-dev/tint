@@ -67,6 +67,11 @@ export interface GeneralLoweringOptions {
     readonly reactor: string;
   };
   readonly nodeWorkers?: GeneralNodeWorkers;
+  readonly nodeCrypto?: {
+    readonly module: string;
+    readonly jobs: string;
+    readonly commonJS?: boolean;
+  };
 }
 export interface GeneralNodeWorkers {
   readonly host: string;
@@ -87,6 +92,12 @@ const workerExports: readonly string[] = [
   "workerData",
   "threadId",
   "resourceLimits",
+];
+const cryptoExports: readonly string[] = [
+  "createHash",
+  "createHmac",
+  "randomBytes",
+  "pbkdf2",
 ];
 
 /** The general lowering used when the typed pipeline rejects a program: each
@@ -126,6 +137,15 @@ export function createGeneralLowering(
     if (workers.typedBindings !== undefined)
       runtimeModules.push(workers.typedBindings);
   }
+  const crypto = options.nodeCrypto;
+  if (crypto !== undefined) {
+    if (eventLoop === undefined) throw "node:crypto requires a Node event loop";
+    runtimeModules.push(crypto.module, crypto.jobs);
+  }
+  const syntheticModules: string[] = [];
+  if (workers !== undefined) syntheticModules.push("node:worker_threads");
+  if (crypto !== undefined)
+    syntheticModules.push("node:crypto", "crypto", "node:buffer", "buffer");
   const objectViews = [
       "viewObjectValue",
       "viewSymbolValue",
@@ -148,12 +168,15 @@ export function createGeneralLowering(
     recordBindings.push(binding);
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
+  // node:crypto objects hold their OpenSSL state as a checked record view.
+  const cryptoViews = ["viewDigestLifetime"];
+  if (crypto !== undefined)
+    for (const name of cryptoViews)
+      recordBindings.push({ module: crypto.module, name, operation: "view" });
   return {
     runtimeModules,
     recordBindings,
-    ...(workers === undefined
-      ? {}
-      : { syntheticModules: ["node:worker_threads"] }),
+    ...(syntheticModules.length === 0 ? {} : { syntheticModules }),
     ...(workers?.typedBindings === undefined
       ? {}
       : {
@@ -185,6 +208,15 @@ export function createGeneralLowering(
           "realmErrorOperation",
         ],
       },
+      ...(crypto === undefined
+        ? []
+        : [
+            {
+              module: crypto.module,
+              namespace: "general-node-crypto-views",
+              retainedExports: cryptoViews,
+            },
+          ]),
     ],
     lower: (request: GeneralProgramRequest): GeneralProgram =>
       lowerGeneralProgram(request, options),
@@ -385,6 +417,32 @@ function lowerGeneralProgram(
   for (let index = 0; index < request.modules.length; index++) {
     const source = request.modules[index];
     if (source === undefined) throw "general module invariant";
+    if (options.nodeCrypto !== undefined) {
+      for (const declaration of source.module.imports) {
+        const name = declaration.specifier;
+        if (
+          declaration.typeOnly ||
+          (name !== "node:crypto" && name !== "crypto")
+        )
+          continue;
+        for (const binding of declaration.bindings) {
+          if (
+            binding.typeOnly ||
+            binding.namespace ||
+            binding.imported === "default" ||
+            cryptoExports.includes(binding.imported)
+          )
+            continue;
+          return {
+            ok: false,
+            error:
+              "node:crypto " +
+              binding.imported +
+              " is outside Tint's crypto proof of concept",
+          };
+        }
+      }
+    }
     const erased = eraseTypeSyntax(source.module, {
       typeExport: (specifier: string, name: string): boolean => {
         const target = source.dependencies.get(specifier);
@@ -494,7 +552,7 @@ function lowerGeneralProgram(
   const nodeTypeErrorModule = "packages/native-runtime/src/node/type-error.ts";
   const hasNodeTypeErrors = available.has(nodeTypeErrorModule);
   const errors = errorAdapters(
-    request.boundaries.length !== 0,
+    request.boundaries.length !== 0 || options.nodeCrypto !== undefined,
     hasNodeErrors,
     hasNodeTypeErrors,
   );
@@ -591,6 +649,8 @@ function lowerGeneralProgram(
   const eventLoop = options.nodeEventLoop;
   const names = request.modules.map((module): string => module.id);
   const moduleCount = names.length + request.boundaries.length;
+  const crypto = options.nodeCrypto;
+  const builtinStart = moduleCount + (workers === undefined ? 0 : 1);
   if (workers !== undefined) {
     const exports = workerExports
       .map(
@@ -611,9 +671,45 @@ function lowerGeneralProgram(
       exports +
       "},undefined);\n";
   }
+  if (crypto !== undefined) {
+    const addBuiltin = (
+      id: number,
+      name: string,
+      names: readonly string[],
+    ): string => {
+      const exportNames = ["default", ...names];
+      return (
+        "  case " +
+        id +
+        ": return createSyntheticModule(realm," +
+        JSON.stringify(exportNames) +
+        ",(module:ModuleRecord):void=>{" +
+        'setSyntheticModuleExport(module,"default",nodeCrypto.' +
+        name +
+        ");" +
+        names
+          .map(
+            (key): string =>
+              "setSyntheticModuleExport(module," +
+              JSON.stringify(key) +
+              ",nodeCrypto.exportValue(nodeCrypto." +
+              name +
+              "," +
+              JSON.stringify(key) +
+              "));",
+          )
+          .join("") +
+        "},undefined" +
+        (name === "crypto" ? ",nodeCrypto.reportMissingExport" : "") +
+        ");\n"
+      );
+    };
+    creates += addBuiltin(builtinStart, "crypto", cryptoExports);
+    creates += addBuiltin(builtinStart + 1, "buffer", ["Buffer", "kMaxLength"]);
+  }
   const selectedInstallers = installers.installers().slice();
   if (
-    workers !== undefined &&
+    (workers !== undefined || crypto !== undefined) &&
     !selectedInstallers.includes("installPromiseIntrinsics")
   )
     selectedInstallers.push("installPromiseIntrinsics");
@@ -647,7 +743,7 @@ function lowerGeneralProgram(
     imports,
     creates,
     edges,
-    moduleCount + (workers === undefined ? 0 : 1),
+    builtinStart + (crypto === undefined ? 0 : 2),
     entryIndex,
     request.start,
     output !== undefined,
@@ -658,6 +754,13 @@ function lowerGeneralProgram(
     names,
     mixed,
     typedWorkerEntry,
+    crypto === undefined
+      ? undefined
+      : {
+          crypto: builtinStart,
+          buffer: builtinStart + 1,
+          commonJS: crypto.commonJS === true,
+        },
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -675,6 +778,10 @@ function lowerGeneralProgram(
     ["global", runtime.globalEnvironment],
   ]);
   if (output !== undefined) hostDependencies.set("output", output.module);
+  if (crypto !== undefined) {
+    hostDependencies.set("node-crypto", crypto.module);
+    hostDependencies.set("node-crypto-jobs", crypto.jobs);
+  }
   if (eventLoop !== undefined) {
     hostDependencies.set("node-event-globals", eventLoop.globals);
     hostDependencies.set("node-event-driver", eventLoop.driver);
@@ -1172,12 +1279,20 @@ function generalHostSource(
   names: readonly string[],
   mixed?: FunctionFallbackPlan,
   typedWorkerEntry = false,
+  crypto?: {
+    readonly crypto: number;
+    readonly buffer: number;
+    readonly commonJS: boolean;
+  },
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
-    if (workers !== undefined && installer === "installPromiseIntrinsics") {
+    if (
+      (workers !== undefined || crypto !== undefined) &&
+      installer === "installPromiseIntrinsics"
+    ) {
       installs += " installProgramPromiseIntrinsics(core);\n";
       programInstallers.push("installProgramPromiseIntrinsics");
       continue;
@@ -1218,7 +1333,7 @@ function generalHostSource(
     ? `import {installNodeEventLoopGlobals} from "node-event-globals";
 import {createReactorEventLoop,type ReactorEventLoop} from "node-event-driver";
 import {monotonicMilliseconds} from "node-event-clock";
-import {createReactor${workers === undefined ? "" : ",signalReactor"}} from "node-event-reactor";`
+import {createReactor${workers === undefined && crypto === undefined ? "" : ",signalReactor"}} from "node-event-reactor";`
     : "";
   const hostedByNode = workers?.nodeHosted === true;
   const threadHostFactory = hostedByNode
@@ -1257,25 +1372,59 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
       : `workerHost?.checkpointAtomicWaits();do{${drainJobs}}while((workerHost?.checkpointAtomicWaits()??0)>0);`;
   const eventSetup = nodeEventLoop
     ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;"}
+ ${crypto === undefined ? "" : "let cryptoJobs:CryptoJobs|undefined=undefined;"}
  const events:ReactorEventLoop=createReactorEventLoop({
   createReactor:()=>createReactor(),
   now:():number=>monotonicMilliseconds(),
   drainMicrotasks:():void=>{${drainCheckpoint}},
-  onWake:():void=>{${workers === undefined ? "" : "events.loop.enqueueIO(():void=>{});"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
+  onWake:():void=>{${crypto === undefined ? "" : "cryptoJobs?.receive();"}${workers === undefined ? "" : "events.loop.enqueueIO(():void=>{});"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
  });
  try {
   installNodeEventLoopGlobals(events.loop,object,realm,hooks);
+  ${crypto === undefined ? "" : "cryptoJobs=createCryptoJobHost(events);"}
   ${workerRegistry}`
     : "";
+  const closeWorkers = workers === undefined ? "" : "workerHost?.close();";
   const eventCleanup = nodeEventLoop
-    ? `} catch(error){report(error);return 1;} finally{${workers === undefined ? "" : "workerHost?.close();"}events.close();}`
+    ? `} catch(error){report(error);return 1;} finally{${
+        crypto === undefined
+          ? closeWorkers + "events.close();"
+          : "try{cryptoJobs?.close();}finally{try{closeDigestContexts();}finally{try{" +
+            closeWorkers +
+            "}finally{events.close();}}}"
+      }}`
     : "";
+  const supportsAsyncEntry = workers !== undefined || crypto !== undefined;
+  const nodeCryptoImport =
+    crypto === undefined
+      ? ""
+      : `import {createNodeCryptoModules,closeDigestContexts} from "node-crypto";
+import {createCryptoJobHost,runCryptoBlockingHelper,type CryptoJobs} from "node-crypto-jobs";`;
+  const nodeCryptoSetup =
+    crypto === undefined
+      ? ""
+      : `const nodeCrypto=createNodeCryptoModules(programRealmCore(),toRealmError);
+ ${crypto.commonJS ? 'createDataProperty<ScriptPropertyKey,unknown>(object,"require",nodeCrypto.require,hooks);' : ""}`;
+  const builtinResolution =
+    crypto === undefined
+      ? ""
+      : `const specifier=request.specifier;
+  if(specifier==="node:crypto"||specifier==="crypto"){
+   finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(${crypto.crypto})});return;
+  }
+  if(specifier==="node:buffer"||specifier==="buffer"){
+   finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(${crypto.buffer})});return;
+  }`;
   const entryWrapper =
     workers === undefined
-      ? `export function ${start}():number {`
+      ? crypto === undefined
+        ? `export function ${start}():number {`
+        : `export function ${start}(argument:number):number {
+ if(argument!==0)return runCryptoBlockingHelper(argument,signalReactor);`
       : `export function ${start}(argument:number${hostedByNode ? ",broker:number" : ""}):number {
  const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost(signalReactor);
  if(argument===0)return runIsolate(${entry},0,undefined,memory,parking${hostedByNode ? ",broker" : ""});
+ ${crypto === undefined ? "" : "if(argument%2===0)return runCryptoBlockingHelper(argument,signalReactor);"}
  return runNativeWorker(memory,parking,argument,
   (moduleId:number,threadId:number,control:NativeWorkerTurnControl):number=>
    runIsolate(moduleId,threadId,control,memory,parking${hostedByNode ? ",broker" : ""}));
@@ -1359,7 +1508,7 @@ export function $tintCallUnit(${signature}):number {
  const value=result.value;
  if(typeof value==="number")return value;
  ${
-   workers === undefined
+   !supportsAsyncEntry
      ? ""
      : `const promise=viewObjectValue(value,object)?.internalExoticSlots?.internalPromiseData;
  if(promise!==undefined){
@@ -1383,6 +1532,7 @@ import {createObject,createCallableObject,createDataProperty,programRealmCore,in
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${eventImports}
 ${workerImports}
+${nodeCryptoImport}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
 function describe(value:unknown,hooks:ObjectHooks<unknown>,realm:ErrorRealm):string{
@@ -1412,6 +1562,7 @@ ${adapters}${mixedAdapter}${entryWrapper}
  let failed=false;
  function report(error:unknown):void{failed=true;${workerError}emit(2,"Uncaught "+describe(error,hooks,realm)+"\\n");}
  ${eventSetup}
+ ${nodeCryptoSetup}
  const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);
  function create(index:number):ModuleRecord{
   switch(index){
@@ -1421,6 +1572,7 @@ ${creates}  }
  function record(index:number):ModuleRecord{const existing=records[index];if(existing!==undefined)return existing;const created=create(index);records[index]=created;return created;}
  const edges=new Map<string,number>();
 ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{
+  ${builtinResolution}
   const from=referrer.kind==="module"?referrer.hostDefined:undefined;
   const target=typeof from==="number"?edges.get(String(from)+"\\u0000"+request.specifier):undefined;
   if(target===undefined){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}
@@ -1433,8 +1585,8 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  if(!linked.ok){report(linked.error);return 1;}
  const evaluation=evaluateModule(root,hooks);
  ${nodeEventLoop ? 'events.loop.checkpoint("microtask");' : "drainScriptJobs(realm.agent,report);"}
- ${workers === undefined ? "const" : "let"} evaluated=settledModulePromise(evaluation,realm);
- ${workers === undefined ? "" : 'if(evaluated.kind==="pending"){events.loop.run("microtask");evaluated=settledModulePromise(evaluation,realm);}'}
+ ${supportsAsyncEntry ? "let" : "const"} evaluated=settledModulePromise(evaluation,realm);
+ ${supportsAsyncEntry ? 'if(evaluated.kind==="pending"){events.loop.run("microtask");evaluated=settledModulePromise(evaluation,realm);}' : ""}
  if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
  if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
  ${workers === undefined ? "" : 'if(threadId!==0){events.loop.run("callback");return failed?1:0;}'}

@@ -5,6 +5,7 @@ import {
   utf8Text,
   utf8WholeText,
   writeUTF8,
+  writeUTF8Bytes,
 } from "../src/text/utf8.ts";
 
 const encoder = new TextEncoder(),
@@ -65,6 +66,16 @@ test("writeUTF8 encodes whole scalars while they fit", () => {
       );
       assert.ok(bytes.subarray(3 + result.written).every((b) => b === 0xcc));
       assert.ok(bytes.subarray(0, 3).every((b) => b === 0xcc));
+      const writtenBytes = new Uint8Array(capacity + 3).fill(0xcc);
+      const written = writeUTF8Bytes(
+        text,
+        0,
+        text.length,
+        writtenBytes.subarray(0, capacity + 3),
+        3,
+      );
+      assert.equal(written, result.written, JSON.stringify([text, capacity]));
+      assert.deepEqual(writtenBytes, bytes);
     }
     // Ranges: a pair split by a range end is two lone surrogates.
     for (let begin = 0; begin <= text.length; begin++)

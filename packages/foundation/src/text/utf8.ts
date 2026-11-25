@@ -68,6 +68,28 @@ export function writeUTF8(
   bytes: Uint8Array,
   offset: number,
 ): number {
+  return encodeUTF8Range(text, begin, limit, bytes, offset).end;
+}
+
+/** As writeUTF8, returning the number of UTF-8 bytes written
+ * (`string-write-utf8` with `written`). */
+export function writeUTF8Bytes(
+  text: string,
+  begin: number,
+  limit: number,
+  bytes: Uint8Array,
+  offset: number,
+): number {
+  return encodeUTF8Range(text, begin, limit, bytes, offset).written;
+}
+
+function encodeUTF8Range(
+  text: string,
+  begin: number,
+  limit: number,
+  bytes: Uint8Array,
+  offset: number,
+): { readonly end: number; readonly written: number } {
   checkRange(begin, limit, text.length);
   const capacity = bytes.length;
   if (offset >>> 0 !== offset || offset > capacity)
@@ -101,7 +123,7 @@ export function writeUTF8(
     }
     index += point > 0xffff ? 2 : 1;
   }
-  return index;
+  return { end: index, written: at - offset };
 }
 
 /** The string decoded from the longest prefix of bytes [begin, limit) that

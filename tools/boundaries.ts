@@ -59,6 +59,8 @@ export function foreignBindingModule(
 export const unsafeForeignMemoryModules: readonly string[] = [
   "packages/native-runtime/src/node/ffi.ts",
   "packages/native-runtime/src/node/zlib.ts",
+  "packages/native-runtime/src/node/crypto-jobs.ts",
+  "packages/native-runtime/src/node/openssl.ts",
   "packages/native-runtime/src/node/os-darwin.ts",
   "packages/native-runtime/src/node/os-linux.ts",
 ];
