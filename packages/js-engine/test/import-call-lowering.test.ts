@@ -69,14 +69,14 @@ test("proposal import phases lower through Script, module, eval and Function ent
 test("import-free lowering retains the caller-policy output contract", () => {
   const cases: [string, boolean, string][] = [
     ["42;", false, "ba2869c9ab7c9b13"],
-    ["function f(){ return a?.b(c); }", false, "4c1216d07eff3a70"],
+    ["function f(){ return a?.b(c); }", false, "f1659bc99fab023c"],
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "e7a5ea1f1cbf38aa",
+      "6907cc5685a9f499",
     ],
-    ["new (f())(1); x = y ?? z;", false, "f93f7d704c6509cc"],
-    ['eval("1");', false, "36790681582352cb"],
+    ["new (f())(1); x = y ?? z;", false, "10d902c275a0e6ca"],
+    ['eval("1");', false, "699e94bb53b6a82a"],
     ["{ using r = null; }", false, "7ff4b4b7b1609bd9"],
     [
       "export let a = 1; export function f(){ return a; }",

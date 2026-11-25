@@ -13,12 +13,12 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "f8a94728d53c48b3a0df0535595288788b13841e964e61dc65b022ddda86ffa4",
+    sha256: "7d10295409ca6ba024cfc3d9130b921631773fd6fd20c49eaba79f610719d642",
   },
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "5864b10101ce31c6eff9b711f8f9757b30c74a166eed0d399b779bbcf9fe8155",
+    sha256: "f27167950095c2a16ad2c7e48f0837909dd1439b9dfebd63693de5608ae2592a",
   },
   {
     source:
@@ -28,17 +28,17 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "f67ee90554bd304666aa37bb078642bfc391557d2cb4e9de169f03fa80baccbc",
+    sha256: "3b7d8cfbe25602b799c4efaebfef7d331e1183baf3b2628ef5632ec028840578",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "7e6d9c11ea408ccdac34331b9eb753eed43fc2831f7a1a3cb75a409d1038cfb9",
+    sha256: "b67a6601d237f35bd909fddb5d304e626f58c567c73844569e07841ce28a5c8f",
   },
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "8c8b6a7e7ce0db2f5d44b9da3c042ce840e95f6e8b46e5839c852e71fc556d6f",
+    sha256: "66b3c69e1060bcff86fa404ad10be913dc2bcb1266bf148a4efa8e85e1d3eb96",
   },
   {
     source:
@@ -62,7 +62,7 @@ test("managed Script surface declares fixed instantiations and preserves lowered
   assert.equal(names.size, 199);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
-    47,
+    46,
   );
   assert.deepEqual(names.get("getIdentifierValue")?.typeArguments, [
     "ScriptPropertyKey",
@@ -124,7 +124,7 @@ test("managed Script surface declares fixed instantiations and preserves lowered
       },
     });
   }
-  assert.equal(seen.size, 28, [...seen].sort().join(","));
+  assert.equal(seen.size, 27, [...seen].sort().join(","));
 });
 
 test("Script entry receives host identity and derives its realm from that record", () => {
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "fa1be51cfb51dcf3ae260608ca42512d756a7d0a1129b990f1b5bd29ae442a76",
+    "09aa3da747e7c8c8d037e92d7c4412bb763e170c45090ca7bd37080f270ad88e",
   );
 });

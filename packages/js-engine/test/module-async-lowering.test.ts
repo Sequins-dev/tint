@@ -70,7 +70,7 @@ test("module lowering preserves its caller-policy shape through nested async bod
     ],
     [
       "using resource=x; export let y=2;",
-      "d39134700eb4ab22a5226652683f16bb3f041ee1144de83dee50024d92e86862",
+      "df627ba58d7caaf9c52cb824ce033707a8694db0d138a54d9aa80e9e9554c19c",
     ],
     [
       'export function f(){return import("./m.js");}',

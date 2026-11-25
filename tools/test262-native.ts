@@ -3437,7 +3437,26 @@ function createNativeImageRequest(
       ],
       runtimes: [
         ...(serviceImage?.runtimes ?? []),
-        ...directEvalSiteImageContract(directEvalSiteView).runtimes,
+        ...(directEvalSiteView
+          ? [
+              {
+                module: globalModule,
+                namespace: "global-environment",
+                retainedExports: [
+                  "viewDirectEvalSite",
+                  ...(hasGlobalCell ? globalCellNames : []),
+                ],
+              },
+            ]
+          : hasGlobalCell
+            ? [
+                {
+                  module: globalModule,
+                  namespace: "global-cell",
+                  retainedExports: [...globalCellNames],
+                },
+              ]
+            : []),
         ...moduleReferrerImageContract(
           dynamicImport || scriptEvaluation?.dynamicImport === true,
           capturedPublicEntry(
@@ -3512,15 +3531,6 @@ function createNativeImageRequest(
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
         },
-        ...(hasGlobalCell
-          ? [
-              {
-                module: globalModule,
-                namespace: "global-cell",
-                retainedExports: [...globalCellNames],
-              },
-            ]
-          : []),
       ],
       weakBindings:
         weakProvider === undefined
