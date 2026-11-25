@@ -8,6 +8,8 @@ export interface CLibraryImage {
   /** Darwin install name or Linux soname. */
   readonly name: string;
   readonly optional: boolean;
+  /** Resolve through a handle registered by the runtime, on every target. */
+  readonly runtimeResolved?: boolean;
   readonly currentVersion: number;
   readonly compatibilityVersion: number;
 }
@@ -34,6 +36,13 @@ const glibc: CLibraryImage = {
   currentVersion: 0,
   compatibilityVersion: 0,
 };
+const openSSL: CLibraryImage = {
+  name: "tint:system-openssl3",
+  optional: true,
+  runtimeResolved: true,
+  currentVersion: 0,
+  compatibilityVersion: 0,
+};
 /** The libraries Tint programs may bind. Names in declarations grant
  * nothing: a binding module outside this manifest (or the build request's
  * additions) is rejected. */
@@ -46,6 +55,7 @@ export const cLibraryManifest: readonly CLibraryManifestEntry[] = [
   { module: "tint:c/linux-reactor", linux: glibc },
   { module: "tint:c/worker-thread-host", darwin: libSystem, linux: glibc },
   { module: "tint:c/dl", darwin: libSystem, linux: glibc },
+  { module: "tint:c/openssl3", darwin: openSSL, linux: openSSL },
   { module: "tint:c/memory", darwin: libSystem, linux: glibc },
   {
     module: "tint:c/zlib",

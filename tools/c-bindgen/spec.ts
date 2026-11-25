@@ -113,6 +113,8 @@ export interface BindingSpec {
     | Readonly<Partial<Record<TargetName, readonly string[]>>>;
   /** Preprocessor definitions (`-D`), e.g. feature-test macros. */
   readonly defines?: readonly string[];
+  /** Additional compiler header search directories for a system package. */
+  readonly includeDirectories?: readonly string[];
   /** C declarations compiled after the headers: records Tint defines
    * itself (out-parameter holders, frames), so clang verifies them too. */
   readonly prelude?: string;

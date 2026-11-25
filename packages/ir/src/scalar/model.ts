@@ -523,7 +523,7 @@ export type Instruction = Span &
     /** Encodes units [begin, limit) of `string` as UTF-8 into `bytes` from
      * `offset` (offset <= bytes.length), scalar by scalar while the next
      * one fits, and yields the index after the last unit encoded (limit
-     * when everything fit). */
+     * when everything fit), or with `written` the number of bytes written. */
     | {
         readonly kind: "string-write-utf8";
         readonly id: number;
@@ -532,6 +532,7 @@ export type Instruction = Span &
         readonly limit: number;
         readonly bytes: number;
         readonly offset: number;
+        readonly written?: true;
       }
     /** The string decoded from the longest prefix of bytes [begin, limit)
      * that is a sequence of complete, valid UTF-8 encodings of scalars;

@@ -3848,7 +3848,19 @@ export function emitModule(
           emit({ op: "lea", dst: environment, src: unitAddress(2) });
           utf8Write(site + ":two", 2);
           emit({ op: "label", name: site + ":done" });
-          emit({ op: "mov", dst: rax, src: r8 });
+          if (op.written === true) {
+            exactInteger(emit, frame(home(op.offset)), r10, trapLabel);
+            emit({ op: "mov", dst: context, src: frame(home(op.bytes)) });
+            emit({
+              op: "mov",
+              dst: eax,
+              src: { ...mem(7, nativeArrayLengthOffset), width: 32 },
+            });
+            emit({ op: "sub", dst: rax, src: r10 });
+            emit({ op: "sub", dst: rax, src: r9 });
+          } else {
+            emit({ op: "mov", dst: rax, src: r8 });
+          }
           numberBits();
           define(op.id, "number");
           return;
