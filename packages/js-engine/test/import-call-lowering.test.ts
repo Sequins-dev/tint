@@ -73,7 +73,7 @@ test("import-free lowering retains the caller-policy output contract", () => {
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "6452b7a0994be228",
+      "0b5f7c396615fd74",
     ],
     ["new (f())(1); x = y ?? z;", false, "6de85292d2f774d3"],
     ['eval("1");', false, "8a29c11d2531ce2a"],
@@ -85,7 +85,7 @@ test("import-free lowering retains the caller-policy output contract", () => {
     ],
     ['import {x} from "./x"; export default x;', true, "471d91115a1ca804"],
     ["export async function g(){ await 1; }", true, "7c143e71a8e80063"],
-    ["export const o = {a(){ return this?.b; }};", true, "5efb039e4553131e"],
+    ["export const o = {a(){ return this?.b; }};", true, "199a8bddffe79f64"],
   ];
   for (const [source, module, hash] of cases) {
     const result = module

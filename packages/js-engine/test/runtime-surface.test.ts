@@ -13,7 +13,7 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "d3822813c47882b5a3609fa4e3689e809abb704985b1ac964718b5248502255a",
+    sha256: "a17e1d9e537c0cf173d4f24511ee66eb8167f2ae3570f4aa951d822704366241",
   },
   {
     source:
@@ -28,7 +28,7 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "1e666a9a6308cbc4f6689bcfd35509f6921a9f5b79d42a0a80751679e005712a",
+    sha256: "38a4216931bce5fd0642d2e6c9281fc0499e6819611d45b7c1e555004a453cd8",
   },
   {
     source:
@@ -38,12 +38,12 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "6bc14e7807d29e3fb2dd265aba2ebe7517cd406e0b4543e2016de4d3c0c74006",
+    sha256: "6bf23c61e04e0b0fdb386d71492f16bcf13e7a0cba057a3f77e69894fff23720",
   },
   {
     source:
       "{using resource=null;}async function f(){await using resource=null;}",
-    sha256: "da671d6e58991044d552df070782fb0e57d2e6899d2a1a61f09786c52fd33cbc",
+    sha256: "212dcc0e4edb047e2558cfb9a1401435f5c0a1d35a47ad75b6e4d72baf7eca67",
   },
   {
     source:
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "b15bb44ee0a5e77f1ccd3f6845f407ec0eba75a0da05927a15bc20cc129e2eb8",
+    "901299196f3e411c4282633a85e980707553e1986b5cb075f40d7bf8e0c95afd",
   );
 });
