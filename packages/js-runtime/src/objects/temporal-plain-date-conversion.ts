@@ -14,7 +14,7 @@ import {
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import { temporalStringOption } from "./temporal-options.ts";
-import { type ObjectHooks } from "./operations.ts";
+import { exoticSlots, type ObjectHooks } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
@@ -82,35 +82,35 @@ export function plainDateFrom(
 
   const object = viewObjectValue(item, realm.objectPrototype);
   if (object !== undefined) {
-    const zoned = object.internalTemporalZonedDateTime;
+    const zoned = exoticSlots(object).internalTemporalZonedDateTime;
     if (zoned !== undefined) {
       overflow(options);
       return {
         date: zoned.dateTime.date,
         calendar: canonicalTemporalCalendar(
-          object.internalTemporalCalendar,
+          exoticSlots(object).internalTemporalCalendar,
           realm,
         ),
       };
     }
-    const dateTime = object.internalTemporalPlainDateTime;
+    const dateTime = exoticSlots(object).internalTemporalPlainDateTime;
     if (dateTime !== undefined) {
       overflow(options);
       return {
         date: dateTime.date,
         calendar: canonicalTemporalCalendar(
-          object.internalTemporalCalendar,
+          exoticSlots(object).internalTemporalCalendar,
           realm,
         ),
       };
     }
-    const branded = object.internalTemporalPlainDate;
+    const branded = exoticSlots(object).internalTemporalPlainDate;
     if (branded !== undefined) {
       overflow(options);
       return {
         date: branded,
         calendar: canonicalTemporalCalendar(
-          object.internalTemporalCalendar,
+          exoticSlots(object).internalTemporalCalendar,
           realm,
         ),
       };

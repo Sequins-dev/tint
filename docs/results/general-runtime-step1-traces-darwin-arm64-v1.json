@@ -1,0 +1,106 @@
+{
+  "kind": "tint-warm-call-traces",
+  "tool": "tools/general-call-bench/count_call.py",
+  "call": 501,
+  "probeSource": "function probeNull(x) {\n  let n = 0;\n  if (x == null) n = 1;\n  return n;\n}\nfunction probeNe(x) {\n  let n = 0;\n  while (x != null) { n++; x = x.next; }\n  return n;\n}\nfunction probeLt(a, b) {\n  if (a < b) return 1;\n  return 2;\n}\nfunction probeSum(values, n) {\n  let s = 0;\n  for (let i = 0; i < n; i++) s = s + values[i];\n  return s;\n}\nfunction probeAnd(state, mask) {\n  return (state & mask) != 0;\n}\nexport function run() {\n  let s = 0;\n  const list = { next: { next: null } };\n  const values = [1, 2, 3, 4];\n  for (let i = 0; i < 1000; i++) {\n    s += probeNull(i & 1 ? null : list) + probeNe(list) + probeLt(i, 3) + probeSum(values, 4) + (probeAnd(i, 4) ? 1 : 0);\n  }\n  return s > 0 ? 42 : 1;\n}\n",
+  "images": {
+    "base": {
+      "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-step1trace-base-Js1BwY/step1trace-base",
+      "sha256": "8c8b20d34ba4f5861db3a39450d089e472542e43222ddb589aff8d37ad83ea67",
+      "head": "3d10cb5c0577477384bf2ecee8a368af781ceff7"
+    },
+    "head": {
+      "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-step1trace-head-j9Nqeg/step1trace-head",
+      "sha256": "8532658a65a75ee803a01c122291e21217dba3a181bf149b53c5b01a068233d7",
+      "head": "7e03decee738ebc25bbab0d81c194a8ba81c34e1"
+    }
+  },
+  "traces": {
+    "probeNull": {
+      "base": {
+        "instructions": 1274,
+        "bySymbol": {
+          "program:$general:fixture:closure@0 [closure_2973]": 251,
+          "program:packages/native-runtime/src/values/index.ts:fromNull [@8:value:0$155]": 63,
+          "program:packages/native-runtime/src/values/index.ts:kindOf [@8:value:10$165]": 58,
+          "program:packages/js-runtime/src/objects/equality.ts:looselyEqual [@78:value:7$1579]": 802,
+          "program:packages/js-runtime/src/objects/symbols.ts:viewSymbolValue [@66:value:1$76]": 31,
+          "program:packages/js-runtime/src/objects/bigints.ts:viewBigIntValue [@24:value:14$78]": 31,
+          "program:packages/js-runtime/src/objects/values.ts:viewObjectValue [@47:value:23$91]": 38
+        }
+      },
+      "head": {
+        "instructions": 63,
+        "bySymbol": {
+          "program:$general:fixture:closure@0 [closure_2989]": 63
+        }
+      }
+    },
+    "probeNe": {
+      "base": {
+        "instructions": 3461,
+        "bySymbol": {
+          "program:$general:fixture:closure@75 [closure_2974]": 942,
+          "program:packages/native-runtime/src/values/index.ts:fromNull [@8:value:0$155]": 189,
+          "program:packages/native-runtime/src/values/index.ts:kindOf [@8:value:10$165]": 174,
+          "program:packages/js-runtime/src/objects/equality.ts:looselyEqual [@78:value:7$1579]": 1880,
+          "program:packages/js-runtime/src/objects/symbols.ts:viewSymbolValue [@66:value:1$76]": 62,
+          "program:packages/js-runtime/src/objects/bigints.ts:viewBigIntValue [@24:value:14$78]": 62,
+          "program:packages/js-runtime/src/objects/values.ts:viewObjectValue [@47:value:23$91]": 152
+        }
+      },
+      "head": {
+        "instructions": 532,
+        "bySymbol": {
+          "program:$general:fixture:closure@75 [closure_2990]": 456,
+          "program:packages/js-runtime/src/objects/values.ts:viewObjectValue [@47:value:23$91]": 76
+        }
+      }
+    },
+    "probeLt": {
+      "base": {
+        "instructions": 144,
+        "bySymbol": {
+          "program:$general:fixture:closure@165 [closure_2975]": 144
+        }
+      },
+      "head": {
+        "instructions": 101,
+        "bySymbol": {
+          "program:$general:fixture:closure@165 [closure_2991]": 101
+        }
+      }
+    },
+    "probeAnd": {
+      "base": {
+        "instructions": 713,
+        "bySymbol": {
+          "program:$general:fixture:closure@334 [closure_2977]": 199,
+          "program:packages/js-runtime/src/objects/equality.ts:looselyEqual [@78:value:7$1579]": 514
+        }
+      },
+      "head": {
+        "instructions": 157,
+        "bySymbol": {
+          "program:$general:fixture:closure@334 [closure_2993]": 157
+        }
+      }
+    },
+    "probeSum": {
+      "base": {
+        "instructions": 1611,
+        "bySymbol": {
+          "program:$general:fixture:closure@227 [closure_2976]": 1459,
+          "program:packages/js-runtime/src/objects/values.ts:viewObjectValue [@47:value:23$91]": 152
+        }
+      },
+      "head": {
+        "instructions": 1306,
+        "bySymbol": {
+          "program:$general:fixture:closure@227 [closure_2992]": 1154,
+          "program:packages/js-runtime/src/objects/values.ts:viewObjectValue [@47:value:23$91]": 152
+        }
+      }
+    }
+  }
+}

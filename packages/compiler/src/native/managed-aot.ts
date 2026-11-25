@@ -139,6 +139,8 @@ export function prepareManagedSurfaceExports(
   retainedModules: ReadonlySet<string>,
   globals: readonly string[],
   maxSpecializations: number,
+  /** The image's barrier policy, recorded in each surface directory. */
+  generationalBarriers: boolean,
 ): ManagedSurfaceAOTPreparation {
   // Ordinary builds must not traverse and clone the whole application's types
   // merely to discover that there is no managed-surface work to do.
@@ -278,7 +280,7 @@ export function prepareManagedSurfaceExports(
     const directory = createManagedSurfaceDirectory(
       request.name,
       canonical.value,
-      facts.value,
+      { ...facts.value, generationalBarriers },
       request.frame,
     );
     if (!directory.ok) return directory;

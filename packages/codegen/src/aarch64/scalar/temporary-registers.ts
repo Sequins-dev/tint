@@ -16,6 +16,19 @@ function transparent(op: Instruction): boolean {
     op.kind === "reference-string" ||
     op.kind === "reference-value" ||
     op.kind === "record-read" ||
+    // A slot read uses x9, x10, x12 and d0/d1 only.
+    op.kind === "record-slot-read" ||
+    // An own cached property load uses x9..x13 only (an inherited one
+    // also x14), none of them a temporary home.
+    (op.kind === "property-load" && !op.inherited) ||
+    // Element loads, stores, length reads, and cache probes use x9..x13, d0 and d1 only.
+    op.kind === "element-load" ||
+    op.kind === "element-store" ||
+    op.kind === "element-length" ||
+    op.kind === "element-storage" ||
+    op.kind === "element-count" ||
+    // A cached global cell check uses x9..x13 only.
+    op.kind === "global-cell" ||
     op.kind === "record-has" ||
     op.kind === "reference-vector-is" ||
     op.kind === "reference-vector-length" ||
@@ -26,14 +39,20 @@ function transparent(op: Instruction): boolean {
     op.kind === "unary" ||
     op.kind === "binary" ||
     op.kind === "array-length" ||
-    // A string's length is one load (x9, d0); an in-bounds code unit one
-    // halfword load (x9..x12, d0).
+    // A string's length is one load (x9, d0); code-unit reads (inline or
+    // via the leaf helper) touch x9..x15 and d0/d1 only.
     op.kind === "string-length" ||
-    (op.kind === "string-code-unit" && op.inBounds === true) ||
+    op.kind === "string-code-unit" ||
     op.kind === "array-read" ||
     op.kind === "array-element" ||
     op.kind === "array-write" ||
     op.kind === "array-store" ||
+    // General tags and payloads move through x9..x12 only.
+    op.kind === "general-is" ||
+    op.kind === "general-value" ||
+    op.kind === "general-wrap" ||
+    op.kind === "general-none" ||
+    op.kind === "general-null" ||
     op.kind === "optional-wrap" ||
     op.kind === "optional-value" ||
     op.kind === "optional-value-or" ||
@@ -45,7 +64,9 @@ function transparent(op: Instruction): boolean {
   );
 }
 function referenceTransparent(op: Instruction): boolean {
-  return transparent(op);
+  return (
+    transparent(op) && (op.kind !== "string-code-unit" || op.inBounds === true)
+  );
 }
 /** Verified block-local SSA. Candidate 1 is numeric/boolean; candidate 2 is a
  * single-word reference; candidate 3 is an integer or boolean word, homed in

@@ -45,7 +45,12 @@ export function runLldb(
   });
   if (result.error !== undefined) throw result.error;
   const output = result.stdout + result.stderr;
-  if (result.status !== 0 || /\berror: /.test(output))
+  // Batch LLDB exits 0 after a failed `script` (a Python exception prints a
+  // traceback and the next command runs), so a traceback is a failure too.
+  if (
+    result.status !== 0 ||
+    /\berror: |Traceback \(most recent call last\)/.test(output)
+  )
     throw Error("lldb failed:\n" + output.slice(-4000));
   return output;
 }

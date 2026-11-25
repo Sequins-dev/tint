@@ -27,7 +27,7 @@ export function run():number{
   [],
   [{ module, namespace: "weak-storage" }],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 1048576,
     allocationCapacity: 65536,
     weakBindings: [

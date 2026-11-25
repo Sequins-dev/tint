@@ -40,7 +40,7 @@ verifyHostedFixture(
   {
     managedBytes: 32 * 1024 * 1024,
     allocationCapacity: 262144,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     hostBindings: [
       { module: memory, name: "collectGarbage", operation: "collect-garbage" },
     ],

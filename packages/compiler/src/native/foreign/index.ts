@@ -284,13 +284,6 @@ export function linkedForeignLibrary(
 ): CLibraryImage | undefined {
   if (target.name !== "linux-x86_64")
     return cLibraryImage(module, target, additional);
-  // The built-in zlib binding describes allocator callbacks. An explicit
-  // manifest entry can still provide a leaf-only declaration for libz.
-  if (
-    module === "tint:c/zlib" &&
-    !additional.some((entry) => entry?.module === module)
-  )
-    return undefined;
   return cLibraryImage(module, linuxArm64CTarget, additional);
 }
 export type ForeignLibraryResult =

@@ -40,6 +40,8 @@ import {
 } from "./intrinsics.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -60,7 +62,8 @@ function requireDataView(
   access: StorageAccess = "read",
 ): DataViewData {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalDataViewData;
+  const data =
+    object === undefined ? undefined : exoticSlots(object).internalDataViewData;
   if (
     data === undefined ||
     (access === "write" && bufferStorageImmutable(data.storage))
@@ -235,13 +238,13 @@ export function installDataViewIntrinsics(
       )
         throw createRuntimeError(realm, "range");
       const object = createObject<ScriptPropertyKey, unknown>(parent);
-      object.internalDataViewData = {
+      ensureExoticSlots(object).internalDataViewData = {
         buffer,
         storage,
         byteOffset: offset,
         byteLength: length,
       };
-      object.internalArrayBufferView = true;
+      ensureExoticSlots(object).internalArrayBufferView = true;
       return object;
     },
   );

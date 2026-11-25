@@ -1467,6 +1467,34 @@ export function run() {
 }`,
   },
   {
+    // A record type with a literal field (a discriminant) is a contract like
+    // any other: untyped code writing a value outside a field's declared type,
+    // or changing the readonly discriminant, gets a TypeError. The general
+    // path used to drop the whole record contract for a literal field type.
+    name: "explicit-literal-field-contract",
+    helpers: untypedHelper,
+    node: { typed: 1 },
+    typed: `import { write } from "./untyped.ts";
+interface Tagged { readonly kind: "tagged"; x: string; count: 1 | 2 }
+export function run(): number {
+  const tagged: Tagged = { kind: "tagged", x: "a", count: 1 };
+  let rejected = 0;
+  try { write(tagged, "x", 1); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { write(tagged, "kind", "other"); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { write(tagged, "count", 3); } catch (error) { if (error instanceof TypeError) rejected++; }
+  write(tagged, "count", 2);
+  return rejected === 3 && tagged.x === "a" && tagged.kind === "tagged" && tagged.count === 2 ? 42 : 1;
+}`,
+    untyped: `import { write } from "./untyped.ts";
+export function run() {
+  const tagged = { kind: "tagged", x: "a", count: 1 };
+  write(tagged, "x", 1);
+  write(tagged, "kind", "other");
+  write(tagged, "count", 3);
+  return tagged.x === 1 && tagged.kind === "other" && tagged.count === 3 ? 42 : 1;
+}`,
+  },
+  {
     name: "explicit-binding-contract",
     helpers: untypedHelper,
     node: { typed: 1 },
@@ -1916,6 +1944,188 @@ export function run() {
   let second = find(0);
   second ??= { value: 2 };
   return first.value + second.value === 42 ? 42 : 1;
+}`,
+  },
+  {
+    // A guard on a mutable binding holds after inner loops, switches and
+    // labelled statements that never assign the binding (gc-granule and
+    // gc-release fixtures; the typed checker used to drop it there).
+    name: "loop-narrowing",
+    typed: `interface Cell { readonly id: number; readonly next: Cell | undefined }
+function walk(head: Cell | undefined): number {
+  let total = 0;
+  let cell: Cell | undefined = head;
+  while (cell !== undefined) {
+    total += cell.id;
+    for (let j = 0; j < cell.id; j++) total += j;
+    switch (cell.id) {
+      case 1:
+        total += 100;
+        break;
+      default:
+        total += 1;
+    }
+    scan: for (let j = 0; j < 4; j++) if (j === cell.id) break scan;
+    cell = cell.next;
+  }
+  return total;
+}
+export function run(): number {
+  const chain: Cell = { id: 1, next: { id: 3, next: undefined } };
+  return walk(chain) === 108 && walk(undefined) === 0 ? 42 : 1;
+}`,
+    untyped: `function walk(head) {
+  let total = 0;
+  let cell = head;
+  while (cell !== undefined) {
+    total += cell.id;
+    for (let j = 0; j < cell.id; j++) total += j;
+    switch (cell.id) {
+      case 1:
+        total += 100;
+        break;
+      default:
+        total += 1;
+    }
+    scan: for (let j = 0; j < 4; j++) if (j === cell.id) break scan;
+    cell = cell.next;
+  }
+  return total;
+}
+export function run() {
+  const chain = { id: 1, next: { id: 3, next: undefined } };
+  return walk(chain) === 108 && walk(undefined) === 0 ? 42 : 1;
+}`,
+  },
+  {
+    // Writes and updates to fields every member of a record union declares
+    // with a type the value fits, at different positions in each member
+    // (gc-granule fixture).
+    name: "union-field-write-shared",
+    typed: `interface One { readonly kind: "one"; next: Item | undefined; count: number }
+interface Three { readonly kind: "three"; text: string; count: number; next: Item | undefined }
+type Item = One | Three;
+function link(old: Item, tail: Item): boolean {
+  old.next = tail;
+  old.count += 1;
+  return old.next === tail;
+}
+export function run(): number {
+  const one: One = { kind: "one", next: undefined, count: 0 };
+  const three: Three = { kind: "three", text: "x", count: 10, next: undefined };
+  return link(one, three) && link(three, one) && three.next === one &&
+    one.count === 1 && three.count === 11 && three.text === "x" ? 42 : 1;
+}`,
+    untyped: `function link(old, tail) {
+  old.next = tail;
+  old.count += 1;
+  return old.next === tail;
+}
+export function run() {
+  const one = { kind: "one", next: undefined, count: 0 };
+  const three = { kind: "three", text: "x", count: 10, next: undefined };
+  return link(one, three) && link(three, one) && three.next === one &&
+    one.count === 1 && three.count === 11 && three.text === "x" ? 42 : 1;
+}`,
+  },
+  {
+    // A write through a record union of a value one member's declared type
+    // excludes: TypeScript accepts any value of the union's read type, but
+    // One declares x as string, so the write must throw a TypeError when the
+    // object is a One (explicit annotations are contracts). The typed path
+    // has no per-member run-time check yet and falls back
+    // (union-field-write capability). Type-erased Node stores the number.
+    name: "union-field-write",
+    typed: `interface One { readonly kind: "one"; x: string }
+interface Three { readonly kind: "three"; x: string | number }
+type Item = One | Three;
+function set(o: Item, value: string | number): void {
+  o.x = value;
+}
+export function run(): number {
+  const one: One = { kind: "one", x: "a" };
+  const three: Three = { kind: "three", x: "b" };
+  set(three, 1);
+  if (three.x !== 1) return 2;
+  set(one, "c");
+  if (one.x !== "c") return 3;
+  try {
+    set(one, 1);
+    return 4;
+  } catch (error) {
+    if (!(error instanceof TypeError)) return 5;
+  }
+  return one.x === "c" ? 42 : 6;
+}`,
+    untyped: `function set(o, value) {
+  o.x = value;
+}
+export function run() {
+  const one = { kind: "one", x: "a" };
+  const three = { kind: "three", x: "b" };
+  set(three, 1);
+  if (three.x !== 1) return 2;
+  set(one, "c");
+  if (one.x !== "c") return 3;
+  set(one, 1);
+  return one.x === 1 ? 42 : 4;
+}`,
+    node: { typed: 4 },
+  },
+  {
+    // String() of a caught value, which typed code holds as unknown
+    // (gc-release fixture): native errors (with and without messages) and
+    // primitives of each kind.
+    name: "caught-value-string",
+    typed: `function risky(n: number): number {
+  if (n === 1) throw new RangeError("big " + String(n));
+  if (n === 2) throw new TypeError("odd");
+  if (n === 3) throw new Error();
+  if (n === 4) throw "text";
+  if (n === 5) throw 42.5;
+  if (n === 6) throw undefined;
+  if (n === 7) throw null;
+  if (n === 8) throw false;
+  if (n === 9) throw true;
+  return n;
+}
+function measure(n: number): string {
+  try {
+    return String(risky(n));
+  } catch (error) {
+    return String(error);
+  }
+}
+export function run(): number {
+  const expected = ["RangeError: big 1", "TypeError: odd", "Error", "text", "42.5", "undefined", "null", "false", "true", "10"];
+  for (let i = 0; i < expected.length; i++)
+    if (measure(i + 1) !== expected[i]) return 10 + i;
+  return 42;
+}`,
+    untyped: `function risky(n) {
+  if (n === 1) throw new RangeError("big " + String(n));
+  if (n === 2) throw new TypeError("odd");
+  if (n === 3) throw new Error();
+  if (n === 4) throw "text";
+  if (n === 5) throw 42.5;
+  if (n === 6) throw undefined;
+  if (n === 7) throw null;
+  if (n === 8) throw false;
+  if (n === 9) throw true;
+  return n;
+}
+function measure(n) {
+  try {
+    return String(risky(n));
+  } catch (error) {
+    return String(error);
+  }
+}
+export function run() {
+  const expected = ["RangeError: big 1", "TypeError: odd", "Error", "text", "42.5", "undefined", "null", "false", "true", "10"];
+  for (let i = 0; i < expected.length; i++)
+    if (measure(i + 1) !== expected[i]) return 10 + i;
+  return 42;
 }`,
   },
   {

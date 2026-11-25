@@ -4,6 +4,7 @@ import {
   createDataProperty,
   aliasDataProperty,
   defineOwnProperty,
+  ensureRareSlots,
   type OrdinaryObject,
   type ObjectHooks,
   type DataAlias,
@@ -48,7 +49,7 @@ export function createArgumentsObject<Key, Value>(
     parameters === undefined
       ? createObject<Key, Value>(intrinsics.prototype)
       : createAliasedObject<Key, Value>(intrinsics.prototype);
-  object.internalArgumentsData = true;
+  ensureRareSlots<Key, Value>(object).internalArgumentsData = true;
   function data(key: Key, value: Value): void {
     const result = defineOwnProperty<Key, Value>(
       object,

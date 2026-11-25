@@ -1,0 +1,122 @@
+{
+ "kind": "tint-warm-call-traces",
+ "tool": "tools/general-call-bench/count_call.py",
+ "call": 501,
+ "probe": "function add(a, b) { return a + b; }\nfunction caller(a, b) { const r = add(a, b); return r; }\nfunction Box(v) { this.v = v; }\nBox.prototype.get = function () { return this.v; };\nfunction method(o) { const r = o.get(); return r; }\nfunction tail(a, b) { return add(a, b); }\nfunction make(v) { const b = new Box(v); return b; }\nexport function run() {\n  let s = 0;\n  const o = new Box(1);\n  for (let i = 0; i < 1000; i++) {\n    s += caller(i, 1) + method(o) + tail(i, 2) + make(i).v;\n  }\n  return s > 0 ? 42 : 1;\n}\n",
+ "heads": {
+  "base": "67f70313a",
+  "step3": "ce43707d5 tree (act2 build)"
+ },
+ "traces": {
+  "caller": {
+   "base": {
+    "instructions": 928,
+    "bySymbol": {
+     "program:$general:fixture:closure@37 [closure_3004]": 130,
+     "program:@47:value:47$1258$direct": 246,
+     "program:packages/js-runtime/src/objects/functions.ts:closure@11739 [closure_1010]": 181,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterExecutionName [@59:value:17$1067]": 75,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterRegisterSourceCall [@59:value:12$1062]": 59,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterSourceCall [@59:value:11$1061]": 68,
+     "program:$general:fixture:closure@0 [closure_3003]": 110,
+     "program:packages/js-runtime/src/objects/jobs.ts:exitSourceCall [@59:value:14$1064]": 19,
+     "program:packages/js-runtime/src/objects/jobs.ts:leaveExecutionName [@59:value:18$1068]": 40
+    }
+   },
+   "step3": {
+    "instructions": 383,
+    "bySymbol": {
+     "program:$general:fixture:closure@37 [closure_3016]": 259,
+     "program:$general:fixture:closure@0 [closure_3015]": 124
+    }
+   }
+  },
+  "method": {
+   "base": {
+    "instructions": 926,
+    "bySymbol": {
+     "program:$general:fixture:closure@178 [closure_3006]": 141,
+     "program:@47:value:47$1258$direct": 246,
+     "program:packages/js-runtime/src/objects/functions.ts:closure@11739 [closure_1010]": 181,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterExecutionName [@59:value:17$1067]": 75,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterRegisterSourceCall [@59:value:12$1062]": 59,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterSourceCall [@59:value:11$1061]": 68,
+     "program:$general:fixture:closure@146 [closure_3011]": 97,
+     "program:packages/js-runtime/src/objects/jobs.ts:exitSourceCall [@59:value:14$1064]": 19,
+     "program:packages/js-runtime/src/objects/jobs.ts:leaveExecutionName [@59:value:18$1068]": 40
+    }
+   },
+   "step3": {
+    "instructions": 334,
+    "bySymbol": {
+     "program:$general:fixture:closure@178 [closure_3018]": 244,
+     "program:$general:fixture:closure@146 [closure_3030]": 90
+    }
+   }
+  },
+  "tail": {
+   "base": {
+    "instructions": 1151,
+    "bySymbol": {
+     "program:$general:fixture:closure@230 [closure_3007]": 282,
+     "program:__tint_reference_list_read$3311": 160,
+     "program:helper:to-uint32": 18,
+     "program:helper:array-initialize": 28,
+     "program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_19$247]": 88,
+     "program:__tint_reference_list_write$3314": 372,
+     "program:packages/js-runtime/src/objects/functions.ts:requestSourceTailCall [@90:value:32$1001]": 203
+    }
+   },
+   "step3": {
+    "instructions": 371,
+    "bySymbol": {
+     "program:$general:fixture:closure@230 [closure_3019]": 247,
+     "program:$general:fixture:closure@0 [closure_3015]": 124
+    }
+   }
+  },
+  "make": {
+   "base": {
+    "instructions": 3767,
+    "bySymbol": {
+     "program:$general:fixture:closure@272 [closure_3008]": 252,
+     "program:helper:to-uint32": 18,
+     "program:helper:array-initialize": 24,
+     "program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_19$247]": 44,
+     "program:__tint_reference_list_write$3314": 186,
+     "program:packages/js-runtime/src/objects/functions.ts:constructObjectValue [@90:value:45$1032]": 96,
+     "program:packages/js-runtime/src/objects/call.ts:constructObject [__tint_specialized_215$3063]": 246,
+     "program:packages/js-runtime/src/objects/jobs.ts:closure@16232 [closure_1079]": 169,
+     "program:packages/js-runtime/src/objects/jobs.ts:runScriptContext [__tint_specialized_221$3068]": 98,
+     "program:packages/js-runtime/src/objects/call.ts:closure@2415 [closure_3064]": 76,
+     "program:packages/js-runtime/src/objects/functions.ts:closure@17697 [closure_1023]": 267,
+     "program:packages/js-runtime/src/objects/functions.ts:constructorPrototype [@90:value:30$999]": 144,
+     "program:__tint_specialized_200$3045$direct": 251,
+     "program:__tint_specialized_189$3025$direct": 247,
+     "program:__tint_reference_list_read$3311": 388,
+     "program:__tint_specialized_503$3180$direct": 62,
+     "program:__tint_specialized_190$3026$direct": 61,
+     "program:packages/js-runtime/src/objects/operations.ts:createObject [__tint_specialized_195$3031]": 81,
+     "program:__tint_specialized_500$3177$direct": 537,
+     "program:__tint_specialized_516$3194$direct": 44,
+     "program:packages/js-runtime/src/objects/functions.ts:closure@16543 [closure_1019]": 169,
+     "program:packages/js-runtime/src/objects/jobs.ts:enterSourceCall [@59:value:11$1061]": 68,
+     "program:packages/js-runtime/src/objects/functions.ts:closure@11272 [closure_1009]": 110,
+     "program:$general:fixture:closure@94 [closure_3005]": 110,
+     "program:packages/js-runtime/src/objects/jobs.ts:exitSourceCall [@59:value:14$1064]": 19
+    }
+   },
+   "step3": {
+    "instructions": 1203,
+    "bySymbol": {
+     "program:$general:fixture:closure@272 [closure_3020]": 320,
+     "program:@90:value:32$1006$direct": 105,
+     "program:packages/js-runtime/src/objects/operations.ts:createObject [__tint_specialized_195$3051]": 81,
+     "program:__tint_specialized_500$3197$direct": 537,
+     "program:__tint_specialized_516$3214$direct": 44,
+     "program:$general:fixture:closure@94 [closure_3017]": 116
+    }
+   }
+  }
+ }
+}

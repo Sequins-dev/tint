@@ -833,10 +833,7 @@ export function run(): number {
     ],
     {
       requireTyped: true,
-      runtimeEntry:
-        nativeFixtureTarget().arch === "x86_64"
-          ? "initializeGenerationalRuntime"
-          : "initializeCopyingRuntime",
+      runtimeEntry: "initializeGenerationalRuntime",
       managedBytes: 67108864,
       allocationCapacity: 1048576,
       stackBytes: 4194304,

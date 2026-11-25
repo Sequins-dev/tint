@@ -4,6 +4,7 @@ import {
   adoptArrayBuffer,
   builtinFunction,
   createDataProperty,
+  exoticSlots,
   projectArrayBufferViewRange,
   viewBigIntValue,
   viewObjectValue,
@@ -646,7 +647,7 @@ export function installFfiMemory(
       return type("The source must be a " + brand);
     const window =
       brand === "ArrayBuffer" ? undefined : projectArrayBufferViewRange(source);
-    const storage = source.internalArrayBufferData;
+    const storage = exoticSlots(source).internalArrayBufferData;
     if (brand === "ArrayBuffer" ? storage === undefined : window === undefined)
       return type(
         brand === "ArrayBuffer"
@@ -695,9 +696,10 @@ export function installFfiMemory(
     const window = projectArrayBufferViewRange(source);
     if (window?.kind === "detached")
       return invalid("ArrayBufferView is backed by a detached ArrayBuffer");
-    const storage = window?.storage ?? source.internalArrayBufferData;
+    const slots = exoticSlots(source);
+    const storage = window?.storage ?? slots.internalArrayBufferData;
     if (storage === undefined) {
-      const shared = source.internalSharedArrayBufferData;
+      const shared = slots.internalSharedArrayBufferData;
       if (shared !== undefined) return ffiSharedAddress(core, shared, 0, 0);
       return type(
         "The source must be an ArrayBuffer, SharedArrayBuffer, or ArrayBufferView",

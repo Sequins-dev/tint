@@ -14,6 +14,7 @@ import {
   runNativeFixture,
 } from "./gate/native-fixture.ts";
 import { spawnSync } from "node:child_process";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 /** Admit `binary` (a darwin image on a darwin host; elsewhere a no-op).
  * Throws when the admission launch itself fails, a host failure that is
@@ -28,10 +29,7 @@ export function admitUnderLldb(binary: string, env = process.env): void {
       // The exec waits in the assessment queue; let LLDB wait with it.
       "-o",
       "settings set plugin.process.gdb-remote.packet-timeout 600",
-      "-o",
-      "process launch --stop-at-entry",
-      "-o",
-      "script assert lldb.process.GetState() == lldb.eStateStopped",
+      ...lldbStartCommands(),
       "-o",
       "process kill",
       binary,

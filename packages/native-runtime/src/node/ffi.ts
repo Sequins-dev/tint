@@ -18,6 +18,8 @@ import {
   createExoticObject,
   createObject,
   createRuntimeError,
+  ensureRareSlots,
+  exoticSlots,
   getObjectValuePropertyOrThrow,
   getOwnProperty,
   getProperty,
@@ -217,7 +219,8 @@ function writePointerArgument(
   }
   const object = viewObjectValue(argument, core.object);
   if (object !== undefined) {
-    const array = object.internalTypedArrayData;
+    const slots = exoticSlots(object);
+    const array = slots.internalTypedArrayData;
     if (array !== undefined && array.kind === "Uint8") {
       const storage = array.storage;
       if (storage.kind === "ordinary") {
@@ -262,7 +265,7 @@ function writePointerArgument(
           destination,
         );
     }
-    const storage = object.internalArrayBufferData;
+    const storage = slots.internalArrayBufferData;
     if (storage !== undefined) {
       const bytes = storage.data;
       if (bytes === undefined)
@@ -493,7 +496,11 @@ function invokeUnaryPointerLeaf(
 ): number {
   const direct = binding.staticBytesCall;
   if (direct !== undefined) {
-    const view = viewObjectValue(input, core.object)?.internalTypedArrayData;
+    const object = viewObjectValue(input, core.object);
+    const view =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalTypedArrayData;
     const length = view?.length;
     const storage = view?.storage;
     if (
@@ -903,6 +910,10 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     };
     call.internalRegisterCall = {
       context: { realm, scriptOrModule: active.scriptOrModule },
+      traceName: binding.name,
+      callerPolicy: "opaque",
+      constructible: false,
+      scriptInvoke: undefined,
       invoke: (_callee, _receiver, _newTarget, count, first, second): unknown =>
         enter(count, first, second, undefined, undefined, undefined, undefined),
       invokeWide: (
@@ -1044,7 +1055,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       word(binding.address.low, binding.address.high),
       hooks,
     );
-    call.internalTailDispatch = dispatch;
+    ensureRareSlots<ScriptPropertyKey, unknown>(call).internalTailDispatch =
+      dispatch;
     installRegisterCall(call, owner, state, binding);
     binding.wrapper = createWeakSlot(call, undefined, false);
     return call;

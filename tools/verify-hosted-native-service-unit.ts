@@ -58,7 +58,7 @@ try {
         "RangeError",
       ],
     };
-  const request = nativeServiceFixtureRequest(runtime);
+  const request = nativeServiceFixtureRequest(runtime, true);
   const label = "unit\0\ud800😀";
   const module = parse(
     `import {seed,type Counter} from "host";let count:number=seed();const label:string=${JSON.stringify(label)};function next():number{count++;if(count===4)throw label;return count;}export function factory():Counter{return {next};}`,
@@ -164,7 +164,7 @@ try {
           bind: { module: "counter-helpers", name: "bind" },
         },
       ],
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry: "initializeGenerationalRuntime",
       managedBytes: 8388608,
       allocationCapacity: 262144,
       rootCapacity: 16384,

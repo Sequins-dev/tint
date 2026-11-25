@@ -117,16 +117,38 @@ test("absent Script capability keeps the generated host unchanged", () => {
       return {
         ...value,
         arguments: value.arguments.map((argument: unknown, index: number) =>
-          index === 1
-            ? { ...(argument as object), value: 1048576, raw: "1048576" }
-            : argument,
+          index === 0 &&
+          typeof argument === "object" &&
+          argument !== null &&
+          "properties" in argument &&
+          Array.isArray(argument.properties)
+            ? {
+                ...argument,
+                properties: argument.properties.filter(
+                  (property: {
+                    readonly name?: string;
+                    readonly value?: {
+                      readonly kind?: string;
+                      readonly value?: unknown;
+                    };
+                  }) =>
+                    !(
+                      property?.name === "architecture" &&
+                      property.value?.kind === "string" &&
+                      property.value.value === "x86_64"
+                    ),
+                ),
+              }
+            : index === 1
+              ? { ...(argument as object), value: 1048576, raw: "1048576" }
+              : argument,
         ),
       };
     return value;
   });
   assert.equal(
     createHash("sha256").update(canonical).digest("hex"),
-    "678610593228bdaab42f08f32c74eac78c2f62b92b1242673413470043757cdf",
+    "3076b94020571386c5b062110a717dce3ae61c998b4ac77d281982fa83eb93b9",
   );
 });
 test("Script service uses realm-local evaluators and one shared arena", () => {
@@ -187,9 +209,11 @@ test("Script service generated modules use captured source bytes", () => {
   );
   // One captured text per Script runtime source (including the number- and
   // string-keyed Map providers, the console provider, the SHA-256 rounds
-  // intrinsic's portable body and the typed BigInt helpers with the
-  // js-runtime BigIntValue module they share).
-  assert.equal(texts.length, 28);
+  // intrinsic's portable body, the typed BigInt helpers with the
+  // js-runtime BigIntValue module they share, the Latin-1 and UTF-8
+  // primitives the text codec moves text in bulk with, and the
+  // number-string cache behind number formatting).
+  assert.equal(texts.length, 31);
   const first = texts[0]!;
   const changed = {
     ...snapshot,
@@ -411,8 +435,10 @@ test("function fallback reuses the realm evaluation host before constructing the
     indirectEval: true,
   });
   assert.equal(
-    createHash("sha256").update(legacy).digest("hex"),
-    "484c1a81b172a639da2ea4255fd884c819fe60bdd604bc15e7b9503cd57fa2d5",
+    createHash("sha256")
+      .update(legacy.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
+    "19119a6ddd327caf4fad2a30909f70abb336be0a8afd838108da3f29b0ffaaba",
   );
 });
 
@@ -497,8 +523,10 @@ test("direct eval shares the same per-realm service after indirect installation"
     functionFallback: true,
   });
   assert.equal(
-    createHash("sha256").update(legacy).digest("hex"),
-    "4e9e4ef629d1c24cd560fa9a23015742169ea97b2b4b5fb08d222df376c07888",
+    createHash("sha256")
+      .update(legacy.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
+    "498cc4aad54fc4b7bb135b9616ec9476b8c880430e8e80697249e74f980106a2",
   );
 });
 

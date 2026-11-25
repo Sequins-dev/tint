@@ -97,7 +97,7 @@ test("engine creation leaves realm installation to the embedder and compilation 
   assert.equal(fn.internalCall!(undefined, [23]), 23);
   assert.deepEqual(events, ["publish", "invoke", "invoke"]);
   assert.equal(runtime.getOwnProperty(fn, "length")?.value, 1);
-  assert.match(fn.internalSourceText!, /return value/);
+  assert.match(fn.internalExoticSlots!.internalSourceText!, /return value/);
 });
 test("engine preserves strict receivers and sloppy global receivers", () => {
   const { object, compiler, target } = fixture();
@@ -454,9 +454,12 @@ test("async generator carriers transfer only an idle unstarted continuation", ()
     );
   const hidden = make(),
     start = runtime.takeAsyncGeneratorStart(hidden, f.realm);
-  assert.equal(hidden.internalAsyncGeneratorData?.record.state, "completed");
   assert.equal(
-    hidden.internalAsyncGeneratorData?.record.continuation,
+    hidden.internalExoticSlots?.internalAsyncGeneratorData?.record.state,
+    "completed",
+  );
+  assert.equal(
+    hidden.internalExoticSlots?.internalAsyncGeneratorData?.record.continuation,
     undefined,
   );
   assert.deepEqual(start("next", undefined), { kind: "return", value: 42 });
@@ -466,11 +469,12 @@ test("async generator carriers transfer only an idle unstarted continuation", ()
   );
   for (const field of ["running", "waiting"] as const) {
     const g = make();
-    g.internalAsyncGeneratorData!.record[field] = true;
+    g.internalExoticSlots!.internalAsyncGeneratorData!.record[field] = true;
     assert.throws(() => runtime.takeAsyncGeneratorStart(g, f.realm));
   }
   const g = make();
-  g.internalAsyncGeneratorData!.record.state = "suspended-yield";
+  g.internalExoticSlots!.internalAsyncGeneratorData!.record.state =
+    "suspended-yield";
   assert.throws(() => runtime.takeAsyncGeneratorStart(g, f.realm));
   for (const value of [undefined, 1, {}, f.object])
     assert.throws(() => runtime.takeAsyncGeneratorStart(value, f.realm));
@@ -582,7 +586,7 @@ test("async generator transfer rejects queued requests and pending resumptions",
   };
   for (const field of ["head", "tail"] as const) {
     const g = make(),
-      record = g.internalAsyncGeneratorData!.record;
+      record = g.internalExoticSlots!.internalAsyncGeneratorData!.record;
     record[field] = request;
     assert.throws(
       () => runtime.takeAsyncGeneratorStart(g, f.realm),
@@ -592,7 +596,7 @@ test("async generator transfer rejects queued requests and pending resumptions",
     assert.ok(record.continuation);
   }
   const pending = make();
-  pending.internalAsyncGeneratorData!.record.pending = {
+  pending.internalExoticSlots!.internalAsyncGeneratorData!.record.pending = {
     target: "body",
     kind: "next",
     value: 42,
@@ -602,7 +606,8 @@ test("async generator transfer rejects queued requests and pending resumptions",
     (e) => e === "DYNAMIC_ASYNC_GENERATOR_CARRIER_INVARIANT",
   );
   const empty = make();
-  empty.internalAsyncGeneratorData!.record.continuation = undefined;
+  empty.internalExoticSlots!.internalAsyncGeneratorData!.record.continuation =
+    undefined;
   assert.throws(
     () => runtime.takeAsyncGeneratorStart(empty, f.realm),
     (e) => e === "DYNAMIC_ASYNC_GENERATOR_CARRIER_INVARIANT",

@@ -1,8 +1,20 @@
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { deserialize, serialize } from "node:v8";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -19,7 +31,10 @@ import {
   compileMacOSProgram,
   linkMacOSProgram,
   type BuildRequest,
+  type CompiledRuntimeUnits,
+  type CompiledRuntimeUnitsResult,
   type ImageOperationRange,
+  type RuntimeUnitInputs,
 } from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
@@ -49,9 +64,15 @@ import {
   type RuntimeSource,
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
-import { nativeFixtureTarget } from "./native-host-target.ts";
+import {
+  nativeFixtureTarget,
+  nativeScriptCallsEnabled,
+} from "./native-host-target.ts";
 import { writeNodeExecutable } from "./node-file-host.ts";
-import { buildNativeFixture } from "./gate/native-fixture.ts";
+import {
+  buildNativeFixture,
+  type NativeFixtureBuild,
+} from "./gate/native-fixture.ts";
 import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 /** Build target and execution runner are selected independently. */
@@ -96,6 +117,263 @@ export interface FixtureForeignDeclaration {
   readonly manifest?: readonly CLibraryManifestEntry[];
 }
 
+/** Builds in one process share the workspace parse and the compiled runtime
+ * units while the workspace sources are unchanged; the images are the same.
+ * TINT_FIXTURE_CACHE=0, read per build, starts every build from scratch. */
+function fixtureCache(): boolean {
+  return process.env.TINT_FIXTURE_CACHE !== "0";
+}
+/** Runtime unit compiles, reuses in this process and restores from the
+ * gate's cache directory (see shareRuntimeUnits). */
+export const fixtureCacheStatistics = { compiled: 0, shared: 0, restored: 0 };
+/** Runtime units shared by every test process of one native batch: beside
+ * its journal (TINT_GATE_NATIVE_IMAGES), or in TINT_FIXTURE_CACHE_DIRECTORY.
+ * Standalone runs keep them in their process only. */
+function fixtureCacheDirectory(): string | undefined {
+  if (!fixtureCache()) return undefined;
+  const directory = process.env.TINT_FIXTURE_CACHE_DIRECTORY;
+  if (directory) return directory;
+  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
+  return journal ? join(dirname(journal), "fixture-cache") : undefined;
+}
+/** Parsed workspace modules, by syntax tree, with the identity of the
+ * captured sources they were parsed from: only those can be restored from
+ * another process's cache entry. */
+const snapshotSyntax = new WeakMap<object, string>();
+function snapshotModules(
+  roots: readonly string[],
+  snapshot: WorkspaceSourceSnapshot,
+  identity: string,
+): readonly SourceModule[] {
+  const modules = workspaceModules(roots, snapshot);
+  for (const module of modules) snapshotSyntax.set(module.module, identity);
+  return modules;
+}
+/** The cache file of runtime units compiled only from captured workspace
+ * sources, or undefined when a fixture supplies or transforms one of them. */
+function runtimeUnitsFile(inputs: RuntimeUnitInputs): string | undefined {
+  const directory = fixtureCacheDirectory();
+  const identity = snapshotSyntax.get(inputs.modules[0]?.module ?? {});
+  if (
+    directory === undefined ||
+    identity === undefined ||
+    inputs.allocator === undefined ||
+    !inputs.modules.every(
+      (source) => snapshotSyntax.get(source.module) === identity,
+    )
+  )
+    return undefined;
+  const key = createHash("sha256")
+    .update(
+      JSON.stringify([
+        "tint-fixture-runtime-units-v1",
+        identity,
+        fixtureTarget.name,
+        inputs.key,
+        inputs.allocator.id,
+        inputs.modules.map((source) => [
+          source.id,
+          [...source.dependencies].sort(),
+        ]),
+      ]),
+    )
+    .digest("hex");
+  return join(directory, "runtime-units-" + key + ".v8");
+}
+/** Restore runtime units from the cache file. The allocator source is not
+ * cloneable (it may hold position callbacks); it comes from this build's
+ * inputs, parsed from the same sources. */
+function restoreRuntimeUnits(
+  file: string,
+  inputs: RuntimeUnitInputs,
+): CompiledRuntimeUnitsResult | undefined {
+  if (inputs.allocator === undefined || !existsSync(file)) return undefined;
+  try {
+    const entry = deserialize(readFileSync(file)) as {
+      readonly file: string;
+      readonly units: Omit<CompiledRuntimeUnits, "allocatorSource">;
+    };
+    if (entry.file !== file) return undefined;
+    return {
+      ok: true,
+      value: { ...entry.units, allocatorSource: inputs.allocator },
+    };
+  } catch {
+    // An unreadable entry is compiled again and replaced.
+    return undefined;
+  }
+}
+function storeRuntimeUnits(file: string, units: CompiledRuntimeUnits): void {
+  mkdirSync(dirname(file), { recursive: true });
+  const staging = file + "." + process.pid + ".tmp";
+  const { allocatorSource: _source, ...stored } = units;
+  writeFileSync(staging, serialize({ file, units: stored }));
+  renameSync(staging, file);
+}
+let currentWorkspace:
+  | {
+      readonly snapshot: WorkspaceSourceSnapshot;
+      readonly identity: ReturnType<typeof workspaceSourceIdentity>;
+    }
+  | undefined;
+/** Capture the workspace sources, keeping the previous snapshot object while
+ * their identity is unchanged: parsed modules (workspaceModules) and expanded
+ * C bindings (expandForeignSnapshot) are cached per snapshot object. */
+function captureWorkspace(): NonNullable<typeof currentWorkspace> {
+  const snapshot = workspaceSources();
+  const identity = workspaceSourceIdentity(snapshot);
+  if (!fixtureCache()) return { snapshot, identity };
+  if (currentWorkspace?.identity.sha256 !== identity.sha256)
+    currentWorkspace = { snapshot, identity };
+  return currentWorkspace;
+}
+/** Runtime units shared by this process's builds (BuildRequest.runtimeUnits).
+ * The key holds the units' options and the identity of each parsed source
+ * module they are compiled from, so a module parsed from another snapshot or
+ * generated by a fixture is a different key. */
+const sharedRuntimeUnits = new Map<string, CompiledRuntimeUnitsResult>();
+const syntaxIds = new WeakMap<object, number>();
+let nextSyntaxId = 0;
+function shareRuntimeUnits(
+  inputs: RuntimeUnitInputs,
+  compile: () => CompiledRuntimeUnitsResult,
+): CompiledRuntimeUnitsResult {
+  const parts = [inputs.key];
+  for (const source of inputs.modules) {
+    let syntax = syntaxIds.get(source.module);
+    if (syntax === undefined) {
+      syntax = nextSyntaxId++;
+      syntaxIds.set(source.module, syntax);
+    }
+    const dependencies = [...source.dependencies]
+      .map(([specifier, id]) => specifier + ">" + id)
+      .sort();
+    parts.push(source.id + "#" + syntax + ":" + dependencies.join(","));
+  }
+  const key = parts.join("\n");
+  const shared = sharedRuntimeUnits.get(key);
+  if (shared !== undefined) {
+    fixtureCacheStatistics.shared++;
+    return shared;
+  }
+  const file = runtimeUnitsFile(inputs);
+  const restored =
+    file === undefined ? undefined : restoreRuntimeUnits(file, inputs);
+  if (restored !== undefined) {
+    fixtureCacheStatistics.restored++;
+    sharedRuntimeUnits.set(key, restored);
+    return restored;
+  }
+  fixtureCacheStatistics.compiled++;
+  const units = compile();
+  if (units.ok) {
+    sharedRuntimeUnits.set(key, units);
+    if (file !== undefined) storeRuntimeUnits(file, units.value);
+  }
+  return units;
+}
+
+/** Copy an image and its build records (manifest, source, run records) to a
+ * new path. A copied manifest names the copied source; the image bytes, and
+ * so the manifest's image hash, are unchanged. */
+function copyFixtureImage(from: string, to: string): void {
+  const prefix = basename(from) + ".";
+  copyFileSync(from, to);
+  chmodSync(to, 0o755);
+  for (const file of readdirSync(dirname(from)))
+    if (file.startsWith(prefix))
+      copyFileSync(
+        join(dirname(from), file),
+        to + "." + file.slice(prefix.length),
+      );
+  const manifest = to + ".manifest.json";
+  if (existsSync(manifest)) {
+    const record = JSON.parse(readFileSync(manifest, "utf8"));
+    if (typeof record.fixture === "string") {
+      record.fixture = to + ".source.ts";
+      writeFileSync(manifest, JSON.stringify(record, null, 2) + "\n");
+    }
+  }
+}
+/** Images of fixed fixtures, built once per process (see sharedFixtureImage). */
+const sharedImages = new Map<string, string>();
+/** Build a fixture whose program and options never vary (`key`) once per
+ * process, and once per native batch through its cache directory. Every
+ * call returns a private copy of the image and its build records, which the
+ * caller may delete. Build-affecting TINT_ variables are part of the key. */
+export function sharedFixtureImage(
+  name: string,
+  key: readonly unknown[],
+  build: () => string,
+): string {
+  if (!fixtureCache()) return build();
+  const environment = Object.entries(process.env)
+    .filter(
+      ([variable]) =>
+        variable.startsWith("TINT_") &&
+        !variable.startsWith("TINT_GATE_") &&
+        !variable.startsWith("TINT_FIXTURE_") &&
+        variable !== "TINT_BUILD_ONLY" &&
+        variable !== "TINT_KEEP_NATIVE",
+    )
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const id = createHash("sha256")
+    .update(
+      JSON.stringify([
+        "tint-fixture-image-v1",
+        captureWorkspace().identity.sha256,
+        fixtureTarget.name,
+        name,
+        key,
+        environment,
+      ]),
+    )
+    .digest("hex");
+  let kept = sharedImages.get(id);
+  if (kept === undefined || !existsSync(kept)) {
+    const cache = fixtureCacheDirectory();
+    const stored =
+      cache === undefined ? undefined : join(cache, "image-" + id, name);
+    if (stored !== undefined && existsSync(stored + ".manifest.json"))
+      kept = stored;
+    else {
+      const built = build();
+      const staging = mkdtempSync(
+        join(
+          cache ?? process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+          "tint-shared-" + name + "-",
+        ),
+      );
+      copyFixtureImage(built, join(staging, name));
+      rmSync(dirname(built), { recursive: true, force: true });
+      kept = join(staging, name);
+      if (stored !== undefined)
+        try {
+          renameSync(staging, dirname(stored));
+          kept = stored;
+        } catch {
+          // Another process stored the same image first; keep this copy.
+        }
+      if (kept !== stored)
+        process.once("exit", () =>
+          rmSync(staging, { recursive: true, force: true }),
+        );
+    }
+    sharedImages.set(id, kept);
+  }
+  const copy = join(
+    mkdtempSync(
+      join(
+        process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+        "tint-hosted-" + name + "-",
+      ),
+    ),
+    name,
+  );
+  copyFixtureImage(kept, copy);
+  return copy;
+}
+
 type GeneralLowering = ReturnType<typeof createGeneralLowering>;
 let generalLowering: GeneralLowering | undefined;
 let nodeGeneralLowering: GeneralLowering | undefined;
@@ -121,8 +399,7 @@ export function workspaceGeneralLowering(
     return cached;
   const lowering = createGeneralLowering({
     functionFallback,
-    nativeScriptCalls:
-      process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1",
+    nativeScriptCalls: nativeScriptCallsEnabled(),
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
       modules: "packages/js-runtime/src/modules/index.ts",
@@ -180,6 +457,9 @@ function buildHostedFixture(
   additionalRuntimes: readonly RuntimeSource[] = [],
   options: {
     readonly allowJit?: boolean;
+    /** BuildRequest.trustedExecutableCode (a trust boundary; see
+     * docs/native-code-loading.md). */
+    readonly trustedExecutableCode?: boolean;
     readonly threaded?: boolean;
     readonly threadExitPipe?: boolean;
     readonly workerModules?: readonly string[];
@@ -245,7 +525,7 @@ function buildHostedFixture(
     managedBytes: 4194304,
     allocationCapacity: 65536,
   },
-): string {
+): string | NativeFixtureBuild {
   const bytes = new TextEncoder().encode(text);
   const functionFallback =
     options.functionFallback === true && options.validateSource !== undefined;
@@ -265,6 +545,8 @@ function buildHostedFixture(
   const eventLoop =
     (options.nodeEventLoop === true || workerImage !== undefined) &&
     general !== undefined;
+  /** The general fallback's reason, when the program took it. */
+  let generalFallback: string | undefined;
   let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
   let fallbackClasses: readonly GeneralFallbackClass[] | undefined;
   const replaySources = options.replaySources;
@@ -296,8 +578,7 @@ function buildHostedFixture(
     heapIntrospection =
       options.heapIntrospection ??
       (heapVariable === undefined ? undefined : heapVariable === "1");
-  const captured = workspaceSources();
-  const sourceSnapshot = workspaceSourceIdentity(captured);
+  const { snapshot: captured, identity: sourceSnapshot } = captureWorkspace();
   const foreign = expandForeignSnapshot(captured);
   const foreignLibraries: ForeignLibrary[] = [...foreign.libraries];
   const foreignModules: SourceModule[] = [];
@@ -429,8 +710,27 @@ function buildHostedFixture(
     original === undefined
       ? []
       : (() => {
+          let workspace = snapshotModules(
+            roots,
+            foreign.snapshot,
+            sourceSnapshot.sha256,
+          );
+          if (
+            fixtureTarget.arch === "x86_64" &&
+            workspace.some(
+              (module) => module.id === foreignRuntimeModules.unsafe,
+            ) &&
+            !workspace.some(
+              (module) => module.id === foreignRuntimeModules.sysv,
+            )
+          )
+            workspace = snapshotModules(
+              [...roots, foreignRuntimeModules.sysv],
+              foreign.snapshot,
+              sourceSnapshot.sha256,
+            );
           const capturedModules: SourceModule[] = [
-            ...workspaceModules(roots, foreign.snapshot),
+            ...workspace,
             ...fixtureGenerated,
             original,
           ];
@@ -445,9 +745,11 @@ function buildHostedFixture(
     moduleLoader,
   );
   const runtimeEntry =
-    fixtureTarget.arch === "x86_64"
-      ? options.runtimeEntry
-      : (options.runtimeEntry ?? defaultRuntimeEntry ?? "initializeRuntime");
+    options.runtimeEntry ??
+    defaultRuntimeEntry ??
+    (fixtureTarget.arch === "x86_64"
+      ? "initializeGenerationalRuntime"
+      : "initializeRuntime");
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(moduleLoader?.ids ?? modules.map((module) => module.id)),
@@ -466,6 +768,7 @@ function buildHostedFixture(
   const buildRequest: BuildRequest = {
     ...observation.request,
     ...request,
+    ...(fixtureCache() ? { runtimeUnits: shareRuntimeUnits } : {}),
     target: fixtureTarget,
     ...(options.optimization === undefined
       ? {}
@@ -484,6 +787,7 @@ function buildHostedFixture(
         : undefined,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
+    trustedExecutableCode: options.trustedExecutableCode ?? false,
     runtimes: [
       ...request.runtimes,
       ...additionalRuntimes,
@@ -572,6 +876,7 @@ function buildHostedFixture(
               : {}),
           },
           onGeneralFallback: (modules: readonly string[], reason: string) => {
+            generalFallback = reason;
             options.onGeneralFallback?.(modules, reason);
             process.stderr.write(
               "general fallback for " +
@@ -586,7 +891,11 @@ function buildHostedFixture(
     // Copying GC metadata needs a forwarding word per semispace allocation unit.
     allocationCapacity: options.allocationCapacity,
     rootCapacity: options.rootCapacity ?? 4096,
-    stackBytes: options.stackBytes ?? 1048576,
+    // x86-64 stack frames spill more slots than arm64; 1 MiB overflows during
+    // general-fallback realm startup.
+    stackBytes:
+      options.stackBytes ??
+      (fixtureTarget.arch === "x86_64" ? 4194304 : 1048576),
     identifier: "tint-hosted-" + name,
     ...(options.maxSpecializations === undefined
       ? {}
@@ -747,7 +1056,7 @@ function buildHostedFixture(
     ) + "\n",
     { flag: "wx" },
   );
-  return path;
+  return generalFallback === undefined ? path : { path, generalFallback };
 }
 
 export function prepareHostedFixture(

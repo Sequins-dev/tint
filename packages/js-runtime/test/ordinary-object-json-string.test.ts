@@ -15,3 +15,22 @@ test("JSON strings escape controls and unpaired surrogates without altering pair
     assert.equal(quoteJSONString(value), JSON.stringify(value), String(unit));
   }
 });
+test("JSON strings quote plain runs whole and escape wherever a special unit falls", () => {
+  for (const prefix of ["", "plain text "])
+    for (const special of [
+      '"',
+      "\\",
+      "\n",
+      "\u0001",
+      "😀",
+      "\ud800",
+      "\udfff",
+      "é",
+    ])
+      for (const suffix of ["", " tail", "\ud83d"]) {
+        const value = prefix + special + suffix;
+        assert.equal(quoteJSONString(value), JSON.stringify(value));
+      }
+  const long = "x".repeat(1000);
+  assert.equal(quoteJSONString(long), JSON.stringify(long));
+});

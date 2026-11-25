@@ -113,6 +113,12 @@ function literalStrings(node: Expression): readonly Expression[] | undefined {
   }
   return node.elements;
 }
+/** An operand of a fusible typed string `+` chain and the `+` it belongs
+ * to (lowering's stringChainLeaves). */
+interface StringChainLeaf {
+  readonly leaf: Expression;
+  readonly parent: Expression;
+}
 export const nativeClosureCallMessage: string =
   "Calling a native closure through Function requires the slice 2b closure view";
 
@@ -466,6 +472,7 @@ export function lowerFunction(
       case "general-is":
       case "boolean-value":
       case "boolean-present":
+      case "string-two-byte":
         type = "boolean";
         break;
       case "error-message":
@@ -479,8 +486,8 @@ export function lowerFunction(
         break;
       case "string-length":
       case "string-code-unit":
+      case "string-index-of":
       case "script-argument-count":
-      case "script-argument-area":
         type = "number";
         break;
       case "array-subarray":
@@ -1518,6 +1525,239 @@ export function lowerFunction(
     jump(head.id, node);
     current = exit;
   }
+  /** `String(value)` on a general slot (`unknown` or general call result):
+   * converts primitives, unexposed native errors and BigInt directly, and
+   * delegates exposed error views, Symbols and realm objects to the program
+   * realm's stringConstructor when linked (otherwise traps explicitly). */
+  function unknownToString(slot: number, node: Expression): number {
+    const result = temporary("string"),
+      done = block();
+    let candidate = slot;
+    const helper = dynamicObjects?.stringConstructor;
+    if (realmErrors !== undefined && helper !== undefined) {
+      const exposed = exposedError(slot, node),
+        attached = block(),
+        unexposed = block();
+      candidate = exposed;
+      choose(
+        truth(realmErrorOperation(exposed, "attached", node), node),
+        attached,
+        unexposed,
+        node,
+      );
+      current = attached;
+      store(result, load(dynamicResult(helper, [exposed], node), node), node);
+      jump(done.id, node);
+      current = unexposed;
+    }
+    const isString = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isString,
+      value: load(slot, node),
+      type: "string",
+      start: node.start,
+      end: node.end,
+    });
+    const asString = block(),
+      notString = block();
+    choose(isString, asString, notString, node);
+    current = asString;
+    store(result, coerce(load(slot, node), "string", node), node);
+    jump(done.id, node);
+    current = notString;
+
+    const isNumber = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isNumber,
+      value: load(slot, node),
+      type: "number",
+      start: node.start,
+      end: node.end,
+    });
+    const asNumber = block(),
+      notNumber = block();
+    choose(isNumber, asNumber, notNumber, node);
+    current = asNumber;
+    const numberValue = save(
+      coerce(load(slot, node), "number", node),
+      "number",
+      node,
+    );
+    store(result, load(stringOperand(numberValue, node), node), node);
+    jump(done.id, node);
+    current = notNumber;
+
+    const isBoolean = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isBoolean,
+      value: load(slot, node),
+      type: "boolean",
+      start: node.start,
+      end: node.end,
+    });
+    const asBoolean = block(),
+      notBoolean = block();
+    choose(isBoolean, asBoolean, notBoolean, node);
+    current = asBoolean;
+    const booleanValue = save(
+      coerce(load(slot, node), "boolean", node),
+      "boolean",
+      node,
+    );
+    store(result, load(stringOperand(booleanValue, node), node), node);
+    jump(done.id, node);
+    current = notBoolean;
+
+    const isUndefined = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isUndefined,
+      value: load(slot, node),
+      type: "undefined",
+      start: node.start,
+      end: node.end,
+    });
+    const asUndefined = block(),
+      notUndefined = block();
+    choose(isUndefined, asUndefined, notUndefined, node);
+    current = asUndefined;
+    store(result, load(errorString("undefined", node), node), node);
+    jump(done.id, node);
+    current = notUndefined;
+
+    const isNull = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isNull,
+      value: load(slot, node),
+      type: "null",
+      start: node.start,
+      end: node.end,
+    });
+    const asNull = block(),
+      notNull = block();
+    choose(isNull, asNull, notNull, node);
+    current = asNull;
+    store(result, load(errorString("null", node), node), node);
+    jump(done.id, node);
+    current = notNull;
+
+    const asError = block(),
+      notError = block();
+    choose(
+      nativeErrorTest(load(slot, node), "Error", node),
+      asError,
+      notError,
+      node,
+    );
+    current = asError;
+    const errorRef = save(
+      coerce(load(slot, node), "reference", node),
+      "reference",
+      node,
+    );
+    const name = nativeErrorProperty(errorRef, "name", node),
+      message = nativeErrorProperty(errorRef, "message", node),
+      nameLength = nextValue++,
+      messageLength = nextValue++;
+    emit({
+      kind: "string-length",
+      id: nameLength,
+      string: load(name, node),
+      start: node.start,
+      end: node.end,
+    });
+    const emptyName = block(),
+      withName = block();
+    choose(
+      load(
+        binarySlot(
+          "===",
+          save(nameLength, "number", node),
+          numberSlot(0, node),
+          node,
+        ),
+        node,
+      ),
+      emptyName,
+      withName,
+      node,
+    );
+    current = emptyName;
+    store(result, load(message, node), node);
+    jump(done.id, node);
+    current = withName;
+    emit({
+      kind: "string-length",
+      id: messageLength,
+      string: load(message, node),
+      start: node.start,
+      end: node.end,
+    });
+    const emptyMessage = block(),
+      withMessage = block();
+    choose(
+      load(
+        binarySlot(
+          "===",
+          save(messageLength, "number", node),
+          numberSlot(0, node),
+          node,
+        ),
+        node,
+      ),
+      emptyMessage,
+      withMessage,
+      node,
+    );
+    current = emptyMessage;
+    store(result, load(name, node), node);
+    jump(done.id, node);
+    current = withMessage;
+    const prefix = save(
+      emitStringConcat(name, errorString(": ", node), node),
+      "string",
+      node,
+    );
+    store(result, emitStringConcat(prefix, message, node), node);
+    jump(done.id, node);
+    current = notError;
+
+    const bigintRecord = info(node).bigIntRecord;
+    if (bigints !== undefined && bigintRecord !== undefined) {
+      const asBigInt = block(),
+        notBigInt = block();
+      choose(
+        errorRecordTest(load(slot, node), bigintRecord, node),
+        asBigInt,
+        notBigInt,
+        node,
+      );
+      current = asBigInt;
+      const bigintRef = save(
+        coerce(load(slot, node), "reference", node),
+        "reference",
+        node,
+      );
+      const text = runtimeCall(bigIntRuntime().toString, [bigintRef], node);
+      if (text === undefined) throw "BigInt string conversion invariant";
+      store(result, load(text, node), node);
+      jump(done.id, node);
+      current = notBigInt;
+    }
+
+    if (helper !== undefined) {
+      store(result, load(dynamicResult(helper, [candidate], node), node), node);
+      jump(done.id, node);
+    } else {
+      finish({ kind: "trap", start: node.start, end: node.end });
+    }
+    current = done;
+    return result;
+  }
   function stringOperand(slot: number, node: Expression): number {
     if (slots[slot] === "string") return slot;
     if (speculativeSlots[slot] === 1) {
@@ -1534,6 +1774,43 @@ export function lowerFunction(
     if (slots[slot] === "number") {
       const target = info(node).callee;
       if (target === undefined) throw "number formatter binding invariant";
+      // The number-string cache inline first (no number converts to "",
+      // its miss), and the formatter, which caches, only on a miss.
+      const result = temporary("string"),
+        cached = nextValue++;
+      emit({
+        kind: "number-string-cached",
+        id: cached,
+        value: load(slot, node),
+        start: node.start,
+        end: node.end,
+      });
+      store(result, cached, node);
+      const length = nextValue++;
+      emit({
+        kind: "string-length",
+        id: length,
+        string: load(result, node),
+        start: node.start,
+        end: node.end,
+      });
+      const miss = block(),
+        done = block();
+      choose(
+        load(
+          binarySlot(
+            "===",
+            save(length, "number", node),
+            numberSlot(0, node),
+            node,
+          ),
+          node,
+        ),
+        miss,
+        done,
+        node,
+      );
+      current = miss;
       const id = nextValue++;
       emit({
         kind: "call",
@@ -1543,7 +1820,10 @@ export function lowerFunction(
         start: node.start,
         end: node.end,
       });
-      return save(id, "string", node);
+      store(result, id, node);
+      jump(done.id, node);
+      current = done;
+      return result;
     }
     if (slots[slot] !== "boolean") throw "string operand invariant";
     const result = temporary("string"),
@@ -1782,6 +2062,11 @@ export function lowerFunction(
       end: node.end,
     });
   }
+  function builtinUndefined(node: Expression): boolean {
+    if (node.kind !== "identifier" || node.name !== "undefined") return false;
+    const checked = info(node);
+    return checked.local === undefined && checked.realmGlobal === undefined;
+  }
   function chooseExpression(test: Expression, yes: Builder, no: Builder): void {
     // A condition needs only truthiness, not the selected operand value. Keep
     // short-circuit evaluation in the CFG without a result slot and merge.
@@ -1793,10 +2078,55 @@ export function lowerFunction(
       chooseExpression(test.operand, no, yes);
       return;
     }
+    if (generalObjectViews && test.kind === "conditional") {
+      const consequent = block(),
+        alternate = block();
+      chooseExpression(test.test, consequent, alternate);
+      current = consequent;
+      chooseExpression(test.consequent, yes, no);
+      current = alternate;
+      chooseExpression(test.alternate, yes, no);
+      return;
+    }
     if (
       test.kind === "binary" &&
       (test.operator === "&&" || test.operator === "||")
     ) {
+      const first = test.left,
+        second = test.right;
+      if (
+        generalObjectViews &&
+        test.operator === "||" &&
+        first.kind === "binary" &&
+        first.operator === "===" &&
+        second.kind === "binary" &&
+        second.operator === "===" &&
+        first.left.kind === "identifier" &&
+        second.left.kind === "identifier" &&
+        first.right.kind === "null" &&
+        builtinUndefined(second.right) &&
+        info(first.left).type === "general" &&
+        info(second.left).type === "general"
+      ) {
+        // The checked local read has no effects, so both comparisons can
+        // share a single load and observe only the general carrier tag.
+        const local = info(first.left).local;
+        if (local !== undefined && local === info(second.left).local) {
+          const operand = value(first.left);
+          const match = nextValue++;
+          emit({
+            kind: "general-is",
+            id: match,
+            value: load(operand, first.left),
+            type: "nullish",
+            branch: true,
+            start: test.start,
+            end: test.end,
+          });
+          choose(match, yes, no, test);
+          return;
+        }
+      }
       const right = block();
       if (test.operator === "&&") chooseExpression(test.left, right, no);
       else chooseExpression(test.left, yes, right);
@@ -1857,6 +2187,114 @@ export function lowerFunction(
     if (slots[left] === "general" || slots[right] === "general") {
       if (operator !== "===" && operator !== "!==")
         throw "unsupported general operation";
+      const generalSlot = slots[left] === "general" ? left : right,
+        otherSlot = slots[left] === "general" ? right : left,
+        otherType = slots[otherSlot];
+      if (otherType === "reference" || otherType === "optional-reference") {
+        const result = temporary("boolean"),
+          checkTag = block(),
+          checkPointer = block(),
+          mismatch = block(),
+          done = block();
+        let targetRef: number | undefined = undefined;
+        if (otherType === "optional-reference") {
+          const isAbsent = block(),
+            noneRef = nextValue++,
+            present = nextValue++;
+          emit({
+            kind: "reference-none",
+            id: noneRef,
+            start: node.start,
+            end: node.end,
+          });
+          emit({
+            kind: "binary",
+            id: present,
+            operator: "!==",
+            left: load(otherSlot, node),
+            right: noneRef,
+            start: node.start,
+            end: node.end,
+          });
+          choose(present, checkTag, isAbsent, node);
+          current = isAbsent;
+          const isUndef = nextValue++;
+          emit({
+            kind: "general-is",
+            id: isUndef,
+            value: load(generalSlot, node),
+            type: "undefined",
+            start: node.start,
+            end: node.end,
+          });
+          store(result, isUndef, node);
+          jump(done.id, node);
+          current = checkTag;
+        } else {
+          jump(checkTag.id, node);
+          current = checkTag;
+        }
+        const isObj = nextValue++;
+        emit({
+          kind: "general-is",
+          id: isObj,
+          value: load(generalSlot, node),
+          type: "object",
+          start: node.start,
+          end: node.end,
+        });
+        choose(isObj, checkPointer, mismatch, node);
+        current = checkPointer;
+        const payload = nextValue++;
+        emit({
+          kind: "general-value",
+          id: payload,
+          value: load(generalSlot, node),
+          type: "reference",
+          unchecked: true,
+          start: node.start,
+          end: node.end,
+        });
+        if (otherType === "optional-reference") {
+          targetRef = nextValue++;
+          emit({
+            kind: "reference-value",
+            id: targetRef,
+            value: load(otherSlot, node),
+            start: node.start,
+            end: node.end,
+          });
+        } else {
+          targetRef = load(otherSlot, node);
+        }
+        const eq = nextValue++;
+        emit({
+          kind: "binary",
+          id: eq,
+          operator: "===",
+          left: payload,
+          right: targetRef,
+          start: node.start,
+          end: node.end,
+        });
+        store(result, eq, node);
+        jump(done.id, node);
+        current = mismatch;
+        const no = nextValue++;
+        emit({
+          kind: "constant",
+          id: no,
+          value: false,
+          start: node.start,
+          end: node.end,
+        });
+        store(result, no, node);
+        jump(done.id, node);
+        current = done;
+        return operator === "==="
+          ? result
+          : unarySlot("!", result, "boolean", node);
+      }
       const a = save(
           coerce(load(left, node), "general", node),
           "general",
@@ -2164,6 +2602,228 @@ export function lowerFunction(
       end: node.end,
     });
     return id;
+  }
+  /** The concatenation of the string slots `pieces` (at least one), in
+   * order: the piece itself, one string-concat for two, and for more one
+   * allocation of the total length and canonical kind (two-byte when some
+   * piece is) with each piece written in turn, as join lowers, instead of
+   * an allocation and a copy of the whole prefix per concatenation. */
+  function emitStringPieces(
+    pieces: readonly number[],
+    node: Expression,
+  ): number {
+    const first = pieces[0],
+      second = pieces[1];
+    if (first === undefined) throw "string pieces invariant";
+    if (second === undefined) return first;
+    if (pieces.length === 2)
+      return save(emitStringConcat(first, second, node), "string", node);
+    const lengths: number[] = [];
+    let total = -1,
+      wide = -1;
+    for (const piece of pieces) {
+      if (piece === undefined) throw "string piece invariant";
+      const lengthId = nextValue++;
+      emit({
+        kind: "string-length",
+        id: lengthId,
+        string: load(piece, node),
+        start: node.start,
+        end: node.end,
+      });
+      const length = save(lengthId, "number", node);
+      lengths.push(length);
+      const twoByteId = nextValue++;
+      emit({
+        kind: "string-two-byte",
+        id: twoByteId,
+        string: load(piece, node),
+        start: node.start,
+        end: node.end,
+      });
+      const twoByte = unarySlot(
+        "boolean-number",
+        save(twoByteId, "boolean", node),
+        "number",
+        node,
+      );
+      total = total < 0 ? length : binarySlot("+", total, length, node);
+      wide = wide < 0 ? twoByte : binarySlot("|", wide, twoByte, node);
+    }
+    const allocated = nextValue++;
+    emit({
+      kind: "string-allocate",
+      id: allocated,
+      length: load(total, node),
+      twoByte: load(binarySlot("!==", wide, numberSlot(0, node), node), node),
+      start: node.start,
+      end: node.end,
+    });
+    const result = save(allocated, "string", node);
+    let offset = numberSlot(0, node);
+    for (let index = 0; index < pieces.length; index++) {
+      const piece = pieces[index],
+        length = lengths[index];
+      if (piece === undefined || length === undefined)
+        throw "string piece invariant";
+      emit({
+        kind: "string-write",
+        target: load(result, node),
+        offset: load(offset, node),
+        source: load(piece, node),
+        start: node.start,
+        end: node.end,
+      });
+      if (index + 1 < pieces.length)
+        offset = binarySlot("+", offset, length, node);
+    }
+    return result;
+  }
+  /** Whether `node` is a typed string `+` whose operands convert to strings
+   * without the general or speculative paths, so a chain of them can be
+   * concatenated at once (stringChainLeaves). */
+  function fusibleStringPlus(node: Expression): boolean {
+    return (
+      node.kind === "binary" &&
+      node.operator === "+" &&
+      scalarType(node) === "string" &&
+      fusibleStringLeaf(node.left) &&
+      fusibleStringLeaf(node.right)
+    );
+  }
+  function fusibleStringLeaf(node: Expression): boolean {
+    if (fusibleStringPlus(node)) return true;
+    const type = scalarType(node),
+      facts = info(node);
+    return (
+      (type === "string" || type === "number" || type === "boolean") &&
+      facts.speculative !== true &&
+      facts.bigint !== true
+    );
+  }
+  /** The leaves of a fusible `+` chain, left to right, with the `+` whose
+   * operand each is (it carries the number formatter binding). */
+  function stringChainLeaves(
+    node: Expression,
+    leaves: StringChainLeaf[],
+  ): void {
+    if (node.kind !== "binary") throw "string chain invariant";
+    stringChainOperand(node.left, node, leaves);
+    stringChainOperand(node.right, node, leaves);
+  }
+  function stringChainOperand(
+    operand: Expression,
+    parent: Expression,
+    leaves: StringChainLeaf[],
+  ): void {
+    if (operand.kind === "binary" && fusibleStringPlus(operand))
+      stringChainLeaves(operand, leaves);
+    else leaves.push({ leaf: operand, parent });
+  }
+  /** `x = x + a + b ...`: a fusible string chain of three or more operands
+   * whose first operand reads the local it is assigned to. It is built as
+   * `x + (a + b ...)`, an append of the rest fused into one piece, so a
+   * loop of such appends builds its string in a buffer
+   * (build-loop-strings). The operands are evaluated and converted in the
+   * same order as the whole chain, and the rest's conversions to strings
+   * are the ones the chain would make after a string. Undefined for any
+   * other expression. */
+  /** Whether evaluating `node` can assign no local: it holds no
+   * assignment, update, function or class syntax (calls cannot assign an
+   * uncaptured local). Conservative: other kinds answer false. */
+  function assignmentFree(node: Expression): boolean {
+    switch (node.kind) {
+      case "identifier":
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "this":
+        return true;
+      case "group":
+      case "satisfies":
+        return assignmentFree(node.expression);
+      case "unary":
+        return assignmentFree(node.operand);
+      case "binary":
+        return assignmentFree(node.left) && assignmentFree(node.right);
+      case "conditional":
+        return (
+          assignmentFree(node.test) &&
+          assignmentFree(node.consequent) &&
+          assignmentFree(node.alternate)
+        );
+      case "member":
+        return assignmentFree(node.object);
+      case "index":
+        return assignmentFree(node.object) && assignmentFree(node.index);
+      case "call":
+        return (
+          assignmentFree(node.callee) &&
+          node.arguments.every((argument) => assignmentFree(argument))
+        );
+      case "template-expression":
+        return node.substitutions.every((part) => assignmentFree(part));
+      default:
+        return false;
+    }
+  }
+  /** Whether `local` may be read after evaluating `pieces` instead of
+   * before, as an append's left operand is: an uncaptured local (no cell,
+   * so nothing else can write it) that the pieces do not assign. Loop
+   * string builders then find the read next to its concatenation even
+   * when a piece branches. */
+  function readableAfter(
+    local: number,
+    pieces: readonly Expression[],
+  ): boolean {
+    return (
+      ownedCells.every((cell) => cell === undefined || cell.local !== local) &&
+      pieces.every((piece) => assignmentFree(piece))
+    );
+  }
+  function appendedChain(node: Expression, local: number): number | undefined {
+    if (
+      node.kind !== "binary" ||
+      node.operator !== "+" ||
+      !fusibleStringPlus(node) ||
+      node.left.kind !== "binary" ||
+      !fusibleStringPlus(node.left)
+    )
+      return undefined;
+    const leaves: StringChainLeaf[] = [];
+    stringChainLeaves(node, leaves);
+    const head = leaves[0];
+    if (head === undefined) throw "string chain leaf invariant";
+    const leaf = head.leaf;
+    if (
+      leaf.kind !== "identifier" ||
+      info(leaf).local !== local ||
+      info(leaf).realmGlobal !== undefined ||
+      info(leaf).undefinedValue === true ||
+      scalarType(leaf) !== "string"
+    )
+      return undefined;
+    const tail: StringChainLeaf[] = [];
+    for (let index = 1; index < leaves.length; index++) {
+      const entry = leaves[index];
+      if (entry === undefined) throw "string chain leaf invariant";
+      tail.push(entry);
+    }
+    const late = readableAfter(
+      local,
+      tail.map((entry) => entry.leaf),
+    );
+    let first = late ? -1 : stringOperand(value(leaf), head.parent);
+    const rest: number[] = [];
+    for (const entry of tail)
+      rest.push(stringOperand(value(entry.leaf), entry.parent));
+    if (late) first = stringOperand(value(leaf), head.parent);
+    return save(
+      emitStringConcat(first, emitStringPieces(rest, node), node),
+      "string",
+      node,
+    );
   }
   /** Make negative integer offsets relative to the end, without clamping. */
   function adjustNegativeIndex(
@@ -3711,6 +4371,7 @@ export function lowerFunction(
     receiver: number | undefined,
     node: Expression,
     scriptArguments?: readonly number[],
+    tail: boolean = false,
   ): number | undefined {
     const signature = signatures[target];
     if (signature === undefined) throw "call signature invariant";
@@ -3828,22 +4489,51 @@ export function lowerFunction(
     if (calleeSlot === undefined) emit({ kind: "call", ...call });
     else {
       const operation = callValue(load(calleeSlot, node), call.arguments);
-      emit({
-        kind: "call-indirect",
-        ...call,
-        ...(info(node).discardCallResult === true
-          ? { discardResult: true }
-          : {}),
-        callee: operation.callee,
-        arguments: operation.arguments,
-        ...(scriptArguments === undefined
-          ? {}
-          : {
-              scriptArguments: scriptArguments.map((slot) =>
-                coerce(load(slot, node), "general", node),
-              ),
-            }),
-      });
+      if (tail) {
+        if (scriptArguments === undefined) throw "script tail call invariant";
+        emit({
+          kind: "call-indirect",
+          ...call,
+          callee: operation.callee,
+          arguments: operation.arguments,
+          scriptArguments: scriptArguments.map((slot) =>
+            coerce(load(slot, node), "general", node),
+          ),
+          tail: true,
+        });
+      } else
+        emit({
+          kind: "call-indirect",
+          ...call,
+          ...(info(node).discardCallResult === true
+            ? { discardResult: true }
+            : {}),
+          callee: operation.callee,
+          arguments: operation.arguments,
+          ...(scriptArguments === undefined
+            ? {}
+            : {
+                scriptArguments: scriptArguments.map((slot) =>
+                  coerce(load(slot, node), "general", node),
+                ),
+              }),
+        });
+      if (tail) {
+        // The entry returns the callee's completion at once; the source's
+        // own return of this value follows in an unreachable block.
+        if (id === undefined || finalizer !== undefined)
+          throw "script tail call outside a returning position";
+        finish({ kind: "return", value: id, start: node.start, end: node.end });
+        current = block();
+        const absent = nextValue++;
+        emit({
+          kind: "general-none",
+          id: absent,
+          start: node.start,
+          end: node.end,
+        });
+        return save(absent, "general", node);
+      }
     }
     if (type === "void") return undefined;
     if (id !== undefined) return save(id, type, node);
@@ -6231,7 +6921,8 @@ export function lowerFunction(
             type = info(node.operand).type;
           if (type === "general") {
             if (operand === undefined) throw "general typeof operand invariant";
-            const classifier = info(node).realmTypeof;
+            const classifier =
+              node.generalTag === true ? undefined : info(node).realmTypeof;
             if (classifier !== undefined)
               return save(
                 primitiveCall(classifier, [load(operand, node)], node),
@@ -6694,14 +7385,23 @@ export function lowerFunction(
           (node.operator === "===" || node.operator === "!==")
         ) {
           const literal =
-            node.left.kind === "null" || node.left.kind === "string"
+            node.left.kind === "null" ||
+            node.left.kind === "string" ||
+            builtinUndefined(node.left)
               ? node.left
               : node.right;
           const compared = literal === node.left ? node.right : node.left;
           let tested = compared;
           let category:
-            "null" | "number" | "boolean" | "string" | "undefined" | undefined;
+            | "null"
+            | "number"
+            | "boolean"
+            | "string"
+            | "undefined"
+            | "object"
+            | undefined;
           if (literal.kind === "null") category = "null";
+          else if (builtinUndefined(literal)) category = "undefined";
           else if (
             literal.kind === "string" &&
             compared.kind === "unary" &&
@@ -6716,7 +7416,10 @@ export function lowerFunction(
               name === "number" ||
               name === "boolean" ||
               name === "string" ||
-              (name === "undefined" && info(compared).realmTypeof === undefined)
+              (name === "undefined" &&
+                (compared.generalTag === true ||
+                  info(compared).realmTypeof === undefined)) ||
+              (name === "object" && compared.generalTag === true)
             ) {
               category = name;
               tested = compared.operand;
@@ -6732,6 +7435,7 @@ export function lowerFunction(
               id,
               value: coerce(load(operand, tested), "general", tested),
               type: category,
+              branch: true,
               start: node.start,
               end: node.end,
             });
@@ -6740,6 +7444,24 @@ export function lowerFunction(
               ? equal
               : unarySlot("!", equal, "boolean", node);
           }
+        }
+        // A typed string `+` chain of three or more operands is built with
+        // one allocation. Its operands are primitive, so converting each
+        // right after evaluating it is unobservable.
+        if (
+          node.operator === "+" &&
+          fusibleStringPlus(node) &&
+          node.left.kind === "binary" &&
+          fusibleStringPlus(node.left)
+        ) {
+          const leaves: StringChainLeaf[] = [];
+          stringChainLeaves(node, leaves);
+          const pieces: number[] = [];
+          for (const entry of leaves) {
+            if (entry === undefined) throw "string chain leaf invariant";
+            pieces.push(stringOperand(value(entry.leaf), entry.parent));
+          }
+          return emitStringPieces(pieces, node);
         }
         const left = value(node.left);
         if (node.operator === "&&" || node.operator === "||") {
@@ -7065,6 +7787,29 @@ export function lowerFunction(
           });
         }
         const string = scalarType(node) === "string";
+        // `s += piece` reads s after the piece when that is unobservable.
+        if (
+          string &&
+          node.kind === "compound" &&
+          node.operator === "+" &&
+          slots[local] === "string" &&
+          readableAfter(local, [node.value])
+        ) {
+          const right = value(node.value),
+            old = save(readLocal(local, node.target), "string", node.target);
+          const id = nextValue++;
+          emit({
+            kind: "string-concat",
+            id,
+            left: load(old, node),
+            right: load(right, node),
+            start: node.start,
+            end: node.end,
+          });
+          const updated = save(id, "string", node);
+          writeLocal(local, load(updated, node), node);
+          return updated;
+        }
         let read = readLocal(local, node.target);
         if (
           slots[local] === "optional-number" ||
@@ -7200,9 +7945,9 @@ export function lowerFunction(
           });
           return result;
         }
-        const result = value(node.value),
-          local = info(node).local;
+        const local = info(node).local;
         if (local === undefined) throw "assignment invariant";
+        const result = appendedChain(node.value, local) ?? value(node.value);
         writeLocal(local, load(result, node.value), node);
         return result;
       }
@@ -7239,30 +7984,26 @@ export function lowerFunction(
           });
           return save(id, "string", node);
         }
-        let result = part(first);
+        // Empty literal parts add nothing; the pieces are concatenated at
+        // once (emitStringPieces).
+        const pieces: number[] = [];
+        if (first.length > 0) pieces.push(part(first));
         for (let i = 0; i < node.substitutions.length; i++) {
           const substitution = node.substitutions[i],
             tail = node.parts[i + 1];
           if (substitution === undefined || tail === undefined)
             throw "template substitution invariant";
           const input = value(substitution);
-          const converted = info(substitution).undefinedValue
-            ? part("undefined")
-            : info(substitution).nullValue
-              ? part("null")
-              : stringOperand(input, node);
-          result = save(
-            emitStringConcat(result, converted, node),
-            "string",
-            node,
+          pieces.push(
+            info(substitution).undefinedValue
+              ? part("undefined")
+              : info(substitution).nullValue
+                ? part("null")
+                : stringOperand(input, node),
           );
-          result = save(
-            emitStringConcat(result, part(tail), node),
-            "string",
-            node,
-          );
+          if (tail.length > 0) pieces.push(part(tail));
         }
-        return result;
+        return pieces.length === 0 ? part("") : emitStringPieces(pieces, node);
       }
       case "call": {
         if (node.scriptArgument === "count") {
@@ -7275,55 +8016,15 @@ export function lowerFunction(
           });
           return save(id, "number", node);
         }
-        if (
-          node.scriptArgument === "registers" ||
-          node.scriptArgument === "stack"
-        ) {
-          const id = nextValue++;
-          emit({
-            kind: "script-argument-area",
-            id,
-            area: node.scriptArgument,
-            start: node.start,
-            end: node.end,
-          });
-          return save(id, "number", node);
-        }
-        if (
-          node.scriptArgument === "index" ||
-          node.scriptArgument === "load-frame"
-        ) {
+        if (node.scriptArgument === "index") {
           const argument = node.arguments[0];
           if (argument === undefined) throw "script argument index invariant";
-          const indexSlot = value(argument);
-          let frame:
-            { count: number; registers: number; stack: number } | undefined;
-          if (node.scriptArgument === "load-frame") {
-            const count = node.arguments[1],
-              registers = node.arguments[2],
-              stack = node.arguments[3];
-            if (
-              count === undefined ||
-              registers === undefined ||
-              stack === undefined
-            )
-              throw "script argument frame invariant";
-            const size = value(count),
-              reg = value(registers),
-              overflow = value(stack);
-            frame = {
-              count: load(size, node),
-              registers: load(reg, node),
-              stack: load(overflow, node),
-            };
-          }
-          const index = load(indexSlot, node),
+          const index = load(value(argument), node),
             id = nextValue++;
           emit({
             kind: "script-argument",
             id,
             index,
-            ...(frame === undefined ? {} : { frame }),
             start: node.start,
             end: node.end,
           });
@@ -7351,6 +8052,7 @@ export function lowerFunction(
             return save(id, "string", node);
           }
           if (input === undefined) throw "String argument invariant";
+          if (slots[input] === "general") return unknownToString(input, node);
           return stringOperand(input, node);
         }
         if (
@@ -8111,13 +8813,33 @@ export function lowerFunction(
               jump(head.id, node);
               current = exit;
             }
-            const total = numberSlot(0, node);
-            visitParts((part) => add(total, lengthOf(part)));
+            // The result is two-byte exactly when some part is (strings
+            // are canonical).
+            const total = numberSlot(0, node),
+              twoByte = booleanSlot(false, node);
+            visitParts((part) => {
+              add(total, lengthOf(part));
+              const wide = nextValue++;
+              emit({
+                kind: "string-two-byte",
+                id: wide,
+                string: load(part, node),
+                start: node.start,
+                end: node.end,
+              });
+              conditionalStore(
+                save(wide, "boolean", node),
+                twoByte,
+                () => booleanSlot(true, node),
+                node,
+              );
+            });
             const allocated = nextValue++;
             emit({
               kind: "string-allocate",
               id: allocated,
               length: load(total, node),
+              twoByte: load(twoByte, node),
               start: node.start,
               end: node.end,
             });
@@ -8876,6 +9598,95 @@ export function lowerFunction(
               });
               separator = save(extracted, "string", node);
             }
+            const cacheable =
+                inputLimit === undefined && slots[list] === "reference",
+              finish = cacheable ? block() : done;
+            function copySplitList(
+              source: number,
+              target: number,
+              count: number,
+              after: Builder,
+            ): void {
+              listCall(runtime, "resize", [target, count], node);
+              const copyIndex = numberSlot(0, node),
+                copyOne = numberSlot(1, node),
+                copyHead = block(),
+                copyVisit = block(),
+                copyBody = block(),
+                copyStep = block();
+              jump(copyHead.id, node);
+              current = copyHead;
+              choose(
+                load(binarySlot("<", copyIndex, count, node), node),
+                copyVisit,
+                after,
+                node,
+              );
+              current = copyVisit;
+              choose(
+                load(
+                  listValue(runtime, "has", [source, copyIndex], node),
+                  node,
+                ),
+                copyBody,
+                copyStep,
+                node,
+              );
+              current = copyBody;
+              const item = listValue(
+                runtime,
+                "read",
+                [source, copyIndex],
+                node,
+              );
+              listCall(runtime, "write", [target, copyIndex, item], node);
+              jump(copyStep.id, node);
+              current = copyStep;
+              store(
+                copyIndex,
+                load(binarySlot("+", copyIndex, copyOne, node), node),
+                node,
+              );
+              jump(copyHead.id, node);
+            }
+            if (cacheable) {
+              const cachedId = nextValue++;
+              emit({
+                kind: "string-split-cached",
+                id: cachedId,
+                string: load(string, node),
+                separator: load(separator, node),
+                template: load(list, node),
+                start: node.start,
+                end: node.end,
+              });
+              const cached = save(cachedId, "optional-reference", node),
+                hitCheck = nextValue++;
+              emit({
+                kind: "unary",
+                id: hitCheck,
+                operator: "truthy",
+                operand: load(cached, node),
+                start: node.start,
+                end: node.end,
+              });
+              const hit = block(),
+                miss = block();
+              choose(hitCheck, hit, miss, node);
+              current = hit;
+              const unwrapped = nextValue++;
+              emit({
+                kind: "reference-value",
+                id: unwrapped,
+                value: load(cached, node),
+                start: node.start,
+                end: node.end,
+              });
+              const snapshot = save(unwrapped, "reference", node),
+                cachedLength = listValue(runtime, "length", [snapshot], node);
+              copySplitList(snapshot, list, cachedLength, done);
+              current = miss;
+            }
             function lengthOf(input: number): number {
               const id = nextValue++;
               emit({
@@ -8921,7 +9732,7 @@ export function lowerFunction(
             choose(
               load(binarySlot("<", index, length, node), node),
               unitLimit,
-              done,
+              finish,
               node,
             );
             current = unitLimit;
@@ -8936,7 +9747,7 @@ export function lowerFunction(
                 node,
               ),
               unitBody,
-              done,
+              finish,
               node,
             );
             current = unitBody;
@@ -8945,34 +9756,34 @@ export function lowerFunction(
             store(index, load(next, node), node);
             jump(unitHead.id, node);
             current = delimited;
+            // Each piece ends at the separator's next occurrence at or after
+            // its start.
             const head = block(),
-              search = block(),
               matched = block(),
-              advance = block(),
               resume = block(),
               tail = block();
             jump(head.id, node);
             current = head;
-            choose(
-              load(binarySlot("<=", index, length, node), node),
-              search,
-              tail,
-              node,
-            );
-            current = search;
-            const match = nextValue++;
+            const found = nextValue++;
             emit({
-              kind: "string-starts-with",
-              id: match,
+              kind: "string-index-of",
+              id: found,
               string: load(string, node),
               search: load(separator, node),
-              position: load(index, node),
+              position: load(start, node),
+              reverse: false,
               start: node.start,
               end: node.end,
             });
-            choose(match, matched, advance, node);
+            const position = save(found, "number", node);
+            choose(
+              load(binarySlot("<", position, zero, node), node),
+              tail,
+              matched,
+              node,
+            );
             current = matched;
-            append(start, index);
+            append(start, position);
             choose(
               load(
                 binarySlot(
@@ -8983,24 +9794,54 @@ export function lowerFunction(
                 ),
                 node,
               ),
-              done,
+              finish,
               resume,
               node,
             );
             current = resume;
-            store(index, load(binarySlot("+", index, width, node), node), node);
-            store(start, load(index, node), node);
-            jump(head.id, node);
-            current = advance;
             store(
-              index,
-              load(binarySlot("+", index, numberSlot(1, node), node), node),
+              start,
+              load(binarySlot("+", position, width, node), node),
               node,
             );
             jump(head.id, node);
             current = tail;
             append(start, length);
-            jump(done.id, node);
+            jump(finish.id, node);
+            if (cacheable) {
+              current = finish;
+              const count = listValue(runtime, "length", [list], node),
+                maxCached = numberSlot(256, node),
+                storeCheck = block(),
+                storeCache = block(),
+                commitCache = block();
+              choose(
+                load(binarySlot(">", count, zero, node), node),
+                storeCheck,
+                done,
+                node,
+              );
+              current = storeCheck;
+              choose(
+                load(binarySlot("<=", count, maxCached, node), node),
+                storeCache,
+                done,
+                node,
+              );
+              current = storeCache;
+              const snapshot = listValue(runtime, "create", [zero], node);
+              copySplitList(list, snapshot, count, commitCache);
+              current = commitCache;
+              emit({
+                kind: "string-split-cache",
+                string: load(string, node),
+                separator: load(separator, node),
+                value: load(snapshot, node),
+                start: node.start,
+                end: node.end,
+              });
+              jump(done.id, node);
+            }
             current = done;
             return list;
           }
@@ -9038,83 +9879,20 @@ export function lowerFunction(
                 node,
               );
             const index = absoluteIndex(input, length, node);
-            const initial = nextValue++;
+            const found = nextValue++;
             emit({
-              kind: "constant",
-              id: initial,
-              value: indexResult ? -1 : false,
-              start: node.start,
-              end: node.end,
-            });
-            const result = save(
-                initial,
-                indexResult ? "number" : "boolean",
-                node,
-              ),
-              head = block(),
-              body = block(),
-              advance = block(),
-              found = block(),
-              done = block();
-            jump(head.id, node);
-            current = head;
-            choose(
-              load(
-                binarySlot(
-                  reverse ? ">=" : "<=",
-                  index,
-                  reverse ? zero : length,
-                  node,
-                ),
-                node,
-              ),
-              body,
-              done,
-              node,
-            );
-            current = body;
-            const match = nextValue++;
-            emit({
-              kind: "string-starts-with",
-              id: match,
+              kind: "string-index-of",
+              id: found,
               string: load(string, node),
               search: load(search, node),
               position: load(index, node),
+              reverse,
               start: node.start,
               end: node.end,
             });
-            choose(match, found, advance, node);
-            current = found;
-            if (indexResult) store(result, load(index, node), node);
-            else {
-              const yes = nextValue++;
-              emit({
-                kind: "constant",
-                id: yes,
-                value: true,
-                start: node.start,
-                end: node.end,
-              });
-              store(result, yes, node);
-            }
-            jump(done.id, node);
-            current = advance;
-            store(
-              index,
-              load(
-                binarySlot(
-                  reverse ? "-" : "+",
-                  index,
-                  numberSlot(1, node),
-                  node,
-                ),
-                node,
-              ),
-              node,
-            );
-            jump(head.id, node);
-            current = done;
-            return result;
+            const result = save(found, "number", node);
+            if (indexResult) return result;
+            return binarySlot("!==", result, numberSlot(-1, node), node);
           }
           if (builtin === "string-ends-with") {
             const string = value(target.object),
@@ -9464,8 +10242,47 @@ export function lowerFunction(
           }
           if (builtin === "string-substring") {
             const string = value(target.object),
-              args = node.arguments.map(value),
-              lengthId = nextValue++;
+              args = node.arguments.map(value);
+            if (args[1] === undefined) {
+              const first = args[0],
+                start =
+                  first === undefined
+                    ? numberSlot(0, node)
+                    : save(numericInput(first, node), "number", node);
+              if (first !== undefined) {
+                const clamp = block(),
+                  done = block();
+                choose(
+                  load(binarySlot(">", start, numberSlot(0, node), node), node),
+                  done,
+                  clamp,
+                  node,
+                );
+                current = clamp;
+                store(start, load(numberSlot(0, node), node), node);
+                jump(done.id, node);
+                current = done;
+              }
+              const limit = nextValue++;
+              emit({
+                kind: "undefined",
+                id: limit,
+                start: node.start,
+                end: node.end,
+              });
+              const id = nextValue++;
+              emit({
+                kind: "string-slice",
+                id,
+                string: load(string, node),
+                begin: load(start, node),
+                limit,
+                start: node.start,
+                end: node.end,
+              });
+              return save(id, "string", node);
+            }
+            const lengthId = nextValue++;
             emit({
               kind: "string-length",
               id: lengthId,
@@ -9990,6 +10807,7 @@ export function lowerFunction(
             undefined,
             node,
             args.slice(4).map(value),
+            node.scriptTail === true,
           );
         }
         return invoke(

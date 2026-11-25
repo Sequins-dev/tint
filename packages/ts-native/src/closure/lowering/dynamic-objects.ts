@@ -43,6 +43,8 @@ export interface DynamicObjectRuntime {
   readonly speculativeBinary?: number | undefined;
   readonly speculativeString?: number | undefined;
   readonly speculativeUnary?: number | undefined;
+  /** String() of a value typed as unknown (see stringConstructor). */
+  readonly stringConstructor?: number | undefined;
   readonly bindingObject?: number;
   readonly bindingIterator?: number;
   readonly bindingNext?: number;
@@ -332,6 +334,17 @@ export function usesDynamicObjectRuntime(
 ): boolean {
   if (speculativeFlow === true && hasFlowReads(checked)) return true;
   if (checked.needsBindingRealm === true) return true;
+  // In mixed programs the program realm is already linked, so String() of an
+  // unknown value aliases stringConstructor for realm objects and Symbols.
+  // Pure typed programs convert primitives, native errors and BigInt natively
+  // without pulling in the realm.
+  if (speculativeFlow === true) {
+    let realmString = false;
+    checked.intrinsics.forEach((intrinsic, _node) => {
+      if (intrinsic === "dynamic-object-string") realmString = true;
+    });
+    if (realmString) return true;
+  }
   if (
     !checked.types.some(
       (type) =>
@@ -565,7 +578,8 @@ export function insertDynamicObjectRuntime(
   const uses: Span[] = [];
   const patterns: Span[] = [];
   const compoundUses: Span[] = [],
-    updates: Span[] = [];
+    updates: Span[] = [],
+    stringUses: Span[] = [];
   const callableViews: Span[] = [];
   const callbackViews: Span[] = [];
   const listViews: Span[] = [];
@@ -606,6 +620,7 @@ export function insertDynamicObjectRuntime(
   checked.intrinsics.forEach((intrinsic, node) => {
     if (intrinsic === "dynamic-object-compound") compoundUses.push(node);
     if (intrinsic === "dynamic-object-update") updates.push(node);
+    if (intrinsic === "dynamic-object-string") stringUses.push(node);
     if (
       intrinsic.startsWith("dynamic-object-") ||
       (realmInstanceof &&
@@ -725,6 +740,7 @@ export function insertDynamicObjectRuntime(
       alias("speculativeUnary");
     }
     if (contains(updates)) alias("update");
+    if (contains(stringUses)) alias("stringConstructor");
     if (contains(callableViews)) alias("projectUnaryNumber");
     if (contains(callbackViews)) alias("projectNativeCallback");
     if (contains(listViews)) alias("projectNumberList");

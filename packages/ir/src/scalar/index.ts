@@ -74,7 +74,8 @@ export {
   provenWordReturns,
   type WordFacts,
 } from "./word-facts.ts";
-export { functionHeader } from "./model.ts";
+export { functionHeader, activationFieldType } from "./model.ts";
+import { activationFieldType } from "./model.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";
 export {
@@ -96,13 +97,19 @@ export {
   dataflowRecordGuards,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
 } from "./record-facts.ts";
 export {
   deadSlotsAtEntry,
   analyzeLiveSlots,
+  analyzeLiveSlotRows,
+  analyzeLiveSlotRowsPrecisely,
   analyzeLiveSlotsPrecisely,
+  fitsLiveRows,
+  liveRowWords,
   liveSlotsIntoEntry,
   type SlotLiveness,
+  type SlotLiveRows,
 } from "./liveness.ts";
 export {
   slotVariables,
@@ -121,7 +128,7 @@ import {
   intersectBitWindows,
   copyBitRange,
 } from "@tint/foundation/collections/bit-vector";
-import { hostParameters, hostReturnType } from "./host.ts";
+import { hostInstruction, hostParameters, hostReturnType } from "./host.ts";
 import { foreignCallTypes, foreignMemoryTypes } from "./foreign.ts";
 export {
   foreignCallTypes,
@@ -191,6 +198,11 @@ export function instructionMayThrow(op: Instruction): boolean {
     case "string-slice":
     case "string-from-code-units":
     case "string-allocate":
+    case "string-from-latin1":
+    case "string-from-utf8":
+    case "string-ascii-case":
+    case "number-string-cache":
+    case "string-split-cache":
       return true;
     default:
       return false;
@@ -290,6 +302,18 @@ function scalar(value: string): boolean {
     value === "Uint8Array" ||
     value === "Uint16Array" ||
     value === "optional-number"
+  );
+}
+/** A field read as a plain word: of `type`, with no presence or cell state. */
+function plainRecordField(
+  field: RecordField | undefined,
+  type: ScalarType,
+): boolean {
+  return (
+    field !== undefined &&
+    field.type === type &&
+    field.stateOffset === undefined &&
+    field.presenceOffset === undefined
   );
 }
 function successors(block: Block): readonly number[] {
@@ -600,6 +624,45 @@ export function verify(
           fail("GRAPH", "integer slots must be ascending local number slots");
         previousInteger = slot ?? previousInteger;
       }
+      const safeSlots = f.safeIntegerSlots ?? [],
+        safeBounds = f.safeIntegerBounds ?? [];
+      if (safeSlots.length !== safeBounds.length)
+        fail("GRAPH", "safe integer slots need one bound each");
+      let previousSafe = -1;
+      for (let index = 0; index < safeSlots.length; index++) {
+        const slot = safeSlots[index],
+          bound = safeBounds[index];
+        if (
+          slot === undefined ||
+          !natural(slot) ||
+          slot <= previousSafe ||
+          f.slots[slot] !== "number" ||
+          params[slot] === 1 ||
+          slot === receiverSlot ||
+          (f.integerSlots ?? []).includes(slot) ||
+          bound === undefined ||
+          !Number.isSafeInteger(bound) ||
+          bound < 0
+        )
+          fail(
+            "GRAPH",
+            "safe integer slots must be ascending local number slots with safe bounds",
+          );
+        previousSafe = slot ?? previousSafe;
+      }
+      let previousNonzero = -1;
+      for (const slot of f.nonzeroSlots ?? []) {
+        if (
+          slot === undefined ||
+          !natural(slot) ||
+          slot <= previousNonzero ||
+          f.slots[slot] !== "number" ||
+          params[slot] === 1 ||
+          slot === receiverSlot
+        )
+          fail("GRAPH", "nonzero slots must be ascending local number slots");
+        previousNonzero = slot ?? previousNonzero;
+      }
       if (f.import !== undefined) {
         if (
           f.import !== true ||
@@ -719,6 +782,381 @@ export function verify(
               define(op.id, field.type);
               break;
             }
+            case "record-slot-read": {
+              hasRecordReads = true;
+              const type = use(op.object);
+              if (type !== "reference" && type !== "optional-reference")
+                fail("TYPE", "record slot read requires a reference");
+              equal(use(op.index), "number");
+              const fields = module.records?.[op.record]?.fields;
+              const first = fields?.[op.field];
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.count) ||
+                op.count < 1 ||
+                fields === undefined ||
+                first === undefined
+              )
+                fail("TYPE", "record slot read requires valid fields");
+              const stride = scalarByteLength(first.type);
+              for (let slot = 0; slot < op.count; slot++) {
+                const field = fields[op.field + slot];
+                if (
+                  field === undefined ||
+                  field.type !== first.type ||
+                  field.stateOffset !== undefined ||
+                  field.presenceOffset !== undefined ||
+                  field.offset !== first.offset + slot * stride
+                )
+                  fail(
+                    "TYPE",
+                    "record slot read requires consecutive fields of one type",
+                  );
+              }
+              define(op.id, first.type);
+              break;
+            }
+            case "property-load":
+            case "property-store": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              equal(use(op.site), "reference");
+              if (op.kind === "property-store") equal(use(op.value), "general");
+              const fields = module.records?.[op.record]?.fields,
+                siteFields = module.records?.[op.siteRecord]?.fields;
+              const first = fields?.[op.field],
+                shape = fields?.[0],
+                siteShape = siteFields?.[op.siteField],
+                siteSlot = siteFields?.[op.siteField + 1];
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.count) ||
+                op.count < 1 ||
+                !natural(op.siteRecord) ||
+                !natural(op.siteField) ||
+                fields === undefined ||
+                first === undefined ||
+                !plainRecordField(shape, "optional-reference") ||
+                shape === undefined ||
+                shape.offset !== 8 ||
+                !plainRecordField(siteShape, "reference") ||
+                !plainRecordField(siteSlot, "number") ||
+                siteSlot === undefined ||
+                siteShape === undefined ||
+                siteSlot.offset !== siteShape.offset + 8
+              )
+                fail("TYPE", "property cache requires shape and value fields");
+              // Site fields checked by exact byte offset relative to siteShape.
+              const siteAt = (
+                index: number,
+                byteOffset: number,
+                type: ScalarType,
+              ): boolean => {
+                const field = siteFields?.[op.siteField + index];
+                return (
+                  plainRecordField(field, type) &&
+                  field !== undefined &&
+                  siteShape !== undefined &&
+                  field.offset === siteShape.offset + byteOffset
+                );
+              };
+              const entries = op.kind === "property-load" ? op.entries : 1;
+              if (!natural(entries) || entries < 1 || entries > 4)
+                fail("TYPE", "property load requires one to four entries");
+              const epoch =
+                module.records?.[op.epochRecord]?.fields[op.epochField];
+              const epochFields = (
+                index: number,
+                byteOffset: number,
+              ): boolean =>
+                natural(op.epochRecord) &&
+                natural(op.epochField) &&
+                siteAt(index, byteOffset, "number") &&
+                siteAt(index + 1, byteOffset + 8, "reference") &&
+                plainRecordField(epoch, "number");
+              if (op.kind === "property-load" && op.inherited) {
+                // Inherited entries are (shape: ref 8B, slot: num 8B,
+                // value: general 16B) = 32B stride, followed by
+                // (inheritedEpoch: num, inheritedEpochs: ref, stringShape: ref).
+                for (let entry = 0; entry < entries; entry++)
+                  if (
+                    !siteAt(entry * 3, entry * 32, "reference") ||
+                    !siteAt(entry * 3 + 1, entry * 32 + 8, "number") ||
+                    !siteAt(entry * 3 + 2, entry * 32 + 16, "general")
+                  )
+                    fail(
+                      "TYPE",
+                      "inherited property load requires shape, slot and value entries",
+                    );
+                if (
+                  !epochFields(entries * 3, entries * 32) ||
+                  !siteAt(entries * 3 + 2, entries * 32 + 16, "reference")
+                )
+                  fail(
+                    "TYPE",
+                    "inherited property load requires epoch and string shape fields",
+                  );
+              } else {
+                for (let entry = 1; entry < entries; entry++)
+                  if (
+                    !siteAt(entry * 2, entry * 16, "reference") ||
+                    !siteAt(entry * 2 + 1, entry * 16 + 8, "number")
+                  )
+                    fail(
+                      "TYPE",
+                      "property load entries require shape and value",
+                    );
+              }
+              if (
+                op.kind === "property-store" &&
+                (!siteAt(2, 16, "optional-reference") || !epochFields(3, 24))
+              )
+                fail("TYPE", "property store requires a transition entry");
+              if (
+                op.kind === "property-load" &&
+                (op.spillRecord !== undefined || op.spillField !== undefined)
+              ) {
+                const spillRecordId = op.spillRecord,
+                  spillFieldId = op.spillField;
+                const spillRef =
+                  spillFieldId === undefined ? undefined : fields[spillFieldId];
+                const spillFields =
+                  spillRecordId === undefined
+                    ? undefined
+                    : module.records?.[spillRecordId]?.fields;
+                const spillNext = spillFields?.[0];
+                let validSpill =
+                  spillRecordId !== undefined &&
+                  spillFieldId !== undefined &&
+                  natural(spillRecordId) &&
+                  natural(spillFieldId) &&
+                  plainRecordField(spillRef, "optional-reference") &&
+                  spillFields !== undefined &&
+                  plainRecordField(spillNext, "optional-reference") &&
+                  spillNext !== undefined &&
+                  spillNext.offset === 8;
+                for (let slot = 0; validSpill && slot < 16; slot++) {
+                  const field = spillFields?.[slot + 1];
+                  if (
+                    !plainRecordField(field, "general") ||
+                    field === undefined ||
+                    field.offset !== 16 + slot * 16
+                  )
+                    validSpill = false;
+                }
+                if (!validSpill)
+                  fail(
+                    "TYPE",
+                    "property load spill requires linked 16-slot spill record",
+                  );
+              }
+              for (let slot = 0; slot < op.count; slot++) {
+                const field = fields[op.field + slot];
+                if (
+                  !plainRecordField(field, "general") ||
+                  field === undefined ||
+                  field.offset !== first.offset + slot * 16
+                )
+                  fail(
+                    "TYPE",
+                    "property cache requires consecutive general values",
+                  );
+              }
+              define(
+                op.id,
+                op.kind === "property-load" ? "general" : "boolean",
+              );
+              break;
+            }
+            case "script-entry": {
+              hasRecordReads = true;
+              equal(use(op.callee), "general");
+              equal(use(op.realm), "reference");
+              const realmFields = module.records?.[op.realmRecord]?.fields,
+                agentFields = module.records?.[op.agentRecord]?.fields,
+                objectFields = module.records?.[op.objectRecord]?.fields,
+                entryFields = module.records?.[op.entryRecord]?.fields,
+                contextFields = module.records?.[op.contextRecord]?.fields;
+              const agent = realmFields?.[op.agentField],
+                active = agentFields?.[op.activeField],
+                registerCall = objectFields?.[op.registerCallField],
+                invoke = entryFields?.[op.invokeField],
+                context = entryFields?.[op.contextField],
+                constructible = entryFields?.[op.constructibleField],
+                realm = contextFields?.[op.realmField],
+                scriptOrModule = contextFields?.[op.scriptOrModuleField];
+              if (
+                !natural(op.realmRecord) ||
+                !natural(op.agentField) ||
+                !natural(op.agentRecord) ||
+                !natural(op.activeField) ||
+                !natural(op.objectRecord) ||
+                !natural(op.registerCallField) ||
+                !natural(op.entryRecord) ||
+                !natural(op.invokeField) ||
+                !natural(op.contextField) ||
+                !natural(op.constructibleField) ||
+                !natural(op.contextRecord) ||
+                !natural(op.realmField) ||
+                !natural(op.scriptOrModuleField) ||
+                !plainRecordField(agent, "reference") ||
+                !plainRecordField(active, "optional-reference") ||
+                !plainRecordField(registerCall, "optional-reference") ||
+                !plainRecordField(invoke, "optional-reference") ||
+                !plainRecordField(context, "reference") ||
+                !plainRecordField(constructible, "boolean") ||
+                !plainRecordField(realm, "reference") ||
+                !plainRecordField(scriptOrModule, "general")
+              )
+                fail(
+                  "TYPE",
+                  "script entry resolution requires realm, agent, object, register-entry and execution-context fields",
+                );
+              define(op.id, "optional-reference");
+              break;
+            }
+            case "global-cell": {
+              hasRecordReads = true;
+              equal(use(op.scope), "reference");
+              equal(use(op.cache), "reference");
+              const scopeFields = module.records?.[op.scopeRecord]?.fields,
+                globalFields = module.records?.[op.globalRecord]?.fields,
+                globalObjectFields =
+                  module.records?.[op.globalObjectRecord]?.fields,
+                cacheFields = module.records?.[op.cacheRecord]?.fields;
+              const declarative = scopeFields?.[op.declarativeField],
+                object = scopeFields?.[op.objectField],
+                global = scopeFields?.[op.globalField],
+                lexicalEpoch = globalFields?.[op.lexicalEpochField],
+                globalObject = globalFields?.[op.globalObjectField],
+                propertyEpoch = globalObjectFields?.[op.propertyEpochField],
+                cacheGlobal = cacheFields?.[op.cacheGlobalField],
+                cacheLexicalEpoch = cacheFields?.[op.cacheLexicalEpochField],
+                cacheObjectEpoch = cacheFields?.[op.cacheObjectEpochField],
+                cacheCell = cacheFields?.[op.cacheCellField];
+              if (
+                !natural(op.scopeRecord) ||
+                !natural(op.declarativeField) ||
+                !natural(op.objectField) ||
+                !natural(op.globalField) ||
+                !natural(op.globalRecord) ||
+                !natural(op.lexicalEpochField) ||
+                !natural(op.globalObjectField) ||
+                !natural(op.globalObjectRecord) ||
+                !natural(op.propertyEpochField) ||
+                !natural(op.cacheRecord) ||
+                !natural(op.cacheGlobalField) ||
+                !natural(op.cacheLexicalEpochField) ||
+                !natural(op.cacheObjectEpochField) ||
+                !natural(op.cacheCellField) ||
+                !plainRecordField(declarative, "optional-reference") ||
+                !plainRecordField(object, "optional-reference") ||
+                !plainRecordField(global, "reference") ||
+                !plainRecordField(lexicalEpoch, "number") ||
+                !plainRecordField(globalObject, "reference") ||
+                !plainRecordField(propertyEpoch, "number") ||
+                !plainRecordField(cacheGlobal, "optional-reference") ||
+                !plainRecordField(cacheLexicalEpoch, "number") ||
+                !plainRecordField(cacheObjectEpoch, "number") ||
+                !plainRecordField(cacheCell, "optional-reference")
+              )
+                fail(
+                  "TYPE",
+                  "global cell resolution requires scope, global, global-object and cache fields",
+                );
+              define(op.id, "optional-reference");
+              break;
+            }
+            case "element-load":
+            case "element-store": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              equal(use(op.index), "number");
+              if (op.kind === "element-store") equal(use(op.value), "general");
+              const cachedStorage = op.cachedStorage,
+                cachedCount = op.cachedCount;
+              if ((cachedStorage === undefined) !== (cachedCount === undefined))
+                fail(
+                  "TYPE",
+                  "element access cache requires both storage and count",
+                );
+              if (cachedStorage !== undefined && cachedCount !== undefined) {
+                equal(use(cachedStorage), "optional-reference");
+                equal(use(cachedCount), "number");
+              }
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.countField) ||
+                !natural(op.storageField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.countField], "number") ||
+                !plainRecordField(
+                  elementFields?.[op.storageField],
+                  "Float64Array",
+                )
+              )
+                fail(
+                  "TYPE",
+                  "element access requires an elements reference with a number count and Float64Array storage",
+                );
+              define(op.id, op.kind === "element-load" ? "general" : "boolean");
+              break;
+            }
+            case "element-storage":
+            case "element-count": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.countField) ||
+                !natural(op.storageField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.countField], "number") ||
+                !plainRecordField(
+                  elementFields?.[op.storageField],
+                  "Float64Array",
+                )
+              )
+                fail(
+                  "TYPE",
+                  "element cache requires an elements reference with a number count and Float64Array storage",
+                );
+              define(
+                op.id,
+                op.kind === "element-storage" ? "optional-reference" : "number",
+              );
+              break;
+            }
+            case "element-length": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.lengthField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.lengthField], "number")
+              )
+                fail(
+                  "TYPE",
+                  "element length requires an elements reference with a number length",
+                );
+              define(op.id, "general");
+              break;
+            }
             case "record-has": {
               const type = use(op.object);
               if (type !== "reference" && type !== "optional-reference")
@@ -796,11 +1234,13 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "null" &&
+                op.type !== "nullish" &&
                 op.type !== "Uint8Array" &&
                 op.type !== "Uint16Array" &&
                 op.type !== "Uint32Array" &&
                 op.type !== "Float64Array" &&
-                op.type !== "object"
+                op.type !== "object" &&
+                op.type !== "absent"
               )
                 fail("TYPE", "general test requires a known category");
               define(op.id, "boolean");
@@ -838,6 +1278,15 @@ export function verify(
                 op.type !== "Float64Array"
               )
                 fail("TYPE", "unsupported general extraction category");
+              if (
+                op.unchecked === true &&
+                op.type !== "number" &&
+                op.type !== "reference"
+              )
+                fail(
+                  "TYPE",
+                  "unchecked general extraction requires number or reference",
+                );
               define(op.id, op.type);
               break;
             case "boolean-none":
@@ -998,6 +1447,45 @@ export function verify(
               equal(use(op.position), "number");
               define(op.id, "boolean");
               break;
+            case "string-index-of":
+              equal(use(op.string), "string");
+              equal(use(op.search), "string");
+              equal(use(op.position), "number");
+              define(op.id, "number");
+              break;
+            case "string-from-latin1":
+            case "string-from-utf8":
+              equal(use(op.bytes), "Uint8Array");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              define(op.id, "string");
+              break;
+            case "string-copy-latin1":
+            case "string-write-utf8":
+              equal(use(op.string), "string");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              equal(use(op.bytes), "Uint8Array");
+              equal(use(op.offset), "number");
+              define(op.id, "number");
+              break;
+            case "string-ascii-prefix":
+            case "string-utf8-length":
+              equal(use(op.string), "string");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              define(op.id, "number");
+              break;
+            case "string-ascii-case":
+              equal(use(op.string), "string");
+              define(op.id, "string");
+              break;
+            case "bytes-ascii-prefix":
+              equal(use(op.bytes), "Uint8Array");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              define(op.id, "number");
+              break;
             case "string-slice":
               equal(use(op.string), "string");
               equal(use(op.begin), "number");
@@ -1018,6 +1506,7 @@ export function verify(
               break;
             case "string-allocate":
               equal(use(op.length), "number");
+              equal(use(op.twoByte), "boolean");
               define(op.id, "string");
               break;
             case "string-write":
@@ -1026,6 +1515,47 @@ export function verify(
               equal(use(op.source), "string");
               break;
             case "string-length":
+              equal(use(op.string), "string");
+              define(op.id, "number");
+              break;
+            case "string-two-byte":
+              equal(use(op.string), "string");
+              define(op.id, "boolean");
+              break;
+            case "string-flat":
+              equal(use(op.string), "string");
+              define(op.id, "number");
+              break;
+            case "number-string-cached":
+              equal(use(op.value), "number");
+              define(op.id, "string");
+              break;
+            case "number-string-cache":
+              equal(use(op.value), "number");
+              equal(use(op.string), "string");
+              break;
+            case "string-index-cached":
+              equal(use(op.string), "string");
+              define(op.id, "number");
+              break;
+            case "string-index-cache":
+              equal(use(op.string), "string");
+              equal(use(op.value), "number");
+              break;
+            case "string-split-cached":
+              equal(use(op.string), "string");
+              equal(use(op.separator), "string");
+              equal(use(op.template), "reference");
+              define(op.id, "optional-reference");
+              break;
+            case "string-split-cache":
+              equal(use(op.string), "string");
+              equal(use(op.separator), "string");
+              equal(use(op.value), "reference");
+              break;
+            case "string-flatten-into":
+              equal(use(op.address), "number");
+              equal(use(op.byteLength), "number");
               equal(use(op.string), "string");
               define(op.id, "number");
               break;
@@ -1145,6 +1675,8 @@ export function verify(
                   fail("TYPE", "host call argument invariant");
                 equal(use(argument), parameter);
               }
+              if (hostInstruction(op.operation, 0, []) !== undefined)
+                fail("TYPE", "host operation binds as an instruction");
               const resultType = hostReturnType(op.operation);
               if (resultType === undefined)
                 fail("TYPE", "invalid host return signature");
@@ -1403,6 +1935,23 @@ export function verify(
                   "TYPE",
                   "JavaScript calls take the receiver in the header",
                 );
+              if (op.kind === "call-indirect" && op.tail === true) {
+                // The entry returns the result at once, with no handler.
+                const terminator = b.terminator;
+                if (
+                  scriptArguments === undefined ||
+                  f.scriptEntry !== true ||
+                  i !== b.instructions.length - 1 ||
+                  b.exception !== undefined ||
+                  terminator.kind !== "return" ||
+                  terminator.value === undefined ||
+                  terminator.value !== op.id
+                )
+                  fail(
+                    "TYPE",
+                    "a tail call is a JavaScript entry's returned last call",
+                  );
+              }
               for (const argument of scriptArguments ?? []) {
                 if (argument === undefined)
                   fail("TYPE", "missing actual argument");
@@ -1487,24 +2036,29 @@ export function verify(
               break;
             }
             case "script-argument-count":
-            case "script-argument-area":
               if (f.scriptEntry !== true)
                 fail("TYPE", "argument storage requires a JavaScript entry");
               define(op.id, "number");
               break;
-            case "script-argument": {
-              const frame = op.frame;
-              if (frame === undefined && f.scriptEntry !== true)
+            case "activation-read": {
+              const record = op.record,
+                index = op.index;
+              // Only `top` names no record; only `argument` takes an index.
+              if ((record === undefined) !== (op.field === "top"))
+                fail("TYPE", "activation fields other than top read a record");
+              if ((index === undefined) !== (op.field !== "argument"))
+                fail("TYPE", "only activation arguments take an index");
+              if (record !== undefined) equal(use(record), "number");
+              if (index !== undefined) equal(use(index), "number");
+              define(op.id, activationFieldType(op.field));
+              break;
+            }
+            case "script-argument":
+              if (f.scriptEntry !== true)
                 fail("TYPE", "actual arguments require a JavaScript entry");
-              if (frame !== undefined) {
-                equal(use(frame.count), "number");
-                equal(use(frame.registers), "number");
-                equal(use(frame.stack), "number");
-              }
               equal(use(op.index), "number");
               define(op.id, "general");
               break;
-            }
           }
         }
         instruction = undefined;

@@ -26,12 +26,12 @@ export function run():number{
   loaded++;finishLoadingImportedModule(referrer,request,payload,{ok:true,module});
  };
  const promise=runScriptContext<OrdinaryObject<ScriptPropertyKey,unknown>>(realm.agent,{realm,scriptOrModule:script},():OrdinaryObject<ScriptPropertyKey,unknown>=>evaluateImportCall("./target",undefined,hooks,realm));
- const promiseData=promise.internalPromiseData;
+ const promiseData=promise.internalExoticSlots?.internalPromiseData;
  if(promiseData===undefined||promiseData.state!=="pending"||loaded!==1)return 80;
  const failures:{count:number}={count:0};
  const jobs=drainScriptJobs(realm.agent,(error:unknown):void=>{failures.count++;});
  if(jobs!==2||failures.count!==0)return 81;
- const settled=promise.internalPromiseData;
+ const settled=promise.internalExoticSlots?.internalPromiseData;
  if(settled===undefined||settled.state!=="fulfilled"||settled.result!==getModuleNamespace(module))return 82;
  if(script.loadedRequests.length!==1||script.loadedRequests[0]?.module!==module)return 83;
  return 42;

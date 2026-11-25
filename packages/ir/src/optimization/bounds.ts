@@ -98,17 +98,12 @@ function multiply(left: Interval, right: Interval): Interval {
     : top;
 }
 function remainder(left: Interval, right: Interval): Interval {
-  // Non-negative finite integers modulo a positive integer constant.
-  if (
-    !bounded(left) ||
-    left.lo < 0 ||
-    !right.integer ||
-    right.lo !== right.hi ||
-    right.lo <= 0
-  )
+  // Non-negative finite integers modulo a positive integer (below the
+  // largest divisor, and no larger than the dividend).
+  if (!bounded(left) || left.lo < 0 || !right.integer || right.lo < 1)
     return top;
   // The remainder takes the dividend's sign: -0 only from -0.
-  return integerInterval(0, Math.min(left.hi, right.lo - 1), left.negativeZero);
+  return integerInterval(0, Math.min(left.hi, right.hi - 1), left.negativeZero);
 }
 /** Math.min/Math.max of two integer intervals (the result is one of the
  * operands, so -0 only from a -0 operand). */
@@ -166,11 +161,13 @@ const emptyState: SparseState = { slots: [], intervals: [] };
 /** Relational facts between number and string slots: Len(L, S) when slot L
  * holds the length of the string slot S holds, Less(I, S) when slot I holds
  * a number below that length. Keys are (first * slots + string) * 2, plus 1
- * for Less. Facts come only from instructions (a stored `string-length` of a
- * load of S) and from the taken edge of `I < length` (or the untaken edge
- * of `length <= I`), comparing loads not overwritten before the branch;
- * any store to either slot, a terminator transfer into it and exception
- * entries end them. Block entry facts meet by intersection. */
+ * for Less. Facts come only from instructions (a stored `string-length` of
+ * S's current value: a load of S, or the value last stored to S) and from
+ * the taken edge of `I < length` (or the untaken edge of `length <= I`),
+ * comparing loads not overwritten before the branch. A store of a slot's
+ * current value to another slot copies that slot's facts to it. Any other
+ * store to either slot, a terminator transfer into it and exception entries
+ * end them. Block entry facts meet by intersection. */
 interface StringIndexWalk {
   /** Facts before the terminator. */
   readonly out: Set<number>;
@@ -218,7 +215,10 @@ function analyzeStringIndices(
       lastStore = new Map<number, number>(),
       // string-length values: the string slot and the position of its load.
       lengthOf = new Map<number, number>(),
-      lengthLoadAt = new Map<number, number>();
+      lengthLoadAt = new Map<number, number>(),
+      // Values stored to a slot: the slot and the position of the store.
+      storedSlot = new Map<number, number>(),
+      storedAt = new Map<number, number>();
     const kill = (slot: number): void => {
       const doomed: number[] = [];
       for (const key of live) {
@@ -229,12 +229,17 @@ function analyzeStringIndices(
       }
       for (const key of doomed) if (key !== undefined) live.delete(key);
     };
-    /** The slot a value was loaded from, if not stored since the load. */
+    /** The slot a value was loaded from, if not stored since the load, or
+     * the slot it was stored to, if that store is the slot's last. */
     const current = (value: number): number => {
       const slot = loadSlot.get(value),
         at = loadAt.get(value);
-      if (slot === undefined || at === undefined) return -1;
-      return (lastStore.get(slot) ?? -1) < at ? slot : -1;
+      if (slot !== undefined && at !== undefined)
+        return (lastStore.get(slot) ?? -1) < at ? slot : -1;
+      const stored = storedSlot.get(value),
+        storedPosition = storedAt.get(value);
+      if (stored === undefined || storedPosition === undefined) return -1;
+      return lastStore.get(stored) === storedPosition ? stored : -1;
     };
     for (let position = 0; position < block.instructions.length; position++) {
       const op = block.instructions[position];
@@ -247,7 +252,18 @@ function analyzeStringIndices(
         const string = current(op.string);
         if (string >= 0 && fn.slots[string] === "string") {
           lengthOf.set(op.id, string);
-          lengthLoadAt.set(op.id, loadAt.get(op.string) ?? 0);
+          // The string slot must not be stored after the load (or after
+          // the store that put the string there).
+          const loaded = loadAt.get(op.string),
+            stored = storedAt.get(op.string);
+          lengthLoadAt.set(
+            op.id,
+            loaded !== undefined
+              ? loaded
+              : stored !== undefined
+                ? stored + 1
+                : 0,
+          );
         }
       } else if (op.kind === "string-code-unit") {
         const index = current(op.index),
@@ -255,8 +271,33 @@ function analyzeStringIndices(
         if (index >= 0 && string >= 0 && live.has(less(index, string)))
           visit(op.id);
       } else if (op.kind === "store") {
+        // A copy of a slot carries its facts (as counted-loop and LICM
+        // preheaders copy lengths and indices).
+        const source = current(op.value);
         kill(op.slot);
         lastStore.set(op.slot, position);
+        if (source >= 0 && source !== op.slot) {
+          const copied: number[] = [];
+          for (const key of live) {
+            if (key === undefined) continue;
+            const pair = Math.floor(key / 2),
+              first = Math.floor(pair / slots),
+              string = pair % slots;
+            if (first === source && string !== op.slot)
+              copied.push((op.slot * slots + string) * 2 + (key % 2));
+            else if (
+              string === source &&
+              first !== op.slot &&
+              fn.slots[op.slot] === "string"
+            )
+              copied.push((first * slots + op.slot) * 2 + (key % 2));
+          }
+          for (const key of copied) if (key !== undefined) live.add(key);
+        }
+        if (!loadSlot.has(op.value)) {
+          storedSlot.set(op.value, op.slot);
+          storedAt.set(op.value, position);
+        }
         const string = lengthOf.get(op.value);
         if (
           string !== undefined &&
@@ -368,6 +409,22 @@ export interface ArrayAccessSelection {
   readonly rewritten: number;
 }
 
+/** The largest safe integer, 2^53 - 1. */
+const maxSafeInteger = 9007199254740991;
+/** The integer an interval holds exactly, if it holds one. */
+function constantOf(interval: Interval | undefined): number | undefined {
+  return interval !== undefined &&
+    interval.integer &&
+    interval.lo === interval.hi &&
+    !interval.negativeZero
+    ? interval.lo
+    : undefined;
+}
+/** A constant `&` mask in [0, 2^31 - 1] (which bounds the result), else -1. */
+function maskOf(interval: Interval | undefined): number {
+  const mask = constantOf(interval);
+  return mask !== undefined && mask >= 0 && mask <= 2147483647 ? mask : -1;
+}
 /** Selects unchecked typed-array accesses (`array-element`, `array-store`)
  * where the index is proven an integer within the array's length. Facts:
  * interval analysis over number slots (constants, + - * and % with integer
@@ -431,8 +488,8 @@ export function selectArrayAccesses(
   // Functions without typed-array accesses still get integer slot facts
   // (loop counters over lists and strings).
   // Track only number slots whose values reach typed-array indices, array
-  // lengths or comparisons (directly, through arithmetic, or through stores
-  // into other tracked slots); states are dense over them.
+  // lengths, comparisons or remainders (directly, through arithmetic, or
+  // through stores into other tracked slots); states are dense over them.
   const relevant = new Uint8Array(slotCount);
   for (let changed = true; changed;) {
     changed = false;
@@ -462,16 +519,26 @@ export function selectArrayAccesses(
           dependencies.set(op.id, [op.slot]);
         else if (op.kind === "binary") {
           dependencies.set(op.id, combine(op.left, op.right));
-          if (["<", "<=", ">", ">="].includes(op.operator)) {
+          // A remainder of safe integers divides as int64s (codegen).
+          if (["<", "<=", ">", ">=", "%"].includes(op.operator)) {
             mark(op.left);
             mark(op.right);
           }
         } else if (op.kind === "unary")
           dependencies.set(op.id, combine(op.operand, op.operand));
+        else if (op.kind === "optional-wrap")
+          dependencies.set(op.id, combine(op.value, op.value));
         else if (op.kind === "array-read" || op.kind === "array-write")
           mark(op.index);
-        else if (op.kind === "array-new") mark(op.length);
-        else if (op.kind === "store" && relevant[op.slot] === 1) mark(op.value);
+        else if (op.kind === "element-load" || op.kind === "element-store") {
+          mark(op.index);
+          if (op.cachedCount !== undefined) mark(op.cachedCount);
+        } else if (op.kind === "array-new") mark(op.length);
+        else if (op.kind === "string-slice") {
+          mark(op.begin);
+          mark(op.limit);
+        } else if (op.kind === "store" && relevant[op.slot] === 1)
+          mark(op.value);
       }
     }
   }
@@ -481,7 +548,22 @@ export function selectArrayAccesses(
   for (let slot = 0; slot < slotCount; slot++)
     if (relevant[slot] === 1) dense[slot] = ++trackedCount;
   const tracked = (slot: number): number => (dense[slot] ?? 0) - 1;
-  if (trackedCount === 0) return { fn, visited, rewritten: 0 };
+  if (trackedCount === 0)
+    return {
+      // Earlier safe integer facts are replaced whole (see below).
+      fn:
+        fn.safeIntegerSlots === undefined && fn.nonzeroSlots === undefined
+          ? fn
+          : {
+              ...fn,
+              ...(fn.safeIntegerSlots === undefined
+                ? {}
+                : { safeIntegerSlots: [], safeIntegerBounds: [] }),
+              ...(fn.nonzeroSlots === undefined ? {} : { nonzeroSlots: [] }),
+            },
+      visited,
+      rewritten: 0,
+    };
   // Dataflow: an interval per tracked slot at each block entry, stored
   // sparsely as its integer intervals (any other interval is top) for slots
   // live into the block: a dead slot is stored before it is read, so its
@@ -709,6 +791,10 @@ export function selectArrayAccesses(
           // Typed array lengths are uint32.
           values.set(op.id, integerInterval(0, 4294967295, false));
           break;
+        case "element-count":
+          // Packed binary64 element counts are uint32 (0 on miss/invalidation).
+          values.set(op.id, integerInterval(0, 4294967295, false));
+          break;
         case "string-length":
           // A flat string (24-byte header, 2 bytes per unit) fits a
           // uint32-sized allocation, so its length is below 2^31.
@@ -721,6 +807,37 @@ export function selectArrayAccesses(
         case "binary": {
           const left = values.get(op.left),
             right = values.get(op.right);
+          // Bitwise results are 32-bit integers, never -0, whatever the
+          // operands: `>>>` unsigned (`x >>> 0` keeps an integer x already
+          // in that range, as counted-loops' word bounds), `&` with a
+          // non-negative 31-bit mask within the mask, the others signed.
+          if (op.operator === ">>>") {
+            values.set(
+              op.id,
+              left !== undefined &&
+                left.integer &&
+                left.lo >= 0 &&
+                left.hi <= 4294967295 &&
+                constantOf(right) === 0
+                ? integerInterval(left.lo, left.hi, false)
+                : integerInterval(0, 4294967295, false),
+            );
+            break;
+          }
+          if (op.operator === "&") {
+            const mask = Math.max(maskOf(left), maskOf(right));
+            values.set(
+              op.id,
+              mask >= 0
+                ? integerInterval(0, mask, false)
+                : integerInterval(-2147483648, 2147483647, false),
+            );
+            break;
+          }
+          if (["|", "^", "<<", ">>", "imul"].includes(op.operator)) {
+            values.set(op.id, integerInterval(-2147483648, 2147483647, false));
+            break;
+          }
           if (left === undefined || right === undefined) break;
           if (op.operator === "+") values.set(op.id, add(left, right, 1));
           else if (op.operator === "-") values.set(op.id, add(left, right, -1));
@@ -927,12 +1044,21 @@ export function selectArrayAccesses(
   }
   // Number slots whose every reachable write stores a proven 32-bit integer
   // (signed or unsigned) other than -0: codegen may hold them as integers.
+  // Wider ones whose writes are all safe integers other than -0 are safe
+  // integer slots, with the largest magnitude written as their bound. Either
+  // kind whose writes all exclude 0 is also a nonzero slot.
   // Entry values (parameters, the receiver) and opaque writes are unknown.
-  const integral = new Uint8Array(trackedCount);
+  const integral = new Uint8Array(trackedCount),
+    safe = new Uint8Array(trackedCount),
+    nonzero = new Uint8Array(trackedCount),
+    magnitudes = new Float64Array(trackedCount);
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
-    if (index >= 0 && opaque[slot] !== 1 && fn.slots[slot] === "number")
+    if (index >= 0 && opaque[slot] !== 1 && fn.slots[slot] === "number") {
       integral[index] = 1;
+      safe[index] = 1;
+      nonzero[index] = 1;
+    }
   }
   for (const block of fn.blocks) {
     if (block === undefined) throw "bounds block invariant";
@@ -948,16 +1074,39 @@ export function selectArrayAccesses(
         interval === undefined ||
         !interval.integer ||
         interval.negativeZero ||
-        interval.lo < -2147483648 ||
-        interval.hi > 4294967295
-      )
+        interval.lo < -maxSafeInteger ||
+        interval.hi > maxSafeInteger
+      ) {
         integral[index] = 0;
+        safe[index] = 0;
+        nonzero[index] = 0;
+        continue;
+      }
+      if (interval.lo < -2147483648 || interval.hi > 4294967295)
+        integral[index] = 0;
+      // Integer intervals exclude NaN, so one excluding 0 is nonzero.
+      if (hasZero(interval)) nonzero[index] = 0;
+      magnitudes[index] = Math.max(
+        magnitudes[index] ?? 0,
+        -interval.lo,
+        interval.hi,
+      );
     }
   }
-  const integerSlots: number[] = [];
+  const integerSlots: number[] = [],
+    safeIntegerSlots: number[] = [],
+    safeIntegerBounds: number[] = [],
+    nonzeroSlots: number[] = [];
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
-    if (index >= 0 && integral[index] === 1) integerSlots.push(slot);
+    if (index < 0) continue;
+    if (nonzero[index] === 1 && (integral[index] === 1 || safe[index] === 1))
+      nonzeroSlots.push(slot);
+    if (integral[index] === 1) integerSlots.push(slot);
+    else if (safe[index] === 1) {
+      safeIntegerSlots.push(slot);
+      safeIntegerBounds.push(magnitudes[index] ?? 0);
+    }
   }
   // A typed array slot's length is the least length any reachable write
   // stores (unreachable writes store nothing).
@@ -1189,20 +1338,20 @@ export function selectArrayAccesses(
           : substituteTerminatorValues(block.terminator, substitution),
     });
   }
-  if (rewritten === 0)
-    return {
-      fn: integerSlots.length === 0 ? fn : { ...fn, integerSlots },
-      visited,
-      rewritten: 0,
-    };
-  return {
-    fn:
-      integerSlots.length === 0
-        ? { ...fn, blocks }
-        : { ...fn, integerSlots, blocks },
-    visited,
-    rewritten,
+  // Safe integer and nonzero facts replace any earlier ones whole (an
+  // earlier list may name a slot that is now an integer slot).
+  const facts: FunctionIR = {
+    ...fn,
+    ...(integerSlots.length === 0 ? {} : { integerSlots }),
+    ...(safeIntegerSlots.length === 0 && fn.safeIntegerSlots === undefined
+      ? {}
+      : { safeIntegerSlots, safeIntegerBounds }),
+    ...(nonzeroSlots.length === 0 && fn.nonzeroSlots === undefined
+      ? {}
+      : { nonzeroSlots }),
   };
+  if (rewritten === 0) return { fn: facts, visited, rewritten: 0 };
+  return { fn: { ...facts, blocks }, visited, rewritten };
 }
 
 /** A comparison's outcome when the intervals of its operands decide it.

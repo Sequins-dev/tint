@@ -18,6 +18,13 @@ export type ScalarType =
   | "Float64Array"
   | "optional-number";
 export type ReturnType = ScalarType | "void";
+/** Fields of IR activation-read. */
+export type ActivationField =
+  "top" | "previous" | "kind" | "callee" | "count" | "argument";
+/** The operands and result type of each activation field. */
+export function activationFieldType(field: ActivationField): ScalarType {
+  return field === "callee" || field === "argument" ? "general" : "number";
+}
 export interface Span {
   readonly start: number;
   readonly end: number;
@@ -36,8 +43,11 @@ export type GeneralTest =
   | "boolean"
   | "string"
   | "null"
+  | "nullish"
   | NativeTypedArray
-  | "object";
+  | "object"
+  /** The miss result of property-load: no JavaScript value. */
+  | "absent";
 export type Instruction = Span &
   DebugOrigin &
   (
@@ -76,6 +86,8 @@ export type Instruction = Span &
         readonly id: number;
         readonly value: number;
         readonly type: GeneralTest;
+        /** Prefer a direct flags branch for a branch-only Script tag guard. */
+        readonly branch?: true;
       }
     | {
         readonly kind: "general-equal";
@@ -98,6 +110,10 @@ export type Instruction = Span &
          * array elements (checked; a narrowed `string | Uint8Array`). */
         readonly type:
           "number" | "boolean" | "string" | "reference" | NativeTypedArray;
+        /** Read the number payload without testing the tag. The result is
+         * meaningful only where a separate test proved the category; other
+         * payloads yield arbitrary bits. Only for type number. */
+        readonly unchecked?: true;
       }
     | {
         readonly kind: "record-has" | "record-read";
@@ -105,6 +121,211 @@ export type Instruction = Span &
         readonly object: number;
         readonly record: number;
         readonly field: number;
+      }
+    | {
+        /** Field `field + index` of a non-null record whose fields
+         * field..field+count-1 share one type (consecutive payload words):
+         * one load at a computed offset. Traps unless `index` is an integer
+         * in [0, count). */
+        readonly kind: "record-slot-read";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly count: number;
+        readonly index: number;
+      }
+    | {
+        /** A cached property value of a JavaScript object (js-runtime
+         * property caches), or the absent value (which general-is "absent"
+         * recognizes and no property holds) unless the general value
+         * `object` is object-tagged and one of the site's `entries`
+         * consecutive entries applies. Its payload is any record such a
+         * value can hold; its first word is compared with each entry's
+         * shape; no record but a `record` object has a shape in that word.
+         * Entries start at field `siteField` of the `siteRecord` record
+         * `site`. An own entry is two fields, the shape and the word index,
+         * and its holder is the object. An inherited entry is three, the
+         * shape, the word index and the holder (none for the object
+         * itself, as a method site caches an object's own method); inherited entries apply
+         * only while the site field after the last one equals field
+         * `epochField` of the `epochRecord` object in the field after it.
+         * That epoch advances with every structural change of an object
+         * used as a prototype, and a receiver shape implies its prototype,
+         * so the whole chain down to each holder (at any depth) is as it
+         * was when the runtime stored the entries. The result is the
+         * holder's general field whose word index is the raw binary64 bits
+         * of the entry's word index. The runtime writes only indices of
+         * fields `field..field+count-1` (consecutive general fields) with a
+         * shape under which they hold the property's value. */
+        readonly kind: "property-load";
+        readonly id: number;
+        readonly object: number;
+        readonly site: number;
+        readonly record: number;
+        readonly field: number;
+        readonly count: number;
+        readonly siteRecord: number;
+        readonly siteField: number;
+        readonly inherited: boolean;
+        /** Entries at the site: 1 to 4. */
+        readonly entries: number;
+        readonly epochRecord: number;
+        readonly epochField: number;
+        /** Optional linked 16-slot PropertySpill layout for reading spilled own
+         * properties past the in-place slots (negative raw-bit slot index). */
+        readonly spillRecord?: number;
+        readonly spillField?: number;
+      }
+    | {
+        /** Store general `value` through a cached property store (js-runtime
+         * property caches); the boolean result is false, with nothing
+         * written, unless `object` is object-tagged with the shape in site
+         * field `siteField`. The value then goes to the general field whose
+         * word index is the raw bits of site field `siteField + 1` (one of
+         * `field..field+count-1` of a `record` object). When site field
+         * `siteField + 2` holds a transition shape, the store also requires
+         * site field `siteField + 3` to equal field `epochField` of the
+         * `epochRecord` object in site field `siteField + 4`, and sets the
+         * object's first word (its shape) to the transition. */
+        readonly kind: "property-store";
+        readonly id: number;
+        readonly object: number;
+        readonly value: number;
+        readonly site: number;
+        readonly record: number;
+        readonly field: number;
+        readonly count: number;
+        readonly siteRecord: number;
+        readonly siteField: number;
+        readonly epochRecord: number;
+        readonly epochField: number;
+      }
+    | {
+        /** Resolve the native script entry closure of general `callee` for a
+         * direct call (`construct: false`) or ordinary construction
+         * (`construct: true`) in `realm`'s active execution context; returns
+         * reference-none (0) when the callee must take the general path. */
+        readonly kind: "script-entry";
+        readonly id: number;
+        readonly callee: number;
+        readonly realm: number;
+        readonly construct: boolean;
+        readonly realmRecord: number;
+        readonly agentField: number;
+        readonly agentRecord: number;
+        readonly activeField: number;
+        readonly objectRecord: number;
+        readonly registerCallField: number;
+        readonly entryRecord: number;
+        readonly invokeField: number;
+        readonly contextField: number;
+        readonly constructibleField: number;
+        readonly contextRecord: number;
+        readonly realmField: number;
+        readonly scriptOrModuleField: number;
+      }
+    | {
+        /** Read the cached global data property cell at `cache` when `start`
+         * is the global scope itself (declarative and object are absent),
+         * `cache.global === start.global`, `cache.lexicalEpoch ===
+         * start.global.lexicalEpoch`, and `cache.objectEpoch ===
+         * start.global.object.internalPropertyEpoch`; returns reference-none
+         * (0) on miss. */
+        readonly kind: "global-cell";
+        readonly id: number;
+        readonly scope: number;
+        readonly cache: number;
+        readonly scopeRecord: number;
+        readonly declarativeField: number;
+        readonly objectField: number;
+        readonly globalField: number;
+        readonly globalRecord: number;
+        readonly lexicalEpochField: number;
+        readonly globalObjectField: number;
+        readonly globalObjectRecord: number;
+        readonly propertyEpochField: number;
+        readonly cacheRecord: number;
+        readonly cacheGlobalField: number;
+        readonly cacheLexicalEpochField: number;
+        readonly cacheObjectEpochField: number;
+        readonly cacheCellField: number;
+      }
+    | {
+        /** A packed binary64 element of a JavaScript array (js-runtime
+         * array elements), or the absent value (see property-load). It is
+         * the element unless the general value `object` is object-tagged
+         * with a `record` payload (its first word is the record's
+         * descriptor) whose optional reference field `field` holds an
+         * `elementsRecord` object, and `index` is an integer at least 0 and
+         * below that object's number field `countField`. The element is
+         * then entry `index` of its Float64Array field `storageField`, which
+         * the runtime keeps at least `countField` long. */
+        readonly kind: "element-load";
+        readonly id: number;
+        readonly object: number;
+        readonly index: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+        readonly cachedStorage?: number;
+        readonly cachedCount?: number;
+      }
+    | {
+        /** Overwrite the packed binary64 element `index` (located as for
+         * element-load) with the Number general value `value`; the boolean
+         * result is false, with nothing written, when element-load would
+         * miss or `value` is not a Number. */
+        readonly kind: "element-store";
+        readonly id: number;
+        readonly object: number;
+        readonly index: number;
+        readonly value: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+        readonly cachedStorage?: number;
+        readonly cachedCount?: number;
+      }
+    | {
+        /** The Float64Array storage of a packed array exotic object (or none
+         * when `object` is not a `record` object with a present `field`). */
+        readonly kind: "element-storage";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+      }
+    | {
+        /** The packed binary64 element count of a packed array exotic object
+         * (or 0 when `object` is not a `record` object with a present `field`). */
+        readonly kind: "element-count";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+      }
+    | {
+        /** The mirrored `length` of a packed array exotic object (the Number
+         * general value of `elementsRecord.lengthField`), or the absent value
+         * when `object` is not a `record` object with a present `field`. */
+        readonly kind: "element-length";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly lengthField: number;
       }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
@@ -143,26 +364,33 @@ export type Instruction = Span &
         /** Actual JavaScript operands. The fixed header contains callee,
          * receiver, new.target and an optional already-materialized list. */
         readonly scriptArguments?: readonly number[];
+        /** A proper tail call of a script entry: the block returns its
+         * result at once, so the callee may replace the entry's frame. */
+        readonly tail?: true;
       }
     | { readonly kind: "script-argument-count"; readonly id: number }
-    | {
-        /** Numeric address of borrowed operands in a live script frame. */
-        readonly kind: "script-argument-area";
-        readonly id: number;
-        readonly area: "registers" | "stack";
-      }
     | {
         /** Read an actual operand of the current script entry. Missing
          * operands return undefined. The caller owns the overflow roots. */
         readonly kind: "script-argument";
         readonly id: number;
         readonly index: number;
-        /** Legacy Function.arguments reflection borrows an active frame. */
-        readonly frame?: {
-          readonly count: number;
-          readonly registers: number;
-          readonly stack: number;
-        };
+      }
+    | {
+        /** A field of the native activation chain: the records script
+         * entries link into their frames while they run (see @tint/abi/host
+         * nativeActivationTopOffset). `top` is the innermost record (0 when
+         * none); for a record, `previous` is the next older one, `kind` is 1
+         * for an entry called with actual operands (0 for one called with a
+         * materialized list, which other bookkeeping covers), `callee` its
+         * callee, `count` its actual operand count and `argument` actual
+         * `index` (undefined from the count on). Records and their frames are
+         * read only while their activations run. */
+        readonly kind: "activation-read";
+        readonly id: number;
+        readonly field: ActivationField;
+        readonly record?: number;
+        readonly index?: number;
       }
     | { readonly kind: "closure-environment"; readonly id: number }
     | { readonly kind: "string-none"; readonly id: number }
@@ -208,6 +436,14 @@ export type Instruction = Span &
         readonly id: number;
         readonly string: number;
       }
+    /** Whether the string stores two bytes per code unit: strings are
+     * canonical, so this is whether some unit is above 0xFF. Builders
+     * choose their result's kind from their parts'. */
+    | {
+        readonly kind: "string-two-byte";
+        readonly id: number;
+        readonly string: number;
+      }
     | {
         readonly kind: "string-code-unit";
         readonly id: number;
@@ -217,6 +453,9 @@ export type Instruction = Span &
          * the string: the index is a non-negative integer below its length,
          * so the result is an integer in [0, 65535], never NaN. */
         readonly inBounds?: boolean;
+        /** Known by the optimizer (versionStringLoops) to read a flat
+         * string of this kind, so no kind dispatch is needed. */
+        readonly unitKind?: "one-byte" | "two-byte";
       }
     | {
         readonly kind: "string-starts-with";
@@ -232,6 +471,178 @@ export type Instruction = Span &
         readonly begin: number;
         readonly limit: number;
       }
+    /** Latin-1 and ASCII bulk primitives (docs/design-one-byte-strings.md),
+     * bound to foundation functions whose portable bodies define the same
+     * results. Indices are integers in range (0 <= begin <= limit <= length,
+     * offset + limit - begin <= bytes.length); anything else is a binding
+     * invariant failure and traps.
+     *
+     * string-from-latin1: the one-byte string of bytes [begin, limit). */
+    | {
+        readonly kind: "string-from-latin1";
+        readonly id: number;
+        readonly bytes: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** Copies code units [begin, limit) of `string` into `bytes` at `offset`,
+     * one byte each: limit - begin when every unit is at most 0xFF, else -1
+     * (bytes may be partly written). */
+    | {
+        readonly kind: "string-copy-latin1";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+        readonly bytes: number;
+        readonly offset: number;
+      }
+    /** The first index in [begin, limit) whose code unit (string-ascii-prefix)
+     * or byte (bytes-ascii-prefix) is 0x80 or more, else limit. */
+    | {
+        readonly kind: "string-ascii-prefix";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** UTF-8 bulk primitives (foundation's text/utf8.ts, bound like the
+     * Latin-1 ones, with the same index contract). A surrogate pair inside
+     * [begin, limit) is one scalar; a lone surrogate encodes as U+FFFD.
+     *
+     * string-utf8-length: the UTF-8 byte length of units [begin, limit). */
+    | {
+        readonly kind: "string-utf8-length";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** Encodes units [begin, limit) of `string` as UTF-8 into `bytes` from
+     * `offset` (offset <= bytes.length), scalar by scalar while the next
+     * one fits, and yields the index after the last unit encoded (limit
+     * when everything fit). */
+    | {
+        readonly kind: "string-write-utf8";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+        readonly bytes: number;
+        readonly offset: number;
+      }
+    /** The string decoded from the longest prefix of bytes [begin, limit)
+     * that is a sequence of complete, valid UTF-8 encodings of scalars;
+     * with `whole`, that string only when the prefix is the whole range,
+     * otherwise the empty string (which a nonempty valid range never
+     * decodes to). */
+    | {
+        readonly kind: "string-from-utf8";
+        readonly id: number;
+        readonly bytes: number;
+        readonly begin: number;
+        readonly limit: number;
+        readonly whole?: true;
+      }
+    /** The number-string cache (numberStringCached, cacheNumberString;
+     * nativeNumberStringCacheWord): the string cached for `value` by its
+     * exact bits, or the empty string, which no number converts to. */
+    | {
+        readonly kind: "number-string-cached";
+        readonly id: number;
+        readonly value: number;
+      }
+    /** Caches `string` as `value`'s string, allocating the table when the
+     * runtime has none (since the last collection). */
+    | {
+        readonly kind: "number-string-cache";
+        readonly value: number;
+        readonly string: number;
+      }
+    /** The array index `string` is the canonical decimal of, as cached in
+     * its index field (nativeStringIndexFieldOffset), or -1 when none is
+     * cached. */
+    | {
+        readonly kind: "string-index-cached";
+        readonly id: number;
+        readonly string: number;
+      }
+    /** Caches `value`, an array index below nativeStringIndexLimit whose
+     * canonical decimal `string` is, in its index field: a relaxed 32-bit
+     * store, only when the field is still unset. */
+    | {
+        readonly kind: "string-index-cache";
+        readonly string: number;
+        readonly value: number;
+      }
+    /** The string-split cache (nativeStringSplitCacheWord): the cached
+     * immutable snapshot list matching `(string, separator)` with the same
+     * record header as `template`, or none (0). */
+    | {
+        readonly kind: "string-split-cached";
+        readonly id: number;
+        readonly string: number;
+        readonly separator: number;
+        readonly template: number;
+      }
+    /** Caches `value` (an immutable snapshot list) for `(string, separator)`,
+     * allocating the table when the runtime has none since the last GC. */
+    | {
+        readonly kind: "string-split-cache";
+        readonly string: number;
+        readonly separator: number;
+        readonly value: number;
+      }
+    /** `string` with each ASCII letter mapped to upper case (`upper`) or
+     * lower case, every other unit unchanged: a new string of the same
+     * length and kind (asciiUppercase and asciiLowercase). */
+    | {
+        readonly kind: "string-ascii-case";
+        readonly id: number;
+        readonly string: number;
+        readonly upper: boolean;
+      }
+    /** 1 when `string` is flat (owns its units: nativeStringIsFlat), else
+     * 0 (a slice). */
+    | {
+        readonly kind: "string-flat";
+        readonly id: number;
+        readonly string: number;
+      }
+    /** Writes a flat image of `string` (its flat header, length and units,
+     * zero-padded: a position-independent, pointer-free string object, as
+     * nativeFlatStringExtent sizes it) at the start of the caller-owned raw
+     * writable window [address, address + byteLength), and yields its byte
+     * extent; a slice's units are copied from its parent. Yields -1 without
+     * writing when the window is too small or its bounds are not exact
+     * integers with a nonzero 8-byte-aligned address and an end below
+     * 2^53. */
+    | {
+        readonly kind: "string-flatten-into";
+        readonly id: number;
+        readonly address: number;
+        readonly byteLength: number;
+        readonly string: number;
+      }
+    | {
+        readonly kind: "bytes-ascii-prefix";
+        readonly id: number;
+        readonly bytes: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** The first index k >= `position` (with `reverse`, the last k <=
+     * `position`) at which `search` occurs in `string`, or -1: indexOf,
+     * lastIndexOf and includes. `position` is an integer in [0, length],
+     * which the caller has clamped. */
+    | {
+        readonly kind: "string-index-of";
+        readonly id: number;
+        readonly string: number;
+        readonly search: number;
+        readonly position: number;
+        readonly reverse: boolean;
+      }
     | {
         readonly kind: "string-from-code-units";
         readonly id: number;
@@ -245,11 +656,18 @@ export type Instruction = Span &
       }
     /** A fresh string of `length` code units whose contents are undefined until
      * `string-write` fills every unit. Only builders that write all units before
-     * any other use (Array.prototype.join) may produce it. */
+     * any other use (Array.prototype.join) may produce it. `twoByte` (a
+     * boolean) is whether any part written is two-byte (string-two-byte):
+     * the result's canonical kind. A loop string builder (build-loop-strings)
+     * also uses one as a buffer with spare capacity: it is never observable,
+     * its unwritten tail is only copied into a larger buffer, and values
+     * leave it only through string-slice of its written prefix, which
+     * holds a unit above 0xFF whenever the buffer is two-byte. */
     | {
         readonly kind: "string-allocate";
         readonly id: number;
         readonly length: number;
+        readonly twoByte: number;
       }
     /** Copy every code unit of `source` into the fresh `target` at `offset`. */
     | {
@@ -555,6 +973,18 @@ export interface FunctionIR {
    * A pass that adds a write to a slot must drop or re-prove its entry; slot
    * renumbering must remap the list. */
   readonly integerSlots?: readonly number[];
+  /** Optimization facts: number slots (ascending, none of them integer
+   * slots) whose every write stores a safe integer other than -0, of
+   * magnitude at most the slot's safeIntegerBounds entry, so they may be
+   * held as int64s. The same pass rules as for integerSlots apply. */
+  readonly safeIntegerSlots?: readonly number[];
+  /** The magnitude bound (at most 2^53 - 1) of each safeIntegerSlots entry,
+   * entry for entry. */
+  readonly safeIntegerBounds?: readonly number[];
+  /** Optimization facts: number slots (ascending) whose every write stores
+   * an integer other than 0 and -0, so remainders by their values never
+   * divide by zero. The same pass rules as for integerSlots apply. */
+  readonly nonzeroSlots?: readonly number[];
   readonly returnType: ReturnType;
   readonly entry: number;
   readonly blocks: readonly Block[];

@@ -5,6 +5,7 @@ import { temporalStringOption } from "./temporal-options.ts";
 import { temporalTimeZonesEqual } from "./temporal-time-zone.ts";
 import { createTemporalInstantObject } from "./temporal-instant-construction.ts";
 import {
+  ensureExoticSlots,
   createObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -198,13 +199,15 @@ export function installZonedCopyMethods(
                 : realm.temporalPlainTimePrototype;
           const object = createObject<ScriptPropertyKey, unknown>(parent);
           if (name === "toPlainDate") {
-            object.internalTemporalPlainDate = data.dateTime.date;
-            object.internalTemporalCalendar = calendar;
+            ensureExoticSlots(object).internalTemporalPlainDate =
+              data.dateTime.date;
+            ensureExoticSlots(object).internalTemporalCalendar = calendar;
           } else if (name === "toPlainDateTime") {
-            object.internalTemporalPlainDateTime = data.dateTime;
-            object.internalTemporalCalendar = calendar;
+            ensureExoticSlots(object).internalTemporalPlainDateTime =
+              data.dateTime;
+            ensureExoticSlots(object).internalTemporalCalendar = calendar;
           } else
-            object.internalTemporalPlainTime = {
+            ensureExoticSlots(object).internalTemporalPlainTime = {
               hour: data.dateTime.hour,
               minute: data.dateTime.minute,
               second: data.dateTime.second,

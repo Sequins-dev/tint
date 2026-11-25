@@ -9,6 +9,7 @@ import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
 import { scriptPropertyKeyOrder, type ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureExoticSlots,
   createObject,
   createDataProperty,
   getOwnProperty,
@@ -245,7 +246,7 @@ export function installIteratorZip(
             },
           );
           const helper = createObject<ScriptPropertyKey, unknown>(prototype);
-          helper.internalIteratorHelperData = {
+          ensureExoticSlots(helper).internalIteratorHelperData = {
             generator,
             close: (): void => closeAll(iterators, false),
           };

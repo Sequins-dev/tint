@@ -13,7 +13,7 @@ export function run():number{
   const result=defineOwnProperty<string,number>(object,"length",{fields:1,value:0,writable:false,enumerable:false,configurable:false,get:0,set:0},hooks);
   if(result!=="accepted"||state.calls>1024)return 2;
   const length=getOwnProperty<string,number>(object,"length");
-  if(length===undefined||length.value!==0||!length.writable||object.properties.size!==1)return 3;
+  if(length===undefined||length.value!==0||!length.writable||object.properties===undefined||object.properties.size!==1)return 3;
  }
  createDataProperty<string,number>(object,"3",42,hooks);
  defineOwnProperty<string,number>(object,"3",{fields:32,value:0,writable:false,enumerable:false,configurable:false,get:0,set:0},hooks);
@@ -25,7 +25,7 @@ export function run():number{
  createDataProperty<string,number>(sparse,"4294967294",42,hooks);
  if(defineOwnProperty<string,number>(sparse,"length",{fields:3,value:0,writable:false,enumerable:false,configurable:false,get:0,set:0},hooks)!=="accepted")return 6;
  const readonly=getOwnProperty<string,number>(sparse,"length");
- if(readonly===undefined||readonly.value!==0||readonly.writable||sparse.properties.size!==1)return 7;
+ if(readonly===undefined||readonly.value!==0||readonly.writable||sparse.properties===undefined||sparse.properties.size!==1)return 7;
  return 42;
 }`,
   "regexp-harness-array-reset",

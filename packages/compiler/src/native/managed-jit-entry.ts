@@ -291,6 +291,7 @@ export function prepareX64ManagedSurfaceEntry(
       bindings: ir.abi,
       functions: [ir.entry],
       records: [],
+      inlineBytes: true,
     },
   );
   if (!emitted.ok) return fail("emit", emitted.error.message);

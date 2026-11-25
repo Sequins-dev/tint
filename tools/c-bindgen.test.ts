@@ -1143,11 +1143,8 @@ test(
   },
 );
 
-test("a registered allocator runs inside the generated zlib binding's may-callback calls (generational, LLDB)", () => {
+test("a registered allocator runs inside the generated zlib binding's may-callback calls (LLDB)", () => {
   verifyGeneratedZlibAllocatorFixture();
-});
-test("a registered allocator runs inside the generated zlib binding's may-callback calls (copying, LLDB)", () => {
-  verifyGeneratedZlibAllocatorFixture("initializeCopyingRuntime");
 });
 
 test("general code imports a generated binding where its exports cross a checked boundary (LLDB)", () => {

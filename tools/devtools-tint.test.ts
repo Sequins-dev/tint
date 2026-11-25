@@ -12,18 +12,22 @@ import {
   tintSession,
   type Frame,
 } from "./devtools-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const available = findLldbDap() !== undefined;
+const supportedTarget = nativeFixtureTarget().arch === "aarch64";
 
 testNativeLaunch(
   "DevTools bridge debugs a Tint debug build (core only)",
-  { skip: !available && "needs lldb-dap", timeout: 300000 },
+  {
+    skip:
+      (!available && "needs lldb-dap") ||
+      (!supportedTarget &&
+        "Tint debug-build DWARF inlines and heap introspection require aarch64"),
+    timeout: 300000,
+  },
   async (onAdmitted) => {
-    const { client, url, close } = await tintSession(
-      "devtools-core",
-      [],
-      onAdmitted,
-    );
+    const { client, url, close } = await tintSession([], onAdmitted);
     try {
       const parsed = await client.next(
         "Debugger.scriptParsed",

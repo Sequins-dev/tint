@@ -31,9 +31,10 @@ export const heapDebugSampleThunkSymbol = "__tint_allocation_sample_thunk";
 /** "TINTHEAP" as two little-endian words. */
 export const heapDebugMagicLow = 0x544e4954;
 export const heapDebugMagicHigh = 0x50414548;
-/** Version 2: one-word headers (marker and kind flags in one word), the
- * 8-byte granule, and per-kind minimum element counts. */
-export const heapDebugVersion = 2;
+/** Version 3: one-word headers (marker and kind flags in one word), the
+ * 8-byte granule, per-kind minimum element counts, and a nursery without
+ * start bits (walked by object extents; see the state block below). */
+export const heapDebugVersion = 3;
 
 // Header and live words (u64 unless noted).
 export const heapDebugMagicOffset = 0;
@@ -52,7 +53,10 @@ export const heapDebugContextOffset = 16;
  * (address, size, context) after the allocation succeeds, then rearms the
  * limit from the (possibly updated) interval. Disarming stores interval 0
  * and restores the saved limit. Unarmed, generated code and the inline
- * allocation sequence are unchanged and the thunk only forwards. */
+ * allocation sequence are unchanged and the thunk only forwards. Arming may
+ * happen at any instruction, below the top of an allocation in flight: the
+ * inline sequence compares top + size with the limit, so the next allocation
+ * then takes the slow path (docs/allocation-throughput.md). */
 export const heapDebugSampleIntervalOffset = 24;
 export const heapDebugSampleLimitOffset = 32;
 /** Samples taken (incremented by the thunk). */
@@ -93,14 +97,15 @@ export const heapDebugContextManagedBytesOffset = 104;
 export const heapDebugContextStateOffset = 108;
 /** u32 word indices into the state block (generational collector): young
  * top, young limit, young base (offset of the nursery from the managed
- * base), old top, the u64 address of the young object-start bits (bit i:
- * a granule-aligned object starts at young base + i * granule; the active
- * old prefix's bits immediately precede them, one bit per granule from the
- * old base = young base - old capacity), old capacity, the u64 address of
- * the dirty-card bitmap (one bit per granule of the old prefix), and the
- * remembered-queue count. Objects occupy [old base, old base + old top) and
- * [young base, young base + young top); both are found through the start
- * bits, since parallel evacuation leaves unformatted gaps. */
+ * base), old top, the u64 address of the young object-start bits (the old
+ * prefix's bits immediately precede it: bit i says a granule-aligned object
+ * starts at old base + i * granule, old base = young base - old capacity),
+ * old capacity, the u64 address of the dirty-card bitmap (one bit per
+ * granule of the old prefix), and the remembered-queue count. Objects occupy
+ * [old base, old base + old top), found through the start bits since
+ * parallel evacuation leaves unformatted gaps, and [young base, young base +
+ * young top), which is bump-allocated without gaps and keeps no start bits:
+ * it is walked object by object from its base by each object's extent. */
 export const heapDebugStateYoungTopOffset = 112;
 export const heapDebugStateYoungLimitOffset = 116;
 export const heapDebugStateYoungBaseOffset = 120;
@@ -160,15 +165,22 @@ export interface HeapDebugKind {
   readonly name: string;
   readonly minimumCount: number;
 }
-/** Built-in object kinds of the current header format (marker 1: flat
- * UTF-16 string, in the heap or an image literal; 2-5: typed buffers by
+/** Built-in object kinds of the current header format (marker 1: string,
+ * flat in the heap or an image literal, two-byte (flags 0) or one-byte
+ * (flags 1), or sliced from a flat parent (flags 2, or 3 for one-byte);
+ * 2-5: typed buffers by
  * element width, owning (flags 0), borrowing external storage (1) or
  * viewing an owner (2); 6: reference vector; 7: weak slot, weak (0) or
  * ephemeron (1)). Functions are records whose descriptor is the image's
  * function-record descriptor. Offsets follow packages/abi/src/host.ts. */
 export const heapDebugKinds: readonly HeapDebugKind[] = [
-  // Strings span at least four units (inline comparisons read them).
+  // Strings have at least eight data bytes (inline comparisons read them):
+  // four two-byte units or eight one-byte units. Both kinds share the DWARF
+  // `string` structure, whose `units` and `bytes` overlay the data.
   kind(1, 0, 16, 8, 2, 0, 0, "string", 4),
+  kind(1, 1, 16, 8, 1, 0, 0, "string", 8),
+  kind(1, 2, 32, -1, 0, 2, 24, "string.slice"),
+  kind(1, 3, 32, -1, 0, 2, 24, "string.slice"),
   kind(2, 0, 24, 8, 1, 0, 0, "Uint8Array"),
   kind(2, 1, 24, -1, 0, 0, 0, "Uint8Array.external"),
   kind(2, 2, 40, -1, 0, 2, 24, "Uint8Array.view"),

@@ -10,6 +10,7 @@ import {
   createConstructorObject,
   createObject,
   createDataProperty,
+  exoticSlots,
   getProperty,
   defineOwnProperty,
   type ObjectHooks,
@@ -91,7 +92,7 @@ export function installPromiseIntrinsics(
         hooks,
       );
       const promise = createPromiseObject(prototype);
-      const record = promise.internalPromiseData;
+      const record = exoticSlots(promise).internalPromiseData;
       if (record === undefined) throw "PROMISE_ALLOCATION_INVARIANT";
       const functions = createResolvingFunctions<unknown>(record, protocol);
       const pair = createScriptResolvingFunctions(functions, realm, hooks);
@@ -160,7 +161,7 @@ export function installPromiseIntrinsics(
     (receiver, args): unknown => {
       const promise = viewObjectValue(receiver, realm.objectPrototype);
       if (promise === undefined) return typeError();
-      const record = promise.internalPromiseData;
+      const record = exoticSlots(promise).internalPromiseData;
       if (record === undefined) return typeError();
       const selected = speciesConstructor(promise, constructor, realm, hooks);
       const capability = newPromiseCapability(selected, realm, hooks);

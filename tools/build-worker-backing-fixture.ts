@@ -92,7 +92,7 @@ export function run():number {
     runtimeEntry:
       target.arch === "x86_64"
         ? "initializeGenerationalRuntime"
-        : "initializeCopyingRuntime",
+        : "initializeGenerationalRuntime",
     hostBindings: bindings,
   },
 );

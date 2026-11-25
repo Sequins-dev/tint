@@ -31,7 +31,7 @@ test("Date exposes a realm-local constructor and unbranded prototype", () => {
     objects.getOwnProperty(prototype, "getTimezoneOffset"),
     "local-time accessors installed",
   );
-  assert.equal(prototype.internalDateValue, undefined);
+  assert.equal(objects.exoticSlots(prototype).internalDateValue, undefined);
   assert.ok(
     objects.getOwnProperty(prototype, "getYear"),
     "legacy year methods installed",

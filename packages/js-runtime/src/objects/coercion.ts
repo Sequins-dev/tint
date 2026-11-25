@@ -4,6 +4,7 @@ import {
   throwIfRuntimeError,
   type ErrorRealm,
 } from "./errors.ts";
+import { appendPackedElement } from "./array-append.ts";
 import { viewSymbolValue, wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
@@ -59,24 +60,48 @@ export function readObjectValuePropertyKey(
   let converted: ScriptPropertyKey;
   if (typeof key === "string") converted = key;
   else if (typeof key === "number") {
+    // Packed array elements (both binary64 numbers and general ElementCells)
+    // are own writable data properties with no prototype lookup or coercion.
+    let object = viewObjectValue(base, realm.objectPrototype);
+    if (object !== undefined) {
+      const elements = object.internalArrayElements;
+      if (elements !== undefined && key >= 0 && (key | 0) === key) {
+        const values = elements.values;
+        if (values !== undefined) {
+          if (key < values.length) {
+            const cell = values[key];
+            if (cell !== undefined) return cell.value;
+          }
+        } else if (key < elements.numberCount) {
+          return elements.numbers[key];
+        }
+      }
+    }
     // A TypedArray's [[Get]] of a canonical numeric key never consults the
     // prototype chain; ToString of a Number is canonical, naming the Number
     // itself (-0 names "0"). Read the element without the string round trip.
-    let object = viewObjectValue(base, realm.objectPrototype);
-    const data = object?.internalTypedArrayData;
+    const exotic =
+      object === undefined ? undefined : object.internalExoticSlots;
+    const data =
+      exotic === undefined ? undefined : exotic.internalTypedArrayData;
     if (data !== undefined)
       return typedArrayElementAt(data, key === 0 ? 0 : key);
     if (Number.isSafeInteger(key) && object !== undefined) {
       while (object !== undefined) {
-        const typed = object.internalTypedArrayData;
+        const cursorExotic = object.internalExoticSlots;
+        const typed =
+          cursorExotic === undefined
+            ? undefined
+            : cursorExotic.internalTypedArrayData;
         if (typed !== undefined)
           return typedArrayElementAt(typed, key === 0 ? 0 : key);
         const methods = object.internalMethods;
+        const rare = object.internalRareSlots;
         if (
           methods?.get !== undefined ||
           methods?.getOwnProperty !== undefined ||
           methods?.getPrototype !== undefined ||
-          object.internalDataAliases !== undefined
+          (rare !== undefined && rare.internalDataAliases !== undefined)
         )
           return getProperty<ScriptPropertyKey, unknown>(
             object,
@@ -135,29 +160,40 @@ export function writeObjectValuePropertyKey(
   if (typeof key === "number") {
     const object = viewObjectValue(base, realm.objectPrototype);
     if (object !== undefined) {
-      const data = object.internalTypedArrayData;
-      if (data !== undefined) {
-        if (!bufferStorageImmutable(data.storage))
-          setTypedArrayElement(data, key === 0 ? 0 : key, value, realm, hooks);
-        else if (strict) throw createRuntimeError(realm, "type");
-        return;
+      const exotic = object.internalExoticSlots;
+      if (exotic !== undefined) {
+        const data = exotic.internalTypedArrayData;
+        if (data !== undefined) {
+          if (!bufferStorageImmutable(data.storage))
+            setTypedArrayElement(
+              data,
+              key === 0 ? 0 : key,
+              value,
+              realm,
+              hooks,
+            );
+          else if (strict) throw createRuntimeError(realm, "type");
+          return;
+        }
       }
+      const rare = object.internalRareSlots;
       if (
         Number.isSafeInteger(key) &&
-        object.internalPropertyContract === undefined
+        (rare === undefined || rare.internalPropertyContract === undefined)
       ) {
         const elements = object.internalArrayElements;
-        if (
-          elements !== undefined &&
-          key >= 0 &&
-          key < arrayElementCount<ScriptPropertyKey, unknown>(elements)
-        ) {
-          writeArrayElement<ScriptPropertyKey, unknown>(elements, key, value);
-          return;
+        if (elements !== undefined && key >= 0) {
+          const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
+          if (key < count) {
+            writeArrayElement<ScriptPropertyKey, unknown>(elements, key, value);
+            return;
+          }
+          if (key === count && appendPackedElement(object, value, realm, true))
+            return;
         }
         if (
           object.internalMethods === undefined &&
-          object.internalDataAliases === undefined
+          (rare === undefined || rare.internalDataAliases === undefined)
         ) {
           const cell = indexedPropertyCell<ScriptPropertyKey, unknown>(
             object,

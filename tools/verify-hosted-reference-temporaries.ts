@@ -31,7 +31,7 @@ export function run():number {
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 32768,
     allocationCapacity: 4096,
     rootCapacity: 4096,

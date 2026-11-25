@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createConstructorObject,
   createObject,
   type OrdinaryObject,
@@ -32,14 +34,16 @@ import {
 import type { ScriptAgent } from "./jobs.ts";
 function requireRegistry(value: unknown, realm: ErrorRealm): WeakRegistryData {
   const object = viewObjectValue(value, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalWeakData;
+    data =
+      object === undefined ? undefined : exoticSlots(object).internalWeakData;
   if (data === undefined || data.kind !== "registry")
     throw createRuntimeError(realm, "type");
   return data;
 }
 function directoryRegistry(owner: unknown): WeakRegistryData {
   const object = viewWeakRegistryOwner(owner),
-    data = object === undefined ? undefined : object.internalWeakData;
+    data =
+      object === undefined ? undefined : exoticSlots(object).internalWeakData;
   if (data === undefined || data.kind !== "registry")
     throw "REGISTRY_BRAND_INVARIANT";
   return data;
@@ -119,7 +123,7 @@ function attachRegistry(
   owner: OrdinaryObject<ScriptPropertyKey, unknown>,
   cleanup: unknown,
 ): void {
-  owner.internalWeakData = {
+  ensureExoticSlots(owner).internalWeakData = {
     kind: "registry",
     storage,
     realm,

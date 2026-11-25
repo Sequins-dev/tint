@@ -8,14 +8,22 @@ import {
 import { sameValue } from "./operators.ts";
 import { scriptPropertyKeyOrder } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
+import type { Descriptor } from "../descriptors/index.ts";
 import {
+  ensureExoticSlots,
   getProperty,
   setProperty,
   deleteProperty,
   setPrototype,
+  markPrototype,
   lookupCachedScriptProperty,
+  lookupCachedStringPrimitiveProperty,
+  cachedScriptPropertyValue,
+  storeCachedScriptProperty,
+  type PropertySpill,
   type ScriptPropertyCache,
   type ObjectHooks,
+  type ObjectScriptCall,
   type OrdinaryObject,
 } from "./operations.ts";
 import { callObject, constructObject } from "./call.ts";
@@ -118,6 +126,50 @@ export function enumerateObjectValue(
   };
 }
 
+/** OrdinaryCreateFromConstructor(newTarget, "%Object.prototype%") for a
+ * native entry's construction in its own realm, given the value of the
+ * target's "prototype": an ordinary object with that prototype, or with the
+ * realm's Object.prototype when the value is not an object. Constructs the
+ * fast-mode object directly without generic createObject indirection. */
+export function createSourceInstance(
+  prototype: unknown,
+  realm: ErrorRealm,
+): unknown {
+  const proto =
+    viewObjectValue(prototype, realm.objectPrototype) ?? realm.objectPrototype;
+  if (!proto.internalUsedAsPrototype)
+    markPrototype<ScriptPropertyKey, unknown>(proto);
+  const instance: OrdinaryObject<ScriptPropertyKey, unknown> = {
+    internalShape: proto.internalChildShape,
+    prototype: proto,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: false,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: false,
+    internalArrayElements: undefined,
+    internalMethods: undefined,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
+  return instance;
+}
+
 /** Native-only checked view, explicitly bound by the embedding build request.
  * The Script surface uses shared property keys and general unknown values. */
 export function viewObjectValue(
@@ -125,6 +177,285 @@ export function viewObjectValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   throw "UNBOUND_OBJECT_VIEW";
+}
+
+/** True when `value` is an OrdinaryObject (ECMAScript Object/Function/Proxy).
+ * Native code binds this to IR general-record-is (`operation: "test"`). */
+export function isOrdinaryObject(
+  value: unknown,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): boolean {
+  return viewObjectValue(value, witness) !== undefined;
+}
+
+/** Resolve a callee's native script entry closure for a direct call in
+ * `realm`'s active execution context, or undefined when the call must take the
+ * general path. Native code binds this to IR script-entry. */
+export function resolveScriptCallEntry(
+  callee: unknown,
+  realm: ErrorRealm,
+): ObjectScriptCall<unknown> | undefined {
+  const object = viewTypeofObject(callee);
+  const slot = object === undefined ? undefined : object.internalRegisterCall;
+  if (slot === undefined) return undefined;
+  const entry = slot.scriptInvoke;
+  if (entry === undefined) return undefined;
+  const context = slot.context;
+  const active = realm.agent.activeContext;
+  if (
+    context !== active &&
+    (active === undefined ||
+      context.realm !== active.realm ||
+      context.scriptOrModule !== active.scriptOrModule)
+  )
+    return undefined;
+  return entry;
+}
+
+/** As resolveScriptCallEntry, requiring an ordinary constructor. */
+export function resolveScriptConstructEntry(
+  callee: unknown,
+  realm: ErrorRealm,
+): ObjectScriptCall<unknown> | undefined {
+  const object = viewTypeofObject(callee);
+  const slot = object === undefined ? undefined : object.internalRegisterCall;
+  if (slot === undefined || !slot.constructible) return undefined;
+  const entry = slot.scriptInvoke;
+  if (entry === undefined) return undefined;
+  const context = slot.context;
+  const active = realm.agent.activeContext;
+  if (
+    context !== active &&
+    (active === undefined ||
+      context.realm !== active.realm ||
+      context.scriptOrModule !== active.scriptOrModule)
+  )
+    return undefined;
+  return entry;
+}
+
+/** In-place (`0..7`) or spilled (`>= 8`) value `index` of a fast-mode Script
+ * object, as the portable bodies of the generated caches' functions read it. */
+export function readPropertyValueSlot(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+  index: number,
+): unknown {
+  if (index >= 8) {
+    const offset = index - 8;
+    let chunkIndex = offset >>> 4;
+    let chunk: PropertySpill<unknown> | undefined = object.internalValues;
+    while (chunkIndex > 0 && chunk !== undefined) {
+      chunk = chunk.next;
+      chunkIndex--;
+    }
+    if (chunk === undefined) return undefined;
+    switch (offset & 15) {
+      case 0:
+        return chunk.v0;
+      case 1:
+        return chunk.v1;
+      case 2:
+        return chunk.v2;
+      case 3:
+        return chunk.v3;
+      case 4:
+        return chunk.v4;
+      case 5:
+        return chunk.v5;
+      case 6:
+        return chunk.v6;
+      case 7:
+        return chunk.v7;
+      case 8:
+        return chunk.v8;
+      case 9:
+        return chunk.v9;
+      case 10:
+        return chunk.v10;
+      case 11:
+        return chunk.v11;
+      case 12:
+        return chunk.v12;
+      case 13:
+        return chunk.v13;
+      case 14:
+        return chunk.v14;
+      case 15:
+        return chunk.v15;
+    }
+    throw "PROPERTY_SLOT_INVARIANT";
+  }
+  switch (index) {
+    case 0:
+      return object.internalValue0;
+    case 1:
+      return object.internalValue1;
+    case 2:
+      return object.internalValue2;
+    case 3:
+      return object.internalValue3;
+    case 4:
+      return object.internalValue4;
+    case 5:
+      return object.internalValue5;
+    case 6:
+      return object.internalValue6;
+    case 7:
+      return object.internalValue7;
+  }
+  throw "PROPERTY_SLOT_INVARIANT";
+}
+/** Store in-place value `index` of a fast-mode Script object. */
+export function writePropertyValueSlot(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+  index: number,
+  value: unknown,
+): void {
+  switch (index) {
+    case 0:
+      object.internalValue0 = value;
+      return;
+    case 1:
+      object.internalValue1 = value;
+      return;
+    case 2:
+      object.internalValue2 = value;
+      return;
+    case 3:
+      object.internalValue3 = value;
+      return;
+    case 4:
+      object.internalValue4 = value;
+      return;
+    case 5:
+      object.internalValue5 = value;
+      return;
+    case 6:
+      object.internalValue6 = value;
+      return;
+    case 7:
+      object.internalValue7 = value;
+      return;
+  }
+  throw "PROPERTY_SLOT_INVARIANT";
+}
+
+/** The word index of internalValue0 in an ordinary object record. Native
+ * code binds this to the layout's constant (field-word); unbound, value
+ * words start at 2 so slot 0 stays reserved for directly cached inherited
+ * values. */
+export function propertySlotWord(
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): number {
+  return 2;
+}
+
+/** The value of `value`'s own data property cached at `site`: its shape is
+ * one of the site's own entry shapes, which proves the property and its
+ * slot. Otherwise the site itself, which absentPropertyValue recognizes and
+ * no property holds. Native code binds this to IR property-load, whose miss
+ * is a dedicated non-value. */
+export function cachedOwnPropertyValue(
+  value: unknown,
+  site: ScriptPropertyCache,
+): unknown {
+  const object = viewTypeofObject(value);
+  if (object === undefined) return site;
+  // The entries in order, as generated code tests them (a retained
+  // declaration reads the site's fields directly).
+  const shape = object.internalShape;
+  let slot = 0;
+  if (shape === site.ownShape) slot = site.ownSlot;
+  else if (shape === site.ownShape1) slot = site.ownSlot1;
+  else if (shape === site.ownShape2) slot = site.ownSlot2;
+  else if (shape === site.ownShape3) slot = site.ownSlot3;
+  else return site;
+  if (slot < 0) {
+    const raw = -slot / Number.MIN_VALUE;
+    return readPropertyValueSlot(
+      object,
+      8 + ((raw >>> 16) << 4) + (((raw & 0xffff) - 2) >>> 1),
+    );
+  }
+  return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
+}
+
+/** As cachedOwnPropertyValue, for a method site: a directly cached inherited
+ * value (slot === 0, valid across any prototype depth, spilled slots,
+ * dictionary-mode prototypes, and String primitives while the epoch holds),
+ * or a data property of the receiver itself when slot !== 0. */
+export function cachedInheritedPropertyValue(
+  value: unknown,
+  site: ScriptPropertyCache,
+): unknown {
+  const object = viewTypeofObject(value);
+  const shape =
+    object !== undefined
+      ? object.internalShape
+      : typeof value === "string"
+        ? site.stringShape
+        : undefined;
+  if (shape === undefined || site.inheritedEpochs.value !== site.inheritedEpoch)
+    return site;
+  let slot = 0,
+    direct: unknown = undefined;
+  if (shape === site.inheritedShape) {
+    slot = site.inheritedSlot;
+    direct = site.inheritedValue;
+  } else if (shape === site.inheritedShape1) {
+    slot = site.inheritedSlot1;
+    direct = site.inheritedValue1;
+  } else if (shape === site.inheritedShape2) {
+    slot = site.inheritedSlot2;
+    direct = site.inheritedValue2;
+  } else if (shape === site.inheritedShape3) {
+    slot = site.inheritedSlot3;
+    direct = site.inheritedValue3;
+  } else return site;
+  if (slot === 0) return direct;
+  if (object === undefined) return site;
+  if (slot < 0) {
+    const raw = -slot / Number.MIN_VALUE;
+    return readPropertyValueSlot(
+      object,
+      8 + ((raw >>> 16) << 4) + (((raw & 0xffff) - 2) >>> 1),
+    );
+  }
+  return readPropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2);
+}
+
+/** Whether a cached read missed. Native code binds it to the miss test of
+ * IR property-load. */
+export function absentPropertyValue(
+  value: unknown,
+  site: ScriptPropertyCache,
+): boolean {
+  return value === site;
+}
+
+/** Store `value` through the site's store cache: to the cached writable own
+ * data property, or by the cached transition that adds one (valid while no
+ * prototype changed shape since: see propertyEpoch). False when the cache
+ * does not apply. Native code binds this to IR property-store. */
+export function cachedPropertyStore(
+  target: unknown,
+  value: unknown,
+  site: ScriptPropertyCache,
+): boolean {
+  const object = viewTypeofObject(target);
+  if (object === undefined || object.internalShape !== site.storeShape)
+    return false;
+  const transition = site.storeTransition;
+  if (transition !== undefined) {
+    if (site.epoch.value !== site.storeEpoch) return false;
+    object.internalShape = transition;
+  }
+  writePropertyValueSlot(
+    object,
+    (site.storeSlot / Number.MIN_VALUE - 2) / 2,
+    value,
+  );
+  return true;
 }
 
 /** Concrete host-authorized object view for weak-directory lookup. Unlike the
@@ -140,7 +471,8 @@ export function viewWeakRegistryOwner(
 export function isArrayValue(value: unknown, realm: ErrorRealm): boolean {
   let object = viewObjectValue(value, realm.objectPrototype);
   while (object !== undefined) {
-    const proxy = object.internalProxyData;
+    const exotic = object.internalExoticSlots;
+    const proxy = exotic === undefined ? undefined : exotic.internalProxyData;
     if (proxy === undefined) return object.internalArrayData;
     if (proxy.target === undefined) throw createRuntimeError(realm, "type");
     object = proxy.target;
@@ -161,7 +493,11 @@ export function objectTypeof(
 ): string {
   if (viewSymbolValue(value) !== undefined) return "symbol";
   if (viewBigIntValue(value) !== undefined) return "bigint";
-  if (object !== undefined && object.internalIsHTMLDDA) return "undefined";
+  // Retained typeof helpers reach this classifier, and retained code may
+  // not call into other modules, so it reads the exotic slot directly
+  // instead of through exoticSlots.
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  if (exotic !== undefined && exotic.internalIsHTMLDDA) return "undefined";
   if (object !== undefined && object.internalCall !== undefined)
     return "function";
   // Runtime internals use raw typeof. In particular this fallback recognizes
@@ -180,12 +516,44 @@ export function generalValueTypeof(value: unknown): string {
   return objectTypeof(value, viewTypeofObject(value));
 }
 
+export function scriptIsHTMLDDA(
+  value: unknown,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): boolean {
+  const object = viewObjectValue(value, witness);
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  return exotic !== undefined && exotic.internalIsHTMLDDA;
+}
+
+/** Annex B.3.6 [[IsHTMLDDA]] objects are host-defined. Code lowered for a
+ * host that creates none omits their checks and excludes them when its
+ * module initializes; a host marks each object through
+ * markHTMLDDAObject. Either step after the other is an image configuration
+ * error, never a silent change of `==` semantics. */
+let htmlDDAObjects: "unknown" | "present" | "excluded" = "unknown";
+
+export function markHTMLDDAObject(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+): void {
+  if (htmlDDAObjects === "excluded")
+    throw "IsHTMLDDA objects were excluded by code lowered without them";
+  htmlDDAObjects = "present";
+  ensureExoticSlots(object).internalIsHTMLDDA = true;
+}
+
+export function excludeHTMLDDAObjects(): void {
+  if (htmlDDAObjects === "present")
+    throw "code lowered without IsHTMLDDA objects runs beside one";
+  htmlDDAObjects = "excluded";
+}
+
 export function scriptBoolean(
   value: unknown,
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  if (object !== undefined && object.internalIsHTMLDDA) return false;
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  if (exotic !== undefined && exotic.internalIsHTMLDDA) return false;
   const bigint = viewBigIntValue(value);
   return bigint === undefined ? !!value : bigIntToBoolean(bigint);
 }
@@ -439,15 +807,35 @@ export function readCachedObjectValueProperty(
   cache: ScriptPropertyCache,
 ): unknown {
   const object = viewObjectValue(base, realm.objectPrototype);
-  if (object !== undefined) {
-    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
-      object,
+  if (
+    object === undefined &&
+    typeof base === "string" &&
+    cache.method &&
+    key !== "length" &&
+    scriptPropertyKeyOrder(key) < 0 &&
+    lookupCachedStringPrimitiveProperty(realm.stringPrototype, key, cache)
+  )
+    return cache.foundValue;
+  // A String's own properties are its length and indices, and Number and
+  // Boolean wrappers have none, so other keys of those primitives are the
+  // keys of their prototype, which the site caches like a receiver's own.
+  const receiver =
+    object !== undefined
+      ? object
+      : typeof base === "string" &&
+          (key === "length" || scriptPropertyKeyOrder(key) >= 0)
+        ? undefined
+        : primitivePrototype(base, realm);
+  if (receiver !== undefined) {
+    const holder = lookupCachedScriptProperty(
+      receiver,
       key,
       cache,
       false,
       realm.agent.propertyStubCache,
+      propertySlotWord(realm.objectPrototype),
     );
-    if (cell !== undefined) return cell.value;
+    if (holder !== undefined) return cachedScriptPropertyValue(holder, cache);
   }
   return readObjectValueProperty(base, key, hooks, realm);
 }
@@ -462,19 +850,17 @@ export function writeCachedObjectValueProperty(
   cache: ScriptPropertyCache,
 ): void {
   const object = viewObjectValue(base, realm.objectPrototype);
-  if (object !== undefined) {
-    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+  if (
+    object !== undefined &&
+    storeCachedScriptProperty(
       object,
       key,
+      value,
       cache,
-      true,
-      realm.agent.propertyStubCache,
-    );
-    if (cell !== undefined && cell.writable) {
-      cell.value = value;
-      return;
-    }
-  }
+      propertySlotWord(realm.objectPrototype),
+    )
+  )
+    return;
   throwIfRuntimeError(
     realm,
     setObjectValueProperty(base, key, value, strict, hooks, realm),

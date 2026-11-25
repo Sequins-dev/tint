@@ -10,16 +10,11 @@ import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { buildMacOSProgram } from "@tint/compiler/build";
 const bytes = new TextEncoder()
-  .encode(`import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,moveMemory,configureLinearAllocation,configureGenerationalAllocation} from "native-memory";
+  .encode(`import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,moveMemory,configureGenerationalAllocation} from "native-memory";
 import {createNurseryEvacuator} from "native-tracing";
 export function run():number {
  const base=mapMemory(4096);if(base<=0)return 1;
  const rejected=new Uint32Array(8),bits=new Uint32Array(1);
- if(configureLinearAllocation(new Uint32Array(7),bits)!==-1||configureLinearAllocation(rejected,bits)!==-1)return 15;
- rejected[1]=16;rejected[0]=1;if(configureLinearAllocation(rejected,bits)!==-1)return 16;
- rejected[0]=0;rejected[2]=16;if(configureLinearAllocation(rejected,bits)!==-1)return 17;
- rejected[2]=0;rejected[1]=18;if(configureLinearAllocation(rejected,bits)!==-1)return 18;
- rejected[1]=16;if(configureLinearAllocation(rejected,new Uint32Array(0))!==-1)return 19;
  const generation=new Uint32Array(16),dirty=new Uint8Array(4),queue=new Float64Array(1);
  if(configureGenerationalAllocation(rejected,bits,dirty,queue)!==-1)return 23;
  generation[1]=512;
@@ -112,8 +107,9 @@ const built = buildMacOSProgram({
   target: nativeFixtureTarget(),
   ...request,
   // The fixture deliberately manipulates an independent raw mapping. Its own
-  // host runtime therefore uses the copying policy, not the restricted mutator.
-  runtimeEntry: "initializeCopyingRuntime",
+  // host runtime therefore uses the non-generational runtime, not the
+  // restricted generational mutator.
+  runtimeEntry: "initializeRuntime",
   entry: "fixture",
   start: "run",
   managedBytes: 4194304,
@@ -129,11 +125,6 @@ const built = buildMacOSProgram({
   ],
   hostBindings: [
     ...request.hostBindings,
-    {
-      module: memoryModule,
-      name: "configureLinearAllocation",
-      operation: "allocation-state",
-    },
     {
       module: memoryModule,
       name: "configureGenerationalAllocation",

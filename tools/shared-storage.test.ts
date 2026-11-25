@@ -5,6 +5,7 @@ import { NodeSharedBlockService } from "./node-shared-block-service.ts";
 import { workspaceModules } from "./workspace-sources.ts";
 import type { SharedOrder } from "@tint/js-runtime/bytes/shared";
 import {
+  ensureExoticSlots,
   createObject,
   projectArrayBufferViewRange,
   type ScriptPropertyKey,
@@ -30,9 +31,9 @@ test("byte-range projection keeps shared backing and observes growth", async () 
   const alias = api.attachSharedStorage(service, storage.handle);
   assert.ok(alias.ok);
   const buffer = createObject<ScriptPropertyKey, unknown>(undefined);
-  buffer.internalSharedArrayBufferData = storage;
+  ensureExoticSlots(buffer).internalSharedArrayBufferData = storage;
   const elementView = createObject<ScriptPropertyKey, unknown>(undefined);
-  elementView.internalTypedArrayData = {
+  ensureExoticSlots(elementView).internalTypedArrayData = {
     buffer,
     storage,
     byteOffset: 2,
@@ -41,7 +42,7 @@ test("byte-range projection keeps shared backing and observes growth", async () 
     endian: "little",
   };
   const dataView = createObject<ScriptPropertyKey, unknown>(undefined);
-  dataView.internalDataViewData = {
+  ensureExoticSlots(dataView).internalDataViewData = {
     buffer,
     storage: alias.value,
     byteOffset: 3,

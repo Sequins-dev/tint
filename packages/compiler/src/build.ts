@@ -36,6 +36,7 @@ import {
   type ManagedSurfaceRequest,
   type SourceLineRange,
   type CompiledProgram,
+  type CompiledX64HostedProgram,
   type NativeServiceImport,
   type ProgramOptimizationObserver,
 } from "./native/index.ts";
@@ -53,7 +54,8 @@ import {
   type EmissionFormHints,
   type NativeOperationRange,
 } from "@tint/codegen/aarch64/scalar";
-/** An emitted function at an image offset (see onEmittedFunctions). */
+/** An emitted function, or a private leaf helper named `helper:<kind>`, at
+ * an image offset (see onEmittedFunctions). */
 export interface ImageFunctionRange {
   readonly module: "allocator" | "runtime" | "program";
   readonly name: string;
@@ -99,7 +101,11 @@ import type {
   ImageSymbol,
   ReadOnlySection,
 } from "@tint/image/executable";
-import type { X64Module, X64SignpostSite } from "@tint/codegen/x86_64/scalar";
+import {
+  x64ModulePatcher,
+  type X64Module,
+  type X64SignpostSite,
+} from "@tint/codegen/x86_64/scalar";
 import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
 import { nativeCStackReserveBytes } from "@tint/abi/host";
 import { writeExecutableImage } from "./image-writer.ts";
@@ -162,7 +168,18 @@ export interface BuildRequest extends ModuleRequest {
   }[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   readonly allowDebugger?: boolean;
+  /** Grants the executable-memory host capabilities (publishing and calling
+   * code at run time). */
   readonly allowJit?: boolean;
+  /** A trust boundary for run-time code (docs/native-code-loading.md,
+   * "Trusted executable code"). Setting it asserts that every executable entry
+   * the image calls was produced by its own unit linker, whose policy check
+   * rejects a unit compiled with a different `generationalBarriers` setting
+   * than the image; that check is what upholds the generational write proof
+   * for published code. Only allowJit images may set it, and only when they
+   * publish nothing but linker output (the Test262 host). Without it the
+   * generational mutator rejects executable calls. */
+  readonly trustedExecutableCode?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   readonly inlineAllocation?: boolean;
@@ -193,8 +210,9 @@ export interface BuildRequest extends ModuleRequest {
   /** Analysis tooling: receives the program's per-IR-operation code ranges,
    * at image offsets in the same space as debug symbols. */
   readonly onOperationRanges?: (ranges: readonly ImageOperationRange[]) => void;
-  /** Analysis tooling: every emitted function of the allocator, runtime and
-   * program modules, at image offsets (code size reports, disassembly). */
+  /** Analysis tooling: every emitted function and private leaf helper of the
+   * allocator, runtime and program modules, at image offsets (code size
+   * reports, disassembly, profiles). */
   readonly onEmittedFunctions?: (
     functions: readonly ImageFunctionRange[],
   ) => void;
@@ -232,10 +250,7 @@ export interface BuildRequest extends ModuleRequest {
   readonly allocatorModule: string;
   readonly runtimeModule: string;
   /** Linux x86-64 selects its bounded, non-collecting runtime when omitted. */
-  readonly runtimeEntry?:
-    | "initializeRuntime"
-    | "initializeCopyingRuntime"
-    | "initializeGenerationalRuntime";
+  readonly runtimeEntry?: "initializeRuntime" | "initializeGenerationalRuntime";
   readonly memoryModule: string;
   readonly identifier: string;
   readonly managedBytes: number;
@@ -244,6 +259,47 @@ export interface BuildRequest extends ModuleRequest {
   readonly rootCapacity: number;
   readonly stackBytes: number;
   readonly report: (stage: string) => void;
+  /** Shares the program-independent runtime units between builds: called
+   * with the inputs that determine them and a function that compiles them,
+   * it must return units compiled from equal inputs. Without it, every build
+   * compiles its own. */
+  readonly runtimeUnits?: (
+    inputs: RuntimeUnitInputs,
+    compile: () => CompiledRuntimeUnitsResult,
+  ) => CompiledRuntimeUnitsResult;
+}
+/** The allocator and runtime of a hosted build. They are compiled from their
+ * own sources and the build options in `RuntimeUnitInputs.key`, never from
+ * the program, so builds that agree on those inputs can share them. */
+export interface CompiledRuntimeUnits {
+  readonly allocatorSource: SourceModule;
+  readonly allocator: NativeModule;
+  readonly allocatorInitializer: number;
+  readonly allocate: number;
+  readonly environmentBytes: number;
+  readonly runtime: CompiledProgram;
+  readonly runtimeEntry: number;
+}
+export type CompiledRuntimeUnitsResult =
+  | { readonly ok: true; readonly value: CompiledRuntimeUnits }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        readonly module?: string;
+      };
+    };
+/** Everything the runtime units are compiled from. */
+export interface RuntimeUnitInputs {
+  /** The target and the build options the units read, encoded as one string. */
+  readonly key: string;
+  /** The allocator module and the runtime's import closure, the only source
+   * modules the units are compiled from. */
+  readonly modules: readonly SourceModule[];
+  /** The allocator module (CompiledRuntimeUnits.allocatorSource), for units
+   * restored without their source modules. */
+  readonly allocator: SourceModule | undefined;
 }
 export type BuildResult =
   | { readonly ok: true; readonly value: Uint8Array }
@@ -284,6 +340,34 @@ export type CompiledMacOSProgramResult =
         readonly module?: string;
       };
     };
+export interface CompiledX64Runtime {
+  readonly native: X64Module;
+  readonly lines: readonly SourceLineRange[];
+  readonly functionNames: ReadonlyMap<string, string>;
+  readonly parameterNames: ReadonlyMap<string, string>;
+  readonly entry: number;
+  readonly controlBytes: number;
+  readonly allocationCapacity: number;
+  readonly rootCapacity: number;
+}
+/** Compiled Linux x86-64 runtime and program, before service units are linked
+ * and the ELF executable is composed. */
+export interface CompiledX64Program {
+  readonly arch: "x86_64";
+  readonly forceFarReach: boolean;
+  readonly runtime?: CompiledX64Runtime;
+  readonly program: CompiledX64HostedProgram;
+}
+export type CompiledX64ProgramResult =
+  | { readonly ok: true; readonly value: CompiledX64Program }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        readonly module?: string;
+      };
+    };
 function compileFailure(
   stage: string,
   message: string,
@@ -310,42 +394,89 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       "Node worker libraries require threaded startup and exit records",
     );
   const target = buildTarget(request);
-  if (target.arch === "x86_64") {
-    const built = buildX64HostedProgram(request, target);
-    if (
-      !built.ok &&
-      request.forceFarReach !== true &&
-      (built.error.message.includes("rel32 displacement out of range") ||
-        built.error.message === "ELF image: ADDRESS_OUT_OF_RANGE")
-    )
-      return buildX64HostedProgram({ ...request, forceFarReach: true }, target);
-    return built;
-  }
+  if (target.arch === "x86_64") return buildX64HostedProgram(request);
   const compiled = compileMacOSProgram(request);
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkMacOSProgram(compiled.value, request);
 }
-function buildX64HostedProgram(
+function buildX64HostedProgram(request: BuildRequest): BuildResult {
+  const compiled = compileX64Program(request);
+  if (!compiled.ok) return { ok: false, error: compiled.error };
+  return linkX64Program(compiled.value, request);
+}
+function withoutX64Patcher(module: X64Module): X64Module {
+  return {
+    code: module.code,
+    data: module.data,
+    functions: module.functions,
+    imports: module.imports,
+    hostedThreadFixups: module.hostedThreadFixups,
+    far: module.far,
+    linearAllocation: module.linearAllocation,
+    generationalBarriers: module.generationalBarriers,
+    managedImports: module.managedImports,
+    managedFixups: module.managedFixups,
+    ...(module.liveSlotOffset === undefined
+      ? {}
+      : { liveSlotOffset: module.liveSlotOffset }),
+    ...(module.jitDebug === undefined ? {} : { jitDebug: module.jitDebug }),
+    ...(module.functionDescriptor === undefined
+      ? {}
+      : { functionDescriptor: module.functionDescriptor }),
+    signatures: module.signatures,
+    records: module.records,
+    unwind: module.unwind,
+    sourceRanges: module.sourceRanges,
+    probes: module.probes,
+    ...(module.callbackKeyOffset === undefined
+      ? {}
+      : { callbackKeyOffset: module.callbackKeyOffset }),
+    stackMaps: module.stackMaps,
+    addressFixups: module.addressFixups,
+    ...(module.relativeFixups === undefined
+      ? {}
+      : { relativeFixups: module.relativeFixups }),
+  };
+}
+/** Validate the memory policy and compile the Linux x86-64 runtime and
+ * program. Native services are linked by linkX64Program. */
+export function compileX64Program(
   request: BuildRequest,
-  target: LinuxX86_64Target,
-): BuildResult {
-  function deferred(operation: string): BuildResult {
-    return failure(
-      "target",
-      target.name +
-        ": unsupported operation " +
-        operation +
-        " (requires slice 7)",
-    );
+): CompiledX64ProgramResult {
+  const target = buildTarget(request);
+  if (target.arch !== "x86_64")
+    return {
+      ok: false,
+      error: { stage: "target", message: target.name + " is not linux-x86_64" },
+    };
+  function deferred(operation: string): CompiledX64ProgramResult {
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          target.name +
+          ": unsupported operation " +
+          operation +
+          " (requires slice 7)",
+      },
+    };
   }
   if (request.requireParallelCollection === true && !target.parallelCollection)
-    return failure(
-      "target",
-      target.name + ": parallel collection is unavailable",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message: target.name + ": parallel collection is unavailable",
+      },
+    };
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
+  // X64 service units always emit with far reach (using r14/r15 as scratch),
+  // so hosts reserving serviceSlots must compile with far reach up front to
+  // link units directly without recompiling the host.
   const forceFarReach =
     request.forceFarReach === true ||
+    (request.serviceSlots?.length ?? 0) !== 0 ||
     (request.nativeServices ?? []).some((service) => {
       if (service === undefined) return false;
       const unit = service.unit;
@@ -360,17 +491,37 @@ function buildX64HostedProgram(
         binding !== undefined && binding.operation.startsWith("executable-"),
     )
   )
-    return failure(
-      "host-binding",
-      "executable-memory capabilities require allowJit",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "host-binding",
+        message: "executable-memory capabilities require allowJit",
+      },
+    };
   if (request.jitDebugInterface === true && request.allowJit !== true)
-    return failure("startup", "the JIT debug interface requires allowJit");
+    return {
+      ok: false,
+      error: {
+        stage: "startup",
+        message: "the JIT debug interface requires allowJit",
+      },
+    };
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return {
+      ok: false,
+      error: {
+        stage: "startup",
+        message: "trustedExecutableCode requires allowJit",
+      },
+    };
   if (request.stackTraces === true || request.heapIntrospection === true)
-    return failure(
-      "target",
-      target.name + ": native diagnostics are unavailable",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message: target.name + ": native diagnostics are unavailable",
+      },
+    };
   if (
     request.onOperationRanges !== undefined ||
     request.onEmittedFunctions !== undefined ||
@@ -379,10 +530,14 @@ function buildX64HostedProgram(
     request.optimizationObserver !== undefined ||
     request.optimizationPassLimit !== undefined
   )
-    return failure(
-      "target",
-      target.name + ": emission and optimization reports are unavailable",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          target.name + ": emission and optimization reports are unavailable",
+      },
+    };
   const managedBytes = request.managedBytes,
     stackBytes = request.stackBytes;
   const pageBytes = target.memoryPageBytes;
@@ -396,26 +551,22 @@ function buildX64HostedProgram(
     stackBytes + pageBytes * 2 > 0x7fffffff ||
     managedBytes > 0xffffffff
   )
-    return failure(
-      "memory-policy",
-      target.name + ": invalid hosted mapping or stack size",
-    );
+    return {
+      ok: false,
+      error: {
+        stage: "memory-policy",
+        message: target.name + ": invalid hosted mapping or stack size",
+      },
+    };
 
-  let runtime:
-    | {
-        native: X64Module;
-        lines: readonly SourceLineRange[];
-        functionNames: ReadonlyMap<string, string>;
-        parameterNames: ReadonlyMap<string, string>;
-        entry: number;
-        controlBytes: number;
-        allocationCapacity: number;
-        rootCapacity: number;
-      }
-    | undefined;
+  let runtime: CompiledX64Runtime | undefined;
   if (generational) {
-    const invalid = movingWorkspaceError(request, true);
-    if (invalid !== undefined) return failure("memory-policy", invalid);
+    const invalid = generationalWorkspaceError(request);
+    if (invalid !== undefined)
+      return {
+        ok: false,
+        error: { stage: "memory-policy", message: invalid },
+      };
     request.report("runtime");
     const hostBindings = x64CollectorBindings(request.memoryModule);
     for (const binding of parallelCollectorBindings(request)) {
@@ -447,16 +598,22 @@ function buildX64HostedProgram(
       },
     );
     if (!loweredRuntime.ok)
-      return failure(
-        "runtime " + loweredRuntime.error.stage,
-        loweredRuntime.error.message,
-      );
+      return {
+        ok: false,
+        error: {
+          stage: "runtime " + loweredRuntime.error.stage,
+          message: loweredRuntime.error.message,
+        },
+      };
     const entry =
       loweredRuntime.native.functions[loweredRuntime.invocation]?.offset;
     if (entry === undefined)
-      return failure("runtime", "missing collector initializer");
+      return {
+        ok: false,
+        error: { stage: "runtime", message: "missing collector initializer" },
+      };
     runtime = {
-      native: loweredRuntime.native,
+      native: withoutX64Patcher(loweredRuntime.native),
       lines: loweredRuntime.lines,
       functionNames: loweredRuntime.functionNames,
       parameterNames: loweredRuntime.parameterNames,
@@ -514,6 +671,7 @@ function buildX64HostedProgram(
       generational,
       forceFarReach,
       jitDebugInterface: request.jitDebugInterface === true,
+      trustedExecutableCode: request.trustedExecutableCode === true,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
       nodeWorkerLibrary: request.nodeWorkerLibrary === true,
@@ -525,6 +683,58 @@ function buildX64HostedProgram(
     },
   );
   if (!compiled.ok) return compiled;
+  return {
+    ok: true,
+    value: {
+      arch: "x86_64",
+      forceFarReach,
+      ...(runtime === undefined ? {} : { runtime }),
+      program: {
+        ...compiled,
+        native: withoutX64Patcher(compiled.native),
+      },
+    },
+  };
+}
+/** Link the request's native services into a compiled Linux x86-64 program and
+ * compose the ELF executable. */
+export function linkX64Program(
+  host: CompiledX64Program,
+  request: BuildRequest,
+): BuildResult {
+  const target = buildTarget(request);
+  if (target.arch !== "x86_64")
+    return failure("target", target.name + " is not linux-x86_64");
+  const needsFar =
+    !host.forceFarReach &&
+    (request.nativeServices ?? []).some((service) => {
+      if (service === undefined) return false;
+      const unit = service.unit;
+      return unit.arch === "x86_64" && unit.native.far;
+    });
+  if (needsFar)
+    return buildX64HostedProgram({ ...request, forceFarReach: true });
+  const built = linkX64Image(host, request, target);
+  if (
+    !built.ok &&
+    !host.forceFarReach &&
+    request.forceFarReach !== true &&
+    (built.error.message.includes("rel32 displacement out of range") ||
+      built.error.message === "ELF image: ADDRESS_OUT_OF_RANGE")
+  )
+    return buildX64HostedProgram({ ...request, forceFarReach: true });
+  return built;
+}
+function linkX64Image(
+  host: CompiledX64Program,
+  request: BuildRequest,
+  target: LinuxX86_64Target,
+): BuildResult {
+  const compiled = host.program,
+    runtime = host.runtime;
+  const managedBytes = request.managedBytes,
+    stackBytes = request.stackBytes,
+    pageBytes = target.memoryPageBytes;
   let native = compiled.native;
   let programCodePlan: CodePlan | undefined;
   if (
@@ -663,7 +873,7 @@ function buildX64HostedProgram(
           : undefined,
       imports: image.imports,
       addressFixups: image.addressFixups,
-      patchAddress: image.patchAddress,
+      patchAddress: x64ModulePatcher(image),
     };
     const written = writeExecutableImage(
       target,
@@ -837,6 +1047,11 @@ function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
       },
       {
         module: request.memoryModule,
+        name: "runtimeTargetOS",
+        operation: "target-os",
+      },
+      {
+        module: request.memoryModule,
         name: "openRuntimeFile",
         operation: "open-read",
       },
@@ -923,10 +1138,16 @@ function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
   return collectorBindings;
 }
 
-/** The standalone collector links only its own dependency graph. */
+/** The standalone collector links only its own dependency graph: the runtime
+ * module's and memory module's import closure, in request order. */
 function runtimeModules(request: BuildRequest): readonly SourceModule[] {
   const loader = request.moduleLoader;
-  if (loader === undefined) return request.modules;
+  const available = new Map<string, SourceModule>();
+  if (loader === undefined)
+    for (const source of request.modules) {
+      if (source === undefined) throw "runtime module invariant";
+      available.set(source.id, source);
+    }
   const pending = [request.runtimeModule, request.memoryModule];
   const seen = new Set<string>();
   const modules = new Map<string, SourceModule>();
@@ -935,7 +1156,8 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
     if (id === undefined) throw "runtime module invariant";
     if (seen.has(id)) continue;
     seen.add(id);
-    const source = loader.load([id])[0];
+    const source =
+      loader === undefined ? available.get(id) : loader.load([id])[0];
     if (source === undefined) continue;
     modules.set(id, source);
     for (const declaration of source.module.imports) {
@@ -945,23 +1167,24 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
     }
   }
   const ordered: SourceModule[] = [];
-  for (const id of loader.ids) {
-    if (id === undefined) throw "runtime module ID invariant";
-    const source = modules.get(id);
-    if (source !== undefined) ordered.push(source);
-  }
+  if (loader === undefined)
+    for (const source of request.modules) {
+      if (source === undefined) throw "runtime module invariant";
+      if (modules.get(source.id) === source) ordered.push(source);
+    }
+  else
+    for (const id of loader.ids) {
+      if (id === undefined) throw "runtime module ID invariant";
+      const source = modules.get(id);
+      if (source !== undefined) ordered.push(source);
+    }
   return ordered;
 }
-function movingWorkspaceError(
-  request: BuildRequest,
-  generational: boolean,
-): string | undefined {
-  // Both moving collectors require a start bitmap for the semispace.
-  // Generational collection also needs old-space mark bytes.
-  // Reject invalid workspaces before runtime initialization can throw.
-  const capacity = generational
-      ? Math.floor(request.managedBytes / 1024) * 512
-      : Math.floor(request.managedBytes / 32) * 16,
+function generationalWorkspaceError(request: BuildRequest): string | undefined {
+  // Generational collection requires start/live/forwarding metadata and
+  // old-space mark bytes. Reject invalid workspaces before runtime
+  // initialization can throw.
+  const capacity = Math.floor(request.managedBytes / 1024) * 512,
     // One start bit per 8-byte allocation granule.
     units = capacity / 8,
     requiredWords = Math.ceil(units / 32),
@@ -971,22 +1194,18 @@ function movingWorkspaceError(
       Math.max(512, Math.floor(capacity / 2048) * 512),
     ),
     // One dirty bit per granule, eight per mark byte.
-    requiredMarks = generational
-      ? Math.ceil((capacity - youngCapacity) / 64)
-      : 0;
+    requiredMarks = Math.ceil((capacity - youngCapacity) / 64);
   if (
     !Number.isSafeInteger(request.managedBytes) ||
     request.managedBytes > 0xffffffff ||
-    capacity < (generational ? 1024 : 16) ||
+    capacity < 1024 ||
     !Number.isSafeInteger(request.allocationCapacity) ||
     request.allocationCapacity < Math.max(1, requiredMarks) ||
     // Generational metadata also holds the major's live bits and chunk
     // offsets beside the start bits.
-    request.allocationCapacity * 3 + 96 < (generational ? 3 : 1) * requiredWords
+    request.allocationCapacity * 3 + 96 < 3 * requiredWords
   )
-    return generational
-      ? "generational runtime allocation metadata cannot cover forwarding and old-space marks"
-      : "copying runtime allocation metadata cannot cover the managed semispace";
+    return "generational runtime allocation metadata cannot cover forwarding and old-space marks";
   return undefined;
 }
 
@@ -1017,136 +1236,27 @@ export function compileMacOSProgram(
       "host-binding",
       "executable-memory capabilities require allowJit",
     );
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return compileFailure("startup", "trustedExecutableCode requires allowJit");
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
-  if (request.runtimeEntry === "initializeCopyingRuntime" || generational) {
-    const invalid = movingWorkspaceError(request, generational);
+  if (generational) {
+    const invalid = generationalWorkspaceError(request);
     if (invalid !== undefined) return compileFailure("memory-policy", invalid);
   }
-  const hostABI = target.hostABI;
-  request.report("allocator");
-  const source = requestModules(request, [request.allocatorModule])[0];
-  if (source === undefined)
-    return compileFailure("allocator", "allocator source is missing");
-  const checked = checkClosureModule(source.module);
-  if (!checked.ok) return compileFailure("allocator", checked.error.message);
-  const declaration = checked.value.module.statements.find(
-    (statement) =>
-      statement !== undefined &&
-      statement.kind === "function" &&
-      statement.name === "createRegionAllocator",
-  );
-  if (declaration === undefined)
-    return compileFailure("allocator", "allocator factory is missing");
-  const fn = checked.value.bindings.functions.find(
-    (item) => item !== undefined && item.node === declaration,
-  );
-  if (fn === undefined)
-    return compileFailure("allocator", "allocator factory binding is missing");
-  const planned = planScalarClosures(checked.value, nativeTargetLayout, 4096);
-  if (!planned.ok) return compileFailure("allocator", planned.error);
-  const scope = fn.scope;
-  const environment = planned.value.environments.find(
-    (item) => item !== undefined && item.scope === scope,
-  );
-  if (environment === undefined)
-    return compileFailure("allocator", "allocator environment is missing");
-  const lowered = lowerClosureFactory(checked.value, fn.id, environment);
-  if (!lowered.ok) return compileFailure("allocator", lowered.error);
-  const allocate = lowered.value.exports.find(
-    (item) => item !== undefined && item.name === "allocate",
-  );
-  if (allocate === undefined)
-    return compileFailure("allocator", "allocation export is missing");
-  const allocator = emitModule(
-    request.optimization === "none"
-      ? lowered.value.module
-      : optimizeModule(lowered.value.module, unboundedWork).module,
-    {
-      maxByteLength: Number.MAX_SAFE_INTEGER,
-      unboundedAnalysis: true,
-      hostABI,
-      debugSpans: request.debugSymbols === true || request.stackTraces === true,
-      throwTraces: request.stackTraces === true,
-      pageAlignedCode: true,
-      forceFarReach: request.forceFarReach === true ? true : undefined,
-    },
-  );
-  if (!allocator.ok)
-    return compileFailure("allocator", allocator.error.message);
-  request.report("runtime");
-  const collectorBindings = parallelCollectorBindings(request);
-  const runtimeBindings: NativeHostBinding[] = [
-    {
-      module: request.memoryModule,
-      name: "configureExternalMemory",
-      operation: "external-memory-configure",
-    },
-    {
-      module: request.memoryModule,
-      name: "configureGenerationalAllocation",
-      operation: "generational-state",
-    },
-    {
-      module: request.memoryModule,
-      name: "configureLinearAllocation",
-      operation: "allocation-state",
-    },
-    {
-      module: request.memoryModule,
-      name: "readMemoryWord",
-      operation: "memory-read-word",
-    },
-    {
-      module: request.memoryModule,
-      name: "currentRootHead",
-      operation: "root-head",
-    },
-    {
-      module: request.memoryModule,
-      name: "engineRangeError",
-      operation: "engine-range-error",
-    },
-    {
-      module: request.memoryModule,
-      name: "writeMemoryWord",
-      operation: "memory-write-word",
-    },
-    {
-      module: request.memoryModule,
-      name: "moveMemory",
-      operation: "memory-move",
-    },
-  ];
-  for (const binding of collectorBindings) {
-    if (binding === undefined) throw "collector binding invariant";
-    runtimeBindings.push(binding);
-  }
-  const runtime = compileNativeProgram(
-    {
-      pageAlignedCode: true,
-      forceFarReach: request.forceFarReach === true,
-      optimization: request.optimization ?? "basic",
-      debugSymbols: request.debugSymbols ?? false,
-      stackTraces: request.stackTraces === true,
-      symbols: request.signposts === true,
-      maxSpecializations: request.maxSpecializations ?? 4096,
-      modules: runtimeModules(request),
-      entry: request.runtimeModule,
-      exports: [request.runtimeEntry ?? "initializeRuntime"],
-      start: request.runtimeEntry ?? "initializeRuntime",
-      runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
-      hostBindings: runtimeBindings,
-    },
-    target,
-  );
-  if (!runtime.ok)
-    return compileFailure(
-      "runtime " + runtime.error.stage,
-      runtime.error.message,
-    );
-  const runtimeEntry = runtime.value.entry;
-  if (runtimeEntry === undefined)
-    return compileFailure("runtime", "runtime entry is missing");
+  const share = request.runtimeUnits;
+  const units =
+    share === undefined
+      ? compileRuntimeUnits(request, target)
+      : share(
+          {
+            key: runtimeUnitKey(request, target),
+            modules: runtimeUnitModules(request),
+            allocator: requestModules(request, [request.allocatorModule])[0],
+          },
+          () => compileRuntimeUnits(request, target),
+        );
+  if (!units.ok) return { ok: false, error: units.error };
+  const runtimeUnits = units.value;
   request.report("program");
   const program = compileNativeProgram(
     {
@@ -1157,15 +1267,10 @@ export function compileMacOSProgram(
       managedSurfaces: request.managedSurfaces ?? [],
       closedProgram: true,
       denseReferenceLists: request.denseReferenceLists ?? false,
-      linearAllocation:
-        request.inlineAllocation ??
-        (request.runtimeEntry === "initializeCopyingRuntime" ||
-          request.runtimeEntry === "initializeGenerationalRuntime"),
-      generationalBarriers:
-        request.runtimeEntry === "initializeGenerationalRuntime",
-      nodeFfiWeakProcessing:
-        request.runtimeEntry === "initializeCopyingRuntime" ||
-        request.runtimeEntry === "initializeGenerationalRuntime",
+      linearAllocation: request.inlineAllocation ?? generational,
+      generationalBarriers: generational,
+      nodeFfiWeakProcessing: generational,
+      trustedExecutableCode: request.trustedExecutableCode === true,
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,
       stackTraces: request.stackTraces === true,
@@ -1225,6 +1330,142 @@ export function compileMacOSProgram(
   return {
     ok: true,
     value: {
+      allocatorSource: runtimeUnits.allocatorSource,
+      allocator: runtimeUnits.allocator,
+      allocatorInitializer: runtimeUnits.allocatorInitializer,
+      allocate: runtimeUnits.allocate,
+      environmentBytes: runtimeUnits.environmentBytes,
+      runtime: runtimeUnits.runtime,
+      runtimeEntry: runtimeUnits.runtimeEntry,
+      program: program.value,
+      programEntry,
+    },
+  };
+}
+/** Compile the allocator and runtime (see CompiledRuntimeUnits). */
+function compileRuntimeUnits(
+  request: BuildRequest,
+  target: AArch64Target,
+): CompiledRuntimeUnitsResult {
+  const hostABI = target.hostABI;
+  request.report("allocator");
+  const source = requestModules(request, [request.allocatorModule])[0];
+  if (source === undefined)
+    return unitFailure("allocator", "allocator source is missing");
+  const checked = checkClosureModule(source.module);
+  if (!checked.ok) return unitFailure("allocator", checked.error.message);
+  const declaration = checked.value.module.statements.find(
+    (statement) =>
+      statement !== undefined &&
+      statement.kind === "function" &&
+      statement.name === "createRegionAllocator",
+  );
+  if (declaration === undefined)
+    return unitFailure("allocator", "allocator factory is missing");
+  const fn = checked.value.bindings.functions.find(
+    (item) => item !== undefined && item.node === declaration,
+  );
+  if (fn === undefined)
+    return unitFailure("allocator", "allocator factory binding is missing");
+  const planned = planScalarClosures(checked.value, nativeTargetLayout, 4096);
+  if (!planned.ok) return unitFailure("allocator", planned.error);
+  const scope = fn.scope;
+  const environment = planned.value.environments.find(
+    (item) => item !== undefined && item.scope === scope,
+  );
+  if (environment === undefined)
+    return unitFailure("allocator", "allocator environment is missing");
+  const lowered = lowerClosureFactory(checked.value, fn.id, environment);
+  if (!lowered.ok) return unitFailure("allocator", lowered.error);
+  const allocate = lowered.value.exports.find(
+    (item) => item !== undefined && item.name === "allocate",
+  );
+  if (allocate === undefined)
+    return unitFailure("allocator", "allocation export is missing");
+  const allocator = emitModule(
+    request.optimization === "none"
+      ? lowered.value.module
+      : optimizeModule(lowered.value.module, unboundedWork).module,
+    {
+      maxByteLength: Number.MAX_SAFE_INTEGER,
+      unboundedAnalysis: true,
+      hostABI,
+      debugSpans: request.debugSymbols === true || request.stackTraces === true,
+      throwTraces: request.stackTraces === true,
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true ? true : undefined,
+    },
+  );
+  if (!allocator.ok) return unitFailure("allocator", allocator.error.message);
+  request.report("runtime");
+  const collectorBindings = parallelCollectorBindings(request);
+  const runtimeBindings: NativeHostBinding[] = [
+    {
+      module: request.memoryModule,
+      name: "configureExternalMemory",
+      operation: "external-memory-configure",
+    },
+    {
+      module: request.memoryModule,
+      name: "configureGenerationalAllocation",
+      operation: "generational-state",
+    },
+    {
+      module: request.memoryModule,
+      name: "readMemoryWord",
+      operation: "memory-read-word",
+    },
+    {
+      module: request.memoryModule,
+      name: "currentRootHead",
+      operation: "root-head",
+    },
+    {
+      module: request.memoryModule,
+      name: "engineRangeError",
+      operation: "engine-range-error",
+    },
+    {
+      module: request.memoryModule,
+      name: "writeMemoryWord",
+      operation: "memory-write-word",
+    },
+    {
+      module: request.memoryModule,
+      name: "moveMemory",
+      operation: "memory-move",
+    },
+  ];
+  for (const binding of collectorBindings) {
+    if (binding === undefined) throw "collector binding invariant";
+    runtimeBindings.push(binding);
+  }
+  const runtime = compileNativeProgram(
+    {
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true,
+      optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols ?? false,
+      stackTraces: request.stackTraces === true,
+      symbols: request.signposts === true,
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      modules: runtimeModules(request),
+      entry: request.runtimeModule,
+      exports: [request.runtimeEntry ?? "initializeRuntime"],
+      start: request.runtimeEntry ?? "initializeRuntime",
+      runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
+      hostBindings: runtimeBindings,
+    },
+    target,
+  );
+  if (!runtime.ok)
+    return unitFailure("runtime " + runtime.error.stage, runtime.error.message);
+  const runtimeEntry = runtime.value.entry;
+  if (runtimeEntry === undefined)
+    return unitFailure("runtime", "runtime entry is missing");
+  return {
+    ok: true,
+    value: {
       allocatorSource: source,
       allocator: allocator.value,
       allocatorInitializer: lowered.value.initializer,
@@ -1232,10 +1473,51 @@ export function compileMacOSProgram(
       environmentBytes: environment.layout.size,
       runtime: runtime.value,
       runtimeEntry,
-      program: program.value,
-      programEntry,
     },
   };
+}
+function unitFailure(
+  stage: string,
+  message: string,
+): CompiledRuntimeUnitsResult {
+  return { ok: false, error: { stage, message } };
+}
+/** The target and build options the runtime units read (see compileRuntimeUnits). */
+function runtimeUnitKey(request: BuildRequest, target: AArch64Target): string {
+  return (
+    target.name +
+    "\n" +
+    request.allocatorModule +
+    "\n" +
+    request.runtimeModule +
+    "\n" +
+    request.memoryModule +
+    "\n" +
+    (request.runtimeEntry ?? "initializeRuntime") +
+    "\n" +
+    (request.optimization ?? "basic") +
+    "\n" +
+    (request.debugSymbols === true ? "debug-symbols" : "") +
+    "\n" +
+    (request.stackTraces === true ? "stack-traces" : "") +
+    "\n" +
+    (request.signposts === true ? "signposts" : "") +
+    "\n" +
+    (request.forceFarReach === true ? "far-reach" : "") +
+    "\n" +
+    String(request.maxSpecializations ?? 4096)
+  );
+}
+/** The source modules the runtime units are compiled from. */
+function runtimeUnitModules(request: BuildRequest): readonly SourceModule[] {
+  const modules: SourceModule[] = [];
+  const allocator = requestModules(request, [request.allocatorModule])[0];
+  if (allocator !== undefined) modules.push(allocator);
+  for (const source of runtimeModules(request)) {
+    if (source === undefined) throw "runtime unit module invariant";
+    modules.push(source);
+  }
+  return modules;
 }
 /** Link the request's native services into a compiled program and compose
  * the signed executable. */
@@ -1430,15 +1712,26 @@ function linkHostedImage(
         base = hosted.value.moduleOffsets[index];
       if (native === undefined || base === undefined)
         throw "emitted function placement invariant";
+      const module =
+        index === 0 ? "allocator" : index === 1 ? "runtime" : "program";
       for (const fn of native.functions) {
         if (fn === undefined) throw "emitted function invariant";
         if (fn.import === true) continue;
         emitted.push({
-          module:
-            index === 0 ? "allocator" : index === 1 ? "runtime" : "program",
+          module,
           name: fn.name,
           offset: base + fn.offset,
           byteLength: fn.byteLength,
+        });
+      }
+      // Private leaf helpers follow the functions; profiles name them too.
+      for (const helper of native.helpers) {
+        if (helper === undefined) throw "emitted helper invariant";
+        emitted.push({
+          module,
+          name: "helper:" + helper.kind,
+          offset: base + helper.offset,
+          byteLength: helper.byteLength,
         });
       }
     }
@@ -2012,9 +2305,7 @@ function collectorSignpostNames(
       metrics: true,
       force: 0,
     },
-    { name: root + "copying.ts:collect", interval: "gc.collect" },
-    // Serial evacuation: generational minors pass their remembered set;
-    // the copying runtime's whole-space copies (majors) pass none.
+    // Serial evacuation: generational minors pass their remembered set.
     {
       name: method(cheney, "createCheneyCollector", "collect"),
       interval: "gc.minor",

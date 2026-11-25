@@ -22,6 +22,11 @@ export function memoryPageBytes(): number {
 export function processorCount(): number {
   throw "HOST_UNAVAILABLE";
 }
+/** Compile-time target operating system code (nativeTargetOS* in
+ * @tint/abi/host) for the runtime's own host queries; probes nothing. */
+export function runtimeTargetOS(): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** Read-only file access for the runtime's own host queries (cgroup CPU
  * limits), with the native-fs-host contract: paths are NUL-terminated
  * UTF-8 bytes, results are counts or descriptors, failures -errno. */
@@ -225,6 +230,28 @@ export function registerStackMaps(
   throw "HOST_UNAVAILABLE";
 }
 
+/** Binds `string-flat`: 1 when `text` is a flat string, which owns its
+ * units and can be copied verbatim (nativeStringIsFlat), else 0 (a slice,
+ * which shares a parent's units and must be flattened to leave its isolate). */
+export function isFlatString(text: string): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Binds `string-flatten-into`: writes a flat image of `text` (its flat
+ * header, length and units, zero-padded: a position-independent,
+ * pointer-free string object without per-isolate state) at the start of a
+ * caller-owned raw writable window, and returns its byte extent
+ * (nativeFlatStringExtent). A flat string is copied verbatim; a slice's
+ * units are copied from its parent. Returns -1 without writing when the
+ * window is too small or its bounds are not exact integers with a nonzero
+ * 8-byte-aligned address and an end below 2^53. */
+export function flattenStringInto(
+  address: number,
+  byteLength: number,
+  text: string,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+
 /** Move raw bytes inside one caller-owned normal-memory window. Overlap is valid.
  * Exact nonnegative integer bounds are checked before writes. Returns 0 or -1;
  * the caller grants mapping/lifetime and must exclude concurrent mutation. */
@@ -238,20 +265,7 @@ export function moveMemory(
   throw "HOST_UNAVAILABLE";
 }
 
-/** Publish permanent control buffers for the optional inline allocation ABI.
- * state has eight uint32 words: top, limit, space base, reserved, then a reserved
- * native bitmap pointer at byte 16. Initially top/base are zero. limit is an
- * aligned semispace capacity; starts contains one bit per 16-byte object unit.
- * The caller owns both buffers outside the managed heap for the context lifetime.
- * Only top and space base may change after publication. Returns 0 or -1. */
-export function configureLinearAllocation(
-  state: Uint32Array,
-  starts: Uint32Array,
-): number {
-  throw "HOST_UNAVAILABLE";
-}
-
-/** Publish the sixteen-word generational allocation/barrier control block.
+/** Publish the nineteen-word generational allocation/barrier control block.
  * All buffers are permanently owned, disjoint control storage. Initial young
  * top and old top are zero; young base equals the aligned old-prefix capacity.
  * The caller supplies zeroed start/dirty maps. Publication installs native data

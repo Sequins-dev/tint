@@ -4,6 +4,8 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
+import { runDarwinFixture } from "./native-admission.ts";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const source = `import {collectGarbage} from "memory";
@@ -45,7 +47,7 @@ export function verifyLargeImage(fullSize: boolean): void {
       {
         managedBytes: 4194304,
         allocationCapacity: 65536,
-        runtimeEntry: "initializeCopyingRuntime",
+        runtimeEntry: "initializeGenerationalRuntime",
         hostBindings: [
           {
             module: memory,
@@ -70,8 +72,10 @@ export function verifyLargeImage(fullSize: boolean): void {
       }),
     );
     if (process.platform === "darwin") {
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const result = spawnSync(
+      // Under the gate's launch lock, after first-launch admission; a debugger
+      // launch failure is reported, not retried.
+      const result = runDarwinFixture(image, () =>
+        spawnSync(
           "lldb",
           [
             "--no-lldbinit",
@@ -80,10 +84,7 @@ export function verifyLargeImage(fullSize: boolean): void {
             "settings set target.disable-aslr false",
             "-o",
             `breakpoint set -r '${symbol}'`,
-            "-o",
-            "process launch --stop-at-entry",
-            "-o",
-            "script assert lldb.process.GetState() == lldb.eStateStopped",
+            ...lldbStartCommands(),
             "-o",
             "continue",
             "-o",
@@ -95,19 +96,16 @@ export function verifyLargeImage(fullSize: boolean): void {
             image,
           ],
           { encoding: "utf8", timeout: 60000 },
-        );
-        const output = result.stdout + result.stderr;
-        console.log(output);
-        if (attempt === 0 && output.includes("could not pause execution"))
-          continue;
-        assert.equal(result.error, undefined);
-        assert.equal(result.status, 0, output);
-        assert.match(output, /frame #0: .*retainAcrossCollection/);
-        assert.match(output, /frame #1: .*__tint_invoke/);
-        assert.match(output, /frame #2: .*tint:process-entry/);
-        assert.match(output, /exited with status = 42/);
-        break;
-      }
+        ),
+      );
+      const output = result.stdout + result.stderr;
+      console.log(output);
+      assert.equal(result.error, undefined);
+      assert.equal(result.status, 0, output);
+      assert.match(output, /frame #0: .*retainAcrossCollection/);
+      assert.match(output, /frame #1: .*__tint_invoke/);
+      assert.match(output, /frame #2: .*tint:process-entry/);
+      assert.match(output, /exited with status = 42/);
     } else {
       const result = spawnSync(
         "gdb",

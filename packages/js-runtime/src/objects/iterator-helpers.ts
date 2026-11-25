@@ -8,6 +8,8 @@ import {
   type GeneratorRecord,
 } from "../iterators/index.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   type ObjectHooks,
   type OrdinaryObject,
@@ -64,7 +66,7 @@ export function installIteratorHelpers(
           const data =
             object === undefined
               ? undefined
-              : object.internalIteratorHelperData;
+              : exoticSlots(object).internalIteratorHelperData;
           if (data === undefined) throw createRuntimeError(realm, "type");
           const generator = data.generator;
           if (name === "return" && generator.state === "suspended-start") {
@@ -99,7 +101,7 @@ export function installIteratorHelpers(
     iterator: ScriptIterator | undefined,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const helper = createObject<ScriptPropertyKey, unknown>(prototype);
-    helper.internalIteratorHelperData = {
+    ensureExoticSlots(helper).internalIteratorHelperData = {
       generator,
       close: (): void => {
         if (iterator !== undefined) closeScriptIterator(iterator, false);

@@ -5,6 +5,7 @@ import {
 import {
   appendExitEntry,
   emitModule as emitX64,
+  x64ModulePatcher,
   type X64Emission,
 } from "@tint/codegen/x86_64/scalar";
 import type { ModuleIR } from "@tint/ir/scalar";
@@ -93,7 +94,7 @@ export function buildFreestandingScalarProgram(
       maxByteLength: Number.MAX_SAFE_INTEGER,
       data: native.data,
       addressFixups: native.addressFixups,
-      patchAddress: native.patchAddress,
+      patchAddress: x64ModulePatcher(native),
     },
     "tint.freestanding",
     [],

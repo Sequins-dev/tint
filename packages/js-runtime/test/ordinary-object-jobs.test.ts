@@ -218,7 +218,7 @@ test("generator bodies restore their captured context independently of the resum
         return { kind: "return", value: 42 };
       }, a),
   );
-  const record = generator.internalGeneratorData;
+  const record = generator.internalExoticSlots?.internalGeneratorData;
   assert.ok(record);
   runScriptContext(agent, { realm: b, scriptOrModule: "consumer" }, () => {
     const result = resumeGenerator(record, "next", undefined, {

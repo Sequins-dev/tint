@@ -188,12 +188,16 @@ export function buildGraph(dump: HeapDump): TintHeapGraph {
     rootWalk: "",
     pendingBytes: 0,
   };
+  // The old space is found through its start bits (parallel evacuation
+  // leaves unformatted gaps); the nursery keeps none and is bump-allocated
+  // without gaps, so it is walked by each object's extent.
   const spaces = [
-    { region: dump.old, top: state.oldTop, first: 0 },
+    { region: dump.old, top: state.oldTop, first: 0, startBits: true },
     {
       region: dump.young,
       top: state.youngTop,
       first: state.oldCapacity / granule,
+      startBits: false,
     },
   ];
   const registers = meta.thread.registers,
@@ -211,15 +215,17 @@ export function buildGraph(dump: HeapDump): TintHeapGraph {
     const units = Math.floor(space.top / granule);
     let end = 0;
     for (let unit = 0; unit < units;) {
-      const bit = space.first + unit,
-        byte = dump.starts[bit >>> 3] ?? 0;
-      if (byte === 0 && (bit & 7) === 0) {
-        unit += 8;
-        continue;
-      }
-      if (((byte >>> (bit & 7)) & 1) === 0) {
-        unit++;
-        continue;
+      if (space.startBits) {
+        const bit = space.first + unit,
+          byte = dump.starts[bit >>> 3] ?? 0;
+        if (byte === 0 && (bit & 7) === 0) {
+          unit += 8;
+          continue;
+        }
+        if (((byte >>> (bit & 7)) & 1) === 0) {
+          unit++;
+          continue;
+        }
       }
       const offset = unit * granule,
         address = space.region.base + offset;

@@ -63,7 +63,7 @@ test("worker clone preserves Error causes and shared backing among copied views"
     resizable: false,
     allocationLimit: 4,
   };
-  buffer.internalArrayBufferData = storage;
+  o.ensureExoticSlots(buffer).internalArrayBufferData = storage;
   const view = o.createTypedArrayView(
     source.realm.typedArrayPrototypes.get("Uint8"),
     {
@@ -89,11 +89,14 @@ test("worker clone preserves Error causes and shared backing among copied views"
   ) as ObjectValue;
   const clonedView = o.getOwnProperty(copy, "first")!.value as ObjectValue;
   const backing = o.getOwnProperty(copy, "backing")!.value as ObjectValue;
-  assert.equal(clonedView.internalTypedArrayData?.buffer, backing);
-  assert.equal(clonedView.internalTypedArrayData?.byteOffset, 1);
-  assert.equal(clonedView.internalTypedArrayData?.length, 2);
+  assert.equal(
+    o.exoticSlots(clonedView).internalTypedArrayData?.buffer,
+    backing,
+  );
+  assert.equal(o.exoticSlots(clonedView).internalTypedArrayData?.byteOffset, 1);
+  assert.equal(o.exoticSlots(clonedView).internalTypedArrayData?.length, 2);
   assert.notEqual(backing, buffer);
-  assert.deepEqual(backing.internalArrayBufferData?.data, bytes);
+  assert.deepEqual(o.exoticSlots(backing).internalArrayBufferData?.data, bytes);
   const cloneError = o.getOwnProperty(copy, "error")!.value as ObjectValue;
   assert.equal(cloneError.prototype, target.realm.prototypes.get("type"));
   assert.equal(o.getOwnProperty(cloneError, "message")!.value, "failure");

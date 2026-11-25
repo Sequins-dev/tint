@@ -175,7 +175,7 @@ export class HeapDump {
     ) as DumpMeta;
     if (this.meta.format !== "tint-heap-dump" || this.meta.formatVersion !== 2)
       throw Error("unsupported heap dump format");
-    if (this.meta.descriptor.version !== 2)
+    if (this.meta.descriptor.version !== 3)
       throw Error(
         "heap descriptor version " +
           this.meta.descriptor.version +
@@ -240,23 +240,43 @@ export class HeapDump {
     }
     return undefined;
   }
-  /** UTF-16 text of a string object (heap or image literal). */
+  /** Text of a string object (heap or image literal): two-byte units, or
+   * one-byte units under kind flag 1. A sliced string (kind flag 2) holds
+   * the byte offset of its first unit in its flat parent's units, then the
+   * parent. */
   stringText(address: number, limit: number): string {
     const length = this.read(address + stringLengthOffset) ?? 0,
-      shown = Math.min(length, limit);
+      shown = Math.min(length, limit),
+      flags = splitHeader(
+        this.read(address) ?? 0,
+        this.meta.descriptor.flagsShift,
+      ).flags,
+      width = (flags & stringOneByteFlag) !== 0 ? 1 : 2,
+      data =
+        (flags & stringSlicedFlag) !== 0
+          ? (this.read(address + stringParentOffset) ?? 0) +
+            stringUnitsOffset +
+            (this.read(address + stringSliceStartOffset) ?? 0)
+          : address + stringUnitsOffset;
     let text = "";
-    const heap = this.heapBytes(address);
+    const heap = this.heapBytes(data);
     for (let index = 0; index < shown; index++) {
+      const at = data + index * width;
       let unit: number;
-      if (heap !== undefined)
-        unit = heap.bytes.readUInt16LE(
-          heap.offset + stringUnitsOffset + index * 2,
-        );
-      else {
-        const offset = this.imageOffset(
-          address + stringUnitsOffset + index * 2,
-        );
-        unit = offset < 0 ? 0xfffd : this.image.readUInt16LE(offset);
+      if (heap !== undefined) {
+        const offset = heap.offset + at - data;
+        unit =
+          width === 1
+            ? heap.bytes.readUInt8(offset)
+            : heap.bytes.readUInt16LE(offset);
+      } else {
+        const offset = this.imageOffset(at);
+        unit =
+          offset < 0
+            ? 0xfffd
+            : width === 1
+              ? this.image.readUInt8(offset)
+              : this.image.readUInt16LE(offset);
       }
       text += String.fromCharCode(unit);
     }
@@ -266,7 +286,11 @@ export class HeapDump {
 
 // Version 2 string layout (packages/abi/src/host.ts).
 const stringLengthOffset = 8,
-  stringUnitsOffset = 16;
+  stringUnitsOffset = 16,
+  stringOneByteFlag = 1,
+  stringSlicedFlag = 2,
+  stringSliceStartOffset = 16,
+  stringParentOffset = 24;
 /** Marker (or record descriptor address) and kind flags of a header word. */
 export function splitHeader(
   word: number,

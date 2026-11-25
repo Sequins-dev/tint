@@ -103,7 +103,7 @@ export function run(): number {
     managedBytes: smallHeap ? 16384 : 262144,
     allocationCapacity: smallHeap ? 512 : 8192,
     rootCapacity: 4096,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     hostBindings,
   },
 );

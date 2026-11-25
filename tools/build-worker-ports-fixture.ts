@@ -164,7 +164,7 @@ export function run(argument:number):number {
     runtimeEntry:
       target.arch === "x86_64"
         ? "initializeGenerationalRuntime"
-        : "initializeCopyingRuntime",
+        : "initializeGenerationalRuntime",
     hostBindings: bindings,
   },
 );

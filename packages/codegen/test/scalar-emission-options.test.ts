@@ -58,7 +58,8 @@ test("emission options preserve default and configured byte images", () => {
   // table. Precise stack maps need no temporary-root initialization.
   // Each record descriptor is preceded by two dispatch family words and its
   // 8-byte record index. Number
-  // constants materialize only their nonzero 16-bit parts.
+  // constants materialize only their nonzero 16-bit parts. The configured
+  // image's inline allocation compares top + size with the limit.
   for (const [options, length, hash] of [
     [
       {},
@@ -71,11 +72,11 @@ test("emission options preserve default and configured byte images", () => {
         hostABI: darwinHostABI(),
         debugSpans: true,
         linearAllocation: true,
-        generationalBarriers: false,
+        generationalBarriers: true,
         closedRoots: [0],
       },
-      832,
-      "9d7ddb1f11442a78a8f5128339c20a8c53baba25339ff0c91b55b22e23b5f36b",
+      784,
+      "effbd87dcef898cb61f2ef1fdaf1bcd1b7512ff5909befbafa819b08ed557716",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);

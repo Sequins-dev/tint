@@ -51,7 +51,6 @@ export function substituteInstructionValues(
     case "general-null":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
     case "boolean-none":
     case "string-none":
     case "reference-none":
@@ -110,13 +109,113 @@ export function substituteInstructionValues(
       const object = substitutedValue(values, op.object);
       return object === op.object ? op : { ...op, object };
     }
+    case "record-slot-read": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index);
+      return object === op.object && index === op.index
+        ? op
+        : { ...op, object, index };
+    }
+    case "property-load": {
+      const object = substitutedValue(values, op.object),
+        site = substitutedValue(values, op.site);
+      return object === op.object && site === op.site
+        ? op
+        : { ...op, object, site };
+    }
+    case "property-store": {
+      const object = substitutedValue(values, op.object),
+        value = substitutedValue(values, op.value),
+        site = substitutedValue(values, op.site);
+      return object === op.object && value === op.value && site === op.site
+        ? op
+        : { ...op, object, value, site };
+    }
+    case "script-entry": {
+      const callee = substitutedValue(values, op.callee),
+        realm = substitutedValue(values, op.realm);
+      return callee === op.callee && realm === op.realm
+        ? op
+        : { ...op, callee, realm };
+    }
+    case "global-cell": {
+      const scope = substitutedValue(values, op.scope),
+        cache = substitutedValue(values, op.cache);
+      return scope === op.scope && cache === op.cache
+        ? op
+        : { ...op, scope, cache };
+    }
+    case "element-load": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index),
+        cachedStorage =
+          op.cachedStorage === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedStorage),
+        cachedCount =
+          op.cachedCount === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedCount);
+      if (
+        object === op.object &&
+        index === op.index &&
+        cachedStorage === op.cachedStorage &&
+        cachedCount === op.cachedCount
+      )
+        return op;
+      return cachedStorage !== undefined && cachedCount !== undefined
+        ? { ...op, object, index, cachedStorage, cachedCount }
+        : { ...op, object, index };
+    }
+    case "element-store": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index),
+        value = substitutedValue(values, op.value),
+        cachedStorage =
+          op.cachedStorage === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedStorage),
+        cachedCount =
+          op.cachedCount === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedCount);
+      if (
+        object === op.object &&
+        index === op.index &&
+        value === op.value &&
+        cachedStorage === op.cachedStorage &&
+        cachedCount === op.cachedCount
+      )
+        return op;
+      return cachedStorage !== undefined && cachedCount !== undefined
+        ? { ...op, object, index, value, cachedStorage, cachedCount }
+        : { ...op, object, index, value };
+    }
+    case "element-length":
+    case "element-storage":
+    case "element-count": {
+      const object = substitutedValue(values, op.object);
+      return object === op.object ? op : { ...op, object };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };
     }
-    case "string-length": {
+    case "string-length":
+    case "string-two-byte":
+    case "string-flat": {
       const string = substitutedValue(values, op.string);
       return string === op.string ? op : { ...op, string };
+    }
+    case "string-flatten-into": {
+      const address = substitutedValue(values, op.address),
+        byteLength = substitutedValue(values, op.byteLength),
+        string = substitutedValue(values, op.string);
+      return address === op.address &&
+        byteLength === op.byteLength &&
+        string === op.string
+        ? op
+        : { ...op, address, byteLength, string };
     }
     case "string-code-unit": {
       const string = substitutedValue(values, op.string),
@@ -125,7 +224,46 @@ export function substituteInstructionValues(
         ? op
         : { ...op, string, index };
     }
-    case "string-starts-with": {
+    case "string-from-latin1":
+    case "bytes-ascii-prefix":
+    case "string-from-utf8": {
+      const bytes = substitutedValue(values, op.bytes),
+        begin = substitutedValue(values, op.begin),
+        limit = substitutedValue(values, op.limit);
+      return bytes === op.bytes && begin === op.begin && limit === op.limit
+        ? op
+        : { ...op, bytes, begin, limit };
+    }
+    case "string-ascii-case": {
+      const string = substitutedValue(values, op.string);
+      return string === op.string ? op : { ...op, string };
+    }
+    case "string-ascii-prefix":
+    case "string-utf8-length": {
+      const string = substitutedValue(values, op.string),
+        begin = substitutedValue(values, op.begin),
+        limit = substitutedValue(values, op.limit);
+      return string === op.string && begin === op.begin && limit === op.limit
+        ? op
+        : { ...op, string, begin, limit };
+    }
+    case "string-copy-latin1":
+    case "string-write-utf8": {
+      const string = substitutedValue(values, op.string),
+        begin = substitutedValue(values, op.begin),
+        limit = substitutedValue(values, op.limit),
+        bytes = substitutedValue(values, op.bytes),
+        offset = substitutedValue(values, op.offset);
+      return string === op.string &&
+        begin === op.begin &&
+        limit === op.limit &&
+        bytes === op.bytes &&
+        offset === op.offset
+        ? op
+        : { ...op, string, begin, limit, bytes, offset };
+    }
+    case "string-starts-with":
+    case "string-index-of": {
       const string = substitutedValue(values, op.string),
         search = substitutedValue(values, op.search),
         position = substitutedValue(values, op.position);
@@ -290,20 +428,22 @@ export function substituteInstructionValues(
             ...(actuals === undefined ? {} : { scriptArguments: actuals }),
           };
     }
+    case "activation-read": {
+      // Only top names no record; only argument takes an index.
+      const record = op.record,
+        index = op.index;
+      if (record === undefined) return op;
+      const renamedRecord = substitutedValue(values, record);
+      if (index === undefined)
+        return renamedRecord === record ? op : { ...op, record: renamedRecord };
+      const renamedIndex = substitutedValue(values, index);
+      return renamedRecord === record && renamedIndex === index
+        ? op
+        : { ...op, record: renamedRecord, index: renamedIndex };
+    }
     case "script-argument": {
       const index = substitutedValue(values, op.index);
-      const frame = op.frame;
-      if (frame === undefined)
-        return index === op.index ? op : { ...op, index };
-      const count = substitutedValue(values, frame.count),
-        registers = substitutedValue(values, frame.registers),
-        stack = substitutedValue(values, frame.stack);
-      return index === op.index &&
-        count === frame.count &&
-        registers === frame.registers &&
-        stack === frame.stack
-        ? op
-        : { ...op, index, frame: { count, registers, stack } };
+      return index === op.index ? op : { ...op, index };
     }
     case "record-new": {
       const args = optionalList(op.arguments, values),
@@ -320,8 +460,11 @@ export function substituteInstructionValues(
       return mapped === op.values ? op : { ...op, values: mapped };
     }
     case "string-allocate": {
-      const length = substitutedValue(values, op.length);
-      return length === op.length ? op : { ...op, length };
+      const length = substitutedValue(values, op.length),
+        twoByte = substitutedValue(values, op.twoByte);
+      return length === op.length && twoByte === op.twoByte
+        ? op
+        : { ...op, length, twoByte };
     }
     case "string-write": {
       const target = substitutedValue(values, op.target),
@@ -332,6 +475,48 @@ export function substituteInstructionValues(
         source === op.source
         ? op
         : { ...op, target, offset, source };
+    }
+    case "number-string-cached": {
+      const value = substitutedValue(values, op.value);
+      return value === op.value ? op : { ...op, value };
+    }
+    case "number-string-cache": {
+      const value = substitutedValue(values, op.value),
+        string = substitutedValue(values, op.string);
+      return value === op.value && string === op.string
+        ? op
+        : { ...op, value, string };
+    }
+    case "string-index-cached": {
+      const string = substitutedValue(values, op.string);
+      return string === op.string ? op : { ...op, string };
+    }
+    case "string-index-cache": {
+      const string = substitutedValue(values, op.string),
+        value = substitutedValue(values, op.value);
+      return string === op.string && value === op.value
+        ? op
+        : { ...op, string, value };
+    }
+    case "string-split-cached": {
+      const string = substitutedValue(values, op.string),
+        separator = substitutedValue(values, op.separator),
+        template = substitutedValue(values, op.template);
+      return string === op.string &&
+        separator === op.separator &&
+        template === op.template
+        ? op
+        : { ...op, string, separator, template };
+    }
+    case "string-split-cache": {
+      const string = substitutedValue(values, op.string),
+        separator = substitutedValue(values, op.separator),
+        value = substitutedValue(values, op.value);
+      return string === op.string &&
+        separator === op.separator &&
+        value === op.value
+        ? op
+        : { ...op, string, separator, value };
     }
   }
   throw "unsupported instruction substitution";
@@ -384,6 +569,9 @@ export function renumberInstructionResult(
     case "reference-vector-write":
     case "reference-vector-copy":
     case "string-write":
+    case "number-string-cache":
+    case "string-index-cache":
+    case "string-split-cache":
       return op;
     default:
       return { ...op, id };

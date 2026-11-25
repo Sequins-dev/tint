@@ -1,4 +1,6 @@
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createConstructorObject,
   createObject,
   getProperty,
@@ -39,7 +41,8 @@ function requireCollection(
   realm: ErrorRealm,
 ): WeakCollectionData {
   const object = viewObjectValue(receiver, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalWeakData;
+    data =
+      object === undefined ? undefined : exoticSlots(object).internalWeakData;
   if (
     data === undefined ||
     (data.kind !== "map" && data.kind !== "set") ||
@@ -95,7 +98,10 @@ export function installWeakCollectionIntrinsics(
         );
         const storage = realm.agent.weakStorage;
         if (storage === undefined) return rejectUnsupportedExecution(realm);
-        object.internalWeakData = createWeakCollectionData(kind, storage);
+        ensureExoticSlots(object).internalWeakData = createWeakCollectionData(
+          kind,
+          storage,
+        );
         const iterable = args[0];
         if (iterable === undefined || iterable === null) return object;
         const adder = getProperty<ScriptPropertyKey, unknown>(

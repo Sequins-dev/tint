@@ -2,6 +2,18 @@ import type { ScriptPropertyKey } from "@tint/js-runtime/objects";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as objects from "../src/objects/index.ts";
+import {
+  advanceScriptMapCursor,
+  clearScriptMap,
+  createScriptMap,
+  createScriptMapCursor,
+  deleteScriptMap,
+  getScriptMap,
+  hasScriptMap,
+  readScriptMapCursorKey,
+  readScriptMapCursorValue,
+  setScriptMap,
+} from "../src/objects/collection-data.ts";
 import { emptyUpdate } from "@tint/js-runtime/descriptors";
 const hooks: objects.ObjectHooks<unknown> = {
   undefinedValue: undefined,
@@ -289,10 +301,12 @@ function define(
   );
 }
 
-test("packed elements keep array indices out of the property map", () => {
+test("packed elements keep array indices and length out of the property map", () => {
   const a = packed(100);
+  const b = array();
   assert.notEqual(a.internalArrayElements, undefined);
-  assert.equal(a.properties.size, 1);
+  assert.equal(a.properties, undefined);
+  assert.equal(a.internalMethods, b.internalMethods);
   assert.equal(length(a), 100);
   assert.deepEqual(data(a, "42"), [false, 42, true, true, true]);
   assert.equal(get(a, "99"), 99);
@@ -300,7 +314,7 @@ test("packed elements keep array indices out of the property map", () => {
   assert.deepEqual(keys(a).slice(0, 3), ["0", "1", "2"]);
   assert.equal(keys(a).at(-1), "length");
   assert.equal(objects.createDataProperty(a, "100", 100, hooks), true);
-  assert.equal(a.properties.size, 1);
+  assert.equal(a.properties, undefined);
 });
 
 test("storing a non-number switches number elements to values once", () => {
@@ -309,12 +323,13 @@ test("storing a non-number switches number elements to values once", () => {
   put(a, "1", NaN);
   put(a, "2", 2);
   const before = a.internalArrayElements!;
-  assert.notEqual(before.numbers, undefined);
+  assert.equal(before.values, undefined);
+  assert.equal(before.numberCount, 3);
   const object = objects.createObject<ScriptPropertyKey, unknown>(undefined);
   put(a, "1", object);
   put(a, "3", "three");
   const after = a.internalArrayElements!;
-  assert.equal(after.numbers, undefined);
+  assert.equal(after.numberCount, 0);
   assert.notEqual(after.values, undefined);
   assert.ok(Object.is(get(a, "0"), -0));
   assert.equal(get(a, "1"), object);
@@ -322,8 +337,30 @@ test("storing a non-number switches number elements to values once", () => {
   assert.equal(get(a, "3"), "three");
   put(a, "4", 4);
   assert.equal(get(a, "4"), 4);
-  assert.equal(a.properties.size, 1);
+  assert.equal(a.properties, undefined);
   assert.equal(length(a), 5);
+});
+
+test("number elements grow in place and an emptied array starts over as numbers", () => {
+  const a = array();
+  for (let i = 0; i < 100; i++) put(a, String(i), i / 2);
+  const elements = a.internalArrayElements!;
+  assert.equal(elements.values, undefined);
+  assert.equal(elements.numberCount, 100);
+  assert.ok(elements.numbers.length >= 100);
+  assert.equal(get(a, "99"), 49.5);
+  put(a, "100", "text");
+  assert.equal(elements.numberCount, 0);
+  // Read through the object: the assertion above narrowed `elements.values`.
+  assert.equal(a.internalArrayElements?.values?.length, 101);
+  assert.equal(get(a, "99"), 49.5);
+  assert.equal(resize(a, 0), "accepted");
+  assert.equal(elements.values, undefined);
+  assert.equal(elements.numberCount, 0);
+  put(a, "0", 7);
+  assert.equal(elements.numberCount, 1);
+  assert.equal(get(a, "0"), 7);
+  assert.equal(length(a), 1);
 });
 
 test("non-default attributes and accessors convert to descriptors", () => {
@@ -570,4 +607,238 @@ test("packed arrays created with a length start empty and grow by define", () =>
   assert.equal(objects.createDataProperty(a, "2", "c", hooks), true);
   assert.equal(a.internalArrayElements, undefined);
   assert.deepEqual(keys(a), ["0", "2", "length"]);
+});
+
+test("unpacking after expando properties keeps length before non-index string keys", () => {
+  const a = packed(2);
+  const symbol = objects.createSymbolValue("sym");
+  assert.equal(objects.createDataProperty(a, "first", 1, hooks), true);
+  assert.equal(objects.createDataProperty(a, symbol, 2, hooks), true);
+  assert.equal(objects.createDataProperty(a, "second", 3, hooks), true);
+  assert.notEqual(a.internalArrayElements, undefined);
+  assert.deepEqual(keys(a), ["0", "1", "length", "first", "second", symbol]);
+  // Truncating a packed array with expandos keeps expandos and stays packed.
+  assert.equal(resize(a, 1), "accepted");
+  assert.notEqual(a.internalArrayElements, undefined);
+  assert.deepEqual(keys(a), ["0", "length", "first", "second", symbol]);
+  // A sparse write unpacks while keeping "length" ahead of existing expandos.
+  assert.equal(put(a, "10", 10), true);
+  assert.equal(a.internalArrayElements, undefined);
+  assert.deepEqual(keys(a), ["0", "10", "length", "first", "second", symbol]);
+  assert.equal(get(a, "first"), 1);
+  assert.equal(get(a, symbol), 2);
+  assert.equal(get(a, "second"), 3);
+});
+
+test("inline length honors descriptor invariants, freezing, sealing, and prototype inheritance", () => {
+  const empty = array();
+  assert.equal(objects.ordinaryHasOwnProperty(empty, "length"), true);
+  assert.equal(objects.hasProperty(empty, "length"), true);
+  assert.equal(objects.deleteProperty(empty, "length"), false);
+  assert.equal(
+    define(empty, "length", { fields: 16, enumerable: true }),
+    "rejected",
+  );
+  assert.equal(
+    define(empty, "length", { fields: 32, configurable: true }),
+    "rejected",
+  );
+  assert.equal(
+    define(empty, "length", { fields: 4, get: () => 0 }),
+    "rejected",
+  );
+  assert.equal(define(empty, "length", { fields: 0 }), "accepted");
+  assert.equal(objects.preventExtensions(empty), true);
+  assert.equal(
+    define(empty, "length", { fields: 32, configurable: false }),
+    "accepted",
+  );
+  assert.notEqual(empty.internalArrayElements, undefined);
+  assert.equal(empty.properties, undefined);
+  assert.equal(
+    define(empty, "length", {
+      fields: 2 | 32,
+      writable: false,
+      configurable: false,
+    }),
+    "accepted",
+  );
+  assert.notEqual(empty.internalArrayElements, undefined);
+  assert.equal(empty.properties, undefined);
+  assert.deepEqual(data(empty, "length"), [false, 0, false, false, false]);
+  assert.equal(
+    define(empty, "length", { fields: 2, writable: true }),
+    "rejected",
+  );
+
+  // Inherited inline length on an ordinary object prototype chain.
+  const proto = packed(3);
+  const child = objects.createObject<ScriptPropertyKey, unknown>(proto);
+  assert.equal(objects.getProperty(child, "length", child, hooks), 3);
+  assert.equal(resize(proto, 3, false), "accepted");
+  assert.equal(
+    objects.setProperty(
+      child,
+      "length",
+      9,
+      { value: child, object: child },
+      hooks,
+    ),
+    false,
+  );
+  assert.equal(objects.getOwnProperty(child, "length"), undefined);
+});
+
+test("fixed-arity small array builders produce packed number and value arrays", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const a0 = objects.createArray0(realm);
+  assert.equal(length(a0), 0);
+  assert.equal(a0.prototype, realm.arrayPrototype);
+  assert.equal(a0.properties, undefined);
+  assert.equal(a0.internalArrayElements?.values, undefined);
+
+  const a1 = objects.createArray1(-0, realm);
+  assert.equal(length(a1), 1);
+  assert.equal(a1.internalArrayElements?.values, undefined);
+  assert.ok(Object.is(get(a1, "0"), -0));
+
+  const a2 = objects.createArray2(1, "two", realm);
+  assert.equal(length(a2), 2);
+  assert.notEqual(a2.internalArrayElements?.values, undefined);
+  assert.equal(get(a2, "0"), 1);
+  assert.equal(get(a2, "1"), "two");
+
+  const a3 = objects.createArray3(1, NaN, 3.5, realm);
+  assert.equal(length(a3), 3);
+  assert.equal(a3.internalArrayElements?.values, undefined);
+  assert.equal(Number.isNaN(get(a3, "1")), true);
+  assert.equal(get(a3, "2"), 3.5);
+
+  const marker = objects.createObject<ScriptPropertyKey, unknown>(undefined);
+  const a4Num = objects.createArray4(10, 20, 30, 40, realm);
+  assert.equal(length(a4Num), 4);
+  assert.equal(a4Num.internalArrayElements?.values, undefined);
+  assert.equal(get(a4Num, "3"), 40);
+
+  const a4Mix = objects.createArray4(10, marker, undefined, 40, realm);
+  assert.equal(length(a4Mix), 4);
+  assert.notEqual(a4Mix.internalArrayElements?.values, undefined);
+  assert.equal(get(a4Mix, "1"), marker);
+  assert.equal(objects.getOwnProperty(a4Mix, "2")?.value, undefined);
+});
+
+test("fixed-arity object literal builders share fast shapes and fall back safely", () => {
+  const proto = objects.createObject<ScriptPropertyKey, unknown>(undefined);
+  const s1 = objects.createObjectLiteralSite(["a"]);
+  const s2 = objects.createObjectLiteralSite(["x", "y"]);
+  const s3 = objects.createObjectLiteralSite(["a", "b", "c"]);
+  const s4 = objects.createObjectLiteralSite(["k1", "k2", "k3", "k4"]);
+  const o1 = objects.createLiteralObject1(proto, s1, 1, hooks);
+  const o1b = objects.createLiteralObject1(proto, s1, 2, hooks);
+  assert.equal(o1.internalShape, o1b.internalShape);
+  assert.equal(o1.properties, undefined);
+  assert.equal(get(o1, "a"), 1);
+  assert.equal(get(o1b, "a"), 2);
+
+  const o2 = objects.createLiteralObject2(proto, s2, 10, 20, hooks);
+  const o2b = objects.createLiteralObject2(proto, s2, 30, 40, hooks);
+  assert.equal(o2.internalShape, o2b.internalShape);
+  assert.equal(get(o2b, "x"), 30);
+  assert.equal(get(o2b, "y"), 40);
+
+  const o3 = objects.createLiteralObject3(proto, s3, 1, 2, 3, hooks);
+  const o3b = objects.createLiteralObject3(proto, s3, 4, 5, 6, hooks);
+  assert.equal(o3.internalShape, o3b.internalShape);
+  assert.equal(get(o3b, "c"), 6);
+
+  const o4 = objects.createLiteralObject4(proto, s4, 1, 2, 3, 4, hooks);
+  const o4b = objects.createLiteralObject4(proto, s4, 5, 6, 7, 8, hooks);
+  assert.equal(o4.internalShape, o4b.internalShape);
+  assert.equal(get(o4b, "k4"), 8);
+
+  // Duplicate keys and numeric keys fall back to descriptor semantics.
+  const dup = objects.createLiteralObject2(
+    proto,
+    objects.createObjectLiteralSite(["a", "a"]),
+    1,
+    2,
+    hooks,
+  );
+  assert.equal(get(dup, "a"), 2);
+  const indexed = objects.createLiteralObject2(
+    proto,
+    objects.createObjectLiteralSite(["0", "a"]),
+    9,
+    "ok",
+    hooks,
+  );
+  assert.equal(get(indexed, "0"), 9);
+  assert.equal(get(indexed, "a"), "ok");
+
+  // Mutating the prototype invalidates the cached root shape without breaking sites.
+  objects.createDataProperty(proto, "added", 99, hooks);
+  const o2c = objects.createLiteralObject2(proto, s2, 70, 80, hooks);
+  assert.equal(get(o2c, "x"), 70);
+  assert.equal(get(o2c, "y"), 80);
+  assert.equal(get(o2c, "added"), 99);
+});
+
+test("ScriptMap enforces SameValueZero, rehashes, and supports live cursors", () => {
+  const map = createScriptMap();
+  assert.equal(setScriptMap(map, -0, "zero"), true);
+  assert.equal(hasScriptMap(map, 0), true);
+  assert.equal(getScriptMap(map, 0), "zero");
+  assert.equal(setScriptMap(map, 0, "updated"), false);
+  assert.equal(map.size, 1);
+
+  assert.equal(setScriptMap(map, NaN, "nan"), true);
+  assert.equal(hasScriptMap(map, NaN), true);
+  assert.equal(getScriptMap(map, NaN), "nan");
+  assert.equal(setScriptMap(map, NaN, "nan2"), false);
+
+  assert.equal(setScriptMap(map, 1, "num"), true);
+  assert.equal(setScriptMap(map, "1", "str"), true);
+  assert.equal(setScriptMap(map, Infinity, "inf"), true);
+  assert.equal(setScriptMap(map, -Infinity, "ninf"), true);
+  assert.equal(getScriptMap(map, 1), "num");
+  assert.equal(getScriptMap(map, "1"), "str");
+  assert.equal(getScriptMap(map, Infinity), "inf");
+  assert.equal(getScriptMap(map, -Infinity), "ninf");
+
+  // Grow past linearLimit (8) into hash buckets and rehash.
+  for (let i = 0; i < 40; i++) {
+    assert.equal(setScriptMap(map, `k${i}`, i), true);
+    assert.equal(setScriptMap(map, i + 100, i * 2), true);
+  }
+  assert.notEqual(map.buckets, undefined);
+  assert.equal(getScriptMap(map, "k39"), 39);
+  assert.equal(getScriptMap(map, 139), 78);
+  assert.equal(deleteScriptMap(map, "k10"), true);
+  assert.equal(deleteScriptMap(map, "k10"), false);
+  assert.equal(hasScriptMap(map, "k10"), false);
+
+  // Live cursor observes deletions and re-insertions, and stops on clear.
+  const live = createScriptMap();
+  setScriptMap(live, "a", 1);
+  setScriptMap(live, "b", 2);
+  setScriptMap(live, "c", 3);
+  const cursor = createScriptMapCursor(live);
+  const visited: string[] = [];
+  while (advanceScriptMapCursor(cursor)) {
+    const k = String(readScriptMapCursorKey(cursor));
+    visited.push(`${k}:${String(readScriptMapCursorValue(cursor))}`);
+    if (k === "a") {
+      deleteScriptMap(live, "b");
+      deleteScriptMap(live, "a");
+      setScriptMap(live, "a", 10);
+    } else if (k === "c") {
+      clearScriptMap(live);
+    }
+  }
+  assert.deepEqual(visited, ["a:1", "c:3"]);
+  assert.equal(live.size, 0);
+  assert.equal(advanceScriptMapCursor(cursor), false);
 });

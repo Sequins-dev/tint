@@ -50,9 +50,21 @@ test("directory binds semantic classes, helper-free witnesses, complete layouts 
   const first = directory(),
     second = directory();
   assert.deepEqual(first.directory, second.directory);
-  assert.equal(first.directory.version, 3);
+  assert.equal(first.directory.version, 4);
   assert.equal(first.directory.frame, "Frame");
   assert.deepEqual(first.directory.abi.functionBrand, [40, 1, 16, 0]);
+  // The image's barrier policy, false unless its facts say otherwise.
+  assert.equal(first.directory.abi.generationalBarriers, false);
+  const { surface, facts } = fixture(),
+    barriered = compiler.createManagedSurfaceDirectory(
+      "test.surface",
+      surface,
+      { ...facts, generationalBarriers: true },
+      "Frame",
+    );
+  assert.ok(barriered.ok, JSON.stringify(barriered));
+  assert.equal(barriered.value.directory.abi.generationalBarriers, true);
+  assert.notEqual(barriered.value.directory.digest, first.directory.digest);
   assert.equal(first.witnesses.length, 1);
   assert.equal(first.directory.signatures.length, 3);
   assert.equal(
@@ -73,7 +85,7 @@ test("directory binds semantic classes, helper-free witnesses, complete layouts 
   );
   assert.equal(view.getUint32(0, true), 22);
   assert.equal(view.getUint16(4, true), "t".charCodeAt(0));
-  assert.equal(view.getUint32(48, true), 3);
+  assert.equal(view.getUint32(48, true), 4);
 });
 test("directory digest preserves lone surrogates and binds semantic names, ordering and physical offsets", () => {
   assert.notEqual(
@@ -83,6 +95,13 @@ test("directory digest preserves lone surrogates and binds semantic names, order
   const original = directory().directory;
   for (const changed of [
     { ...original, name: original.name + "x" },
+    {
+      ...original,
+      abi: {
+        ...original.abi,
+        generationalBarriers: !original.abi.generationalBarriers,
+      },
+    },
     {
       ...original,
       types: {

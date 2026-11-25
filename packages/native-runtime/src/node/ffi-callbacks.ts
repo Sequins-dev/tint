@@ -2,6 +2,7 @@ import { sysVCallbackFrame } from "@tint/abi/c/sysv";
 import { nodeFfiScalarKind, type CCallLayout } from "@tint/abi/c";
 import {
   callObjectValueOrThrow,
+  exoticSlots,
   typedRecordOf,
   viewObjectValue,
   type ProgramRealmCore,
@@ -271,10 +272,11 @@ export function createFfiCallbacks(
           return host.abort("Callbacks cannot throw an exception");
         }
         if (typeof value !== "number") {
-          const promise = viewObjectValue(
-            value,
-            core.object,
-          )?.internalPromiseData;
+          const object = viewObjectValue(value, core.object);
+          const promise =
+            object === undefined
+              ? undefined
+              : exoticSlots(object).internalPromiseData;
           return host.abort(
             promise === undefined
               ? "Callback returned invalid value for declared FFI type"
@@ -384,8 +386,10 @@ export function createFfiCallbacks(
       } catch (error) {
         return host.abort("Callbacks cannot throw an exception");
       }
+      const returnedObject = viewObjectValue(value, core.object);
       if (
-        viewObjectValue(value, core.object)?.internalPromiseData !== undefined
+        returnedObject !== undefined &&
+        exoticSlots(returnedObject).internalPromiseData !== undefined
       )
         return host.abort("Callbacks cannot return promises");
       const result = callback.signature.result;

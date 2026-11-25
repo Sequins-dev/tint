@@ -15,6 +15,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import {
+  exoticSlots,
   createConstructorObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -41,7 +42,9 @@ export function installBigIntIntrinsics(
     if (direct !== undefined) return direct;
     const object = viewObjectValue(value, realm.objectPrototype);
     const data =
-      object === undefined ? undefined : object.internalPrimitiveData;
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalPrimitiveData;
     if (data !== undefined && data.kind === "bigint") {
       const bigint = viewBigIntValue(data.value);
       if (bigint !== undefined) return bigint;

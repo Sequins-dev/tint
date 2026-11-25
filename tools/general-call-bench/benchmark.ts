@@ -12,6 +12,7 @@ import { nativeFixtureTarget } from "../native-host-target.ts";
 import { nativeArtifact } from "../native-target-runner.ts";
 import * as kernels from "./kernels.ts";
 import * as generality from "./generality.ts";
+import * as elements from "./elements.ts";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
 type Artifact = ReturnType<typeof nativeArtifact>;
@@ -69,13 +70,17 @@ function prepare(
   node: string,
   selected: string | undefined,
   scale: number,
-  suite: "kernels" | "generality",
+  suite: "kernels" | "generality" | "elements",
 ): Prepared {
   node = resolve(node);
   assert.equal(execute(node, ["--version"]).trim(), "v26.13.1");
   assert.ok(Number.isSafeInteger(scale) && scale > 0);
   const operations: Record<string, (iterations: number) => number> =
-    suite === "kernels" ? kernels : generality;
+    suite === "kernels"
+      ? kernels
+      : suite === "elements"
+        ? elements
+        : generality;
   const names = Object.keys(operations).filter(
     (name) => selected === undefined || selected === name,
   );
@@ -382,14 +387,24 @@ function readPrepared(path: string): Prepared {
 }
 
 const [mode, input, output, extra, ...additional] = process.argv.slice(2);
-if ((mode === "prepare" || mode === "prepare-generality") && input && output) {
+if (
+  (mode === "prepare" ||
+    mode === "prepare-generality" ||
+    mode === "prepare-elements") &&
+  input &&
+  output
+) {
   writeReport(
     output,
     prepare(
       input,
       extra,
       Number(additional[0] ?? 1),
-      mode === "prepare" ? "kernels" : "generality",
+      mode === "prepare"
+        ? "kernels"
+        : mode === "prepare-elements"
+          ? "elements"
+          : "generality",
     ),
   );
 } else if (mode === "fetch-octane" && input) {
@@ -433,6 +448,7 @@ if ((mode === "prepare" || mode === "prepare-generality") && input && output) {
   throw Error(`Usage:
   node tools/general-call-bench/benchmark.ts prepare NODE26 PREPARED.json [CASE] [SCALE]
   node tools/general-call-bench/benchmark.ts prepare-generality NODE26 PREPARED.json [CASE] [SCALE]
+  node tools/general-call-bench/benchmark.ts prepare-elements NODE26 PREPARED.json [CASE] [SCALE]
   node tools/general-call-bench/benchmark.ts fetch-octane DIRECTORY
   node tools/general-call-bench/benchmark.ts prepare-octane NODE26 PREPARED.json DIRECTORY [CASE]
   tools/gate/with-lock.sh launch general-calls-smoke node tools/general-call-bench/benchmark.ts smoke PREPARED.json

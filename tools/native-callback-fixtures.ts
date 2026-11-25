@@ -7,8 +7,7 @@ import { runDarwinFixture } from "./native-admission.ts";
 // TypeScript through AOT thunks during may-callback calls.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
   verifyHostedFixture,
@@ -16,6 +15,8 @@ import {
 } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 export const callbackDeclarations: FixtureForeignDeclaration = {
   id: "fixture/callbacks.d.ts",
@@ -173,14 +174,10 @@ export function run(): number {
 }
 `;
 }
-export function verifyCallbackFixture(
-  runtimeEntry?: "initializeCopyingRuntime" | "initializeGenerationalRuntime",
-): string {
+export function verifyCallbackFixture(): string {
   return verifyHostedFixture(
     callbackFixtureSource(),
-    runtimeEntry === "initializeCopyingRuntime"
-      ? "ffi-callbacks-copying"
-      : "ffi-callbacks",
+    "ffi-callbacks",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
@@ -191,10 +188,44 @@ export function verifyCallbackFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [callbackDeclarations],
+    },
+  );
+}
+
+/** A may-callback call in a program with no callback (docs/native-ffi.md,
+ * "Callbacks"): the call still publishes the thread's callback state under
+ * the image's callback key, so the image creates the key although it has
+ * no callback thunk. */
+export const mayCallbackOnlyDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/may-callback-only.d.ts",
+  text: `declare module "tint:c/libsystem" {
+  import type { i32, MayCallback } from "tint:ffi";
+  export function abs(value: i32): MayCallback<i32>;
+}
+`,
+};
+export function verifyMayCallbackOnlyFixture(): string {
+  return verifyHostedFixture(
+    `import { abs } from "may-callback-only";
+export function run(): number {
+  return abs(-42) === 42 && abs(7) === 7 ? 42 : 1;
+}
+`,
+    "ffi-may-callback-only",
+    [
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["may-callback-only", mayCallbackOnlyDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [mayCallbackOnlyDeclarations],
     },
   );
 }
@@ -352,10 +383,7 @@ export function verifyCallbackTrap(
         [
           "--no-lldbinit",
           "--batch",
-          "-o",
-          "process launch --stop-at-entry",
-          "-o",
-          "script assert lldb.process.GetState() == lldb.eStateStopped",
+          ...lldbStartCommands(),
           "-o",
           "continue",
           "-o",
@@ -386,7 +414,7 @@ export function withCallbackLibrary<T>(
   body: (library: string) => T,
 ): T | undefined {
   if (spawnSync("clang", ["--version"]).status !== 0) return undefined;
-  const directory = mkdtempSync(join(tmpdir(), "tint-callback-traps-"));
+  const directory = stableScratchDirectory("callback-library");
   try {
     const source = join(directory, "callback-traps.c"),
       library = join(
@@ -551,14 +579,10 @@ export function run(): number {
 }
 `;
 }
-export function verifyZlibCallbackFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyZlibCallbackFixture(): string {
   return verifyHostedFixture(
     zlibCallbackSource(),
-    runtimeEntry === undefined
-      ? "ffi-zlib-callbacks"
-      : "ffi-zlib-callbacks-copying",
+    "ffi-zlib-callbacks",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["zlib", zlibCallbackDeclarations.id],
@@ -568,7 +592,6 @@ export function verifyZlibCallbackFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [zlibCallbackDeclarations],

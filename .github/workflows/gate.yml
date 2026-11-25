@@ -1,0 +1,258 @@
+name: Gate
+
+# One target's gate (see docs/validation-gate.md). The bootstrap job builds
+# the workspace and stage 1 once; every other job runs on that build, after
+# checking the bundle SHA-256s the bootstrap job reported.
+on:
+  workflow_call:
+    inputs:
+      id:
+        description: Artifact name prefix for this target.
+        required: true
+        type: string
+      target:
+        description: Native compilation target name (e.g. darwin-aarch64, linux-x86_64, linux-aarch64).
+        required: true
+        type: string
+      runner:
+        description: The target's own runner.
+        required: true
+        type: string
+      arch:
+        description: The Node architecture the target's runner must report.
+        required: true
+        type: string
+      bootstrap-runner:
+        description: The runner that builds stage 1; Node compiles it identically on any host.
+        required: true
+        type: string
+      bootstrap-arch:
+        required: true
+        type: string
+      bootstrap-target:
+        description: The stage 1 target when the bootstrap runner is another host.
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  TEST262_SHA: 91c70759363c46557b694792bf34a2551a7af5ba
+  # Node defaults to roughly 2 GiB; Linux runners have 16 GiB, macOS 7 GiB.
+  NODE_OPTIONS: --max-old-space-size=5120
+  TINT_GATE_STAGE_TIMEOUT: 2700
+  TINT_GATE_MEMORY_SLOTS: 1
+  TINT_GATE_NATIVE_CONCURRENCY: 2
+  TINT_GATE_NATIVE_TIMEOUT: 3600
+
+jobs:
+  bootstrap:
+    runs-on: ${{ inputs.bootstrap-runner }}
+    timeout-minutes: 30
+    outputs:
+      build-bundle-sha256: ${{ steps.gate.outputs.build-bundle-sha256 }}
+      stage1-bundle-sha256: ${{ steps.gate.outputs.stage1-bundle-sha256 }}
+      stage1-sha256: ${{ steps.gate.outputs.stage1-sha256 }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/gate-setup
+        with:
+          arch: ${{ inputs.bootstrap-arch }}
+      - id: gate
+        run: tools/gate/ci.sh bootstrap ${{ inputs.bootstrap-target }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ inputs.id }}-build
+          path: ${{ runner.temp }}/tint-bundles/build.tar
+          compression-level: 1
+          retention-days: 3
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ inputs.id }}-stage1
+          path: ${{ runner.temp }}/tint-bundles/stage1.tar
+          compression-level: 1
+          retention-days: 3
+      - if: always()
+        uses: ./.github/actions/gate-evidence
+        with:
+          name: ${{ inputs.id }}-bootstrap
+
+  # Stage 2 on the target's own runner and the byte comparison with stage 1.
+  fixpoint:
+    needs: bootstrap
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/gate-setup
+        with:
+          arch: ${{ inputs.arch }}
+          debugger: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.id }}-stage1
+          path: ${{ runner.temp }}/tint-bundles
+      - run: tools/gate/ci.sh fixpoint
+        env:
+          TINT_CI_STAGE1_BUNDLE_SHA256: ${{ needs.bootstrap.outputs.stage1-bundle-sha256 }}
+          TINT_CI_STAGE1_SHA256: ${{ needs.bootstrap.outputs.stage1-sha256 }}
+      - if: always()
+        uses: ./.github/actions/gate-evidence
+        with:
+          name: ${{ inputs.id }}-fixpoint
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ inputs.id }}-fixpoint-stages
+          path: |
+            .tint-bootstrap/gate.*/stage1
+            .tint-bootstrap/gate.*/stage2
+          include-hidden-files: true
+
+  # Separate, small jobs per group run on every target: on macOS they share
+  # the organization's five-runner pool cleanly; on Linux both x86-64 and
+  # arm64 run the exact same full suite with zero skipped jobs.
+  tests:
+    needs: bootstrap
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    name: tests (${{ matrix.shard }}/2)
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/gate-setup
+        with:
+          arch: ${{ inputs.arch }}
+          tools: true
+          test262: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.id }}-build
+          path: ${{ runner.temp }}/tint-bundles
+      - run: tools/gate/ci.sh tests "$SHARD/2"
+        env:
+          SHARD: ${{ matrix.shard }}
+          TINT_CI_BUILD_BUNDLE_SHA256: ${{ needs.bootstrap.outputs.build-bundle-sha256 }}
+      - if: always()
+        uses: ./.github/actions/gate-evidence
+        with:
+          name: ${{ inputs.id }}-tests-${{ matrix.shard }}
+
+  native:
+    needs: bootstrap
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: native (${{ matrix.shard }}/3)
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/gate-setup
+        with:
+          arch: ${{ inputs.arch }}
+          debugger: true
+          tools: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.id }}-build
+          path: ${{ runner.temp }}/tint-bundles
+      - run: tools/gate/ci.sh native "$SHARD/3"
+        env:
+          SHARD: ${{ matrix.shard }}
+          TINT_CI_BUILD_BUNDLE_SHA256: ${{ needs.bootstrap.outputs.build-bundle-sha256 }}
+      - if: always()
+        uses: ./.github/actions/gate-evidence
+        with:
+          name: ${{ inputs.id }}-native-${{ matrix.shard }}
+
+  # One Test262 host compile needs about 7.5 GB, more than a macOS runner's
+  # 7 GiB; a 16 GiB Linux x86-64 runner compiles each target's units host
+  # without swapping (byte-identical across hosts; docs/results/ci-fast-gate-v1.md).
+  # The target's own test262 job then only links and runs.
+  test262-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      unit-host-bundle-sha256: ${{ steps.gate.outputs.unit-host-bundle-sha256 }}
+      unit-host-sha256: ${{ steps.gate.outputs.unit-host-sha256 }}
+      toolchain-sha256: ${{ steps.gate.outputs.toolchain-sha256 }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/gate-setup
+        with:
+          arch: x64
+          test262: true
+      - id: gate
+        run: tools/gate/ci.sh test262-host
+        env:
+          TINT_NATIVE_TARGET: ${{ inputs.target }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ inputs.id }}-unit-host
+          path: ${{ runner.temp }}/tint-bundles/unit-host.tar
+          compression-level: 1
+          retention-days: 3
+      - if: always()
+        uses: ./.github/actions/gate-evidence
+        with:
+          name: ${{ inputs.id }}-test262-host
+
+  test262:
+    needs: [bootstrap, test262-host]
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/gate-setup
+        with:
+          arch: ${{ inputs.arch }}
+          debugger: true
+          test262: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.id }}-build
+          path: ${{ runner.temp }}/tint-bundles
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.id }}-unit-host
+          path: ${{ runner.temp }}/tint-bundles
+      - run: tools/gate/ci.sh test262
+        env:
+          TINT_CI_BUILD_BUNDLE_SHA256: ${{ needs.bootstrap.outputs.build-bundle-sha256 }}
+          TINT_CI_UNIT_HOST_BUNDLE_SHA256: ${{ needs.test262-host.outputs.unit-host-bundle-sha256 }}
+          TINT_CI_UNIT_HOST_TOOLCHAIN: ${{ needs.test262-host.outputs.toolchain-sha256 }}
+      - if: always()
+        uses: ./.github/actions/gate-evidence
+        with:
+          name: ${{ inputs.id }}-test262
+
+  # One status for the target: every job above passed, with zero skips.
+  result:
+    if: always()
+    needs: [bootstrap, fixpoint, tests, native, test262-host, test262]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ needs.bootstrap.result }} ${{ needs.fixpoint.result }} ${{ needs.tests.result }} ${{ needs.native.result }} ${{ needs.test262-host.result }} ${{ needs.test262.result }}
+        run: |
+          echo "bootstrap/fixpoint/tests/native/test262-host/test262=$RESULTS"
+          for result in $RESULTS; do test "$result" = success; done

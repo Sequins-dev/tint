@@ -10,6 +10,7 @@ import {
   createRuntimeError,
   createTypedArrayView,
   defineOwnProperty,
+  exoticSlots,
   getProperty,
   hasProperty,
   hasPrototype,
@@ -134,7 +135,7 @@ export function adoptNodeBuffer(
   installNodeBuffer(core);
   const prototype = core.realm.prototypes.get(bufferBrand);
   const buffer = adoptArrayBuffer(bytes, core.realm);
-  const storage = buffer.internalArrayBufferData;
+  const storage = exoticSlots(buffer).internalArrayBufferData;
   if (prototype === undefined || storage === undefined)
     throw "BUFFER_ADOPTION_INVARIANT";
   return view(core, prototype, buffer, storage, 0, bytes.length);
@@ -182,8 +183,9 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
         "Expected a string, ArrayBuffer, Array, or array-like object",
         "ERR_INVALID_ARG_TYPE",
       );
+    const slots = exoticSlots(object);
     const backing =
-      object.internalArrayBufferData ?? object.internalSharedArrayBufferData;
+      slots.internalArrayBufferData ?? slots.internalSharedArrayBufferData;
     if (backing !== undefined) {
       const offset = integer(core, encoding);
       const total = bufferStorageByteLength(backing);
@@ -260,7 +262,10 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
   }
   function subarray(receiver: unknown, args: readonly unknown[]): unknown {
     const object = viewObjectValue(receiver, core.object);
-    const data = object?.internalTypedArrayData;
+    const data =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalTypedArrayData;
     if (object === undefined || data === undefined || data.kind !== "Uint8")
       throw createRuntimeError(realm, "type");
     const range = projectArrayBufferViewRange(object);
@@ -306,8 +311,9 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
     if (object !== undefined) {
       const range = projectArrayBufferViewRange(object);
       if (range !== undefined) return range.byteLength;
+      const slots = exoticSlots(object);
       const backing =
-        object.internalArrayBufferData ?? object.internalSharedArrayBufferData;
+        slots.internalArrayBufferData ?? slots.internalSharedArrayBufferData;
       if (backing !== undefined) return bufferStorageByteLength(backing);
     }
     return bufferError(

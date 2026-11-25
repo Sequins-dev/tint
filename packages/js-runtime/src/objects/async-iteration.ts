@@ -11,7 +11,13 @@ import {
   getScriptIterator,
   type ScriptIterator,
 } from "./iteration.ts";
-import { createObject, getProperty, type ObjectHooks } from "./operations.ts";
+import {
+  ensureExoticSlots,
+  exoticSlots,
+  createObject,
+  getProperty,
+  type ObjectHooks,
+} from "./operations.ts";
 import { getObjectValueProperty, viewObjectValue } from "./values.ts";
 import {
   createRuntimeError,
@@ -58,7 +64,7 @@ export function createAsyncFromSyncIterator(
   const wrapper = createObject<ScriptPropertyKey, unknown>(
     realm.asyncFromSyncIteratorPrototype,
   );
-  wrapper.internalSyncIteratorData = record;
+  ensureExoticSlots(wrapper).internalSyncIteratorData = record;
   return {
     record: {
       iterator: wrapper,
@@ -94,7 +100,7 @@ export function installAsyncFromSyncIntrinsics(
       0,
       (receiver, args): unknown => {
         const promise = createPromiseObject(realm.promisePrototype);
-        const record = promise.internalPromiseData;
+        const record = exoticSlots(promise).internalPromiseData;
         if (record === undefined) throw "ASYNC_DISPOSE_PROMISE_INVARIANT";
         const functions = createResolvingFunctions<unknown>(record, promises);
         try {
@@ -158,7 +164,7 @@ export function installAsyncFromSyncIntrinsics(
         1,
         (receiver, args): unknown => {
           const promise = createPromiseObject(realm.promisePrototype);
-          const promiseRecord = promise.internalPromiseData;
+          const promiseRecord = exoticSlots(promise).internalPromiseData;
           if (promiseRecord === undefined)
             throw "ASYNC_FROM_SYNC_PROMISE_INVARIANT";
           const functions = createResolvingFunctions<unknown>(
@@ -167,7 +173,9 @@ export function installAsyncFromSyncIntrinsics(
           );
           const object = viewObjectValue(receiver, realm.objectPrototype);
           const sync =
-            object === undefined ? undefined : object.internalSyncIteratorData;
+            object === undefined
+              ? undefined
+              : exoticSlots(object).internalSyncIteratorData;
           if (sync === undefined)
             functions.reject(createRuntimeError(realm, "type"));
           else

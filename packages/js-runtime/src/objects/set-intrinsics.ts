@@ -1,15 +1,17 @@
 import { installSetAlgebra } from "./set-algebra.ts";
 import { requireSet, createSetData } from "./set-data.ts";
 import {
-  hasMap,
-  setMap,
-  deleteMap,
-  clearMap,
-  createMapCursor,
-  advanceMapCursor,
-  readMapCursorKey,
-} from "@tint/foundation/collections/linked-map";
+  hasScriptMap,
+  setScriptMap,
+  deleteScriptMap,
+  clearScriptMap,
+  createScriptMapCursor,
+  advanceScriptMapCursor,
+  readScriptMapCursorKey,
+} from "./collection-data.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   getProperty,
@@ -30,7 +32,7 @@ import {
   stepScriptIterator,
   closeScriptIterator,
 } from "./iteration.ts";
-import { createArrayFromList } from "./array-like.ts";
+import { createArray2 } from "./array-like.ts";
 import { createIteratorResult } from "./iterator-intrinsics.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
@@ -51,7 +53,7 @@ export function installSetIntrinsics(
       const set = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "set", realm, hooks),
       );
-      set.internalSetData = createSetData();
+      ensureExoticSlots(set).internalSetData = createSetData();
       const iterable = args[0];
       if (iterable === undefined || iterable === null) return set;
       const adder = getProperty<ScriptPropertyKey, unknown>(
@@ -125,31 +127,28 @@ export function installSetIntrinsics(
   );
   for (const name of ["has", "add", "delete", "clear"]) {
     if (name === undefined) throw "SET_METHOD_NAME_INVARIANT";
-    builtinProperty(
-      prototype,
+    const method = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(
-        realm.functionPrototype,
-        name,
-        name === "clear" ? 0 : 1,
-        (receiver, args): unknown => {
-          const set = requireSet(receiver, realm);
-          const value = args[0] === 0 ? 0 : args[0];
-          if (name === "has") return hasMap<unknown, unknown>(set, value);
-          if (name === "delete") return deleteMap<unknown, unknown>(set, value);
-          if (name === "clear") {
-            clearMap<unknown, unknown>(set);
-            return undefined;
-          }
-          setMap<unknown, unknown>(set, value, value);
-          return receiver;
-        },
-        hooks,
-      ),
-      true,
-      true,
+      name === "clear" ? 0 : 1,
+      (receiver, args): unknown => {
+        const set = requireSet(receiver, realm);
+        const value = args[0] === 0 ? 0 : args[0];
+        if (name === "has") return hasScriptMap(set, value);
+        if (name === "delete") return deleteScriptMap(set, value);
+        if (name === "clear") {
+          clearScriptMap(set);
+          return undefined;
+        }
+        setScriptMap(set, value, value);
+        return receiver;
+      },
       hooks,
     );
+    builtinProperty(prototype, name, method, true, true, hooks);
+    // Generated calls perform these inline on a Set receiver's storage.
+    if (name === "has") realm.intrinsicFunctions.setHas = method;
+    else if (name === "add") realm.intrinsicFunctions.setAdd = method;
   }
   installSetAlgebra(realm, hooks);
   builtinProperty(
@@ -168,9 +167,9 @@ export function installSetIntrinsics(
           )
         )
           throw createRuntimeError(realm, "type");
-        const cursor = createMapCursor<unknown, unknown>(set);
-        while (advanceMapCursor<unknown, unknown>(cursor)) {
-          const value = readMapCursorKey<unknown, unknown>(cursor);
+        const cursor = createScriptMapCursor(set);
+        while (advanceScriptMapCursor(cursor)) {
+          const value = readScriptMapCursorKey(cursor);
           const called = callObjectValue(
             callback,
             args[1],
@@ -205,20 +204,14 @@ export function installSetIntrinsics(
       (receiver, args): unknown => {
         const object = viewObjectValue(receiver, realm.objectPrototype);
         const data =
-          object === undefined ? undefined : object.internalSetIteratorData;
+          object === undefined
+            ? undefined
+            : exoticSlots(object).internalSetIteratorData;
         if (data === undefined) throw createRuntimeError(realm, "type");
-        if (!advanceMapCursor<unknown, unknown>(data.cursor))
+        if (!advanceScriptMapCursor(data.cursor))
           return createIteratorResult(undefined, true, realm, hooks);
-        const value = readMapCursorKey<unknown, unknown>(data.cursor);
-        const result = data.entries
-          ? createArrayFromList(
-              [value, value],
-              0,
-              realm.arrayPrototype,
-              realm,
-              hooks,
-            )
-          : value;
+        const value = readScriptMapCursorKey(data.cursor);
+        const result = data.entries ? createArray2(value, value, realm) : value;
         return createIteratorResult(result, false, realm, hooks);
       },
       hooks,
@@ -238,8 +231,8 @@ export function installSetIntrinsics(
         const iterator = createObject<ScriptPropertyKey, unknown>(
           realm.setIteratorPrototype,
         );
-        iterator.internalSetIteratorData = {
-          cursor: createMapCursor<unknown, unknown>(set),
+        ensureExoticSlots(iterator).internalSetIteratorData = {
+          cursor: createScriptMapCursor(set),
           entries: name === "entries",
         };
         return iterator;

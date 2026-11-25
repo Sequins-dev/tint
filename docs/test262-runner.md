@@ -216,23 +216,37 @@ whole engine (including the compiler it embeds for eval) as one program, whose
 inlined functions and stack-map tables are far larger than any workspace
 fixture. Compiler, optimizer, verifier and codegen changes can pass both gates
 and still break every Test262 image (for example a fixed proof or encoding
-limit reached only at that scale). Before merging such changes, compile the
-host through a frozen toolchain and run one file in both linking modes:
+limit reached only at that scale). The [validation gate](validation-gate.md)
+therefore compiles the host through a frozen toolchain and runs one file with
+linked Script units; to reproduce it by hand:
 
 ```sh
 pnpm build
 node -e 'import("./tools/frozen-node-toolchain.ts").then(async (m) => m.freezeNodeToolchain((await import("./tools/workspace-sources.ts")).workspaceSources(), ".tint-bootstrap/tc-smoke"))'
-for linking in units program; do
-  TZ=UTC TINT_TEST262_LINKING=$linking NODE_OPTIONS=--max-old-space-size=16000 \
-    node .tint-bootstrap/tc-smoke/tools/test262-native-run.ts \
-    .tint-bootstrap/test262 language/expressions/object/11.1.5-0-1.js 128 > smoke-$linking.json
-done
+TZ=UTC TINT_TEST262_LINKING=units NODE_OPTIONS=--max-old-space-size=16000 \
+  node .tint-bootstrap/tc-smoke/tools/test262-native-run.ts \
+  .tint-bootstrap/test262 language/expressions/object/11.1.5-0-1.js 128 > smoke-units.json
 ```
 
-Both variants must pass in each mode. One host compile takes about 7 minutes
-and 9 GB of Node heap on the current tree (more than Node's default heap limit),
-too much for `pnpm check`; the scale-specific limits it has caught are covered
-there by unit regressions instead.
+Both variants must pass, and every batch must report `"linking": "units"`: a
+Script that falls back to a whole-program batch passes its tests but compiles
+the runtime per batch. The smoke runs only this linking. Each of `units`,
+`program` and `suite` spends almost all of a one-file run compiling the
+runtime once (about 4–6 minutes and 7–7.5 GB peak resident memory on an M-class
+Mac), but only the units host is independent of the selection, so it alone can
+be compiled once and reused.
+
+`TINT_TEST262_UNIT_HOST=prepare` compiles the units host into
+`TINT_TEST262_UNIT_HOST_CACHE` and exits without running a case, printing the
+entry's path, size and SHA-256 as JSON. It runs on any host; off arm64, set
+`TINT_NATIVE_TARGET=darwin-aarch64`. The same frozen toolchain compiles a
+byte-identical Darwin host on macOS and Linux, and the cache key records only
+the Node version of the compiling host, so CI compiles the host on a 16 GiB
+Linux x86-64 runner: the compile needs more memory than a 7 GiB macOS runner
+has.
+`TINT_TEST262_UNIT_HOST=require` loads that entry and fails before the first
+case when the cache has none for this frozen toolchain, sources and
+configuration, instead of compiling one.
 
 ## Deduplicated native coverage ledger
 
@@ -510,6 +524,28 @@ values receive Annex B behavior. Property access and callability remain object
 operations; neither inheritance nor a Proxy forwards the brand. Three native regression cases pass; the fourth had a pre-entry debugger attach
 failure and passes a separate diagnostic. Both reports remain in the dashboard.
 Complete unchanged Annex B selections are queued.
+
+### The [[IsHTMLDDA]] host capability
+
+Whether a host creates [[IsHTMLDDA]] objects is an explicit capability of the
+lowering (`htmlDDAObjects` in `ScriptLoweringOptions` and
+`GeneralLoweringOptions`). Code lowered with it tests `x == null` against
+undefined, null and the brand. Code lowered without it tests the tag alone
+and calls `excludeHTMLDDAObjects` when it initializes. The runtime makes that
+exclusion and `markHTMLDDAObject` mutually exclusive, so a host that creates
+such an object beside code lowered without the capability fails instead of
+changing loose equality: the refusal escapes the program's entry uncaught
+(exit status 70).
+
+| Host                                       | Capability                             |
+| ------------------------------------------ | -------------------------------------- |
+| Test262 (`test262ScriptHost`)              | Declared; it creates `$262.IsHTMLDDA`. |
+| Benchmark (`benchmarkScriptHost`)          | Not declared.                          |
+| General programs (`createGeneralLowering`) | Not declared by default.               |
+| Script lowering (`lowerScript`, eval)      | Declared by default.                   |
+
+`tools/native-script-cases.test.ts` runs Scripts lowered both ways
+beside the Test262 host's marked object.
 
 ### Debugger transport
 

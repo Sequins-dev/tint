@@ -43,7 +43,7 @@ export function run(): number {
 
 if (form === undefined || form === "bytes")
   verifyHostedFixture(
-    `import { createObject, createTypedArrayView, programRealmCore, projectArrayBufferViewRange, type ScriptPropertyKey } from "objects";
+    `import { createObject, createTypedArrayView, programRealmCore, projectArrayBufferViewRange, ensureExoticSlots, type ScriptPropertyKey } from "objects";
 import { createByteStorage, resizeByteStorage, detachByteStorage } from "bytes";
 export function run(): number {
   const core = programRealmCore();
@@ -51,10 +51,10 @@ export function run(): number {
   if (!allocated.ok) return 1;
   const storage = allocated.value;
   const buffer = createObject<ScriptPropertyKey, unknown>(core.realm.arrayBufferPrototype);
-  buffer.internalArrayBufferData = storage;
+  ensureExoticSlots(buffer).internalArrayBufferData = storage;
   const array = createTypedArrayView(core.realm.objectPrototype, { buffer, storage, byteOffset: 2, length: 2, kind: "Uint16", endian: "little" }, core.realm, core.hooks);
   const data = createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
-  data.internalDataViewData = { buffer, storage, byteOffset: 3, byteLength: 2 };
+  ensureExoticSlots(data).internalDataViewData = { buffer, storage, byteOffset: 3, byteLength: 2 };
   const first = projectArrayBufferViewRange(array);
   const alias = projectArrayBufferViewRange(data);
   if (first === undefined || alias === undefined || first.kind !== "ordinary" || first.byteOffset !== 2 || first.byteLength !== 4) return 2;

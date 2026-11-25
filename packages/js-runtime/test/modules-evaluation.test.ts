@@ -59,7 +59,10 @@ test("evaluation runs dependency post-order exactly once and reuses the root pro
     root = make("root", [a, b]);
   assert.equal(modules.linkModule(root).ok, true);
   const promise = modules.evaluateModule(root, hooks);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
   assert.deepEqual(log, ["c", "a", "b", "root"]);
   assert.equal(modules.evaluateModule(root, hooks), promise);
   assert.equal(log.length, 4);
@@ -111,13 +114,13 @@ test("an error marks every active cycle member, while later member evaluation ma
   cycle.loaded[0] = root;
   modules.linkModule(root);
   const promise = modules.evaluateModule(root, hooks);
-  assert.equal(promise.internalPromiseData?.result, error);
+  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
   assert.equal(root.evaluationError?.error, error);
   assert.equal(cycle.evaluationError?.error, error);
   assert.equal(cycle.cycleRoot, undefined);
   const second = modules.evaluateModule(cycle, hooks);
   assert.notEqual(second, promise);
-  assert.equal(second.internalPromiseData?.result, error);
+  assert.equal(second.internalExoticSlots?.internalPromiseData?.result, error);
   assert.equal(modules.evaluateModule(root, hooks), promise);
   assert.deepEqual(log, ["cycle"]);
 });
@@ -134,7 +137,7 @@ test("completed child groups keep success and later siblings remain linked after
     root = make("root", [child, fail, later]);
   modules.linkModule(root);
   const promise = modules.evaluateModule(root, hooks);
-  assert.equal(promise.internalPromiseData?.result, error);
+  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
   assert.deepEqual(log, ["child"]);
   assert.equal(child.cycleRoot, child);
   assert.equal(child.evaluationError, undefined);
@@ -220,7 +223,8 @@ test("host invariant faults propagate but identical strings thrown by module cod
   });
   modules.linkModule(thrown);
   assert.equal(
-    modules.evaluateModule(thrown, hooks).internalPromiseData?.result,
+    modules.evaluateModule(thrown, hooks).internalExoticSlots
+      ?.internalPromiseData?.result,
     "MODULE_LOADED_INVARIANT",
   );
 });

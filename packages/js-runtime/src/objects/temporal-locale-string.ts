@@ -12,6 +12,7 @@ import {
   dateTimeValueParts,
   dateTimeInstantParts,
 } from "./intl-date-time-value.ts";
+import { exoticSlots } from "./operations.ts";
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 export function installTemporalLocaleStrings(
   realm: ErrorRealm,
@@ -53,7 +54,7 @@ export function installTemporalLocaleStrings(
                       : "any",
             defaults =
               kind < 4 ? required : kind === 6 ? "zoned-date-time" : "all",
-            zoned = object.internalTemporalZonedDateTime,
+            zoned = exoticSlots(object).internalTemporalZonedDateTime,
             formatter = configureDateTimeFormatter(
               args[0],
               args[1],
@@ -65,7 +66,8 @@ export function installTemporalLocaleStrings(
             );
           if (kind === 6) {
             if (zoned === undefined) throw "TEMPORAL_LOCALE_ZONED_INVARIANT";
-            const calendar = object.internalTemporalCalendar ?? "iso8601";
+            const calendar =
+              exoticSlots(object).internalTemporalCalendar ?? "iso8601";
             if (
               calendar !== "iso8601" &&
               calendar !== formatter.configuration.locale.calendar

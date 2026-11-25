@@ -9,6 +9,11 @@ import {
   upperPoints,
   upperMappings,
 } from "./data.ts";
+import {
+  asciiEndOfText,
+  asciiLowercase,
+  asciiUppercase,
+} from "../../text/latin1.ts";
 export const unicodeVersion = "17.0.0";
 
 function requiredProperty(name: string): string {
@@ -48,6 +53,10 @@ function followingCased(text: string, offset: number): boolean {
   return false;
 }
 function convert(text: string, upper: boolean): string {
+  // ASCII text maps letter by letter (no special or contextual casing),
+  // through the bulk primitives.
+  if (asciiEndOfText(text, 0, text.length) === text.length)
+    return upper ? asciiUppercase(text) : asciiLowercase(text);
   const pieces: string[] = [];
   let beforeCased = false;
   for (let offset = 0; offset < text.length;) {

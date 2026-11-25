@@ -1,5 +1,9 @@
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
-import { createObject, type OrdinaryObject } from "./operations.ts";
+import {
+  ensureExoticSlots,
+  createObject,
+  type OrdinaryObject,
+} from "./operations.ts";
 import { temporalEpochDateTime } from "./temporal-epoch.ts";
 import type { BigIntValue } from "./bigints.ts";
 import {
@@ -18,13 +22,13 @@ export function createTemporalZonedObject(
   calendar: string = "iso8601",
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = createObject<ScriptPropertyKey, unknown>(parent);
-  object.internalTemporalZonedDateTime = temporalZonedData(
+  ensureExoticSlots(object).internalTemporalZonedDateTime = temporalZonedData(
     epoch,
     zone,
     realm,
     calendar,
   );
-  object.internalTemporalCalendar = calendar;
+  ensureExoticSlots(object).internalTemporalCalendar = calendar;
   return object;
 }
 

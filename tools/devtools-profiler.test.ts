@@ -5,13 +5,12 @@ import { buildNativeFixture } from "./gate/native-fixture.ts";
 // sampling, on a clang -g C program and a Tint debug build, as .cpuprofile
 // objects DevTools loads.
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { testNativeLaunch } from "./gate/native-launch-test.ts";
-import { compileC, findLlvmTool } from "./host-tools.ts";
+import { compileDebugProgram, findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
 import {
@@ -23,6 +22,8 @@ import { TintPlugin } from "./devtools/tint-plugin.ts";
 import { CdpTestClient } from "./devtools/test-client.ts";
 import type { CpuProfile } from "./profiling/devtools-profiles.ts";
 import { tintSession } from "./devtools-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 // The inlined callee does most of the work: a wall-clock sampler on a busy
 // host sees a descheduled thread at its preemption point, so a profile
@@ -95,12 +96,12 @@ async function profileC(
   scriptId: string;
   paused: boolean;
 }> {
-  const dir = mkdtempSync(join(tmpdir(), "tint-devtools-cpu-"));
+  const dir = stableScratchDirectory("devtools-cpu");
   const file = join(dir, "spin.c"),
     program = join(dir, "spin");
   writeFileSync(file, source);
   buildNativeFixture(program, () => {
-    const built = compileC(["-g", "-O0", file, "-o", program]);
+    const built = compileDebugProgram(file, program);
     assert.equal(built.status, 0, built.stderr);
     return program;
   });
@@ -251,13 +252,14 @@ testNativeLaunch(
   "CPU profiles of a Tint debug build name source functions",
   {
     skip:
-      (!debuggable || external === undefined) &&
-      "needs lldb-dap and pprofessor or perf",
+      ((!debuggable || external === undefined) &&
+        "needs lldb-dap and pprofessor or perf") ||
+      (nativeFixtureTarget().arch !== "aarch64" &&
+        "Tint debug-build DWARF inlines and heap introspection require aarch64"),
     timeout: 300000,
   },
   async (onAdmitted) => {
     const { client, url, close } = await tintSession(
-      "devtools-cpu",
       [new TintPlugin(), new CpuProfiler(external)],
       onAdmitted,
     );

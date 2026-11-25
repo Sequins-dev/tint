@@ -24,8 +24,14 @@ test("foundation Unicode purposes have narrow public entries without obsolete pa
     assert.ok(
       modules.every((module) => module.id.startsWith("packages/foundation/")),
     );
-    assert.equal(modules.length, name === "casing" ? 6 : 2);
+    // Casing also maps ASCII text through the bulk text primitives.
+    assert.equal(modules.length, name === "casing" ? 7 : 2);
     if (name === "casing") {
+      assert.ok(
+        modules.some(
+          (module) => module.id === "packages/foundation/src/text/latin1.ts",
+        ),
+      );
       assert.ok(
         modules.some(
           (module) =>

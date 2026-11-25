@@ -1,0 +1,82 @@
+{
+  "kind": "tint-frozen-self-compile",
+  "workload": "gr8 (frozen at origin/main 3d10cb5c0)",
+  "command": "node tools/frozen-workload.ts run gr8 base-3d10cb5c0 step1-7e03decee step2-5c0304f4b --rounds 3 (under tint-timing.lock)",
+  "images": {
+    "base-3d10cb5c0": "f02cbfd39a953b1105ae89ab75e4d6a8fb0527ac22bca2dd65b1d4e7e5f16f33",
+    "step1-7e03decee": "376fd713da2ba7be77252caa918515fc5714e42f3a74131db9c4bd75fdb40645",
+    "step2-5c0304f4b": "08def44a2740b56efe1de6284844f2725c1cbb6b03d158d37fb3c9e1bb2f09a5",
+    "step2-24af2993b": "08def44a2740b56efe1de6284844f2725c1cbb6b03d158d37fb3c9e1bb2f09a5"
+  },
+  "notes": "step2-24af2993b (the final head) builds an image byte-identical to step2-5c0304f4b, so the step 2 rows stand for both; all images built by frozen-workload.ts build with the same options",
+  "runs": [
+    {
+      "load": "one-minute load about 5-6",
+      "rows": [
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 103.5,
+          "cycles": 493732926212,
+          "instructions": 2422112407241,
+          "rssBytes": 2227650560
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 95.23,
+          "cycles": 473240890104,
+          "instructions": 2373924056639,
+          "rssBytes": 2227896320
+        },
+        {
+          "label": "step2-5c0304f4b",
+          "seconds": 86.01,
+          "cycles": 438846312596,
+          "instructions": 2291418483307,
+          "rssBytes": 2226847744
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 102.27,
+          "cycles": 493190873484,
+          "instructions": 2422433161341,
+          "rssBytes": 2228355072
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 105.52,
+          "cycles": 486288397939,
+          "instructions": 2375161365274,
+          "rssBytes": 2226077696
+        },
+        {
+          "label": "step2-5c0304f4b",
+          "seconds": 94.55,
+          "cycles": 450496579217,
+          "instructions": 2291991309366,
+          "rssBytes": 2225618944
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 94.42,
+          "cycles": 472750153965,
+          "instructions": 2418744398914,
+          "rssBytes": 2227601408
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 98.2,
+          "cycles": 475122189680,
+          "instructions": 2374038238370,
+          "rssBytes": 2226978816
+        },
+        {
+          "label": "step2-5c0304f4b",
+          "seconds": 90.6,
+          "cycles": 449411564028,
+          "instructions": 2291128831670,
+          "rssBytes": 2226569216
+        }
+      ]
+    }
+  ]
+}
