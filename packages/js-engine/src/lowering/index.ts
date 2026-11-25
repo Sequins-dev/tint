@@ -103,7 +103,7 @@ interface ArgumentsForwarding {
 }
 /** Actual operands a native script entry receives in registers (codegen's
  * scriptActualRegisterPairs): tail calls pass no stack actuals. */
-const scriptRegisterActuals = 3;
+const scriptRegisterActuals = 7;
 /** In-place value slots of an ordinary object (js-runtime propertySlots). */
 export const propertySlots = 8;
 /** Inline own and inherited read entries per site (js-runtime
@@ -3058,6 +3058,72 @@ function lowerScriptEntry(
       returnType: named("number"),
       body: implementationBody,
     };
+  }
+  /** Rewrite a pure numeric return expression (parameters + numeric literals
+   * and arithmetic/bitwise ops) by substituting parameter names with narrowed
+   * local names, for inline specialization inside native script entries. */
+  function substituteNumericLeaf(
+    node: Expression,
+    substitutions: ReadonlyMap<string, string>,
+  ): Expression | undefined {
+    switch (node.kind) {
+      case "number":
+        return node;
+      case "identifier": {
+        const replacement = substitutions.get(node.name);
+        return replacement === undefined ? undefined : id(replacement, node);
+      }
+      case "group": {
+        const inner = substituteNumericLeaf(node.expression, substitutions);
+        return inner === undefined ? undefined : { ...node, expression: inner };
+      }
+      case "unary": {
+        const operand = substituteNumericLeaf(node.operand, substitutions);
+        return operand === undefined ? undefined : { ...node, operand };
+      }
+      case "binary": {
+        const left = substituteNumericLeaf(node.left, substitutions);
+        const right = substituteNumericLeaf(node.right, substitutions);
+        return left === undefined || right === undefined
+          ? undefined
+          : { ...node, left, right };
+      }
+      default:
+        return undefined;
+    }
+  }
+  function inlineNumericReturn(
+    source: readonly Parameter[],
+    body: Expression | BlockStatement,
+    names: readonly string[],
+  ): Expression | undefined {
+    if (body.kind !== "block" || body.statements.length !== 1) return undefined;
+    const finish = body.statements[0];
+    if (finish?.kind !== "return") return undefined;
+    const returned = finish.expression;
+    if (
+      returned === undefined ||
+      (returned.kind !== "binary" && returned.kind !== "unary")
+    )
+      return undefined;
+    const bindings = new Map<string, NumericBinding>();
+    const numericParams = numericParameters(source, bindings);
+    if (numericParams === undefined || numericParams.length !== names.length)
+      return undefined;
+    if (!numericLeafExpression(returned, bindings)) return undefined;
+    const substitutions = new Map<string, string>();
+    for (let i = 0; i < numericParams.length; i++) {
+      const param = numericParams[i];
+      const name = names[i];
+      if (
+        param === undefined ||
+        param.kind === "pattern-parameter" ||
+        name === undefined
+      )
+        return undefined;
+      substitutions.set(param.name, name);
+    }
+    return substituteNumericLeaf(returned, substitutions);
   }
   /** ToPropertyKey of a constant string key is the key itself, and its only
    * other effect, RequireObjectCoercible(base), is repeated by the adjacent
@@ -7070,33 +7136,77 @@ function lowerScriptEntry(
       });
     }
     if (materializesArguments) materializeList(argsName);
-    if (numericImplementation !== undefined) {
-      const operands: Expression[] = [];
-      let guard: Expression | undefined;
-      for (let i = 0; i < parameters.length; i++) {
-        const argument = temporary(
-          argumentAt(scalarNumber(i, span), span),
-          true,
-        );
-        operands.push(argument);
-        const test = numberOperand(argument, span);
-        guard =
-          guard === undefined
-            ? test
-            : {
-                ...at(span),
-                kind: "binary",
-                operator: "&&",
-                left: guard,
-                right: test,
-              };
+    /** Extract `count` positional arguments under a single
+     * `incomingArguments === undefined` branch so native script calls read
+     * all register/stack actuals straight-line without per-parameter branches. */
+    function extractNativeArguments(count: number): Expression[] {
+      const targets: Expression[] = [];
+      for (let i = 0; i < count; i++)
+        targets.push(uninitializedGeneralTemporary(span));
+      const nativeReads: Statement[] = [];
+      const listReads: Statement[] = [];
+      for (let i = 0; i < count; i++) {
+        const target = targets[i];
+        if (target === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
+        const offset = scalarNumber(i, span);
+        nativeReads.push({
+          ...at(span),
+          kind: "expression",
+          expression: {
+            ...at(span),
+            kind: "assignment",
+            target: { ...target },
+            value: nativeArgument(offset, span),
+          },
+        });
+        listReads.push({
+          ...at(span),
+          kind: "expression",
+          expression: {
+            ...at(span),
+            kind: "assignment",
+            target: { ...target },
+            value: {
+              ...at(span),
+              kind: "index",
+              object: id(argsName, span),
+              index: offset,
+            },
+          },
+        });
       }
-      if (guard === undefined) throw "SCRIPT_NUMERIC_PARAMETERS_INVARIANT";
       statements.push({
         ...at(span),
         kind: "if",
-        test: guard,
-        consequent: {
+        test: noList(),
+        consequent: { ...at(span), kind: "block", statements: nativeReads },
+        alternate: { ...at(span), kind: "block", statements: listReads },
+      });
+      return targets;
+    }
+    let preExtractedArguments: Expression[] | undefined = undefined;
+    if (numericImplementation !== undefined) {
+      if (
+        nativeEntry &&
+        !materializesArguments &&
+        !register &&
+        parameters.length > 0 &&
+        !parameters.some((p) => p?.rest)
+      ) {
+        // Fast path for native script calls with all-number actuals: a single
+        // `incomingArguments === undefined` check followed by nested short-circuit
+        // `typeof arg === "number"` checks, avoiding deferred temporaries and
+        // per-parameter boolean slots on the hot path.
+        const operands: Expression[] = [];
+        const names: string[] = [];
+        for (let i = 0; i < parameters.length; i++) {
+          const name = "$value" + serial++;
+          immutableTemporaries.add(name);
+          generalTemporaries.add(name);
+          names.push(name);
+          operands.push(id(name, span));
+        }
+        let branch: Statement = {
           ...at(span),
           kind: "return",
           expression: {
@@ -7105,9 +7215,163 @@ function lowerScriptEntry(
             callee: numericImplementation,
             arguments: operands,
           },
-        },
-        alternate: undefined,
-      });
+        };
+        for (let i = parameters.length - 1; i >= 0; i--) {
+          const name = names[i];
+          const arg = operands[i];
+          if (name === undefined || arg === undefined)
+            throw "SCRIPT_NUMERIC_PARAMETERS_INVARIANT";
+          branch = {
+            ...at(span),
+            kind: "block",
+            statements: [
+              {
+                ...at(span),
+                kind: "variable",
+                mode: "const",
+                exported: false,
+                declarations: [
+                  {
+                    ...at(span),
+                    name,
+                    type: named("unknown"),
+                    initializer: nativeArgument(scalarNumber(i, span), span),
+                  },
+                ],
+              },
+              {
+                ...at(span),
+                kind: "if",
+                test: numberOperand(arg, span),
+                consequent: branch,
+                alternate: undefined,
+              },
+            ],
+          };
+        }
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: noList(),
+          consequent: branch,
+          alternate: undefined,
+        });
+      } else {
+        const operands: Expression[] = [];
+        let guard: Expression | undefined;
+        for (let i = 0; i < parameters.length; i++) {
+          const argument = temporary(
+            argumentAt(scalarNumber(i, span), span),
+            true,
+          );
+          operands.push(argument);
+          const test = numberOperand(argument, span);
+          guard =
+            guard === undefined
+              ? test
+              : {
+                  ...at(span),
+                  kind: "binary",
+                  operator: "&&",
+                  left: guard,
+                  right: test,
+                };
+        }
+        if (guard === undefined) throw "SCRIPT_NUMERIC_PARAMETERS_INVARIANT";
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: guard,
+          consequent: {
+            ...at(span),
+            kind: "return",
+            expression: {
+              ...at(span),
+              kind: "call",
+              callee: numericImplementation,
+              arguments: operands,
+            },
+          },
+          alternate: undefined,
+        });
+      }
+    } else if (
+      nativeEntry &&
+      !materializesArguments &&
+      !register &&
+      !raw &&
+      !suspending &&
+      !derived &&
+      !options.packed &&
+      !options.classFieldInitializer &&
+      !options.baseConstructor &&
+      options.resultType === undefined &&
+      parameters.length > 0 &&
+      !hasRest
+    ) {
+      // Inline pure-arithmetic return specialization for native script entries:
+      // checks `incomingArguments === undefined` once, narrows each actual via
+      // nested `typeof arg === "number"` checks, and evaluates the expression
+      // inline with zero closure/call/activation overhead.
+      const names: string[] = [];
+      const operands: Expression[] = [];
+      for (let i = 0; i < parameters.length; i++) {
+        const name = "$value" + serial++;
+        names.push(name);
+        operands.push(id(name, span));
+      }
+      const inlined = inlineNumericReturn(parameters, body, names);
+      if (inlined !== undefined) {
+        for (const name of names) {
+          immutableTemporaries.add(name);
+          generalTemporaries.add(name);
+        }
+        let branch: Statement = {
+          ...at(span),
+          kind: "return",
+          expression: inlined,
+        };
+        for (let i = parameters.length - 1; i >= 0; i--) {
+          const name = names[i];
+          const arg = operands[i];
+          if (name === undefined || arg === undefined)
+            throw "SCRIPT_NUMERIC_PARAMETERS_INVARIANT";
+          branch = {
+            ...at(span),
+            kind: "block",
+            statements: [
+              {
+                ...at(span),
+                kind: "variable",
+                mode: "const",
+                exported: false,
+                declarations: [
+                  {
+                    ...at(span),
+                    name,
+                    type: named("unknown"),
+                    initializer: nativeArgument(scalarNumber(i, span), span),
+                  },
+                ],
+              },
+              {
+                ...at(span),
+                kind: "if",
+                test: numberOperand(arg, span),
+                consequent: branch,
+                alternate: undefined,
+              },
+            ],
+          };
+        }
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: noList(),
+          consequent: branch,
+          alternate: undefined,
+        });
+      }
     }
     const packedName = options.packed ? "$packed" + serial++ : undefined;
     if (packedName !== undefined) {
@@ -7629,6 +7893,15 @@ function lowerScriptEntry(
         };
       }
     }
+    if (
+      preExtractedArguments === undefined &&
+      nativeEntry &&
+      !materializesArguments &&
+      !register &&
+      directSimpleParameters &&
+      parameters.length >= 2
+    )
+      preExtractedArguments = extractNativeArguments(parameters.length);
     for (let i = 0; i < parameters.length; i++) {
       const parameter = parameters[i];
       if (parameter === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
@@ -7655,6 +7928,7 @@ function lowerScriptEntry(
             ),
           );
       }
+      const preExtracted = preExtractedArguments?.[i];
       const argumentValue: Expression = register
         ? id(
             registerArguments[i] ?? fail(parameter, "Missing positional slot"),
@@ -7672,10 +7946,24 @@ function lowerScriptEntry(
               ],
               parameter,
             )
-          : argumentAt(offset, parameter);
+          : preExtracted !== undefined
+            ? { ...preExtracted }
+            : argumentAt(offset, parameter);
       const binding = directSimpleParameters
         ? localBindingDeclarations.get(parameter.start)
         : undefined;
+      if (
+        directSimpleParameters &&
+        preExtracted !== undefined &&
+        binding !== undefined &&
+        !capturedBindings.has(binding)
+      ) {
+        // Bind uncaptured pre-extracted parameters directly without copying
+        // into a second temporary slot.
+        localSlots.set(binding, preExtracted);
+        parameterSlots.push(binding);
+        continue;
+      }
       const argument = temporary(
         argumentValue,
         true,

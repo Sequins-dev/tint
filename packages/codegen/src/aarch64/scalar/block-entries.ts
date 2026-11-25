@@ -1,10 +1,17 @@
 import { blockSuccessors, type Block, type FunctionIR } from "@tint/ir/scalar";
+import type { FusedPropertyAccess } from "../../scalar/property-fusion.ts";
 function isColdBlock(block: Block): boolean {
   const kind = block.terminator.kind;
   return (
     block.instructions.length <= 4 &&
     (kind === "trap" || kind === "throw" || kind === "throw-literal")
   );
+}
+function blockHasScriptArgument(block: Block | undefined): boolean {
+  if (block === undefined) return false;
+  for (const op of block.instructions)
+    if (op !== undefined && op.kind === "script-argument") return true;
+  return false;
 }
 function prefersAlternateFallthrough(block: Block): boolean {
   const term = block.terminator;
@@ -24,8 +31,12 @@ function prefersAlternateFallthrough(block: Block): boolean {
 }
 /** Orders blocks in greedy hot-trace fallthrough order, placing entry first,
  * keeping sequential loop and dispatch bodies contiguous, and sinking
- * trap/throw blocks to the end of the function. */
-export function orderBlocks(fn: FunctionIR): readonly Block[] {
+ * trap/throw blocks (and cold script IC miss / list-bridge paths) to the end
+ * of the function. */
+export function orderBlocks(
+  fn: FunctionIR,
+  fusedAccesses?: ReadonlyMap<number, FusedPropertyAccess>,
+): readonly Block[] {
   if (fn.blocks.length <= 2) return fn.blocks;
   const byId = new Map<number, Block>();
   for (const block of fn.blocks) {
@@ -36,11 +47,11 @@ export function orderBlocks(fn: FunctionIR): readonly Block[] {
     placed = new Set<number>(),
     hotWork: Block[] = [],
     coldWork: Block[] = [];
-  const enqueue = (target: number): void => {
+  const enqueue = (target: number, cold: boolean = false): void => {
     if (placed.has(target)) return;
     const block = byId.get(target);
     if (block === undefined) return;
-    if (isColdBlock(block)) coldWork.push(block);
+    if (cold || isColdBlock(block)) coldWork.push(block);
     else hotWork.push(block);
   };
   const entry = byId.get(fn.entry) ?? fn.blocks[0];
@@ -62,13 +73,39 @@ export function orderBlocks(fn: FunctionIR): readonly Block[] {
         nextId = t.consequent;
         enqueue(t.alternate);
       } else if (t.kind === "branch") {
+        const fusion = fusedAccesses?.get(current.id);
         const cons = byId.get(t.consequent),
           alt = byId.get(t.alternate),
           consCold = cons !== undefined && isColdBlock(cons),
           altCold = alt !== undefined && isColdBlock(alt),
           consRet = cons !== undefined && cons.terminator.kind === "return",
           altRet = alt !== undefined && alt.terminator.kind === "return";
-        if (altCold && !consCold) {
+        if (
+          fusion !== undefined &&
+          fusion.test === t.condition &&
+          (fusion.hit === t.consequent || fusion.hit === t.alternate)
+        ) {
+          // Fused script property/element hit stays on the hot fallthrough;
+          // the IC miss block sinks to coldWork.
+          nextId = fusion.hit;
+          enqueue(fusion.miss, true);
+        } else if (
+          fn.scriptEntry === true &&
+          blockHasScriptArgument(cons) &&
+          !blockHasScriptArgument(alt)
+        ) {
+          // Native script actuals path stays on fallthrough; list-bridge
+          // argument reads and cold fallbacks sink to coldWork.
+          nextId = t.consequent;
+          enqueue(t.alternate, true);
+        } else if (
+          fn.scriptEntry === true &&
+          blockHasScriptArgument(alt) &&
+          !blockHasScriptArgument(cons)
+        ) {
+          nextId = t.alternate;
+          enqueue(t.consequent, true);
+        } else if (altCold && !consCold) {
           nextId = t.consequent;
           enqueue(t.alternate);
         } else if (consCold && !altCold) {

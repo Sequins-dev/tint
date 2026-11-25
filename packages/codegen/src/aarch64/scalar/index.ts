@@ -304,6 +304,7 @@ import {
   signatureLayout,
   scriptArgumentLayout,
   scriptFirstActualRegister,
+  scriptGpActualRegisterPairs,
   scriptActualRegisterPairs,
   nativeAllocationStateOffset,
   type SignatureLayout,
@@ -980,6 +981,7 @@ interface EmissionFacts {
   noSafepointsKnown: boolean;
   directReturns: Uint8Array | undefined;
   directReturnsKnown: boolean;
+  pureLeafNoActivation: Uint8Array | undefined;
 }
 interface BranchForms {
   /** BL for local calls; false after any call target was out of reach. */
@@ -1093,6 +1095,7 @@ export function emitModuleFromStore(
     noSafepointsKnown: false,
     directReturns: undefined,
     directReturnsKnown: false,
+    pureLeafNoActivation: undefined,
   };
   const hints = options.formHints;
   if (hints !== undefined) {
@@ -2985,6 +2988,240 @@ function emitColdListReadStubs(
       });
     emit({ op: "b", displacement: (stub.resume - instructions.length) * 4 });
   }
+}
+/** Non-script functions with no calls, allocations, throws, or activation
+ * reads cannot observe nativeActivationTop or trigger GC: lazyActivation
+ * callers can invoke them directly without linking or zeroing extra actuals.
+ * Skip completely when the module has no script entries (preserving zero work
+ * on typed-only builds) or when `provenNoSafepoints` hit its budget. */
+function computePureLeafNoActivation(
+  module: ModuleIR,
+  bodies: EmissionBodies,
+  noSafepoints: Uint8Array | undefined,
+): Uint8Array {
+  const result = new Uint8Array(module.functions.length);
+  if (noSafepoints === undefined) return result;
+  let hasScriptEntry = false;
+  for (let id = 0; id < module.functions.length; id++) {
+    if (module.functions[id]?.scriptEntry === true) {
+      hasScriptEntry = true;
+      break;
+    }
+  }
+  if (!hasScriptEntry) return result;
+  for (let id = 0; id < module.functions.length; id++) {
+    const header = module.functions[id];
+    if (
+      header === undefined ||
+      header.import === true ||
+      header.scriptEntry === true ||
+      noSafepoints[id] !== 1
+    )
+      continue;
+    const f = bodies.get(id);
+    try {
+      if (f !== undefined && f.blocks.length > 0) {
+        let pure: boolean = true;
+        for (const block of f.blocks) {
+          if (block === undefined) {
+            pure = false;
+            break;
+          }
+          const tk = block.terminator.kind;
+          if (tk === "throw" || tk === "throw-literal") {
+            pure = false;
+            break;
+          }
+          for (const op of block.instructions) {
+            if (
+              op === undefined ||
+              op.kind === "call" ||
+              op.kind === "call-indirect" ||
+              op.kind === "c-call" ||
+              op.kind === "host-call" ||
+              op.kind === "activation-read" ||
+              (irInstructionEffects(op) & irEffectAllocate) !== 0
+            ) {
+              pure = false;
+              break;
+            }
+          }
+          if (!pure) break;
+        }
+        if (pure) result[id] = 1;
+      }
+    } finally {
+      bodies.release(id);
+    }
+  }
+  return result;
+}
+function hasCViewAccesses(fn: FunctionIR): boolean {
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "view entry invariant";
+    for (const op of block.instructions) {
+      if (op === undefined) throw "view access invariant";
+      if (
+        op.kind === "c-memory" &&
+        (op.access.operation === "load" || op.access.operation === "store")
+      )
+        return true;
+    }
+  }
+  return false;
+}
+interface ScriptEntryPlan {
+  readonly hasCalls: boolean;
+  readonly callCount: number;
+  readonly hasHostOrCCall: boolean;
+  readonly hasActivationRead: boolean;
+  readonly hasNonCallSafepoint: boolean;
+  readonly hasLoopCall: boolean;
+  readonly usesArgCount: boolean;
+  readonly readsDynamicArg: boolean;
+  readonly maxConstArg: number;
+  readonly readsParam0: boolean;
+  readonly readsParam1: boolean;
+  readonly readsParam2: boolean;
+  readonly readsParam3: boolean;
+}
+const noScriptEntryPlan: ScriptEntryPlan = {
+  hasCalls: false,
+  callCount: 0,
+  hasHostOrCCall: false,
+  hasActivationRead: false,
+  hasNonCallSafepoint: false,
+  hasLoopCall: false,
+  usesArgCount: false,
+  readsDynamicArg: false,
+  maxConstArg: -1,
+  readsParam0: false,
+  readsParam1: false,
+  readsParam2: false,
+  readsParam3: false,
+};
+function scriptPlanReadsParam(plan: ScriptEntryPlan, index: number): boolean {
+  if (index === 0) return plan.readsParam0;
+  if (index === 1) return plan.readsParam1;
+  if (index === 2) return plan.readsParam2;
+  if (index === 3) return plan.readsParam3;
+  return false;
+}
+function analyzeScriptEntryFunction(
+  fn: FunctionIR,
+  entryImports: ReadonlyMap<number, number>,
+  listShapes: readonly (ListReadShape | undefined)[],
+  writeShapes: readonly (ListWriteShape | undefined)[],
+  vectorShapes: readonly (number | undefined)[],
+  maxLoopWork: number,
+): ScriptEntryPlan {
+  const loopBlocks = new Uint8Array(fn.blocks.length);
+  const scriptLoops = naturalLoops(fn, maxLoopWork);
+  if (scriptLoops === undefined) {
+    for (let bi = 0; bi < loopBlocks.length; bi++) loopBlocks[bi] = 1;
+  } else if (scriptLoops.loops.length > 0) {
+    for (const loop of scriptLoops.loops) {
+      if (loop === undefined) continue;
+      for (const id of loop.body)
+        if (id !== undefined && id < loopBlocks.length) loopBlocks[id] = 1;
+    }
+  }
+  const p0 = fn.parameters[0],
+    p1 = fn.parameters[1],
+    p2 = fn.parameters[2],
+    p3 = fn.parameters[3];
+  const constNumbers = new Map<number, number>();
+  let hasCalls: boolean = false,
+    callCount: number = 0,
+    hasHostOrCCall: boolean = false,
+    hasActivationRead: boolean = false,
+    hasNonCallSafepoint: boolean = false,
+    hasLoopCall: boolean = false,
+    usesArgCount: boolean = false,
+    readsDynamicArg: boolean = false,
+    maxConstArg: number = -1,
+    readsParam0: boolean = false,
+    readsParam1: boolean = false,
+    readsParam2: boolean = false,
+    readsParam3: boolean = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "script entry analysis block invariant";
+    const inLoop = loopBlocks[block.id] === 1;
+    const t = block.terminator;
+    if (
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+      t.operation !== "read"
+    ) {
+      const slot = t.slot;
+      if (slot === p0) readsParam0 = true;
+      else if (slot === p1) readsParam1 = true;
+      else if (slot === p2) readsParam2 = true;
+      else if (slot === p3) readsParam3 = true;
+    }
+    for (const op of block.instructions) {
+      if (op === undefined) throw "script entry analysis instruction invariant";
+      if (op.kind === "constant") {
+        const constant = op.value;
+        if (typeof constant === "number") constNumbers.set(op.id, constant);
+      } else if (op.kind === "load") {
+        const slot = op.slot;
+        if (slot === p0) readsParam0 = true;
+        else if (slot === p1) readsParam1 = true;
+        else if (slot === p2) readsParam2 = true;
+        else if (slot === p3) readsParam3 = true;
+      } else if (op.kind === "script-argument-count") {
+        usesArgCount = true;
+      } else if (op.kind === "script-argument") {
+        const c = constNumbers.get(op.index);
+        if (c !== undefined) {
+          if (c >>> 0 === c && c < 2048) {
+            if (c > maxConstArg) maxConstArg = c;
+          } else readsDynamicArg = true;
+        } else readsDynamicArg = true;
+      } else if (op.kind === "activation-read") {
+        hasActivationRead = true;
+      } else if (op.kind === "call") {
+        hasCalls = true;
+        callCount++;
+        if (inLoop) hasLoopCall = true;
+        if (
+          op.environment === undefined &&
+          !entryImports.has(op.target) &&
+          (listShapes[op.target] !== undefined ||
+            writeShapes[op.target] !== undefined ||
+            vectorShapes[op.target] !== undefined)
+        )
+          hasNonCallSafepoint = true;
+      } else if (op.kind === "call-indirect") {
+        hasCalls = true;
+        callCount++;
+        if (inLoop) hasLoopCall = true;
+      } else if (op.kind === "c-call" || op.kind === "host-call") {
+        hasHostOrCCall = true;
+      }
+      if (
+        op.kind !== "call" &&
+        op.kind !== "call-indirect" &&
+        (irInstructionEffects(op) & irEffectAllocate) !== 0
+      )
+        hasNonCallSafepoint = true;
+    }
+  }
+  return {
+    hasCalls,
+    callCount,
+    hasHostOrCCall,
+    hasActivationRead,
+    hasNonCallSafepoint,
+    hasLoopCall,
+    usesArgCount,
+    readsDynamicArg,
+    maxConstArg,
+    readsParam0,
+    readsParam1,
+    readsParam2,
+    readsParam3,
+  };
 }
 function emitModuleForms(
   module: ModuleIR,
@@ -4914,6 +5151,35 @@ function emitModuleForms(
       rawStore(register + 1, offset + 8);
     }
   }
+  /** Load or store a script register actual (`index` in 0..scriptActualRegisterPairs-1):
+   * indices 0..2 use GP pairs x10..x15; indices 3..6 use FP pairs d0..d7.
+   * Memory accesses stay in the GP domain (moving through `fmov`) to avoid
+   * cross-domain FP/GP store-to-load forwarding stalls on Apple Silicon.
+   * When `load` is true, `scratch` is a free GP register; when `load` is false,
+   * x10 and x11 are used as free GP temporaries (already spilled in prologue,
+   * preserving x8/x9 which still hold `new.target` until parameters spill). */
+  function scriptActualPair(
+    index: number,
+    offset: number,
+    load: boolean,
+    scratch: number,
+  ): void {
+    if (index < scriptGpActualRegisterPairs) {
+      generalPair(scriptFirstActualRegister + index * 2, offset, load);
+      return;
+    }
+    const d = (index - scriptGpActualRegisterPairs) * 2;
+    if (load) {
+      rawLoad(scratch, offset);
+      emit({ op: "fmov-d-x", rd: d, rn: scratch });
+      rawLoad(scratch, offset + 8);
+      emit({ op: "fmov-d-x", rd: d + 1, rn: scratch });
+    } else {
+      emit({ op: "fmov-x-d", rd: 10, rn: d });
+      emit({ op: "fmov-x-d", rd: 11, rn: d + 1 });
+      generalPair(10, offset, false);
+    }
+  }
   /** Zero stack words whose order is unobservable (no label or safepoint
    * between them). These are frame words the collector may scan (roots,
    * temporary pools, result buffers): they are written in memory even when
@@ -5666,6 +5932,15 @@ function emitModuleForms(
       facts.directReturnsKnown = true;
     }
     const directReturns = facts.directReturns;
+    let pureLeafNoActivation = facts.pureLeafNoActivation;
+    if (pureLeafNoActivation === undefined) {
+      pureLeafNoActivation = computePureLeafNoActivation(
+        module,
+        bodies,
+        noSafepoints,
+      );
+      facts.pureLeafNoActivation = pureLeafNoActivation;
+    }
     const signatures = module.functions.map((fn): SignatureLayout => {
       if (fn === undefined) throw "function invariant";
       return signatureLayout(fn);
@@ -6906,7 +7181,12 @@ function emitModuleForms(
           safepointAt(instructions.length);
         }
         forwardSites = [];
-        const orderedBlocks = orderBlocks(fn),
+        // Cached property misses branch to their block's slow successor
+        // directly (not with C view tokens, which follow block ends).
+        const fusedAccesses = hasCViewAccesses(fn)
+          ? undefined
+          : fusedPropertyAccesses(fn);
+        const orderedBlocks = orderBlocks(fn, fusedAccesses),
           forwardable = forwardableEntries(fn, orderedBlocks),
           coldReciprocals: ColdReciprocalStub[] = [],
           coldNaNs: ColdNaNStub[] = [],
@@ -7034,6 +7314,41 @@ function emitModuleForms(
             fn.scriptEntry === true
               ? scriptArgumentsOffset + scriptActualRegisterPairs * 16
               : scriptCountOffset;
+        const scriptPlan =
+          fn.scriptEntry === true
+            ? analyzeScriptEntryFunction(
+                fn,
+                entryImports,
+                listShapes,
+                writeShapes,
+                vectorShapes,
+                work(100000),
+              )
+            : noScriptEntryPlan;
+        const elideActivation =
+          fn.scriptEntry === true &&
+          !scriptPlan.hasCalls &&
+          !scriptPlan.hasHostOrCCall &&
+          !scriptPlan.hasActivationRead &&
+          !scriptPlan.hasNonCallSafepoint;
+        const lazyActivation =
+          fn.scriptEntry === true &&
+          !elideActivation &&
+          !scriptPlan.hasHostOrCCall &&
+          !scriptPlan.hasActivationRead &&
+          !scriptPlan.hasLoopCall &&
+          scriptPlan.callCount <= 64 &&
+          scriptArgumentsOffset + (scriptActualRegisterPairs - 1) * 16 <= 504;
+        const readsExtraActuals =
+          fn.scriptEntry === true &&
+          (scriptPlan.readsDynamicArg ||
+            scriptPlan.maxConstArg >= scriptGpActualRegisterPairs);
+        const needsExtraActualSlots =
+          fn.scriptEntry === true && (!elideActivation || readsExtraActuals);
+        const deferExtraActualZeroing =
+          lazyActivation &&
+          !readsExtraActuals &&
+          !scriptPlan.hasNonCallSafepoint;
         let cursor = localsOffset;
         const slotOffsets: number[] = [];
         // Frames share offsets between same-typed slots whose live ranges
@@ -8301,8 +8616,9 @@ function emitModuleForms(
          * with the context in x0. */
         function teardown(tail: boolean): void {
           endFrameRange();
-          // Unlink the activation record.
-          if (fn.scriptEntry === true) {
+          // Unlink the activation record (elided for pure leaves and handled
+          // around individual cold calls for lazyActivation functions).
+          if (fn.scriptEntry === true && !elideActivation && !lazyActivation) {
             emit({
               op: "ldr",
               width: 64,
@@ -8734,84 +9050,277 @@ function emitModuleForms(
             else emit({ op: "fmov-d-x", rd: home, rn: "zr" });
           }
         }
+        function zeroScriptActualSlot(index: number): void {
+          const off = scriptArgumentsOffset + index * 16;
+          if (off <= 504)
+            emit({
+              op: "stp",
+              width: 64,
+              rt: "zr",
+              rt2: "zr",
+              rn: "sp",
+              offset: off,
+              mode: "offset",
+            });
+          else {
+            address(16, off);
+            emit({
+              op: "stp",
+              width: 64,
+              rt: "zr",
+              rt2: "zr",
+              rn: 16,
+              offset: 0,
+              mode: "offset",
+            });
+          }
+        }
+        function linkLazyActivation(): void {
+          // x17 is free here; x0 holds context, x16 holds callee entry (if any).
+          if (deferExtraActualZeroing) {
+            rawLoad(17, scriptCountOffset);
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn: 17,
+              immediate: scriptGpActualRegisterPairs,
+              shift: 0,
+              setFlags: true,
+            });
+            const alreadySpilled = instructions.length;
+            emit({ op: "b.cond", condition: "hi", displacement: 0 });
+            for (
+              let i: number = scriptGpActualRegisterPairs;
+              i < scriptActualRegisterPairs;
+              i++
+            )
+              zeroScriptActualSlot(i);
+            patchInstruction(alreadySpilled, {
+              op: "b.cond",
+              condition: "hi",
+              displacement: (instructions.length - alreadySpilled) * 4,
+            });
+          }
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 17,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 17,
+            rn: "sp",
+            offset: activationOffset,
+          });
+          address(17, activationOffset);
+          emit({
+            op: "str",
+            width: 64,
+            rt: 17,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
+        }
         rawStore(0, contextOffset);
         rawStore(3, resultPointerOffset);
         if (fn.scriptEntry === true) {
           const listSlot = fn.parameters[3];
           if (listSlot === undefined) throw "script entry header invariant";
-          emit({
-            op: "ands-imm",
-            width: 64,
-            rd: "zr",
-            rn: 2,
-            n: 1,
-            immr: 0,
-            imms: 0,
-          });
-          emit({
-            op: "csel",
-            width: 64,
-            rd: 16,
-            rn: 2,
-            rm: "zr",
-            condition: "eq",
-          });
-          rawStore(16, slotOffset(listSlot));
-          emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 1, imms: 63 });
-          emit({
-            op: "csel",
-            width: 64,
-            rd: 17,
-            rn: "zr",
-            rm: 17,
-            condition: "eq",
-          });
-          rawStore(17, scriptCountOffset);
-          for (let i = 0; i < scriptActualRegisterPairs; i++) {
+          const needsListSlot = !elideActivation || scriptPlan.readsParam3;
+          const needsCount =
+            !elideActivation ||
+            scriptPlan.usesArgCount ||
+            scriptPlan.readsDynamicArg ||
+            scriptPlan.maxConstArg >= scriptGpActualRegisterPairs;
+          if (needsListSlot || needsCount) {
+            emit({
+              op: "ands-imm",
+              width: 64,
+              rd: "zr",
+              rn: 2,
+              n: 1,
+              immr: 0,
+              imms: 0,
+            });
+          }
+          if (needsListSlot) {
+            emit({
+              op: "csel",
+              width: 64,
+              rd: 16,
+              rn: 2,
+              rm: "zr",
+              condition: "eq",
+            });
+            rawStore(16, slotOffset(listSlot));
+          }
+          if (needsCount) {
+            emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 1, imms: 63 });
+            emit({
+              op: "csel",
+              width: 64,
+              rd: 17,
+              rn: "zr",
+              rm: 17,
+              condition: "eq",
+            });
+            rawStore(17, scriptCountOffset);
+          }
+          const gpSpillCount = !elideActivation
+            ? scriptGpActualRegisterPairs
+            : scriptPlan.readsDynamicArg
+              ? scriptGpActualRegisterPairs
+              : Math.min(
+                  scriptGpActualRegisterPairs,
+                  scriptPlan.maxConstArg + 1,
+                );
+          for (let i = 0; i < gpSpillCount; i++) {
             const offset = scriptArgumentsOffset + i * 16;
             const register = scriptFirstActualRegister + i * 2;
             generalPair(register, offset, false);
           }
+          if (needsExtraActualSlots) {
+            const emitSpillCascade = (): void => {
+              const zeroJumps: number[] = [];
+              for (
+                let i: number = scriptGpActualRegisterPairs;
+                i < scriptActualRegisterPairs;
+                i++
+              ) {
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 17,
+                  immediate: i + 1,
+                  shift: 0,
+                  setFlags: true,
+                });
+                zeroJumps.push(instructions.length);
+                emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                scriptActualPair(i, scriptArgumentsOffset + i * 16, false, 16);
+              }
+              const done = instructions.length;
+              emit({ op: "b", displacement: 0 });
+              for (
+                let idx = 0;
+                idx < scriptActualRegisterPairs - scriptGpActualRegisterPairs;
+                idx++
+              ) {
+                const jumpAt = zeroJumps[idx];
+                if (jumpAt === undefined)
+                  throw "script extra actual jump invariant";
+                patchInstruction(jumpAt, {
+                  op: "b.cond",
+                  condition: "cc",
+                  displacement: (instructions.length - jumpAt) * 4,
+                });
+                zeroScriptActualSlot(scriptGpActualRegisterPairs + idx);
+              }
+              patchInstruction(done, {
+                op: "b",
+                displacement: (instructions.length - done) * 4,
+              });
+            };
+            if (readsExtraActuals || !coldStubsAvailable()) {
+              emitSpillCascade();
+            } else {
+              emit({
+                op: "sub-imm",
+                width: 64,
+                rd: "zr",
+                rn: 17,
+                immediate: scriptGpActualRegisterPairs,
+                shift: 0,
+                setFlags: true,
+              });
+              const spillExtraBranch = instructions.length;
+              emit({ op: "b.cond", condition: "hi", displacement: 0 });
+              if (!deferExtraActualZeroing) {
+                for (
+                  let i: number = scriptGpActualRegisterPairs;
+                  i < scriptActualRegisterPairs;
+                  i++
+                )
+                  zeroScriptActualSlot(i);
+              }
+              const resumeAt = instructions.length;
+              stackWords.clear();
+              coldStubs.push((): void => {
+                farBranch(spillExtraBranch, {
+                  op: "b.cond",
+                  condition: "hi",
+                  displacement: (instructions.length - spillExtraBranch) * 4,
+                });
+                stackWords.clear();
+                emitSpillCascade();
+                const back = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                farBranch(back, {
+                  op: "b",
+                  displacement: (resumeAt - back) * 4,
+                });
+              });
+            }
+          }
           // Link the activation record (abi.ts activationRecordBytes): the
           // callee pair is a root from here on; the kind is x2's list bit.
-          const record = activationOffset;
-          if (record + activationCalleeOffset + 8 > 504)
-            fail("FRAME_LIMIT", "activation record beyond pair reach");
-          emit({
-            op: "stp",
-            width: 64,
-            rt: 4,
-            rt2: 5,
-            rn: "sp",
-            offset: record + activationCalleeOffset,
-            mode: "offset",
-          });
-          emit({
-            op: "ldr",
-            width: 64,
-            rt: 16,
-            rn: 0,
-            offset: nativeActivationTopOffset,
-          });
-          emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 0, imms: 0 });
-          emit({ op: "orr-reg", width: 64, rd: 17, rn: 17, rm: 29 });
-          emit({
-            op: "stp",
-            width: 64,
-            rt: 16,
-            rt2: 17,
-            rn: "sp",
-            offset: record,
-            mode: "offset",
-          });
-          address(16, record);
-          emit({
-            op: "str",
-            width: 64,
-            rt: 16,
-            rn: 0,
-            offset: nativeActivationTopOffset,
-          });
+          if (!elideActivation) {
+            const record = activationOffset;
+            if (record + activationCalleeOffset + 8 > 504)
+              fail("FRAME_LIMIT", "activation record beyond pair reach");
+            emit({
+              op: "stp",
+              width: 64,
+              rt: 4,
+              rt2: 5,
+              rn: "sp",
+              offset: record + activationCalleeOffset,
+              mode: "offset",
+            });
+            emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 0, imms: 0 });
+            emit({ op: "orr-reg", width: 64, rd: 17, rn: 17, rm: 29 });
+            if (lazyActivation) {
+              // Store fp | kind now; link/unlink nativeActivationTopOffset
+              // only around the cold calls in this function.
+              emit({
+                op: "str",
+                width: 64,
+                rt: 17,
+                rn: "sp",
+                offset: record + activationFrameOffset,
+              });
+            } else {
+              emit({
+                op: "ldr",
+                width: 64,
+                rt: 16,
+                rn: 0,
+                offset: nativeActivationTopOffset,
+              });
+              emit({
+                op: "stp",
+                width: 64,
+                rt: 16,
+                rt2: 17,
+                rn: "sp",
+                offset: record,
+                mode: "offset",
+              });
+              address(16, record);
+              emit({
+                op: "str",
+                width: 64,
+                rt: 16,
+                rn: 0,
+                offset: nativeActivationTopOffset,
+              });
+            }
+          }
         }
         frameStart = instructions.length * 4;
         // Words the prologue stores below before publishing the frame record
@@ -8824,8 +9333,16 @@ function emitModuleForms(
           prologueStores.add(slotOffset(receiverSlot));
           prologueStores.add(slotOffset(receiverSlot) + 8);
         }
-        for (const parameter of fn.parameters) {
+        for (let i = 0; i < fn.parameters.length; i++) {
+          const parameter = fn.parameters[i];
           if (parameter === undefined) throw "parameter layout invariant";
+          if (
+            fn.scriptEntry === true &&
+            i < 3 &&
+            safepointLiveness !== undefined &&
+            !scriptPlanReadsParam(scriptPlan, i)
+          )
+            continue;
           const type = fn.slots[parameter];
           // A register-homed parameter's prologue store targets its register:
           // its frame (root) word still needs zeroing.
@@ -9030,6 +9547,13 @@ function emitModuleForms(
           if (slot === undefined || location === undefined)
             throw "parameter layout invariant";
           if (location.kind === "script-list") continue;
+          if (
+            fn.scriptEntry === true &&
+            i < 3 &&
+            safepointLiveness !== undefined &&
+            !scriptPlanReadsParam(scriptPlan, i)
+          )
+            continue;
           const offset = slotOffset(slot);
           if (
             fn.slots[slot] === "general" ||
@@ -12289,11 +12813,7 @@ function emitModuleForms(
           const exception = block.exception;
           if (exception !== undefined) viewEntries.set(exception.target, -1);
         }
-        // Cached property misses branch to their block's slow successor
-        // directly (not with C view tokens, which follow block ends).
-        const fusedAccesses = viewAccesses
-          ? undefined
-          : fusedPropertyAccesses(fn);
+        // Cached property misses use `fusedAccesses` computed before block ordering.
         const knownObjectTag = knownObjectTagAccesses(fn, fusedAccesses);
         const scriptEntryCallees = scriptEntryCalleeValues(fn);
         // For pure-leaf outlined numeric loop kernels (`__tint_spec_loop_*`),
@@ -27080,7 +27600,7 @@ function emitModuleForms(
                         generalPair(location.index, offset, true);
                       else rawLoad(location.index, offset);
                     }
-                    for (let i = 0; i < scriptActualRegisterPairs; i++) {
+                    for (let i = 0; i < scriptGpActualRegisterPairs; i++) {
                       const register = scriptFirstActualRegister + i * 2;
                       const argument = actuals[i];
                       if (
@@ -27092,6 +27612,26 @@ function emitModuleForms(
                       } else {
                         const offset = value(argument).offset;
                         generalPair(register, offset, true);
+                      }
+                    }
+                    const extraActuals = Math.min(
+                      actuals.length,
+                      scriptActualRegisterPairs,
+                    );
+                    for (
+                      let i: number = scriptGpActualRegisterPairs;
+                      i < extraActuals;
+                      i++
+                    ) {
+                      const argument = actuals[i];
+                      if (argument === undefined)
+                        throw "script operand invariant";
+                      if (zeroValues[valueIds.intern(argument)] === 1) {
+                        const d = (i - scriptGpActualRegisterPairs) * 2;
+                        emit({ op: "fmov-d-x", rd: d, rn: "zr" });
+                        emit({ op: "fmov-d-x", rd: d + 1, rn: "zr" });
+                      } else {
+                        scriptActualPair(i, value(argument).offset, true, 17);
                       }
                     }
                     if (!listFolded) {
@@ -27122,12 +27662,46 @@ function emitModuleForms(
                     tailExitBlock = b.id;
                     break;
                   }
+                  if (lazyActivation) linkLazyActivation();
                   emit({ op: "blr", rn: 16 });
-                } else if (importedEntry !== undefined) {
-                  managedPointer(16, importedEntry);
-                  emit({ op: "blr", rn: 16 });
-                } else branch({ op: "bl" }, op.target, undefined);
+                } else {
+                  const needsLazyLink =
+                    lazyActivation &&
+                    !(
+                      importedEntry === undefined &&
+                      pureLeafNoActivation[op.target] === 1
+                    );
+                  if (needsLazyLink) linkLazyActivation();
+                  if (importedEntry !== undefined) {
+                    managedPointer(16, importedEntry);
+                    emit({ op: "blr", rn: 16 });
+                  } else branch({ op: "bl" }, op.target, undefined);
+                }
                 safepoint();
+                if (
+                  lazyActivation &&
+                  !(
+                    op.kind === "call" &&
+                    importedEntry === undefined &&
+                    pureLeafNoActivation[op.target] === 1
+                  )
+                ) {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 16,
+                    rn: "sp",
+                    offset: activationOffset,
+                  });
+                  rawLoad(17, contextOffset);
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 16,
+                    rn: 17,
+                    offset: nativeActivationTopOffset,
+                  });
+                }
                 if (
                   actuals !== undefined &&
                   actuals.length > scriptActualRegisterPairs
@@ -28088,7 +28662,7 @@ function emitModuleForms(
               if (offset === undefined) throw "site reference invariant";
               references.push(offset);
             }
-            if (fn.scriptEntry === true) {
+            if (fn.scriptEntry === true && !elideActivation) {
               generals.push(activationOffset + activationCalleeOffset);
               for (let i = 0; i < scriptActualRegisterPairs; i++)
                 generals.push(scriptArgumentsOffset + i * 16);
