@@ -799,7 +799,12 @@ function withStaticFfiRuntimes(
   if (weakProcessing && literalPlans.length === 0 && arities.length === 0)
     return request;
   const plans = addFixedFfiPlans(literalPlans, arities);
-  const generated = makeStaticFfiModule(plans, weakProcessing, arities);
+  const generated = makeStaticFfiModule(
+    plans,
+    weakProcessing,
+    arities,
+    request.hostABI !== undefined,
+  );
   function replace(modules: readonly SourceModule[]): SourceModule[] {
     return modules.map((source) =>
       source?.id === generated.id ? generated : source,

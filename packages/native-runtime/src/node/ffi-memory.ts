@@ -15,6 +15,7 @@ import {
 import { Cell } from "tint:c/dl";
 import { external, stableBytes, type View } from "tint:ffi";
 import type { CallbackActivity } from "../ffi/index.ts";
+export type { CallbackActivity };
 import { adoptNodeBuffer, isNodeBuffer } from "./buffer.ts";
 import { bufferBytes, bufferEncoding, bufferText } from "./buffer-codecs.ts";
 import { ffiError, type FfiObject } from "./ffi-signature.ts";

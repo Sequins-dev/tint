@@ -212,6 +212,7 @@ export {
   type ObjectCallDispatch,
   type ObjectExecutionContext,
   type ObjectConstruct,
+  type ObjectScriptCall,
   type Receiver,
 } from "./operations.ts";
 export { isCallableObject, callObject, constructObject } from "./call.ts";

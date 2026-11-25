@@ -3,6 +3,7 @@ import { nodeFfiScalarKind, type CCallLayout } from "@tint/abi/c";
 import {
   callObjectValueOrThrow,
   exoticSlots,
+  resolveScriptCallEntry,
   typedRecordOf,
   viewObjectValue,
   type ProgramRealmCore,
@@ -27,6 +28,7 @@ import {
   ffiError,
   type FfiSignature,
 } from "./ffi-signature.ts";
+import { staticFfiInvokeUnaryScript } from "./ffi-static.ts";
 
 export interface FfiCallbackHost {
   readonly allocate: (id: number, unaryI32: boolean) => number;
@@ -168,7 +170,7 @@ export function createFfiCallbacks(
     const workspace = newWorkspace(guard, layout.stackBytes);
     const unary = unaryCallback(signature, layout, parameters, callback);
     const runtimeI32 =
-      unary !== undefined &&
+      signature.parameters.length === 1 &&
       signature.parameters[0] === "i32" &&
       signature.result === "i32";
     const address = host.allocate(id, runtimeI32);
@@ -260,16 +262,29 @@ export function createFfiCallbacks(
         const fn = strong === undefined ? weakSlotKey(callback.weak) : strong;
         if (fn === undefined) return 0;
         let value: unknown;
-        try {
-          value = callObjectValueOrThrow(
-            fn,
-            undefined,
-            [input],
-            core.object,
-            core.realm,
-          );
-        } catch (error) {
-          return host.abort("Callbacks cannot throw an exception");
+        const scriptEntry = resolveScriptCallEntry(fn, core.realm);
+        if (scriptEntry !== undefined) {
+          const contextDepth = agent.executionContextDepth;
+          agent.executionContextDepth = contextDepth + 1;
+          try {
+            value = staticFfiInvokeUnaryScript(scriptEntry, fn, input);
+          } catch (error) {
+            return host.abort("Callbacks cannot throw an exception");
+          } finally {
+            agent.executionContextDepth = contextDepth;
+          }
+        } else {
+          try {
+            value = callObjectValueOrThrow(
+              fn,
+              undefined,
+              [input],
+              core.object,
+              core.realm,
+            );
+          } catch (error) {
+            return host.abort("Callbacks cannot throw an exception");
+          }
         }
         if (typeof value !== "number") {
           const object = viewObjectValue(value, core.object);

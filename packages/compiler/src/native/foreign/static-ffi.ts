@@ -283,12 +283,10 @@ function fixedFfiSource(
     general += "plan.writeArgument(frame," + i + ",p" + i + ");\n";
   }
   let body =
-    "const typedView=viewTypeofObject(callee)?.internalMethods?.typedView;\n" +
-    "if(typedView===undefined)return undefined;\n" +
-    "const plan=viewTypedFfiCall(typedView.value);\n" +
-    "if(plan===undefined||plan.arity!==" +
-    arity +
-    ")return undefined;\n";
+    "const obj=viewTypeofObject(callee);if(obj===undefined)return undefined;\n" +
+    "const methods=obj.internalMethods;if(methods===undefined)return undefined;\n" +
+    "const typedView=methods.typedView;if(typedView===undefined)return undefined;\n" +
+    "const plan=viewTypedFfiCall(typedView.value);if(plan===undefined)return undefined;\n";
   let direct = mixed && arity === 1;
   if (!mixed)
     for (let i = 0; i < plans.length; i++) {
@@ -343,7 +341,11 @@ function fixedFfiSource(
   // Numeric entries keep only the direct checks in the entry itself, so a
   // direct call does not pay for the frame path's saved registers.
   const outlineMode = !mixed && direct;
-  let modeBody = "const mode=plan.mode();if(mode===0)return undefined;\n";
+  let modeBody =
+    "if(plan.arity!==" +
+    arity +
+    ")return undefined;\n" +
+    "const mode=plan.mode();if(mode===0)return undefined;\n";
   if (mixed && arity === 1)
     modeBody +=
       "const pointerLeaf=plan.unaryPointerLeaf;" +
@@ -408,6 +410,7 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
   const name = staticFfiNumberEntry(index);
   const parameters = ["target:number"];
   const args = ["target"];
+  let reads = "";
   for (
     let parameter = 0;
     parameter < plan.signature.parameters.length;
@@ -416,17 +419,39 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
     const type = plan.signature.parameters[parameter];
     if (type?.kind !== "scalar") throw "static numeric FFI parameter invariant";
     parameters.push("p" + parameter + ":number");
-    args.push(
-      type.scalar === "i32"
-        ? "checkedFfiI32(core,args[" + parameter + "]," + parameter + ")"
-        : "checkedFfiNumber(core," +
-            nodeFfiScalarKind(type.scalar) +
-            ",args[" +
-            parameter +
-            "]," +
-            parameter +
-            ")",
-    );
+    if (type.scalar === "i32") {
+      reads +=
+        "const a" +
+        parameter +
+        "=args[" +
+        parameter +
+        "];const v" +
+        parameter +
+        "=typeof a" +
+        parameter +
+        '==="number"&&(a' +
+        parameter +
+        "|0)===a" +
+        parameter +
+        "?a" +
+        parameter +
+        ":checkedFfiI32(core,a" +
+        parameter +
+        "," +
+        parameter +
+        ");\n";
+      args.push("v" + parameter);
+    } else {
+      args.push(
+        "checkedFfiNumber(core," +
+          nodeFfiScalarKind(type.scalar) +
+          ",args[" +
+          parameter +
+          "]," +
+          parameter +
+          ")",
+      );
+    }
   }
   const returns = plan.signature.result.kind === "void" ? "void" : "number";
   const declaration =
@@ -444,6 +469,7 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
     "function invoke" +
     name +
     "(core:ProgramRealmCore,target:number,args:readonly unknown[]):unknown {" +
+    reads +
     (returns === "void"
       ? name + "(" + args.join(",") + ");return undefined;"
       : "return " + name + "(" + args.join(",") + ");") +
@@ -451,14 +477,82 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
   );
 }
 
+/** Native script entry for one compiled numeric prototype: validates operands
+ * directly from the script-call ABI without allocating an argument array. */
+function scriptNumericFfiSource(plan: StaticFfiPlan, index: number): string {
+  const name = staticFfiNumberEntry(index);
+  const arity = plan.signature.parameters.length;
+  let reads = "";
+  const args = ["target"];
+  for (let p = 0; p < arity; p++) {
+    const type = plan.signature.parameters[p];
+    if (type?.kind !== "scalar") throw "static numeric FFI parameter invariant";
+    reads += "const a" + p + "=sourceArgument(" + p + ");\n";
+    if (type.scalar === "i32") {
+      reads +=
+        "const v" +
+        p +
+        "=typeof a" +
+        p +
+        '==="number"&&(a' +
+        p +
+        "|0)===a" +
+        p +
+        "?a" +
+        p +
+        ":checkedFfiI32(core,a" +
+        p +
+        "," +
+        p +
+        ");\n";
+    } else {
+      reads +=
+        "const v" +
+        p +
+        "=checkedFfiNumber(core," +
+        nodeFfiScalarKind(type.scalar) +
+        ",a" +
+        p +
+        "," +
+        p +
+        ");\n";
+    }
+    args.push("v" + p);
+  }
+  const returns = plan.signature.result.kind === "void" ? "void" : "number";
+  const invoke =
+    returns === "void"
+      ? name + "(" + args.join(",") + ");return undefined;"
+      : "return " + name + "(" + args.join(",") + ");";
+  return (
+    "function makeScript" +
+    name +
+    "(core:ProgramRealmCore,target:number,lifetime:FfiLibraryLifetime,nodeCallbacks:CallbackActivity,nativeCallbacks:CallbackActivity,fallback:(args:readonly unknown[])=>unknown):ObjectScriptCall<unknown>{" +
+    "return(__ffiCallee:unknown,_r:unknown,_n:unknown,_a:readonly unknown[]|undefined):unknown=>{" +
+    "if(_a===undefined&&sourceArgumentCount()===" +
+    arity +
+    "&&lifetime.open&&!nodeCallbacks.active&&!nativeCallbacks.active){\n" +
+    reads +
+    invoke +
+    "\n}" +
+    "if(_a!==undefined)return fallback(_a);" +
+    "const _c=sourceArgumentCount();const _l:unknown[]=[];" +
+    "for(let _i=0;_i<_c;_i++)_l.push(sourceArgument(_i));" +
+    "return fallback(_l);};}\n"
+  );
+}
+
 export function makeStaticFfiModule(
   plans: readonly StaticFfiPlan[],
   weakProcessing: boolean,
   fixedArities: readonly number[] = [],
+  scriptEntries: boolean = false,
 ): SourceModule {
   let text =
-    'import type { ProgramRealmCore } from "objects";\n' +
-    'import { checkedFfiI32, checkedFfiNumber } from "memory";\n' +
+    (scriptEntries
+      ? 'import { sourceArgument, sourceArgumentCount, type ObjectScriptCall, type ProgramRealmCore } from "objects";\n'
+      : 'import type { ObjectScriptCall, ProgramRealmCore } from "objects";\n') +
+    'import { checkedFfiI32, checkedFfiNumber, type CallbackActivity, type FfiLibraryLifetime } from "memory";\n' +
     "export type StaticFfiNumberCall=(core:ProgramRealmCore,target:number,args:readonly unknown[])=>unknown;\n" +
     "export type StaticFfiBytesCall=(target:number,bytes:Uint8Array)=>number;\n" +
     "export function ffiWeakProcessing():boolean { return " +
@@ -470,6 +564,8 @@ export function makeStaticFfiModule(
     "export function staticFfiCall(index:number,frame:Uint8Array):boolean {\n";
   let numbers =
     "export function staticFfiNumberCall(index:number):StaticFfiNumberCall|undefined {\n";
+  let scriptNumbers =
+    "export function staticFfiScriptNumberCall(index:number,core:ProgramRealmCore,target:number,lifetime:FfiLibraryLifetime,nodeCallbacks:CallbackActivity,nativeCallbacks:CallbackActivity,fallback:(args:readonly unknown[])=>unknown):ObjectScriptCall<unknown>|undefined {\n";
   let bytes =
     "export function staticFfiBytesCall(index:number):StaticFfiBytesCall|undefined {\n";
   for (let index = 0; index < plans.length; index++) {
@@ -493,13 +589,23 @@ export function makeStaticFfiModule(
     if (plan.typedOnly) {
       if (!byteEntry) {
         text += numericFfiSource(plan, index);
-        if (hasStaticFfiNumberEntry(plan))
+        if (hasStaticFfiNumberEntry(plan)) {
           numbers +=
             "if(index===" +
             index +
             ")return invoke" +
             staticFfiNumberEntry(index) +
             ";\n";
+          if (scriptEntries) {
+            text += scriptNumericFfiSource(plan, index);
+            scriptNumbers +=
+              "if(index===" +
+              index +
+              ")return makeScript" +
+              staticFfiNumberEntry(index) +
+              "(core,target,lifetime,nodeCallbacks,nativeCallbacks,fallback);\n";
+          }
+        }
       }
       typed += 'if(key==="' + plan.key + '")return ' + String(index) + ";\n";
       continue;
@@ -517,11 +623,40 @@ export function makeStaticFfiModule(
         ")return invoke" +
         staticFfiNumberEntry(index) +
         ";\n";
+      if (scriptEntries) {
+        text += scriptNumericFfiSource(plan, index);
+        scriptNumbers +=
+          "if(index===" +
+          index +
+          ")return makeScript" +
+          staticFfiNumberEntry(index) +
+          "(core,target,lifetime,nodeCallbacks,nativeCallbacks,fallback);\n";
+      }
     }
     lookup += 'if(key==="' + plan.key + '")return ' + String(index) + ";\n";
     dispatch +=
       "if(index===" + String(index) + ")return " + entry + "(frame);\n";
   }
+  const scriptHelpers = scriptEntries
+    ? "export function staticFfiScriptUnaryCall(unary:(arg0:unknown)=>unknown,fallback:(args:readonly unknown[])=>unknown):ObjectScriptCall<unknown>|undefined{" +
+      "return(__ffiCallee:unknown,_r:unknown,_n:unknown,_a:readonly unknown[]|undefined):unknown=>{" +
+      "if(_a===undefined&&sourceArgumentCount()===1)return unary(sourceArgument(0));" +
+      "if(_a!==undefined)return fallback(_a);" +
+      "const _c=sourceArgumentCount();const _l:unknown[]=[];" +
+      "for(let _i=0;_i<_c;_i++)_l.push(sourceArgument(_i));" +
+      "return fallback(_l);};}\n" +
+      "export function staticFfiScriptBinaryCall(binary:(arg0:unknown,arg1:unknown)=>unknown,fallback:(args:readonly unknown[])=>unknown):ObjectScriptCall<unknown>|undefined{" +
+      "return(__ffiCallee:unknown,_r:unknown,_n:unknown,_a:readonly unknown[]|undefined):unknown=>{" +
+      "if(_a===undefined&&sourceArgumentCount()===2)return binary(sourceArgument(0),sourceArgument(1));" +
+      "if(_a!==undefined)return fallback(_a);" +
+      "const _c=sourceArgumentCount();const _l:unknown[]=[];" +
+      "for(let _i=0;_i<_c;_i++)_l.push(sourceArgument(_i));" +
+      "return fallback(_l);};}\n" +
+      "export function staticFfiInvokeUnaryScript(entry:ObjectScriptCall<unknown>,callee:unknown,input:number):unknown{" +
+      "return __ffiScriptCall1(entry,callee,input);}\n"
+    : "export function staticFfiScriptUnaryCall(_unary:(arg0:unknown)=>unknown,_fallback:(args:readonly unknown[])=>unknown):ObjectScriptCall<unknown>|undefined{return undefined;}\n" +
+      "export function staticFfiScriptBinaryCall(_binary:(arg0:unknown,arg1:unknown)=>unknown,_fallback:(args:readonly unknown[])=>unknown):ObjectScriptCall<unknown>|undefined{return undefined;}\n" +
+      'export function staticFfiInvokeUnaryScript(_entry:ObjectScriptCall<unknown>,_callee:unknown,_input:number):unknown{throw "UNSUPPORTED_SCRIPT_CALL";}\n';
   if (fixedArities.length !== 0) {
     text =
       'import { viewTypeofObject } from "objects";\n' +
@@ -536,6 +671,7 @@ export function makeStaticFfiModule(
   const parsed = parseModule(
     createSourceTextView(
       text +
+        scriptHelpers +
         lookup +
         "return -1;\n}" +
         typed +
@@ -544,17 +680,64 @@ export function makeStaticFfiModule(
         "return false;\n}" +
         numbers +
         "return undefined;\n}" +
+        scriptNumbers +
+        "return undefined;\n}" +
         bytes +
         "return undefined;\n}",
     ),
   );
   if (!parsed.ok) throw "static FFI module invariant";
+  const module = scriptEntries
+    ? rewriteModule(parsed.value, {
+        expression: (mapped): Expression => {
+          if (mapped.kind === "arrow" && mapped.parameters.length === 4) {
+            const first = mapped.parameters[0];
+            if (
+              first !== undefined &&
+              first.kind !== "pattern-parameter" &&
+              first.name === "__ffiCallee"
+            )
+              return { ...mapped, scriptEntry: true };
+          }
+          if (mapped.kind === "call" && mapped.callee.kind === "identifier") {
+            if (mapped.callee.name === "sourceArgumentCount")
+              return { ...mapped, scriptArgument: "count" };
+            if (mapped.callee.name === "sourceArgument")
+              return { ...mapped, scriptArgument: "index" };
+            if (mapped.callee.name === "__ffiScriptCall1") {
+              const entryArg = mapped.arguments[0],
+                calleeArg = mapped.arguments[1],
+                inputArg = mapped.arguments[2];
+              if (
+                entryArg === undefined ||
+                calleeArg === undefined ||
+                inputArg === undefined
+              )
+                throw "static FFI script call invariant";
+              const undef: Expression = {
+                kind: "identifier",
+                name: "undefined",
+                start: mapped.start,
+                end: mapped.end,
+              };
+              return {
+                ...mapped,
+                callee: entryArg,
+                scriptCall: true,
+                arguments: [calleeArg, undef, undef, undef, inputArg],
+              };
+            }
+          }
+          return mapped;
+        },
+      })
+    : parsed.value;
   const dependencies = new Map<string, string>();
   dependencies.set("objects", objectModule);
   dependencies.set("memory", ffiMemoryModule);
   return {
     id: staticFfiModule,
-    module: parsed.value,
+    module,
     dependencies,
   };
 }

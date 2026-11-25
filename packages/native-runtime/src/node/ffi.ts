@@ -93,6 +93,9 @@ import {
   staticFfiCall,
   staticFfiIndex,
   staticFfiNumberCall,
+  staticFfiScriptBinaryCall,
+  staticFfiScriptNumberCall,
+  staticFfiScriptUnaryCall,
   typedFfiIndex,
   type StaticFfiBytesCall,
   type StaticFfiNumberCall,
@@ -872,51 +875,129 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     binding: Binding,
   ): void {
     const active = agent.activeContext;
+    if (active === undefined || active.realm !== realm) return;
     const arity = binding.signature.parameters.length;
-    if (active === undefined || active.realm !== realm || arity > 6) return;
-    const reusable: unknown[] = [];
-    for (let index = 0; index < arity; index++) reusable.push(undefined);
-    let reusing = false;
-    const enter = (
-      count: number,
-      first: unknown,
-      second: unknown,
-      third: unknown,
-      fourth: unknown,
-      fifth: unknown,
-      sixth: unknown,
-    ): unknown => {
-      const reuse = count === arity && !reusing;
-      const args: unknown[] = reuse ? reusable : [];
-      if (reuse) reusing = true;
-      if (count > 0) args[0] = first;
-      if (count > 1) args[1] = second;
-      if (count > 2) args[2] = third;
-      if (count > 3) args[3] = fourth;
-      if (count > 4) args[4] = fifth;
-      if (count > 5) args[5] = sixth;
+    const plan = binding.plan;
+    const fallback = (args: readonly unknown[]): unknown => {
       const depth = agent.executionContextDepth;
       agent.executionContextDepth = depth + 1;
       try {
         return callBinding(owner, state, binding, args);
       } finally {
         agent.executionContextDepth = depth;
-        if (reuse) {
-          for (let index = 0; index < arity; index++)
-            reusable[index] = undefined;
-          reusing = false;
-        }
       }
     };
-    call.internalRegisterCall = {
-      context: { realm, scriptOrModule: active.scriptOrModule },
-      traceName: binding.name,
-      callerPolicy: "opaque",
-      constructible: false,
-      scriptInvoke: undefined,
-      invoke: (_callee, _receiver, _newTarget, count, first, second): unknown =>
-        enter(count, first, second, undefined, undefined, undefined, undefined),
-      invokeWide: (
+    const scriptInvoke =
+      binding.staticNumberCall !== undefined && binding.typedCall >= 0
+        ? staticFfiScriptNumberCall(
+            binding.typedCall,
+            core,
+            binding.numericAddress,
+            state.lifetime,
+            callbacks.activity,
+            nativeCallbacks,
+            fallback,
+          )
+        : binding.unaryPointerNumber && plan !== undefined
+          ? staticFfiScriptUnaryCall((arg0): unknown => {
+              if (
+                state.handle === undefined ||
+                callbacks.activity.active ||
+                nativeCallbacks.active
+              )
+                return fallback([arg0]);
+              return invokeUnaryPointerLeaf(core, binding, plan, arg0);
+            }, fallback)
+          : binding.pointerI32 && plan !== undefined
+            ? staticFfiScriptBinaryCall((arg0, arg1): unknown => {
+                if (
+                  state.handle !== undefined &&
+                  binding.scalarDepth === 0 &&
+                  (callbacks.activity.active || nativeCallbacks.active) &&
+                  typeof arg1 === "number" &&
+                  (arg1 | 0) === arg1
+                ) {
+                  const result = invokePointerI32Callback(
+                    binding,
+                    plan,
+                    arg0,
+                    arg1,
+                  );
+                  if (result !== undefined) return result;
+                }
+                return fallback([arg0, arg1]);
+              }, fallback)
+            : undefined;
+    if (arity > 6 && scriptInvoke === undefined) return;
+    let invoke:
+      | ((
+          callee: unknown,
+          receiver: unknown,
+          newTarget: unknown,
+          count: number,
+          first: unknown,
+          second: unknown,
+        ) => unknown)
+      | undefined;
+    let invokeWide:
+      | ((
+          callee: unknown,
+          receiver: unknown,
+          newTarget: unknown,
+          count: number,
+          first: unknown,
+          second: unknown,
+          third: unknown,
+          fourth: unknown,
+          fifth: unknown,
+          sixth: unknown,
+        ) => unknown)
+      | undefined;
+    if (arity <= 6) {
+      const reusable: unknown[] = [];
+      for (let index = 0; index < arity; index++) reusable.push(undefined);
+      let reusing = false;
+      const enter = (
+        count: number,
+        first: unknown,
+        second: unknown,
+        third: unknown,
+        fourth: unknown,
+        fifth: unknown,
+        sixth: unknown,
+      ): unknown => {
+        const reuse = count === arity && !reusing;
+        const args: unknown[] = reuse ? reusable : [];
+        if (reuse) reusing = true;
+        if (count > 0) args[0] = first;
+        if (count > 1) args[1] = second;
+        if (count > 2) args[2] = third;
+        if (count > 3) args[3] = fourth;
+        if (count > 4) args[4] = fifth;
+        if (count > 5) args[5] = sixth;
+        const depth = agent.executionContextDepth;
+        agent.executionContextDepth = depth + 1;
+        try {
+          return callBinding(owner, state, binding, args);
+        } finally {
+          agent.executionContextDepth = depth;
+          if (reuse) {
+            for (let index = 0; index < arity; index++)
+              reusable[index] = undefined;
+            reusing = false;
+          }
+        }
+      };
+      invoke = (
+        _callee,
+        _receiver,
+        _newTarget,
+        count,
+        first,
+        second,
+      ): unknown =>
+        enter(count, first, second, undefined, undefined, undefined, undefined);
+      invokeWide = (
         _callee,
         _receiver,
         _newTarget,
@@ -927,7 +1008,16 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         fourth,
         fifth,
         sixth,
-      ): unknown => enter(count, first, second, third, fourth, fifth, sixth),
+      ): unknown => enter(count, first, second, third, fourth, fifth, sixth);
+    }
+    call.internalRegisterCall = {
+      context: active,
+      traceName: binding.name,
+      callerPolicy: "opaque",
+      constructible: false,
+      scriptInvoke,
+      invoke,
+      invokeWide,
     };
   }
   function wrapper(
