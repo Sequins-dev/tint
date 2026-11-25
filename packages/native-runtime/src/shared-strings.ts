@@ -8,11 +8,14 @@ import { latin1Text } from "@tint/foundation/text/latin1";
 import { adoptExternal } from "./ffi/primitives.ts";
 import {
   currentContextDomain,
-  flattenStringInto,
   isFlatString,
 } from "./intrinsics/memory.ts";
 import { readMemoryString } from "./intrinsics/packet-memory.ts";
-import { stringAddress, stringAt } from "./intrinsics/shared-strings.ts";
+import {
+  copyString,
+  stringAddress,
+  stringAt,
+} from "./intrinsics/shared-strings.ts";
 import {
   createWeakSlot,
   weakSlotKey,
@@ -346,7 +349,14 @@ export function createNativeSharedStrings(
       const extent = nativeStringDataOffset + value.length * 2,
         body = allocateSharedStringBody(words, control, base, extent, 2);
       if (body === 0) return 0;
-      if (flattenStringInto(body + sharedStringObjectOffset, extent, value) < 0)
+      if (
+        copyString(
+          body,
+          sharedStringObjectOffset + extent,
+          sharedStringObjectOffset,
+          value,
+        ) < 0
+      )
         throw "SHARED_STRING_COPY";
       const granule = (body - base) / (1 << shift);
       if (

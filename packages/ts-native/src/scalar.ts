@@ -6431,6 +6431,7 @@ export function lowerFunction(
       "general",
       node,
     );
+    sharedBufferFlowSlots[source] = 0;
     const accepted = block(),
       projecting = block();
     choose(

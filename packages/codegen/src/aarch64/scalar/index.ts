@@ -21633,8 +21633,9 @@ function emitModuleForms(
                       setFlags: true,
                     });
                   }
-                  /** x10 = the flat extent of the string in x9 (header and
-                   * length read from the object), or a branch to -1. */
+                  /** x10 = the flat extent of the string in x9, x12 = flat
+                   * header, x13 = units pointer, x14 = length, x15 = data
+                   * bytes (or a branch to -1). */
                   function extent(): void {
                     emit({ op: "ldr", width: 64, rt: 12, rn: 9, offset: 0 });
                     emit({
@@ -21668,7 +21669,8 @@ function emitModuleForms(
                       width: 64,
                       rd: "zr",
                       rn: 13,
-                      immediate: nativeStringOneByteFlag,
+                      immediate:
+                        nativeStringOneByteFlag | nativeStringSlicedFlag,
                       shift: 0,
                       setFlags: true,
                     });
@@ -21676,33 +21678,105 @@ function emitModuleForms(
                     emit({
                       op: "ldr",
                       width: 32,
-                      rt: 10,
+                      rt: 14,
                       rn: 9,
                       offset: nativeStringLengthOffset,
                     });
-                    imm(14, 1);
                     emit({
-                      op: "sub-reg",
+                      op: "add-imm",
                       width: 64,
-                      rd: 14,
-                      rn: 14,
-                      rm: 13,
+                      rd: 13,
+                      rn: 9,
+                      immediate: nativeStringDataOffset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "tbz",
+                      rt: 12,
+                      bit: nativeHeaderFlagsShift + 1,
+                      displacement: 24,
+                    });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 15,
+                      rt2: 13,
+                      rn: 9,
+                      offset: nativeStringSlicedStartOffset,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      rm: 15,
                       shift: "lsl",
                       amount: 0,
                       setFlags: false,
                     });
-                    emit({ op: "lslv", width: 64, rd: 10, rn: 10, rm: 14 });
                     emit({
-                      op: "sub-imm",
+                      op: "add-imm",
                       width: 64,
-                      rd: "zr",
-                      rn: 10,
-                      immediate: nativeStringMinimumDataBytes,
+                      rd: 13,
+                      rn: 13,
+                      immediate: nativeStringDataOffset,
                       shift: 0,
-                      setFlags: true,
+                      setFlags: false,
                     });
-                    emit({ op: "b.cond", condition: "cs", displacement: 8 });
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 15,
+                      immediate: nativeStringSlicedFlag,
+                      shift: 48,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      rm: 15,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 15,
+                      rn: 14,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "tbnz",
+                      rt: 12,
+                      bit: nativeHeaderFlagsShift,
+                      displacement: 8,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 15,
+                      rn: 15,
+                      rm: 15,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
                     imm(10, nativeStringMinimumDataBytes);
+                    compareRegisters(15, 10);
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: 10,
+                      rn: 15,
+                      rm: 10,
+                      condition: "hi",
+                    });
                     emit({
                       op: "add-imm",
                       width: 64,
@@ -21785,8 +21859,9 @@ function emitModuleForms(
                   extent();
                   compareRegisters(10, 11);
                   reject("hi");
-                  // memmove(address + offset, string, extent). Nothing
-                  // between the load and the copy can allocate, so the
+                  // Write canonical flat header, length, zero tail padding,
+                  // and memmove(address + offset + 16, units, dataBytes).
+                  // Nothing between the load and the copy can allocate, so the
                   // string stays put.
                   emit({
                     op: "add-reg",
@@ -21799,10 +21874,47 @@ function emitModuleForms(
                     setFlags: false,
                   });
                   emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 16,
+                    rn: 0,
+                    rm: 10,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "stp",
+                    width: 64,
+                    rt: "zr",
+                    rt2: "zr",
+                    rn: 16,
+                    offset: -16,
+                    mode: "offset",
+                  });
+                  emit({
+                    op: "stp",
+                    width: 64,
+                    rt: 12,
+                    rt2: 14,
+                    rn: 0,
+                    offset: 0,
+                    mode: "offset",
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 0,
+                    rn: 0,
+                    immediate: nativeStringDataOffset,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
                     op: "add-imm",
                     width: 64,
                     rd: 1,
-                    rn: 9,
+                    rn: 13,
                     immediate: 0,
                     shift: 0,
                     setFlags: false,
@@ -21811,7 +21923,7 @@ function emitModuleForms(
                     op: "add-imm",
                     width: 64,
                     rd: 2,
-                    rn: 10,
+                    rn: 15,
                     immediate: 0,
                     shift: 0,
                     setFlags: false,

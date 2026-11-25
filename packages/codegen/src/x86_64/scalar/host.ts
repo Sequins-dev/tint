@@ -803,42 +803,80 @@ export function emitHostCall(request: HostCall): boolean {
       numberResult(rax);
       return true;
     case "string-copy": {
-      // A flat string object, copied verbatim (header, length and units) by
-      // the extent its header gives, into the window; the extent, or -1.
-      // Marker 1 is the only flat string today: 16 + 2·length bytes,
-      // rounded up to eight.
+      // Copies a string into its canonical flat form (header, length and
+      // units, flattening slices) into the window; returns the extent, or -1.
       const failed = site + ":copy-invalid",
         done = site + ":copy-done";
-      const limit = r11;
-      /** RDX = the flat extent of the string in R10, or a branch to -1. */
+      const limit = r11,
+        rcx = gpr(1),
+        ecx = word(1),
+        r8 = gpr(8);
+      /** Computes R10 = flat extent, RAX = flat header, RCX = length,
+       * RSI = units pointer, RDX = data bytes (or branches to -1). */
       function extent(tag: string): void {
-        const oneByte = site + ":copy-one-" + tag;
+        const flat = site + ":copy-flat-" + tag,
+          oneByte = site + ":copy-one-" + tag;
         emit({ op: "mov", dst: r10, src: argument(3) });
         emit({ op: "mov", dst: rax, src: mem(10, 0) });
-        emit({ op: "mov", dst: rdx, src: rax });
-        emit({ op: "shl", dst: rdx, count: 16 });
-        emit({ op: "shr", dst: rdx, count: 16 });
-        emit({ op: "cmp", dst: rdx, src: imm(1) });
+        emit({ op: "mov", dst: r8, src: rax });
+        emit({ op: "shl", dst: r8, count: 16 });
+        emit({ op: "shr", dst: r8, count: 16 });
+        emit({ op: "cmp", dst: r8, src: imm(1) });
         branch(emit, "ne", failed);
-        emit({ op: "shr", dst: rax, count: nativeHeaderFlagsShift });
-        emit({ op: "and", dst: rax, src: imm(7) });
-        emit({ op: "cmp", dst: rax, src: imm(nativeStringOneByteFlag) });
+        emit({ op: "mov", dst: r8, src: rax });
+        emit({ op: "shr", dst: r8, count: nativeHeaderFlagsShift });
+        emit({ op: "and", dst: r8, src: imm(7) });
+        emit({
+          op: "cmp",
+          dst: r8,
+          src: imm(nativeStringOneByteFlag | nativeStringSlicedFlag),
+        });
         branch(emit, "a", failed);
         emit({
           op: "mov",
-          dst: edx,
+          dst: ecx,
           src: { ...mem(10, nativeStringLengthOffset), width: 32 },
         });
-        emit({ op: "test", dst: rax, src: rax });
+        emit({ op: "lea", dst: rsi, src: mem(10, nativeStringDataOffset) });
+        emit({ op: "test", dst: r8, src: imm(nativeStringSlicedFlag) });
+        branch(emit, "e", flat);
+        emit({
+          op: "mov",
+          dst: rdx,
+          src: mem(10, nativeStringSlicedStartOffset),
+        });
+        emit({ op: "mov", dst: r10, src: mem(10, nativeStringParentOffset) });
+        emit({
+          op: "lea",
+          dst: rsi,
+          src: {
+            kind: "mem",
+            width: 64,
+            address: {
+              kind: "base",
+              base: 10,
+              index: 2,
+              scale: 1,
+              disp: nativeStringDataOffset,
+            },
+          },
+        });
+        emit({ op: "mov", dst: rdx, src: imm(1) });
+        emit({ op: "shl", dst: rdx, count: nativeHeaderFlagsShift + 1 });
+        emit({ op: "sub", dst: rax, src: rdx });
+        emit({ op: "label", name: flat });
+        emit({ op: "mov", dst: rdx, src: rcx });
+        emit({ op: "test", dst: r8, src: imm(nativeStringOneByteFlag) });
         branch(emit, "ne", oneByte);
         emit({ op: "shl", dst: rdx, count: 1 });
         emit({ op: "label", name: oneByte });
-        emit({ op: "mov", dst: rax, src: imm(nativeStringMinimumDataBytes) });
-        emit({ op: "cmp", dst: rdx, src: rax });
-        emit({ op: "cmovcc", cc: "b", dst: rdx, src: rax });
-        emit({ op: "add", dst: rdx, src: imm(nativeStringDataOffset + 7) });
-        emit({ op: "shr", dst: rdx, count: 3 });
-        emit({ op: "shl", dst: rdx, count: 3 });
+        emit({ op: "mov", dst: r10, src: rdx });
+        emit({ op: "mov", dst: r8, src: imm(nativeStringMinimumDataBytes) });
+        emit({ op: "cmp", dst: r10, src: r8 });
+        emit({ op: "cmovcc", cc: "b", dst: r10, src: r8 });
+        emit({ op: "add", dst: r10, src: imm(nativeStringDataOffset + 7) });
+        emit({ op: "shr", dst: r10, count: 3 });
+        emit({ op: "shl", dst: r10, count: 3 });
       }
       emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
       const args = [rdi, rsi, rdx];
@@ -860,13 +898,24 @@ export function emitHostCall(request: HostCall): boolean {
       // RSI is the room after the offset; the extent must fit it.
       emit({ op: "mov", dst: limit, src: rsi });
       extent("a");
-      emit({ op: "cmp", dst: rdx, src: limit });
+      emit({ op: "cmp", dst: r10, src: limit });
       branch(emit, "a", failed);
-      emit({ op: "mov", dst: rsi, src: r10 });
+      // Zero the last two words (padding, at most 15 bytes), then write the
+      // flat header, length, and units.
+      const padding = (disp: number): Memory<64> => ({
+        kind: "mem",
+        width: 64,
+        address: { kind: "base", base: 7, index: 10, scale: 1, disp },
+      });
+      emit({ op: "mov", dst: padding(-8), src: imm(0) });
+      emit({ op: "mov", dst: padding(-16), src: imm(0) });
+      emit({ op: "mov", dst: mem(7, 0), src: rax });
+      emit({ op: "mov", dst: mem(7, nativeStringLengthOffset), src: rcx });
+      emit({ op: "lea", dst: rdi, src: mem(7, nativeStringDataOffset) });
       libc("memmove");
-      // The call clobbers RDX and R10: read the extent again.
+      // The call clobbers R10: read the extent again.
       extent("b");
-      emit({ op: "mov", dst: rax, src: rdx });
+      emit({ op: "mov", dst: rax, src: r10 });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: failed });
       emit({ op: "mov", dst: rax, src: imm(-1) });

@@ -45,11 +45,6 @@ const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "isFlatString", operation: "string-flat" },
   {
     module: memory,
-    name: "flattenStringInto",
-    operation: "string-flatten-into",
-  },
-  {
-    module: memory,
     name: "hostedThreadEntry",
     operation: "hosted-thread-entry",
   },

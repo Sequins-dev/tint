@@ -14,10 +14,9 @@ export function stringAddress(value: string): number {
 export function stringAt(address: number): string {
   throw "HOST_UNAVAILABLE";
 }
-/** Copies a flat string object verbatim (header, length and units), by the
- * extent its header gives, to `offset` of a live authorized window, and
- * returns that extent in bytes; -1 when the string is not flat, does not fit
- * or an input is invalid. */
+/** Copies a string object into its canonical flat form (header, length and
+ * units) at `offset` of a live authorized window, and returns that extent in
+ * bytes; -1 when the string does not fit or an input is invalid. */
 export function copyString(
   address: number,
   byteLength: number,
