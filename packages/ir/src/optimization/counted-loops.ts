@@ -318,7 +318,7 @@ export function versionNonzeroDivisors(
     if (visited > budget) return undefined;
     // The copy's exits join the loop's: a record read proven along the
     // unique-predecessor chain through an exit must stay proven.
-    if (joined && !recordReadsKept(current, result.fn, verifierRecordWork)) {
+    if (joined && !recordReadsKept(current, result.fn)) {
       if (remarks !== undefined)
         remarks({
           pass: "version-nonzero-divisors",

@@ -9201,57 +9201,7 @@ function emitModuleForms(
             stackWords.clear();
           };
           const blockNested = blockDiamond?.nested;
-          for (
-            let operationIndex = 0;
-            operationIndex < b.instructions.length;
-            operationIndex++
-          ) {
-            if (
-              blockDiamond !== undefined &&
-              blockNested !== undefined &&
-              operationIndex === comparisonIndex
-            ) {
-              const nestedFloat =
-                fn.slots[blockDiamond.targetSlot] === "number" &&
-                integerSlots[blockDiamond.targetSlot] !== 1;
-              emitNestedSelect(blockNested, nestedFloat);
-            }
-            const op: IRInstruction | undefined =
-              b.instructions[operationIndex];
-            if (op === undefined) throw "instruction invariant";
-            siteIndex = operationIndex;
-            if (
-              op.kind !== "load" &&
-              op.kind !== "store" &&
-              op.kind !== "constant" &&
-              !(
-                op.kind === "c-memory" &&
-                (op.access.operation === "load" ||
-                  op.access.operation === "store" ||
-                  op.access.operation === "fits" ||
-                  op.access.operation === "available")
-              )
-            )
-              viewToken = -1;
-            else if (op.kind === "load") {
-              const index = viewSlots.get(op.slot) ?? -1,
-                known = index < 0 ? -1 : (viewSlotTokens[index] ?? -1);
-              if (known >= 0) viewValueTokens.set(op.id, known);
-              else if (index >= 0)
-                viewSlotTokens[index] = viewValueToken(op.id);
-            } else if (op.kind === "store") {
-              const index = viewSlots.get(op.slot) ?? -1;
-              if (index >= 0) viewSlotTokens[index] = viewValueToken(op.value);
-            }
-            if (recordOperations) beginOperation(b.id, operationIndex, op);
-            if (tracker !== undefined)
-              tracker.operation(
-                b.id,
-                operationIndex,
-                op.inline ?? -1,
-                instructions.length * 4,
-              );
-            span = { start: op.start, end: op.end };
+          const recordInstructionFacts = (op: IRInstruction): void => {
             if (op.kind === "load" && slotIntegerFacts !== undefined) {
               const mask = slotIntegerFacts[op.slot] ?? 0,
                 index = valueIds.intern(op.id),
@@ -9470,6 +9420,59 @@ function emitModuleForms(
                 }
               }
             }
+          };
+          for (
+            let operationIndex = 0;
+            operationIndex < b.instructions.length;
+            operationIndex++
+          ) {
+            if (
+              blockDiamond !== undefined &&
+              blockNested !== undefined &&
+              operationIndex === comparisonIndex
+            ) {
+              const nestedFloat =
+                fn.slots[blockDiamond.targetSlot] === "number" &&
+                integerSlots[blockDiamond.targetSlot] !== 1;
+              emitNestedSelect(blockNested, nestedFloat);
+            }
+            const op: IRInstruction | undefined =
+              b.instructions[operationIndex];
+            if (op === undefined) throw "instruction invariant";
+            siteIndex = operationIndex;
+            if (
+              op.kind !== "load" &&
+              op.kind !== "store" &&
+              op.kind !== "constant" &&
+              !(
+                op.kind === "c-memory" &&
+                (op.access.operation === "load" ||
+                  op.access.operation === "store" ||
+                  op.access.operation === "fits" ||
+                  op.access.operation === "available")
+              )
+            )
+              viewToken = -1;
+            else if (op.kind === "load") {
+              const index = viewSlots.get(op.slot) ?? -1,
+                known = index < 0 ? -1 : (viewSlotTokens[index] ?? -1);
+              if (known >= 0) viewValueTokens.set(op.id, known);
+              else if (index >= 0)
+                viewSlotTokens[index] = viewValueToken(op.id);
+            } else if (op.kind === "store") {
+              const index = viewSlots.get(op.slot) ?? -1;
+              if (index >= 0) viewSlotTokens[index] = viewValueToken(op.value);
+            }
+            if (recordOperations) beginOperation(b.id, operationIndex, op);
+            if (tracker !== undefined)
+              tracker.operation(
+                b.id,
+                operationIndex,
+                op.inline ?? -1,
+                instructions.length * 4,
+              );
+            span = { start: op.start, end: op.end };
+            recordInstructionFacts(op);
             // Binary operations keep an immediate operand deferred, and
             // integer slot stores write a deferred constant directly.
             if (
