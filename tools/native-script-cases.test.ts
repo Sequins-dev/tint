@@ -155,6 +155,109 @@ function after() {
 }
 if (after() !== after) throw 3;
 `,
+  // 4..7 register actuals, 8+ overflow actuals, lazy activation through cold
+  // property IC misses (getter/proxy observing caller, arguments, stack, and
+  // throwing), and GC survival of object arguments across cold calls.
+  String.raw`
+function sum4(a, b, c, d) { return (a || 0) + (b || 0) * 10 + (c || 0) * 100 + (d || 0) * 1000; }
+function sum7(a, b, c, d, e, f, g) {
+  return [a, b, c, d, e, f, g].map(function (x) { return x === undefined ? "u" : String(x); }).join(",");
+}
+function sum9(a, b, c, d, e, f, g, h, i) {
+  return [a, b, c, d, e, f, g, h, i].map(function (x) { return x === undefined ? "u" : String(x); }).join(",");
+}
+if (sum4(1, 2, 3, 4) !== 4321) throw 1;
+if (sum4(1, 2) !== 21) throw 2;
+if (sum7(1, 2, 3, 4, 5, 6, 7) !== "1,2,3,4,5,6,7") throw 3;
+if (sum7(1, 2, 3, 4) !== "1,2,3,4,u,u,u") throw 4;
+if (sum7(1, 2, 3, 4, 5, 6, 7, 8, 9) !== "1,2,3,4,5,6,7") throw 5;
+if (sum9(1, 2, 3, 4, 5, 6, 7, 8, 9) !== "1,2,3,4,5,6,7,8,9") throw 6;
+if (sum9(1, 2, 3, 4, 5, 6, 7) !== "1,2,3,4,5,6,7,u,u") throw 7;
+if (sum9(1, 2) !== "1,2,u,u,u,u,u,u,u") throw 8;
+
+// Lazy-activation cold IC miss: getter observes caller, arguments[0..7], stack,
+// and throws cleanly without corrupting nativeActivationTop.
+function lazyRead2(o, x) { return o.v + x; }
+function lazyRead6(o, a, b, c, d, e) { return o.v + a + b + c + d + e; }
+function lazyRead9(o, a, b, c, d, e, f, g, h) { return o.v + a + b + c + d + e + f + g + h; }
+var plain = { v: 10 };
+for (var w = 0; w < 4; w++) {
+  if (lazyRead2(plain, 5) !== 15) throw 9;
+  if (lazyRead6(plain, 1, 2, 3, 4, 5) !== 25) throw 10;
+  if (lazyRead9(plain, 1, 2, 3, 4, 5, 6, 7, 8) !== 46) throw 11;
+}
+var observed = {};
+var accessor = {
+  get v() {
+    observed.caller2 = lazyRead2.caller;
+    observed.args2 = lazyRead2.arguments ? lazyRead2.arguments.length + ":" + lazyRead2.arguments[1] : "none";
+    observed.stack = new Error("lazy").stack;
+    return 100;
+  }
+};
+function callLazy2() { return lazyRead2(accessor, 42); }
+if (callLazy2() !== 142) throw 12;
+if (observed.caller2 !== callLazy2) throw 13;
+if (observed.args2 !== "2:42") throw 14;
+if (!/at lazyRead2\n\s+at callLazy2/.test(observed.stack)) throw 15;
+if (lazyRead2.caller !== null || lazyRead2.arguments !== null) throw 16;
+
+var obs6 = {};
+var acc6 = {
+  get v() {
+    obs6.caller = lazyRead6.caller;
+    obs6.len = lazyRead6.arguments.length;
+    obs6.a5 = lazyRead6.arguments[5];
+    obs6.a6 = lazyRead6.arguments[6];
+    obs6.stack = new Error("lazy6").stack;
+    return 200;
+  }
+};
+function callLazy6() { return lazyRead6(acc6, 1, 2, 3, 4, 5, 66); }
+if (callLazy6() !== 215) throw 17;
+if (obs6.caller !== callLazy6 || obs6.len !== 7 || obs6.a5 !== 5 || obs6.a6 !== 66) throw 18;
+if (!/at lazyRead6\n\s+at callLazy6/.test(obs6.stack)) throw 19;
+
+var obs9 = {};
+var acc9 = {
+  get v() {
+    obs9.len = lazyRead9.arguments.length;
+    obs9.a8 = lazyRead9.arguments[8];
+    return 300;
+  }
+};
+if (lazyRead9(acc9, 1, 2, 3, 4, 5, 6, 7, 8) !== 336) throw 20;
+if (obs9.len !== 9 || obs9.a8 !== 8) throw 21;
+
+var throwingAcc = { get v() { throw new Error("boom"); } };
+function catchLazy() {
+  try { lazyRead6(throwingAcc, 1, 2, 3, 4, 5); } catch (e) {}
+  return new Error("after").stack;
+}
+var afterLazy = catchLazy();
+if (/at lazyRead6/.test(afterLazy) || !/at catchLazy/.test(afterLazy)) throw 22;
+
+// GC survival of freshly allocated objects passed in register actuals 0..6 and stack actuals 7..8.
+var gcAcc = {
+  get v() {
+    var junk = [];
+    for (var j = 0; j < 2000; j++) junk.push({ a: j, b: j + 1, c: "s" + j });
+    return junk.length;
+  }
+};
+function lazyGc6(o, a, b, c, d, e) {
+  var k = o.v;
+  return k + a.n + b.n + c.n + d.n + e.n;
+}
+function lazyGc9(o, a, b, c, d, e, f, g, h) {
+  var k = o.v;
+  return k + a.n + b.n + c.n + d.n + e.n + f.n + g.n + h.n;
+}
+for (var r = 0; r < 3; r++) {
+  if (lazyGc6(gcAcc, { n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }) !== 2015) throw 23;
+  if (lazyGc9(gcAcc, { n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }, { n: 6 }, { n: 7 }, { n: 8 }) !== 2036) throw 24;
+}
+`,
 ];
 
 const depth = 100000;
@@ -171,10 +274,18 @@ if (even(${depth}) !== true || odd(${depth}) !== false) throw 2;
   String.raw`"use strict";
 function four(a, b, c, n) { return n === 0 ? a + b + c : four(a, b, c, n - 1); }
 if (four(1, 2, 3, ${depth}) !== 6) throw 1;
+function seven(a, b, c, d, e, f, n) {
+  return n === 0 ? a + b + c + d + e + f : seven(a, b, c, d, e, f, n - 1);
+}
+if (seven(1, 2, 3, 4, 5, 6, ${depth}) !== 21) throw 4;
+function eight(a, b, c, d, e, f, g, n) {
+  return n === 0 ? a + b + c + d + e + f + g : eight(a, b, c, d, e, f, g, n - 1);
+}
+if (eight(1, 2, 3, 4, 5, 6, 7, ${depth}) !== 28) throw 5;
 function spread(n) { return n === 0 ? "done" : spread(...[n - 1]); }
 if (spread(${depth}) !== "done") throw 2;
-function wide(n) { return n === 0 ? 0 : narrow(1, 2, 3, n - 1); }
-function narrow(a, b, c, n) { return wide(n); }
+function wide(n) { return n === 0 ? 0 : narrow(1, 2, 3, 4, 5, 6, 7, n - 1); }
+function narrow(a, b, c, d, e, f, g, n) { return wide(n); }
 if (wide(${depth}) !== 0) throw 3;
 `,
   // Builtin and bound targets: fallback calls through their dispatch.
@@ -224,6 +335,10 @@ function counts() {
   out.push(describe(new Point(1, 2, 3)));
   out.push(describe(new Point(1, 2, 3, 4)));
   out.push(describe(new Point(1, 2, 3, 4, 5)));
+  out.push(describe(new Point(1, 2, 3, 4, 5, 6)));
+  out.push(describe(new Point(1, 2, 3, 4, 5, 6, 7)));
+  out.push(describe(new Point(1, 2, 3, 4, 5, 6, 7, 8)));
+  out.push(describe(new Point(1, 2, 3, 4, 5, 6, 7, 8, 9)));
   return out.join(",");
 }
 function collect() { return Array.prototype.slice.call(arguments).join("/"); }

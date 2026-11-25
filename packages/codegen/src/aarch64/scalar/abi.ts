@@ -23,8 +23,11 @@ export interface SignatureLayout {
 // x0/x1 retain the context and closure environment. x2 carries either
 // (argc * 2 + 1) or an aligned reference to an existing argument list.
 // x3 carries the completion area. x4–x9 hold callee, receiver and new.target.
+// x10–x15 hold the first three actuals (general pairs); d0–d7 hold actuals
+// 3..6 as 64-bit register pairs (only populated up to argc by callers).
 // x16/x17 are available for entry dispatch and x18 is reserved on Darwin.
 export const scriptFirstActualRegister = 10;
+export const scriptGpActualRegisterPairs = 3;
 /** A script entry's activation record (@tint/abi/host
  * nativeActivationRecordBytes): its count and register actuals follow it. */
 export const activationRecordBytes = nativeActivationRecordBytes;
@@ -32,7 +35,7 @@ export const activationFrameOffset = nativeActivationFrameOffset;
 export const activationCalleeOffset = nativeActivationCalleeOffset;
 export const activationCountOffset = nativeActivationCountOffset;
 export const activationArgumentsOffset = nativeActivationArgumentsOffset;
-export const scriptActualRegisterPairs = 3;
+export const scriptActualRegisterPairs = 7;
 export function scriptArgumentLayout(count: number): {
   readonly registerArguments: number;
   readonly stackBytes: number;
