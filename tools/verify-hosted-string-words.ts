@@ -28,7 +28,7 @@ return 42;}`,
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 1048576,
     allocationCapacity: 65536,
     rootCapacity: 4096,

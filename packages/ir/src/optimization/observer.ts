@@ -36,6 +36,7 @@ export interface PassStatistics {
     | "select-array-access"
     | "hoist-loop-invariants"
     | "bound-counted-loops"
+    | "version-nonzero-divisors"
     | "layout-blocks"
     | "inline-small-functions"
     | "remove-unreachable"

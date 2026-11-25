@@ -154,11 +154,11 @@ export function nativeAdmissionTimeout(requested: string | undefined): number {
   return runBudget(requested, 1800000, "admission");
 }
 /** Uniform execution budgets, recorded in reports rather than tailored to tests.
- * The copying collector reserves half the heap as evacuation space; large
- * generated Unicode inputs cannot fit in the former 4 MiB managed window. */
+ * The collector uses half the managed window; large generated Unicode inputs
+ * cannot fit in the former 4 MiB managed window. */
 export const nativeDebuggerEntitlement = "com.apple.security.get-task-allow";
 export const nativeTestResources = Object.freeze({
-  collector: nativeTestTarget.arch === "x86_64" ? "generational" : "copying",
+  collector: "generational",
   // The complete module/agent host plus the decorator runtime surface exceeds
   // the project compiler's 16K specialization budget even for a small batch.
   maxSpecializations: 32768,
@@ -174,16 +174,14 @@ export const nativeTestResources = Object.freeze({
   maxScriptCodeBytes: 2097152,
   // Entries that differ only in abstracted string-literal values share code.
   maxSharedScriptEntries: 256,
-  // The copying runtime collects the whole managed graph on every cycle, so
-  // its cost scales with the number of collections: a 256 MiB semispace
-  // halves them against 128 MiB (3M Script calls -11.8% instructions; see
-  // docs/results/native-test262-heap-512m-v1.json). The managed region is a
-  // reservation; resident memory grows only as both semispaces are used.
-  // 1 GiB is refused by the copying runtime's allocation metadata.
+  // A reservation: the generational runtime uses half of it, a 64 MiB nursery
+  // and a 192 MiB old prefix, and resident memory grows only as they are used
+  // (the former copying runtime's sizing is in
+  // docs/results/native-test262-heap-512m-v1.json).
   managedBytes: 536870912,
   // Per-buffer cap: 32 MiB covers staging/sm/extensions/dataview.js (20 MiB),
-  // the largest pinned allocation that must succeed, and stays within an
-  // eighth of a 256 MiB copying semispace of the 512 MiB managed heap.
+  // the largest pinned allocation that must succeed; buffers that large go
+  // directly to the 192 MiB old prefix.
   arrayBufferBytes: 33554432,
   // Shared mappings remain live through engine shutdown. The conversion matrix
   // alone needs 1,120 tiny blocks, or 17.5 MiB after native page rounding.
@@ -3225,9 +3223,10 @@ function createNativeImageRequest(
       debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
       threaded: agentProvider !== undefined,
       allowJit: true,
-      runtimeEntry: x64
-        ? ("initializeGenerationalRuntime" as const)
-        : ("initializeCopyingRuntime" as const),
+      // Every entry the host publishes comes from its unit linker, which
+      // rejects a unit whose barrier policy differs from the host's.
+      trustedExecutableCode: true,
+      runtimeEntry: "initializeGenerationalRuntime" as const,
       denseReferenceLists: false,
       maxSpecializations: nativeTestResources.maxSpecializations,
       managedBytes: nativeTestResources.managedBytes,

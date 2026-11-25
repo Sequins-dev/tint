@@ -238,19 +238,6 @@ export function moveMemory(
   throw "HOST_UNAVAILABLE";
 }
 
-/** Publish permanent control buffers for the optional inline allocation ABI.
- * state has eight uint32 words: top, limit, space base, reserved, then a reserved
- * native bitmap pointer at byte 16. Initially top/base are zero. limit is an
- * aligned semispace capacity; starts contains one bit per 16-byte object unit.
- * The caller owns both buffers outside the managed heap for the context lifetime.
- * Only top and space base may change after publication. Returns 0 or -1. */
-export function configureLinearAllocation(
-  state: Uint32Array,
-  starts: Uint32Array,
-): number {
-  throw "HOST_UNAVAILABLE";
-}
-
 /** Publish the nineteen-word generational allocation/barrier control block.
  * All buffers are permanently owned, disjoint control storage. Initial young
  * top and old top are zero; young base equals the aligned old-prefix capacity.

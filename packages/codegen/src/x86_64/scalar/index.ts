@@ -58,7 +58,7 @@ import {
   optionalNumberAbsentHigh,
   optionalNumberAbsentLow,
   scalarByteLength,
-  stableDescriptors,
+  trackedManagedWrites,
   verify,
   type Block,
   type FunctionIR,
@@ -360,6 +360,8 @@ export function emitModule(
   managed?: X64ManagedOptions,
   jitDebug: boolean = false,
   workerFunctions?: ReadonlySet<string>,
+  /** See trustedExecutableCode in the arm64 emitter's options. */
+  trustedExecutableCode: boolean = false,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -3800,7 +3802,10 @@ export function emitModule(
   }
 
   try {
-    if (generational && !stableDescriptors(module))
+    if (
+      generational &&
+      !trackedManagedWrites(module, undefined, trustedExecutableCode)
+    )
       fail(
         "INVALID_IR",
         "generational mutator requires tracked managed writes",

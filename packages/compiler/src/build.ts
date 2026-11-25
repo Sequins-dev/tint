@@ -167,7 +167,18 @@ export interface BuildRequest extends ModuleRequest {
   }[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   readonly allowDebugger?: boolean;
+  /** Grants the executable-memory host capabilities (publishing and calling
+   * code at run time). */
   readonly allowJit?: boolean;
+  /** A trust boundary for run-time code (docs/native-code-loading.md,
+   * "Trusted executable code"). Setting it asserts that every executable entry
+   * the image calls was produced by its own unit linker, whose policy check
+   * rejects a unit compiled with a different `generationalBarriers` setting
+   * than the image; that check is what upholds the generational write proof
+   * for published code. Only allowJit images may set it, and only when they
+   * publish nothing but linker output (the Test262 host). Without it the
+   * generational mutator rejects executable calls. */
+  readonly trustedExecutableCode?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   readonly inlineAllocation?: boolean;
@@ -237,10 +248,7 @@ export interface BuildRequest extends ModuleRequest {
   readonly allocatorModule: string;
   readonly runtimeModule: string;
   /** Linux x86-64 selects its bounded, non-collecting runtime when omitted. */
-  readonly runtimeEntry?:
-    | "initializeRuntime"
-    | "initializeCopyingRuntime"
-    | "initializeGenerationalRuntime";
+  readonly runtimeEntry?: "initializeRuntime" | "initializeGenerationalRuntime";
   readonly memoryModule: string;
   readonly identifier: string;
   readonly managedBytes: number;
@@ -496,6 +504,14 @@ export function compileX64Program(
         message: "the JIT debug interface requires allowJit",
       },
     };
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return {
+      ok: false,
+      error: {
+        stage: "startup",
+        message: "trustedExecutableCode requires allowJit",
+      },
+    };
   if (request.stackTraces === true || request.heapIntrospection === true)
     return {
       ok: false,
@@ -543,7 +559,7 @@ export function compileX64Program(
 
   let runtime: CompiledX64Runtime | undefined;
   if (generational) {
-    const invalid = movingWorkspaceError(request, true);
+    const invalid = generationalWorkspaceError(request);
     if (invalid !== undefined)
       return {
         ok: false,
@@ -652,6 +668,7 @@ export function compileX64Program(
       generational,
       forceFarReach,
       jitDebugInterface: request.jitDebugInterface === true,
+      trustedExecutableCode: request.trustedExecutableCode === true,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
       nodeWorkerLibrary: request.nodeWorkerLibrary === true,
@@ -1155,16 +1172,11 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
     }
   return ordered;
 }
-function movingWorkspaceError(
-  request: BuildRequest,
-  generational: boolean,
-): string | undefined {
-  // Both moving collectors require a start bitmap for the semispace.
-  // Generational collection also needs old-space mark bytes.
-  // Reject invalid workspaces before runtime initialization can throw.
-  const capacity = generational
-      ? Math.floor(request.managedBytes / 1024) * 512
-      : Math.floor(request.managedBytes / 32) * 16,
+function generationalWorkspaceError(request: BuildRequest): string | undefined {
+  // Generational collection requires start/live/forwarding metadata and
+  // old-space mark bytes. Reject invalid workspaces before runtime
+  // initialization can throw.
+  const capacity = Math.floor(request.managedBytes / 1024) * 512,
     // One start bit per 8-byte allocation granule.
     units = capacity / 8,
     requiredWords = Math.ceil(units / 32),
@@ -1174,22 +1186,18 @@ function movingWorkspaceError(
       Math.max(512, Math.floor(capacity / 2048) * 512),
     ),
     // One dirty bit per granule, eight per mark byte.
-    requiredMarks = generational
-      ? Math.ceil((capacity - youngCapacity) / 64)
-      : 0;
+    requiredMarks = Math.ceil((capacity - youngCapacity) / 64);
   if (
     !Number.isSafeInteger(request.managedBytes) ||
     request.managedBytes > 0xffffffff ||
-    capacity < (generational ? 1024 : 16) ||
+    capacity < 1024 ||
     !Number.isSafeInteger(request.allocationCapacity) ||
     request.allocationCapacity < Math.max(1, requiredMarks) ||
     // Generational metadata also holds the major's live bits and chunk
     // offsets beside the start bits.
-    request.allocationCapacity * 3 + 96 < (generational ? 3 : 1) * requiredWords
+    request.allocationCapacity * 3 + 96 < 3 * requiredWords
   )
-    return generational
-      ? "generational runtime allocation metadata cannot cover forwarding and old-space marks"
-      : "copying runtime allocation metadata cannot cover the managed semispace";
+    return "generational runtime allocation metadata cannot cover forwarding and old-space marks";
   return undefined;
 }
 
@@ -1220,9 +1228,11 @@ export function compileMacOSProgram(
       "host-binding",
       "executable-memory capabilities require allowJit",
     );
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return compileFailure("startup", "trustedExecutableCode requires allowJit");
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
-  if (request.runtimeEntry === "initializeCopyingRuntime" || generational) {
-    const invalid = movingWorkspaceError(request, generational);
+  if (generational) {
+    const invalid = generationalWorkspaceError(request);
     if (invalid !== undefined) return compileFailure("memory-policy", invalid);
   }
   const share = request.runtimeUnits;
@@ -1249,12 +1259,9 @@ export function compileMacOSProgram(
       managedSurfaces: request.managedSurfaces ?? [],
       closedProgram: true,
       denseReferenceLists: request.denseReferenceLists ?? false,
-      linearAllocation:
-        request.inlineAllocation ??
-        (request.runtimeEntry === "initializeCopyingRuntime" ||
-          request.runtimeEntry === "initializeGenerationalRuntime"),
-      generationalBarriers:
-        request.runtimeEntry === "initializeGenerationalRuntime",
+      linearAllocation: request.inlineAllocation ?? generational,
+      generationalBarriers: generational,
+      trustedExecutableCode: request.trustedExecutableCode === true,
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,
       stackTraces: request.stackTraces === true,
@@ -1393,11 +1400,6 @@ function compileRuntimeUnits(
       module: request.memoryModule,
       name: "configureGenerationalAllocation",
       operation: "generational-state",
-    },
-    {
-      module: request.memoryModule,
-      name: "configureLinearAllocation",
-      operation: "allocation-state",
     },
     {
       module: request.memoryModule,
@@ -2283,9 +2285,7 @@ function collectorSignpostNames(
       metrics: true,
       force: 0,
     },
-    { name: root + "copying.ts:collect", interval: "gc.collect" },
-    // Serial evacuation: generational minors pass their remembered set;
-    // the copying runtime's whole-space copies (majors) pass none.
+    // Serial evacuation: generational minors pass their remembered set.
     {
       name: method(cheney, "createCheneyCollector", "collect"),
       interval: "gc.minor",

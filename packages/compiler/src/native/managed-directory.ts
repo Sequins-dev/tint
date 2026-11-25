@@ -53,6 +53,9 @@ export interface ManagedSurfaceLayoutRuntime {
 }
 export interface ManagedSurfacePhysicalFacts {
   readonly runtimes?: readonly ManagedRuntimeProvider[];
+  /** The publishing image's generational barrier policy; code linked against
+   * its surface must have been compiled with the same one. */
+  readonly generationalBarriers?: boolean;
   readonly records: readonly {
     readonly alias: string;
     readonly layout: RecordLayout;

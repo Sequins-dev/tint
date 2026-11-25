@@ -47,7 +47,7 @@ export function verifyLargeImage(fullSize: boolean): void {
       {
         managedBytes: 4194304,
         allocationCapacity: 65536,
-        runtimeEntry: "initializeCopyingRuntime",
+        runtimeEntry: "initializeGenerationalRuntime",
         hostBindings: [
           {
             module: memory,

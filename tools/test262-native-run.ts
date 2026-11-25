@@ -239,6 +239,9 @@ try {
         process.env.TINT_NATIVE_SERVICE_CACHE ??
           ".tint-bootstrap/native-service-cache",
       ),
+      {
+        generationalBarriers: nativeTestResources.collector === "generational",
+      },
     );
   }
   const nativeLinkingIdentity =

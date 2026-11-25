@@ -1,30 +1,18 @@
 // Native node:os (docs/native-ffi.md, "Foreign memory"): userInfo,
 // networkInterfaces and loadavg read memory C owns through tint:ffi/unsafe
-// views and match Node on this machine, under the generational and copying
-// collectors, executed under LLDB; and each target's node:os module fails to
-// resolve on the other target. Kept apart from native-ffi.test.ts: these
-// programs link the JavaScript object surface (24 MB images, minutes to build
-// on the CI runner), so the gate can shard them separately.
+// views and match Node on this machine, executed under LLDB; and each target's
+// node:os module fails to resolve on the other target. Kept apart from
+// native-ffi.test.ts: these programs link the JavaScript object surface (24 MB
+// images, minutes to build on the CI runner), so the gate can shard them
+// separately.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
-import { nativeFixtureTarget } from "./native-host-target.ts";
 import { verifyOsFixture } from "./native-os-fixtures.ts";
 
-test("node:os userInfo, networkInterfaces and loadavg match Node (generational)", () => {
+test("node:os userInfo, networkInterfaces and loadavg match Node", () => {
   verifyOsFixture();
 });
-test(
-  "node:os userInfo, networkInterfaces and loadavg match Node (copying)",
-  {
-    skip:
-      nativeFixtureTarget().arch === "x86_64" &&
-      "linux-x86_64 does not implement initializeCopyingRuntime",
-  },
-  () => {
-    verifyOsFixture("initializeCopyingRuntime");
-  },
-);
 /** Build `module` as node:os for `target` in a child process (the fixture
  * target is fixed when hosted-fixture.ts loads). */
 function buildOsFor(module: string, target: string) {

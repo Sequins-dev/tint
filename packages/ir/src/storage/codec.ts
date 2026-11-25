@@ -36,7 +36,7 @@ import {
  * format"). Every field is written in a fixed order; optional fields are
  * flagged, so decoding restores exactly the fields that were present
  * (absent and undefined are the same field). */
-export const packedFunctionVersion = 1;
+export const packedFunctionVersion = 2;
 /** Values the encoding refers to by index instead of serializing: foreign
  * descriptors (their vocabulary belongs to the FFI), host operations and
  * operator spellings. All are bounded by the language and the program's
@@ -1874,6 +1874,9 @@ const importFlag = 1,
   integerSlotsFlag = 32,
   debugFlag = 64,
   scriptEntryFlag = 128;
+/** Second function flags byte. */
+const safeIntegerSlotsFlag = 1,
+  nonzeroSlotsFlag = 2;
 /** Appends one function record to `writer`. */
 export function encodeFunction(
   writer: ByteWriter,
@@ -1884,6 +1887,9 @@ export function encodeFunction(
     closure = fn.closureEnvironment,
     environment = fn.environment,
     integerSlots = fn.integerSlots,
+    safeIntegerSlots = fn.safeIntegerSlots,
+    safeIntegerBounds = fn.safeIntegerBounds,
+    nonzeroSlots = fn.nonzeroSlots,
     debug = fn.debug;
   writer.spanBase = 0;
   writeByte(writer, packedFunctionVersion);
@@ -1897,6 +1903,11 @@ export function encodeFunction(
       bit(integerSlots !== undefined, integerSlotsFlag) +
       bit(debug !== undefined, debugFlag) +
       bit(fn.scriptEntry === true, scriptEntryFlag),
+  );
+  writeByte(
+    writer,
+    bit(safeIntegerSlots !== undefined, safeIntegerSlotsFlag) +
+      bit(nonzeroSlots !== undefined, nonzeroSlotsFlag),
   );
   writeSigned(writer, fn.id);
   writeString(writer, fn.name);
@@ -1912,6 +1923,19 @@ export function encodeFunction(
     writeByte(writer, scalarCode(type));
   }
   if (integerSlots !== undefined) writeList(writer, integerSlots);
+  if (safeIntegerSlots !== undefined) {
+    const bounds = safeIntegerBounds ?? [];
+    if (bounds.length !== safeIntegerSlots.length)
+      throw "packed IR safe integer slot invariant";
+    writeList(writer, safeIntegerSlots);
+    // Bounds reach 2^53 - 1, beyond writeSigned's range.
+    for (let index = 0; index < bounds.length; index++) {
+      const bound = bounds[index];
+      if (bound === undefined) throw "packed IR safe integer bound invariant";
+      writeUnsigned(writer, bound);
+    }
+  }
+  if (nonzeroSlots !== undefined) writeList(writer, nonzeroSlots);
   writeUnsigned(writer, fn.blocks.length);
   for (const block of fn.blocks) {
     if (block === undefined) throw "packed IR block invariant";
@@ -1930,6 +1954,7 @@ export function decodeFunction(
   if (readByte(reader) !== packedFunctionVersion)
     throw "packed IR version mismatch";
   const flags = readByte(reader),
+    moreFlags = readByte(reader),
     id = readSigned(reader),
     name = readString(reader),
     returns = returnType(readByte(reader)),
@@ -1949,6 +1974,15 @@ export function decodeFunction(
   for (let index = 0; index < slotCount; index++)
     slots.push(scalarType(readByte(reader)));
   const integerSlots = flagged(flags, integerSlotsFlag)
+    ? readList(reader)
+    : undefined;
+  const safeIntegerSlots = flagged(moreFlags, safeIntegerSlotsFlag)
+    ? readList(reader)
+    : undefined;
+  const safeIntegerBounds: number[] = [];
+  for (let index = 0; index < (safeIntegerSlots?.length ?? 0); index++)
+    safeIntegerBounds.push(readUnsigned(reader));
+  const nonzeroSlots = flagged(moreFlags, nonzeroSlotsFlag)
     ? readList(reader)
     : undefined;
   const blockCount = readUnsigned(reader);
@@ -1973,6 +2007,9 @@ export function decodeFunction(
   if (closureEnvironment !== undefined) fn = { ...fn, closureEnvironment };
   if (environment !== undefined) fn = { ...fn, environment };
   if (integerSlots !== undefined) fn = { ...fn, integerSlots };
+  if (safeIntegerSlots !== undefined)
+    fn = { ...fn, safeIntegerSlots, safeIntegerBounds };
+  if (nonzeroSlots !== undefined) fn = { ...fn, nonzeroSlots };
   if (debug !== undefined) fn = { ...fn, debug };
   return fn;
 }

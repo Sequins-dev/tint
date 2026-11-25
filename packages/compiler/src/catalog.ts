@@ -2747,10 +2747,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
-      id: "packages/native-runtime/src/copying.ts",
-      packageId: "native-runtime",
-    },
-    {
       id: "packages/native-runtime/src/event-loop-reactor.ts",
       packageId: "native-runtime",
     },

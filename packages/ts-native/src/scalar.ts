@@ -1516,6 +1516,239 @@ export function lowerFunction(
     jump(head.id, node);
     current = exit;
   }
+  /** `String(value)` on a general slot (`unknown` or general call result):
+   * converts primitives, unexposed native errors and BigInt directly, and
+   * delegates exposed error views, Symbols and realm objects to the program
+   * realm's stringConstructor when linked (otherwise traps explicitly). */
+  function unknownToString(slot: number, node: Expression): number {
+    const result = temporary("string"),
+      done = block();
+    let candidate = slot;
+    const helper = dynamicObjects?.stringConstructor;
+    if (realmErrors !== undefined && helper !== undefined) {
+      const exposed = exposedError(slot, node),
+        attached = block(),
+        unexposed = block();
+      candidate = exposed;
+      choose(
+        truth(realmErrorOperation(exposed, "attached", node), node),
+        attached,
+        unexposed,
+        node,
+      );
+      current = attached;
+      store(result, load(dynamicResult(helper, [exposed], node), node), node);
+      jump(done.id, node);
+      current = unexposed;
+    }
+    const isString = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isString,
+      value: load(slot, node),
+      type: "string",
+      start: node.start,
+      end: node.end,
+    });
+    const asString = block(),
+      notString = block();
+    choose(isString, asString, notString, node);
+    current = asString;
+    store(result, coerce(load(slot, node), "string", node), node);
+    jump(done.id, node);
+    current = notString;
+
+    const isNumber = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isNumber,
+      value: load(slot, node),
+      type: "number",
+      start: node.start,
+      end: node.end,
+    });
+    const asNumber = block(),
+      notNumber = block();
+    choose(isNumber, asNumber, notNumber, node);
+    current = asNumber;
+    const numberValue = save(
+      coerce(load(slot, node), "number", node),
+      "number",
+      node,
+    );
+    store(result, load(stringOperand(numberValue, node), node), node);
+    jump(done.id, node);
+    current = notNumber;
+
+    const isBoolean = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isBoolean,
+      value: load(slot, node),
+      type: "boolean",
+      start: node.start,
+      end: node.end,
+    });
+    const asBoolean = block(),
+      notBoolean = block();
+    choose(isBoolean, asBoolean, notBoolean, node);
+    current = asBoolean;
+    const booleanValue = save(
+      coerce(load(slot, node), "boolean", node),
+      "boolean",
+      node,
+    );
+    store(result, load(stringOperand(booleanValue, node), node), node);
+    jump(done.id, node);
+    current = notBoolean;
+
+    const isUndefined = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isUndefined,
+      value: load(slot, node),
+      type: "undefined",
+      start: node.start,
+      end: node.end,
+    });
+    const asUndefined = block(),
+      notUndefined = block();
+    choose(isUndefined, asUndefined, notUndefined, node);
+    current = asUndefined;
+    store(result, load(errorString("undefined", node), node), node);
+    jump(done.id, node);
+    current = notUndefined;
+
+    const isNull = nextValue++;
+    emit({
+      kind: "general-is",
+      id: isNull,
+      value: load(slot, node),
+      type: "null",
+      start: node.start,
+      end: node.end,
+    });
+    const asNull = block(),
+      notNull = block();
+    choose(isNull, asNull, notNull, node);
+    current = asNull;
+    store(result, load(errorString("null", node), node), node);
+    jump(done.id, node);
+    current = notNull;
+
+    const asError = block(),
+      notError = block();
+    choose(
+      nativeErrorTest(load(slot, node), "Error", node),
+      asError,
+      notError,
+      node,
+    );
+    current = asError;
+    const errorRef = save(
+      coerce(load(slot, node), "reference", node),
+      "reference",
+      node,
+    );
+    const name = nativeErrorProperty(errorRef, "name", node),
+      message = nativeErrorProperty(errorRef, "message", node),
+      nameLength = nextValue++,
+      messageLength = nextValue++;
+    emit({
+      kind: "string-length",
+      id: nameLength,
+      string: load(name, node),
+      start: node.start,
+      end: node.end,
+    });
+    const emptyName = block(),
+      withName = block();
+    choose(
+      load(
+        binarySlot(
+          "===",
+          save(nameLength, "number", node),
+          numberSlot(0, node),
+          node,
+        ),
+        node,
+      ),
+      emptyName,
+      withName,
+      node,
+    );
+    current = emptyName;
+    store(result, load(message, node), node);
+    jump(done.id, node);
+    current = withName;
+    emit({
+      kind: "string-length",
+      id: messageLength,
+      string: load(message, node),
+      start: node.start,
+      end: node.end,
+    });
+    const emptyMessage = block(),
+      withMessage = block();
+    choose(
+      load(
+        binarySlot(
+          "===",
+          save(messageLength, "number", node),
+          numberSlot(0, node),
+          node,
+        ),
+        node,
+      ),
+      emptyMessage,
+      withMessage,
+      node,
+    );
+    current = emptyMessage;
+    store(result, load(name, node), node);
+    jump(done.id, node);
+    current = withMessage;
+    const prefix = save(
+      emitStringConcat(name, errorString(": ", node), node),
+      "string",
+      node,
+    );
+    store(result, emitStringConcat(prefix, message, node), node);
+    jump(done.id, node);
+    current = notError;
+
+    const bigintRecord = info(node).bigIntRecord;
+    if (bigints !== undefined && bigintRecord !== undefined) {
+      const asBigInt = block(),
+        notBigInt = block();
+      choose(
+        errorRecordTest(load(slot, node), bigintRecord, node),
+        asBigInt,
+        notBigInt,
+        node,
+      );
+      current = asBigInt;
+      const bigintRef = save(
+        coerce(load(slot, node), "reference", node),
+        "reference",
+        node,
+      );
+      const text = runtimeCall(bigIntRuntime().toString, [bigintRef], node);
+      if (text === undefined) throw "BigInt string conversion invariant";
+      store(result, load(text, node), node);
+      jump(done.id, node);
+      current = notBigInt;
+    }
+
+    if (helper !== undefined) {
+      store(result, load(dynamicResult(helper, [candidate], node), node), node);
+      jump(done.id, node);
+    } else {
+      finish({ kind: "trap", start: node.start, end: node.end });
+    }
+    current = done;
+    return result;
+  }
   function stringOperand(slot: number, node: Expression): number {
     if (slots[slot] === "string") return slot;
     if (speculativeSlots[slot] === 1) {
@@ -7267,6 +7500,7 @@ export function lowerFunction(
             return save(id, "string", node);
           }
           if (input === undefined) throw "String argument invariant";
+          if (slots[input] === "general") return unknownToString(input, node);
           return stringOperand(input, node);
         }
         if (

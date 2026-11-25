@@ -40,7 +40,6 @@ export type HostOperation =
    * the heap's capacity), so a JavaScript boundary turns it into a RangeError
    * exactly as it does an overflow. Allocates nothing. */
   | "engine-range-error"
-  | "allocation-state"
   | "generational-state"
   | "external-memory-configure"
   | "external-memory-register"
@@ -172,8 +171,6 @@ export function hostParameters(
       return ["Uint32Array"];
     case "sha256-rounds":
       return ["Uint32Array", "Uint32Array", "Uint32Array"];
-    case "allocation-state":
-      return ["Uint32Array", "Uint32Array"];
     case "argument-length":
       return ["number"];
     case "argument-copy":

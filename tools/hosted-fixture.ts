@@ -69,7 +69,10 @@ import {
   nativeScriptCallsEnabled,
 } from "./native-host-target.ts";
 import { writeNodeExecutable } from "./node-file-host.ts";
-import { buildNativeFixture } from "./gate/native-fixture.ts";
+import {
+  buildNativeFixture,
+  type NativeFixtureBuild,
+} from "./gate/native-fixture.ts";
 import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 /** Build target and execution runner are selected independently. */
@@ -454,6 +457,9 @@ function buildHostedFixture(
   additionalRuntimes: readonly RuntimeSource[] = [],
   options: {
     readonly allowJit?: boolean;
+    /** BuildRequest.trustedExecutableCode (a trust boundary; see
+     * docs/native-code-loading.md). */
+    readonly trustedExecutableCode?: boolean;
     readonly threaded?: boolean;
     readonly threadExitPipe?: boolean;
     readonly workerModules?: readonly string[];
@@ -519,7 +525,7 @@ function buildHostedFixture(
     managedBytes: 4194304,
     allocationCapacity: 65536,
   },
-): string {
+): string | NativeFixtureBuild {
   const bytes = new TextEncoder().encode(text);
   const functionFallback =
     options.functionFallback === true && options.validateSource !== undefined;
@@ -539,6 +545,8 @@ function buildHostedFixture(
   const eventLoop =
     (options.nodeEventLoop === true || workerImage !== undefined) &&
     general !== undefined;
+  /** The general fallback's reason, when the program took it. */
+  let generalFallback: string | undefined;
   let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
   let fallbackClasses: readonly GeneralFallbackClass[] | undefined;
   const replaySources = options.replaySources;
@@ -778,6 +786,7 @@ function buildHostedFixture(
         : undefined,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
+    trustedExecutableCode: options.trustedExecutableCode ?? false,
     runtimes: [
       ...request.runtimes,
       ...additionalRuntimes,
@@ -862,6 +871,7 @@ function buildHostedFixture(
               : {}),
           },
           onGeneralFallback: (modules: readonly string[], reason: string) => {
+            generalFallback = reason;
             options.onGeneralFallback?.(modules, reason);
             process.stderr.write(
               "general fallback for " +
@@ -1041,7 +1051,7 @@ function buildHostedFixture(
     ) + "\n",
     { flag: "wx" },
   );
-  return path;
+  return generalFallback === undefined ? path : { path, generalFallback };
 }
 
 export function prepareHostedFixture(

@@ -397,14 +397,101 @@ test("a counter running to a string's length inclusive stays a 32-bit slot", () 
   assert.deepEqual(select(fn).integerSlots, [1]);
 });
 
+test("safe integer slots carry the largest magnitude written", () => {
+  // Slot 0 holds a product of a 32-bit integer slot and 2^40, or -5; slot 1
+  // is a 32-bit integer slot; slot 2 holds 2^53, slot 3 -0 and slot 4 a
+  // fraction, none of them safe integers other than -0. Remainders make
+  // every slot relevant.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "wide",
+    exported: true,
+    parameters: [],
+    slots: ["number", "number", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 7, ...span },
+          { kind: "store", slot: 1, value: 0, ...span },
+          { kind: "load", id: 1, slot: 1, ...span },
+          { kind: "constant", id: 2, value: 1099511627776, ...span },
+          { kind: "binary", id: 3, operator: "*", left: 1, right: 2, ...span },
+          { kind: "store", slot: 0, value: 3, ...span },
+          { kind: "constant", id: 4, value: -5, ...span },
+          { kind: "store", slot: 0, value: 4, ...span },
+          { kind: "constant", id: 5, value: 9007199254740992, ...span },
+          { kind: "store", slot: 2, value: 5, ...span },
+          { kind: "constant", id: 6, value: -0, ...span },
+          { kind: "store", slot: 3, value: 6, ...span },
+          { kind: "constant", id: 7, value: 0.5, ...span },
+          { kind: "store", slot: 4, value: 7, ...span },
+          { kind: "load", id: 8, slot: 0, ...span },
+          { kind: "load", id: 9, slot: 2, ...span },
+          { kind: "load", id: 10, slot: 3, ...span },
+          { kind: "load", id: 11, slot: 4, ...span },
+          { kind: "binary", id: 12, operator: "%", left: 8, right: 9, ...span },
+          {
+            kind: "binary",
+            id: 13,
+            operator: "%",
+            left: 10,
+            right: 11,
+            ...span,
+          },
+          {
+            kind: "binary",
+            id: 14,
+            operator: "%",
+            left: 12,
+            right: 13,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 14, ...span },
+      },
+    ],
+  };
+  const selected = select(fn);
+  assert.deepEqual(selected.integerSlots, [1]);
+  assert.deepEqual(selected.safeIntegerSlots, [0]);
+  assert.deepEqual(selected.safeIntegerBounds, [7696581394432]);
+  // A rerun replaces the facts whole: once slot 0's writes fit 32 bits it
+  // is an integer slot only.
+  const narrowed = select({
+    ...selected,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 7, ...span },
+          { kind: "store", slot: 0, value: 0, ...span },
+          { kind: "load", id: 8, slot: 0, ...span },
+          { kind: "binary", id: 9, operator: "%", left: 8, right: 0, ...span },
+        ],
+        terminator: { kind: "return", value: 9, ...span },
+      },
+    ],
+  });
+  assert.deepEqual(narrowed.integerSlots, [0]);
+  assert.deepEqual(narrowed.safeIntegerSlots, []);
+  assert.deepEqual(narrowed.safeIntegerBounds, []);
+});
+
 /** `sum(s, t)`: i = start; [n = s.length;] while (i <op> bound) { [late
  * write]; total += read.charCodeAt(i); i++ }. Slots: 0 s, 1 t, 2 i, 3
  * total, 4 n. */
 function codeUnitLoop(options: {
   readonly start?: number;
   readonly operator?: "<" | "<=" | ">";
-  /** "length": compare with s.length directly; "hoisted": with slot n. */
-  readonly bound?: "length" | "hoisted";
+  /** "length": compare with s.length directly; "hoisted": with slot n;
+   * "stored": with slot n, the length of a fresh string stored to s (as
+   * LICM leaves a call result's length); "restored": like "stored", but s
+   * is stored again after its length was taken; "copied": with slot n2, a
+   * copy of slot n (as counted-loop preheaders copy hoisted lengths). */
+  readonly bound?: "length" | "hoisted" | "stored" | "restored" | "copied";
   /** Which string the body reads. */
   readonly read?: 0 | 1;
   /** A write in the body before the read: to i or to s. */
@@ -412,7 +499,9 @@ function codeUnitLoop(options: {
 }): FunctionIR {
   const start = options.start ?? 0,
     operator = options.operator ?? "<",
-    hoisted = options.bound === "hoisted";
+    stored = options.bound === "stored" || options.bound === "restored",
+    copied = options.bound === "copied",
+    hoisted = options.bound === "hoisted" || stored || copied;
   const late: Instruction[] =
     options.write === "index"
       ? [
@@ -437,7 +526,7 @@ function codeUnitLoop(options: {
   const comparison: Instruction[] = [
     { kind: "load", id: 10, slot: 2, ...span },
     ...(hoisted
-      ? [{ kind: "load" as const, id: 11, slot: 4, ...span }]
+      ? [{ kind: "load" as const, id: 11, slot: copied ? 5 : 4, ...span }]
       : [
           { kind: "load" as const, id: 12, slot: 0, ...span },
           { kind: "string-length" as const, id: 11, string: 12, ...span },
@@ -451,7 +540,7 @@ function codeUnitLoop(options: {
     name: "sum",
     exported: true,
     parameters: [0, 1],
-    slots: ["string", "string", "number", "number", "number"],
+    slots: ["string", "string", "number", "number", "number", "number"],
     returnType: "number",
     entry: 0,
     blocks: [
@@ -462,13 +551,37 @@ function codeUnitLoop(options: {
           { kind: "store", slot: 2, value: 0, ...span },
           { kind: "constant", id: 1, value: 0, ...span },
           { kind: "store", slot: 3, value: 1, ...span },
-          ...(hoisted
+          ...(stored
             ? [
-                { kind: "load" as const, id: 2, slot: 0, ...span },
-                { kind: "string-length" as const, id: 3, string: 2, ...span },
+                {
+                  kind: "string-literal" as const,
+                  id: 5,
+                  value: "abcdef",
+                  ...span,
+                },
+                { kind: "store" as const, slot: 0, value: 5, ...span },
+                { kind: "string-length" as const, id: 3, string: 5, ...span },
                 { kind: "store" as const, slot: 4, value: 3, ...span },
+                ...(options.bound === "restored"
+                  ? [
+                      { kind: "load" as const, id: 6, slot: 1, ...span },
+                      { kind: "store" as const, slot: 0, value: 6, ...span },
+                    ]
+                  : []),
               ]
-            : []),
+            : hoisted
+              ? [
+                  { kind: "load" as const, id: 2, slot: 0, ...span },
+                  { kind: "string-length" as const, id: 3, string: 2, ...span },
+                  { kind: "store" as const, slot: 4, value: 3, ...span },
+                  ...(copied
+                    ? [
+                        { kind: "load" as const, id: 7, slot: 4, ...span },
+                        { kind: "store" as const, slot: 5, value: 7, ...span },
+                      ]
+                    : []),
+                ]
+              : []),
         ],
         terminator: { kind: "jump", target: 1, ...span },
       },
@@ -548,6 +661,10 @@ test("code units indexed below their string's length are in bounds", () => {
   assert.equal(codeUnitInBounds(codeUnitLoop({})), true);
   assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "hoisted" })), true);
   assert.equal(codeUnitInBounds(codeUnitLoop({ operator: ">" })), true);
+  // The length of a string stored to its slot in the same block.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "stored" })), true);
+  // A copy of the slot holding the length.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "copied" })), true);
 });
 
 test("code units stay checked without the length relation", () => {
@@ -558,6 +675,8 @@ test("code units stay checked without the length relation", () => {
   // The index or the string changes after the comparison.
   assert.equal(codeUnitInBounds(codeUnitLoop({ write: "index" })), false);
   assert.equal(codeUnitInBounds(codeUnitLoop({ write: "string" })), false);
+  // The string slot is stored again after its length was taken.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "restored" })), false);
   // A negative index is below the length too.
   assert.equal(codeUnitInBounds(codeUnitLoop({ start: -1 })), false);
   assert.equal(

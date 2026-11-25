@@ -30,11 +30,8 @@ const available =
   process.arch === "arm64" &&
   spawnSync("lldb", ["--version"], { encoding: "utf8" }).status === 0;
 
-/** Builds the heap-tools fixture as a debug image for `runtimeEntry`. */
-function build(
-  name: string,
-  runtimeEntry: "initializeGenerationalRuntime" | "initializeCopyingRuntime",
-): string {
+/** Builds the heap-tools fixture as a debug image for the generational runtime. */
+function build(name: string): string {
   const saved = {
     debug: process.env.TINT_DEBUG_SYMBOLS,
     only: process.env.TINT_BUILD_ONLY,
@@ -45,7 +42,7 @@ function build(
     return verifyHostedFixture(fixtureSource, name, [], [], [], [], {
       managedBytes: 16777216,
       allocationCapacity: 1048576,
-      runtimeEntry,
+      runtimeEntry: "initializeGenerationalRuntime",
     });
   } finally {
     for (const [key, value] of [
@@ -111,10 +108,7 @@ testNativeLaunch(
   "a sampling limit armed below an in-flight young top sends the next allocation to the slow path",
   { skip: !available && "needs LLDB on arm64", timeout: 300000 },
   async (onAdmitted) => {
-    const image = build(
-      "heap-arm-inflight-generational",
-      "initializeGenerationalRuntime",
-    );
+    const image = build("heap-arm-inflight-generational");
     onAdmitted();
     try {
       const output = lldb.run(image, [
@@ -159,60 +153,6 @@ testNativeLaunch(
         output.split("\n").some((line) => line.startsWith('{"old"')),
         "the heap walks cleanly at the slow path",
       );
-    } finally {
-      rmSync(dirname(image), { recursive: true, force: true });
-    }
-  },
-);
-
-testNativeLaunch(
-  "a copying-runtime limit lowered below an in-flight top sends the next allocation to the slow path",
-  { skip: !available && "needs LLDB on arm64", timeout: 300000 },
-  async (onAdmitted) => {
-    const image = build(
-      "heap-arm-inflight-copying",
-      "initializeCopyingRuntime",
-    );
-    onAdmitted();
-    try {
-      const output = lldb.run(image, [
-        lldb.breakAtLine("fixture", chainLine),
-        lldb.launch,
-        lldb.python("assert " + lldb.stoppedExpression),
-        lldb.deleteBreakpoints,
-        breakInFlight,
-        lldb.resume,
-        // The copying state: word 0 the cursor, word 1 the limit (the
-        // semispace capacity, which the allocator keeps itself).
-        python(
-          stateWords +
-            `state = frame.FindRegister('x12').GetValueAsUnsigned()
-top = frame.FindRegister('x11').GetValueAsUnsigned()
-saved = word(state + 4)
-lldb.process.WriteMemory(state + 4, struct.pack('<I', top + 1), error)
-assert error.Success(), error
-globals()['tint_state'] = (state, saved)
-print('LOWERED top=%d limit=%d saved=%d' % (top, top + 1, saved))`,
-        ),
-        lldb.deleteBreakpoints,
-        lldb.breakAtSymbol(thunk),
-        lldb.resume,
-        assertAt(thunk),
-        python(
-          stateWords +
-            `state, saved = globals()['tint_state']
-cursor = word(state)
-assert cursor <= saved, (cursor, saved)
-print('AT SLOW PATH cursor=%d capacity=%d' % (cursor, saved))
-lldb.process.WriteMemory(state + 4, struct.pack('<I', saved), error)
-assert error.Success(), error`,
-        ),
-        lldb.deleteBreakpoints,
-        lldb.resume,
-        lldb.assertExit(42),
-      ]);
-      assert.match(output, /LOWERED top=\d+ limit=\d+ saved=\d+/);
-      assert.match(output, /AT SLOW PATH cursor=\d+ capacity=\d+/);
     } finally {
       rmSync(dirname(image), { recursive: true, force: true });
     }

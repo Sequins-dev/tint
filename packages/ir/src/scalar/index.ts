@@ -97,6 +97,7 @@ export {
   dataflowRecordGuards,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
 } from "./record-facts.ts";
 export {
   deadSlotsAtEntry,
@@ -614,6 +615,45 @@ export function verify(
         )
           fail("GRAPH", "integer slots must be ascending local number slots");
         previousInteger = slot ?? previousInteger;
+      }
+      const safeSlots = f.safeIntegerSlots ?? [],
+        safeBounds = f.safeIntegerBounds ?? [];
+      if (safeSlots.length !== safeBounds.length)
+        fail("GRAPH", "safe integer slots need one bound each");
+      let previousSafe = -1;
+      for (let index = 0; index < safeSlots.length; index++) {
+        const slot = safeSlots[index],
+          bound = safeBounds[index];
+        if (
+          slot === undefined ||
+          !natural(slot) ||
+          slot <= previousSafe ||
+          f.slots[slot] !== "number" ||
+          params[slot] === 1 ||
+          slot === receiverSlot ||
+          (f.integerSlots ?? []).includes(slot) ||
+          bound === undefined ||
+          !Number.isSafeInteger(bound) ||
+          bound < 0
+        )
+          fail(
+            "GRAPH",
+            "safe integer slots must be ascending local number slots with safe bounds",
+          );
+        previousSafe = slot ?? previousSafe;
+      }
+      let previousNonzero = -1;
+      for (const slot of f.nonzeroSlots ?? []) {
+        if (
+          slot === undefined ||
+          !natural(slot) ||
+          slot <= previousNonzero ||
+          f.slots[slot] !== "number" ||
+          params[slot] === 1 ||
+          slot === receiverSlot
+        )
+          fail("GRAPH", "nonzero slots must be ascending local number slots");
+        previousNonzero = slot ?? previousNonzero;
       }
       if (f.import !== undefined) {
         if (

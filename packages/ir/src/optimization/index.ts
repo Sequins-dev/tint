@@ -62,9 +62,10 @@ import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
 import { hoistLoopInvariants } from "./licm.ts";
-import { boundCountedLoops } from "./counted-loops.ts";
+import { boundCountedLoops, versionNonzeroDivisors } from "./counted-loops.ts";
 import { layoutBlocks } from "./block-layout.ts";
 export { hoistLoopInvariants } from "./licm.ts";
+export { versionNonzeroDivisors } from "./counted-loops.ts";
 export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
 
@@ -1650,11 +1651,12 @@ export function optimizeModuleVersion(
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
+  const boundChanges: number[] = [];
   const bounded = rewriteFunctions(
     version,
     vectorBudget - vectors.visited,
     undefined,
-    undefined,
+    boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
       const result = boundCountedLoops(fn, budget, remarks);
       return result === undefined
@@ -1671,9 +1673,74 @@ export function optimizeModuleVersion(
   if (bounded.exhausted)
     return exhausted("bound-counted-loops", bounded.visited);
   if (completed("bound-counted-loops", bounded, false)) return stop();
+  // Loops taking remainders by an invariant integer get a version for a
+  // positive divisor, whose remainders codegen keeps integers.
+  const divided = rewriteFunctions(
+    version,
+    vectorBudget - vectors.visited - bounded.visited,
+    undefined,
+    boundChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = versionNonzeroDivisors(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.versioned,
+            refused: false,
+          };
+    },
+  );
+  if (divided.exhausted)
+    return exhausted("version-nonzero-divisors", divided.visited);
+  if (completed("version-nonzero-divisors", divided, false)) return stop();
+  // Interval facts again where a counter now has a word bound or a divisor
+  // a positive slot: values derived from a counter (a loop-invariant
+  // `round * 7` carried in a slot) become safe integer slots, and positive
+  // divisors nonzero slots. Selection rewrites accesses in place and moves no
+  // code, which the vector caches above require. It runs (and reports) only
+  // when some loop was bounded or versioned.
+  const reboundSelection = new Uint8Array(version.module.functions.length);
+  let rebound = false;
+  for (let id = 0; id < boundChanges.length; id++)
+    if (boundChanges[id] === 1) {
+      reboundSelection[id] = 1;
+      rebound = true;
+    }
+  let reselectedVisited = 0;
+  if (rebound) {
+    const reselected = rewriteFunctions(
+      version,
+      vectorBudget - vectors.visited - bounded.visited - divided.visited,
+      reboundSelection,
+      undefined,
+      (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+        const result = selectArrayAccesses(fn, budget, remarks);
+        // New facts alone are a rewrite here: the module must adopt them.
+        return result === undefined
+          ? undefined
+          : {
+              fn: result.fn,
+              visited: result.visited,
+              rewritten: result.rewritten + (result.fn === fn ? 0 : 1),
+              refused: false,
+            };
+      },
+    );
+    if (reselected.exhausted)
+      return exhausted("select-array-access", reselected.visited);
+    if (completed("select-array-access", reselected, false)) return stop();
+    reselectedVisited = reselected.visited;
+  }
   // Layout only: each block is followed by its preferred successor, so the
   // emitter elides that edge's branch (block-layout.ts).
-  const layoutBudget = vectorBudget - vectors.visited - bounded.visited;
+  const layoutBudget =
+    vectorBudget -
+    vectors.visited -
+    bounded.visited -
+    divided.visited -
+    reselectedVisited;
   const laid = rewriteFunctions(
     version,
     layoutBudget,

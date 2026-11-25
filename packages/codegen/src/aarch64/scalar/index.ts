@@ -187,6 +187,7 @@ import {
   provenDirectOnlyFunctions,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
@@ -249,6 +250,7 @@ import {
   float64Immediate,
   logicalImmediate32,
   encode,
+  branchAt,
   type EncodingResult,
   type Instruction,
   type Branch,
@@ -807,6 +809,11 @@ export interface EmissionOptions {
   readonly operationRanges?: boolean | undefined;
   readonly linearAllocation?: boolean | undefined;
   readonly generationalBarriers?: boolean | undefined;
+  /** The image's trust boundary for run-time code: every executable entry it
+   * calls was produced by its own unit linker under this image's barrier
+   * policy, so generational emission accepts executable calls
+   * (trackedManagedWrites). Only images built with allowJit may set it. */
+  readonly trustedExecutableCode?: boolean | undefined;
   readonly closedRoots?: readonly number[] | undefined;
   readonly managedABI?: ManagedABIRequest | undefined;
   readonly localSignatures?: readonly LocalSignatureBinding[] | undefined;
@@ -3238,7 +3245,13 @@ function emitModuleForms(
         fail("INVALID_IR", "imported functions cannot be executable roots");
     }
     if (generationalBarriers) {
-      if (!stableRecordLayouts(module, bodies))
+      if (
+        !trackedManagedWrites(
+          module,
+          bodies,
+          options.trustedExecutableCode === true,
+        )
+      )
         fail(
           "INVALID_IR",
           "generational mutator requires tracked managed writes; raw memory capabilities are unsupported",
@@ -3610,15 +3623,52 @@ function emitModuleForms(
         // Integer slots hold an exact int64 instead of a double: number
         // slots whose every assignment is proven a 32-bit integer, that only
         // instruction loads and stores access (the facts never admit -0), and
-        // whose loads are all used as integers (see below).
-        const integerSlots = new Uint8Array(fn.slots.length);
+        // whose loads are all used as integers (see below). Parameters arrive
+        // as doubles: one that every direct call passes a proven 32-bit
+        // integer (wordArguments; escaped functions have none) and that
+        // arrives in a register converts once in the prologue.
+        const integerSlots = new Uint8Array(fn.slots.length),
+          // Safe integer slots (bounds): int64 slots whose loads are
+          // bounded safe integers (word kind 6) of these magnitudes.
+          safeSlotBounds = new Float64Array(fn.slots.length),
+          // Nonzero slots (bounds): integers other than 0, divisors whose
+          // remainders never divide by zero.
+          nonzeroSlots = new Uint8Array(fn.slots.length);
+        for (const slot of fn.nonzeroSlots ?? [])
+          if (slot !== undefined) nonzeroSlots[slot] = 1;
+        const safeIntegerBounds = fn.safeIntegerBounds ?? [];
+        for (
+          let index = 0;
+          index < (fn.safeIntegerSlots?.length ?? 0);
+          index++
+        ) {
+          const slot = fn.safeIntegerSlots?.[index],
+            bound = safeIntegerBounds[index];
+          if (slot === undefined || bound === undefined)
+            throw "safe integer slot invariant";
+          safeSlotBounds[slot] = Math.max(1, bound);
+        }
         if (slotIntegerFacts !== undefined) {
           for (let slot = 0; slot < fn.slots.length; slot++)
-            if (fn.slots[slot] === "number" && slotIntegerFacts[slot] === 1)
+            if (
+              fn.slots[slot] === "number" &&
+              (slotIntegerFacts[slot] === 1 || (safeSlotBounds[slot] ?? 0) > 0)
+            )
               integerSlots[slot] = 1;
           if (fn.receiverSlot !== undefined) integerSlots[fn.receiverSlot] = 0;
-          for (const parameter of fn.parameters)
-            if (parameter !== undefined) integerSlots[parameter] = 0;
+          const parameterWords =
+              wordArguments === undefined ? undefined : wordArguments[fn.id],
+            parameterLocations = signatures[fn.id]?.parameters;
+          for (let i = 0; i < fn.parameters.length; i++) {
+            const parameter = fn.parameters[i];
+            if (parameter === undefined) throw "parameter slot invariant";
+            if (
+              parameterWords === undefined ||
+              parameterWords[parameter] !== 1 ||
+              parameterLocations?.[i]?.kind !== "float"
+            )
+              integerSlots[parameter] = 0;
+          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "integer slot block invariant";
             if (block.exception !== undefined)
@@ -3662,10 +3712,14 @@ function emitModuleForms(
           ">=",
         ];
         /** Results whose zero sign an accepted integer use still observes:
-         * optional payloads, Float64Array element values and the operands
-         * of +, - and * results that may be -0 and are so observed. Such
-         * results are recorded in zeroSignResults. */
-        function findZeroSignResults(): Uint8Array {
+         * optional payloads, Float64Array element values, the operands of
+         * +, - and * results that may be -0 and are so observed, and the
+         * dividends of % results so observed (`results`, recorded in
+         * zeroSignResults); and results that are never -0 (`signless`). */
+        function findZeroSignResults(): {
+          readonly results: Uint8Array;
+          readonly signless: Uint8Array;
+        } {
           const signs = new Uint8Array(resultBound),
             results = new Uint8Array(resultBound),
             // Arrays proven integer-typed (their elements store no -0).
@@ -3756,10 +3810,17 @@ function emitModuleForms(
                   signs[valueIds.intern(op.left)] = 1;
                   signs[valueIds.intern(op.right)] = 1;
                 }
+              } else if (op.kind === "binary" && op.operator === "%") {
+                // A zero remainder takes the dividend's sign.
+                const index = valueIds.intern(op.id);
+                if (signs[index] === 1) {
+                  results[index] = 1;
+                  signs[valueIds.intern(op.left)] = 1;
+                }
               }
             }
           }
-          return results;
+          return { results, signless };
         }
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
@@ -3789,6 +3850,10 @@ function emitModuleForms(
                       op.operator === "*") &&
                       uses[valueIds.intern(op.id)] === 1) ||
                     comparisonOperators.includes(op.operator))) ||
+                // Rounding an integer is the identity (see the unary case).
+                (op.kind === "unary" &&
+                  (op.operator === "trunc" || op.operator === "ceil") &&
+                  uses[valueIds.intern(op.id)] === 1) ||
                 op.kind === "array-read" ||
                 op.kind === "array-element" ||
                 op.kind === "array-valid" ||
@@ -3813,7 +3878,13 @@ function emitModuleForms(
                   (listReadShapes(op.target) !== undefined ||
                     (op.id === undefined &&
                       writeShapes[op.target] !== undefined)));
-              if (!accepts)
+              if (op.kind === "binary" && op.operator === "%") {
+                // An int64 divisor divides directly (see the % case). The
+                // dividend's zero sign shows in the remainder (-0 % 3 is
+                // -0), so only a dividend that is never -0 is accepted.
+                if (signlessResults[valueIds.intern(op.left)] !== 1)
+                  rejected[valueIds.intern(op.left)] = 1;
+              } else if (!accepts)
                 visitInstructionOperands(op, (id) => {
                   rejected[valueIds.intern(id)] = 1;
                 });
@@ -3828,7 +3899,10 @@ function emitModuleForms(
         // +, - and * results that may be -0 where the sign is observed. Int64
         // arithmetic turns -0 into +0, so these keep double arithmetic (see
         // the +/-/* case).
-        const zeroSignResults = findZeroSignResults();
+        const zeroSignFacts = findZeroSignResults(),
+          zeroSignResults = zeroSignFacts.results,
+          // Read by findIntegerUses, declared above.
+          signlessResults: Uint8Array = zeroSignFacts.signless;
         let anyIntegerSlot = false;
         for (let slot = 0; slot < fn.slots.length; slot++)
           if (integerSlots[slot] === 1) anyIntegerSlot = true;
@@ -3894,11 +3968,135 @@ function emitModuleForms(
         // equality fold into a presence test; neither is materialized.
         // String literal values by result ID, for inline comparisons.
         const stringLiterals = new Map<number, string>();
+        // Numeric constants by value ID (a divisor's value, see `%`), and
+        // values proven non-negative and never -0 (a dividend whose
+        // remainder is never -0): such constants, lengths, code units,
+        // uint32 and >>> words, & with a constant mask below 2^31, +, * and
+        // % of such operands, and loads of non-negative slots: proven
+        // 32-bit integer slots (never -0) whose every store is such a
+        // value. Values are block-local, but slot facts are not, so the
+        // forward pass repeats until no slot loses its fact (each round
+        // only removes slots, from an optimistic start).
+        const constantFlags = new Uint8Array(resultBound),
+          constantNumbers = new Float64Array(resultBound),
+          nonNegativeValues = new Uint8Array(resultBound),
+          nonNegativeSlots = nonNegativeZeroSlots.slice();
+        /** The value of numeric constant `id`, else undefined. */
+        function numberConstant(id: number): number | undefined {
+          const index = valueIds.intern(id);
+          return constantFlags[index] === 1
+            ? constantNumbers[index]
+            : undefined;
+        }
+        function nonNegative(id: number): boolean {
+          return nonNegativeValues[valueIds.intern(id)] === 1;
+        }
+        for (let changed = true; changed;) {
+          changed = false;
+          nonNegativeValues.fill(0);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "string literal block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) continue;
+              if (
+                op.kind === "store" &&
+                nonNegativeSlots[op.slot] === 1 &&
+                !nonNegative(op.value)
+              ) {
+                nonNegativeSlots[op.slot] = 0;
+                changed = true;
+              } else markNonNegative(op);
+            }
+          }
+        }
+        /** Records `op`'s literal, constant and non-negative facts. */
+        function markNonNegative(op: IRInstruction): void {
+          if (op.kind === "string-literal") stringLiterals.set(op.id, op.value);
+          else if (op.kind === "constant") {
+            const constant = op.value;
+            if (typeof constant === "number") {
+              const index = valueIds.intern(op.id);
+              constantFlags[index] = 1;
+              constantNumbers[index] = constant;
+              if (constant > 0 || (constant === 0 && 1 / constant > 0))
+                nonNegativeValues[index] = 1;
+            }
+          } else if (
+            op.kind === "string-length" ||
+            op.kind === "array-length" ||
+            (op.kind === "string-code-unit" && op.inBounds === true) ||
+            (op.kind === "unary" && op.operator === "uint32") ||
+            (op.kind === "binary" && op.operator === ">>>") ||
+            (op.kind === "load" && nonNegativeSlots[op.slot] === 1)
+          )
+            nonNegativeValues[valueIds.intern(op.id)] = 1;
+          else if (op.kind === "binary") {
+            const left = nonNegative(op.left),
+              right = nonNegative(op.right),
+              leftMask = numberConstant(op.left) ?? -1,
+              rightMask = numberConstant(op.right) ?? -1;
+            if (
+              // ToInt32 keeps a mask below 2^31 non-negative.
+              (op.operator === "&" &&
+                ((leftMask >= 0 && leftMask <= 2147483647) ||
+                  (rightMask >= 0 && rightMask <= 2147483647))) ||
+              ((op.operator === "+" || op.operator === "*") && left && right) ||
+              (op.operator === "%" && left)
+            )
+              nonNegativeValues[valueIds.intern(op.id)] = 1;
+          }
+        }
+        // Truncated sums: an imul whose only use is a `+` of an integer
+        // addend (see truncatableAddend), where that sum's every use reads
+        // only its low 32 bits (bitwise operators and imul), as in
+        // `(h * 31 + u) | 0`. The sum is then a 32-bit add and the product
+        // needs no sign extension: low bits of exact sums and products
+        // depend only on low bits. The facts are use-based and block-local
+        // (values are block-local); the addend is checked at the product.
+        const soleConsumers: (IRInstruction | undefined)[] = [],
+          useCounts = new Uint32Array(resultBound),
+          low32UseCounts = new Uint32Array(resultBound),
+          truncatedSums = new Uint8Array(resultBound);
         for (const block of fn.blocks) {
-          if (block === undefined) throw "string literal block invariant";
-          for (const op of block.instructions)
-            if (op !== undefined && op.kind === "string-literal")
-              stringLiterals.set(op.id, op.value);
+          if (block === undefined) throw "truncation block invariant";
+          visitTerminatorOperands(block.terminator, (id) => {
+            const index = valueIds.intern(id);
+            useCounts[index] = (useCounts[index] ?? 0) + 1;
+          });
+          for (const op of block.instructions) {
+            if (op === undefined) throw "truncation instruction invariant";
+            const low32 =
+              (op.kind === "binary" &&
+                ["|", "&", "^", "<<", ">>", ">>>", "imul"].includes(
+                  op.operator,
+                )) ||
+              (op.kind === "unary" && op.operator === "~");
+            visitInstructionOperands(op, (id) => {
+              const index = valueIds.intern(id);
+              useCounts[index] = (useCounts[index] ?? 0) + 1;
+              if (low32)
+                low32UseCounts[index] = (low32UseCounts[index] ?? 0) + 1;
+              soleConsumers[index] = op;
+            });
+          }
+        }
+        /** Whether every use of `id` reads only its low 32 bits. */
+        function low32Only(id: number): boolean {
+          const index = valueIds.intern(id),
+            count = useCounts[index] ?? 0;
+          return count > 0 && (low32UseCounts[index] ?? 0) === count;
+        }
+        /** The `+` that is the only use of `id`, if any. */
+        function soleSum(id: number): IRInstruction | undefined {
+          const index = valueIds.intern(id),
+            consumer = soleConsumers[index];
+          return (useCounts[index] ?? 0) === 1 &&
+            consumer !== undefined &&
+            consumer.kind === "binary" &&
+            consumer.operator === "+" &&
+            low32Only(consumer.id)
+            ? consumer
+            : undefined;
         }
         const foldedConstants = new Uint8Array(resultBound),
           // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
@@ -6297,7 +6495,12 @@ function emitModuleForms(
               scalarRegisters === undefined
                 ? 0
                 : (scalarRegisters[offset / 8] ?? 0);
-            if (register !== 0)
+            if (integerSlots[slot] === 1) {
+              // A word parameter (see integerSlots): its exact int64.
+              const target = register >= 32 ? register - 32 : 9;
+              emit({ op: "fcvtzs-x-d", rd: target, rn: location.index });
+              rawStore(target, offset);
+            } else if (register !== 0)
               emit({ op: "fmov-d-d", rd: register, rn: location.index });
             else emit({ op: "str-d", rt: location.index, rn: "sp", offset });
           } else if (location.kind === "integer")
@@ -6321,6 +6524,8 @@ function emitModuleForms(
           // quieted unwraps. Moves, FNEG and memory reads keep raw bits.
           quietValues = new Uint8Array(values.length),
           wordKinds = new Uint8Array(values.length),
+          // Loads of nonzero slots: divisors that are never 0.
+          nonzeroValues = new Uint8Array(values.length),
           wordConstants = new Uint32Array(values.length),
           wordMagnitudes = new Float64Array(values.length),
           slotWordBlocks = new Uint32Array(fn.slots.length),
@@ -6357,6 +6562,24 @@ function emitModuleForms(
             else emit({ op: "fcvtzs-x-d", rd: rt, rn: floatOperand(id, 0) });
           }
         }
+        /** Whether `id` is an integer of magnitude at most 2^53 - 2^31,
+         * so its double sum with any int32 is exact and the sum's low 32
+         * bits are those of the addends' low bits (truncatedSums): a 32-bit
+         * integer, a numeric constant (also one the block emits later) or
+         * a bounded integer. Int64 storage alone does not bound it. */
+        function truncatableAddend(id: number): boolean {
+          const index = valueIds.intern(id),
+            kind = wordKinds[index] ?? 0;
+          if (kind === 2 || kind === 3) return true;
+          const constant = numberConstant(id),
+            limit = 9007197107257344;
+          if (constant !== undefined)
+            return (
+              Number.isSafeInteger(constant) && Math.abs(constant) <= limit
+            );
+          const magnitude = kind === 6 ? wordMagnitude(index) : -1;
+          return magnitude >= 0 && magnitude <= limit;
+        }
         /** Proven integral without NaN: int64 storage, a 32-bit integer or
          * exact uint32 constant, or a bounded safe integer. */
         function exactInteger(id: number): boolean {
@@ -6387,38 +6610,31 @@ function emitModuleForms(
           else if (jsConvert)
             emit({ op: "fjcvtzs", rd: 9, rn: floatOperand(id, 0) });
           else {
-            // Most unknown operands already hold an integral binary64. An exact
-            // round trip through int64 yields ToUint32's low 32 bits directly;
-            // only 2^63 survives saturation, so INT64_MAX (cmn sets V) also
-            // takes the helper with fractional, non-finite and huge inputs.
-            const operand = floatOperand(id, 0);
-            emit({ op: "fcvtzs-x-d", rd: 9, rn: operand });
-            emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
-            emit({ op: "fcmp", rn: operand, rm: 1 });
-            const inexact = instructions.length;
-            emit({ op: "b.cond", condition: "ne", displacement: 0 });
+            // fcvtzs truncates toward zero, ToUint32's first step, and maps
+            // NaN to 0, so below 2^63 in magnitude its low 32 bits are
+            // ToUint32's whether or not the operand is integral. Only
+            // saturation (infinities and magnitudes from 2^63) is wrong:
+            // doubling overflows (cmn sets V) from 2^62, and those operands
+            // take the helper.
+            emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
             emit({
-              op: "add-imm",
+              op: "add-reg",
               width: 64,
               rd: "zr",
               rn: 9,
-              immediate: 1,
-              shift: 0,
+              rm: 9,
+              shift: "lsl",
+              amount: 0,
               setFlags: true,
             });
-            const exact = instructions.length;
+            const inRange = instructions.length;
             emit({ op: "b.cond", condition: "vc", displacement: 0 });
-            patchInstruction(inexact, {
-              op: "b.cond",
-              condition: "ne",
-              displacement: (instructions.length - inexact) * 4,
-            });
             rawValue(9, id);
             callHelper("to-uint32");
-            patchInstruction(exact, {
+            patchInstruction(inRange, {
               op: "b.cond",
               condition: "vc",
-              displacement: (instructions.length - exact) * 4,
+              displacement: (instructions.length - inRange) * 4,
             });
           }
         }
@@ -7869,81 +8085,27 @@ function emitModuleForms(
             const exhausted = instructions.length;
             emit({ op: "b.cond", condition: "hi", displacement: 0 });
             emit({ op: "str", width: 32, rt: 14, rn: 12, offset: 0 });
-            // The copying runtime's space keeps one start bit per 8-byte
-            // granule: word top >> 8, bit (top >> 3) & 31. A generational
-            // nursery keeps none: it is bump-allocated without gaps, so the
-            // compactor's rare fallback and heap tools walk it by extents.
-            if (!generationalBarriers) {
-              emit({ op: "ldr", width: 64, rt: 13, rn: 12, offset: 16 });
-              emit({
-                op: "ubfm",
-                width: 32,
-                rd: 14,
-                rn: 11,
-                immr: 8,
-                imms: 31,
-              });
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 14,
-                rn: 13,
-                rm: 14,
-                shift: "lsl",
-                amount: 2,
-                setFlags: false,
-              });
-              emit({
-                op: "ubfm",
-                width: 32,
-                rd: 15,
-                rn: 11,
-                immr: 3,
-                imms: 7,
-              });
-              imm(9, 1);
-              emit({ op: "lslv", width: 32, rd: 9, rn: 9, rm: 15 });
-              emit({ op: "ldr", width: 32, rt: 15, rn: 14, offset: 0 });
-              emit({ op: "orr-reg", width: 32, rd: 15, rn: 15, rm: 9 });
-              emit({ op: "str", width: 32, rt: 15, rn: 14, offset: 0 });
-            }
-            const addTop = (): void =>
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 9,
-                rn: 9,
-                rm: 11,
-                shift: "lsl",
-                amount: 0,
-                setFlags: false,
-              });
-            if (generationalBarriers) {
-              // The nursery's absolute address plus the young top.
-              emit({
-                op: "ldr",
-                width: 64,
-                rt: 9,
-                rn: 12,
-                offset: nativeGenerationalNurseryAddressOffset,
-              });
-              addTop();
-            } else {
-              // The semispace's base offset plus the top, then the managed base.
-              emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-              addTop();
-              emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 9,
-                rn: 10,
-                rm: 9,
-                shift: "lsl",
-                amount: 0,
-                setFlags: false,
-              });
-            }
+            // The generational nursery keeps no start bits: it is
+            // bump-allocated without gaps, so the compactor's rare fallback
+            // and heap tools walk it by extents. Add the young top to the
+            // nursery's absolute address.
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 9,
+              rn: 12,
+              offset: nativeGenerationalNurseryAddressOffset,
+            });
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: 9,
+              rn: 9,
+              rm: 11,
+              shift: "lsl",
+              amount: 0,
+              setFlags: false,
+            });
             fastDone = instructions.length;
             emit({ op: "b", displacement: 0 });
             const slow = instructions.length;
@@ -8781,10 +8943,15 @@ function emitModuleForms(
             span = { start: op.start, end: op.end };
             if (op.kind === "load" && slotIntegerFacts !== undefined) {
               const mask = slotIntegerFacts[op.slot] ?? 0,
-                index = valueIds.intern(op.id);
+                index = valueIds.intern(op.id),
+                safeBound = safeSlotBounds[op.slot] ?? 0;
               if (fn.slots[op.slot] === "number") {
                 if (mask === 1) wordKinds[index] = 2;
-                else if (mask !== 0 && (mask & ~3) === 0) wordKinds[index] = 5;
+                else if (safeBound > 0) {
+                  wordKinds[index] = 6;
+                  wordMagnitudes[index] = safeBound;
+                } else if (mask !== 0 && (mask & ~3) === 0)
+                  wordKinds[index] = 5;
               } else if (
                 fn.slots[op.slot] === "optional-number" &&
                 mask !== 0 &&
@@ -8940,6 +9107,56 @@ function emitModuleForms(
                     ? 7
                     : 6;
                 wordMagnitudes[index] = Math.max(1, bound);
+              }
+            }
+            if (
+              op.kind === "load" &&
+              nonzeroSlots[op.slot] === 1 &&
+              fn.slots[op.slot] === "number"
+            )
+              nonzeroValues[valueIds.intern(op.id)] = 1;
+            if (
+              op.kind === "unary" &&
+              (op.operator === "trunc" || op.operator === "ceil") &&
+              exactInteger(op.operand)
+            ) {
+              // Rounding an exact integer is the identity.
+              const magnitude = wordMagnitude(valueIds.intern(op.operand));
+              if (magnitude >= 0) {
+                const index = valueIds.intern(op.id);
+                wordKinds[index] = 6;
+                wordMagnitudes[index] = Math.max(1, magnitude);
+              }
+            }
+            if (op.kind === "binary" && op.operator === "%") {
+              // An exact integer modulo a nonzero integer constant d is an
+              // integer below |d| in magnitude (-0 aside, as for sums); one
+              // modulo a nonzero slot's value is below that value's bound,
+              // and no larger than the dividend.
+              const divisor = numberConstant(op.right),
+                index = valueIds.intern(op.id);
+              if (
+                divisor !== undefined &&
+                Number.isSafeInteger(divisor) &&
+                divisor !== 0 &&
+                exactInteger(op.left)
+              ) {
+                wordKinds[index] = 6;
+                wordMagnitudes[index] = Math.max(1, Math.abs(divisor) - 1);
+              } else if (
+                nonzeroValues[valueIds.intern(op.right)] === 1 &&
+                exactInteger(op.left) &&
+                exactInteger(op.right)
+              ) {
+                const left = wordMagnitude(valueIds.intern(op.left)),
+                  right = wordMagnitude(valueIds.intern(op.right));
+                if (left >= 0 && right >= 0) {
+                  wordKinds[index] = 6;
+                  wordMagnitudes[index] = Math.max(
+                    1,
+                    Math.min(left, right - 1),
+                  );
+                }
               }
             }
             // Binary operations keep an immediate operand deferred, and
@@ -13907,12 +14124,8 @@ function emitModuleForms(
                   floatStore(0, resultId);
                   break;
                 }
-                if (
-                  operation === "allocation-state" ||
-                  operation === "generational-state"
-                ) {
-                  const generational = operation === "generational-state";
-                  // State and bitmap are permanent, caller-owned control storage.
+                if (operation === "generational-state") {
+                  // State and bitmaps are permanent, caller-owned control storage.
                   // Context +56 is zero until this checked publication succeeds.
                   const failures: {
                     index: number;
@@ -13943,7 +14156,7 @@ function emitModuleForms(
                     rn: 10,
                     offset: nativeArrayLengthOffset,
                   });
-                  imm(12, generational ? nativeGenerationalStateWords : 8);
+                  imm(12, nativeGenerationalStateWords);
                   compareState(9, 12);
                   requireState("cc");
                   emit({
@@ -13971,33 +14184,27 @@ function emitModuleForms(
                   emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 0 });
                   compareState(9, 10);
                   requireState("ne");
-                  if (generational) {
-                    emit({ op: "ldr", width: 32, rt: 17, rn: 12, offset: 28 });
-                    imm(10, 512);
-                    compareState(17, 10);
-                    requireState("cc");
-                    emit({
-                      op: "ubfm",
-                      width: 32,
-                      rd: 10,
-                      rn: 17,
-                      immr: 0,
-                      imms: 8,
-                    });
-                    imm(11, 0);
-                    compareState(10, 11);
-                    requireState("ne");
-                    emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-                    compareState(9, 17);
-                    requireState("ne");
-                    emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 12 });
-                    compareState(9, 11);
-                    requireState("ne");
-                  } else {
-                    emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-                    compareState(9, 10);
-                    requireState("ne");
-                  }
+                  emit({ op: "ldr", width: 32, rt: 17, rn: 12, offset: 28 });
+                  imm(10, 512);
+                  compareState(17, 10);
+                  requireState("cc");
+                  emit({
+                    op: "ubfm",
+                    width: 32,
+                    rd: 10,
+                    rn: 17,
+                    immr: 0,
+                    imms: 8,
+                  });
+                  imm(11, 0);
+                  compareState(10, 11);
+                  requireState("ne");
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
+                  compareState(9, 17);
+                  requireState("ne");
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 12 });
+                  compareState(9, 11);
+                  requireState("ne");
                   emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 4 });
                   imm(10, 16);
                   compareState(9, 10);
@@ -14005,21 +14212,19 @@ function emitModuleForms(
                   imm(10, 0x7ffffff0);
                   compareState(9, 10);
                   requireState("hi");
-                  if (generational) {
-                    emit({
-                      op: "add-reg",
-                      width: 64,
-                      rd: 10,
-                      rn: 9,
-                      rm: 17,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: false,
-                    });
-                    imm(11, 0x7ffffff0);
-                    compareState(10, 11);
-                    requireState("hi");
-                  }
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 10,
+                    rn: 9,
+                    rm: 17,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  imm(11, 0x7ffffff0);
+                  compareState(10, 11);
+                  requireState("hi");
                   emit({
                     op: "ubfm",
                     width: 32,
@@ -14050,87 +14255,76 @@ function emitModuleForms(
                   });
                   compareState(13, 9);
                   requireState("cc");
-                  if (generational) {
-                    rawValue(15, argument(2));
-                    emit({
-                      op: "ldr",
-                      width: 32,
-                      rt: 13,
-                      rn: 15,
-                      offset: nativeArrayLengthOffset,
-                    });
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 15,
-                      rn: 15,
-                      offset: nativeArrayDataOffset,
-                    });
-                    emit({
-                      op: "add-imm",
-                      width: 64,
-                      rd: 9,
-                      rn: 17,
-                      immediate: 63,
-                      shift: 0,
-                      setFlags: false,
-                    });
-                    emit({
-                      op: "ubfm",
-                      width: 64,
-                      rd: 9,
-                      rn: 9,
-                      immr: 6,
-                      imms: 63,
-                    });
-                    compareState(13, 9);
-                    requireState("cc");
-                    rawValue(16, argument(3));
-                    emit({
-                      op: "ldr",
-                      width: 32,
-                      rt: 13,
-                      rn: 16,
-                      offset: nativeArrayLengthOffset,
-                    });
-                    imm(9, 1);
-                    compareState(13, 9);
-                    requireState("cc");
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 16,
-                      rn: 16,
-                      offset: nativeArrayDataOffset,
-                    });
-                    emit({ op: "str", width: 64, rt: 15, rn: 12, offset: 32 });
-                    emit({ op: "str", width: 64, rt: 16, rn: 12, offset: 40 });
-                    emit({
-                      op: "str",
-                      width: 32,
-                      rt: "zr",
-                      rn: 12,
-                      offset: 48,
-                    });
-                    emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 52 });
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: "zr",
-                      rn: 12,
-                      offset: 56,
-                    });
-                    emit({ op: "str", width: 32, rt: 9, rn: 12, offset: 24 });
-                  } else {
-                    // A copying-runtime publication cannot accidentally enable barriers.
-                    emit({
-                      op: "str",
-                      width: 64,
-                      rt: "zr",
-                      rn: 12,
-                      offset: 24,
-                    });
-                  }
+                  rawValue(15, argument(2));
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 13,
+                    rn: 15,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 15,
+                    rn: 15,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 9,
+                    rn: 17,
+                    immediate: 63,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    immr: 6,
+                    imms: 63,
+                  });
+                  compareState(13, 9);
+                  requireState("cc");
+                  rawValue(16, argument(3));
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 13,
+                    rn: 16,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  imm(9, 1);
+                  compareState(13, 9);
+                  requireState("cc");
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 16,
+                    rn: 16,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({ op: "str", width: 64, rt: 15, rn: 12, offset: 32 });
+                  emit({ op: "str", width: 64, rt: 16, rn: 12, offset: 40 });
+                  emit({
+                    op: "str",
+                    width: 32,
+                    rt: "zr",
+                    rn: 12,
+                    offset: 48,
+                  });
+                  emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 52 });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: "zr",
+                    rn: 12,
+                    offset: 56,
+                  });
+                  emit({ op: "str", width: 32, rt: 9, rn: 12, offset: 24 });
                   emit({ op: "str", width: 64, rt: 14, rn: 12, offset: 16 });
                   rawLoad(10, contextOffset);
                   emit({
@@ -15676,7 +15870,7 @@ function emitModuleForms(
                     if (tracker !== undefined)
                       tracker.saved(op.id, instructions.length * 4);
                   } else {
-                    // A proven 32-bit integer (never -0) converts exactly.
+                    // A proven safe integer (never -0) converts exactly.
                     rawLoad(9, slotOffset(op.slot));
                     emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                     floatStore(0, op.id);
@@ -15723,6 +15917,24 @@ function emitModuleForms(
                 break;
               case "unary": {
                 if (
+                  (op.operator === "ceil" || op.operator === "trunc") &&
+                  wantsInteger(op.id) &&
+                  exactInteger(op.operand)
+                ) {
+                  // Rounding an exact integer is the integer itself.
+                  const source = intRegister(op.operand, 9),
+                    target = intTarget(op.id, 9);
+                  if (source !== target)
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: target,
+                      rn: "zr",
+                      rm: source,
+                    });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                } else if (
                   op.operator === "ceil" ||
                   op.operator === "trunc" ||
                   op.operator === "sqrt"
@@ -16096,7 +16308,48 @@ function emitModuleForms(
                   saveRaw(9, op.id);
                   break;
                 }
-                if (integerArithmetic(op) && immediate !== undefined) {
+                if (truncatedSums[valueIds.intern(op.id)] === 1) {
+                  // A product's only use, read only in its low word: a
+                  // 32-bit add (the product was left unextended), of an add
+                  // immediate when the other addend is one.
+                  if (immediate !== undefined) {
+                    const constant = deferredIntegers.get(immediate);
+                    if (constant === undefined) throw "immediate invariant";
+                    const source = intRegister(
+                        immediate === op.right ? op.left : op.right,
+                        9,
+                      ),
+                      target = intTarget(op.id, 9),
+                      magnitude = Math.abs(constant),
+                      shifted = magnitude > 4095;
+                    emit({
+                      op: constant < 0 ? "sub-imm" : "add-imm",
+                      width: 32,
+                      rd: target,
+                      rn: source,
+                      immediate: shifted ? magnitude / 4096 : magnitude,
+                      shift: shifted ? 12 : 0,
+                      setFlags: false,
+                    });
+                    saveRaw(target, op.id);
+                  } else {
+                    const left = intRegister(op.left, 9),
+                      right = intRegister(op.right, 10),
+                      target = intTarget(op.id, 9);
+                    emit({
+                      op: "add-reg",
+                      width: 32,
+                      rd: target,
+                      rn: left,
+                      rm: right,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    saveRaw(target, op.id);
+                  }
+                  markInteger(op.id);
+                } else if (integerArithmetic(op) && immediate !== undefined) {
                   // An immediate operand: an add/sub immediate, or a
                   // multiplier 2^k (LSL) or 2^k + 1 (ADD shifted).
                   const constant = deferredIntegers.get(immediate);
@@ -16199,6 +16452,125 @@ function emitModuleForms(
                     rd: target,
                     rn: left,
                     rm: right,
+                  });
+                  floatStore(target, op.id);
+                } else if (
+                  op.operator === "%" &&
+                  exactInteger(op.left) &&
+                  exactInteger(op.right)
+                ) {
+                  // Exact integer operands (below 2^53) divide as int64s:
+                  // SDIV truncates toward zero, so MSUB leaves the
+                  // remainder with the dividend's sign, as in ECMAScript.
+                  // A nonzero divisor (a constant, or a nonzero slot's
+                  // value) needs no zero test; a zero divisor gives NaN. A
+                  // non-negative dividend's remainder is never -0, so with
+                  // a nonzero divisor it is an int64 result when its uses
+                  // take one; otherwise a zero remainder takes the
+                  // dividend's sign.
+                  const divisor = numberConstant(op.right),
+                    constant =
+                      divisor !== undefined &&
+                      Number.isSafeInteger(divisor) &&
+                      divisor !== 0
+                        ? divisor
+                        : undefined,
+                    // A nonzero slot's value never divides by zero either.
+                    nonzeroDivisor =
+                      constant !== undefined ||
+                      nonzeroValues[valueIds.intern(op.right)] === 1;
+                  intOperand(op.left, 9);
+                  if (constant === undefined) intOperand(op.right, 10);
+                  else {
+                    const lo =
+                        ((constant % 4294967296) + 4294967296) % 4294967296,
+                      hi =
+                        (Math.floor(constant / 4294967296) + 4294967296) %
+                        4294967296;
+                    imm64(10, lo, hi);
+                  }
+                  if (
+                    nonzeroDivisor &&
+                    nonNegative(op.left) &&
+                    wantsInteger(op.id)
+                  ) {
+                    const target = intTarget(op.id, 11);
+                    emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                    emit({
+                      op: "msub",
+                      width: 64,
+                      rd: target,
+                      rn: 11,
+                      rm: 10,
+                      ra: 9,
+                    });
+                    saveRaw(target, op.id);
+                    markInteger(op.id);
+                    break;
+                  }
+                  const target = floatTarget(op.id, 0);
+                  let zeroDivisor = -1;
+                  if (!nonzeroDivisor) {
+                    zeroDivisor = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                  }
+                  emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                  emit({
+                    op: "msub",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    rm: 10,
+                    ra: 9,
+                  });
+                  const nonzero = instructions.length;
+                  emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+                  if (storedAsInteger(op.left)) {
+                    // An int64 dividend is never -0: its sign bit decides.
+                    emit({ op: "fmov-d-x", rd: target, rn: "zr" });
+                    emit({ op: "tbz", rt: 9, bit: 63, displacement: 8 });
+                    emit({ op: "fneg", rd: target, rn: target });
+                  } else {
+                    // left * +0 is a zero with the dividend's sign.
+                    const left = floatOperand(op.left, 1);
+                    emit({ op: "fmov-d-x", rd: 2, rn: "zr" });
+                    emit({ op: "fmul", rd: target, rn: left, rm: 2 });
+                  }
+                  const zeroDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(nonzero, {
+                    op: "cbnz",
+                    width: 64,
+                    rt: 11,
+                    displacement: (instructions.length - nonzero) * 4,
+                  });
+                  emit({ op: "scvtf-d-x", rd: target, rn: 11 });
+                  if (zeroDivisor >= 0) {
+                    const divided = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(zeroDivisor, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - zeroDivisor) * 4,
+                    });
+                    // x % 0 is NaN.
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 9,
+                      immediate: 0x7ff8,
+                      shift: 48,
+                    });
+                    emit({ op: "fmov-d-x", rd: target, rn: 9 });
+                    patchInstruction(divided, {
+                      op: "b",
+                      displacement: (instructions.length - divided) * 4,
+                    });
+                  }
+                  patchInstruction(zeroDone, {
+                    op: "b",
+                    displacement: (instructions.length - zeroDone) * 4,
                   });
                   floatStore(target, op.id);
                 } else if (op.operator === "%") {
@@ -16506,6 +16878,22 @@ function emitModuleForms(
                                       rm: right,
                                     },
                     );
+                  }
+                  const sum =
+                    op.operator === "imul" &&
+                    !storedAsWord(op.id) &&
+                    wantsInteger(op.id)
+                      ? soleSum(op.id)
+                      : undefined;
+                  if (
+                    sum !== undefined &&
+                    sum.kind === "binary" &&
+                    wantsInteger(sum.id) &&
+                    truncatableAddend(sum.left === op.id ? sum.right : sum.left)
+                  ) {
+                    // Its sum reads only its low word (truncatedSums).
+                    truncatedSums[valueIds.intern(sum.id)] = 1;
+                    extended = true;
                   }
                   if (storedAsWord(op.id)) saveRaw(target, op.id);
                   else if (wantsInteger(op.id)) {
@@ -17092,22 +17480,7 @@ function emitModuleForms(
                   const slow: { site: number; branch: Branch }[] = [];
                   const toSlow = (branch: Branch): void => {
                     slow.push({ site: instructions.length, branch });
-                    emit(
-                      branch.op === "b.cond"
-                        ? {
-                            op: "b.cond",
-                            condition: branch.condition,
-                            displacement: 0,
-                          }
-                        : branch.op === "cbz" || branch.op === "cbnz"
-                          ? {
-                              op: branch.op,
-                              width: branch.width,
-                              rt: branch.rt,
-                              displacement: 0,
-                            }
-                          : { op: branch.op, displacement: 0 },
-                    );
+                    emit(branchAt(branch, 0));
                   };
                   // The root vector: the cached argument, or read from the
                   // list header and tested to be a reference vector.
@@ -17262,20 +17635,7 @@ function emitModuleForms(
                       displacement = (instructions.length - entry.site) * 4;
                     patchInstruction(
                       entry.site,
-                      branch.op === "b.cond"
-                        ? {
-                            op: "b.cond",
-                            condition: branch.condition,
-                            displacement,
-                          }
-                        : branch.op === "cbz" || branch.op === "cbnz"
-                          ? {
-                              op: branch.op,
-                              width: branch.width,
-                              rt: branch.rt,
-                              displacement,
-                            }
-                          : { op: branch.op, displacement },
+                      branchAt(branch, displacement),
                     );
                   }
                 }

@@ -5197,6 +5197,22 @@ function lowerScriptEntry(
           [text("union", span), array(members)],
           span,
         );
+      } else if (type.kind === "literal") {
+        // A literal type (a discriminant such as `kind: "one"`) admits
+        // exactly its value; without this rule the record had no contract.
+        const literal = type.value;
+        entry = object(
+          ["kind", "value"],
+          [
+            text("literal", span),
+            typeof literal === "string"
+              ? text(literal, span)
+              : typeof literal === "number"
+                ? index(literal)
+                : flag(literal),
+          ],
+          span,
+        );
       } else if (
         type.kind === "named" &&
         (type.arguments?.length ?? 0) === 0 &&

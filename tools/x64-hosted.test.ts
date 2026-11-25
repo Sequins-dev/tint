@@ -203,14 +203,14 @@ test("x86-64 hosted compilation pinpoints deferred runtime operations", () => {
     build(
       "export function run(): number { return 42; }",
       {},
-      { runtimeEntry: "initializeCopyingRuntime" },
+      { runtimeEntry: "initializeRuntime" },
     ),
     {
       ok: false,
       error: {
         stage: "target",
         message:
-          "linux-x86_64: unsupported operation initializeCopyingRuntime (requires slice 7)",
+          "linux-x86_64: unsupported operation initializeRuntime (requires slice 7)",
       },
     },
   );
