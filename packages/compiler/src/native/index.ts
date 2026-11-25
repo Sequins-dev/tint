@@ -4159,6 +4159,44 @@ function emitProgram(
   }
 }
 
+function lowerX64Program(
+  source: CompileRequest,
+  invokeDirectly: boolean,
+  onGeneralFallback?: (modules: readonly string[], reason: string) => void,
+): TypedLowering {
+  const typed = compileWithTypedWorkerEntry<TypedProgram>(
+    source,
+    (input): TypedLowering => {
+      const prepared = withTypedNodeFfiRealm(input);
+      return lowerTypedWithProgramRealm(
+        prepared,
+        prepared.nodeFfiRealmModules,
+        invokeDirectly,
+      );
+    },
+    (fallback: GeneralFallback): void =>
+      onGeneralFallback?.(fallback.modules, fallback.reason),
+  );
+  const lowering = source.generalLowering;
+  if (
+    typed.ok ||
+    lowering === undefined ||
+    typed.error.preventsFallback === true
+  )
+    return typed;
+  const general = compileGeneralProgram<TypedProgram>(
+    source,
+    lowering,
+    typed.error,
+    (program, realmTypeofModules): TypedLowering =>
+      lowerTypedWithProgramRealm(program, realmTypeofModules),
+  );
+  if (!general.ok) return general;
+  if (onGeneralFallback !== undefined)
+    onGeneralFallback(general.fallback.modules, general.fallback.reason);
+  return { ok: true, value: general.value };
+}
+
 /** Use the normal typed linker and scalar IR for a closed hosted x86-64
  * application. The AArch64 Compilation contract carries backend-specific
  * metadata; keep the x86-64 emitter and entry linker on their own boundary. */
@@ -4186,54 +4224,24 @@ export function compileX64HostedProgram(
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
-  const source = withForeignRuntimes(
-    {
-      ...request,
-      // Recorded in managed-surface directories (the x86-64 emitter takes the
-      // policy from options.generational).
-      generationalBarriers: options.generational === true,
-      moduleLoader: selected.moduleLoader,
-      modules: selected.modules,
-      symbols: true,
-    },
-    true,
-  );
-  const invokeDirectly = options.runtime !== true && options.threaded !== true;
-  function lower(): TypedLowering {
-    const typed = compileWithTypedWorkerEntry<TypedProgram>(
-      source,
-      (input): TypedLowering => {
-        const prepared = withTypedNodeFfiRealm(input);
-        return lowerTypedWithProgramRealm(
-          prepared,
-          prepared.nodeFfiRealmModules,
-          invokeDirectly,
-        );
+  const needSourceNames =
+    request.debugSymbols === true || options.signposts !== undefined;
+  const lowered = lowerX64Program(
+    withForeignRuntimes(
+      {
+        ...request,
+        // Recorded in managed-surface directories (the x86-64 emitter takes the
+        // policy from options.generational).
+        generationalBarriers: options.generational === true,
+        moduleLoader: selected.moduleLoader,
+        modules: selected.modules,
+        symbols: needSourceNames,
       },
-      (fallback: GeneralFallback): void =>
-        options.onGeneralFallback?.(fallback.modules, fallback.reason),
-    );
-    const lowering = source.generalLowering;
-    if (
-      typed.ok ||
-      lowering === undefined ||
-      typed.error.preventsFallback === true
-    )
-      return typed;
-    const general = compileGeneralProgram<TypedProgram>(
-      source,
-      lowering,
-      typed.error,
-      (program, realmTypeofModules): TypedLowering =>
-        lowerTypedWithProgramRealm(program, realmTypeofModules),
-    );
-    if (!general.ok) return general;
-    const report = options.onGeneralFallback;
-    if (report !== undefined)
-      report(general.fallback.modules, general.fallback.reason);
-    return { ok: true, value: general.value };
-  }
-  const lowered = lower();
+      true,
+    ),
+    options.runtime !== true && options.threaded !== true,
+    options.onGeneralFallback,
+  );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const lists = program.referenceLists;
@@ -4340,9 +4348,10 @@ export function compileX64HostedProgram(
     reportIR("optimized", program.ir.module);
   }
   const sourceNames = program.sourceNames;
-  if (sourceNames === undefined) throw "x64 foreign source names invariant";
+  if (needSourceNames && sourceNames === undefined)
+    throw "x64 foreign source names invariant";
   const signposts: X64SignpostSite[] = [];
-  if (request.debugSymbols === true || options.signposts !== undefined)
+  if (sourceNames !== undefined)
     for (const fn of program.ir.module.functions) {
       if (fn === undefined) throw "x64 signpost function invariant";
       // Devirtualization gives a closure a direct twin with the same source
@@ -4455,7 +4464,7 @@ export function compileX64HostedProgram(
     });
   }
   const parameterNames = new Map<string, string>();
-  if (request.debugSymbols === true)
+  if (request.debugSymbols === true && sourceNames !== undefined)
     for (const fn of emitted.value.functions) {
       if (fn === undefined) throw "x64 debug function invariant";
       for (const parameter of fn.frame?.parameters ?? []) {
@@ -4472,21 +4481,22 @@ export function compileX64HostedProgram(
           );
       }
     }
-  for (const span of emitted.value.sourceRanges) {
-    if (span === undefined) throw "x64 source range invariant";
-    const origin = locateSourceRange(program.ranges, span);
-    if (origin === undefined) continue;
-    const locate = sourceNames.positions.get(origin.module);
-    const position = locate === undefined ? undefined : locate(origin.start);
-    if (position === undefined) continue;
-    lines.push({
-      offset: span.offset,
-      byteLength: span.byteLength,
-      file: origin.module,
-      line: position.line,
-      column: position.column,
-    });
-  }
+  if (sourceNames !== undefined)
+    for (const span of emitted.value.sourceRanges) {
+      if (span === undefined) throw "x64 source range invariant";
+      const origin = locateSourceRange(program.ranges, span);
+      if (origin === undefined) continue;
+      const locate = sourceNames.positions.get(origin.module);
+      const position = locate === undefined ? undefined : locate(origin.start);
+      if (position === undefined) continue;
+      lines.push({
+        offset: span.offset,
+        byteLength: span.byteLength,
+        file: origin.module,
+        line: position.line,
+        column: position.column,
+      });
+    }
   const managedSurfaces = publishedManagedSurfaces(
     program.surfacePlans,
     program.surfaceRuntimes,
@@ -4497,7 +4507,8 @@ export function compileX64HostedProgram(
     invocation,
     returnType,
     lines,
-    functionNames: sourceNames.names,
+    functionNames:
+      sourceNames === undefined ? new Map<string, string>() : sourceNames.names,
     parameterNames,
     serviceIdentities,
     ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
