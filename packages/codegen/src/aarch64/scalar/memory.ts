@@ -90,15 +90,17 @@ export function memoryMover(
     emit({ op: "lslv", width: 64, rd: 4, rn: 4, rm: 5 });
     add(2, 9, 2);
   } else {
-    // Validate every range before the first load or store.
-    for (const shift of [0, 16, 32, 48])
-      emit({
-        op: shift === 0 ? "movz" : "movk",
-        width: 64,
-        rd: 9,
-        immediate: shift === 48 ? 31 : 65535,
-        shift: shift === 0 ? 0 : shift === 16 ? 16 : shift === 32 ? 32 : 48,
-      });
+    // Validate every range before the first load or store. 2^53 - 1 is 53
+    // trailing ones, encodable as one 64-bit logical immediate.
+    emit({
+      op: "orr-imm",
+      width: 64,
+      rd: 9,
+      rn: "zr",
+      n: 1,
+      immr: 0,
+      imms: 52,
+    });
     add(10, 0, 1);
     compare(10, 9);
     asm.branch("invalid", "hi");
@@ -127,8 +129,15 @@ export function memoryMover(
     forward: boolean,
   ): void {
     asm.label(label);
-    emit({ op: "movz", width: 64, rd: 10, immediate: width, shift: 0 });
-    compare(4, 10);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 4,
+      immediate: width,
+      shift: 0,
+      setFlags: true,
+    });
     asm.branch(next, "cc");
     if (width === 16) {
       // Pair transfers move 16 bytes per iteration, post-indexed forward
@@ -173,11 +182,147 @@ export function memoryMover(
     step(4, width, false);
     asm.branch(label);
   }
-  copy("backward-pair", "backward-word", 16, false);
+  copy("backward-pair", "backward-tail", 16, false);
+  asm.label("backward-tail");
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 4,
+    immediate: 0,
+    shift: 0,
+    setFlags: true,
+  });
+  asm.branch("done", "eq");
   copy("backward-word", "backward-byte", 8, false);
   copy("backward-byte", "done", 1, false);
   asm.label("forward");
-  copy("forward-pair", "forward-word", 16, true);
+  // Fast straight-line copies for the dominant 32- and 48-byte managed objects.
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 4,
+    immediate: 32,
+    shift: 0,
+    setFlags: true,
+  });
+  asm.branch("forward-not32", "ne");
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 3,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 2,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 3,
+    offset: 16,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 2,
+    offset: 16,
+    mode: "offset",
+  });
+  asm.branch("done");
+  asm.label("forward-not32");
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 4,
+    immediate: 48,
+    shift: 0,
+    setFlags: true,
+  });
+  asm.branch("forward-pair", "ne");
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 3,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 2,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 3,
+    offset: 16,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 2,
+    offset: 16,
+    mode: "offset",
+  });
+  emit({
+    op: "ldp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 3,
+    offset: 32,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 9,
+    rt2: 10,
+    rn: 2,
+    offset: 32,
+    mode: "offset",
+  });
+  asm.branch("done");
+  copy("forward-pair", "forward-tail", 16, true);
+  asm.label("forward-tail");
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 4,
+    immediate: 0,
+    shift: 0,
+    setFlags: true,
+  });
+  asm.branch("done", "eq");
   copy("forward-word", "forward-byte", 8, true);
   copy("forward-byte", "done", 1, true);
   asm.label("done");

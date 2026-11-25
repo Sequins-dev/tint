@@ -177,6 +177,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
       return (
         op.operation === "memory-read-word" ||
         op.operation === "memory-write-word" ||
+        op.operation === "memory-move" ||
         op.operation === "memory-compare-exchange-word" ||
         op.operation === "memory-fetch-add-word" ||
         op.operation === "memory-load-acquire-word" ||

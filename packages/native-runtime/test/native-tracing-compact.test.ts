@@ -296,3 +296,25 @@ test("ephemerons keep values exactly while their keys live, to a fixpoint", () =
     "ephemeron headers are unchanged",
   );
 });
+
+test("typed arrays with extended builtin markers (> 7) compact without treating markers as descriptors", () => {
+  const h = heap();
+  const leaf = h.descriptor(16, []);
+  h.allocate(16, [leaf, 0]); // garbage so survivors slide
+  // Int32Array marker = 12 (width class 4, index 1): 4 elements -> 24 + 16 = 40 bytes.
+  const int32Arr = h.allocate(40, [12, 4, 0, 0x11111111, 0x22222222]);
+  h.words.set(int32Arr + 16, int32Arr + 24);
+  // Int8Array marker = 10 (width class 2, index 1): 8 elements -> 24 + 8 = 32 bytes.
+  const int8Arr = h.allocate(32, [10, 8, 0, 0x0102030405060708]);
+  h.words.set(int8Arr + 16, int8Arr + 24);
+  const bytes = h.collect(h.roots([int32Arr, int8Arr]));
+  assert.equal(bytes, 72);
+  const moved32 = h.root(0),
+    moved8 = h.root(1);
+  assert.equal(moved32, 0x10000);
+  assert.equal(moved8, 0x10028);
+  assert.equal(h.read(moved32), 12);
+  assert.equal(h.read(moved32 + 16), moved32 + 24);
+  assert.equal(h.read(moved8), 10);
+  assert.equal(h.read(moved8 + 16), moved8 + 24);
+});

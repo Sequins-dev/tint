@@ -10,6 +10,7 @@ import {
   type Block,
   type Instruction,
 } from "../scalar/index.ts";
+import { compactReachableBlocks } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 export interface RecordAccessLowering {
   readonly module: ModuleIR;
@@ -41,7 +42,10 @@ export function lowerProvenRecordReads(
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
       const terminator = block.terminator;
-      if (terminator.kind === "record" && terminator.operation === "read")
+      if (
+        terminator.kind === "record" &&
+        (terminator.operation === "read" || terminator.operation === "write")
+      )
         candidates++;
       for (const op of block.instructions) {
         if (op === undefined || ++visited > budget) return undefined;
@@ -58,12 +62,62 @@ export function lowerProvenRecordReads(
     visited += proof.work;
     const blocks: Block[] = [];
     let changed = false,
-      next = maximum + 1;
+      next = maximum + 1,
+      deadTrapId = -1;
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
       const term = block.terminator;
-      if (term.kind !== "record" || term.operation !== "read") {
+      if (
+        term.kind !== "record" ||
+        (term.operation !== "read" && term.operation !== "write")
+      ) {
         blocks.push(block);
+        continue;
+      }
+      if (term.operation === "write") {
+        const altBlock = fn.blocks[term.alternate];
+        if (
+          proof.guards[block.id] !== 1 ||
+          term.alternate === term.consequent ||
+          (altBlock !== undefined &&
+            altBlock.instructions.length === 0 &&
+            altBlock.exception === undefined &&
+            altBlock.terminator.kind === "trap")
+        ) {
+          blocks.push(block);
+          continue;
+        }
+        const writeKnowledge: TypeKnowledge = {
+          declared: undefined,
+          variants: [term.record],
+          origin: "analysis",
+          guard: undefined,
+        };
+        if (representationFor(writeKnowledge, []) !== "fixed") {
+          blocks.push(block);
+          continue;
+        }
+        if (deadTrapId < 0) deadTrapId = fn.blocks.length;
+        blocks.push({
+          ...block,
+          terminator: { ...term, alternate: deadTrapId },
+        });
+        rewritten++;
+        changed = true;
+        if (remarks !== undefined)
+          remarks({
+            pass: "lower-proven-record-reads",
+            outcome: "applied",
+            function: fn.name,
+            start: term.start,
+            end: term.end,
+            message:
+              "write r" +
+              String(term.record) +
+              ".f" +
+              String(term.field) +
+              " proven: unreachable slow path pruned",
+          });
         continue;
       }
       if (proof.guards[block.id] !== 1) {
@@ -167,17 +221,29 @@ export function lowerProvenRecordReads(
       functions.push(fn);
       continue;
     }
+    if (deadTrapId >= 0)
+      blocks.push({
+        id: deadTrapId,
+        instructions: [],
+        terminator: { kind: "trap", start: 0, end: 0 },
+      });
     // The proof above spends this pass's budget; the verifier re-proves the
     // direct reads under its own (verifierRecordBudget). Keep the checked
     // reads of a function it would not prove.
-    const lowered: FunctionIR = { ...fn, blocks },
-      proofs = provenRecordReads(
-        lowered,
-        verifierRecordBudget(lowered),
-        stable,
-      );
+    let lowered: FunctionIR = { ...fn, blocks };
+    if (deadTrapId >= 0) {
+      const compacted = compactReachableBlocks(fn, blocks, budget - visited);
+      if (compacted === undefined) return undefined;
+      visited += compacted.visited;
+      lowered = compacted.fn;
+    }
+    const proofs = provenRecordReads(
+      lowered,
+      verifierRecordBudget(lowered),
+      stable,
+    );
     let verified = proofs !== undefined;
-    for (const block of blocks) {
+    for (const block of lowered.blocks) {
       if (!verified) break;
       if (block === undefined || ++visited > budget) return undefined;
       for (const op of block.instructions)

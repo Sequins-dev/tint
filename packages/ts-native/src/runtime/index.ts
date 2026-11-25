@@ -714,6 +714,9 @@ function prepareCollectionPass(
           delete: functionId(helper("number-list", "deleteNumberList")),
           resize: functionId(helper("number-list", "resizeNumberList")),
           pop: functionId(helper("number-list", "popNumberList")),
+          wrap: helpers.has("number-list:wrapNumberList")
+            ? functionId(helper("number-list", "wrapNumberList"))
+            : undefined,
         };
       } else {
         const element = preparedElement(list.element);

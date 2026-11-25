@@ -312,3 +312,73 @@ test("reads stay checked where the verifier's budget would not prove them", () =
   assert.equal(large.module, input);
   assert.ok(verify(large.module).ok);
 });
+
+test("proven fixed record writes redirect unreachable slow alternates to a trap block", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "writeProven",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "record-new", id: 1, record: 0, arguments: [0], ...s },
+              { kind: "store", slot: 1, value: 1, ...s },
+            ],
+            terminator: {
+              kind: "record",
+              object: 1,
+              record: 0,
+              field: 0,
+              operation: "write",
+              slot: 0,
+              consequent: 1,
+              alternate: 2,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 2, slot: 1, ...s }],
+            terminator: { kind: "return", value: 2, ...s },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "constant", id: 3, value: 99, ...s },
+              { kind: "record-new", id: 4, record: 0, arguments: [3], ...s },
+            ],
+            terminator: { kind: "return", value: 4, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  const optimized = optimizeModule(module, 1000000).module;
+  assert.deepEqual(verify(optimized), { ok: true });
+  const fn = optimized.functions[0];
+  assert.ok(fn);
+  for (const block of fn.blocks) {
+    assert.ok(block);
+    for (const op of block.instructions)
+      assert.ok(op === undefined || op.kind !== "constant" || op.value !== 99);
+  }
+  const writeBlock = fn.blocks.find((b) => b?.terminator.kind === "record");
+  assert.ok(writeBlock && writeBlock.terminator.kind === "record");
+  const alt = fn.blocks[writeBlock.terminator.alternate];
+  assert.equal(alt?.terminator.kind, "trap");
+  assert.equal(alt?.instructions.length, 0);
+});

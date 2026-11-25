@@ -143,6 +143,7 @@ export function slotHomes(
   maxWork: number = 2000000,
   /** Dense live-in table limit in words (tests force the list form). */
   denseRowWords?: number,
+  inlineCall?: (target: number) => boolean,
 ): SlotHomes | undefined {
   const count = fn.slots.length;
   if (!Number.isSafeInteger(maxWork) || maxWork < 1 || count > 65536)
@@ -152,15 +153,81 @@ export function slotHomes(
   // Loop depth per block (blocks are dense by ID in verified IR).
   const blockCount = fn.blocks.length,
     depth = new Uint8Array(blockCount),
+    headers = new Uint8Array(blockCount),
     forest = naturalLoops(fn, Math.max(1, maxWork - work));
   if (forest !== undefined) {
     work += forest.visited;
     for (const loop of forest.loops) {
       if (loop === undefined) throw "slot home loop invariant";
+      if (loop.header < blockCount) headers[loop.header] = 1;
       for (const block of loop.body)
         if (block < blockCount && (depth[block] ?? 0) < 255)
           depth[block] = (depth[block] ?? 0) + 1;
     }
+  }
+  // Mark cold blocks inside loops: blocks with calls/throws/traps, plus
+  // non-header blocks whose every in-loop non-header successor is cold
+  // (e.g. inlined slow growth paths in hoisted push loops).
+  const coldInLoop = new Uint8Array(blockCount);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "slot home block invariant";
+    if ((depth[block.id] ?? 0) === 0) continue;
+    const termKind = block.terminator.kind;
+    let cold =
+      termKind === "throw" ||
+      termKind === "throw-literal" ||
+      termKind === "trap";
+    if (!cold) {
+      for (const op of block.instructions)
+        if (
+          op !== undefined &&
+          ((op.kind === "call" && inlineCall?.(op.target) !== true) ||
+            op.kind === "call-indirect" ||
+            op.kind === "host-call" ||
+            op.kind === "c-call" ||
+            op.kind === "array-copy")
+        ) {
+          cold = true;
+          break;
+        }
+    }
+    if (cold) coldInLoop[block.id] = 1;
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "slot home block invariant";
+      if (
+        (depth[block.id] ?? 0) === 0 ||
+        headers[block.id] === 1 ||
+        coldInLoop[block.id] === 1
+      )
+        continue;
+      const t = block.terminator;
+      let anySucc = false,
+        allCold = true;
+      const checkSucc = (s: number): void => {
+        if (s < blockCount && (depth[s] ?? 0) > 0 && headers[s] !== 1) {
+          anySucc = true;
+          if (coldInLoop[s] !== 1) allCold = false;
+        }
+      };
+      if (t.kind === "jump") checkSucc(t.target);
+      else if (
+        t.kind === "branch" ||
+        t.kind === "record" ||
+        t.kind === "record-cell" ||
+        t.kind === "cell"
+      ) {
+        checkSucc(t.consequent);
+        checkSucc(t.alternate);
+      }
+      if (anySucc && allCold) {
+        coldInLoop[block.id] = 1;
+        changed = true;
+      }
+    }
+    if (!changed) break;
   }
   // 4 per loop level, capped at six levels.
   const depthWeights = [1, 4, 16, 64, 256, 1024, 4096];
@@ -172,7 +239,8 @@ export function slotHomes(
   let escapes = false;
   for (const block of fn.blocks) {
     if (block === undefined) throw "slot home block invariant";
-    const weight = blockWeight(block.id);
+    let weight = blockWeight(block.id);
+    if (coldInLoop[block.id] === 1) weight = Math.max(1, weight / 4);
     if (block.exception !== undefined) handlerSlot[block.exception.slot] = 1;
     for (const op of block.instructions) {
       if (op === undefined) throw "slot home instruction invariant";
@@ -201,7 +269,7 @@ export function slotHomes(
         eligible(slot) &&
         handlerSlot[slot] !== 1 &&
         fn.receiverSlot !== slot &&
-        (weights[slot] ?? 0) > 1
+        (weights[slot] ?? 0) > 0
       )
         candidates.push(slot);
   // One liveness for every slot that may take a home: reference candidates

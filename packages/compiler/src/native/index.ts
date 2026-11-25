@@ -4000,7 +4000,7 @@ function compileTypedProgram(
   let analysisLimits = 0;
   const native = emitProgram(program.ir, request.storage, {
     maxByteLength: Number.MAX_SAFE_INTEGER,
-    unboundedAnalysis: true,
+    unboundedAnalysis: request.optimization !== "none",
     analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
       analysisLimits++;
       if (programRemark !== undefined)

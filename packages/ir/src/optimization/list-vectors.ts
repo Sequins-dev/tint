@@ -1,6 +1,7 @@
 import {
   cachedListReadPrefix,
   uncheckedListReadPrefix,
+  uncheckedListWritePrefix,
   createFunctionBuilder,
   indirectCallClass,
   indirectCallTargets,
@@ -50,7 +51,8 @@ const span = { start: 0, end: 0 };
 function readHeader(fn: FunctionIR): number | undefined {
   if (
     !fn.name.startsWith("__tint_reference_list_read$") ||
-    fn.returnType !== "optional-reference" ||
+    (fn.returnType !== "optional-reference" &&
+      fn.returnType !== "optional-string") ||
     fn.parameters.length !== 2 ||
     fn.parameters[0] !== 0 ||
     fn.parameters[1] !== 1 ||
@@ -74,6 +76,41 @@ function readHeader(fn: FunctionIR): number | undefined {
       if (op !== undefined && op.kind === "binary" && op.operator === "===")
         selfTest = true;
   return selfTest ? term.record : undefined;
+}
+
+/** A dense reference-list write accessor (direct references): its header
+ * record, matching codegen's listWriteShape. */
+function writeHeader(fn: FunctionIR): number | undefined {
+  if (
+    !fn.name.startsWith("__tint_reference_list_write$") ||
+    fn.returnType !== "void" ||
+    fn.parameters.length !== 3 ||
+    fn.parameters[0] !== 0 ||
+    fn.parameters[1] !== 1 ||
+    fn.parameters[2] !== 2 ||
+    fn.slots[0] !== "reference" ||
+    fn.slots[1] !== "number" ||
+    (fn.slots[2] !== "optional-reference" && fn.slots[2] !== "optional-string")
+  )
+    return undefined;
+  let header = -1,
+    vectorWrite = false,
+    lengthWrite = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) return undefined;
+    for (const op of block.instructions) {
+      if (op === undefined) return undefined;
+      if (op.kind === "record-new") return undefined;
+      if (op.kind === "reference-vector-write") vectorWrite = true;
+    }
+    const t = block.terminator;
+    if (t.kind === "record") {
+      if (header < 0) header = t.record;
+      else if (header !== t.record) return undefined;
+      if (t.field === 0 && t.operation === "write") lengthWrite = true;
+    } else if (t.kind === "record-cell" || t.kind === "cell") return undefined;
+  }
+  return header >= 0 && vectorWrite && lengthWrite ? header : undefined;
 }
 
 /** Header records a terminator may write (a field write or initialization of
@@ -254,6 +291,7 @@ export function cacheListVectors(
   let visited = module.functions.length;
   if (visited > budget) return undefined;
   const readers = new Map<number, number>(),
+    writers = new Map<number, number>(),
     headers = new Map<number, number>(),
     readOnly = new Set<number>();
   for (const fn of module.functions) {
@@ -263,10 +301,18 @@ export function cacheListVectors(
       readers.set(fn.id, header);
       if (!headers.has(header)) headers.set(header, headers.size);
       readOnly.add(fn.id);
-    } else if (fn.name.startsWith("__tint_reference_list_has$"))
+    } else if (fn.name.startsWith("__tint_reference_list_has$")) {
       readOnly.add(fn.id);
+    } else {
+      const wHeader = writeHeader(fn);
+      if (wHeader !== undefined) {
+        writers.set(fn.id, wHeader);
+        if (!headers.has(wHeader)) headers.set(wHeader, headers.size);
+      }
+    }
   }
-  if (readers.size === 0) return { module, visited, rewritten: 0 };
+  if (readers.size === 0 && writers.size === 0)
+    return { module, visited, rewritten: 0 };
   const targets = indirectCallTargets(module, closedCalls, budget - visited);
   if (targets === undefined) return undefined;
   const words = (headers.size + 31) >>> 5,
@@ -326,6 +372,10 @@ export function cacheListVectors(
     const existing = cached.get(reader);
     if (existing !== undefined) return existing;
     const id = functions.length,
+      returnType: ScalarType =
+        functions[reader]?.returnType === "optional-string"
+          ? "optional-string"
+          : "optional-reference",
       readArguments: number[] = [0, 1];
     functions.push({
       id,
@@ -333,7 +383,7 @@ export function cacheListVectors(
       exported: false,
       parameters: [0, 1, 2],
       slots: ["optional-reference", "reference", "number"],
-      returnType: "optional-reference",
+      returnType,
       entry: 0,
       blocks: [
         {
@@ -365,6 +415,10 @@ export function cacheListVectors(
     const existing = unchecked.get(reader);
     if (existing !== undefined) return existing;
     const id = functions.length,
+      returnType: ScalarType =
+        functions[reader]?.returnType === "optional-string"
+          ? "optional-string"
+          : "optional-reference",
       readArguments: number[] = [0, 1];
     functions.push({
       id,
@@ -372,7 +426,7 @@ export function cacheListVectors(
       exported: false,
       parameters: [0, 1, 2],
       slots: ["optional-reference", "reference", "number"],
-      returnType: "optional-reference",
+      returnType,
       entry: 0,
       blocks: [
         {
@@ -394,6 +448,49 @@ export function cacheListVectors(
     });
     unchecked.set(reader, id);
     readOnly.add(id);
+    return id;
+  }
+  // Unchecked-write accessors, created on first use, by writer: valid IR
+  // forwarding to `writer`, inlined as direct vector store + barrier when
+  // guarded by a hoisted push loop's `len < cap` check.
+  const uncheckedWrites = new Map<number, number>();
+  function uncheckedWriter(writer: number): number {
+    const existing = uncheckedWrites.get(writer);
+    if (existing !== undefined) return existing;
+    const id = functions.length,
+      elementType: ScalarType =
+        functions[writer]?.slots[2] === "optional-string"
+          ? "optional-string"
+          : "optional-reference",
+      writeArguments: number[] = [0, 1, 2];
+    functions.push({
+      id,
+      name: uncheckedListWritePrefix + String(id),
+      exported: false,
+      parameters: [0, 1, 2, 3],
+      slots: ["reference", "reference", "number", elementType],
+      returnType: "void",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "load", id: 0, slot: 1, ...span },
+            { kind: "load", id: 1, slot: 2, ...span },
+            { kind: "load", id: 2, slot: 3, ...span },
+            {
+              kind: "call",
+              id: undefined,
+              target: writer,
+              arguments: writeArguments,
+              ...span,
+            },
+          ],
+          terminator: { kind: "return", value: undefined, ...span },
+        },
+      ],
+    });
+    uncheckedWrites.set(writer, id);
     return id;
   }
   // Vector accessors, created on first use, by header record: the list's
@@ -430,21 +527,50 @@ export function cacheListVectors(
   for (let index = 0; index < module.functions.length; index++) {
     const fn = module.functions[index];
     if (fn === undefined) throw "list vector function invariant";
-    if (fn.import === true || readOnly.has(fn.id)) continue;
-    let reads = 0;
+    if (fn.import === true || readOnly.has(fn.id) || writers.has(fn.id))
+      continue;
+    let reads = 0,
+      writeOps = 0;
     for (const block of fn.blocks)
       for (const op of block?.instructions ?? [])
-        if (op !== undefined && op.kind === "call" && readers.has(op.target))
-          reads++;
+        if (op !== undefined && op.kind === "call") {
+          if (readers.has(op.target)) reads++;
+          else if (writers.has(op.target)) writeOps++;
+        }
     visited += fn.blocks.length;
-    if (reads === 0) continue;
+    if (reads === 0 && writeOps === 0) continue;
     if (visited > budget) return undefined;
-    const result = rewriteFunction(fn, budget - visited);
-    if (result === undefined) return undefined;
-    visited += result.visited;
-    if (result.rewritten === 0) continue;
-    rewritten += result.rewritten;
-    functions[index] = result.fn;
+    let cur = fn;
+    // Hoist fresh push loops before read caching so hoisted unchecked vector
+    // writes no longer mark the shared list header as always-written in loops
+    // that also read another list (e.g. `labels[i & 3]` inside `items.push`).
+    if (writeOps > 0) {
+      const pushed = hoistPushLoops(
+        cur,
+        writers,
+        readOnly,
+        (w) => functions[w]?.slots[2] ?? "optional-reference",
+        vectorAccessor,
+        uncheckedWriter,
+        budget - visited,
+      );
+      if (pushed === undefined) return undefined;
+      visited += pushed.visited;
+      if (pushed.rewritten > 0) {
+        rewritten += pushed.rewritten;
+        cur = pushed.fn;
+      }
+    }
+    if (reads > 0) {
+      const result = rewriteFunction(cur, budget - visited);
+      if (result === undefined) return undefined;
+      visited += result.visited;
+      if (result.rewritten > 0) {
+        rewritten += result.rewritten;
+        cur = result.fn;
+      }
+    }
+    functions[index] = cur;
   }
 
   function rewriteFunction(
@@ -1652,4 +1778,1438 @@ function tryUncheckedListBounds(
   const resultFn: FunctionIR =
     debug === undefined ? { ...fn, blocks } : { ...fn, blocks, debug };
   return { fn: resultFn, nextValue, rewritten: matched.length };
+}
+
+/** Hoists dense direct-reference `ReferenceList` push loops (`len = list.length;
+ * __tint_reference_list_write(list, len, elem)`) for freshly created, unescaped
+ * lists: caches `vec` (optional-reference), `len` (uint32 int64), and `cap`
+ * (uint32 int64) in slots across the loop, executes an unchecked vector write +
+ * `len++` on the `len < cap` fast path, falls back to the writer on growth and
+ * refreshes the cache, and writes `list.length = len` once on loop exit. */
+function hoistPushLoops(
+  fn: FunctionIR,
+  writers: ReadonlyMap<number, number>,
+  readOnly: ReadonlySet<number>,
+  writerElementType: (writer: number) => ScalarType,
+  vectorAccessor: (header: number) => number,
+  uncheckedWriter: (writer: number) => number,
+  budget: number,
+):
+  | {
+      readonly fn: FunctionIR;
+      readonly visited: number;
+      readonly rewritten: number;
+    }
+  | undefined {
+  const forest = naturalLoops(fn, budget);
+  if (forest === undefined) return undefined;
+  let visited = forest.visited;
+  if (forest.loops.length === 0) return { fn, visited, rewritten: 0 };
+
+  let nextValue = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined) return undefined;
+    for (const op of block.instructions) {
+      if (op === undefined) return undefined;
+      const r = instructionResult(op);
+      if (r !== undefined && r >= nextValue) nextValue = r + 1;
+    }
+  }
+
+  // Process innermost loops first.
+  const loops: NaturalLoop[] = [];
+  for (const loop of forest.loops) {
+    if (loop === undefined) continue;
+    let at = loops.length;
+    while (at > 0 && (loops[at - 1]?.body.size ?? 0) > loop.body.size) at--;
+    loops.splice(at, 0, loop);
+  }
+
+  let current = fn,
+    rewritten = 0;
+  const touched = new Set<number>();
+
+  for (const loop of loops) {
+    if (loop === undefined) continue;
+    let overlap = false;
+    for (const id of loop.body) if (touched.has(id)) overlap = true;
+    if (overlap) continue;
+
+    const predecessors: number[][] = [];
+    for (let i = 0; i < current.blocks.length; i++) predecessors.push([]);
+    for (const block of current.blocks) {
+      if (block === undefined) return undefined;
+      for (const succ of blockSuccessors(block))
+        predecessors[succ]?.push(block.id);
+      if (block.exception !== undefined)
+        predecessors[block.exception.target]?.push(block.id);
+    }
+
+    const outside = (predecessors[loop.header] ?? []).filter(
+      (id) => !loop.body.has(id),
+    );
+    const preheaderId = outside[0];
+    if (
+      outside.length !== 1 ||
+      preheaderId === undefined ||
+      touched.has(preheaderId)
+    )
+      continue;
+    const preheader = current.blocks[preheaderId];
+    const preTerm = preheader?.terminator;
+    if (
+      preheader === undefined ||
+      preheader.exception !== undefined ||
+      preTerm === undefined ||
+      preTerm.kind !== "jump" ||
+      preTerm.target !== loop.header
+    )
+      continue;
+
+    let irreducible = false;
+    for (const id of loop.body) {
+      if (id === loop.header) continue;
+      if ((predecessors[id] ?? []).some((p) => !loop.body.has(p))) {
+        irreducible = true;
+        break;
+      }
+    }
+    if (irreducible) continue;
+
+    // Single non-trap exit target, no exceptions/throws/returns, and find the
+    // single writer call in `loop.body`.
+    const isPureTrap = (bid: number): boolean => {
+      const tb = current.blocks[bid];
+      return (
+        tb !== undefined &&
+        tb.instructions.length === 0 &&
+        tb.terminator.kind === "trap" &&
+        tb.exception === undefined
+      );
+    };
+    let valid = true,
+      exitTarget = -1,
+      pushBlockId = -1,
+      pushIndex = -1,
+      writerTarget = -1,
+      header = -1;
+    for (const id of loop.body) {
+      const block = current.blocks[id];
+      if (block === undefined || block.exception !== undefined) {
+        valid = false;
+        break;
+      }
+      visited += block.instructions.length + 1;
+      if (visited > budget) return undefined;
+      const t = block.terminator;
+      if (
+        t.kind === "throw" ||
+        t.kind === "throw-literal" ||
+        t.kind === "return" ||
+        t.kind === "trap"
+      ) {
+        valid = false;
+        break;
+      }
+      for (const succ of blockSuccessors(block))
+        if (!loop.body.has(succ)) {
+          if (isPureTrap(succ)) continue;
+          if (exitTarget < 0) exitTarget = succ;
+          else if (exitTarget !== succ) {
+            valid = false;
+            break;
+          }
+        }
+      if (!valid) break;
+      for (let i = 0; i < block.instructions.length; i++) {
+        const op = block.instructions[i];
+        if (op === undefined) {
+          valid = false;
+          break;
+        }
+        if (op.kind === "call") {
+          const wHeader = writers.get(op.target);
+          if (wHeader !== undefined) {
+            if (pushBlockId >= 0) {
+              valid = false;
+              break;
+            }
+            pushBlockId = id;
+            pushIndex = i;
+            writerTarget = op.target;
+            header = wHeader;
+          } else if (!readOnly.has(op.target)) {
+            valid = false;
+            break;
+          }
+        } else if (
+          op.kind === "call-indirect" ||
+          op.kind === "host-call" ||
+          op.kind === "c-call"
+        ) {
+          valid = false;
+          break;
+        }
+      }
+      if (!valid) break;
+    }
+    if (!valid || exitTarget < 0 || pushBlockId < 0 || header < 0) continue;
+
+    const pushBlock = current.blocks[pushBlockId];
+    if (pushBlock === undefined) continue;
+    const pushOp = pushBlock.instructions[pushIndex];
+    if (pushOp === undefined || pushOp.kind !== "call") continue;
+    const argList = pushOp.arguments[0],
+      argIndex = pushOp.arguments[1],
+      argElem = pushOp.arguments[2];
+    if (
+      argList === undefined ||
+      argIndex === undefined ||
+      argElem === undefined
+    )
+      continue;
+
+    const defs = new Map<number, Instruction>(),
+      defPos = new Map<number, number>(),
+      useCount = new Map<number, number>();
+    for (let i = 0; i < pushBlock.instructions.length; i++) {
+      const op = pushBlock.instructions[i];
+      if (op === undefined) continue;
+      const r = instructionResult(op);
+      if (r !== undefined) {
+        defs.set(r, op);
+        defPos.set(r, i);
+      }
+      visitInstructionOperands(op, (v) =>
+        useCount.set(v, (useCount.get(v) ?? 0) + 1),
+      );
+    }
+    visitTerminatorOperands(pushBlock.terminator, (v) =>
+      useCount.set(v, (useCount.get(v) ?? 0) + 1),
+    );
+
+    const listDef = defs.get(argList);
+    if (
+      listDef === undefined ||
+      listDef.kind !== "load" ||
+      current.slots[listDef.slot] !== "reference" ||
+      loop.writes.has(listDef.slot)
+    )
+      continue;
+    const listSlot = listDef.slot;
+
+    // Match `argIndex` either as `record-read(load(listSlot), header, 0)` in
+    // `pushBlock` OR as `load(lenTempSlot)` populated by the unique in-loop
+    // predecessor `readBlock`'s `record(read, load(listSlot), header, 0)`
+    // terminator (whose alternate is a pure trap block).
+    const idxDef = defs.get(argIndex);
+    if (idxDef === undefined || (useCount.get(argIndex) ?? 0) !== 1) continue;
+    const idxReadPos = defPos.get(argIndex) ?? -1;
+    if (idxReadPos < 0 || idxReadPos >= pushIndex) continue;
+    let inlineIdxObjId = -1,
+      readBlockId = -1,
+      readObjId = -1,
+      readTrapId = -1,
+      lenTempSlot = -1;
+    if (
+      idxDef.kind === "record-read" &&
+      idxDef.record === header &&
+      idxDef.field === 0
+    ) {
+      const idxObjDef = defs.get(idxDef.object);
+      if (
+        idxObjDef === undefined ||
+        idxObjDef.kind !== "load" ||
+        idxObjDef.slot !== listSlot
+      )
+        continue;
+      inlineIdxObjId = idxDef.object;
+    } else if (idxDef.kind === "load") {
+      const slot = idxDef.slot;
+      const predsOfPush = predecessors[pushBlockId] ?? [];
+      const rbId = predsOfPush[0];
+      if (
+        predsOfPush.length !== 1 ||
+        rbId === undefined ||
+        !loop.body.has(rbId) ||
+        rbId === pushBlockId
+      )
+        continue;
+      const rb = current.blocks[rbId];
+      if (rb === undefined) continue;
+      const rt = rb.terminator;
+      if (
+        rt.kind !== "record" ||
+        rt.operation !== "read" ||
+        rt.record !== header ||
+        rt.field !== 0 ||
+        rt.slot !== slot ||
+        rt.consequent !== pushBlockId ||
+        !isPureTrap(rt.alternate)
+      )
+        continue;
+      // Ensure `rt.object` is `load(listSlot)` in `rb`.
+      let matchedObj = false;
+      for (const op of rb.instructions) {
+        if (
+          op !== undefined &&
+          op.kind === "load" &&
+          op.id === rt.object &&
+          op.slot === listSlot
+        ) {
+          matchedObj = true;
+          break;
+        }
+      }
+      if (!matchedObj) continue;
+      // Ensure `slot` is not read anywhere else inside `loop.body`, nor read
+      // after `exitTarget` before being overwritten.
+      let slotLiveElsewhere = false;
+      for (const id of loop.body) {
+        const b = current.blocks[id];
+        if (b === undefined) {
+          slotLiveElsewhere = true;
+          break;
+        }
+        for (const op of b.instructions)
+          if (
+            op !== undefined &&
+            op.kind === "load" &&
+            op.slot === slot &&
+            !(id === pushBlockId && op.id === argIndex)
+          ) {
+            slotLiveElsewhere = true;
+            break;
+          }
+        const bt = b.terminator;
+        if (
+          (bt.kind === "record" ||
+            bt.kind === "record-cell" ||
+            bt.kind === "cell") &&
+          bt.operation === "write" &&
+          bt.slot === slot
+        )
+          slotLiveElsewhere = true;
+        if (slotLiveElsewhere) break;
+      }
+      if (!slotLiveElsewhere) {
+        // BFS from `exitTarget` stopping at blocks that write `slot`.
+        const seen = new Set<number>();
+        const q: number[] = [exitTarget];
+        seen.add(exitTarget);
+        while (q.length > 0 && !slotLiveElsewhere) {
+          const bid = q.pop();
+          if (bid === undefined) break;
+          const b = current.blocks[bid];
+          if (b === undefined) {
+            slotLiveElsewhere = true;
+            break;
+          }
+          let overwritten = false;
+          for (const op of b.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "load" && op.slot === slot) {
+              slotLiveElsewhere = true;
+              break;
+            }
+            if (op.kind === "store" && op.slot === slot) {
+              overwritten = true;
+              break;
+            }
+          }
+          if (slotLiveElsewhere || overwritten) continue;
+          const bt = b.terminator;
+          if (
+            (bt.kind === "record" ||
+              bt.kind === "record-cell" ||
+              bt.kind === "cell") &&
+            bt.operation === "write" &&
+            bt.slot === slot
+          ) {
+            slotLiveElsewhere = true;
+            break;
+          }
+          const readsSlot =
+            (bt.kind === "record" ||
+              bt.kind === "record-cell" ||
+              bt.kind === "cell") &&
+            bt.operation !== "write" &&
+            bt.slot === slot;
+          for (const succ of blockSuccessors(b)) {
+            if (
+              readsSlot &&
+              (bt.kind === "record" ||
+                bt.kind === "record-cell" ||
+                bt.kind === "cell") &&
+              succ === bt.consequent
+            )
+              continue;
+            if (!seen.has(succ)) {
+              seen.add(succ);
+              q.push(succ);
+            }
+          }
+        }
+      }
+      if (slotLiveElsewhere) continue;
+      readBlockId = rbId;
+      readObjId = rt.object;
+      readTrapId = rt.alternate;
+      lenTempSlot = slot;
+    } else continue;
+
+    // Ensure no SSA value defined before `pushIndex` is used after `pushIndex`
+    // (since splitting `pushBlock` requires block-local SSA).
+    let liveAcross = false;
+    for (let i = pushIndex + 1; i < pushBlock.instructions.length; i++) {
+      const op = pushBlock.instructions[i];
+      if (op === undefined) continue;
+      visitInstructionOperands(op, (v) => {
+        const p = defPos.get(v);
+        if (p !== undefined && p < pushIndex) liveAcross = true;
+      });
+    }
+    visitTerminatorOperands(pushBlock.terminator, (v) => {
+      const p = defPos.get(v);
+      if (p !== undefined && p < pushIndex) liveAcross = true;
+    });
+    if (liveAcross) continue;
+
+    // Ensure no other instruction or terminator in `loop.body` touches
+    // `listSlot` (except the matched push/length loads) or writes `header`.
+    let otherTouch = false;
+    for (const id of loop.body) {
+      const b = current.blocks[id];
+      if (b === undefined) {
+        otherTouch = true;
+        break;
+      }
+      const bt = b.terminator;
+      if (
+        (bt.kind === "record" || bt.kind === "record-cell") &&
+        bt.record === header &&
+        id !== readBlockId
+      ) {
+        otherTouch = true;
+        break;
+      }
+      for (let i = 0; i < b.instructions.length; i++) {
+        const op = b.instructions[i];
+        if (op === undefined) continue;
+        if (op.kind === "load" && op.slot === listSlot) {
+          const allowedInPush =
+            id === pushBlockId &&
+            (op.id === argList || op.id === inlineIdxObjId);
+          const allowedInRead = id === readBlockId && op.id === readObjId;
+          if (!allowedInPush && !allowedInRead) {
+            otherTouch = true;
+            break;
+          }
+        }
+        if (
+          op.kind === "record-read" &&
+          op.record === header &&
+          !(inlineIdxObjId >= 0 && id === pushBlockId && i === idxReadPos)
+        ) {
+          otherTouch = true;
+          break;
+        }
+      }
+      if (otherTouch) break;
+    }
+    if (otherTouch) continue;
+
+    // Match a simple counted loop `for (i = start; i < bound; i += 1)` so we
+    // can pre-allocate the backing vector once in `freshBlockId`, and when
+    // every backedge steps `i` by +1 with no inner cycle, drop the per-push
+    // `len < cap` check and slow growth path completely.
+    const matchCountedPushBound = ():
+      { readonly capacity: number; readonly exact: boolean } | undefined => {
+      if (pushBlockId === loop.header) return undefined;
+      const hb = current.blocks[loop.header];
+      const ht = hb?.terminator;
+      if (hb === undefined || ht === undefined || ht.kind !== "branch")
+        return undefined;
+      let exitOnTrue = false;
+      if (ht.consequent === exitTarget && loop.body.has(ht.alternate))
+        exitOnTrue = true;
+      else if (ht.alternate === exitTarget && loop.body.has(ht.consequent))
+        exitOnTrue = false;
+      else return undefined;
+
+      const hDefs = new Map<number, Instruction>();
+      for (const op of hb.instructions) {
+        if (op === undefined) continue;
+        const r = instructionResult(op);
+        if (r !== undefined) hDefs.set(r, op);
+      }
+      const condOp = hDefs.get(ht.condition);
+      if (condOp === undefined || condOp.kind !== "binary") return undefined;
+      let stayOp = condOp.operator;
+      if (exitOnTrue) {
+        if (stayOp === "<") stayOp = ">=";
+        else if (stayOp === "<=") stayOp = ">";
+        else if (stayOp === ">") stayOp = "<=";
+        else if (stayOp === ">=") stayOp = "<";
+        else return undefined;
+      }
+      let lhs: Instruction | undefined,
+        rhs: Instruction | undefined,
+        inclusive = false;
+      if (stayOp === "<" || stayOp === "<=") {
+        lhs = hDefs.get(condOp.left);
+        rhs = hDefs.get(condOp.right);
+        inclusive = stayOp === "<=";
+      } else if (stayOp === ">" || stayOp === ">=") {
+        lhs = hDefs.get(condOp.right);
+        rhs = hDefs.get(condOp.left);
+        inclusive = stayOp === ">=";
+      } else return undefined;
+
+      if (
+        lhs === undefined ||
+        lhs.kind !== "load" ||
+        current.slots[lhs.slot] !== "number" ||
+        !loop.writes.has(lhs.slot)
+      )
+        return undefined;
+      const counterSlot = lhs.slot;
+
+      const scanSlotConstant = (slot: number): number | undefined => {
+        let cur = preheaderId;
+        for (let hops = 0; hops < 4; hops++) {
+          const sb = current.blocks[cur];
+          if (sb === undefined || sb.exception !== undefined) return undefined;
+          const sDefs = new Map<number, Instruction>();
+          for (const op of sb.instructions) {
+            if (op === undefined) continue;
+            const r = instructionResult(op);
+            if (r !== undefined) sDefs.set(r, op);
+          }
+          for (let i = sb.instructions.length - 1; i >= 0; i--) {
+            const op = sb.instructions[i];
+            if (op !== undefined && op.kind === "store" && op.slot === slot) {
+              const v = sDefs.get(op.value);
+              if (v === undefined || v.kind !== "constant") return undefined;
+              const cv = v.value;
+              return typeof cv === "number" && Number.isSafeInteger(cv)
+                ? cv
+                : undefined;
+            }
+          }
+          const st = sb.terminator;
+          if (
+            (st.kind === "record" ||
+              st.kind === "record-cell" ||
+              st.kind === "cell") &&
+            st.operation !== "write" &&
+            st.slot === slot
+          )
+            return undefined;
+          const preds = predecessors[cur] ?? [];
+          const prev = preds[0];
+          if (preds.length !== 1 || prev === undefined) return undefined;
+          const pb = current.blocks[prev],
+            pt = pb?.terminator;
+          if (
+            pb === undefined ||
+            pt === undefined ||
+            pt.kind !== "jump" ||
+            pt.target !== cur
+          )
+            return undefined;
+          cur = prev;
+        }
+        return undefined;
+      };
+
+      let boundVal: number | undefined;
+      if (rhs !== undefined && rhs.kind === "constant") {
+        const cv = rhs.value;
+        if (typeof cv === "number" && Number.isSafeInteger(cv)) boundVal = cv;
+      } else if (
+        rhs !== undefined &&
+        rhs.kind === "load" &&
+        current.slots[rhs.slot] === "number" &&
+        !loop.writes.has(rhs.slot)
+      )
+        boundVal = scanSlotConstant(rhs.slot);
+      if (boundVal === undefined) return undefined;
+
+      const startVal = scanSlotConstant(counterSlot);
+      if (startVal === undefined) return undefined;
+      const iterations = inclusive
+        ? boundVal - startVal + 1
+        : boundVal - startVal;
+      if (
+        !Number.isSafeInteger(iterations) ||
+        iterations < 1 ||
+        iterations > 4096
+      )
+        return undefined;
+
+      // Verify whether `pushBlockId` can execute at most `iterations` times:
+      // 1. `loop.body` excluding edges to `loop.header` is a DAG (no inner
+      //    cycles, so each block runs at most once per header trip).
+      let exact = true;
+      const color = new Map<number, number>();
+      function hasCycle(u: number): boolean {
+        color.set(u, 1);
+        const ub = current.blocks[u];
+        if (ub !== undefined) {
+          for (const succ of blockSuccessors(ub)) {
+            if (!loop.body.has(succ) || succ === loop.header) continue;
+            const c = color.get(succ) ?? 0;
+            if (c === 1) return true;
+            if (c === 0 && hasCycle(succ)) return true;
+          }
+        }
+        color.set(u, 2);
+        return false;
+      }
+      for (const id of loop.body) {
+        if ((color.get(id) ?? 0) === 0 && hasCycle(id)) {
+          exact = false;
+          break;
+        }
+      }
+
+      // 2. `counterSlot` has a single write in `loop.body`, in a non-header
+      //    block `stepBlockId`, which adds +1 without integer wrap.
+      let stepBlockId = -1;
+      if (exact) {
+        let storeCount = 0;
+        for (const id of loop.body) {
+          const b = current.blocks[id];
+          if (b === undefined) {
+            exact = false;
+            break;
+          }
+          const bt = b.terminator;
+          if (
+            (bt.kind === "record" ||
+              bt.kind === "record-cell" ||
+              bt.kind === "cell") &&
+            bt.operation !== "write" &&
+            bt.slot === counterSlot
+          ) {
+            exact = false;
+            break;
+          }
+          const bDefs = new Map<number, Instruction>();
+          for (const op of b.instructions) {
+            if (op === undefined) continue;
+            const r = instructionResult(op);
+            if (r !== undefined) bDefs.set(r, op);
+            if (op.kind === "store" && op.slot === counterSlot) {
+              storeCount++;
+              if (storeCount > 1 || id === loop.header) {
+                exact = false;
+                break;
+              }
+              let rhsDef = bDefs.get(op.value);
+              if (rhsDef !== undefined && rhsDef.kind === "unary") {
+                if (
+                  rhsDef.operator === "int32" &&
+                  startVal >= 0 &&
+                  boundVal < 0x7fffffff
+                )
+                  rhsDef = bDefs.get(rhsDef.operand);
+                else if (
+                  rhsDef.operator === "uint32" &&
+                  startVal >= 0 &&
+                  boundVal < 0xffffffff
+                )
+                  rhsDef = bDefs.get(rhsDef.operand);
+                else {
+                  exact = false;
+                  break;
+                }
+              }
+              if (
+                rhsDef === undefined ||
+                rhsDef.kind !== "binary" ||
+                rhsDef.operator !== "+"
+              ) {
+                exact = false;
+                break;
+              }
+              const lDef = bDefs.get(rhsDef.left),
+                rDef = bDefs.get(rhsDef.right);
+              const plusOne =
+                (lDef !== undefined &&
+                  lDef.kind === "load" &&
+                  lDef.slot === counterSlot &&
+                  rDef !== undefined &&
+                  rDef.kind === "constant" &&
+                  rDef.value === 1) ||
+                (rDef !== undefined &&
+                  rDef.kind === "load" &&
+                  rDef.slot === counterSlot &&
+                  lDef !== undefined &&
+                  lDef.kind === "constant" &&
+                  lDef.value === 1);
+              if (!plusOne) {
+                exact = false;
+                break;
+              }
+              stepBlockId = id;
+            }
+          }
+          if (!exact) break;
+        }
+        if (storeCount !== 1 || stepBlockId < 0) exact = false;
+      }
+
+      // 3. Every path from `loop.header` to a backedge (`-> loop.header`)
+      //    must pass through `stepBlockId`.
+      if (exact) {
+        const seen = new Set<number>();
+        seen.add(loop.header);
+        const stack: number[] = [loop.header];
+        while (stack.length > 0 && exact) {
+          const u = stack.pop();
+          if (u === undefined || u === stepBlockId) continue;
+          const ub = current.blocks[u];
+          if (ub === undefined) {
+            exact = false;
+            break;
+          }
+          for (const succ of blockSuccessors(ub)) {
+            if (!loop.body.has(succ)) continue;
+            if (succ === loop.header) {
+              exact = false;
+              break;
+            }
+            if (!seen.has(succ)) {
+              seen.add(succ);
+              stack.push(succ);
+            }
+          }
+        }
+      }
+
+      return { capacity: iterations, exact };
+    };
+
+    // Verify `listSlot` is freshly created by an empty `record-new(header,
+    // [constant 0, reference-none])` in `preheader` (or up a unique-pred
+    // chain) with no intervening reads, writes, or escapes of `listSlot`.
+    let freshEmpty = false,
+      freshBlockId = -1,
+      freshRecordPos = -1,
+      freshRecordId = -1,
+      freshRecordStart = 0,
+      freshRecordEnd = 0,
+      freshRecordInline: number | undefined,
+      freshArg0 = -1,
+      scanId = preheaderId;
+    for (let hops = 0; hops < 4; hops++) {
+      const sb = current.blocks[scanId];
+      if (sb === undefined || sb.exception !== undefined) break;
+      const sDefs = new Map<number, Instruction>(),
+        sDefPos = new Map<number, number>(),
+        sUses = new Map<number, number>();
+      for (let idx = 0; idx < sb.instructions.length; idx++) {
+        const op = sb.instructions[idx];
+        if (op === undefined) continue;
+        const r = instructionResult(op);
+        if (r !== undefined) {
+          sDefs.set(r, op);
+          sDefPos.set(r, idx);
+        }
+        visitInstructionOperands(op, (v) =>
+          sUses.set(v, (sUses.get(v) ?? 0) + 1),
+        );
+      }
+      visitTerminatorOperands(sb.terminator, (v) =>
+        sUses.set(v, (sUses.get(v) ?? 0) + 1),
+      );
+      let touchedSlot = false;
+      for (let i = sb.instructions.length - 1; i >= 0; i--) {
+        const op = sb.instructions[i];
+        if (op === undefined) continue;
+        if (op.kind === "load" && op.slot === listSlot) {
+          touchedSlot = true;
+          break;
+        }
+        if (op.kind === "store" && op.slot === listSlot) {
+          touchedSlot = true;
+          const created = sDefs.get(op.value);
+          if (
+            created !== undefined &&
+            created.kind === "record-new" &&
+            created.record === header &&
+            created.arguments.length === 2 &&
+            (sUses.get(created.id) ?? 0) === 1
+          ) {
+            const arg0 = created.arguments[0],
+              arg1 = created.arguments[1],
+              a0 = arg0 === undefined ? undefined : sDefs.get(arg0),
+              a1 = arg1 === undefined ? undefined : sDefs.get(arg1);
+            if (
+              arg0 !== undefined &&
+              a0 !== undefined &&
+              a0.kind === "constant" &&
+              a0.value === 0 &&
+              a1 !== undefined &&
+              a1.kind === "reference-none"
+            ) {
+              freshEmpty = true;
+              freshBlockId = scanId;
+              freshRecordPos = sDefPos.get(created.id) ?? -1;
+              freshRecordId = created.id;
+              freshRecordStart = created.start;
+              freshRecordEnd = created.end;
+              freshRecordInline = created.inline;
+              freshArg0 = arg0;
+            }
+          }
+          break;
+        }
+      }
+      if (touchedSlot) break;
+      const preds = predecessors[scanId] ?? [];
+      const prev = preds[0];
+      if (preds.length !== 1 || prev === undefined) break;
+      const pb = current.blocks[prev],
+        pbTerm = pb?.terminator;
+      if (
+        pb === undefined ||
+        pbTerm === undefined ||
+        pbTerm.kind !== "jump" ||
+        pbTerm.target !== scanId
+      )
+        break;
+      scanId = prev;
+    }
+    if (!freshEmpty) continue;
+
+    // Element type from writer's parameter 2.
+    const actualElemType = writerElementType(writerTarget);
+    if (
+      actualElemType !== "optional-reference" &&
+      actualElemType !== "optional-string"
+    )
+      continue;
+
+    const canPresize =
+      freshBlockId >= 0 &&
+      freshRecordPos >= 0 &&
+      freshRecordId >= 0 &&
+      !touched.has(freshBlockId) &&
+      !loop.body.has(freshBlockId);
+    const countedBound = canPresize ? matchCountedPushBound() : undefined;
+    const preCap = countedBound?.capacity;
+    const exactBound = countedBound?.exact === true;
+
+    const candSlots = current.slots.slice(),
+      candBlocks = current.blocks.slice();
+    let candNextValue = nextValue;
+    const fresh = (): number => candNextValue++;
+
+    const vecSlot = candSlots.length;
+    candSlots.push(exactBound ? "reference" : "optional-reference");
+    const lenSlot = candSlots.length;
+    candSlots.push("number");
+    const lenWriteSlot = candSlots.length;
+    candSlots.push("number");
+
+    if (preCap !== undefined && freshRecordId >= 0) {
+      // Pre-allocate the backing vector once at `freshRecordPos` and attach it
+      // directly to the new empty list header (`length = 0`, `root = vector`).
+      const fb = candBlocks[freshBlockId];
+      if (fb === undefined) continue;
+      const fInsts: Instruction[] = [];
+      for (let i = 0; i < fb.instructions.length; i++) {
+        const op = fb.instructions[i];
+        if (op === undefined) continue;
+        if (i === freshRecordPos) {
+          const vPreCap = fresh(),
+            vPreVec = fresh(),
+            vPreWrap = fresh(),
+            preRecArgs: number[] = [freshArg0, vPreWrap];
+          const rebuiltRec: Instruction =
+            freshRecordInline === undefined
+              ? {
+                  kind: "record-new",
+                  id: freshRecordId,
+                  record: header,
+                  arguments: preRecArgs,
+                  start: freshRecordStart,
+                  end: freshRecordEnd,
+                }
+              : {
+                  kind: "record-new",
+                  id: freshRecordId,
+                  record: header,
+                  arguments: preRecArgs,
+                  start: freshRecordStart,
+                  end: freshRecordEnd,
+                  inline: freshRecordInline,
+                };
+          fInsts.push(
+            { kind: "constant", id: vPreCap, value: preCap, start: 0, end: 0 },
+            {
+              kind: "reference-vector-new",
+              id: vPreVec,
+              length: vPreCap,
+              start: 0,
+              end: 0,
+            },
+            {
+              kind: "reference-wrap",
+              id: vPreWrap,
+              value: vPreVec,
+              start: 0,
+              end: 0,
+            },
+            {
+              kind: "store",
+              slot: vecSlot,
+              value: exactBound ? vPreVec : vPreWrap,
+              start: 0,
+              end: 0,
+            },
+            rebuiltRec,
+          );
+        } else {
+          fInsts.push(op);
+        }
+      }
+      candBlocks[freshBlockId] = { ...fb, instructions: fInsts };
+    }
+
+    if (exactBound) {
+      // Preheader: initialize `lenSlot = 0`.
+      const updatedPre = candBlocks[preheaderId];
+      if (updatedPre === undefined) continue;
+      const preInsts = updatedPre.instructions.slice(),
+        vInitZero = fresh();
+      preInsts.push(
+        { kind: "constant", id: vInitZero, value: 0, start: 0, end: 0 },
+        { kind: "store", slot: lenSlot, value: vInitZero, start: 0, end: 0 },
+      );
+      candBlocks[preheaderId] = { ...updatedPre, instructions: preInsts };
+
+      const wbId = candBlocks.length,
+        trapId = readTrapId >= 0 ? readTrapId : wbId + 1;
+
+      // Replace the push call inline with the unchecked vector write + `len++`.
+      const newPushInsts: Instruction[] = [];
+      for (let i = 0; i < pushBlock.instructions.length; i++) {
+        if (i === idxReadPos) continue;
+        if (i === pushIndex) {
+          const vFVec = fresh(),
+            vFLen = fresh(),
+            vFOne = fresh(),
+            vFNext = fresh(),
+            vFUintNext = fresh();
+          const fastWriter = uncheckedWriter(writerTarget),
+            fastArgs: number[] = [vFVec, argList, vFLen, argElem];
+          newPushInsts.push(
+            { kind: "load", id: vFVec, slot: vecSlot, start: 0, end: 0 },
+            { kind: "load", id: vFLen, slot: lenSlot, start: 0, end: 0 },
+            {
+              kind: "call",
+              id: undefined,
+              target: fastWriter,
+              arguments: fastArgs,
+              start: 0,
+              end: 0,
+            },
+            { kind: "constant", id: vFOne, value: 1, start: 0, end: 0 },
+            {
+              kind: "binary",
+              id: vFNext,
+              operator: "+",
+              left: vFLen,
+              right: vFOne,
+              start: 0,
+              end: 0,
+            },
+            {
+              kind: "unary",
+              id: vFUintNext,
+              operator: "uint32",
+              operand: vFNext,
+              start: 0,
+              end: 0,
+            },
+            {
+              kind: "store",
+              slot: lenSlot,
+              value: vFUintNext,
+              start: 0,
+              end: 0,
+            },
+          );
+          continue;
+        }
+        const op = pushBlock.instructions[i];
+        if (op !== undefined) newPushInsts.push(op);
+      }
+      candBlocks[pushBlockId] = {
+        ...pushBlock,
+        instructions: newPushInsts,
+        terminator: retargetTerminator(pushBlock.terminator, (t) =>
+          t === exitTarget ? wbId : t,
+        ),
+      };
+      if (readBlockId >= 0) {
+        const rb = candBlocks[readBlockId];
+        if (rb !== undefined) {
+          const rbUses = new Map<number, number>();
+          for (const op of rb.instructions)
+            if (op !== undefined)
+              visitInstructionOperands(op, (v) =>
+                rbUses.set(v, (rbUses.get(v) ?? 0) + 1),
+              );
+          const rbInsts =
+            (rbUses.get(readObjId) ?? 0) === 0
+              ? rb.instructions.filter(
+                  (op) =>
+                    op === undefined || instructionResult(op) !== readObjId,
+                )
+              : rb.instructions;
+          candBlocks[readBlockId] = {
+            ...rb,
+            instructions: rbInsts,
+            terminator: { kind: "jump", target: pushBlockId, start: 0, end: 0 },
+          };
+        }
+      }
+      void lenTempSlot;
+
+      // Writeback block on loop exit: update `list.length = lenSlot`.
+      const vWLen = fresh(),
+        vWList = fresh();
+      candBlocks.push({
+        id: wbId,
+        instructions: [
+          { kind: "load", id: vWLen, slot: lenSlot, start: 0, end: 0 },
+          { kind: "store", slot: lenWriteSlot, value: vWLen, start: 0, end: 0 },
+          { kind: "load", id: vWList, slot: listSlot, start: 0, end: 0 },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "write",
+          object: vWList,
+          record: header,
+          field: 0,
+          slot: lenWriteSlot,
+          consequent: exitTarget,
+          alternate: trapId,
+          start: 0,
+          end: 0,
+        },
+      });
+      if (readTrapId < 0)
+        candBlocks.push({
+          id: trapId,
+          instructions: [],
+          terminator: { kind: "trap", start: 0, end: 0 },
+        });
+
+      for (const id of loop.body) {
+        if (id === pushBlockId) continue;
+        const b = candBlocks[id];
+        if (b === undefined) continue;
+        const nt = retargetTerminator(b.terminator, (t) =>
+          t === exitTarget ? wbId : t,
+        );
+        if (nt !== b.terminator) candBlocks[id] = { ...b, terminator: nt };
+      }
+
+      const debug =
+        current.debug === undefined
+          ? undefined
+          : retainDebugValues(current, candBlocks);
+      const candidate: FunctionIR =
+        debug === undefined
+          ? { ...current, slots: candSlots, blocks: candBlocks }
+          : { ...current, slots: candSlots, blocks: candBlocks, debug };
+      if (!recordReadsKept(current, candidate)) continue;
+      current = candidate;
+      nextValue = candNextValue;
+      rewritten++;
+      for (const id of loop.body) touched.add(id);
+      touched.add(preheaderId);
+      touched.add(freshBlockId);
+      continue;
+    }
+
+    const capSlot = candSlots.length;
+    candSlots.push("number");
+    const elemSlot = candSlots.length;
+    candSlots.push(actualElemType);
+    const lenRawSlot = candSlots.length;
+    candSlots.push("number");
+
+    // Preheader: initialize `vecSlot` (unless already pre-sized), `lenSlot = 0`,
+    // and `capSlot` (`preCap` or `0`).
+    const updatedPre = candBlocks[preheaderId];
+    if (updatedPre === undefined) continue;
+    const preInsts = updatedPre.instructions.slice(),
+      vInitZero = fresh();
+    if (preCap === undefined) {
+      const vInitVec = fresh();
+      preInsts.push(
+        { kind: "reference-none", id: vInitVec, start: 0, end: 0 },
+        { kind: "store", slot: vecSlot, value: vInitVec, start: 0, end: 0 },
+        { kind: "constant", id: vInitZero, value: 0, start: 0, end: 0 },
+        { kind: "store", slot: lenSlot, value: vInitZero, start: 0, end: 0 },
+        { kind: "store", slot: capSlot, value: vInitZero, start: 0, end: 0 },
+      );
+    } else {
+      const vInitCap = fresh();
+      preInsts.push(
+        { kind: "constant", id: vInitZero, value: 0, start: 0, end: 0 },
+        { kind: "store", slot: lenSlot, value: vInitZero, start: 0, end: 0 },
+        { kind: "constant", id: vInitCap, value: preCap, start: 0, end: 0 },
+        { kind: "store", slot: capSlot, value: vInitCap, start: 0, end: 0 },
+      );
+    }
+    candBlocks[preheaderId] = { ...updatedPre, instructions: preInsts };
+
+    const fastId = candBlocks.length,
+      slowId = fastId + 1,
+      slowCapCheckId = fastId + 2,
+      slowCapSomeId = fastId + 3,
+      slowCapZeroId = fastId + 4,
+      afterId = fastId + 5,
+      wbId = fastId + 6,
+      trapId = readTrapId >= 0 ? readTrapId : fastId + 7;
+
+    // Split `pushBlock`: keep 0..pushIndex-1 (minus `idxReadPos`), store
+    // `argElem` into `elemSlot`, then branch `len < cap ? fastId : slowId`.
+    const beforeInsts: Instruction[] = [];
+    for (let i = 0; i < pushIndex; i++) {
+      if (i === idxReadPos) continue;
+      const op = pushBlock.instructions[i];
+      if (op !== undefined) beforeInsts.push(op);
+    }
+    const vLenCmp = fresh(),
+      vCapCmp = fresh(),
+      vFits = fresh();
+    beforeInsts.push(
+      { kind: "store", slot: elemSlot, value: argElem, start: 0, end: 0 },
+      { kind: "load", id: vLenCmp, slot: lenSlot, start: 0, end: 0 },
+      { kind: "load", id: vCapCmp, slot: capSlot, start: 0, end: 0 },
+      {
+        kind: "binary",
+        id: vFits,
+        operator: "<",
+        left: vLenCmp,
+        right: vCapCmp,
+        start: 0,
+        end: 0,
+      },
+    );
+    candBlocks[pushBlockId] = {
+      ...pushBlock,
+      instructions: beforeInsts,
+      terminator: {
+        kind: "branch",
+        condition: vFits,
+        consequent: fastId,
+        alternate: slowId,
+        start: 0,
+        end: 0,
+      },
+    };
+    if (readBlockId >= 0) {
+      const rb = candBlocks[readBlockId];
+      if (rb !== undefined) {
+        // Drop the now-unused `record(read, field: 0)` terminator on `readBlock`.
+        const rbUses = new Map<number, number>();
+        for (const op of rb.instructions)
+          if (op !== undefined)
+            visitInstructionOperands(op, (v) =>
+              rbUses.set(v, (rbUses.get(v) ?? 0) + 1),
+            );
+        const rbInsts =
+          (rbUses.get(readObjId) ?? 0) === 0
+            ? rb.instructions.filter(
+                (op) => op === undefined || instructionResult(op) !== readObjId,
+              )
+            : rb.instructions;
+        candBlocks[readBlockId] = {
+          ...rb,
+          instructions: rbInsts,
+          terminator: { kind: "jump", target: pushBlockId, start: 0, end: 0 },
+        };
+      }
+    }
+    void lenTempSlot;
+
+    // Fast path: unchecked vector store + `lenSlot = uint32(lenSlot + 1)`.
+    const vFVecOpt = fresh(),
+      vFVec = fresh(),
+      vFList = fresh(),
+      vFLen = fresh(),
+      vFElem = fresh(),
+      vFOne = fresh(),
+      vFNext = fresh(),
+      vFUintNext = fresh();
+    const fastWriter = uncheckedWriter(writerTarget),
+      fastArgs: number[] = [vFVec, vFList, vFLen, vFElem];
+    candBlocks.push({
+      id: fastId,
+      instructions: [
+        { kind: "load", id: vFVecOpt, slot: vecSlot, start: 0, end: 0 },
+        {
+          kind: "reference-value",
+          id: vFVec,
+          value: vFVecOpt,
+          start: 0,
+          end: 0,
+        },
+        { kind: "load", id: vFList, slot: listSlot, start: 0, end: 0 },
+        { kind: "load", id: vFLen, slot: lenSlot, start: 0, end: 0 },
+        { kind: "load", id: vFElem, slot: elemSlot, start: 0, end: 0 },
+        {
+          kind: "call",
+          id: undefined,
+          target: fastWriter,
+          arguments: fastArgs,
+          start: 0,
+          end: 0,
+        },
+        { kind: "constant", id: vFOne, value: 1, start: 0, end: 0 },
+        {
+          kind: "binary",
+          id: vFNext,
+          operator: "+",
+          left: vFLen,
+          right: vFOne,
+          start: 0,
+          end: 0,
+        },
+        {
+          kind: "unary",
+          id: vFUintNext,
+          operator: "uint32",
+          operand: vFNext,
+          start: 0,
+          end: 0,
+        },
+        { kind: "store", slot: lenSlot, value: vFUintNext, start: 0, end: 0 },
+      ],
+      terminator: { kind: "jump", target: afterId, start: 0, end: 0 },
+    });
+
+    // Slow path: call original writer, refresh `vecSlot`, `lenSlot`, `capSlot`.
+    const vSList = fresh(),
+      vSLen = fresh(),
+      vSElem = fresh(),
+      vSList2 = fresh(),
+      vSListWrap = fresh(),
+      vSNewVec = fresh(),
+      vSList3 = fresh();
+    const vecAcc = vectorAccessor(header),
+      slowWriteArgs: number[] = [vSList, vSLen, vSElem],
+      slowVecArgs: number[] = [vSListWrap];
+    candBlocks.push({
+      id: slowId,
+      instructions: [
+        { kind: "load", id: vSList, slot: listSlot, start: 0, end: 0 },
+        { kind: "load", id: vSLen, slot: lenSlot, start: 0, end: 0 },
+        { kind: "load", id: vSElem, slot: elemSlot, start: 0, end: 0 },
+        {
+          kind: "call",
+          id: undefined,
+          target: writerTarget,
+          arguments: slowWriteArgs,
+          start: 0,
+          end: 0,
+        },
+        { kind: "load", id: vSList2, slot: listSlot, start: 0, end: 0 },
+        {
+          kind: "reference-wrap",
+          id: vSListWrap,
+          value: vSList2,
+          start: 0,
+          end: 0,
+        },
+        {
+          kind: "call",
+          id: vSNewVec,
+          target: vecAcc,
+          arguments: slowVecArgs,
+          start: 0,
+          end: 0,
+        },
+        { kind: "store", slot: vecSlot, value: vSNewVec, start: 0, end: 0 },
+        { kind: "load", id: vSList3, slot: listSlot, start: 0, end: 0 },
+      ],
+      terminator: {
+        kind: "record",
+        operation: "read",
+        object: vSList3,
+        record: header,
+        field: 0,
+        slot: lenRawSlot,
+        consequent: slowCapCheckId,
+        alternate: trapId,
+        start: 0,
+        end: 0,
+      },
+    });
+
+    const vSRawLen = fresh(),
+      vSUintLen = fresh(),
+      vSCVec = fresh(),
+      vSHasVec = fresh();
+    candBlocks.push({
+      id: slowCapCheckId,
+      instructions: [
+        { kind: "load", id: vSRawLen, slot: lenRawSlot, start: 0, end: 0 },
+        {
+          kind: "unary",
+          id: vSUintLen,
+          operator: "uint32",
+          operand: vSRawLen,
+          start: 0,
+          end: 0,
+        },
+        { kind: "store", slot: lenSlot, value: vSUintLen, start: 0, end: 0 },
+        { kind: "load", id: vSCVec, slot: vecSlot, start: 0, end: 0 },
+        {
+          kind: "unary",
+          id: vSHasVec,
+          operator: "truthy",
+          operand: vSCVec,
+          start: 0,
+          end: 0,
+        },
+      ],
+      terminator: {
+        kind: "branch",
+        condition: vSHasVec,
+        consequent: slowCapSomeId,
+        alternate: slowCapZeroId,
+        start: 0,
+        end: 0,
+      },
+    });
+
+    const vSCVecOpt = fresh(),
+      vSCVecVal = fresh(),
+      vSCCap = fresh(),
+      vSCUintCap = fresh();
+    candBlocks.push({
+      id: slowCapSomeId,
+      instructions: [
+        { kind: "load", id: vSCVecOpt, slot: vecSlot, start: 0, end: 0 },
+        {
+          kind: "reference-value",
+          id: vSCVecVal,
+          value: vSCVecOpt,
+          start: 0,
+          end: 0,
+        },
+        {
+          kind: "reference-vector-length",
+          id: vSCCap,
+          vector: vSCVecVal,
+          start: 0,
+          end: 0,
+        },
+        {
+          kind: "unary",
+          id: vSCUintCap,
+          operator: "uint32",
+          operand: vSCCap,
+          start: 0,
+          end: 0,
+        },
+        { kind: "store", slot: capSlot, value: vSCUintCap, start: 0, end: 0 },
+      ],
+      terminator: { kind: "jump", target: afterId, start: 0, end: 0 },
+    });
+
+    const vSCZero = fresh();
+    candBlocks.push({
+      id: slowCapZeroId,
+      instructions: [
+        { kind: "constant", id: vSCZero, value: 0, start: 0, end: 0 },
+        { kind: "store", slot: capSlot, value: vSCZero, start: 0, end: 0 },
+      ],
+      terminator: { kind: "jump", target: afterId, start: 0, end: 0 },
+    });
+
+    const afterInsts: Instruction[] = [];
+    for (let i = pushIndex + 1; i < pushBlock.instructions.length; i++) {
+      const op = pushBlock.instructions[i];
+      if (op !== undefined) afterInsts.push(op);
+    }
+    candBlocks.push({
+      id: afterId,
+      instructions: afterInsts,
+      terminator: retargetTerminator(pushBlock.terminator, (t) =>
+        t === exitTarget ? wbId : t,
+      ),
+    });
+
+    // Writeback block on loop exit: copy `lenSlot` to `lenWriteSlot` (so
+    // `lenSlot` remains eligible as an integer slot!) and update `list.length`.
+    const vWLen = fresh(),
+      vWList = fresh();
+    candBlocks.push({
+      id: wbId,
+      instructions: [
+        { kind: "load", id: vWLen, slot: lenSlot, start: 0, end: 0 },
+        { kind: "store", slot: lenWriteSlot, value: vWLen, start: 0, end: 0 },
+        { kind: "load", id: vWList, slot: listSlot, start: 0, end: 0 },
+      ],
+      terminator: {
+        kind: "record",
+        operation: "write",
+        object: vWList,
+        record: header,
+        field: 0,
+        slot: lenWriteSlot,
+        consequent: exitTarget,
+        alternate: trapId,
+        start: 0,
+        end: 0,
+      },
+    });
+    if (readTrapId < 0)
+      candBlocks.push({
+        id: trapId,
+        instructions: [],
+        terminator: { kind: "trap", start: 0, end: 0 },
+      });
+
+    // Retarget all other exits from `loop.body` to `wbId`.
+    for (const id of loop.body) {
+      if (id === pushBlockId) continue;
+      const b = candBlocks[id];
+      if (b === undefined) continue;
+      const nt = retargetTerminator(b.terminator, (t) =>
+        t === exitTarget ? wbId : t,
+      );
+      if (nt !== b.terminator) candBlocks[id] = { ...b, terminator: nt };
+    }
+
+    const debug =
+      current.debug === undefined
+        ? undefined
+        : retainDebugValues(current, candBlocks);
+    const candidate: FunctionIR =
+      debug === undefined
+        ? { ...current, slots: candSlots, blocks: candBlocks }
+        : { ...current, slots: candSlots, blocks: candBlocks, debug };
+    if (!recordReadsKept(current, candidate)) continue;
+    current = candidate;
+    nextValue = candNextValue;
+    rewritten++;
+    for (const id of loop.body) touched.add(id);
+    touched.add(preheaderId);
+    if (preCap !== undefined) touched.add(freshBlockId);
+  }
+
+  return { fn: current, visited, rewritten };
 }

@@ -441,6 +441,10 @@ test("weak slots, chains and cycles across parallel workers", () => {
   process.env.TINT_DEBUG_SYMBOLS = "1";
   let image: string;
   try {
+    // Disable optimization on the debug hit-counting image so inlining does
+    // not fold single-caller runtime helpers (e.g. finishCopiedWeak) into
+    // their callers and hide them from LLDB function breakpoints. The
+    // optimized parallel build above already exercised the inlined code.
     image = verifyHostedFixture(
       parallelSource,
       "weak-cells-parallel-debug",
@@ -448,7 +452,7 @@ test("weak slots, chains and cycles across parallel workers", () => {
       [],
       [],
       fixtureNamespaces,
-      fixtureOptions(134217728),
+      { ...fixtureOptions(134217728), optimization: "none" as const },
     );
   } finally {
     if (saved.build === undefined) delete process.env.TINT_BUILD_ONLY;

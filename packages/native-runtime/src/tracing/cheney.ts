@@ -157,7 +157,7 @@ export function cheneyExtent(
   if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) size = nativeWeakSlotByteLength;
     else {
-      if (marker % 8 !== 0 || flags !== 0) throw "CHENEY_HEADER";
+      if ((marker & 7) !== 0 || flags !== 0) throw "CHENEY_HEADER";
       size = read(marker);
     }
   } else if (marker === 1) {
@@ -193,7 +193,10 @@ function evacuate(
   if (header >= nativeHeaderForwarded) return header - nativeHeaderForwarded;
   const marker = headerMarker(header),
     flags = headerFlags(header),
-    size = cheneyExtent(address, marker, flags),
+    size =
+      marker >= nativeBuiltinMarkerLimit && (marker & 7) === 0 && flags === 0
+        ? ((read(marker) + 7) >>> 3) << 3
+        : cheneyExtent(address, marker, flags),
     toBase = state.toBase,
     free = state.free,
     destination = toBase + free,
@@ -305,7 +308,7 @@ function scanObject(
       }
       return nativeWeakSlotByteLength;
     }
-    if (marker % 8 !== 0 || header !== marker) throw "CHENEY_HEADER";
+    if ((marker & 7) !== 0 || header !== marker) throw "CHENEY_HEADER";
     scanFields(state, starts, marker + 8, address);
     return ((read(marker) + 7) >>> 3) << 3;
   }
@@ -615,7 +618,11 @@ function popcount(word: number): number {
 /** Aligned extent of the object with this header; records (most objects)
  * read their descriptor's extent directly. */
 export function compactObjectSize(address: number, header: number): number {
-  if (header > 7 && header < nativeHeaderFlagUnit)
+  if (
+    header >= nativeBuiltinMarkerLimit &&
+    (header & 7) === 0 &&
+    header < nativeHeaderFlagUnit
+  )
     return ((read(header) + 7) >>> 3) << 3;
   return cheneyExtent(address, headerMarker(header), headerFlags(header));
 }
@@ -848,7 +855,7 @@ export function compactForwardObject(
   header: number,
 ): void {
   compactForwardChildren(state, address, header);
-  if (header >= 2 && header <= 5)
+  if (header < nativeHeaderFlagUnit && nativeTypedArrayMarker(header))
     write(
       address + nativeArrayDataOffset,
       compactForward(state, address) + nativeArrayInlineOffset,
@@ -882,7 +889,11 @@ function compactLive(
         size = compactObjectSize(address, header),
         destination = cursor;
       if (fieldsPending) compactForwardChildren(state, address, header);
-      if (fieldsPending && header >= 2 && header <= 5)
+      if (
+        fieldsPending &&
+        header < nativeHeaderFlagUnit &&
+        nativeTypedArrayMarker(header)
+      )
         write(
           address + nativeArrayDataOffset,
           destination + nativeArrayInlineOffset,

@@ -134,7 +134,18 @@ export function temporaryRegisters(
         if (reference) hasReferenceCandidate = true;
         if (candidates[id] === 3) hasWordCandidate = true;
         epochs[id] = reference ? referenceEpoch : epoch;
-        if (candidates[id] !== 3 && !(reference ? referenceSafe : safe))
+        const writesRefAfter =
+          collects !== undefined &&
+          reference &&
+          (op.kind === "array-new" ||
+            op.kind === "record-new" ||
+            op.kind === "reference-vector-new" ||
+            op.kind === "string-literal");
+        if (
+          candidates[id] !== 3 &&
+          !writesRefAfter &&
+          !(reference ? referenceSafe : safe)
+        )
           valid[id] = 0;
       }
     }
@@ -212,8 +223,18 @@ export function temporaryRegisters(
         const start = starts[id] ?? 0,
           end = ends[id] ?? 0;
         if (end <= start) continue;
+        const canReuseEnded =
+          op.kind === "binary" &&
+          (op.operator === "&" ||
+            op.operator === "<<" ||
+            op.operator === ">>" ||
+            op.operator === ">>>" ||
+            op.operator === "imul");
         for (let r = 0; r < wordRegisters; r++)
-          if ((words[r] ?? 0) < start) {
+          if (
+            (words[r] ?? 0) < start ||
+            (canReuseEnded && (words[r] ?? 0) === start)
+          ) {
             words[r] = end;
             registers[id] = 32 + 19 + r;
             break;

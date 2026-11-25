@@ -39,6 +39,7 @@ export interface PassStatistics {
     | "scalarize-loop-records"
     | "devirtualize-closures"
     | "select-array-access"
+    | "scalarize-stencil-loops"
     | "hoist-loop-invariants"
     | "bound-counted-loops"
     | "version-nonzero-divisors"

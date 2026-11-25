@@ -1386,7 +1386,8 @@ function lowerEntries(
         has = source.has,
         remove = source.delete,
         resize = source.resize,
-        pop = source.pop;
+        pop = source.pop,
+        wrap = source.wrap;
       const receivers = [source.read, source.write, source.push, source.length];
       for (const receiver of [sort, has, remove, resize, pop]) {
         if (receiver !== undefined) receivers.push(receiver);
@@ -1396,6 +1397,13 @@ function lowerEntries(
         source.create,
         receivers,
       );
+      let wrapId: number | undefined;
+      if (wrap !== undefined) {
+        const wrapContract = runtimeHelpers(encoding + " list wrap", wrap, [
+          source.length,
+        ]);
+        wrapId = wrapContract(wrap, ["Float64Array"], "reference");
+      }
       if (sort !== undefined) {
         const system = validatedTypes;
         if (!system.ok) fail("sort type system invariant");
@@ -1468,6 +1476,7 @@ function lowerEntries(
           ...(pop === undefined
             ? {}
             : { pop: helper(pop, ["reference"], optionalEncoding) }),
+          ...(wrapId === undefined ? {} : { wrap: wrapId }),
         },
       });
     }

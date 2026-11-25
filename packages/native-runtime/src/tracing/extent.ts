@@ -86,14 +86,14 @@ export function nativeObjectExtent(
       size = nativeArrayInlineOffset + length * width;
     } else return undefined;
   } else {
-    if (marker < nativeBuiltinMarkerLimit || marker % 8 !== 0 || flags !== 0)
+    if (marker < nativeBuiltinMarkerLimit || (marker & 7) !== 0 || flags !== 0)
       return undefined;
     const extent = read(marker);
     if (
       extent === undefined ||
       !Number.isInteger(extent) ||
       extent < 8 ||
-      extent % 8 !== 0
+      (extent & 7) !== 0
     )
       return undefined;
     size = extent;

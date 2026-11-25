@@ -67,11 +67,13 @@ import { dispatchStringChains } from "./string-dispatch.ts";
 import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
+import { scalarizeStencilLoops } from "./stencil-loops.ts";
 import { hoistLoopInvariants } from "./licm.ts";
 import { boundCountedLoops, versionNonzeroDivisors } from "./counted-loops.ts";
 export { hoistLoopInvariants } from "./licm.ts";
 export { versionNonzeroDivisors } from "./counted-loops.ts";
 export { selectArrayAccesses } from "./bounds.ts";
+export { scalarizeStencilLoops } from "./stencil-loops.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
 
 import type {
@@ -281,6 +283,7 @@ function foldFunctionConstants(
       present: (number | undefined)[] = [],
       absent: (number | undefined)[] = [],
       texts: (string | undefined)[] = [],
+      arrayLengths: (number | undefined)[] = [],
       unwrapped = new Map<number, number>(),
       instructions: Instruction[] = [];
     if (hasGeneralIs) {
@@ -290,6 +293,7 @@ function foldFunctionConstants(
     let slots: (Constant | undefined)[] = [],
       slotTexts: (string | undefined)[] = [],
       slotGeneralTags: (string | undefined)[] = [],
+      slotArrayLengths: (number | undefined)[] = [],
       changed = false;
     for (const op of block.instructions) {
       if (op === undefined) throw "optimizer instruction invariant";
@@ -497,9 +501,25 @@ function foldFunctionConstants(
       }
       let folded: Constant | undefined;
       if (op.kind === "constant") values[op.id] = op.value;
-      else if (op.kind === "store") slots[op.slot] = values[op.value];
-      else if (op.kind === "load") folded = slots[op.slot];
-      else if (op.kind === "unary") {
+      else if (op.kind === "array-new") {
+        const len = values[op.length];
+        if (
+          typeof len === "number" &&
+          Number.isInteger(len) &&
+          len >= 0 &&
+          len <= 4294967295
+        )
+          arrayLengths[op.id] = len === 0 ? 0 : len;
+      } else if (op.kind === "array-length") {
+        const len = arrayLengths[op.array];
+        if (len !== undefined) folded = len;
+      } else if (op.kind === "store") {
+        slots[op.slot] = values[op.value];
+        slotArrayLengths[op.slot] = arrayLengths[op.value];
+      } else if (op.kind === "load") {
+        folded = slots[op.slot];
+        arrayLengths[op.id] = slotArrayLengths[op.slot];
+      } else if (op.kind === "unary") {
         const value = values[op.operand];
         if (value !== undefined) folded = unary(op.operator, value);
       } else if (op.kind === "binary") {
@@ -510,7 +530,10 @@ function foldFunctionConstants(
       }
       if (
         folded !== undefined &&
-        (op.kind === "load" || op.kind === "unary" || op.kind === "binary")
+        (op.kind === "load" ||
+          op.kind === "unary" ||
+          op.kind === "binary" ||
+          op.kind === "array-length")
       ) {
         values[op.id] = folded;
         instructions.push({
@@ -529,6 +552,7 @@ function foldFunctionConstants(
         slots = [];
         slotTexts = [];
         slotGeneralTags = [];
+        slotArrayLengths = [];
       }
     }
     if (!changed) blocks.push(block);
@@ -1992,6 +2016,33 @@ export function optimizeModuleVersion(
     );
   used += selected.visited;
   if (completed("select-array-access", selected, false)) return stop();
+  // Scalar-replace loop-carried typed-array stencil and prefix-recurrence
+  // loads (`A[i - 1]`, and `A[i]` from `A[i + 1]`) after bounds selection has
+  // lowered them to unchecked `array-element`/`array-store` operations.
+  const stenciled = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = scalarizeStencilLoops(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (stenciled.exhausted)
+    return exhausted(
+      "scalarize-stencil-loops",
+      maxInstructions - used - accessVisited,
+    );
+  used += stenciled.visited;
+  if (completed("scalarize-stencil-loops", stenciled, false)) return stop();
   // Optional numbers that are only stored and inspected become a presence
   // and a value slot (registers rather than two frame words); threading
   // then sees the presence tests as slot-carried booleans.
@@ -2129,9 +2180,10 @@ export function optimizeModuleVersion(
   // loop with its refreshes keeps it current).
   const vectorBudget =
     maxInstructions - used - accessVisited - controlVisited - compactVisited;
+  const boundChanges: number[] = [];
   const vectors = rewriteModuleVersion(
     version,
-    undefined,
+    boundChanges,
     (module: ModuleIR): ModuleRewrite | undefined =>
       cacheListVectors(module, vectorBudget, options.closedCalls === true),
   );
@@ -2141,7 +2193,6 @@ export function optimizeModuleVersion(
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
-  const boundChanges: number[] = [];
   const bounded = rewriteFunctions(
     version,
     vectorBudget - vectors.visited,
@@ -2254,6 +2305,8 @@ function removable(op: Instruction): boolean {
     case "reference-string":
     // Reads selected as in bounds cannot fail.
     case "array-element":
+    // Proven record reads cannot fail or throw.
+    case "record-read":
     // An unused closure is an unobservable allocation.
     case "function-new":
       return true;

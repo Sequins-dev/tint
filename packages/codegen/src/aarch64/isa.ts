@@ -79,6 +79,9 @@ export type Instruction =
       readonly rd: DataRegister;
       readonly rn: DataRegister;
       readonly rm: DataRegister;
+      /** Optional shifted Rm for and-reg, orr-reg, eor-reg, orn-reg. */
+      readonly shift?: "lsl" | "lsr" | "asr" | "ror";
+      readonly amount?: number;
     }
   | {
       /** madd: rd = ra + rn * rm (MUL is MADD with the zero register as
@@ -537,8 +540,39 @@ export function encode(instruction: Instruction): EncodingResult<number> {
                     : i.op === "asrv"
                       ? 0x1ac02800
                       : 0x1ac00c00;
+      const logical =
+        i.op === "and-reg" ||
+        i.op === "orr-reg" ||
+        i.op === "eor-reg" ||
+        i.op === "orn-reg";
+      let shiftField = 0,
+        amount = 0;
+      if (i.shift !== undefined || i.amount !== undefined) {
+        if (!logical) return fail("INVALID_SHIFT");
+        const s =
+          i.shift === undefined || i.shift === "lsl"
+            ? 0
+            : i.shift === "lsr"
+              ? 1
+              : i.shift === "asr"
+                ? 2
+                : i.shift === "ror"
+                  ? 3
+                  : -1;
+        const amt = i.amount ?? 0;
+        if (s < 0 || !integer(amt, 0, i.width - 1))
+          return fail("INVALID_SHIFT");
+        shiftField = s * 0x400000;
+        amount = amt * 1024;
+      }
       return word(
-        base + (i.width === 64 ? 0x80000000 : 0) + rm * 65536 + rn * 32 + rd,
+        base +
+          (i.width === 64 ? 0x80000000 : 0) +
+          shiftField +
+          rm * 65536 +
+          amount +
+          rn * 32 +
+          rd,
       );
     }
     case "and-imm":

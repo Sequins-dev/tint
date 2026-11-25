@@ -33,6 +33,7 @@ interface NumberListHelpers {
   readonly header: number;
   readonly lengthFns: ReadonlySet<number>;
   readonly readFns: ReadonlySet<number>;
+  readonly hasFns: ReadonlySet<number>;
   readonly popFns: ReadonlySet<number>;
   readonly pushFns: ReadonlySet<number>;
 }
@@ -275,6 +276,155 @@ function matchReadHelper(
     }
     if (term.kind === "return" && term.value !== undefined)
       return header !== undefined && values.get(term.value) === "result"
+        ? header
+        : undefined;
+    return undefined;
+  }
+  return undefined;
+}
+
+/** Symbolically verifies that `fn(list, index)` has no side effects and on the
+ * dense in-range path (`present === none`, `index` is a non-negative integer
+ * below `length`) returns `true`. */
+function matchHasHelper(
+  fn: FunctionIR,
+  headers: ReadonlySet<number>,
+): number | undefined {
+  if (
+    fn.import === true ||
+    fn.parameters.length !== 2 ||
+    fn.returnType !== "boolean" ||
+    fn.blocks.length > 24
+  )
+    return undefined;
+  const pList = fn.parameters[0],
+    pIndex = fn.parameters[1];
+  if (
+    pList === undefined ||
+    pIndex === undefined ||
+    fn.slots[pList] !== "reference" ||
+    fn.slots[pIndex] !== "number"
+  )
+    return undefined;
+  for (const block of fn.blocks) {
+    if (block === undefined || block.exception !== undefined) return undefined;
+    for (const op of block.instructions) {
+      if (op === undefined) return undefined;
+      if (
+        op.kind === "call" ||
+        op.kind === "call-indirect" ||
+        op.kind === "host-call" ||
+        op.kind === "array-write" ||
+        op.kind === "array-store" ||
+        op.kind === "array-fill"
+      )
+        return undefined;
+    }
+    const t = block.terminator;
+    if (
+      t.kind === "throw" ||
+      t.kind === "throw-literal" ||
+      ((t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+        t.operation !== "read")
+    )
+      return undefined;
+  }
+  const slotState = new Map<number, string>();
+  slotState.set(pList, "list");
+  slotState.set(pIndex, "index");
+  let blockId = fn.entry,
+    header: number | undefined;
+  for (let steps = 0; steps < 32; steps++) {
+    const block = fn.blocks[blockId];
+    if (block === undefined) return undefined;
+    const values = new Map<number, string>();
+    for (const op of block.instructions) {
+      if (op === undefined) return undefined;
+      if (op.kind === "load") {
+        const s = slotState.get(op.slot);
+        if (s !== undefined) values.set(op.id, s);
+      } else if (op.kind === "store") {
+        const v = values.get(op.value);
+        if (v === undefined) slotState.delete(op.slot);
+        else slotState.set(op.slot, v);
+      } else if (op.kind === "constant") {
+        if (op.value === 0) values.set(op.id, "zero");
+        else if (op.value === true) values.set(op.id, "true");
+        else if (op.value === false) values.set(op.id, "false");
+      } else if (op.kind === "reference-none") {
+        values.set(op.id, "ref-none");
+      } else if (op.kind === "record-read") {
+        if (values.get(op.object) !== "list" || !headers.has(op.record))
+          return undefined;
+        if (header !== undefined && header !== op.record) return undefined;
+        header = op.record;
+        if (op.field === 0) values.set(op.id, "length");
+        else if (op.field === 2) values.set(op.id, "present-none");
+      } else if (op.kind === "unary") {
+        const arg = values.get(op.operand);
+        if (op.operator === "is-integer" && arg === "index")
+          values.set(op.id, "true");
+        else if (op.operator === "truthy") {
+          if (arg === "true" || arg === "false") values.set(op.id, arg);
+          else if (arg === "present-none") values.set(op.id, "false");
+        } else if (op.operator === "!") {
+          if (arg === "true") values.set(op.id, "false");
+          else if (arg === "false") values.set(op.id, "true");
+        }
+      } else if (op.kind === "binary") {
+        const l = values.get(op.left),
+          r = values.get(op.right);
+        if (op.operator === "===" || op.operator === "!==") {
+          const isEq = op.operator === "===";
+          if (
+            (l === "present-none" && r === "ref-none") ||
+            (r === "present-none" && l === "ref-none")
+          )
+            values.set(op.id, isEq ? "true" : "false");
+        } else if (op.operator === ">=" && l === "index" && r === "zero")
+          values.set(op.id, "true");
+        else if (op.operator === "<=" && l === "zero" && r === "index")
+          values.set(op.id, "true");
+        else if (op.operator === "<" && l === "index" && r === "length")
+          values.set(op.id, "true");
+        else if (op.operator === ">" && l === "length" && r === "index")
+          values.set(op.id, "true");
+      }
+    }
+    const term = block.terminator;
+    if (term.kind === "jump") {
+      blockId = term.target;
+      continue;
+    }
+    if (
+      term.kind === "record" &&
+      term.operation === "read" &&
+      headers.has(term.record) &&
+      values.get(term.object) === "list" &&
+      isEmptyTrap(fn.blocks[term.alternate])
+    ) {
+      if (header !== undefined && header !== term.record) return undefined;
+      header = term.record;
+      if (term.field === 0) slotState.set(term.slot, "length");
+      else if (term.field === 2) slotState.set(term.slot, "present-none");
+      else return undefined;
+      blockId = term.consequent;
+      continue;
+    }
+    if (term.kind === "branch") {
+      const cond = values.get(term.condition);
+      if (cond === "true") {
+        blockId = term.consequent;
+        continue;
+      }
+      if (cond === "false") {
+        blockId = term.alternate;
+        continue;
+      }
+      return undefined;
+    }
+    if (term.kind === "return" && term.value !== undefined)
+      return header !== undefined && values.get(term.value) === "true"
         ? header
         : undefined;
     return undefined;
@@ -628,6 +778,7 @@ function findNumberListHelpers(module: ModuleIR): NumberListHelpers[] {
   if (candidates.size === 0) return [];
   const lengths = new Map<number, Set<number>>(),
     reads = new Map<number, Set<number>>(),
+    hases = new Map<number, Set<number>>(),
     pops = new Map<number, Set<number>>(),
     pushes = new Map<number, Set<number>>();
   for (const fn of module.functions) {
@@ -640,6 +791,11 @@ function findNumberListHelpers(module: ModuleIR): NumberListHelpers[] {
     const readH = matchReadHelper(fn, candidates);
     if (readH !== undefined) {
       addMapSet(reads, readH, fn.id);
+      continue;
+    }
+    const hasH = matchHasHelper(fn, candidates);
+    if (hasH !== undefined) {
+      addMapSet(hases, hasH, fn.id);
       continue;
     }
     const popH = matchPopHelper(fn, candidates);
@@ -658,13 +814,14 @@ function findNumberListHelpers(module: ModuleIR): NumberListHelpers[] {
   for (const header of allHeaders) {
     const lengthFns = lengths.get(header) ?? new Set<number>(),
       readFns = reads.get(header) ?? new Set<number>(),
+      hasFns = hases.get(header) ?? new Set<number>(),
       popFns = pops.get(header) ?? new Set<number>(),
       pushFns = pushes.get(header) ?? new Set<number>();
     if (
       (lengthFns.size > 0 && (readFns.size > 0 || popFns.size > 0)) ||
       pushFns.size > 0
     )
-      helpers.push({ header, lengthFns, readFns, popFns, pushFns });
+      helpers.push({ header, lengthFns, readFns, hasFns, popFns, pushFns });
   }
   return helpers;
 }
@@ -850,6 +1007,7 @@ export function hoistNumberListLoops(
       readToHelper.set(id, h);
       helperFunctions.add(id);
     }
+    for (const id of h.hasFns) helperFunctions.add(id);
     for (const id of h.popFns) {
       popToHelper.set(id, h);
       helperFunctions.add(id);
@@ -1251,7 +1409,10 @@ export function hoistNumberListLoops(
       if (hStored.has(counter)) return undefined;
 
       const boundDef = resolveVal(condDef.right);
-      let lenCall: Instruction | undefined, uint32Op: Instruction | undefined;
+      let lenCall: Instruction | undefined,
+        uint32Op: Instruction | undefined,
+        preheaderBoundLoad: Instruction | undefined,
+        preheaderResolve: ((id: number) => Instruction | undefined) | undefined;
       if (
         boundDef !== undefined &&
         boundDef.kind === "unary" &&
@@ -1259,6 +1420,44 @@ export function hoistNumberListLoops(
       ) {
         uint32Op = boundDef;
         lenCall = resolveVal(boundDef.operand);
+      } else if (
+        boundDef !== undefined &&
+        boundDef.kind === "load" &&
+        !loop.writes.has(boundDef.slot) &&
+        fnIn.slots[boundDef.slot] === "number"
+      ) {
+        // Also recognize `const length = lengthNumberList(list)` hoisted into
+        // the loop preheader (as emitted by fused HIR pipelines).
+        preheaderResolve = makeResolve(preheader);
+        let stored: number | undefined;
+        for (let i = preheader.instructions.length - 1; i >= 0; i--) {
+          const pOp = preheader.instructions[i];
+          if (
+            pOp !== undefined &&
+            pOp.kind === "store" &&
+            pOp.slot === boundDef.slot
+          ) {
+            stored = pOp.value;
+            break;
+          }
+        }
+        if (stored !== undefined) {
+          let rhs = preheaderResolve(stored);
+          if (
+            rhs !== undefined &&
+            rhs.kind === "unary" &&
+            rhs.operator === "uint32"
+          )
+            rhs = preheaderResolve(rhs.operand);
+          if (
+            rhs !== undefined &&
+            rhs.kind === "call" &&
+            rhs.id !== undefined
+          ) {
+            lenCall = rhs;
+            preheaderBoundLoad = boundDef;
+          }
+        }
       } else {
         lenCall = boundDef;
       }
@@ -1272,20 +1471,85 @@ export function hoistNumberListLoops(
       if (helper === undefined || helper.readFns.size === 0) return undefined;
       const listArg = lenCall.arguments[0];
       if (listArg === undefined) return undefined;
-      const listDef = resolveVal(listArg);
+      let directListSlot: number | undefined;
+      const srcBlock =
+        preheaderBoundLoad !== undefined ? preheader : headerBlock;
+      for (const sOp of srcBlock.instructions)
+        if (sOp !== undefined && sOp.kind === "load" && sOp.id === listArg) {
+          directListSlot = sOp.slot;
+          break;
+        }
+      const listDef = (preheaderResolve ?? resolveVal)(listArg);
+      const listSlots = new Set<number>();
+      let listSlot = -1;
       if (
-        listDef === undefined ||
-        listDef.kind !== "load" ||
-        loop.writes.has(listDef.slot) ||
-        fnIn.slots[listDef.slot] !== "reference"
-      )
-        return undefined;
-      const listSlot = listDef.slot;
+        directListSlot !== undefined &&
+        !loop.writes.has(directListSlot) &&
+        fnIn.slots[directListSlot] === "reference"
+      ) {
+        listSlot = directListSlot;
+        listSlots.add(directListSlot);
+      }
+      if (
+        listDef !== undefined &&
+        listDef.kind === "load" &&
+        !loop.writes.has(listDef.slot) &&
+        fnIn.slots[listDef.slot] === "reference"
+      ) {
+        if (listSlot < 0) listSlot = listDef.slot;
+        listSlots.add(listDef.slot);
+      }
+      if (listSlot < 0) return undefined;
+      // Also recognize preheader slot copies `store(alias, load(listSlot))`
+      // (as produced by fused HIR pipelines before propagate-slot-copies runs).
+      const preResolve = preheaderResolve ?? makeResolve(preheader);
+      const aliasWrites = new Map<number, number>();
+      for (let i = 0; i < preheader.instructions.length; i++) {
+        const pOp = preheader.instructions[i];
+        if (pOp !== undefined && pOp.kind === "store")
+          aliasWrites.set(pOp.slot, i);
+      }
+      for (const [slot, writeIdx] of aliasWrites) {
+        if (
+          listSlots.has(slot) ||
+          loop.writes.has(slot) ||
+          fnIn.slots[slot] !== "reference"
+        )
+          continue;
+        const st = preheader.instructions[writeIdx];
+        if (st === undefined || st.kind !== "store") continue;
+        const rhs = preResolve(st.value);
+        if (rhs !== undefined && rhs.kind === "load" && listSlots.has(rhs.slot))
+          listSlots.add(slot);
+      }
+      // When the bound came from the preheader, ensure listSlot is not
+      // reassigned in the preheader after `lenCall`!
+      if (preheaderBoundLoad !== undefined) {
+        let seenCall = false;
+        for (const pOp of preheader.instructions) {
+          if (pOp === lenCall) seenCall = true;
+          else if (
+            seenCall &&
+            pOp !== undefined &&
+            pOp.kind === "store" &&
+            listSlots.has(pOp.slot)
+          ) {
+            const rhs = preResolve(pOp.value);
+            if (
+              rhs === undefined ||
+              rhs.kind !== "load" ||
+              !listSlots.has(rhs.slot)
+            )
+              return undefined;
+          }
+        }
+      }
 
       const hIdx = headerIndex.get(helper.header);
       const readOnlyHelpers = new Set<number>();
       for (const id of helper.lengthFns) readOnlyHelpers.add(id);
       for (const id of helper.readFns) readOnlyHelpers.add(id);
+      for (const id of helper.hasFns) readOnlyHelpers.add(id);
       if (
         hIdx === undefined ||
         loopWritesHeader(fnIn, loop, helper.header, hIdx, readOnlyHelpers)
@@ -1303,6 +1567,7 @@ export function hoistNumberListLoops(
         readonly blockId: number;
         readonly index: number;
         readonly idxArg: number;
+        readonly kind: "read" | "has";
       }[] = [];
       const matchedByBlock = new Map<number, number[]>();
 
@@ -1381,8 +1646,9 @@ export function hoistNumberListLoops(
             id !== loop.header &&
             op.kind === "call" &&
             op.id !== undefined &&
-            helper.readFns.has(op.target)
+            (helper.readFns.has(op.target) || helper.hasFns.has(op.target))
           ) {
+            const kind = helper.readFns.has(op.target) ? "read" : "has";
             const aList = op.arguments[0],
               aIdx = op.arguments[1];
             if (aList === undefined || aIdx === undefined) continue;
@@ -1390,7 +1656,7 @@ export function hoistNumberListLoops(
             if (
               listOp === undefined ||
               listOp.kind !== "load" ||
-              listOp.slot !== listSlot
+              !listSlots.has(listOp.slot)
             )
               continue;
             const idxOp = resolveLocal(aIdx);
@@ -1426,7 +1692,7 @@ export function hoistNumberListLoops(
               }
             }
             if (inRange) {
-              matched.push({ blockId: id, index: i, idxArg: aIdx });
+              matched.push({ blockId: id, index: i, idxArg: aIdx, kind });
               let list = matchedByBlock.get(id);
               if (list === undefined) {
                 list = [];
@@ -1488,11 +1754,27 @@ export function hoistNumberListLoops(
       let candNextValue = cloned.nextValue;
       const coldHeader = cloned.coldHeader;
 
-      // Rewrite hot header: replace `lenCall` (and `uint32Op`, if present) with `load(lenSlot)`.
+      // Rewrite hot header: replace `lenCall` (and `uint32Op`, or `preheaderBoundLoad`) with `load(lenSlot)`.
       const hotHeaderInsts: Instruction[] = [];
       for (const op of headerBlock.instructions) {
         if (op === undefined) continue;
-        if (op === lenCall && op.kind === "call" && op.id !== undefined) {
+        if (
+          preheaderBoundLoad !== undefined &&
+          op === preheaderBoundLoad &&
+          op.kind === "load"
+        ) {
+          hotHeaderInsts.push({
+            kind: "load",
+            id: op.id,
+            slot: lenSlot,
+            start: op.start,
+            end: op.end,
+          });
+        } else if (
+          op === lenCall &&
+          op.kind === "call" &&
+          op.id !== undefined
+        ) {
           hotHeaderInsts.push({
             kind: "load",
             id: op.id,
@@ -1521,15 +1803,22 @@ export function hoistNumberListLoops(
         instructions: hotHeaderInsts,
       };
 
-      // Rewrite matched `readFn(listSlot, idx)` in hot blocks to `array-element` + `optional-wrap`.
-      const matchMap = new Map<number, Map<number, number>>();
+      // Rewrite matched `readFn(listSlot, idx)` in hot blocks to `array-element` + `optional-wrap`
+      // and `hasFn(listSlot, idx)` to `constant true`.
+      const matchMap = new Map<
+        number,
+        Map<number, { readonly idxArg: number; readonly kind: "read" | "has" }>
+      >();
       for (const m of matched) {
         let perBlock = matchMap.get(m.blockId);
         if (perBlock === undefined) {
-          perBlock = new Map<number, number>();
+          perBlock = new Map<
+            number,
+            { readonly idxArg: number; readonly kind: "read" | "has" }
+          >();
           matchMap.set(m.blockId, perBlock);
         }
-        perBlock.set(m.index, m.idxArg);
+        perBlock.set(m.index, { idxArg: m.idxArg, kind: m.kind });
       }
       for (const [blockId, indices] of matchMap) {
         const orig = candBlocks[blockId];
@@ -1538,38 +1827,44 @@ export function hoistNumberListLoops(
         for (let i = 0; i < orig.instructions.length; i++) {
           const op = orig.instructions[i];
           if (op === undefined) continue;
-          const idxArg = indices.get(i);
-          if (
-            idxArg !== undefined &&
-            op.kind === "call" &&
-            op.id !== undefined
-          ) {
-            const vArr = candNextValue++,
-              vEl = candNextValue++;
-            nextInsts.push(
-              {
-                kind: "load",
-                id: vArr,
-                slot: valuesSlot,
-                start: op.start,
-                end: op.end,
-              },
-              {
-                kind: "array-element",
-                id: vEl,
-                array: vArr,
-                index: idxArg,
-                start: op.start,
-                end: op.end,
-              },
-              {
-                kind: "optional-wrap",
+          const hit = indices.get(i);
+          if (hit !== undefined && op.kind === "call" && op.id !== undefined) {
+            if (hit.kind === "has") {
+              nextInsts.push({
+                kind: "constant",
                 id: op.id,
-                value: vEl,
+                value: true,
                 start: op.start,
                 end: op.end,
-              },
-            );
+              });
+            } else {
+              const vArr = candNextValue++,
+                vEl = candNextValue++;
+              nextInsts.push(
+                {
+                  kind: "load",
+                  id: vArr,
+                  slot: valuesSlot,
+                  start: op.start,
+                  end: op.end,
+                },
+                {
+                  kind: "array-element",
+                  id: vEl,
+                  array: vArr,
+                  index: hit.idxArg,
+                  start: op.start,
+                  end: op.end,
+                },
+                {
+                  kind: "optional-wrap",
+                  id: op.id,
+                  value: vEl,
+                  start: op.start,
+                  end: op.end,
+                },
+              );
+            }
           } else {
             nextInsts.push(op);
           }

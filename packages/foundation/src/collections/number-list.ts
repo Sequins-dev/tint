@@ -23,6 +23,13 @@ export function createNumberList(capacity: number): NumberList {
     present: undefined,
   };
 }
+export function wrapNumberList(values: Float64Array): NumberList {
+  return {
+    length: values.length,
+    values,
+    present: undefined,
+  };
+}
 function capacityOf(list: NumberList): number {
   const values = list.values;
   return values === undefined ? 0 : values.length;
@@ -71,14 +78,18 @@ export function readNumberList(
 ): number | undefined {
   // Typed-array reads at fractional, negative or out-of-range indexes are
   // undefined. Dense cells below length are numbers; holey lists have no
-  // present marker beyond length. One element read keeps this within the
-  // inliner's small-CFG bound.
-  // A numeric cell implies an allocated buffer.
-  const present = list.present,
-    values = list.values;
-  const numeric =
-    present === undefined ? index < list.length : present[index] === 1;
-  return numeric && values !== undefined ? values[index] : undefined;
+  // present marker beyond length. Keeping the dense fast path on the
+  // fallthrough edges avoids taken branches on every dense read.
+  const values = list.values;
+  if (values !== undefined) {
+    const present = list.present;
+    if (present === undefined) {
+      if (index < list.length) return values[index];
+      return undefined;
+    }
+    if (present[index] === 1) return values[index];
+  }
+  return undefined;
 }
 export function writeNumberList(
   list: NumberList,

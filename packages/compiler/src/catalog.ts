@@ -1019,6 +1019,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/stencil-loops.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/string-dispatch.ts",
       packageId: "ir",
     },

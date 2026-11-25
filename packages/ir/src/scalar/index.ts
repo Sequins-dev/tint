@@ -24,6 +24,12 @@ export const cachedListReadPrefix = "__tint_reference_list_readv$";
  * and `index` is an integer in `[0, bound)`. Codegen inlines them without
  * null or bounds checks on that trust. */
 export const uncheckedListReadPrefix = "__tint_reference_list_readu$";
+/** Name prefix of the bounds-proven dense list writers that cacheListVectors
+ * creates for hoisted push loops: (vector, list, index, element), where a
+ * dominating guard proved `vector` is the list's current non-null reference
+ * vector and `index` is an integer in `[0, vector.length)`. Codegen inlines
+ * them as a direct vector store plus write barrier without length updates. */
+export const uncheckedListWritePrefix = "__tint_reference_list_writeu$";
 /** Name prefix of cacheListVectors' vector accessors: (list or none) to the
  * list's root when it is a reference vector, else none. */
 export const listVectorPrefix = "__tint_reference_list_vector$";

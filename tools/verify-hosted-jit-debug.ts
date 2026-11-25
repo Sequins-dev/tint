@@ -173,8 +173,8 @@ const path = buildNativeFixture("jit-debug", () => {
     ...request,
     target,
     // The debugger assertions cover the JIT output. Optimizing the outer
-    // Darwin fixture can exhaust the test budget before LLDB runs.
-    ...(target.os === "darwin" ? { optimization: "none" as const } : {}),
+    // fixture can exhaust the test budget before LLDB/GDB runs.
+    optimization: "none" as const,
     allowDebugger: true,
     debugSymbols: true,
     allowJit: true,

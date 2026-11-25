@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { verify } from "@tint/ir/scalar";
 import type { FunctionIR, Instruction, ModuleIR } from "@tint/ir/scalar";
 import { cacheListVectors } from "../src/optimization/list-vectors.ts";
 const s = { start: 0, end: 0 };
@@ -718,5 +719,192 @@ test("preheader-guarded unchecked reads handle i-1 with start=1 and reject i-2",
     !outOfRange.module.functions.some((f) =>
       f.name.startsWith("__tint_reference_list_readu$"),
     ),
+  );
+});
+
+test("counted push loops pre-size fresh lists and omit growth check only when step is unconditional", () => {
+  const records = [
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "number" as const, mutable: true },
+        { offset: 16, type: "optional-reference" as const, mutable: true },
+      ],
+    },
+  ];
+  const denseWriter = (id: number): FunctionIR => ({
+    id,
+    name: "__tint_reference_list_write$" + String(id),
+    exported: false,
+    parameters: [0, 1, 2],
+    slots: ["reference", "number", "optional-reference"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "load", id: 2, slot: 2, ...s },
+          {
+            kind: "reference-vector-write",
+            vector: 0,
+            index: 1,
+            value: 2,
+            ...s,
+          },
+        ],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "write",
+          slot: 1,
+          consequent: 1,
+          alternate: 1,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  });
+  const makePushLoop = (conditionalStep: boolean): FunctionIR => ({
+    id: 1,
+    name: conditionalStep ? "pushCondStep" : "pushExact",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["optional-reference", "boolean", "reference", "number", "number"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "reference-none", id: 1, ...s },
+          { kind: "record-new", id: 2, record: 0, arguments: [0, 1], ...s },
+          { kind: "store", slot: 2, value: 2, ...s },
+          { kind: "store", slot: 3, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 3, slot: 3, ...s },
+          { kind: "constant", id: 4, value: 256, ...s },
+          { kind: "binary", id: 5, operator: "<", left: 3, right: 4, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 2,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 6, slot: 2, ...s }],
+        terminator: {
+          kind: "record",
+          object: 6,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 4,
+          consequent: 3,
+          alternate: 6,
+          ...s,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 7, slot: 2, ...s },
+          { kind: "load", id: 8, slot: 4, ...s },
+          { kind: "load", id: 9, slot: 0, ...s },
+          {
+            kind: "call",
+            id: undefined,
+            target: 0,
+            arguments: [7, 8, 9],
+            ...s,
+          },
+          ...(conditionalStep
+            ? [{ kind: "load" as const, id: 10, slot: 1, ...s }]
+            : []),
+        ],
+        terminator: conditionalStep
+          ? {
+              kind: "branch",
+              condition: 10,
+              consequent: 4,
+              alternate: 1,
+              ...s,
+            }
+          : { kind: "jump", target: 4, ...s },
+      },
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 11, slot: 3, ...s },
+          { kind: "constant", id: 12, value: 1, ...s },
+          { kind: "binary", id: 13, operator: "+", left: 11, right: 12, ...s },
+          { kind: "store", slot: 3, value: 13, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 14, slot: 2, ...s }],
+        terminator: { kind: "return", value: 14, ...s },
+      },
+      { id: 6, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  });
+
+  const exactRes = cacheListVectors(
+    { records, functions: [denseWriter(0), makePushLoop(false)] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(exactRes !== undefined && exactRes.rewritten > 0);
+  assert.equal(verify(exactRes.module).ok, true);
+  const exactFn = exactRes.module.functions[1]!;
+  const exactInsts = exactFn.blocks.flatMap((b) => b.instructions);
+  assert.ok(
+    exactInsts.some((op) => op.kind === "reference-vector-new"),
+    "exact counted push loop should pre-allocate its vector",
+  );
+  assert.ok(
+    exactInsts.some((op) => op.kind === "call" && op.target !== 0),
+    "exact counted push loop should call the unchecked writer",
+  );
+  assert.ok(
+    !exactInsts.some((op) => op.kind === "call" && op.target === 0),
+    "exact counted push loop should omit the slow growth call",
+  );
+
+  const condRes = cacheListVectors(
+    { records, functions: [denseWriter(0), makePushLoop(true)] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(condRes !== undefined && condRes.rewritten > 0);
+  assert.equal(verify(condRes.module).ok, true);
+  const condFn = condRes.module.functions[1]!;
+  const condInsts = condFn.blocks.flatMap((b) => b.instructions);
+  assert.ok(
+    condInsts.some((op) => op.kind === "reference-vector-new"),
+    "conditional-step loop should still pre-allocate its vector",
+  );
+  assert.ok(
+    condInsts.some((op) => op.kind === "call" && op.target === 0),
+    "conditional-step loop must retain the slow growth fallback",
   );
 });

@@ -5,6 +5,7 @@ import type {
 import type { DynamicObjectRuntime } from "./closure/lowering/dynamic-objects.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
+  forOfPipelineCompatible,
   planPipeline,
   type PipelineFacts,
   type PipelinePlan,
@@ -299,12 +300,15 @@ export type ListOperation =
   | "write"
   | "push"
   | "length"
-  | "pop";
+  | "pop"
+  | "wrap";
 export interface ListRuntime {
   readonly sort?: number;
   /** Removes and returns the last element (undefined when empty); lists
    * without it pop through length, read and resize. */
   readonly pop?: number;
+  /** Wraps a freshly initialized dense Float64Array into a NumberList. */
+  readonly wrap?: number | undefined;
   readonly has?: number;
   readonly delete?: number;
   readonly resize?: number;
@@ -4735,6 +4739,9 @@ export function lowerFunction(
       case "pop":
         target = runtime.pop;
         break;
+      case "wrap":
+        target = runtime.wrap;
+        break;
     }
     if (target === undefined) throw "numeric list runtime invariant";
     return runtimeCall(target, args, node);
@@ -5292,6 +5299,172 @@ export function lowerFunction(
     jump(head.id, node);
     current = done;
     return result;
+  }
+  let localUseCounts: Map<number, number> | undefined;
+  function localReferenceCount(localId: number): number {
+    if (localUseCounts === undefined) {
+      const counts = new Map<number, number>();
+      fn.expressions.forEach((exprInfo, expr) => {
+        if (expr.kind === "identifier" && exprInfo.local !== undefined) {
+          const id = exprInfo.local;
+          counts.set(id, (counts.get(id) ?? 0) + 1);
+        }
+      });
+      localUseCounts = counts;
+    }
+    return localUseCounts.get(localId) ?? 0;
+  }
+  /** Legalizes a fused HIR pipeline whose output feeds directly into a
+   * `for-of` loop body, avoiding materializing the intermediate list. */
+  function lowerForOfPipeline(
+    plan: PipelinePlan,
+    node: Statement,
+    local: Local,
+    named: readonly LabelTarget[] = [],
+  ): void {
+    if (node.kind !== "for-of") throw "for-of pipeline invariant";
+    const binding = node.binding,
+      iterable = node.iterable,
+      mode = node.mode,
+      loopBody = node.body;
+    const receiver = value(plan.source),
+      input = listRuntime(plan.source);
+    const callbacks: number[] = [];
+    for (const stage of plan.stages) {
+      if (stage === undefined) throw "pipeline stage invariant";
+      callbacks.push(value(stage.callback));
+    }
+    const length = listValue(input, "length", [receiver], node);
+    const positions: number[] = [];
+    for (let k = 0; k <= plan.stages.length; k++)
+      positions.push(numberSlot(0, node));
+    const index = numberSlot(0, node),
+      head = block(),
+      visit = block(),
+      invoke = block(),
+      advance = block(),
+      done = block();
+    jump(head.id, node);
+    current = head;
+    choose(load(binarySlot("<", index, length, node), node), visit, done, node);
+    current = visit;
+    let item = listValue(input, "read", [receiver, index], node);
+    const itemType = slots[item];
+    let presence: number | undefined;
+    if (itemType === "optional-reference" || itemType === "optional-number") {
+      presence = nextValue++;
+      if (itemType === "optional-number")
+        emit({
+          kind: "optional-present",
+          id: presence,
+          value: load(item, node),
+          start: node.start,
+          end: node.end,
+        });
+      else
+        emit({
+          kind: "unary",
+          id: presence,
+          operator: "truthy",
+          operand: load(item, node),
+          start: node.start,
+          end: node.end,
+        });
+    }
+    if (presence === undefined)
+      choose(
+        load(listValue(input, "has", [receiver, index], node), node),
+        invoke,
+        advance,
+        node,
+      );
+    else {
+      const absent = block();
+      choose(presence, invoke, absent, node);
+      current = absent;
+      choose(
+        load(listValue(input, "has", [receiver, index], node), node),
+        invoke,
+        advance,
+        node,
+      );
+    }
+    current = invoke;
+    function reached(k: number): number {
+      const position = positions[k];
+      if (position === undefined) throw "pipeline position invariant";
+      const at = save(load(position, node), "number", node);
+      store(
+        position,
+        load(binarySlot("+", position, numberSlot(1, node), node), node),
+        node,
+      );
+      return at;
+    }
+    function callbackNeedsIndex(call: Expression): boolean {
+      const witness = info(call).callee;
+      const signature = witness === undefined ? undefined : signatures[witness];
+      return signature !== undefined && signature.parameters.length >= 2;
+    }
+    for (let k = 0; k < plan.stages.length; k++) {
+      const stage = plan.stages[k],
+        callback = callbacks[k];
+      if (stage === undefined || callback === undefined)
+        throw "pipeline stage invariant";
+      const args =
+        k === 0
+          ? [item, index, receiver]
+          : callbackNeedsIndex(stage.call)
+            ? [item, reached(k)]
+            : [item];
+      const returned = callCallback(stage.call, callback, args, node);
+      if (returned === undefined) throw "pipeline callback result invariant";
+      if (stage.kind === "filter") {
+        const keep = block();
+        choose(truth(returned, node), keep, advance, node);
+        current = keep;
+      } else item = returned;
+    }
+    allocateCells(node);
+    const outType = slots[item];
+    let bound = load(item, node);
+    const isOptionalOut =
+      outType === "optional-number" ||
+      outType === "optional-string" ||
+      outType === "optional-reference" ||
+      outType === "optional-boolean";
+    if (isOptionalOut && info(iterable).holeCheck === true) {
+      requireCondition(
+        holeAbsent(item, node),
+        "TypeError",
+        "array hole is not a value of the declared element type",
+        node,
+      );
+      bound = load(item, node);
+    }
+    if (
+      (outType === "optional-number" && local.type === "number") ||
+      (outType === "optional-string" && local.type === "string") ||
+      (outType === "optional-reference" && local.type === "reference") ||
+      (outType === "optional-boolean" && local.type === "boolean")
+    ) {
+      const extracted = nextValue++;
+      emitUnwrap(extracted, bound, local.type, node);
+      store(local.id, extracted, node);
+    } else {
+      store(local.id, coerce(bound, local.type, node), node);
+    }
+    cellAccess(local.id, mode === "var" ? "write" : "initialize", binding);
+    statement(loopBody, iterationTarget(advance.id, done.id, named));
+    if (current !== undefined) jump(advance.id, node);
+    current = advance;
+    store(
+      index,
+      load(binarySlot("+", index, numberSlot(1, node), node), node),
+      node,
+    );
+    jump(head.id, node);
+    current = done;
   }
   function expression(node: Expression): number | undefined {
     const known = expressionOverrides.get(node);
@@ -6086,6 +6259,81 @@ export function lowerFunction(
     switch (node.kind) {
       case "array": {
         const runtime = listRuntime(node);
+        // Dense numeric array literal: evaluate all elements first (preserving
+        // exact evaluation order and throw semantics), then populate one
+        // Float64Array with unchecked stores and wrap it as a dense NumberList.
+        if (
+          runtime.wrap !== undefined &&
+          node.elements.length >= 1 &&
+          node.elements.length <= 32
+        ) {
+          let denseNumeric = true;
+          for (let i = 0; i < node.elements.length; i++) {
+            const element = node.elements[i];
+            if (
+              element === undefined ||
+              element.kind === "elision" ||
+              element.kind === "spread" ||
+              scalarType(element) !== "number"
+            ) {
+              denseNumeric = false;
+              break;
+            }
+          }
+          if (denseNumeric) {
+            const elementSlots: number[] = [];
+            for (let i = 0; i < node.elements.length; i++) {
+              const element = node.elements[i];
+              if (
+                element === undefined ||
+                element.kind === "elision" ||
+                element.kind === "spread"
+              )
+                throw "dense numeric array literal invariant";
+              elementSlots.push(value(element));
+            }
+            const lenConst = nextValue++;
+            emit({
+              kind: "constant",
+              id: lenConst,
+              value: elementSlots.length,
+              start: node.start,
+              end: node.end,
+            });
+            const arrayId = nextValue++;
+            emit({
+              kind: "array-new",
+              id: arrayId,
+              type: "Float64Array",
+              length: lenConst,
+              start: node.start,
+              end: node.end,
+            });
+            const arraySlot = save(arrayId, "Float64Array", node);
+            for (let i = 0; i < elementSlots.length; i++) {
+              const elSlot = elementSlots[i];
+              if (elSlot === undefined)
+                throw "dense numeric array literal invariant";
+              const idxConst = nextValue++;
+              emit({
+                kind: "constant",
+                id: idxConst,
+                value: i,
+                start: node.start,
+                end: node.end,
+              });
+              emit({
+                kind: "array-store",
+                array: load(arraySlot, node),
+                index: idxConst,
+                value: load(elSlot, node),
+                start: node.start,
+                end: node.end,
+              });
+            }
+            return listValue(runtime, "wrap", [arraySlot], node);
+          }
+        }
         const list = listValue(
           runtime,
           "create",
@@ -10942,9 +11190,64 @@ export function lowerFunction(
       case "block":
         if (!cellsAllocated) allocateCells(node);
         hoistFunctions(node);
-        for (const child of node.statements) {
+        for (let i = 0; i < node.statements.length; i++) {
+          const child = node.statements[i];
           if (child === undefined) throw "block statement invariant";
           if (child === fn.bindingPrologue) continue;
+          if (
+            child.kind === "variable" &&
+            child.mode === "const" &&
+            child.declarations.length === 1
+          ) {
+            const decl = child.declarations[0],
+              next = node.statements[i + 1];
+            if (
+              decl !== undefined &&
+              decl.kind !== "object-binding" &&
+              decl.kind !== "array-binding" &&
+              decl.initializer !== undefined &&
+              next !== undefined &&
+              next.kind === "for-of" &&
+              next !== fn.bindingPrologue
+            ) {
+              const nextBinding = next.binding,
+                declInit = decl.initializer;
+              if (
+                declInit !== undefined &&
+                nextBinding.kind !== "object-binding" &&
+                nextBinding.kind !== "array-binding" &&
+                fn.bindingInitializations?.get(nextBinding) === undefined
+              ) {
+                const declLocal = fn.declarations.get(decl),
+                  iterLocal = fn.declarations.get(nextBinding);
+                let iter: Expression = next.iterable;
+                while (iter.kind === "group") iter = iter.expression;
+                if (
+                  declLocal !== undefined &&
+                  iterLocal !== undefined &&
+                  cellPointers[declLocal.id] === undefined &&
+                  iter.kind === "identifier" &&
+                  info(iter).local === declLocal.id &&
+                  info(next.iterable).setElement === undefined &&
+                  scalarType(next.iterable) !== "string" &&
+                  localReferenceCount(declLocal.id) === 1
+                ) {
+                  const plan = planPipeline(declInit, pipelineFacts);
+                  if (
+                    plan !== undefined &&
+                    forOfPipelineCompatible(plan, next.body)
+                  ) {
+                    allocateCells(next);
+                    lowerForOfPipeline(plan, next, iterLocal);
+                    createSunkFunctions(child);
+                    createSunkFunctions(next);
+                    i++;
+                    continue;
+                  }
+                }
+              }
+            }
+          }
           statement(child, loop);
           createSunkFunctions(child);
         }
@@ -11538,6 +11841,17 @@ export function lowerFunction(
           jump(head.id, node);
           current = exit;
           break;
+        }
+        if (
+          pattern === undefined &&
+          binding.kind !== "object-binding" &&
+          binding.kind !== "array-binding"
+        ) {
+          const plan = planPipeline(node.iterable, pipelineFacts);
+          if (plan !== undefined && forOfPipelineCompatible(plan, node.body)) {
+            lowerForOfPipeline(plan, node, local, named);
+            break;
+          }
         }
         const array = value(node.iterable),
           index = numberSlot(0, node);

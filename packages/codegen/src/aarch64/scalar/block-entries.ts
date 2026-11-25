@@ -60,7 +60,10 @@ export function fallsThrough(word: number): boolean {
  * placed, so the common path falls through instead of taking a branch
  * (inlining and record lowering append such continuations at the end).
  * The entry stays first; every block appears exactly once. */
-export function chainedBlockOrder(fn: FunctionIR): number[] {
+export function chainedBlockOrder(
+  fn: FunctionIR,
+  inlineCall?: (target: number) => boolean,
+): number[] {
   const predecessors = new Uint32Array(fn.blocks.length);
   for (const block of fn.blocks) {
     if (block === undefined) throw "block order invariant";
@@ -73,7 +76,98 @@ export function chainedBlockOrder(fn: FunctionIR): number[] {
   }
   const placed = new Uint8Array(fn.blocks.length),
     order: number[] = [];
-  /** The single-predecessor continuation that should follow `id`. */
+  const coldFlags = new Uint8Array(fn.blocks.length);
+  for (const block of fn.blocks) {
+    if (block === undefined || block.id === fn.entry) continue;
+    const kind = block.terminator.kind;
+    if (kind === "trap" || kind === "throw" || kind === "throw-literal") {
+      coldFlags[block.id] = 1;
+      continue;
+    }
+    for (const op of block.instructions)
+      if (
+        op !== undefined &&
+        ((op.kind === "call" && inlineCall?.(op.target) !== true) ||
+          op.kind === "call-indirect" ||
+          op.kind === "host-call" ||
+          op.kind === "c-call" ||
+          op.kind === "array-copy")
+      ) {
+        coldFlags[block.id] = 1;
+        break;
+      }
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    for (const block of fn.blocks) {
+      if (
+        block === undefined ||
+        block.id === fn.entry ||
+        coldFlags[block.id] === 1
+      )
+        continue;
+      const succs = blockSuccessors(block);
+      if (succs.length === 0) continue;
+      let allCold = true;
+      for (const s of succs)
+        if (s === undefined || coldFlags[s] !== 1) {
+          allCold = false;
+          break;
+        }
+      if (allCold) {
+        coldFlags[block.id] = 1;
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  // Forward cold propagation: blocks reachable only from cold blocks (such as
+  // post-call capacity refresh diamonds on a slow push path) are also cold,
+  // so their join back into the hot loop sees only one hot predecessor.
+  const coldPredCount = new Uint32Array(fn.blocks.length);
+  for (let pass = 0; pass < 4; pass++) {
+    coldPredCount.fill(0);
+    for (const block of fn.blocks) {
+      if (block === undefined || coldFlags[block.id] !== 1) continue;
+      for (const s of blockSuccessors(block))
+        if (s !== undefined) coldPredCount[s] = (coldPredCount[s] ?? 0) + 1;
+    }
+    let changed = false;
+    for (const block of fn.blocks) {
+      if (
+        block === undefined ||
+        block.id === fn.entry ||
+        coldFlags[block.id] === 1
+      )
+        continue;
+      const total = predecessors[block.id] ?? 0;
+      if (total > 0 && (coldPredCount[block.id] ?? 0) === total) {
+        coldFlags[block.id] = 1;
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  /** Cold or call-bearing blocks that should not interrupt a hot branch's
+   * fallthrough chain (e.g. a slow growth path in a push loop). */
+  function coldOrCallBlock(id: number): boolean {
+    return coldFlags[id] === 1;
+  }
+  const hotPredecessors = new Uint32Array(fn.blocks.length);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "block order invariant";
+    if (!coldOrCallBlock(block.id)) {
+      for (const successor of blockSuccessors(block))
+        if (successor !== undefined)
+          hotPredecessors[successor] = (hotPredecessors[successor] ?? 0) + 1;
+    }
+    const handler = block.exception;
+    if (handler !== undefined)
+      hotPredecessors[handler.target] =
+        (hotPredecessors[handler.target] ?? 0) + 2;
+  }
+  /** The single-predecessor (or sole non-cold predecessor) continuation that
+   * should follow `id`. */
   function continuation(id: number): number {
     const block = fn.blocks[id];
     if (block === undefined) throw "block order invariant";
@@ -82,7 +176,31 @@ export function chainedBlockOrder(fn: FunctionIR): number[] {
     if (term.kind === "jump") next = term.target;
     else if (term.kind === "record" || term.kind === "record-cell")
       next = term.consequent;
-    return next >= 0 && next !== fn.entry && (predecessors[next] ?? 0) === 1
+    else if (term.kind === "branch" && term.consequent !== term.alternate) {
+      const coldC = coldOrCallBlock(term.consequent),
+        coldA = coldOrCallBlock(term.alternate);
+      if (!coldC && coldA) next = term.consequent;
+      else if (!coldA && coldC) next = term.alternate;
+      else if (!coldC && !coldA) {
+        const cUnique =
+            term.consequent !== fn.entry &&
+            ((predecessors[term.consequent] ?? 0) === 1 ||
+              (!coldOrCallBlock(id) &&
+                (hotPredecessors[term.consequent] ?? 0) === 1)),
+          aUnique =
+            term.alternate !== fn.entry &&
+            ((predecessors[term.alternate] ?? 0) === 1 ||
+              (!coldOrCallBlock(id) &&
+                (hotPredecessors[term.alternate] ?? 0) === 1));
+        if (cUnique && !aUnique) next = term.consequent;
+        else if (aUnique && !cUnique) next = term.alternate;
+        else if (cUnique) next = term.consequent;
+      }
+    }
+    return next >= 0 &&
+      next !== fn.entry &&
+      ((predecessors[next] ?? 0) === 1 ||
+        (!coldOrCallBlock(id) && (hotPredecessors[next] ?? 0) === 1))
       ? next
       : -1;
   }

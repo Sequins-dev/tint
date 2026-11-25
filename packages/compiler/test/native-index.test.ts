@@ -439,6 +439,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "propagate-slot-copies",
       "hoist-loop-invariants",
       "select-array-access",
+      "scalarize-stencil-loops",
       "split-optional-numbers",
       "thread-branches",
       // Before the late sweep (folded read guards), the sweep of the lowered
