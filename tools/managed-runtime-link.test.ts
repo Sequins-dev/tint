@@ -43,6 +43,7 @@ const globals = [
   "TextDecoder",
   "Number",
   "Math",
+  "Atomics",
   "Map",
   "Set",
   "Uint8Array",

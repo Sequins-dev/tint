@@ -209,6 +209,10 @@ export function createScriptRuntimeRequest(
       "createArray2",
       "createArray3",
       "createArray4",
+      "scriptAtomicsAddFast",
+      "scriptAtomicsLoadFast",
+      "scriptAtomicsStoreFast",
+      "scriptAtomicsInt32View",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }
