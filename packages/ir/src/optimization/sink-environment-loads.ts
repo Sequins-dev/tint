@@ -314,6 +314,23 @@ export function sinkEnvironmentLoads(
       return fn.entry;
     }
 
+    function isFusableMissTestBlock(block: Block, blockId: number): boolean {
+      if (
+        (predCount[blockId] ?? 0) !== 1 ||
+        block.exception !== undefined ||
+        block.terminator.kind !== "branch" ||
+        block.terminator.consequent === block.terminator.alternate
+      )
+        return false;
+      const last = block.instructions[block.instructions.length - 1];
+      return (
+        last !== undefined &&
+        last.kind === "general-is" &&
+        last.type === "absent" &&
+        last.id === block.terminator.condition
+      );
+    }
+
     for (const candidate of toCheck) {
       if (candidate === undefined) continue;
       const uses = readBlocks[candidate.slot];
@@ -331,8 +348,10 @@ export function sinkEnvironmentLoads(
         if (prefixSet.has(target)) break;
       }
       if (!reachable || prefixSet.has(target)) continue;
-      // Keep loads outside natural loops and out of blocks whose exception
-      // edge could bypass the prepended store on a path to another use block.
+      // Keep loads outside natural loops, out of blocks whose exception
+      // edge could bypass the prepended store on a path to another use block,
+      // and out of single-predecessor `general-is absent` miss-test blocks so
+      // `property-load`/`element-load` fusion stays intact.
       while (!prefixSet.has(target)) {
         const targetBlock = fn.blocks[target];
         if (targetBlock === undefined) {
@@ -342,7 +361,12 @@ export function sinkEnvironmentLoads(
         const unsafeException =
           targetBlock.exception !== undefined &&
           (uses.length > 1 || uses[0] !== target);
-        if (inLoop[target] !== 1 && !unsafeException) break;
+        if (
+          inLoop[target] !== 1 &&
+          !unsafeException &&
+          !isFusableMissTestBlock(targetBlock, target)
+        )
+          break;
         const parent = (dominators.idom[target] ?? 0) - 1;
         if (parent < 0 || parent === target) {
           target = fn.entry;

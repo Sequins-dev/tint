@@ -29,6 +29,7 @@ function skippable(op: Instruction): boolean {
     op.kind === "string-literal" ||
     op.kind === "reference-none" ||
     op.kind === "general-none" ||
+    op.kind === "closure-environment" ||
     op.kind === "record-read" ||
     op.kind === "general-is" ||
     (op.kind === "general-value" && op.unchecked === true)

@@ -579,3 +579,115 @@ test("sinking into a record-check block preserves proven layout in its consequen
     true,
   );
 });
+
+test("does not sink into a single-predecessor general-is absent miss-test block", () => {
+  const objectRecord = {
+    byteLength: 32,
+    fields: [
+      { offset: 8, type: "optional-reference" as const, mutable: true },
+      { offset: 16, type: "general" as const, mutable: true },
+    ],
+  };
+  const siteRecord = {
+    byteLength: 24,
+    fields: [
+      { offset: 8, type: "reference" as const, mutable: true },
+      { offset: 16, type: "number" as const, mutable: true },
+    ],
+  };
+  const epochRecord = {
+    byteLength: 16,
+    fields: [{ offset: 8, type: "number" as const, mutable: true }],
+  };
+  const fn: FunctionIR = {
+    id: 1,
+    name: "keepPropertyFusion",
+    exported: false,
+    closureEnvironment: 0,
+    parameters: [0, 1],
+    slots: ["general", "reference", "number", "general"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "closure-environment", id: 0, ...span },
+          {
+            kind: "record-read",
+            id: 1,
+            object: 0,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 1, ...span },
+          { kind: "load", id: 2, slot: 0, ...span },
+          { kind: "load", id: 3, slot: 1, ...span },
+          {
+            kind: "property-load",
+            id: 4,
+            object: 2,
+            site: 3,
+            record: 1,
+            field: 1,
+            count: 1,
+            siteRecord: 2,
+            siteField: 0,
+            inherited: false,
+            entries: 1,
+            epochRecord: 3,
+            epochField: 0,
+            ...span,
+          },
+          { kind: "store", slot: 3, value: 4, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1, // single-predecessor miss-test block; LCD of b2 and b3
+        instructions: [
+          { kind: "load", id: 5, slot: 3, ...span },
+          { kind: "general-is", id: 6, value: 5, type: "absent", ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 6,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 7, slot: 2, ...span }],
+        terminator: { kind: "return", value: 7, ...span },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 8, slot: 2, ...span }],
+        terminator: { kind: "return", value: 8, ...span },
+      },
+    ],
+  };
+  const base = makeModule(fn);
+  const module: ModuleIR = {
+    ...base,
+    records: [envRecord, objectRecord, siteRecord, epochRecord],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = sinkEnvironmentLoads(module.functions[1]!, module, 10000);
+  assert.ok(result !== undefined);
+  // Must NOT sink into b1 (which would break property-load fusion with b0).
+  assert.equal(result.sunk, 0);
+  assert.equal(
+    result.fn.blocks[1]!.instructions.some(
+      (op) => op.kind === "closure-environment" || op.kind === "record-read",
+    ),
+    false,
+  );
+  assert.deepEqual(
+    verify({ ...module, functions: [module.functions[0]!, result.fn] }),
+    { ok: true },
+  );
+});
