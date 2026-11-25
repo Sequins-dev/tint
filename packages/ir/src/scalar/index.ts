@@ -1072,6 +1072,17 @@ export function verify(
               equal(use(op.object), "general");
               equal(use(op.index), "number");
               if (op.kind === "element-store") equal(use(op.value), "general");
+              const cachedStorage = op.cachedStorage,
+                cachedCount = op.cachedCount;
+              if ((cachedStorage === undefined) !== (cachedCount === undefined))
+                fail(
+                  "TYPE",
+                  "element access cache requires both storage and count",
+                );
+              if (cachedStorage !== undefined && cachedCount !== undefined) {
+                equal(use(cachedStorage), "optional-reference");
+                equal(use(cachedCount), "number");
+              }
               const elements = module.records?.[op.record]?.fields[op.field],
                 elementFields = module.records?.[op.elementsRecord]?.fields;
               if (
@@ -1092,6 +1103,55 @@ export function verify(
                   "element access requires an elements reference with a number count and Float64Array storage",
                 );
               define(op.id, op.kind === "element-load" ? "general" : "boolean");
+              break;
+            }
+            case "element-storage":
+            case "element-count": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.countField) ||
+                !natural(op.storageField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.countField], "number") ||
+                !plainRecordField(
+                  elementFields?.[op.storageField],
+                  "Float64Array",
+                )
+              )
+                fail(
+                  "TYPE",
+                  "element cache requires an elements reference with a number count and Float64Array storage",
+                );
+              define(
+                op.id,
+                op.kind === "element-storage" ? "optional-reference" : "number",
+              );
+              break;
+            }
+            case "element-length": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.lengthField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.lengthField], "number")
+              )
+                fail(
+                  "TYPE",
+                  "element length requires an elements reference with a number length",
+                );
+              define(op.id, "general");
               break;
             }
             case "record-has": {
@@ -1215,8 +1275,15 @@ export function verify(
                 op.type !== "Float64Array"
               )
                 fail("TYPE", "unsupported general extraction category");
-              if (op.unchecked === true && op.type !== "number")
-                fail("TYPE", "unchecked general extraction requires number");
+              if (
+                op.unchecked === true &&
+                op.type !== "number" &&
+                op.type !== "reference"
+              )
+                fail(
+                  "TYPE",
+                  "unchecked general extraction requires number or reference",
+                );
               define(op.id, op.type);
               break;
             case "boolean-none":

@@ -58,23 +58,23 @@ test("module lowering preserves its caller-policy shape through nested async bod
   const cases = [
     [
       "export let x=1; export function f(){return x;}",
-      "7b969aec48745d5c64f1dbd46108965e2cbf7c2050033fa0dddd66db680e8277",
+      "934066e74f876c38ce26b4fc5615aca77a60328fba5ddc11ab9dd381cfc226fc",
     ],
     [
       "export async function f(){return await 1;}",
-      "2fd5c0dcff6d59450b509a95ca87954249a75e8166de764934f33d918b3e5460",
+      "feb56bb01fd986747650fe489bfa3ae4d784d47d5f9edd610322c286feecab98",
     ],
     [
       'export const C=class {["x"](){return 1;}};',
-      "c40062cb574b187224c9b03551b78a87e76e2827d6767befaa23415260c32410",
+      "debdb80eef176237567c5a8f6f414764fdfda3e838d1652842cb55fa014efda9",
     ],
     [
       "using resource=x; export let y=2;",
-      "05c9e393f562f3c73328e952eaee409cf116caa5cbb6345052cca0b596f69ed9",
+      "3edb417c3979258ad601e2a2e9a47dcf3f7b748a1f03fb594b0b266c3995d8d4",
     ],
     [
       'export function f(){return import("./m.js");}',
-      "6471c326ac0fad2727f329e961e3256796345304bbc6d56a0f8c1c56cf854123",
+      "dc6a1e102cc2fd580dd9921bdf88a4dfaae65771fe3ccd5832a981421b4dfc98",
     ],
   ] as const;
   for (const [source, sha256] of cases) {

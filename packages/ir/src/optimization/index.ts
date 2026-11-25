@@ -1,6 +1,6 @@
 import { bulkListCopies } from "./bulk-list-copies.ts";
 import { unbounded } from "./budget.ts";
-import { simplifyControlFlow } from "./control-flow.ts";
+import { hasScriptOperations, simplifyControlFlow } from "./control-flow.ts";
 import { promoteLoopCells } from "./cell-promotion.ts";
 import { splitOptionalNumbers } from "./optional-split.ts";
 import { shadowGeneralNumbers } from "./general-numbers.ts";
@@ -25,6 +25,10 @@ import { forwardLocalLoads } from "./forward-loads.ts";
 import { propagateSlotCopies } from "./slot-copies.ts";
 import { cacheListVectors } from "./list-vectors.ts";
 export { cacheListVectors } from "./list-vectors.ts";
+import { cacheElementStorage } from "./element-cache.ts";
+export { cacheElementStorage } from "./element-cache.ts";
+import { cacheLoopProperties } from "./property-cache.ts";
+export { cacheLoopProperties } from "./property-cache.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
@@ -1525,6 +1529,35 @@ export function optimizeModuleVersion(
     );
   used += shadows.visited;
   if (completed("shadow-general-numbers", shadows, false)) return stop();
+  // Loop-invariant global-cell and property-load accesses cache their results
+  // in the loop preheader and refresh after cold invalidating calls/writes.
+  // Running before thread-branches, cleanup, sink-environment-loads and
+  // compact-slots lets those passes remove dead IC operands and compact slots.
+  const cachedProperties = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = cacheLoopProperties(fn, version.module, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (cachedProperties.exhausted)
+    return exhausted(
+      "cache-loop-properties",
+      maxInstructions - used - accessVisited,
+    );
+  used += cachedProperties.visited;
+  if (completed("cache-loop-properties", cachedProperties, false))
+    return stop();
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
   const threaded = rewriteFunctions(
@@ -1591,12 +1624,25 @@ export function optimizeModuleVersion(
     if (completed("function-local-cleanup", sweep, true)) return stop();
     used += sweep.visited;
   }
+  const generalControlChanged = new Uint8Array(version.module.functions.length);
+  let hasGeneralControlChanged = false;
   const control = rewriteFunctions(
     version,
     maxInstructions - used - accessVisited,
     undefined,
     undefined,
-    controlFlowRewrite,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = controlFlowRewrite(fn, budget);
+      if (
+        result !== undefined &&
+        result.rewritten > 0 &&
+        hasScriptOperations(result.fn)
+      ) {
+        generalControlChanged[fn.id] = 1;
+        hasGeneralControlChanged = true;
+      }
+      return result;
+    },
   );
   if (control.exhausted)
     return exhausted(
@@ -1604,7 +1650,19 @@ export function optimizeModuleVersion(
       maxInstructions - used - accessVisited,
     );
   if (completed("simplify-control-flow", control, false)) return stop();
-  const controlVisited = control.visited;
+  let controlVisited = control.visited;
+  // Jump-chain merging in general functions exposes block-local forwarding
+  // (e.g. wrap/unwrap pairs and merged loop increments) before slot
+  // compaction, element caching, and counted-loop induction.
+  if (hasGeneralControlChanged) {
+    const postControl = cleanupSelectedFunctions(
+      version,
+      maxInstructions - used - accessVisited - controlVisited,
+      generalControlChanged,
+    );
+    if (completed("function-local-cleanup", postControl, true)) return stop();
+    controlVisited += postControl.visited;
+  }
   // Sink cold closure-environment loads from the entry block to the lowest
   // common dominator of their uses outside loops, freeing callee-saved
   // registers on hot paths.
@@ -1675,14 +1733,37 @@ export function optimizeModuleVersion(
   );
   if (vectors.exhausted) return exhausted("cache-list-vectors", vectorBudget);
   if (completed("cache-list-vectors", vectors, false)) return stop();
+  // Loop-invariant packed binary64 array accesses cache (storage, count) in
+  // the loop preheader and invalidate count to 0 after cold calls/writes.
+  const elementBudget = vectorBudget - vectors.visited;
+  const boundChanges: number[] = [];
+  const cachedElements = rewriteFunctions(
+    version,
+    elementBudget,
+    undefined,
+    boundChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = cacheElementStorage(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (cachedElements.exhausted)
+    return exhausted("cache-element-storage", elementBudget);
+  if (completed("cache-element-storage", cachedElements, false)) return stop();
   // Last: counted loops with unknown bounds compare against a word bound,
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
-  const boundChanges: number[] = [];
   const bounded = rewriteFunctions(
     version,
-    vectorBudget - vectors.visited,
+    elementBudget - cachedElements.visited,
     undefined,
     boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1705,7 +1786,7 @@ export function optimizeModuleVersion(
   // positive divisor, whose remainders codegen keeps integers.
   const divided = rewriteFunctions(
     version,
-    vectorBudget - vectors.visited - bounded.visited,
+    elementBudget - cachedElements.visited - bounded.visited,
     undefined,
     boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1740,7 +1821,10 @@ export function optimizeModuleVersion(
   if (rebound) {
     const reselected = rewriteFunctions(
       version,
-      vectorBudget - vectors.visited - bounded.visited - divided.visited,
+      elementBudget -
+        cachedElements.visited -
+        bounded.visited -
+        divided.visited,
       reboundSelection,
       undefined,
       (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1765,8 +1849,8 @@ export function optimizeModuleVersion(
   // copy for its flat kind, without a kind dispatch per read. Copying whole
   // loops keeps their list vector caches and interval facts current.
   const stringBudget =
-    vectorBudget -
-    vectors.visited -
+    elementBudget -
+    cachedElements.visited -
     bounded.visited -
     divided.visited -
     reselectedVisited;

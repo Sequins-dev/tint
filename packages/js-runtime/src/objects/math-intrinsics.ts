@@ -61,25 +61,6 @@ export function installMathIntrinsics(
     return converted.value;
   }
   const math = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
-  builtinProperty(
-    math,
-    wellKnownSymbol(realm.symbolRegistry, "toStringTag"),
-    "Math",
-    false,
-    true,
-    hooks,
-  );
-  function constant(name: string, value: number): void {
-    builtinProperty(math, name, value, false, false, hooks);
-  }
-  constant("E", 2.718281828459045);
-  constant("LN10", 2.302585092994046);
-  constant("LN2", 0.6931471805599453);
-  constant("LOG10E", 0.4342944819032518);
-  constant("LOG2E", 1.4426950408889634);
-  constant("PI", 3.141592653589793);
-  constant("SQRT1_2", 0.7071067811865476);
-  constant("SQRT2", 1.4142135623730951);
   function unary(
     name: string,
     operation: (value: number) => number,
@@ -94,52 +75,6 @@ export function installMathIntrinsics(
     builtinProperty(math, name, method, true, true, hooks);
     return method;
   }
-  // Generated calls perform these inline on Numbers (intrinsic-functions.ts)
-  // with the same typed operations.
-  const intrinsics = realm.intrinsicFunctions;
-  intrinsics.mathAbs = unary("abs", (value: number): number => Math.abs(value));
-  intrinsics.mathCeil = unary("ceil", (value: number): number =>
-    Math.ceil(value),
-  );
-  intrinsics.mathFloor = unary("floor", (value: number): number =>
-    Math.floor(value),
-  );
-  intrinsics.mathTrunc = unary("trunc", (value: number): number =>
-    Math.trunc(value),
-  );
-  intrinsics.mathRound = unary("round", (value: number): number =>
-    Math.round(value),
-  );
-  intrinsics.mathSign = unary("sign", (value: number): number =>
-    Math.sign(value),
-  );
-  unary("sin", (value: number): number => sine(value));
-  unary("cos", (value: number): number => cosine(value));
-  unary("tan", (value: number): number => tangent(value));
-  unary("atan", (value: number): number => numberAtan(value));
-  unary("asin", (value: number): number => numberAsin(value));
-  unary("acos", (value: number): number => numberAcos(value));
-  unary("sinh", (value: number): number => numberSinh(value));
-  unary("cosh", (value: number): number => numberCosh(value));
-  unary("tanh", (value: number): number => numberTanh(value));
-  unary("asinh", (value: number): number => numberAsinh(value));
-  unary("acosh", (value: number): number => numberAcosh(value));
-  unary("atanh", (value: number): number => numberAtanh(value));
-  unary("exp", (value: number): number => numberExp(value));
-  unary("expm1", (value: number): number => numberExpm1(value));
-  unary("log", (value: number): number => numberLog(value, 0));
-  unary("log2", (value: number): number => numberLog(value, 2));
-  unary("log10", (value: number): number => numberLog(value, 10));
-  unary("log1p", (value: number): number => numberLog1p(value));
-  unary("cbrt", (value: number): number => numberCbrt(value));
-  intrinsics.mathSqrt = unary("sqrt", (value: number): number =>
-    Math.sqrt(value),
-  );
-  intrinsics.mathClz32 = unary("clz32", (value: number): number =>
-    Math.clz32(value),
-  );
-  unary("fround", (value: number): number => roundFloat(value, 4));
-  unary("f16round", (value: number): number => roundFloat(value, 2));
   function extremum(
     name: string,
     maximum: boolean,
@@ -170,8 +105,6 @@ export function installMathIntrinsics(
     builtinProperty(math, name, method, true, true, hooks);
     return method;
   }
-  intrinsics.mathMin = extremum("min", false);
-  intrinsics.mathMax = extremum("max", true);
   function binary(
     name: string,
     operation: (left: number, right: number) => number,
@@ -190,9 +123,76 @@ export function installMathIntrinsics(
     builtinProperty(math, name, method, true, true, hooks);
     return method;
   }
+  // Install hot inline-intrinsic Math methods in slots 0..7 so `Math.floor`,
+  // `Math.sqrt`, `Math.max`, etc. hit the inline property-load cache.
+  const intrinsics = realm.intrinsicFunctions;
+  intrinsics.mathFloor = unary("floor", (value: number): number =>
+    Math.floor(value),
+  );
+  intrinsics.mathSqrt = unary("sqrt", (value: number): number =>
+    Math.sqrt(value),
+  );
+  intrinsics.mathMax = extremum("max", true);
+  intrinsics.mathMin = extremum("min", false);
+  intrinsics.mathAbs = unary("abs", (value: number): number => Math.abs(value));
+  intrinsics.mathRound = unary("round", (value: number): number =>
+    Math.round(value),
+  );
+  intrinsics.mathCeil = unary("ceil", (value: number): number =>
+    Math.ceil(value),
+  );
   intrinsics.mathImul = binary("imul", (left: number, right: number): number =>
     Math.imul(left, right),
   );
+  builtinProperty(
+    math,
+    wellKnownSymbol(realm.symbolRegistry, "toStringTag"),
+    "Math",
+    false,
+    true,
+    hooks,
+  );
+  function constant(name: string, value: number): void {
+    builtinProperty(math, name, value, false, false, hooks);
+  }
+  constant("E", 2.718281828459045);
+  constant("LN10", 2.302585092994046);
+  constant("LN2", 0.6931471805599453);
+  constant("LOG10E", 0.4342944819032518);
+  constant("LOG2E", 1.4426950408889634);
+  constant("PI", 3.141592653589793);
+  constant("SQRT1_2", 0.7071067811865476);
+  constant("SQRT2", 1.4142135623730951);
+  intrinsics.mathTrunc = unary("trunc", (value: number): number =>
+    Math.trunc(value),
+  );
+  intrinsics.mathSign = unary("sign", (value: number): number =>
+    Math.sign(value),
+  );
+  unary("sin", (value: number): number => sine(value));
+  unary("cos", (value: number): number => cosine(value));
+  unary("tan", (value: number): number => tangent(value));
+  unary("atan", (value: number): number => numberAtan(value));
+  unary("asin", (value: number): number => numberAsin(value));
+  unary("acos", (value: number): number => numberAcos(value));
+  unary("sinh", (value: number): number => numberSinh(value));
+  unary("cosh", (value: number): number => numberCosh(value));
+  unary("tanh", (value: number): number => numberTanh(value));
+  unary("asinh", (value: number): number => numberAsinh(value));
+  unary("acosh", (value: number): number => numberAcosh(value));
+  unary("atanh", (value: number): number => numberAtanh(value));
+  unary("exp", (value: number): number => numberExp(value));
+  unary("expm1", (value: number): number => numberExpm1(value));
+  unary("log", (value: number): number => numberLog(value, 0));
+  unary("log2", (value: number): number => numberLog(value, 2));
+  unary("log10", (value: number): number => numberLog(value, 10));
+  unary("log1p", (value: number): number => numberLog1p(value));
+  unary("cbrt", (value: number): number => numberCbrt(value));
+  intrinsics.mathClz32 = unary("clz32", (value: number): number =>
+    Math.clz32(value),
+  );
+  unary("fround", (value: number): number => roundFloat(value, 4));
+  unary("f16round", (value: number): number => roundFloat(value, 2));
   binary("atan2", (y: number, x: number): number => numberAtan2(y, x));
   builtinProperty(
     math,

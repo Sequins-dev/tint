@@ -1,9 +1,3 @@
-import {
-  getMap,
-  hasMap,
-  setMap,
-  type LinkedMap,
-} from "@tint/foundation/collections/linked-map";
 import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 
@@ -68,38 +62,4 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     arrayPush: undefined,
     arrayPop: undefined,
   };
-}
-
-// The inline forms of the collection methods on a receiver's storage
-// (Map.prototype.get and friends after their receiver check): keys compare
-// with SameValueZero, so -0 is stored and found as +0.
-
-export function scriptMapGet(
-  data: LinkedMap<unknown, unknown>,
-  key: unknown,
-): unknown {
-  return getMap<unknown, unknown>(data, key === 0 ? 0 : key);
-}
-
-export function scriptMapHas(
-  data: LinkedMap<unknown, unknown>,
-  key: unknown,
-): boolean {
-  return hasMap<unknown, unknown>(data, key === 0 ? 0 : key);
-}
-
-export function scriptMapSet(
-  data: LinkedMap<unknown, unknown>,
-  key: unknown,
-  value: unknown,
-): void {
-  setMap<unknown, unknown>(data, key === 0 ? 0 : key, value);
-}
-
-export function scriptSetAdd(
-  data: LinkedMap<unknown, unknown>,
-  value: unknown,
-): void {
-  const key = value === 0 ? 0 : value;
-  setMap<unknown, unknown>(data, key, key);
 }

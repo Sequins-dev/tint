@@ -270,6 +270,8 @@ export type Instruction = Span &
         readonly elementsRecord: number;
         readonly countField: number;
         readonly storageField: number;
+        readonly cachedStorage?: number;
+        readonly cachedCount?: number;
       }
     | {
         /** Overwrite the packed binary64 element `index` (located as for
@@ -286,6 +288,44 @@ export type Instruction = Span &
         readonly elementsRecord: number;
         readonly countField: number;
         readonly storageField: number;
+        readonly cachedStorage?: number;
+        readonly cachedCount?: number;
+      }
+    | {
+        /** The Float64Array storage of a packed array exotic object (or none
+         * when `object` is not a `record` object with a present `field`). */
+        readonly kind: "element-storage";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+      }
+    | {
+        /** The packed binary64 element count of a packed array exotic object
+         * (or 0 when `object` is not a `record` object with a present `field`). */
+        readonly kind: "element-count";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+      }
+    | {
+        /** The mirrored `length` of a packed array exotic object (the Number
+         * general value of `elementsRecord.lengthField`), or the absent value
+         * when `object` is not a `record` object with a present `field`. */
+        readonly kind: "element-length";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly lengthField: number;
       }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {

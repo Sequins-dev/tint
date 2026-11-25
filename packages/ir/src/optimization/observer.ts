@@ -29,6 +29,8 @@ export interface PassStatistics {
     | "forward-local-loads"
     | "propagate-slot-copies"
     | "cache-list-vectors"
+    | "cache-element-storage"
+    | "cache-loop-properties"
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"

@@ -319,6 +319,42 @@ function appends() {
   const replaced = push([], 1);
   Array.prototype.push = original;
   out.push(replaced);
+  // Own push property shadows Array.prototype.push even on a packed array.
+  const shadowed = [1, 2];
+  shadowed.push = function (v) { return "own " + v; };
+  out.push(push(shadowed, 3), shadowed.length);
+  // Unrelated mutation on Array.prototype bumps its property epoch; push still works and self-heals.
+  Array.prototype.unrelatedPushTag = 123;
+  const afterProto = [1];
+  out.push(push(afterProto, 2), push(afterProto, 3), afterProto.join("/"));
+  delete Array.prototype.unrelatedPushTag;
+  // Deleting Array.prototype.push throws TypeError at the call site.
+  delete Array.prototype.push;
+  let deletedPushErr = "pushed";
+  try { push([], 1); } catch (e) { deletedPushErr = e.constructor.name; }
+  // Accessor on Array.prototype.push must be invoked.
+  let getterHits = 0;
+  Object.defineProperty(Array.prototype, "push", {
+    get() { getterHits++; return original; },
+    configurable: true,
+  });
+  const viaGetter = [];
+  const getterLen = push(viaGetter, 7);
+  Object.defineProperty(Array.prototype, "push", {
+    value: original,
+    writable: true,
+    enumerable: false,
+    configurable: true,
+  });
+  out.push(deletedPushErr, getterLen, getterHits, viaGetter[0]);
+  // Push across capacity growth and number -> value transition, and on unpacked arrays.
+  const growing = [];
+  for (let i = 0; i < 20; i++) push(growing, i);
+  push(growing, "tail");
+  out.push(growing.length, growing[0], growing[19], growing[20]);
+  const unpackedPush = [1, 2, 3];
+  delete unpackedPush[1];
+  out.push(push(unpackedPush, 4), unpackedPush.length, String(unpackedPush[1]), unpackedPush[3]);
   out.push([].push(), [1].push(2, 3));
   const huge = [];
   huge.length = 4294967295;
@@ -413,6 +449,47 @@ function literals() {
   out.push(Reflect.ownKeys(expando).map((k) => typeof k === "symbol" ? "sym" : k).join("/"));
   const mixed = [1, 2, "three", 4];
   out.push(mixed.join("/"), mixed.length);
+  // Small dense array literals of arities 0..4 (numbers, objects, mixed).
+  const d0 = [];
+  const d1 = [42];
+  const d2 = [1, -0];
+  const d3 = [1, "b", 3];
+  const d4 = [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }];
+  out.push(d0.length, d1[0], show(d2[1]), d3.join("/"), d4.map((v) => v.a).join("/"));
+  // Small static-key object literals of arities 1..4, duplicate keys, numeric keys, and prototype mutation.
+  const make1 = (a) => ({ a });
+  const make2 = (a, b) => ({ a, b });
+  const make3 = (a, b, c) => ({ a, b, c });
+  const make4 = (a, b, c, d) => ({ a, b, c, d });
+  const p1 = make1(1);
+  const p2 = make2(2, 3);
+  const p3 = make3(4, 5, 6);
+  const p4 = make4(7, 8, 9, 10);
+  const dupObj = { a: 1, a: 2 };
+  const idxObj = { 0: "z", a: "w" };
+  let protoSetCalls = 0;
+  Object.defineProperty(Object.prototype, "litTrap", {
+    set() { protoSetCalls++; },
+    get() { return "proto"; },
+    configurable: true,
+  });
+  const trapped = { litTrap: "own", b: 2 };
+  delete Object.prototype.litTrap;
+  out.push(
+    p1.a,
+    p2.a + p2.b,
+    p3.a + p3.b + p3.c,
+    p4.a + p4.b + p4.c + p4.d,
+    dupObj.a,
+    idxObj[0] + idxObj.a,
+    trapped.litTrap,
+    protoSetCalls,
+  );
+  // Warm literal site continues to work after Object.prototype changes.
+  Object.prototype.extraLitProp = "inherited";
+  const p2After = make2(20, 30);
+  out.push(p2After.a, p2After.b, p2After.extraLitProp);
+  delete Object.prototype.extraLitProp;
   const protoArr = [1, 2, 3];
   const derived = Object.create(protoArr);
   out.push(derived.length, Object.hasOwn(protoArr, "length"), "length" in protoArr);
@@ -597,6 +674,80 @@ function popAndSpecLoops() {
   out.push(advectLike(adShortD, adShortD0, adU, adV, 2, 2, 0.5), adShortD.map((v) => (Number.isNaN(v) ? "NaN" : Math.round(v * 1000) / 1000)).join("/"));
   return out.join(",");
 }
+function cachedLoops() {
+  const out = [];
+  const shrink = (arr) => { arr.length = 2; };
+  const unpack = (arr) => { arr[4] = "text"; };
+  const freeze = (arr) => { Object.freeze(arr); };
+  const a = [1, 2, 3, 4, 5, 6];
+  let sumA = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 2) shrink(a);
+    const v = a[i];
+    if (typeof v === "number") sumA += v;
+    else out.push("shrunk:" + i + ":" + String(v));
+  }
+  out.push(sumA, a.length);
+  const b = [10, 20, 30, 40, 50, 60];
+  let traceB = "";
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) unpack(b);
+    traceB += String(b[i]) + "/";
+  }
+  out.push(traceB);
+  const c = [1, 2, 3, 4, 5, 6];
+  let froze = "";
+  for (let i = 0; i < 6; i++) {
+    if (i === 2) freeze(c);
+    try { c[i] = i * 10; } catch (e) { froze += i + ":" + e.constructor.name + ";"; }
+  }
+  out.push(c.join("/"), froze);
+  // Direct and continue-bearing for loops (unlabelled, labelled, nested inner continue).
+  let s1 = 0;
+  for (let i = 0; i < 8; i++) {
+    if (i % 2 === 0) continue;
+    s1 += i;
+  }
+  let s2 = 0;
+  outer: for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      if (j === 1) continue;
+      if (i === 2 && j === 2) continue outer;
+      s2 += i * 10 + j;
+    }
+  }
+  out.push(s1, s2);
+  // Mid-loop Array.prototype / Object.prototype mutation invalidating cleanArrayPushEpoch.
+  const protoPush = [];
+  let protoSetCount = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) {
+      Object.defineProperty(Array.prototype, 3, {
+        set(v) { protoSetCount += v; },
+        get() { return 777; },
+        configurable: true,
+      });
+    }
+    protoPush.push(i);
+  }
+  delete Array.prototype[3];
+  out.push(protoPush.length, Object.hasOwn(protoPush, 3), protoPush[4], protoSetCount);
+  // Mid-loop Object.prototype indexed property invalidates fast push as well.
+  const objProtoPush = [];
+  let objProtoSeen = 0;
+  for (let i = 0; i < 5; i++) {
+    if (i === 2) {
+      Object.defineProperty(Object.prototype, 2, {
+        set(v) { objProtoSeen += v + 10; },
+        configurable: true,
+      });
+    }
+    objProtoPush.push(i);
+  }
+  delete Object.prototype[2];
+  out.push(objProtoPush.length, Object.hasOwn(objProtoPush, 2), objProtoPush[3], objProtoSeen);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -609,6 +760,7 @@ export function sections() {
     appends(),
     literals(),
     popAndSpecLoops(),
+    cachedLoops(),
   ];
 }
 `;
@@ -626,7 +778,7 @@ test("element access keeps JavaScript semantics on every receiver and key", asyn
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 10);
+  assert.equal(expected.length, 11);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

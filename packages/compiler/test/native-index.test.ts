@@ -423,6 +423,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "select-array-access",
       "split-optional-numbers",
       "shadow-general-numbers",
+      "cache-loop-properties",
       "thread-branches",
       // Before the late sweep (folded read guards), then after it.
       "simplify-control-flow",
@@ -430,6 +431,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "sink-environment-loads",
       "compact-slots",
       "cache-list-vectors",
+      "cache-element-storage",
       "bound-counted-loops",
       "version-nonzero-divisors",
       "version-string-loops",

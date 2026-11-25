@@ -1,19 +1,15 @@
 import {
-  createMapWithKeys,
-  createMapCursor,
-  advanceMapCursor,
-  readMapCursorKey,
-  setMap,
-  type LinkedMap,
-} from "@tint/foundation/collections/linked-map";
-import { collectionKeyHash, collectionKeyEqual } from "./collection-keys.ts";
+  createScriptMap,
+  createScriptMapCursor,
+  advanceScriptMapCursor,
+  readScriptMapCursorKey,
+  setScriptMap,
+  type ScriptMap,
+} from "./collection-data.ts";
 import { viewObjectValue } from "./values.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { exoticSlots } from "./operations.ts";
-export function requireSet(
-  receiver: unknown,
-  realm: ErrorRealm,
-): LinkedMap<unknown, unknown> {
+export function requireSet(receiver: unknown, realm: ErrorRealm): ScriptMap {
   const object = viewObjectValue(receiver, realm.objectPrototype);
   const data =
     object === undefined ? undefined : exoticSlots(object).internalSetData;
@@ -21,20 +17,15 @@ export function requireSet(
   return data;
 }
 
-export function createSetData(): LinkedMap<unknown, unknown> {
-  return createMapWithKeys<unknown, unknown>({
-    hash: collectionKeyHash,
-    equals: collectionKeyEqual,
-  });
+export function createSetData(): ScriptMap {
+  return createScriptMap();
 }
-export function copySetData(
-  source: LinkedMap<unknown, unknown>,
-): LinkedMap<unknown, unknown> {
+export function copySetData(source: ScriptMap): ScriptMap {
   const result = createSetData(),
-    cursor = createMapCursor<unknown, unknown>(source);
-  while (advanceMapCursor<unknown, unknown>(cursor)) {
-    const key = readMapCursorKey<unknown, unknown>(cursor);
-    setMap<unknown, unknown>(result, key, key);
+    cursor = createScriptMapCursor(source);
+  while (advanceScriptMapCursor(cursor)) {
+    const key = readScriptMapCursorKey(cursor);
+    setScriptMap(result, key, key);
   }
   return result;
 }

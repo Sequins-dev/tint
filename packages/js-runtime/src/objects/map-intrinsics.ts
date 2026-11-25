@@ -1,16 +1,21 @@
 import { forEachGroupItem } from "./grouping.ts";
 import {
+  createScriptMap,
+  getScriptMap,
+  hasScriptMap,
+  setScriptMap,
+  deleteScriptMap,
+  clearScriptMap,
+  createScriptMapCursor,
+  advanceScriptMapCursor,
+  readScriptMapCursorKey,
+  readScriptMapCursorValue,
+  type ScriptMap,
+} from "./collection-data.ts";
+import {
   createMapWithKeys,
   getMap,
-  hasMap,
   setMap,
-  deleteMap,
-  clearMap,
-  createMapCursor,
-  advanceMapCursor,
-  readMapCursorKey,
-  readMapCursorValue,
-  type LinkedMap,
 } from "@tint/foundation/collections/linked-map";
 import { collectionKeyHash, collectionKeyEqual } from "./collection-keys.ts";
 import {
@@ -32,15 +37,12 @@ import { viewObjectValue, callObjectValue } from "./values.ts";
 import { isCallableObject } from "./call.ts";
 import { constructorPrototype } from "./functions.ts";
 import { addEntriesFromIterable } from "./entry-iteration.ts";
-import { createArrayFromList } from "./array-like.ts";
+import { createArray2, createArrayFromList } from "./array-like.ts";
 import { createIteratorResult } from "./iterator-intrinsics.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 
-function requireMap(
-  receiver: unknown,
-  realm: ErrorRealm,
-): LinkedMap<unknown, unknown> {
+function requireMap(receiver: unknown, realm: ErrorRealm): ScriptMap {
   const object = viewObjectValue(receiver, realm.objectPrototype);
   const data =
     object === undefined ? undefined : exoticSlots(object).internalMapData;
@@ -64,13 +66,7 @@ export function installMapIntrinsics(
       const map = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "map", realm, hooks),
       );
-      ensureExoticSlots(map).internalMapData = createMapWithKeys<
-        unknown,
-        unknown
-      >({
-        hash: collectionKeyHash,
-        equals: collectionKeyEqual,
-      });
+      ensureExoticSlots(map).internalMapData = createScriptMap();
       const iterable = args[0];
       if (iterable === undefined || iterable === null) return map;
       const adder = getProperty<ScriptPropertyKey, unknown>(
@@ -143,14 +139,11 @@ export function installMapIntrinsics(
           hooks,
         );
         const result = createObject<ScriptPropertyKey, unknown>(prototype);
-        const data = createMapWithKeys<unknown, unknown>({
-          hash: collectionKeyHash,
-          equals: collectionKeyEqual,
-        });
+        const data = createScriptMap();
         ensureExoticSlots(result).internalMapData = data;
         for (const group of groups) {
           if (group === undefined) throw "MAP_GROUP_INVARIANT";
-          setMap<unknown, unknown>(
+          setScriptMap(
             data,
             group.key,
             createArrayFromList(
@@ -190,8 +183,7 @@ export function installMapIntrinsics(
           )
             throw createRuntimeError(realm, "type");
           const key = args[0] === 0 ? 0 : args[0];
-          if (hasMap<unknown, unknown>(map, key))
-            return getMap<unknown, unknown>(map, key);
+          if (hasScriptMap(map, key)) return getScriptMap(map, key);
           let value = args[1];
           if (computed) {
             const called = callObjectValue(
@@ -205,7 +197,7 @@ export function installMapIntrinsics(
             value = called.value;
           }
           // Lookup again after the callback: it may have inserted this key itself.
-          setMap<unknown, unknown>(map, key, value);
+          setScriptMap(map, key, value);
           return value;
         },
         hooks,
@@ -258,14 +250,14 @@ export function installMapIntrinsics(
       (receiver, args): unknown => {
         const map = requireMap(receiver, realm);
         const key = args[0] === 0 ? 0 : args[0];
-        if (name === "get") return getMap<unknown, unknown>(map, key);
-        if (name === "has") return hasMap<unknown, unknown>(map, key);
-        if (name === "delete") return deleteMap<unknown, unknown>(map, key);
+        if (name === "get") return getScriptMap(map, key);
+        if (name === "has") return hasScriptMap(map, key);
+        if (name === "delete") return deleteScriptMap(map, key);
         if (name === "clear") {
-          clearMap<unknown, unknown>(map);
+          clearScriptMap(map);
           return undefined;
         }
-        setMap<unknown, unknown>(map, key, args[1]);
+        setScriptMap(map, key, args[1]);
         return receiver;
       },
       hooks,
@@ -293,14 +285,14 @@ export function installMapIntrinsics(
           )
         )
           throw createRuntimeError(realm, "type");
-        const cursor = createMapCursor<unknown, unknown>(map);
-        while (advanceMapCursor<unknown, unknown>(cursor)) {
+        const cursor = createScriptMapCursor(map);
+        while (advanceScriptMapCursor(cursor)) {
           const called = callObjectValue(
             callback,
             args[1],
             [
-              readMapCursorValue<unknown, unknown>(cursor),
-              readMapCursorKey<unknown, unknown>(cursor),
+              readScriptMapCursorValue(cursor),
+              readScriptMapCursorKey(cursor),
               receiver,
             ],
             realm.objectPrototype,
@@ -337,22 +329,16 @@ export function installMapIntrinsics(
             ? undefined
             : exoticSlots(object).internalMapIteratorData;
         if (data === undefined) throw createRuntimeError(realm, "type");
-        if (!advanceMapCursor<unknown, unknown>(data.cursor))
+        if (!advanceScriptMapCursor(data.cursor))
           return createIteratorResult(undefined, true, realm, hooks);
-        const key = readMapCursorKey<unknown, unknown>(data.cursor),
-          value = readMapCursorValue<unknown, unknown>(data.cursor);
+        const key = readScriptMapCursorKey(data.cursor),
+          value = readScriptMapCursorValue(data.cursor);
         const result =
           data.kind === "key"
             ? key
             : data.kind === "value"
               ? value
-              : createArrayFromList(
-                  [key, value],
-                  0,
-                  realm.arrayPrototype,
-                  realm,
-                  hooks,
-                );
+              : createArray2(key, value, realm);
         return createIteratorResult(result, false, realm, hooks);
       },
       hooks,
@@ -373,7 +359,7 @@ export function installMapIntrinsics(
           realm.mapIteratorPrototype,
         );
         ensureExoticSlots(iterator).internalMapIteratorData = {
-          cursor: createMapCursor<unknown, unknown>(map),
+          cursor: createScriptMapCursor(map),
           kind: name === "keys" ? "key" : name === "values" ? "value" : "entry",
         };
         return iterator;

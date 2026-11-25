@@ -46,6 +46,7 @@ import {
   bindArrayStore,
   bindElementLoad,
   bindElementStore,
+  bindElementLength,
   bindRecordOperation,
   bindScriptEntry,
   bindGlobalCell,
@@ -4789,20 +4790,38 @@ function lowerEntries(
         binding.operation === "element-store"
       ) {
         const store = binding.operation === "element-store";
-        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          countName = binding.siteField;
+        // Accept either OrdinaryObject or ErrorRealm (extracting
+        // objectPrototype's record type) as parameter 0 so call sites can
+        // pass $errors directly without loading $errors.objectPrototype.
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
         const record =
           witnessType === undefined
             ? undefined
             : recordContracts.forType(witnessType);
-        const elementsName = binding.field,
-          countName = binding.siteField;
         const field =
           record === undefined || elementsName === undefined
             ? undefined
             : recordContracts.fieldIndex(record, elementsName);
         // The elements field holds `Elements | undefined`.
-        const witness =
-          witnessType === undefined ? undefined : checked.types[witnessType];
         const property =
           witness?.kind === "object" && elementsName !== undefined
             ? witness.properties.find(
@@ -4862,6 +4881,85 @@ function lowerEntries(
           store && fourth !== undefined
             ? bindElementStore(fn, second, third, fourth, layout, span)
             : bindElementLoad(fn, second, third, layout, span);
+        continue;
+      }
+      if (binding.operation === "element-length") {
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          lengthName = binding.siteField;
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const field =
+          record === undefined || elementsName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, elementsName);
+        const property =
+          witness?.kind === "object" && elementsName !== undefined
+            ? witness.properties.find(
+                (item) => item !== undefined && item.name === elementsName,
+              )
+            : undefined;
+        let elementsType: number | undefined = undefined;
+        const declared =
+          property === undefined ? undefined : checked.types[property.type];
+        if (declared?.kind === "union") {
+          for (const member of declared.members) {
+            if (member === undefined) throw "element binding union invariant";
+            if (checked.types[member]?.kind === "undefined") continue;
+            elementsType = elementsType === undefined ? member : -1;
+          }
+        } else if (property !== undefined) elementsType = property.type;
+        const elementsRecord =
+          elementsType === undefined || elementsType < 0
+            ? undefined
+            : recordContracts.forType(elementsType);
+        const lengthField =
+          elementsRecord === undefined || lengthName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, lengthName);
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.returnType !== "general" ||
+          record === undefined ||
+          field === undefined ||
+          elementsRecord === undefined ||
+          lengthField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "element-length binding takes a record witness with an elements field and an unknown value",
+          );
+        functions[fn.id] = bindElementLength(
+          fn,
+          second,
+          { record, field, elementsRecord, lengthField },
+          span,
+        );
         continue;
       }
       if (binding.operation === "slot-read") {

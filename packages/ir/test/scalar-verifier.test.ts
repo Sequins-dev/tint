@@ -2689,4 +2689,221 @@ test("element access requires an elements reference with a number count and Floa
       false,
     );
   }
+
+  function lengthModule(
+    elementsType: "optional-reference" | "number",
+    lengthType: "number" | "general",
+    objectType: "general" | "reference",
+  ) {
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "length",
+          exported: true,
+          parameters: [0],
+          slots: [objectType],
+          returnType: "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                {
+                  kind: "element-length",
+                  id: 1,
+                  object: 0,
+                  record: 0,
+                  field: 1,
+                  elementsRecord: 1,
+                  lengthField: 0,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 1, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: elementsType, mutable: true },
+          ],
+        },
+        {
+          byteLength: 24,
+          fields: [{ offset: 8, type: lengthType, mutable: true }],
+        },
+      ],
+    });
+  }
+  const validLength = lengthModule("optional-reference", "number", "general");
+  assert.ok(validLength.ok, JSON.stringify(validLength));
+  assert.equal(lengthModule("number", "number", "general").ok, false);
+  assert.equal(
+    lengthModule("optional-reference", "general", "general").ok,
+    false,
+  );
+  assert.equal(
+    lengthModule("optional-reference", "number", "reference").ok,
+    false,
+  );
+
+  function cachedModule(
+    storageType: "optional-reference" | "reference",
+    countType: "number" | "boolean",
+    includeCount: boolean,
+    store: boolean,
+  ) {
+    const layout = {
+      record: 0,
+      field: 1,
+      elementsRecord: 1,
+      countField: 0,
+      storageField: 1,
+    };
+    const instructions: Block["instructions"][number][] = [
+      { kind: "load", id: 0, slot: 0, ...span },
+      { kind: "load", id: 1, slot: 1, ...span },
+      { kind: "load", id: 2, slot: 2, ...span },
+      { kind: "load", id: 3, slot: 3, ...span },
+      store
+        ? {
+            kind: "element-store",
+            id: 4,
+            object: 0,
+            index: 1,
+            value: 0,
+            ...layout,
+            cachedStorage: 2,
+            ...(includeCount ? { cachedCount: 3 } : {}),
+            ...span,
+          }
+        : {
+            kind: "element-load",
+            id: 4,
+            object: 0,
+            index: 1,
+            ...layout,
+            cachedStorage: 2,
+            ...(includeCount ? { cachedCount: 3 } : {}),
+            ...span,
+          },
+    ];
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "cachedElement",
+          exported: true,
+          parameters: [0, 1, 2, 3],
+          slots: ["general", "number", storageType, countType],
+          returnType: store ? "boolean" : "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: 4, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: "optional-reference", mutable: true },
+          ],
+        },
+        {
+          byteLength: 32,
+          fields: [
+            { offset: 8, type: "number", mutable: true },
+            { offset: 16, type: "Float64Array", mutable: true },
+          ],
+        },
+      ],
+    });
+  }
+  for (const store of [false, true]) {
+    const ok = cachedModule("optional-reference", "number", true, store);
+    assert.ok(ok.ok, JSON.stringify(ok));
+    assert.equal(cachedModule("reference", "number", true, store).ok, false);
+    assert.equal(
+      cachedModule("optional-reference", "boolean", true, store).ok,
+      false,
+    );
+    assert.equal(
+      cachedModule("optional-reference", "number", false, store).ok,
+      false,
+    );
+  }
+  const cacheReads = verify({
+    functions: [
+      {
+        id: 0,
+        name: "cacheReads",
+        exported: true,
+        parameters: [0],
+        slots: ["general", "optional-reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "element-storage",
+                id: 1,
+                object: 0,
+                record: 0,
+                field: 1,
+                elementsRecord: 1,
+                countField: 0,
+                storageField: 1,
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 1, ...span },
+              {
+                kind: "element-count",
+                id: 2,
+                object: 0,
+                record: 0,
+                field: 1,
+                elementsRecord: 1,
+                countField: 0,
+                storageField: 1,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+    records: [
+      {
+        byteLength: 24,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "optional-reference", mutable: true },
+        ],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "number", mutable: true },
+          { offset: 16, type: "Float64Array", mutable: true },
+        ],
+      },
+    ],
+  });
+  assert.ok(cacheReads.ok, JSON.stringify(cacheReads));
 });

@@ -185,7 +185,13 @@ function pruneTracedModule(
               globalObjectRecord,
               cacheRecord,
             };
-        } else if (op.kind === "element-load" || op.kind === "element-store") {
+        } else if (
+          op.kind === "element-load" ||
+          op.kind === "element-store" ||
+          op.kind === "element-length" ||
+          op.kind === "element-storage" ||
+          op.kind === "element-count"
+        ) {
           const record = recordId(op.record),
             elementsRecord = recordId(op.elementsRecord);
           if (record !== op.record || elementsRecord !== op.elementsRecord)

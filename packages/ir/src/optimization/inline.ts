@@ -142,9 +142,12 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "property-store":
     case "script-entry":
     case "global-cell":
-    // Element loads and stores are inline, nonallocating and nonthrowing.
+    // Element loads, stores, and length reads are inline, nonallocating and nonthrowing.
     case "element-load":
     case "element-store":
+    case "element-length":
+    case "element-storage":
+    case "element-count":
     // The nonallocating Latin-1 and ASCII primitives (bound foundation
     // functions): inline sequences with a private helper call, so a bound
     // body inlines into its callers like a typed-array access.
@@ -219,6 +222,7 @@ function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
     last.kind === "element-store" ||
     last.kind === "array-element" ||
     last.kind === "array-store" ||
+    last.kind === "element-length" ||
     last.kind === "script-entry" ||
     last.kind === "global-cell" ||
     last.kind === "general-record-is"
@@ -1053,24 +1057,71 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
-              case "element-load":
-                cloned.push({
-                  ...instruction,
-                  id: value(instruction.id),
-                  object: value(instruction.object),
-                  index: value(instruction.index),
-                  start: at.start,
-                  end: at.end,
-                  inline: at.inline,
-                });
+              case "element-load": {
+                const cachedStorage = instruction.cachedStorage,
+                  cachedCount = instruction.cachedCount;
+                cloned.push(
+                  cachedStorage !== undefined && cachedCount !== undefined
+                    ? {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        cachedStorage: value(cachedStorage),
+                        cachedCount: value(cachedCount),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      }
+                    : {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      },
+                );
                 break;
-              case "element-store":
+              }
+              case "element-store": {
+                const cachedStorage = instruction.cachedStorage,
+                  cachedCount = instruction.cachedCount;
+                cloned.push(
+                  cachedStorage !== undefined && cachedCount !== undefined
+                    ? {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        value: value(instruction.value),
+                        cachedStorage: value(cachedStorage),
+                        cachedCount: value(cachedCount),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      }
+                    : {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        value: value(instruction.value),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      },
+                );
+                break;
+              }
+              case "element-length":
+              case "element-storage":
+              case "element-count":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
                   object: value(instruction.object),
-                  index: value(instruction.index),
-                  value: value(instruction.value),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

@@ -649,18 +649,33 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "packedNumberElement",
     "absentElementValue",
     "storePackedNumberElement",
+    "packedArrayLength",
     "readCachedLengthValue",
     "readFloat64Element",
     "writeFloat64Element",
     "isOrdinaryObject",
     "scriptMapGet",
+    "scriptMapGetFast",
     "scriptMapHas",
+    "scriptMapHasFast",
     "scriptMapSet",
+    "scriptMapSetFast",
     "scriptSetAdd",
+    "scriptSetAddFast",
     "scriptArrayPush",
+    "scriptArrayPushFast",
     "scriptArrayPop",
     "createObjectLiteralSite",
     "createLiteralObject",
+    "createLiteralObject1",
+    "createLiteralObject2",
+    "createLiteralObject3",
+    "createLiteralObject4",
+    "createArray0",
+    "createArray1",
+    "createArray2",
+    "createArray3",
+    "createArray4",
   ];
   const old = {
     ...snapshot,
@@ -701,12 +716,15 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const bind = { module: "fixture-host", name: "bindScript" };
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
-  assert.equal(previous.values.length, 136);
+  assert.equal(previous.values.length, 137);
   // The inline property caches import two value readers (own and
   // inherited), their miss test and the cached store where they imported
   // one slot reader; native script entries add six helpers; step 5a adds
-  // eleven helpers for element access, builtin intrinsics and object literals.
-  assert.equal(current.values.length, 176);
+  // eleven helpers for element access, builtin intrinsics and object literals;
+  // step 5a-3 adds ten helpers for packed length and fixed-arity literals;
+  // step 5a-6 adds five direct collection/push fast-path helpers; A7 adds
+  // viewObjectValue, isOrdinaryObject, readFloat64Element and writeFloat64Element.
+  assert.equal(current.values.length, 192);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

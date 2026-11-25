@@ -66,9 +66,9 @@ const dataFields =
 // Number storage of every array with no room for numbers: elements that are
 // not numbers, or none yet. It has no cells to write, so arrays share it and
 // creating an array allocates no storage.
-const noNumbers = new Float64Array(0);
+export const noNumbers = new Float64Array(0);
 // Initial and minimum grown capacity of number storage.
-const firstCapacity = 4;
+export const firstCapacity = 4;
 // Largest Float64Array extent below the native allocator's aligned uint32 bound.
 const maximumCapacity = 536870906;
 

@@ -3,19 +3,27 @@ export {
   packedNumberElement,
   absentElementValue,
   storePackedNumberElement,
+  packedArrayLength,
   readCachedLengthValue,
   readFloat64Element,
   writeFloat64Element,
 } from "./element-access.ts";
 export {
   createIntrinsicFunctions,
-  scriptMapGet,
-  scriptMapHas,
-  scriptMapSet,
-  scriptSetAdd,
   type IntrinsicFunctions,
 } from "./intrinsic-functions.ts";
+export {
+  scriptMapGet,
+  scriptMapGetFast,
+  scriptMapHas,
+  scriptMapHasFast,
+  scriptMapSet,
+  scriptMapSetFast,
+  scriptSetAdd,
+  scriptSetAddFast,
+} from "./collection-data.ts";
 export { scriptArrayPush } from "./array-append.ts";
+export { scriptArrayPushFast } from "./array-append.ts";
 export { scriptArrayPop } from "./array-append.ts";
 export { createModuleSourceObject } from "./module-source.ts";
 export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
@@ -66,6 +74,11 @@ export type {
 export { runGeneratorSteps } from "../iterators/index.ts";
 export { createIteratorResult } from "./iterator-intrinsics.ts";
 export {
+  createArray0,
+  createArray1,
+  createArray2,
+  createArray3,
+  createArray4,
   createArrayFromList,
   lengthOfArrayLike,
   arrayLikeValues,
@@ -155,6 +168,10 @@ export {
   createAccessorProperty,
   createObjectLiteralSite,
   createLiteralObject,
+  createLiteralObject1,
+  createLiteralObject2,
+  createLiteralObject3,
+  createLiteralObject4,
   type ObjectLiteralSite,
   getOwnProperty,
   defineOwnProperty,

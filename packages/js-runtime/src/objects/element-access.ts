@@ -1,9 +1,4 @@
-import type {
-  ObjectHooks,
-  OrdinaryObject,
-  ScriptPropertyCache,
-} from "./operations.ts";
-import type { ScriptPropertyKey } from "./symbols.ts";
+import type { ObjectHooks, ScriptPropertyCache } from "./operations.ts";
 import type { ErrorRealm } from "./errors.ts";
 import { readCachedObjectValueProperty, viewObjectValue } from "./values.ts";
 
@@ -16,42 +11,45 @@ import { readCachedObjectValueProperty, viewObjectValue } from "./values.ts";
  * Everything else (holes, appends, general elements, other objects and
  * non-integer keys) misses to the generic paths. */
 
-/** The packed number element `index` of an object value, or a miss: `witness`,
+/** The packed number element `index` of an object value, or a miss: `realm`,
  * which no number element can be (natively the absent value). */
 export function packedNumberElement(
-  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+  realm: ErrorRealm,
   value: unknown,
   index: number,
 ): unknown {
-  const elements = viewObjectValue(value, witness)?.internalArrayElements;
+  const elements = viewObjectValue(
+    value,
+    realm.objectPrototype,
+  )?.internalArrayElements;
   if (
     elements === undefined ||
     !Number.isInteger(index) ||
     index < 0 ||
     index >= elements.numberCount
   )
-    return witness;
+    return realm;
   return elements.numbers[index];
 }
 
 /** Whether packedNumberElement missed. */
-export function absentElementValue(
-  value: unknown,
-  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
-): boolean {
-  return value === witness;
+export function absentElementValue(value: unknown, realm: ErrorRealm): boolean {
+  return value === realm;
 }
 
 /** Overwrite the packed number element `index` of an object value with a
  * Number; false, with nothing written, when either does not apply. */
 export function storePackedNumberElement(
-  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+  realm: ErrorRealm,
   target: unknown,
   index: number,
   value: unknown,
 ): boolean {
   if (typeof value !== "number") return false;
-  const elements = viewObjectValue(target, witness)?.internalArrayElements;
+  const elements = viewObjectValue(
+    target,
+    realm.objectPrototype,
+  )?.internalArrayElements;
   if (
     elements === undefined ||
     !Number.isInteger(index) ||
@@ -61,6 +59,17 @@ export function storePackedNumberElement(
     return false;
   elements.numbers[index] = value;
   return true;
+}
+
+/** The mirrored `length` of an array with packed elements, or a miss:
+ * `realm`, which no length number can be (natively IR element-length). */
+export function packedArrayLength(realm: ErrorRealm, value: unknown): unknown {
+  const elements = viewObjectValue(
+    value,
+    realm.objectPrototype,
+  )?.internalArrayElements;
+  if (elements === undefined) return realm;
+  return elements.length;
 }
 
 /** A generated `length` read of a value that is not a String: the length an

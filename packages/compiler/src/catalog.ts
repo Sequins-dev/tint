@@ -935,6 +935,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/element-cache.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/forward-loads.ts",
       packageId: "ir",
     },
@@ -968,6 +972,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/optional-split.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/property-cache.ts",
       packageId: "ir",
     },
     {
@@ -1648,6 +1656,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/collator.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/collection-data.ts",
       packageId: "js-runtime",
     },
     {

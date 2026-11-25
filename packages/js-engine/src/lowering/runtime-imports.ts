@@ -86,6 +86,7 @@ export function scriptRuntimeImports(
   usesElementAccess: boolean = false,
   usesIntrinsicCalls: boolean = false,
   usesObjectLiterals: boolean = false,
+  usesSmallArrays: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -168,6 +169,7 @@ export function scriptRuntimeImports(
         "initializeClassFields",
         "viewObjectValue",
         "isOrdinaryObject",
+        "viewTypeofObject",
         "createBigIntLiteral",
         "createRegExpLiteral",
         "scriptBoolean",
@@ -306,6 +308,7 @@ export function scriptRuntimeImports(
               "packedNumberElement",
               "absentElementValue",
               "storePackedNumberElement",
+              "packedArrayLength",
               "readCachedLengthValue",
               "readFloat64Element",
               "writeFloat64Element",
@@ -314,15 +317,36 @@ export function scriptRuntimeImports(
         ...(usesIntrinsicCalls || declarations === "all"
           ? [
               "scriptMapGet",
+              "scriptMapGetFast",
               "scriptMapHas",
+              "scriptMapHasFast",
               "scriptMapSet",
+              "scriptMapSetFast",
               "scriptSetAdd",
+              "scriptSetAddFast",
               "scriptArrayPush",
+              "scriptArrayPushFast",
               "scriptArrayPop",
             ]
           : []),
         ...(usesObjectLiterals || declarations === "all"
-          ? ["createObjectLiteralSite", "createLiteralObject"]
+          ? [
+              "createObjectLiteralSite",
+              "createLiteralObject",
+              "createLiteralObject1",
+              "createLiteralObject2",
+              "createLiteralObject3",
+              "createLiteralObject4",
+            ]
+          : []),
+        ...(usesSmallArrays || declarations === "all"
+          ? [
+              "createArray0",
+              "createArray1",
+              "createArray2",
+              "createArray3",
+              "createArray4",
+            ]
           : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",

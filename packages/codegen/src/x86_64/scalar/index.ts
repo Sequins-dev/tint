@@ -4396,22 +4396,41 @@ export function emitModule(
             emit({ op: "cmp", dst: frame(home(op.value)), src: imm(1) });
             branch(emit, "ne", missed);
           }
-          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
-          branch(emit, "ne", missed);
-          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
-          address(scratch, descriptor(op.record));
-          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
-          branch(emit, "ne", missed);
-          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
-          emit({ op: "test", dst: gpr(10), src: gpr(10) });
-          branch(emit, "e", missed);
-          // An exact integer (R9) compares unsigned: negative ones are huge.
-          exactInteger(emit, frame(home(op.index)), r9, missed);
-          emit({ op: "movsd", dst: xmm(1), src: mem(10, count.offset) });
-          emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
-          emit({ op: "cmp", dst: r9, src: rax });
-          branch(emit, "ae", missed);
-          emit({ op: "mov", dst: gpr(10), src: mem(10, storage.offset) });
+          const cachedStorage = op.cachedStorage,
+            cachedCount = op.cachedCount;
+          if (cachedStorage !== undefined && cachedCount !== undefined) {
+            exactInteger(emit, frame(home(op.index)), r9, missed);
+            emit({
+              op: "movsd",
+              dst: xmm(1),
+              src: frame(home(cachedCount)),
+            });
+            emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
+            emit({ op: "cmp", dst: r9, src: rax });
+            branch(emit, "ae", missed);
+            emit({
+              op: "mov",
+              dst: gpr(10),
+              src: frame(home(cachedStorage)),
+            });
+          } else {
+            emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+            address(scratch, descriptor(op.record));
+            emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+            emit({ op: "test", dst: gpr(10), src: gpr(10) });
+            branch(emit, "e", missed);
+            // An exact integer (R9) compares unsigned: negative ones are huge.
+            exactInteger(emit, frame(home(op.index)), r9, missed);
+            emit({ op: "movsd", dst: xmm(1), src: mem(10, count.offset) });
+            emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
+            emit({ op: "cmp", dst: r9, src: rax });
+            branch(emit, "ae", missed);
+            emit({ op: "mov", dst: gpr(10), src: mem(10, storage.offset) });
+          }
           emit({
             op: "mov",
             dst: gpr(10),
@@ -4444,6 +4463,66 @@ export function emitModule(
           emit({ op: "xor", dst: eax, src: eax });
           emit({ op: "label", name: done });
           define(op.id, "general");
+          return;
+        }
+        case "element-length": {
+          const elements = recordField(op.record, op.field),
+            length = recordField(op.elementsRecord, op.lengthField);
+          const site = fnLabel + ":element-length:" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+          address(scratch, descriptor(op.record));
+          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", missed);
+          emit({ op: "mov", dst: rax, src: mem(10, length.offset) });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: rax });
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "general");
+          return;
+        }
+        case "element-storage":
+        case "element-count": {
+          const elements = recordField(op.record, op.field),
+            count = recordField(op.elementsRecord, op.countField),
+            storage = recordField(op.elementsRecord, op.storageField);
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+          address(scratch, descriptor(op.record));
+          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", missed);
+          if (op.kind === "element-storage") {
+            emit({ op: "mov", dst: rax, src: mem(10, storage.offset) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "label", name: done });
+            define(op.id, "optional-reference");
+          } else {
+            emit({ op: "movsd", dst: xmm(0), src: mem(10, count.offset) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            emit({ op: "xorpd", dst: xmm(0), src: xmm(0) });
+            emit({ op: "label", name: done });
+            define(op.id, "number");
+          }
           return;
         }
         case "record-has": {
