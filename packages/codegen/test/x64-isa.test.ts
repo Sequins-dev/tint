@@ -62,6 +62,35 @@ test("streamed rel64 fields patch across byte chunks", () => {
   );
 });
 
+test("scoped assembly resolves local branches and drops local labels", () => {
+  const baseline = createAssembler();
+  const scoped = createAssembler();
+  for (const target of [baseline, scoped]) {
+    if (target === scoped) target.beginScope();
+    target.instruction({ op: "label", name: "fn0" });
+    target.instruction({
+      op: "jmp",
+      target: { kind: "label", label: "fn0:b1" },
+    });
+    target.instruction({ op: "nop" });
+    target.instruction({ op: "label", name: "fn0:b1" });
+    target.instruction({ op: "call", target: { kind: "label", label: "fn1" } });
+    target.instruction({ op: "ret" });
+    if (target === scoped) target.endScope((name) => name === "fn0");
+    if (target === scoped) target.beginScope();
+    target.instruction({ op: "label", name: "fn1" });
+    target.instruction({ op: "call", target: { kind: "label", label: "fn0" } });
+    target.instruction({ op: "ret" });
+    if (target === scoped) target.endScope((name) => name === "fn1");
+  }
+  const expected = baseline.finish();
+  const actual = scoped.finish();
+  assert.deepEqual(actual.bytes, expected.bytes);
+  assert.equal(actual.labels.get("fn0"), expected.labels.get("fn0"));
+  assert.equal(actual.labels.get("fn1"), expected.labels.get("fn1"));
+  assert.equal(actual.labels.has("fn0:b1"), false);
+});
+
 test("encoding failures identify the instruction and its operands", () => {
   assert.throws(
     () =>

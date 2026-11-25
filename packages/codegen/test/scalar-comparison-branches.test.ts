@@ -637,3 +637,82 @@ test("(int32 + f64) | 0 fuses into fjcvtzs fast path", () => {
   );
   assert.equal(countMasked(mod, 0xfffffc00, 0x1e7e0000), 0);
 });
+
+test("folded string-present feeding a select diamond tests the source word instead of an unmaterialized boolean", () => {
+  const mod: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "coalesce",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["optional-string", "optional-string", "optional-string"],
+        returnType: "optional-string",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "string-present", id: 1, value: 0, ...s },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 1,
+              alternate: 2,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 0, ...s },
+              { kind: "store", slot: 2, value: 2, ...s },
+            ],
+            terminator: { kind: "jump", target: 3, ...s },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 3, slot: 1, ...s },
+              { kind: "store", slot: 2, value: 3, ...s },
+            ],
+            terminator: { kind: "jump", target: 3, ...s },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "load", id: 4, slot: 2, ...s }],
+            terminator: { kind: "return", value: 4, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  const emitted = emitModule(mod);
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  const view = new DataView(
+    emitted.value.code.buffer,
+    emitted.value.code.byteOffset,
+  );
+  let cselCount = 0,
+    cmpSourceCount = 0;
+  for (let i = fn.offset; i < fn.offset + fn.byteLength; i += 4) {
+    const insn = view.getUint32(i, true);
+    // 64-bit CSEL: 0xffe00c00 == 0x9a800000.
+    if ((insn & 0xffe00c00) >>> 0 === 0x9a800000) cselCount++;
+    // 64-bit SUBS xzr, xN, #0: 0xfffffc1f == 0xf100001f.
+    if ((insn & 0xfffffc1f) >>> 0 === 0xf100001f) {
+      const rn = (insn >>> 5) & 31;
+      // Parameter 0 lives in x1 (copied to its home register or stack slot) and
+      // must be loaded/tested directly rather than loading an unwritten slot
+      // into x11 when x11 was never written.
+      if (rn !== 31) cmpSourceCount++;
+    }
+  }
+  assert.equal(cselCount, 1);
+  assert.equal(cmpSourceCount, 1);
+  // No cset ne should be emitted for the folded string-present.
+  assert.equal(conditionSets(mod, "ne"), 0);
+});

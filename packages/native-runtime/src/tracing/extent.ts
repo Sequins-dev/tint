@@ -7,6 +7,10 @@ import {
 import {
   nativeStringLengthOffset,
   nativeStringDataOffset,
+  nativeStringOneByteFlag,
+  nativeStringDataBytes,
+  nativeStringSlicedFlag,
+  nativeStringSlicedByteLength,
   nativeArrayLengthOffset,
   nativeArrayInlineOffset,
   nativeArrayBorrowedByteLength,
@@ -21,8 +25,8 @@ import { headerMarker, headerFlags, type ReadWord } from "./scan.ts";
  * immutable, and read authorizes descriptor memory. This does not prove liveness
  * or validate edges/backing pointers. end is the exclusive containing limit.
  * Optional caller-owned one-byte classification receives the marker (a typed
- * array's width class; plus 8 for array views) for built-in headers, or zero
- * for records, only after successful validation. */
+ * array's width class; plus 8 for views: array views and sliced strings) for
+ * built-in headers, or zero for records, only after successful validation. */
 export function nativeObjectExtent(
   read: ReadWord,
   address: number,
@@ -65,7 +69,11 @@ export function nativeObjectExtent(
     size = nativeArrayInlineOffset + capacity * 8;
   } else if (marker === 1 || nativeTypedArrayMarker(marker)) {
     if (end - address < nativeStringDataOffset) return undefined;
-    const length = read(address + nativeStringLengthOffset);
+    const word = read(address + nativeStringLengthOffset);
+    // A string's length is the word's low 32 bits (above it, its index
+    // field); arrays share the offset.
+    const length =
+      word === undefined || marker !== 1 ? word : word % 4294967296;
     if (
       length === undefined ||
       !Number.isInteger(length) ||
@@ -73,12 +81,17 @@ export function nativeObjectExtent(
       length > 0xffffffff
     )
       return undefined;
-    if (marker === 1) {
-      // Managed strings own their UTF-16 payload. Borrowed strings are not part
-      // of this allocation domain; accepting them would invent an extent.
-      if (flags !== 0) return undefined;
-      // At least four units' space (inline comparisons read them).
-      size = nativeStringDataOffset + Math.max(length, 4) * 2;
+    if (marker === 1 && flags >= nativeStringSlicedFlag) {
+      // A sliced string views its flat parent's units.
+      if (flags > nativeStringSlicedFlag + nativeStringOneByteFlag)
+        return undefined;
+      size = nativeStringSlicedByteLength;
+    } else if (marker === 1) {
+      // Flat strings own their payload: two-byte (flags 0) or one-byte.
+      if (flags !== 0 && flags !== nativeStringOneByteFlag) return undefined;
+      size =
+        nativeStringDataOffset +
+        nativeStringDataBytes(length, flags === nativeStringOneByteFlag);
     } else if (flags === 2) size = nativeArrayViewByteLength;
     else if (flags === 1) size = nativeArrayBorrowedByteLength;
     else if (flags === 0) {
@@ -102,7 +115,8 @@ export function nativeObjectExtent(
   if (size > 0xffffffff || size > end - address) return undefined;
   // Typed arrays classify by width class, which fits the caller's four bits.
   if (classification !== undefined) {
-    const view = flags === 2 ? 8 : 0;
+    const view =
+      flags === 2 || (marker === 1 && flags >= nativeStringSlicedFlag) ? 8 : 0;
     let kind = 0;
     if (nativeTypedArrayMarker(marker)) kind = (marker & 7) + view;
     else if (marker <= nativeWeakSlotMarker) kind = marker + view;

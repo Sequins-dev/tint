@@ -95,6 +95,7 @@ export const numericFixtureLocations: ReadonlyMap<string, string> = new Map([
 export const textFixtureLocations: ReadonlyMap<string, string> = new Map([
   ["text-scanner", "packages/foundation/src/text/text-scanner.ts"],
   ["string-builder", "packages/foundation/src/text/string-builder.ts"],
+  ["latin1", "packages/foundation/src/text/latin1.ts"],
   ["text-encoding", "packages/foundation/src/text/text-encoding/index.ts"],
   ["base-encoding", "packages/foundation/src/text/base-encoding/index.ts"],
   ["json-syntax", "packages/foundation/src/text/json-syntax.ts"],

@@ -1233,10 +1233,10 @@ export interface Assembler {
   /** Starts a scope (one function): labels defined until endScope are
    * local to it. */
   readonly beginScope: () => void;
-  /** Patches every fixup recorded in the scope whose label the scope
-   * defined, and forgets those labels unless `keep` names them, so a large
+  /** Patches every fixup recorded in the scope whose label is already
+   * defined, and forgets local labels unless `keep` names them, so a large
    * module does not hold every local label and relocation until finish. */
-  readonly endScope: (keep: (label: string) => boolean) => void;
+  readonly endScope: (keep: (name: string) => boolean) => void;
   readonly finish: (
     isExternal?: (label: string) => boolean,
     byteLength?: number,
@@ -1248,38 +1248,16 @@ export interface Assembler {
 export function createAssembler(far: boolean = false): Assembler {
   const out: Encoding = { bytes: byteBuffer(), fixups: [], far };
   const labels = new Map<string, number>();
+  const scopeLabels: string[] = [];
+  const scratch = new Uint8Array(8);
+  let scopeFixupStart = -1;
   let finished = false;
-  // The open scope: labels it defined and the first fixup it recorded.
-  let scopeLabels: Set<string> | undefined;
-  let scopeFixups = 0;
-  const scopeScratch = new Uint8Array(8);
-  function beginScope(): void {
-    if (scopeLabels !== undefined) invalid("assembler scope already open");
-    scopeLabels = new Set<string>();
-    scopeFixups = out.fixups.length;
-  }
-  function endScope(keep: (label: string) => boolean): void {
-    const local = scopeLabels;
-    if (local === undefined) invalid("assembler scope is not open");
-    let write = scopeFixups;
-    for (let read = scopeFixups; read < out.fixups.length; read++) {
-      const fixup = out.fixups[read];
-      if (fixup === undefined) throw "rel32 fixup invariant";
-      const label = fixup.ref.label;
-      const target = local.has(label) ? labels.get(label) : undefined;
-      if (target === undefined) out.fixups[write++] = fixup;
-      else patchChunkRelative(out.bytes, fixup, target, scopeScratch);
-    }
-    out.fixups.length = write;
-    for (const label of local) if (!keep(label)) labels.delete(label);
-    scopeLabels = undefined;
-  }
   function instruction(insn: Instruction): void {
     if (finished) invalid("assembler already finalized");
     if (insn.op === "label") {
       if (labels.has(insn.name)) invalid("duplicate label: " + insn.name);
       labels.set(insn.name, out.bytes.length);
-      scopeLabels?.add(insn.name);
+      if (scopeFixupStart >= 0) scopeLabels.push(insn.name);
     } else if (insn.op === "align-entry") {
       while (out.bytes.length % 4 !== 0) append(out.bytes, 0x90);
     } else {
@@ -1298,6 +1276,34 @@ export function createAssembler(far: boolean = false): Assembler {
     }
   }
 
+  function beginScope(): void {
+    if (finished) invalid("assembler already finalized");
+    scopeLabels.length = 0;
+    scopeFixupStart = out.fixups.length;
+  }
+
+  function endScope(keep: (name: string) => boolean): void {
+    if (finished) invalid("assembler already finalized");
+    if (scopeFixupStart < 0) return;
+    let kept = scopeFixupStart;
+    for (let i = scopeFixupStart; i < out.fixups.length; i++) {
+      const fixup = out.fixups[i];
+      if (fixup === undefined) throw "rel32 fixup invariant";
+      const target = labels.get(fixup.ref.label);
+      if (target !== undefined) {
+        patchChunkRelative(out.bytes, fixup, target, scratch);
+      } else {
+        out.fixups[kept++] = fixup;
+      }
+    }
+    out.fixups.length = kept;
+    for (const name of scopeLabels) {
+      if (name !== undefined && !keep(name)) labels.delete(name);
+    }
+    scopeLabels.length = 0;
+    scopeFixupStart = -1;
+  }
+
   function finish(
     isExternal?: (label: string) => boolean,
     byteLength: number = out.bytes.length,
@@ -1307,7 +1313,6 @@ export function createAssembler(far: boolean = false): Assembler {
       invalid("assembly output is smaller than instruction bytes or invalid");
     finished = true;
     const externalFixups: RelativeFixup[] = [];
-    const scratch = new Uint8Array(8);
     for (const fixup of out.fixups) {
       if (fixup === undefined) throw "rel32 fixup invariant";
       const target = labels.get(fixup.ref.label);

@@ -15,14 +15,37 @@ test("object extents come from layouts without an allocation inventory", () => {
   header(4096, 0, 0);
   words.set(4096, 40);
   assert.equal(nativeObjectExtent(read, 256, 4096), 48);
-  // Strings: 16 + 2 * length (at least four units).
-  header(1, 0, 5);
-  assert.equal(nativeObjectExtent(read, 256, 4096), 32);
-  header(1, 0, 0);
-  assert.equal(nativeObjectExtent(read, 256, 4096), 32);
+  // Two-byte strings: 16 + 2 * length; one-byte strings (flag 1): 16 +
+  // length. Both have at least eight data bytes; other flags are invalid.
+  for (const [flags, length, extent] of [
+    [0, 0, 32],
+    [0, 5, 32],
+    [0, 9, 48],
+    [1, 0, 32],
+    [1, 5, 32],
+    [1, 9, 32],
+    [1, 16, 32],
+    [1, 17, 48],
+  ]) {
+    header(1, flags!, length!);
+    assert.equal(nativeObjectExtent(read, 256, 4096), extent);
+  }
+  // Sliced strings (flags 2, or 3 for one-byte) are 32 bytes whatever
+  // their length; other string flags are invalid.
+  const classification = new Uint8Array(1);
+  for (const flags of [2, 3]) {
+    header(1, flags, 5);
+    assert.equal(nativeObjectExtent(read, 256, 4096, classification), 32);
+    assert.equal(classification[0], 9);
+    header(1, flags, 1000);
+    assert.equal(nativeObjectExtent(read, 256, 4096), 32);
+  }
+  for (const flags of [4, 7]) {
+    header(1, flags, 5);
+    assert.equal(nativeObjectExtent(read, 256, 4096), undefined);
+  }
   // Every typed-array kind: pointer-free elements sized by the marker's
   // width class, classified by that class (plus 8 for views).
-  const classification = new Uint8Array(1);
   for (const { marker, elementBytes } of nativeTypedArrayKinds) {
     header(marker, 0, 17);
     assert.equal(
@@ -72,7 +95,7 @@ test("extent decoding rejects invalid headers, truncation and overflowing sizes"
   words.set(264, 4);
   words.set(256, 4 + 3 * nativeHeaderFlagUnit);
   assert.equal(nativeObjectExtent(read, 256, 4096), undefined);
-  words.set(256, 1 + 2 * nativeHeaderFlagUnit);
+  words.set(256, 1 + 4 * nativeHeaderFlagUnit);
   assert.equal(nativeObjectExtent(read, 256, 4096), undefined);
   words.set(256, 4096);
   for (const size of [undefined, 0, 7, 15, 16.5, 4294967295]) {
@@ -92,14 +115,19 @@ test("extent classification publishes only successfully validated immutable head
   const kind = new Uint8Array([255]),
     read = (address: number) => words.get(address);
   for (const marker of [1, 2, 3, 4, 5, 6, 4096]) {
-    for (const flags of marker >= 2 && marker <= 5 ? [0, 1, 2] : [0]) {
+    for (const flags of marker === 1
+      ? [0, 1, 2, 3]
+      : marker <= 5
+        ? [0, 1, 2]
+        : [0]) {
       words.set(256, marker + flags * nativeHeaderFlagUnit);
       assert.notEqual(nativeObjectExtent(read, 256, 4096, kind), undefined);
-      assert.equal(kind[0], marker <= 6 ? marker + (flags === 2 ? 8 : 0) : 0);
+      // Views (array views and sliced strings) classify as marker + 8.
+      assert.equal(kind[0], marker <= 6 ? marker + (flags >= 2 ? 8 : 0) : 0);
     }
   }
   kind[0] = 255;
-  words.set(256, 1 + 2 * nativeHeaderFlagUnit);
+  words.set(256, 1 + 4 * nativeHeaderFlagUnit);
   assert.equal(nativeObjectExtent(read, 256, 4096, kind), undefined);
   assert.equal(kind[0], 255);
 });

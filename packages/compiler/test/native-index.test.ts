@@ -438,6 +438,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "lower-proven-record-reads",
       "propagate-slot-copies",
       "hoist-loop-invariants",
+      "build-loop-strings",
       "select-array-access",
       "scalarize-stencil-loops",
       "split-optional-numbers",
@@ -452,6 +453,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "cache-list-vectors",
       "bound-counted-loops",
       "version-nonzero-divisors",
+      "version-string-loops",
     ],
   );
   // The first run of each scalar cleanup pass rewrites the arithmetic

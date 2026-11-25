@@ -59,28 +59,37 @@ function python(code: string): string {
   return "script exec(" + JSON.stringify(code) + ")";
 }
 
-/** From the stop at the chain line, a breakpoint on the instruction after
- * the next inline allocation's limit branch: there the limit check has passed
- * and the new top (x11 + size) is not yet stored. x12 holds the allocation
- * state (context +56), x11 the top the allocation read. */
+/** From the stop at the chain line, breakpoints on the instruction after
+ * every inline allocation's limit branch in this function (loop versioning can
+ * emit both a cold double-counter copy and a hot integer-counter copy): there
+ * the limit check has passed and the new top (x11 + size) is not yet stored.
+ * x12 holds the allocation state (context +56), x11 the top the allocation
+ * read. */
 const breakInFlight = python(`
 t = lldb.target
-pc = lldb.thread.GetFrameAtIndex(0).GetPC()
+frame = lldb.thread.GetFrameAtIndex(0)
+fn = frame.GetFunction()
+pc = frame.GetPC()
+end = fn.GetEndAddress().GetLoadAddress(t) if fn.IsValid() else 0
 insts = t.ReadInstructions(lldb.SBAddress(pc, t), 400)
 state = False
-found = None
+found = []
 for i in range(insts.GetSize() - 1):
     ins = insts.GetInstructionAtIndex(i)
+    addr = ins.GetAddress().GetLoadAddress(t)
+    if end and addr >= end:
+        break
     m = ins.GetMnemonic(t)
     o = ins.GetOperands(t).replace(' ', '')
     if not state and m == 'ldr' and o.startswith('x12,[x10,#0x38]'):
         state = True
     elif state and m == 'b.hi':
-        found = insts.GetInstructionAtIndex(i + 1).GetAddress().GetLoadAddress(t)
-        break
-assert found is not None, 'no inline allocation fast path after the chain line'
-t.BreakpointCreateByAddress(found)
-print('IN-FLIGHT 0x%x' % found)
+        target_addr = insts.GetInstructionAtIndex(i + 1).GetAddress().GetLoadAddress(t)
+        found.append(target_addr)
+        t.BreakpointCreateByAddress(target_addr)
+        state = False
+assert found, 'no inline allocation fast path after the chain line'
+print('IN-FLIGHT ' + ' '.join('0x%x' % a for a in found))
 `);
 
 /** Words of the allocation state (x12) at the current stop. */

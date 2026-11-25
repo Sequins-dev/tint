@@ -3,6 +3,11 @@ import {
   nativeHeaderForwarded,
   nativeStringLengthOffset,
   nativeStringDataOffset,
+  nativeStringMinimumDataBytes,
+  nativeStringOneByteFlag,
+  nativeStringSlicedFlag,
+  nativeStringParentOffset,
+  nativeStringSlicedByteLength,
   nativeArrayLengthOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
@@ -160,12 +165,21 @@ export function cheneyExtent(
       if ((marker & 7) !== 0 || flags !== 0) throw "CHENEY_HEADER";
       size = read(marker);
     }
+  } else if (marker === 1 && flags >= nativeStringSlicedFlag) {
+    if (flags > nativeStringSlicedFlag + nativeStringOneByteFlag)
+      throw "CHENEY_HEADER";
+    size = nativeStringSlicedByteLength;
   } else if (marker === 1) {
-    if (flags !== 0) throw "CHENEY_HEADER";
+    if (flags !== 0 && flags !== nativeStringOneByteFlag) throw "CHENEY_HEADER";
+    // Two-byte (flags 0) or one-byte units, at least the minimum data bytes.
+    // The length is the word's low 32 bits (above it, the index field).
+    const units = read(address + nativeStringLengthOffset) % 4294967296,
+      bytes = flags === 0 ? units * 2 : units;
     size =
       nativeStringDataOffset +
-      // At least four units' space (inline comparisons read them).
-      Math.max(read(address + nativeStringLengthOffset), 4) * 2;
+      (bytes < nativeStringMinimumDataBytes
+        ? nativeStringMinimumDataBytes
+        : bytes);
   } else if (marker === 6)
     size =
       nativeArrayInlineOffset + read(address + nativeArrayLengthOffset) * 8;
@@ -246,7 +260,6 @@ function evacuate(
     state.weakCopied = state.weakCopied + 1;
   return destination;
 }
-
 /** Updates a reference slot that may point into the source window. */
 function referenceSlot(
   state: CheneyState,
@@ -326,6 +339,9 @@ function scanObject(
   } else if (nativeTypedArrayMarker(marker) && flags === 2)
     // Copies fixed their owner when evacuated; this covers in-place scans.
     referenceSlot(state, starts, address + nativeArrayOwnerOffset);
+  else if (marker === 1 && flags >= nativeStringSlicedFlag)
+    // A slice holds its parent like any reference field.
+    referenceSlot(state, starts, address + nativeStringParentOffset);
   return cheneyExtent(address, marker, flags);
 }
 
@@ -694,7 +710,8 @@ function markChildren(state: CompactState, address: number): void {
   } else if (nativeTypedArrayMarker(marker) && headerFlags(header) === 2) {
     state.sawView = true;
     markReference(state, read(address + nativeArrayOwnerOffset));
-  }
+  } else if (marker === 1 && headerFlags(header) >= nativeStringSlicedFlag)
+    markReference(state, read(address + nativeStringParentOffset));
 }
 function drainMarks(state: CompactState): void {
   const base = state.base,
@@ -845,7 +862,8 @@ export function compactForwardChildren(
   } else if (nativeTypedArrayMarker(marker)) {
     const flags = headerFlags(header);
     if (flags === 2) forwardReference(state, address + nativeArrayOwnerOffset);
-  }
+  } else if (marker === 1 && headerFlags(header) >= nativeStringSlicedFlag)
+    forwardReference(state, address + nativeStringParentOffset);
 }
 /** Phase 4 for one live object: its fields, and an owned array's data
  * pointer (its elements move with it). */

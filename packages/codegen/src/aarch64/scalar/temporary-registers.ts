@@ -26,10 +26,10 @@ function transparent(op: Instruction): boolean {
     op.kind === "unary" ||
     op.kind === "binary" ||
     op.kind === "array-length" ||
-    // A string's length is one load (x9, d0); an in-bounds code unit one
-    // halfword load (x9..x12, d0).
+    // A string's length is one load (x9, d0); code-unit reads (inline or
+    // via the leaf helper) touch x9..x15 and d0/d1 only.
     op.kind === "string-length" ||
-    (op.kind === "string-code-unit" && op.inBounds === true) ||
+    op.kind === "string-code-unit" ||
     op.kind === "array-read" ||
     op.kind === "array-element" ||
     op.kind === "array-write" ||
@@ -45,7 +45,9 @@ function transparent(op: Instruction): boolean {
   );
 }
 function referenceTransparent(op: Instruction): boolean {
-  return transparent(op);
+  return (
+    transparent(op) && (op.kind !== "string-code-unit" || op.inBounds === true)
+  );
 }
 /** Verified block-local SSA. Candidate 1 is numeric/boolean; candidate 2 is a
  * single-word reference; candidate 3 is an integer or boolean word, homed in

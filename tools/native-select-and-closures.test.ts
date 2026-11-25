@@ -125,13 +125,31 @@ function testListLengthAndNullChecks(): string {
   }
   return String(roSum) + ":" + String(rwSum) + ":" + String(points.length) + ":" + caught;
 }
+function testOptionalStringSelect(): string {
+  const literals = new Map<number, string>();
+  literals.set(1, "");
+  literals.set(2, "complete");
+  literals.set(3, "left");
+  const leftKeys: number[] = [99, 99, 3, 3, 99];
+  const rightKeys: number[] = [1, 2, 99, 2, 98];
+  let out = "";
+  for (let i = 0; i < leftKeys.length; i++) {
+    const left = literals.get(leftKeys[i] ?? 0),
+      right = literals.get(rightKeys[i] ?? 0),
+      chosen = right ?? left;
+    out += (chosen === undefined ? "<none>" : "[" + chosen + "]") + ";";
+  }
+  return out;
+}
 export function trace(): string {
   return (
     testSelectEdges() +
     "|" +
     testClosuresAndPipelines() +
     "|" +
-    testListLengthAndNullChecks()
+    testListLengthAndNullChecks() +
+    "|" +
+    testOptionalStringSelect()
   );
 }
 `;

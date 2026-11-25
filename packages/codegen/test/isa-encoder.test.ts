@@ -460,6 +460,29 @@ test("SXTW sign-extends a 32-bit register", () => {
   assert.equal(encode({ op: "sxtw", rd: 0, rn: 31 }).ok, false);
 });
 
+test("RBIT and CLZ count a word's trailing zeros", () => {
+  // rbit x0, x1; clz x0, x1; rbit x10, x16; clz x10, x10 as assembled by
+  // clang.
+  assert.deepEqual(encode({ op: "rbit", rd: 0, rn: 1 }), {
+    ok: true,
+    value: 0xdac00020,
+  });
+  assert.deepEqual(encode({ op: "clz", rd: 0, rn: 1 }), {
+    ok: true,
+    value: 0xdac01020,
+  });
+  assert.deepEqual(encode({ op: "rbit", rd: 10, rn: 16 }), {
+    ok: true,
+    value: 0xdac0020a,
+  });
+  assert.deepEqual(encode({ op: "clz", rd: 10, rn: 10 }), {
+    ok: true,
+    value: 0xdac0114a,
+  });
+  assert.equal(encode({ op: "rbit", rd: 31, rn: 0 }).ok, false);
+  assert.equal(encode({ op: "clz", rd: 0, rn: 31 }).ok, false);
+});
+
 test("TBZ and TBNZ test one bit within 32 KiB", () => {
   // As assembled by clang at offsets 0, 4, 8, 12 and 16:
   // tbz x9, #49, +8; tbnz x15, #49, -8; tbz w3, #5, +0x7ff4;

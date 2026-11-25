@@ -1,13 +1,11 @@
 // Native number↔string conversions (foundation number-text), on the typed
 // path: decimal and prefixed strings through Number() on both sides of the
 // exact fast paths (15 significant digits, |exponent| 22, integers below
-// 2^53) and the bignum paths beyond them; and numbers through String() and
-// template literals, around the integer formatter's 10^8 split, the safe
-// integer limit and the shortest-decimal path. (parseInt and parseFloat do not
-// link in typed code yet; Node unit tests and Test262 cover them.)
-// Expected values come from Node and reach the fixture as numeric literals,
-// which the Node-hosted compiler parses with V8, independently of the
-// native runtime under test. Built natively and run under LLDB.
+// 2^53) and the bignum paths beyond them; numbers through String() and
+// template literals around the integer formatter's 10^8 split, the safe
+// integer limit, and shortest-decimal fractions whose text joins integer
+// digits, a point, and zero-padded fraction digits. Every result must equal
+// Node's, bit for bit. Built natively and run under LLDB.
 import test from "node:test";
 
 // The fixture must compile on the typed path, not the general fallback (the
@@ -17,9 +15,9 @@ const { verifyHostedFixture } = await import("./hosted-fixture.ts");
 
 function literal(value: number): string {
   if (Object.is(value, -0)) return "-0";
-  if (Number.isNaN(value)) return "NaN";
-  if (value === Infinity) return "Infinity";
-  if (value === -Infinity) return "-Infinity";
+  if (Number.isNaN(value)) return "0 / 0";
+  if (value === Infinity) return "1 / 0";
+  if (value === -Infinity) return "-1 / 0";
   return String(value);
 }
 
@@ -99,7 +97,7 @@ function formattedValues(): number[] {
 
 const texts = decimalTexts();
 const values = formattedValues();
-const source = `const texts: string[] = [${texts.map((text) => JSON.stringify(text)).join(", ")}];
+const fastPathSource = `const texts: string[] = [${texts.map((text) => JSON.stringify(text)).join(", ")}];
 const numbers: number[] = [${texts.map((text) => literal(Number(text))).join(", ")}];
 const values: number[] = [${values.map(literal).join(", ")}];
 const formatted: string[] = [${values.map((value) => JSON.stringify(String(value))).join(", ")}];
@@ -124,9 +122,95 @@ export function run(): number {
 }
 `;
 
+/** A deterministic 32-bit generator (xorshift). */
+function generator(seed: number): () => number {
+  let state = seed >>> 0 || 1;
+  return () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    return state;
+  };
+}
+const next = generator(29);
+const fractionTexts: string[] = [
+  "",
+  "0",
+  "-0",
+  "-0.0",
+  "00012",
+  "-00012.50",
+  ".5",
+  "-.5",
+  "5.",
+  ".",
+  "-",
+  "1.2.3",
+  "+5",
+  "0x1f",
+  "0b101",
+  "-0x1f",
+  "1e5",
+  "Infinity",
+  "-Infinity",
+  " 12",
+  "12 ",
+  "0." + "0".repeat(21) + "1",
+  "0." + "0".repeat(22) + "1",
+  "123456789012345",
+  "1234567890123456",
+  "9999999999999999",
+  "48862.125",
+];
+for (let i = 0; i < 300; i++) {
+  const digits = String(next() % 1000000000000000).padStart(
+    1 + (next() % 18),
+    "0",
+  );
+  const point = next() % (digits.length + 1);
+  fractionTexts.push(
+    digits.slice(0, point) + "." + digits.slice(point),
+    "-" + digits,
+  );
+}
+const fractionValues: number[] = [
+  1.05, 3.0001, 12.000000001, 48862.125, 0.5, 0.05, 1.5e-7, 99999999999.99,
+  123456.7890123,
+];
+for (let i = 0; i < 300; i++) {
+  const scale = 10 ** (1 + (next() % 9));
+  fractionValues.push((next() % 100000000) / scale + (next() % 100000));
+}
+
+const fractionSource = `const texts: string[] = [${fractionTexts.map((text) => JSON.stringify(text)).join(", ")}];
+const parsed: number[] = [${fractionTexts.map((text) => literal(Number(text))).join(", ")}];
+const values: number[] = [${fractionValues.map(literal).join(", ")}];
+const formatted: string[] = [${fractionValues.map((value) => JSON.stringify(String(value))).join(", ")}];
+function same(a: number, b: number): boolean {
+  if (a !== a) return b !== b;
+  return a === b && (a !== 0 || 1 / a === 1 / b);
+}
+export function run(): number {
+  for (let i = 0; i < texts.length; i++)
+    if (!same(Number(texts[i] ?? ""), parsed[i] ?? 0)) return 1;
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i] ?? 0;
+    if (String(value) !== (formatted[i] ?? "")) return 2;
+    if (String(-value) !== "-" + (formatted[i] ?? "")) return 3;
+    if (!same(Number(String(value)), value)) return 4;
+  }
+  return 42;
+}
+`;
+
 test("native number-text conversions agree with Node across the fast-path bounds", () => {
-  verifyHostedFixture(source, "number-text", [], [], [], [], {
+  verifyHostedFixture(fastPathSource, "number-text", [], [], [], [], {
     managedBytes: 16777216,
     allocationCapacity: 262144,
   });
+});
+
+test("decimal texts and fractions convert like Node natively", () => {
+  verifyHostedFixture(fractionSource, "number-text-fractions", [], [], [], []);
 });

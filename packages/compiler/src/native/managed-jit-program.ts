@@ -43,6 +43,7 @@ import {
   type ModuleEntryOptions,
   type RecordBinding,
 } from "@tint/ts-native/closure/lowering";
+import type { ListRuntime, ListRuntimeBinding } from "@tint/ts-native/scalar";
 import type { ManagedSurfaceLayoutRuntime } from "./managed-directory.ts";
 import { validRuntimeNamespace } from "./runtime-contracts.ts";
 
@@ -364,18 +365,58 @@ export function lowerManagedJitProgram(
     identities.set(type, -1);
     return { ok: true, value: undefined };
   }
+  // Managed surfaces publish the uniform listOperations vocabulary, not
+  // number-list's AOT-inlining fast paths (pop/wrap); omitting those optional
+  // helpers makes scalar lowering use the surface-provided list operations.
+  let loweringOptions: ModuleEntryOptions = program.options;
+  const sourceLists = program.options.lists;
+  if (sourceLists !== undefined) {
+    const lists: ListRuntimeBinding[] = [];
+    for (const binding of sourceLists) {
+      if (binding === undefined) return reject("missing list runtime binding");
+      const source = binding.runtime;
+      if (source.pop === undefined && source.wrap === undefined) {
+        lists.push(binding);
+        continue;
+      }
+      let runtime: ListRuntime = {
+        create: source.create,
+        read: source.read,
+        write: source.write,
+        push: source.push,
+        length: source.length,
+      };
+      if (source.has !== undefined) runtime = { ...runtime, has: source.has };
+      if (source.delete !== undefined)
+        runtime = { ...runtime, delete: source.delete };
+      if (source.resize !== undefined)
+        runtime = { ...runtime, resize: source.resize };
+      if (source.sort !== undefined)
+        runtime = { ...runtime, sort: source.sort };
+      lists.push(
+        binding.erasedRecords === undefined
+          ? { element: binding.element, runtime }
+          : {
+              element: binding.element,
+              runtime,
+              erasedRecords: binding.erasedRecords,
+            },
+      );
+    }
+    loweringOptions = { ...program.options, lists };
+  }
   const lowered = lowerModuleEntries(
     program.checked,
     [program.entry, program.view],
     target,
     4096,
     {
-      ...program.options,
+      ...loweringOptions,
       recordTypes: true,
       recordIdentity,
       signatureTypes: true,
       recordBindings,
-      importedFunctions: runtimeFunctionIds(program.options),
+      importedFunctions: runtimeFunctionIds(loweringOptions),
     },
   );
   if (!lowered.ok) return reject("lower: " + lowered.error);

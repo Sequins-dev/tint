@@ -304,9 +304,16 @@ export function createRuntimeBindingContext(input: {
     numberText():
       { readonly toString: string; readonly fromString: string } | undefined {
       if (closed) throw "runtime binding context is closed";
+      // Typed code looks the number-string cache up inline and formats a
+      // miss with numberToStringMissed (older sources: numberToString).
       return input.helpers.has("number-text:numberToString")
         ? {
-            toString: helper("number-text", "numberToString"),
+            toString: helper(
+              "number-text",
+              input.helpers.has("number-text:numberToStringMissed")
+                ? "numberToStringMissed"
+                : "numberToString",
+            ),
             fromString: helper("number-text", "stringToNumber"),
           }
         : undefined;

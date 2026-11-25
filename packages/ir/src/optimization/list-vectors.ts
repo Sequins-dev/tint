@@ -371,11 +371,9 @@ export function cacheListVectors(
   function cachedReader(reader: number): number {
     const existing = cached.get(reader);
     if (existing !== undefined) return existing;
+    const target = module.functions[reader];
+    if (target === undefined) throw "list vector reader invariant";
     const id = functions.length,
-      returnType: ScalarType =
-        functions[reader]?.returnType === "optional-string"
-          ? "optional-string"
-          : "optional-reference",
       readArguments: number[] = [0, 1];
     functions.push({
       id,
@@ -383,7 +381,7 @@ export function cacheListVectors(
       exported: false,
       parameters: [0, 1, 2],
       slots: ["optional-reference", "reference", "number"],
-      returnType,
+      returnType: target.returnType,
       entry: 0,
       blocks: [
         {
@@ -520,6 +518,45 @@ export function cacheListVectors(
     b.end({ kind: "return", value: b.load(none(b)), start: 0, end: 0 });
     functions.push(b.finish());
     vectorAccessors.set(header, id);
+    readOnly.add(id);
+    return id;
+  }
+  // Length accessors, created on first use, by header record: the list's
+  // length (field 0) wrapped as optional-number when it has the expected
+  // header, else optional-none (never traps; preheader applies unary:uint32 so
+  // interval analysis proves [0, 2^32 - 1] on the cached length slot).
+  const lengthAccessors = new Map<number, number>();
+  function lengthAccessor(header: number): number {
+    const existing = lengthAccessors.get(header);
+    if (existing !== undefined) return existing;
+    const id = functions.length,
+      b = createFunctionBuilder(
+        id,
+        "__tint_list_length$" + String(id),
+        ["optional-reference"],
+        "optional-number",
+      ),
+      present = b.block(),
+      absent = b.block(),
+      length = b.slot("number");
+    branch(b, unary(b, "truthy", 0, "boolean"), present, absent);
+    b.at(present);
+    field(b, reference(b, 0, false), header, 0, length, false, absent);
+    const wrapped = b.next();
+    b.emit({
+      kind: "optional-wrap",
+      id: wrapped,
+      value: b.load(length),
+      start: 0,
+      end: 0,
+    });
+    b.end({ kind: "return", value: wrapped, start: 0, end: 0 });
+    b.at(absent);
+    const missing = b.next();
+    b.emit({ kind: "undefined", id: missing, start: 0, end: 0 });
+    b.end({ kind: "return", value: missing, start: 0, end: 0 });
+    functions.push(b.finish());
+    lengthAccessors.set(header, id);
     readOnly.add(id);
     return id;
   }
@@ -809,6 +846,44 @@ export function cacheListVectors(
         });
       }
     }
+    const allLoops = forest.loops;
+    /** Outermost enclosing loop where `listSlot` and `headerIdx` are both
+     * unmodified and a preheader exists, so invariant caches hoist out of
+     * nested loops too. */
+    function outerCacheLoop(
+      inner: NaturalLoop,
+      listSlot: number,
+      headerIdx: number,
+    ): NaturalLoop {
+      let best = inner;
+      if (headerIdx < 0) return best;
+      for (const outer of allLoops) {
+        if (
+          outer === undefined ||
+          outer === best ||
+          outer.body.size <= best.body.size ||
+          !outer.body.has(inner.header) ||
+          outer.writes.has(listSlot) ||
+          preheader(outer) === undefined
+        )
+          continue;
+        const outerSites = sites(outer);
+        if (outerSites === undefined) continue;
+        let written = false;
+        for (const site of outerSites) {
+          if (
+            site === undefined ||
+            site.headers === undefined ||
+            site.headers.has(headerIdx)
+          ) {
+            written = true;
+            break;
+          }
+        }
+        if (!written) best = outer;
+      }
+      return best;
+    }
     // Per loop: list slot -> its cache.
     const caches = new Map<NaturalLoop, Map<number, CachedList>>();
     const slots: ScalarType[] = fn.slots.slice();
@@ -823,8 +898,14 @@ export function cacheListVectors(
         const op = block.instructions[at];
         if (op === undefined) throw "list vector instruction invariant";
         work++;
-        const read = cacheableRead(op, loop);
-        let vectors = caches.get(loop);
+        const read = cacheableRead(op, loop),
+          headerIdx =
+            read === undefined ? -1 : (headers.get(read.header) ?? -1),
+          target =
+            read === undefined
+              ? loop
+              : outerCacheLoop(loop, read.slot, headerIdx);
+        let vectors = caches.get(target);
         const known = read === undefined ? undefined : vectors?.get(read.slot);
         if (
           op.kind !== "call" ||
@@ -832,7 +913,7 @@ export function cacheListVectors(
           (known === undefined &&
             !profitable(
               loop,
-              headers.get(read.header) ?? -1,
+              headerIdx,
               readCounts.get(loop)?.get(read.slot) ?? {
                 count: 0,
                 everyIteration: false,
@@ -844,7 +925,7 @@ export function cacheListVectors(
         }
         if (vectors === undefined) {
           vectors = new Map<number, CachedList>();
-          caches.set(loop, vectors);
+          caches.set(target, vectors);
         }
         const vector = known === undefined ? slots.length : known.vector;
         if (known === undefined) {
@@ -1124,7 +1205,7 @@ export function cacheListVectors(
       // Build candidate rewrite: move the header's length read into entryBlock,
       // followed by a fresh jump preheader (so counted-loops still sees a plain
       // jump preheader). Also hoist `unary:uint32(load lenSlot)` from C into
-      // the fresh preheader as a dedicated word-typed bound slot.
+      // the fresh preheader as a dedicated integer bound slot.
       let candNextValue = nextValue;
       const entryInsts = entryBlock.instructions.slice();
       const loadedObj = candNextValue++;
@@ -1271,10 +1352,24 @@ export function cacheListVectors(
         currentFn.debug === undefined
           ? undefined
           : retainDebugValues(currentFn, candBlocks);
-      const candidate: FunctionIR =
-        debug === undefined
-          ? { ...currentFn, slots: candSlots, blocks: candBlocks }
-          : { ...currentFn, slots: candSlots, blocks: candBlocks, debug };
+      let nextIntegerSlots: readonly number[] | undefined =
+        currentFn.integerSlots;
+      if (hoistedBoundSlot !== undefined) {
+        const merged: number[] = [];
+        for (const slot of currentFn.integerSlots ?? [])
+          if (slot !== undefined) merged.push(slot);
+        merged.push(hoistedBoundSlot);
+        nextIntegerSlots = merged;
+      }
+      const candidate: FunctionIR = {
+        ...currentFn,
+        slots: candSlots,
+        blocks: candBlocks,
+        ...(nextIntegerSlots === undefined
+          ? {}
+          : { integerSlots: nextIntegerSlots }),
+        ...(debug === undefined ? {} : { debug }),
+      };
       if (recordReadsKept(currentFn, candidate)) {
         currentFn = candidate;
         nextValue = candNextValue;
@@ -1302,6 +1397,350 @@ export function cacheListVectors(
             nextValue = guarded.nextValue;
             count += guarded.rewritten;
           }
+        }
+      }
+    }
+    // For any remaining unmodified-header length reads inside a loop body that
+    // the header-only pass above could not move directly into the preheader,
+    // hoist ToUint32(field 0) via a closed-world length accessor into an
+    // integer preheader slot.
+    if (closed) {
+      const bodySlots = currentFn.slots.slice();
+      const addedIntegerSlots: number[] = [];
+      const slotReaders = new Uint32Array(bodySlots.length);
+      for (const block of currentFn.blocks) {
+        if (block === undefined) throw "list vector block invariant";
+        for (const op of block.instructions) {
+          if (op !== undefined && op.kind === "load")
+            slotReaders[op.slot] = (slotReaders[op.slot] ?? 0) + 1;
+        }
+        const term = block.terminator;
+        if (
+          (term.kind === "record" || term.kind === "record-cell") &&
+          term.operation !== "read"
+        )
+          slotReaders[term.slot] = (slotReaders[term.slot] ?? 0) + 1;
+      }
+      const recordReadSlots = new Set<number>();
+      for (const block of currentFn.blocks) {
+        if (block === undefined) continue;
+        for (const op of block.instructions) {
+          if (op === undefined || op.kind !== "record-read") continue;
+          let obj = definitions.get(op.object);
+          if (obj !== undefined && obj.kind === "reference-value")
+            obj = definitions.get(obj.value);
+          if (obj !== undefined && obj.kind === "load")
+            recordReadSlots.add(obj.slot);
+        }
+      }
+      const bodyPreds = new Map<number, number[]>();
+      for (const block of currentFn.blocks) {
+        if (block === undefined) continue;
+        for (const succ of blockSuccessors(block)) {
+          let list = bodyPreds.get(succ);
+          if (list === undefined) {
+            list = [];
+            bodyPreds.set(succ, list);
+          }
+          list.push(block.id);
+        }
+      }
+      const hoistedLengths = new Map<
+        NaturalLoop,
+        {
+          readonly cache: CachedList;
+          readonly lengthSlot: number;
+          readonly hasSlot: number;
+        }[]
+      >();
+      const lengthReplaced = new Map<number, Block>();
+      let bodyNextValue = nextValue,
+        bodyCount = 0;
+      for (const [loop, vectors] of caches) {
+        const entry = preheader(loop);
+        if (entry === undefined) continue;
+        const entryBlock = currentFn.blocks[entry.id];
+        if (entryBlock === undefined) continue;
+        const entryTerm = entryBlock.terminator;
+        if (entryTerm.kind !== "jump" || entryTerm.target !== loop.header)
+          continue;
+        const loopWriteSites = sites(loop) ?? [];
+        const unmodified = new Map<number, CachedList>();
+        for (const [listSlot, cache] of vectors) {
+          if (cache.list !== listSlot) throw "list vector cache invariant";
+          if (recordReadSlots.has(listSlot)) continue;
+          const headerIdx = headers.get(cache.header) ?? -1;
+          if (headerIdx < 0) continue;
+          let written = false;
+          for (const site of loopWriteSites) {
+            if (
+              site === undefined ||
+              site.headers === undefined ||
+              site.headers.has(headerIdx)
+            ) {
+              written = true;
+              break;
+            }
+          }
+          if (!written) unmodified.set(listSlot, cache);
+        }
+        if (unmodified.size === 0) continue;
+        const lengthSlots = new Map<
+          number,
+          { readonly lengthSlot: number; readonly hasSlot: number }
+        >();
+        const loopHoisted: {
+          readonly cache: CachedList;
+          readonly lengthSlot: number;
+          readonly hasSlot: number;
+        }[] = [];
+        for (const id of loop.body) {
+          const block = lengthReplaced.get(id) ?? currentFn.blocks[id];
+          if (block === undefined) continue;
+          const term = block.terminator;
+          if (
+            term.kind !== "record" ||
+            term.operation !== "read" ||
+            term.field !== 0 ||
+            currentFn.slots[term.slot] !== "number"
+          )
+            continue;
+          let source = definitions.get(term.object),
+            optional = false;
+          if (source !== undefined && source.kind === "reference-value") {
+            source = definitions.get(source.value);
+            optional = true;
+          }
+          if (source === undefined || source.kind !== "load") continue;
+          const cache = unmodified.get(source.slot);
+          if (
+            cache === undefined ||
+            cache.header !== term.record ||
+            cache.optional !== optional
+          )
+            continue;
+          if (!loop.body.has(term.consequent)) continue;
+          if ((bodyPreds.get(term.consequent)?.length ?? 0) !== 1) continue;
+          const consequent =
+            lengthReplaced.get(term.consequent) ??
+            currentFn.blocks[term.consequent];
+          if (consequent === undefined) continue;
+          const useCount = new Map<number, number>();
+          for (const op of consequent.instructions) {
+            if (op === undefined) continue;
+            visitInstructionOperands(op, (vid) => {
+              useCount.set(vid, (useCount.get(vid) ?? 0) + 1);
+            });
+          }
+          visitTerminatorOperands(consequent.terminator, (vid) => {
+            useCount.set(vid, (useCount.get(vid) ?? 0) + 1);
+          });
+          const droppedLoads = new Set<number>(),
+            rewrittenUint = new Set<number>();
+          let valid = true;
+          for (const op of consequent.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "store" && op.slot === term.slot) break;
+            if (op.kind === "load" && op.slot === term.slot) {
+              if ((useCount.get(op.id) ?? 0) !== 1) {
+                valid = false;
+                break;
+              }
+              droppedLoads.add(op.id);
+            } else if (
+              op.kind === "unary" &&
+              op.operator === "uint32" &&
+              droppedLoads.has(op.operand)
+            )
+              rewrittenUint.add(op.id);
+          }
+          if (
+            !valid ||
+            droppedLoads.size === 0 ||
+            rewrittenUint.size !== droppedLoads.size ||
+            (slotReaders[term.slot] ?? 0) !== droppedLoads.size
+          )
+            continue;
+          let entrySlot = lengthSlots.get(cache.list);
+          if (entrySlot === undefined) {
+            const lengthSlot = bodySlots.length;
+            bodySlots.push("number");
+            addedIntegerSlots.push(lengthSlot);
+            const hasSlot = bodySlots.length;
+            bodySlots.push("boolean");
+            entrySlot = { lengthSlot, hasSlot };
+            lengthSlots.set(cache.list, entrySlot);
+            loopHoisted.push({ cache, lengthSlot, hasSlot });
+          }
+          const nextInstructions: Instruction[] = [];
+          for (const op of consequent.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "load" && droppedLoads.has(op.id)) continue;
+            if (op.kind === "unary" && rewrittenUint.has(op.id)) {
+              nextInstructions.push({
+                kind: "load",
+                id: op.id,
+                slot: entrySlot.lengthSlot,
+                start: op.start,
+                end: op.end,
+              });
+              continue;
+            }
+            nextInstructions.push(op);
+          }
+          lengthReplaced.set(consequent.id, {
+            ...consequent,
+            instructions: nextInstructions,
+          });
+          slotReaders[term.slot] = 0;
+          const blockInstructions = block.instructions.slice(),
+            hasHeader = bodyNextValue++;
+          blockInstructions.push({
+            kind: "load",
+            id: hasHeader,
+            slot: entrySlot.hasSlot,
+            start: term.start,
+            end: term.end,
+          });
+          const branchTerminator: Terminator = {
+            kind: "branch",
+            condition: hasHeader,
+            consequent: term.consequent,
+            alternate: term.alternate,
+            start: term.start,
+            end: term.end,
+          };
+          lengthReplaced.set(block.id, {
+            ...block,
+            instructions: blockInstructions,
+            terminator: branchTerminator,
+          });
+          bodyCount++;
+        }
+        if (loopHoisted.length > 0) hoistedLengths.set(loop, loopHoisted);
+      }
+      if (hoistedLengths.size > 0) {
+        const preheaderReplaced = new Map<number, Block>();
+        for (const [loop, lengthEntries] of hoistedLengths) {
+          const entry = preheader(loop);
+          if (entry === undefined) throw "list vector preheader invariant";
+          const original =
+            lengthReplaced.get(entry.id) ?? currentFn.blocks[entry.id];
+          if (original === undefined) throw "list vector preheader invariant";
+          const instructions = original.instructions.slice();
+          for (const item of lengthEntries) {
+            if (item === undefined) throw "list length entry invariant";
+            const object = bodyNextValue++,
+              optionalLength = bodyNextValue++,
+              present = bodyNextValue++,
+              zero = bodyNextValue++,
+              rawLength = bodyNextValue++,
+              uintLength = bodyNextValue++;
+            instructions.push({
+              kind: "load",
+              id: object,
+              slot: item.cache.list,
+              start: 0,
+              end: 0,
+            });
+            let argument = object;
+            if (!item.cache.optional) {
+              argument = bodyNextValue++;
+              instructions.push({
+                kind: "reference-wrap",
+                id: argument,
+                value: object,
+                start: 0,
+                end: 0,
+              });
+            }
+            const lengthArguments: number[] = [argument];
+            instructions.push(
+              {
+                kind: "call",
+                id: optionalLength,
+                target: lengthAccessor(item.cache.header),
+                arguments: lengthArguments,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "optional-present",
+                id: present,
+                value: optionalLength,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "store",
+                slot: item.hasSlot,
+                value: present,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "constant",
+                id: zero,
+                value: 0,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "optional-value-or",
+                id: rawLength,
+                value: optionalLength,
+                fallback: zero,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "unary",
+                id: uintLength,
+                operator: "uint32",
+                operand: rawLength,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "store",
+                slot: item.lengthSlot,
+                value: uintLength,
+                start: 0,
+                end: 0,
+              },
+            );
+          }
+          preheaderReplaced.set(entry.id, { ...original, instructions });
+        }
+        const blocks: Block[] = [];
+        for (const block of currentFn.blocks) {
+          if (block === undefined) throw "list vector block invariant";
+          blocks.push(
+            preheaderReplaced.get(block.id) ??
+              lengthReplaced.get(block.id) ??
+              block,
+          );
+        }
+        const integerSlots: number[] = [];
+        for (const slot of currentFn.integerSlots ?? [])
+          if (slot !== undefined) integerSlots.push(slot);
+        for (const slot of addedIntegerSlots)
+          if (slot !== undefined) integerSlots.push(slot);
+        const debug =
+          currentFn.debug === undefined
+            ? undefined
+            : retainDebugValues(currentFn, blocks);
+        const bodyCand: FunctionIR = {
+          ...currentFn,
+          slots: bodySlots,
+          blocks,
+          ...(integerSlots.length > 0 ? { integerSlots } : {}),
+          ...(debug === undefined ? {} : { debug }),
+        };
+        if (recordReadsKept(currentFn, bodyCand)) {
+          currentFn = bodyCand;
+          nextValue = bodyNextValue;
+          count += bodyCount;
         }
       }
     }

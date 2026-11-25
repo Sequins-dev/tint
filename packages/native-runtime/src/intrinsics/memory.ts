@@ -22,6 +22,11 @@ export function memoryPageBytes(): number {
 export function processorCount(): number {
   throw "HOST_UNAVAILABLE";
 }
+/** Compile-time target operating system code (nativeTargetOS* in
+ * @tint/abi/host) for the runtime's own host queries; probes nothing. */
+export function runtimeTargetOS(): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** Read-only file access for the runtime's own host queries (cgroup CPU
  * limits), with the native-fs-host contract: paths are NUL-terminated
  * UTF-8 bytes, results are counts or descriptors, failures -errno. */
@@ -221,6 +226,28 @@ export function registerStackMaps(
   codeAddress: number,
   codeByteLength: number,
   tableAddress: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+
+/** Binds `string-flat`: 1 when `text` is a flat string, which owns its
+ * units and can be copied verbatim (nativeStringIsFlat), else 0 (a slice,
+ * which shares a parent's units and must be flattened to leave its isolate). */
+export function isFlatString(text: string): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Binds `string-flatten-into`: writes a flat image of `text` (its flat
+ * header, length and units, zero-padded: a position-independent,
+ * pointer-free string object without per-isolate state) at the start of a
+ * caller-owned raw writable window, and returns its byte extent
+ * (nativeFlatStringExtent). A flat string is copied verbatim; a slice's
+ * units are copied from its parent. Returns -1 without writing when the
+ * window is too small or its bounds are not exact integers with a nonzero
+ * 8-byte-aligned address and an end below 2^53. */
+export function flattenStringInto(
+  address: number,
+  byteLength: number,
+  text: string,
 ): number {
   throw "HOST_UNAVAILABLE";
 }

@@ -1600,3 +1600,245 @@ test("wrappers with callers stay within the inline ceiling instead of absorbing 
     "wrapper must be inlined into caller",
   );
 });
+
+test("bound Latin-1 scans and copies inline with their operands remapped", () => {
+  // Bodies as bindHostOperations leaves them: parameter loads, the
+  // instruction and a return. The allocating string-from-latin1 stays a call.
+  function bound(
+    id: number,
+    name: string,
+    slots: FunctionIR["slots"],
+    op: Instruction,
+    returnType: FunctionIR["returnType"],
+  ): FunctionIR {
+    const instructions: Instruction[] = [];
+    for (let slot = 0; slot < slots.length; slot++)
+      instructions.push({ kind: "load", id: slot, slot, ...span });
+    instructions.push(op);
+    return {
+      id,
+      name,
+      exported: false,
+      parameters: slots.map((_, slot) => slot),
+      slots,
+      returnType,
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions,
+          terminator: { kind: "return", value: slots.length, ...span },
+        },
+      ],
+    };
+  }
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["string", "Uint8Array"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              { kind: "constant", id: 3, value: 4, ...span },
+              { kind: "call", id: 4, target: 1, arguments: [0, 2, 3], ...span },
+              { kind: "call", id: 5, target: 2, arguments: [1, 2, 3], ...span },
+              {
+                kind: "call",
+                id: 6,
+                target: 3,
+                arguments: [0, 2, 4, 1, 2],
+                ...span,
+              },
+              { kind: "call", id: 7, target: 4, arguments: [1, 2, 5], ...span },
+              {
+                kind: "binary",
+                id: 8,
+                operator: "+",
+                left: 4,
+                right: 6,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 8, ...span },
+          },
+        ],
+      },
+      bound(
+        1,
+        "asciiEndOfText",
+        ["string", "number", "number"],
+        {
+          kind: "string-ascii-prefix",
+          id: 3,
+          string: 0,
+          begin: 1,
+          limit: 2,
+          ...span,
+        },
+        "number",
+      ),
+      bound(
+        2,
+        "asciiEndOfBytes",
+        ["Uint8Array", "number", "number"],
+        {
+          kind: "bytes-ascii-prefix",
+          id: 3,
+          bytes: 0,
+          begin: 1,
+          limit: 2,
+          ...span,
+        },
+        "number",
+      ),
+      bound(
+        3,
+        "copyLatin1",
+        ["string", "number", "number", "Uint8Array", "number"],
+        {
+          kind: "string-copy-latin1",
+          id: 5,
+          string: 0,
+          begin: 1,
+          limit: 2,
+          bytes: 3,
+          offset: 4,
+          ...span,
+        },
+        "number",
+      ),
+      bound(
+        4,
+        "latin1Text",
+        ["Uint8Array", "number", "number"],
+        {
+          kind: "string-from-latin1",
+          id: 3,
+          bytes: 0,
+          begin: 1,
+          limit: 2,
+          ...span,
+        },
+        "string",
+      ),
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 3);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const ops = result.module.functions[0]!.blocks.flatMap((b) => b.instructions);
+  const scan = ops.find((op) => op.kind === "string-ascii-prefix"),
+    bytes = ops.find((op) => op.kind === "bytes-ascii-prefix"),
+    copy = ops.find((op) => op.kind === "string-copy-latin1");
+  assert.ok(scan?.kind === "string-ascii-prefix");
+  assert.deepEqual([scan.string, scan.begin, scan.limit], [0, 2, 3]);
+  assert.ok(bytes?.kind === "bytes-ascii-prefix");
+  assert.deepEqual([bytes.bytes, bytes.begin, bytes.limit], [1, 2, 3]);
+  assert.ok(copy?.kind === "string-copy-latin1");
+  assert.equal(copy.string, 0);
+  assert.equal(copy.bytes, 1);
+  assert.deepEqual(
+    ops
+      .filter((op) => op.kind === "call")
+      .map((op) => op.kind === "call" && op.target),
+    [4],
+  );
+});
+
+test("multi-block callees with traced reference slots stay under referenceAllowance", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              ...Array.from({ length: 300 }, (_, i) => ({
+                kind: "call" as const,
+                id: i + 1,
+                target: 1,
+                arguments: [0],
+                ...span,
+              })),
+            ],
+            terminator: { kind: "return", value: 300, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "readBox",
+        exported: false,
+        parameters: [0],
+        slots: ["reference", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "record",
+              object: 0,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 1, slot: 1, ...span }],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+          {
+            id: 2,
+            instructions: [],
+            terminator: { kind: "trap", ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 100000)!;
+  assert.deepEqual(verify(result.module), { ok: true });
+  // readBox has cost 2 + overhead (1 param + 1 return + 3 blocks) = 7, so
+  // referenceAllowance (384) admits floor(384 / 7) = 54 expansions rather than
+  // all 300 calls (caller growth allowance is 301 + 128 = 429).
+  assert.equal(result.inlined, 54);
+  assert.equal(
+    result.module.functions[0]!.blocks.flatMap((b) => b.instructions).filter(
+      (op) => op.kind === "call",
+    ).length,
+    246,
+  );
+});

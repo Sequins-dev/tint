@@ -112,7 +112,7 @@ export function forwardLocalLoads(
   // the block directly to the written value slot (eliminating heap reload +
   // store-to-load forwarding stalls).
   const predCount = new Uint32Array(fn.blocks.length),
-    uniquePred = new Int32Array(fn.blocks.length).fill(-1);
+    uniquePred = new Uint32Array(fn.blocks.length);
   for (const block of fn.blocks) {
     if (block === undefined) throw "forward block invariant";
     for (const succ of blockSuccessors(block)) {

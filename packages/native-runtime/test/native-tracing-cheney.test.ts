@@ -194,14 +194,27 @@ test("general fields trace only reference tags", () => {
 test("strings and reference vectors size and trace correctly", () => {
   const h = heap();
   const text = h.allocate(24, [1, 3]); // 3 code units: at least 4 → 24 bytes
-  const vector = h.allocate(40, [6, 2, 0, text, 0]);
+  // One-byte strings (kind flag 1): 16 + length, at least 8 data bytes.
+  const oneByte = 1 + nativeHeaderFlagUnit;
+  const short = h.allocate(24, [oneByte, 3]),
+    long = h.allocate(32, [oneByte, 11]);
+  const vector = h.allocate(56, [6, 4, 0, text, short, long, 0]);
   const { bytes } = h.collect(h.roots([vector]));
-  assert.equal(bytes, 40 + 24);
+  assert.equal(bytes, 56 + 24 + 24 + 32);
   const moved = h.root(0);
   const movedText = h.read(moved + 24);
   assert.ok(movedText >= to);
   assert.equal(h.read(movedText + 8), 3);
-  assert.equal(h.read(moved + 32), 0, "null element stays null");
+  for (const [slot, length] of [
+    [32, 3],
+    [40, 11],
+  ]) {
+    const movedString = h.read(moved + slot!);
+    assert.ok(movedString >= to);
+    assert.equal(h.read(movedString), oneByte, "one-byte header is kept");
+    assert.equal(h.read(movedString + 8), length);
+  }
+  assert.equal(h.read(moved + 48), 0, "null element stays null");
 });
 
 test("array data pointers follow inline backing, borrowed backing, and views", () => {
@@ -228,6 +241,42 @@ test("array data pointers follow inline backing, borrowed backing, and views", (
     assert.equal(h.read(movedInner), viewHeader, "view header is restored");
     assert.equal(h.read(h.root(1) + 16), 0x9000, "borrowed data stays");
   }
+});
+
+test("sliced strings keep their flat parents through their parent slots", () => {
+  const h = heap();
+  // A one-byte flat string of 40 units (16 + 40 bytes) and a two-byte one
+  // of 20 units (16 + 40 bytes).
+  const oneByte = h.allocate(56, [1 + nativeHeaderFlagUnit, 40]),
+    twoByte = h.allocate(56, [1, 20]);
+  // Slices: marker 1, flags 3 (one-byte) or 2 (two-byte); length, the
+  // first unit's byte offset in the parent's units, the parent.
+  const slicedOne = h.allocate(32, [
+    1 + 3 * nativeHeaderFlagUnit,
+    13,
+    7,
+    oneByte,
+  ]);
+  const slicedTwo = h.allocate(32, [
+    1 + 2 * nativeHeaderFlagUnit,
+    15,
+    2 * 5,
+    twoByte,
+  ]);
+  // Only the slices are roots: they keep their parents alive.
+  const { bytes } = h.collect(h.roots([slicedOne, slicedTwo]));
+  const one = h.root(0),
+    two = h.root(1),
+    oneParent = h.read(one + 24),
+    twoParent = h.read(two + 24);
+  assert.ok(oneParent >= to && twoParent >= to, "parents are copied");
+  assert.equal(h.read(oneParent), 1 + nativeHeaderFlagUnit);
+  assert.equal(h.read(twoParent), 1);
+  assert.equal(h.read(one + 16), 7, "offsets are position-independent");
+  assert.equal(h.read(two + 16), 10);
+  assert.equal(h.read(one + 8), 13);
+  assert.equal(h.read(one), 1 + 3 * nativeHeaderFlagUnit);
+  assert.equal(bytes, 2 * 32 + 2 * 56);
 });
 
 test("weak cells and ephemerons keep live keys and clear dead ones", () => {

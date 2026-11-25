@@ -114,3 +114,37 @@ test("bounded grammar mutations agree with the reference parser", () => {
       assert.deepEqual(materialize(parsed.node), expected);
   }
 });
+test("strings, punctuation and literals parse like JSON.parse wherever escapes fall", () => {
+  const valid = [
+    '"plain"',
+    '""',
+    '"a\\"b"',
+    '"\\n tail"',
+    '"head \\u00e9"',
+    '"head \\uD83D\\uDE00 tail"',
+    '{"key": [true, false, null, -0.5e+3, 12E-2, 0]}',
+    '[ "x" , "y\\\\" ,{"z":"\\t"} ]',
+    "null",
+    " true ",
+    "false",
+  ];
+  for (const text of valid) {
+    const result = parseJSONText(text);
+    assert.ok(result.node !== undefined, text);
+    assert.deepEqual(materialize(result.node), JSON.parse(text), text);
+  }
+  for (const text of [
+    '"unterminated',
+    '"tab\there"',
+    '"bad \\x escape"',
+    "tru",
+    "nul",
+    "falsey",
+    '{"a" 1}',
+    "[1,]",
+    "-",
+    "1.",
+    "1e",
+  ])
+    assert.equal(parseJSONText(text).node, undefined, text);
+});

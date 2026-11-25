@@ -154,6 +154,28 @@ test("array data pointers follow inline backing, borrowed backing, and views", (
   assert.equal(h.read(h.root(1) + 16), 0x9000, "borrowed data stays");
 });
 
+test("sliced strings follow their flat parents through compaction", () => {
+  const h = heap();
+  const leafDescriptor = h.descriptor(16, []);
+  h.allocate(64, [leafDescriptor, 0]); // garbage, so both strings move
+  // A one-byte flat string of 20 units and a 13-unit slice from unit 3
+  // (marker 1, flags 3; length, first unit's byte offset, parent).
+  const parent = h.allocate(48, [
+    1 + nativeHeaderFlagUnit,
+    20,
+    0x6867666564636261,
+  ]);
+  const sliced = h.allocate(32, [1 + 3 * nativeHeaderFlagUnit, 13, 3, parent]);
+  h.collect(h.roots([sliced]));
+  const moved = h.root(0),
+    movedParent = h.read(moved + 24);
+  assert.equal(movedParent, 0x10000);
+  assert.equal(h.read(movedParent + 16), 0x6867666564636261, "units move");
+  assert.equal(h.read(moved + 16), 3, "the offset is position-independent");
+  assert.equal(h.read(moved + 8), 13);
+  assert.equal(h.read(moved), 1 + 3 * nativeHeaderFlagUnit);
+});
+
 test("strings and reference vectors size and trace correctly", () => {
   const h = heap();
   const leafDescriptor = h.descriptor(16, []);

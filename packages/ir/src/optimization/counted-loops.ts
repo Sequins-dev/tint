@@ -595,6 +595,7 @@ function loopLocalCandidates(
   return local;
 }
 
+export { recordReadsKept } from "../scalar/index.ts";
 interface CountedLoop {
   readonly preheader: number;
   readonly counter: number;

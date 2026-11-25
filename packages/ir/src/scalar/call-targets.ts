@@ -573,8 +573,15 @@ function functionFlows(
           case "reference-none":
           case "string-literal":
           case "string-length":
+          case "string-two-byte":
           case "string-code-unit":
           case "string-starts-with":
+          case "string-index-of":
+          case "string-from-latin1":
+          case "string-copy-latin1":
+          case "string-ascii-prefix":
+          case "string-ascii-case":
+          case "bytes-ascii-prefix":
           case "string-slice":
           case "string-from-code-units":
           case "string-concat":

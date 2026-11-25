@@ -194,8 +194,15 @@ function kind(
   };
 }
 function builtinKinds(): HeapDebugKind[] {
-  // Strings span at least four units (inline comparisons read them).
-  const kinds: HeapDebugKind[] = [kind(1, 0, 16, 8, 2, 0, 0, "string", 4)];
+  // Strings have at least eight data bytes (inline comparisons read them):
+  // four two-byte units or eight one-byte units. Both flat kinds share the
+  // DWARF `string` structure, whose `units` and `bytes` overlay the data.
+  const kinds: HeapDebugKind[] = [
+    kind(1, 0, 16, 8, 2, 0, 0, "string", 4),
+    kind(1, 1, 16, 8, 1, 0, 0, "string", 8),
+    kind(1, 2, 32, -1, 0, 2, 24, "string.slice", 0),
+    kind(1, 3, 32, -1, 0, 2, 24, "string.slice", 0),
+  ];
   for (const entry of nativeTypedArrayKinds) {
     if (entry === undefined) throw "heap debug typed array invariant";
     const name = entry.name;
@@ -208,12 +215,14 @@ function builtinKinds(): HeapDebugKind[] {
   kinds.push(kind(7, 1, 40, -1, 0, 3, 8, "ephemeron-slot", 0));
   return kinds;
 }
-/** Built-in object kinds of the current header format (marker 1: flat
- * UTF-16 string, in the heap or an image literal; typed buffers by element
- * kind (./typed-array.ts), owning (flags 0), borrowing external storage (1)
- * or viewing an owner (2); 6: reference vector; 7: weak slot, weak (0) or
- * ephemeron (1)). Functions are records whose descriptor is the image's
- * function-record descriptor. Offsets follow packages/abi/src/host.ts. */
+/** Built-in object kinds of the current header format (marker 1: string,
+ * flat in the heap or an image literal, two-byte (flags 0) or one-byte
+ * (flags 1), or sliced from a flat parent (flags 2, or 3 for one-byte);
+ * typed buffers by element kind (./typed-array.ts), owning (flags 0),
+ * borrowing external storage (1) or viewing an owner (2); 6: reference
+ * vector; 7: weak slot, weak (0) or ephemeron (1)). Functions are records
+ * whose descriptor is the image's function-record descriptor. Offsets follow
+ * packages/abi/src/host.ts. */
 export const heapDebugKinds: readonly HeapDebugKind[] = builtinKinds();
 
 /** The descriptor's initial image bytes. Startup stores the live context

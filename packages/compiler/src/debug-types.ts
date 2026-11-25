@@ -15,7 +15,11 @@ import type { ScalarType } from "@tint/ir/scalar";
 import {
   nativeHeaderByteLength,
   nativeStringLengthOffset,
+  nativeStringIndexFieldOffset,
   nativeStringDataOffset,
+  nativeStringSlicedByteLength,
+  nativeStringSlicedStartOffset,
+  nativeStringParentOffset,
 } from "@tint/abi/host";
 import {
   nativeTypedArrayKind,
@@ -122,25 +126,46 @@ function structure(
 function word(table: DebugTypeTable): number {
   return baseType(table, "uint64", 8, "unsigned");
 }
+/** Adds a string's 32-bit length and index field (see @tint/abi/host). */
+function pushStringLength(table: DebugTypeTable, members: DebugMember[]): void {
+  const uint32 = baseType(table, "uint32", 4, "unsigned");
+  members.push({
+    name: "length",
+    type: uint32,
+    offset: nativeStringLengthOffset,
+  });
+  members.push({
+    name: "index",
+    type: uint32,
+    offset: nativeStringIndexFieldOffset,
+  });
+}
 /** The one-word object header: the layout marker or descriptor address in
  * bits 0-47 and the kind flags in bits 48-50 (see @tint/abi/host). */
 function header(table: DebugTypeTable): DebugMember[] {
   return [{ name: "__header", type: word(table), offset: 0 }];
 }
-/** A flat UTF-16 string: header, length, then the code units. */
+/** A flat string: header, length, then the code units. `units` describes a
+ * two-byte string's data (header kind flags 0) and `bytes` a one-byte
+ * string's (kind flag 1); both overlay the same storage. */
 function stringStructure(table: DebugTypeTable): number {
   return structure(table, "string", "string", nativeStringDataOffset, () => {
     const members = header(table);
-    members.push({
-      name: "length",
-      type: word(table),
-      offset: nativeStringLengthOffset,
-    });
+    pushStringLength(table, members);
     members.push({
       name: "units",
       type: intern(table, "array:char16_t", () => ({
         kind: "array",
         element: baseType(table, "char16_t", 2, "utf"),
+        count: undefined,
+      })),
+      offset: nativeStringDataOffset,
+    });
+    members.push({
+      name: "bytes",
+      type: intern(table, "array:latin1", () => ({
+        kind: "array",
+        element: baseType(table, "latin1", 1, "unsigned"),
         count: undefined,
       })),
       offset: nativeStringDataOffset,
@@ -293,7 +318,30 @@ function bufferStructure(table: DebugTypeTable, scalar: string): number {
 /** Every built-in heap object kind (heapDebugKinds) as a named structure,
  * and the function record, so tools can decode any object by name. */
 export function heapKindTypes(table: DebugTypeTable): void {
-  stringStructure(table);
+  const flat = stringStructure(table);
+  // A sliced string: its length, the byte offset of its first unit in the
+  // flat parent's units (one-byte with kind flag 1), and the parent.
+  structure(
+    table,
+    "heap:string.slice",
+    "string.slice",
+    nativeStringSlicedByteLength,
+    () => {
+      const members = header(table);
+      pushStringLength(table, members);
+      members.push({
+        name: "start",
+        type: word(table),
+        offset: nativeStringSlicedStartOffset,
+      });
+      members.push({
+        name: "parent",
+        type: pointer(table, flat),
+        offset: nativeStringParentOffset,
+      });
+      return members;
+    },
+  );
   structure(table, "heap:vector", "vector", 24, () => {
     const members = header(table);
     members.push({ name: "capacity", type: word(table), offset: 8 });
@@ -442,24 +490,6 @@ function pieces(
     pieces: parts,
   };
 }
-/** A string variable addressed through its (non-null) pointer word. */
-function stringView(
-  location: NativeDebugLocation,
-  base: number,
-  add: number,
-  value: boolean,
-): DebugLocationRange | undefined {
-  const source = location.words[0];
-  if (source === undefined || location.words.length !== 1) return undefined;
-  if (source.kind === "float") return undefined;
-  return {
-    offset: base + location.offset,
-    byteLength: location.byteLength,
-    pieces: [
-      { part: { kind: "pointer", base: dwarfWord(source), add, value } },
-    ],
-  };
-}
 function variable(
   table: DebugTypeTable,
   source: ProgramDebugVariable,
@@ -469,33 +499,6 @@ function variable(
     file = declaration === undefined ? undefined : declaration.file,
     line = declaration === undefined ? undefined : declaration.line;
   const type: DebugValueType = source.type;
-  if (type.scalar === "string") {
-    // Shown as its UTF-16 units: an array counted by the string's length.
-    const units: DebugLocationRange[] = [],
-      counts: DebugLocationRange[] = [];
-    let views = true;
-    for (const location of source.locations) {
-      if (location === undefined) throw "debug location invariant";
-      const unit = stringView(location, base, nativeStringDataOffset, false),
-        count = stringView(location, base, nativeStringLengthOffset, true);
-      if (unit === undefined || count === undefined) {
-        views = false;
-        break;
-      }
-      units.push(unit);
-      counts.push(count);
-    }
-    if (views)
-      return {
-        name: source.name,
-        type: baseType(table, "char16_t", 2, "utf"),
-        parameter: source.parameter,
-        file,
-        line,
-        locations: units,
-        count: counts,
-      };
-  }
   const locations: DebugLocationRange[] = [];
   for (const location of source.locations) {
     if (location === undefined) throw "debug location invariant";

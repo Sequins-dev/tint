@@ -1112,7 +1112,12 @@ function prepareCollectionPass(
           ...(helpers.has("number-text:numberToString")
             ? {
                 numberToString: functionId(
-                  helper("number-text", "numberToString"),
+                  helper(
+                    "number-text",
+                    helpers.has("number-text:numberToStringMissed")
+                      ? "numberToStringMissed"
+                      : "numberToString",
+                  ),
                 ),
                 numberFromString: functionId(
                   helper("number-text", "stringToNumber"),

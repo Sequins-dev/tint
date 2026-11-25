@@ -7,6 +7,7 @@ import { frozenSourcePackageExports } from "./frozen-source-exports.ts";
 const entries = new Map([
   ["text-scanner", "text-scanner.ts"],
   ["string-builder", "string-builder.ts"],
+  ["latin1", "latin1.ts"],
   ["text-encoding", "text-encoding/index.ts"],
   ["base-encoding", "base-encoding/index.ts"],
   ["json-syntax", "json-syntax.ts"],
@@ -91,10 +92,8 @@ test("text fixture aliases retain provider IDs and the complete transitive graph
   const modules = testWorkspaceModules(["text-encoding"]);
   const provider = modules.find((module) => module.id === "text-encoding");
   assert.ok(provider);
-  assert.equal(
-    provider.dependencies.get("../string-builder.ts"),
-    "string-builder",
-  );
+  assert.equal(provider.dependencies.get("../latin1.ts"), "latin1");
+  assert.ok(modules.some((module) => module.id === "latin1"));
   assert.ok(modules.some((module) => module.id === "string-builder"));
   assert.ok(
     modules.every((module) =>

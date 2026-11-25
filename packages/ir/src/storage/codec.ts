@@ -523,13 +523,22 @@ export function encodeInstruction(
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
       return true;
+    case "string-two-byte":
+      writePrefix(writer, 85, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
     case "string-code-unit": {
-      const inBounds = op.inBounds;
+      const inBounds = op.inBounds,
+        unitKind = op.unitKind;
       writePrefix(
         writer,
         33,
         op,
-        bit(inBounds !== undefined, 2) + bit(inBounds === true, 4),
+        bit(inBounds !== undefined, 2) +
+          bit(inBounds === true, 4) +
+          bit(unitKind !== undefined, 8) +
+          bit(unitKind === "two-byte", 16),
       );
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
@@ -538,6 +547,110 @@ export function encodeInstruction(
     }
     case "string-starts-with":
       writePrefix(writer, 34, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.search);
+      writeSigned(writer, op.position);
+      return true;
+    case "string-from-latin1":
+    case "bytes-ascii-prefix":
+      writePrefix(writer, op.kind === "string-from-latin1" ? 87 : 90, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "number-string-cached":
+      writePrefix(writer, 97, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
+    case "number-string-cache":
+      writePrefix(writer, 98, op, 0);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-index-cached":
+      writePrefix(writer, 99, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-index-cache":
+      writePrefix(writer, 100, op, 0);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.value);
+      return true;
+    case "string-split-cached":
+      writePrefix(writer, 101, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.separator);
+      writeSigned(writer, op.template);
+      return true;
+    case "string-split-cache":
+      writePrefix(writer, 102, op, 0);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.separator);
+      writeSigned(writer, op.value);
+      return true;
+    case "string-utf8-length":
+      writePrefix(writer, 94, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "string-write-utf8":
+      writePrefix(writer, 95, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.offset);
+      return true;
+    case "string-from-utf8":
+      writePrefix(writer, 96, op, bit(op.whole === true, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "string-copy-latin1":
+      writePrefix(writer, 88, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.offset);
+      return true;
+    case "string-ascii-case":
+      writePrefix(writer, 91, op, bit(op.upper, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-flat":
+      writePrefix(writer, 92, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-flatten-into":
+      writePrefix(writer, 93, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.address);
+      writeSigned(writer, op.byteLength);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-ascii-prefix":
+      writePrefix(writer, 89, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "string-index-of":
+      writePrefix(writer, 86, op, bit(op.reverse, 2));
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
       writeSigned(writer, op.search);
@@ -565,6 +678,7 @@ export function encodeInstruction(
       writePrefix(writer, 38, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.length);
+      writeSigned(writer, op.twoByte);
       return true;
     case "string-write":
       writePrefix(writer, 39, op, 0);
@@ -737,7 +851,7 @@ export function encodeInstruction(
       writeSigned(writer, op.offset);
       return true;
     case "array-fill":
-      writePrefix(writer, 85, op, 0);
+      writePrefix(writer, 103, op, 0);
       writeSigned(writer, op.array);
       writeSigned(writer, op.value);
       writeSigned(writer, op.from);
@@ -1261,7 +1375,21 @@ export function decodeInstruction(
       const id = readSigned(reader),
         string = readSigned(reader),
         index = readSigned(reader);
-      if (!flagged(flags, 2))
+      const unitKind: "one-byte" | "two-byte" = flagged(flags, 16)
+        ? "two-byte"
+        : "one-byte";
+      if (!flagged(flags, 2)) {
+        if (flagged(flags, 8))
+          return {
+            kind: "string-code-unit",
+            id,
+            string,
+            index,
+            unitKind,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
         return {
           kind: "string-code-unit",
           id,
@@ -1271,7 +1399,20 @@ export function decodeInstruction(
           end,
           ...(inline === undefined ? {} : { inline }),
         };
+      }
       const inBounds = flagged(flags, 4);
+      if (flagged(flags, 8))
+        return {
+          kind: "string-code-unit",
+          id,
+          string,
+          index,
+          inBounds,
+          unitKind,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       return {
         kind: "string-code-unit",
         id,
@@ -1343,11 +1484,13 @@ export function decodeInstruction(
     }
     case 38: {
       const id = readSigned(reader),
-        length = readSigned(reader);
+        length = readSigned(reader),
+        twoByte = readSigned(reader);
       return {
         kind: "string-allocate",
         id,
         length,
+        twoByte,
         start,
         end,
         ...(inline === undefined ? {} : { inline }),
@@ -1746,7 +1889,7 @@ export function decodeInstruction(
         ...(inline === undefined ? {} : { inline }),
       };
     }
-    case 85: {
+    case 103: {
       const array = readSigned(reader),
         value = readSigned(reader),
         from = readSigned(reader),
@@ -1932,6 +2075,282 @@ export function decodeInstruction(
         end,
         ...(inline === undefined ? {} : { inline }),
       };
+    case 85: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-two-byte",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 87:
+    case 90: {
+      const id = readSigned(reader),
+        bytes = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      return opcode === 87
+        ? {
+            kind: "string-from-latin1",
+            id,
+            bytes,
+            begin,
+            limit,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "bytes-ascii-prefix",
+            id,
+            bytes,
+            begin,
+            limit,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
+    }
+    case 88: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader),
+        bytes = readSigned(reader),
+        offset = readSigned(reader);
+      return {
+        kind: "string-copy-latin1",
+        id,
+        string,
+        begin,
+        limit,
+        bytes,
+        offset,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 97: {
+      const id = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "number-string-cached",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 98: {
+      const value = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "number-string-cache",
+        value,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 99: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-index-cached",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 100: {
+      const string = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "string-index-cache",
+        string,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 101: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        separator = readSigned(reader),
+        template = readSigned(reader);
+      return {
+        kind: "string-split-cached",
+        id,
+        string,
+        separator,
+        template,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 102: {
+      const string = readSigned(reader),
+        separator = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "string-split-cache",
+        string,
+        separator,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 94: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      return {
+        kind: "string-utf8-length",
+        id,
+        string,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 95: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader),
+        bytes = readSigned(reader),
+        offset = readSigned(reader);
+      return {
+        kind: "string-write-utf8",
+        id,
+        string,
+        begin,
+        limit,
+        bytes,
+        offset,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 96: {
+      const id = readSigned(reader),
+        bytes = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      if (flagged(flags, 2))
+        return {
+          kind: "string-from-utf8",
+          id,
+          bytes,
+          begin,
+          limit,
+          whole: true,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
+      return {
+        kind: "string-from-utf8",
+        id,
+        bytes,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 92: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-flat",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 93: {
+      const id = readSigned(reader),
+        address = readSigned(reader),
+        byteLength = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-flatten-into",
+        id,
+        address,
+        byteLength,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 91: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-ascii-case",
+        id,
+        string,
+        upper: flagged(flags, 2),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 89: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      return {
+        kind: "string-ascii-prefix",
+        id,
+        string,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 86: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        search = readSigned(reader),
+        position = readSigned(reader);
+      return {
+        kind: "string-index-of",
+        id,
+        string,
+        search,
+        position,
+        reverse: flagged(flags, 2),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
     case 81: {
       const id = readSigned(reader),
         value = readSigned(reader);
