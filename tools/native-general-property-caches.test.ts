@@ -478,6 +478,42 @@ function deepSpilledAndBuiltins() {
   }
   return out.join(",");
 }
+function inheritedNonMethodAndEviction() {
+  const out = [];
+  // Non-method inherited data reads (RayTrace info.isHit / material.reflection pattern)
+  // with prototype value mutation, own shadowing, and deletion invalidation.
+  const matProto = { reflection: 0.25, gloss: 2, hasTexture: false };
+  const m1 = Object.create(matProto);
+  const m2 = Object.create(matProto);
+  m2.reflection = 0.75;
+  const readMat = (m) => m.reflection + ":" + m.gloss + ":" + m.hasTexture;
+  for (let i = 0; i < 3; i++) out.push(readMat(m1), readMat(m2));
+  matProto.reflection = 0.5;
+  matProto.hasTexture = true;
+  out.push(readMat(m1), readMat(m2));
+  m1.gloss = 9;
+  out.push(readMat(m1), readMat(m2));
+  delete m1.gloss;
+  out.push(readMat(m1));
+  // Megamorphic > 4 shapes rotating eviction across repeated reads.
+  const readV = (o) => o.v;
+  const shapes = [
+    { a: 1, v: 10 },
+    { b: 1, v: 20 },
+    { c: 1, v: 30 },
+    { d: 1, v: 40 },
+    { e: 1, v: 50 },
+    { f: 1, v: 60 },
+    { g: 1, v: 70 },
+    { h: 1, v: 80 },
+  ];
+  let sum = 0;
+  for (let round = 0; round < 20; round++) {
+    for (const s of shapes) sum += readV(s);
+  }
+  out.push(sum);
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -494,6 +530,7 @@ export function sections() {
     ownMethods(),
     literals(),
     deepSpilledAndBuiltins(),
+    inheritedNonMethodAndEviction(),
   ];
 }
 `;
@@ -511,7 +548,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 14);
+  assert.equal(expected.length, 15);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

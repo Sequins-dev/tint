@@ -1191,6 +1191,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/lowering/numeric-loop-spec.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/lowering/runtime-imports.ts",
       packageId: "js-engine",
     },

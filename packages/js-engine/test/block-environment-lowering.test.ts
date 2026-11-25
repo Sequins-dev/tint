@@ -1234,9 +1234,11 @@ test("a named load reads the receiver's value, a method call its inherited entri
   const read = "function read(object) { return object.value; }",
     call = "function call(object) { return object.method(1); }",
     write = "function write(object) { object.value = 1; }";
+  // A named load probes own slots first and checks inherited entries on an own
+  // miss before falling back to the helper.
   assert.equal(runtimeCalls(read, "cachedOwnPropertyValue"), 1);
-  assert.equal(runtimeCalls(read, "cachedInheritedPropertyValue"), 0);
-  assert.equal(runtimeCalls(read, "absentPropertyValue"), 1);
+  assert.equal(runtimeCalls(read, "cachedInheritedPropertyValue"), 1);
+  assert.equal(runtimeCalls(read, "absentPropertyValue"), 2);
   // A method site keeps the receiver's own methods among its inherited
   // entries, so it has one inline read.
   assert.equal(runtimeCalls(call, "cachedInheritedPropertyValue"), 1);
@@ -1244,13 +1246,14 @@ test("a named load reads the receiver's value, a method call its inherited entri
   assert.equal(runtimeCalls(call, "absentPropertyValue"), 1);
   assert.equal(runtimeCalls(write, "cachedPropertyStore"), 1);
   assert.equal(runtimeCalls(write, "writeCachedObjectValueProperty"), 1);
-  // Optional chains read callees as methods too.
+  // Optional chains read callees as methods too (1 inherited probe for `.a`
+  // miss + 1 direct inherited read for `.method`).
   assert.equal(
     runtimeCalls(
       "function call(object) { return object?.a.method(); }",
       "cachedInheritedPropertyValue",
     ),
-    1,
+    2,
   );
 });
 

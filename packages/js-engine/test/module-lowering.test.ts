@@ -66,7 +66,7 @@ test("modules export a factory over the shared runtime without Script entry or g
   const serialized = JSON.stringify(module);
   assert.ok(!serialized.includes('"name":"$script"'));
   assert.ok(serialized.includes('"name":"$environment"'));
-  assert.equal(lowering.scriptRuntimeSurface().length, 199);
+  assert.equal(lowering.scriptRuntimeSurface().length, 200);
 });
 test("module this is undefined while ordinary function receivers keep their own binding", () => {
   const module = lower(

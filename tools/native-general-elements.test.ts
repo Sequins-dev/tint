@@ -422,6 +422,83 @@ function literals() {
   out.push(sumMasked(10), sumDefaulted(10), String(sumPastEnd(10)), sumPastEnd(4));
   return out.join(",");
 }
+function popAndSpecLoops() {
+  const out = [];
+  // Packed pop (numbers, objects, empty, frozen, non-writable length, holey + prototype).
+  const pop = (a) => a.pop();
+  const nums = [10, 20, 30];
+  out.push(pop(nums), pop(nums), pop(nums), String(pop(nums)), nums.length);
+  const objs = [{ id: 1 }, "s", null];
+  out.push(String(pop(objs)), pop(objs), pop(objs).id, objs.length);
+  const frozen = Object.freeze([1, 2]);
+  try { pop(frozen); out.push("ok"); } catch (e) { out.push(e.constructor.name); }
+  const nonWritableLen = [1, 2];
+  Object.defineProperty(nonWritableLen, "length", { writable: false });
+  try { pop(nonWritableLen); out.push("ok"); } catch (e) { out.push(e.constructor.name); }
+  Array.prototype[1] = "proto-1";
+  const holey = [5, ,];
+  out.push(pop(holey), holey.length);
+  delete Array.prototype[1];
+  const origPop = Array.prototype.pop;
+  Array.prototype.pop = function () { return "patched:" + this.length; };
+  out.push(pop([1, 2, 3]));
+  Array.prototype.pop = origPop;
+  out.push(pop([1, 2, 3]));
+  // Sequential fill of preallocated new Array(n).
+  const pre = new Array(8);
+  for (let i = 0; i < 8; i++) pre[i] = i * 2 + 1;
+  out.push(pre.length, pre.join("/"));
+  // Speculative numeric for loop: fast path, compound +=, alias distinctness,
+  // and exact deopt on OOB, negative, fractional, NaN, non-number scalar, and
+  // holey/string arrays.
+  function saxpy(a, b, k, n) {
+    for (var i = 0; i < n; i++) a[i] += k * b[i];
+    return i;
+  }
+  const x = [1, 2, 3, 4], y = [10, 20, 30, 40];
+  out.push(saxpy(x, y, 0.5, 4), x.join("/"));
+  // Aliased a === b must observe exact sequential writes.
+  const alias = [1, 2, 3, 4];
+  function shiftWrite(a, b, n) {
+    for (var i = 0; i < n; i++) { a[i] = b[i] + 1; b[i] = a[i] * 2; }
+    return i;
+  }
+  out.push(shiftWrite(alias, alias, 4), alias.join("/"));
+  // Deopt mid-loop on out-of-bounds read/write, negative, fractional, NaN.
+  const small = [1, 2, 3];
+  out.push(saxpy(small, [10, 20, 30, 40], 1, 4), small.length, small.join("/"));
+  function writeAt(a, idxs, n) {
+    for (var i = 0; i < n; i++) a[idxs[i]] = i + 100;
+    return i;
+  }
+  const target = [0, 0, 0];
+  out.push(writeAt(target, [0, 1.5, 2], 3), target[0], target[1.5], target[2]);
+  const targetNeg = [0, 0];
+  out.push(writeAt(targetNeg, [0, -1, 1], 3), targetNeg[0], targetNeg[-1], targetNeg[1]);
+  const targetNan = [0, 0];
+  out.push(writeAt(targetNan, [0, NaN, 1], 3), targetNan[0], targetNan.NaN, targetNan[1]);
+  // Non-number scalar falls back cleanly.
+  const nonNum = [1, 2, 3];
+  out.push(saxpy(nonNum, [1, 2, 3], "2", 3), nonNum.join("/"));
+  // Nested 2-level numeric loop + inner deopt resuming cleanly.
+  function gridSolve(g, w, h) {
+    var rowSize = w + 2;
+    for (var j = 1; j <= h; j++) {
+      var pos = j * rowSize;
+      for (var i = 1; i <= w; i++) {
+        g[++pos] = g[pos] + j * 10 + i;
+      }
+    }
+    return j * 100 + i;
+  }
+  const grid = new Array(16);
+  for (let k = 0; k < 16; k++) grid[k] = 0;
+  out.push(gridSolve(grid, 2, 2), grid.join("/"));
+  // Trigger inner deopt at row 2 (grid too short for row 2, falls back to general).
+  const shortGrid = [0, 0, 0, 0, 0, 0, 0, 0];
+  out.push(gridSolve(shortGrid, 2, 2), shortGrid.length, shortGrid[5], shortGrid[10]);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -433,6 +510,7 @@ export function sections() {
     lengths(),
     appends(),
     literals(),
+    popAndSpecLoops(),
   ];
 }
 `;
@@ -450,7 +528,7 @@ test("element access keeps JavaScript semantics on every receiver and key", asyn
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 9);
+  assert.equal(expected.length, 10);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

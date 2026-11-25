@@ -267,6 +267,78 @@ for (var i = 0; i < expected.length; i++)
   );
 }
 
+const directMethodProgram = String.raw`
+function Counter(v) { this.v = v; }
+Counter.prototype.inc = function (d) { this.v = this.v + d; return this.v; };
+Counter.prototype.get = function () { return this.v; };
+Counter.add = function (a, b) { return a + b; };
+function Box(v) { this.v = v; }
+Box.prototype = {
+  get: function () { return this.v * 10; },
+  failIfNeg: function (x) { if (x < 0) throw "neg:" + x; return this.v + x; },
+  rec: function (n) { return n <= 0 ? this.v : this.rec(n - 1) + 1; },
+};
+function callThis() { return typeof this + ":" + (this === globalThis ? "global" : String(this.valueOf())); }
+function runDirectTests() {
+  var out = [];
+  var c = new Counter(5);
+  var b = new Box(3);
+  // Monomorphic and bimodal direct method dispatch + non-this static method.
+  out.push(c.inc(2), c.get(), b.get(), Counter.add(4, 9));
+  // Extra arguments must still be evaluated; missing arguments become undefined.
+  var side = 0;
+  out.push(c.inc(3, (side = 77)), side, String(Counter.add(1)));
+  // Recursive direct method & exception unwinding.
+  out.push(b.rec(4));
+  try { b.failIfNeg(-5); out.push("no-throw"); } catch (e) { out.push(e); }
+  // Monkey-patching prototype and own-property shadowing must deopt cleanly.
+  var origGet = Counter.prototype.get;
+  Counter.prototype.get = function () { return this.v + 1000; };
+  out.push(c.get());
+  Counter.prototype.get = origGet;
+  c.get = function () { return 9999; };
+  out.push(c.get());
+  delete c.get;
+  out.push(c.get());
+  // Primitive sloppy this boxing through prototype method.
+  Number.prototype.inc = Counter.prototype.inc;
+  var primRes = (42).inc(1);
+  out.push(primRes);
+  delete Number.prototype.inc;
+  // Function.prototype.call forwarding, sloppy receiver coercion, and override.
+  out.push(c.inc.call(new Counter(10), 5), callThis.call(null), callThis.call(undefined), callThis.call(7));
+  var savedCall = Function.prototype.call;
+  Function.prototype.call = function (t, x) { return "patched-call:" + x; };
+  out.push(c.inc.call(c, 99));
+  Function.prototype.call = savedCall;
+  out.push(c.inc.call(c, 1));
+  return out.join("|");
+}
+`;
+
+async function directMethodSection(): Promise<string> {
+  const directory = mkdtempSync(join(tmpdir(), "tint-direct-methods-"));
+  let expected: string;
+  try {
+    const file = join(directory, "fixture.cjs");
+    writeFileSync(
+      file,
+      directMethodProgram + "module.exports = runDirectTests;\n",
+    );
+    const runDirectTests = (await import(pathToFileURL(file).href))
+      .default as () => string;
+    expected = runDirectTests();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+  return (
+    directMethodProgram +
+    `var actual = runDirectTests(), expected = ${JSON.stringify(expected)};
+if (actual !== expected) throw new Error(actual + " !== " + expected);
+`
+  );
+}
+
 // Native entries are the subject of the call cases on targets that implement
 // the entry ABI (aarch64); x86-64 runs the same cases on register/list entries.
 if (nativeFixtureTarget().arch === "aarch64")
@@ -275,6 +347,7 @@ const callSources = [
   ...activationSections,
   ...tailCallSections,
   await forwardingSection(),
+  await directMethodSection(),
 ];
 const cases: readonly {
   readonly source: string;

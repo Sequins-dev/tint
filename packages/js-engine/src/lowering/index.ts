@@ -1,4 +1,5 @@
 import { forwardSingleUseTemporaries } from "./forward-temporaries.ts";
+import { specializeNumericForLoop } from "./numeric-loop-spec.ts";
 import { collectTailCalls } from "./tail-position.ts";
 import { argumentsForwardingSites } from "./arguments-forwarding.ts";
 import { sourceModuleShape } from "./module-shape.ts";
@@ -858,6 +859,7 @@ function lowerScriptEntry(
     variableDeclarationBindings.set(target.node.start, target.binding);
   }
   const localBindingReferences = new Map<number, number>();
+  const capturedFunctionReadBindings = new Map<number, number>();
   const writtenSlots = new Set<number>();
   for (const target of bound.value.varInitializerTargets ?? []) {
     if (target === undefined) throw "SCRIPT_BINDING_ALIAS_INVARIANT";
@@ -995,6 +997,14 @@ function lowerScriptEntry(
       reference.binding === undefined
         ? undefined
         : boundBindings[reference.binding];
+    if (
+      binding !== undefined &&
+      reference.access === "read" &&
+      !namedScopes.has(binding.scope) &&
+      bound.value.scopes[binding.scope]?.kind !== "script" &&
+      (binding.kind === "var" || binding.kind === "parameter")
+    )
+      capturedFunctionReadBindings.set(node.start, binding.id);
     const reachesGlobal =
       binding === undefined ||
       (bound.value.scopes[binding.scope]?.kind === "script" &&
@@ -1207,6 +1217,9 @@ function lowerScriptEntry(
         : id("$scope");
   let inFunction =
     entryKind === "direct-eval" && (directFlags & directEvalInFunction) !== 0;
+  let tryDepth = 0;
+  let withDepth = 0;
+  let functionHasDirectEval = false;
   let catchRecords: Expression[] = [];
   let inheritedCatches: Expression =
     entryKind === "direct-eval"
@@ -1254,6 +1267,7 @@ function lowerScriptEntry(
   const externalPrivate = new Map<string, Expression>();
   const templateSites: Statement[] = [];
   let functionDepth = 0;
+  let suppressingNumericLoopSpec = false;
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
   /** In a native entry's body, the parameter holding its materialized
    * argument list (undefined when called with actual operands). */
@@ -3080,14 +3094,30 @@ function lowerScriptEntry(
       span,
     );
     if (cached && key.kind === "string" && key.value === "length") {
-      // A String's length; for other values the runtime read, which takes
-      // the length an array with packed elements mirrors first.
+      // Packed array length or String length inline; other values take the
+      // runtime read.
       usesElementAccess = true;
+      const elements = temporary(
+        optionalMember(
+          runtimeCall(
+            "viewObjectValue",
+            [object, member(id("$errors"), "objectPrototype", span)],
+            span,
+          ),
+          "internalArrayElements",
+          span,
+        ),
+      );
       return temporary(
         scalarBranch(
-          categoryOperand(base, "string", span),
-          member(base, "length", span),
-          runtimeCall("readCachedLengthValue", args, span),
+          scalarBinary("!==", elements, id("undefined", span), span),
+          member(elements, "length", span),
+          scalarBranch(
+            categoryOperand(object, "string", span),
+            member(object, "length", span),
+            runtimeCall("readCachedLengthValue", args, span),
+            span,
+          ),
           span,
         ),
         true,
@@ -3109,7 +3139,26 @@ function lowerScriptEntry(
     if (result.kind !== "identifier")
       throw "property cache temporary invariant";
     const name = result.name;
-    statements.push(ifAbsent(name, cache, assignTo(name, read, span), span));
+    if (method) {
+      statements.push(ifAbsent(name, cache, assignTo(name, read, span), span));
+    } else {
+      // On own-entry miss, also probe the site's direct inherited entries
+      // inline before falling back to the runtime: own hits pay zero overhead,
+      // while inherited data and method reads (e.g. `this.initialize.apply`,
+      // `info.isHit`, `material.reflection`) hit inline.
+      const inheritedProbe = block(
+        [
+          assignTo(
+            name,
+            runtimeCall("cachedInheritedPropertyValue", [object, cache], span),
+            span,
+          ),
+          ifAbsent(name, cache, assignTo(name, read, span), span),
+        ],
+        span,
+      );
+      statements.push(ifAbsent(name, cache, inheritedProbe, span));
+    }
     return id(name, span);
   }
   /** The statements `build` emits, removed from the current list so the
@@ -3786,6 +3835,44 @@ function lowerScriptEntry(
       };
     }
     if (node.kind === "member" || node.kind === "index") {
+      // For `obj.m.apply(...)` / `obj.m.call(...)`, `obj.m` is a method lookup
+      // so probe its inherited entries directly rather than own entries first.
+      if (
+        !checkMethod &&
+        node.kind === "member" &&
+        !node.optional &&
+        !node.private &&
+        (node.property === "apply" || node.property === "call")
+      ) {
+        const forwardingReceiver = ungroup(node.object);
+        if (
+          forwardingReceiver.kind === "member" &&
+          !forwardingReceiver.optional &&
+          !forwardingReceiver.private &&
+          forwardingReceiver.object.kind !== "super"
+        ) {
+          const receiverBase = temporary(
+            value(forwardingReceiver.object),
+            true,
+          );
+          const targetMethod = readProperty(
+            receiverBase,
+            text(forwardingReceiver.property, forwardingReceiver),
+            forwardingReceiver,
+            true,
+          );
+          return {
+            value: readProperty(
+              targetMethod,
+              text(node.property, node),
+              node,
+              true,
+            ),
+            receiver: targetMethod,
+            contract: undefined,
+          };
+        }
+      }
       const reference = captureAssignment(node);
       const property = reference.property;
       if (checkMethod && property !== undefined) {
@@ -4195,6 +4282,86 @@ function lowerScriptEntry(
     });
     return result;
   }
+  /** A direct call of `f.call(thisArg, ...args)` when the callee is the
+   * realm's %Function.prototype.call% and `f` has a native script entry in the
+   * current context. Avoids the builtin wrapper and argument-slice allocation;
+   * any other callee or target takes the ordinary call with the same evaluated
+   * operands. */
+  function invokeForwardedCall(
+    callMethod: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const target = temporary(receiver, true);
+    const actuals = args.map((argument) => {
+      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return temporary(value(argument), true);
+    });
+    const { entry, accepts } = scriptEntryGuard(target, false, span);
+    const result = uninitializedGeneralTemporary(span);
+    const start = statements.length;
+    const slow = invoke(callMethod, target, args, span, actuals);
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: slow,
+    });
+    const alternate: BlockStatement = {
+      ...at(span),
+      kind: "block",
+      statements: statements.splice(start),
+    };
+    const thisArg = actuals[0] ?? id("undefined", span);
+    const operands: Expression[] = [
+      target,
+      thisArg,
+      id("undefined", span),
+      id("undefined", span),
+    ];
+    for (let index = 1; index < actuals.length; index++) {
+      const actual = actuals[index];
+      if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      operands.push(actual);
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: callMethod,
+          right: member(id("$errors", span), "functionCall", span),
+        },
+        right: accepts,
+      },
+      consequent: {
+        ...at(span),
+        kind: "expression",
+        expression: {
+          ...at(span),
+          kind: "assignment",
+          target: result,
+          value: {
+            ...at(span),
+            kind: "call",
+            scriptCall: true,
+            callee: entry,
+            arguments: operands,
+          },
+        },
+      },
+      alternate,
+    });
+    return result;
+  }
   /** A tail call in a native entry's body. Called with actual operands, a
    * native callee in the caller's context replaces this entry's frame (a
    * proper tail call); any other case takes invokeList's tail call. An
@@ -4512,6 +4679,7 @@ function lowerScriptEntry(
       | "set"
       | "has"
       | "push"
+      | "pop"
       | undefined = undefined;
     let arity = 1;
     if (target.kind === "identifier") {
@@ -4564,11 +4732,19 @@ function lowerScriptEntry(
     } else if (name === "has") shape = "has";
     // push appends every argument; the inline form takes exactly one.
     else if (name === "push" && count === 1) shape = "push";
-    else if (name === "add") {
+    else if (name === "pop" && count === 0) {
+      shape = "pop";
+      arity = 0;
+    } else if (name === "add") {
       field = "setAdd";
       shape = "set";
     }
-    if (shape === undefined || arity === 0 || count < arity) return undefined;
+    if (
+      shape === undefined ||
+      (shape !== "pop" && arity === 0) ||
+      count < arity
+    )
+      return undefined;
     usesIntrinsicCalls = true;
     const evaluated: Expression[] = [];
     for (const arg of args) {
@@ -4641,6 +4817,21 @@ function lowerScriptEntry(
       );
       test = scalarBinary(">=", length, scalarNumber(0, span), span);
       inline = { ...length };
+    } else if (shape === "pop") {
+      // A dense packed pop's value, or the private miss sentinel for the
+      // ordinary call.
+      const miss = member(id("$errors"), "arrayPopMiss", span);
+      const popped = temporary(
+        scalarBranch(
+          is("arrayPop"),
+          runtimeCall("scriptArrayPop", [{ ...base }, id("$errors")], span),
+          miss,
+          span,
+        ),
+        true,
+      );
+      test = scalarBinary("!==", popped, { ...miss }, span);
+      inline = { ...popped };
     } else if (shape === "number") {
       test = numbers(is("number"), 1);
       inline = { ...operand(0) };
@@ -5984,10 +6175,16 @@ function lowerScriptEntry(
     const outerStrict = strict;
     const outerHome = home;
     const outerInFunction = inFunction;
+    const outerTryDepth = tryDepth;
+    const outerWithDepth = withDepth;
+    const outerFunctionHasDirectEval = functionHasDirectEval;
     const outerFieldInitializer = inClassFieldInitializer;
     if (!arrow)
       inClassFieldInitializer = options.classFieldInitializer ?? false;
     if (!arrow) inFunction = true;
+    tryDepth = 0;
+    withDepth = 0;
+    functionHasDirectEval = evalBody || evalParameters;
     const outerNewTarget = newTarget;
     const outerDerivedContext = derivedContext,
       outerConstructor = activeConstructor;
@@ -6376,42 +6573,73 @@ function lowerScriptEntry(
       // arrows, parameters or body) to the receiver-owning function: a
       // second, conservative guard; extra `arguments` uses only keep it.
       !observesArguments(span);
-    if (!arrow)
-      receiver =
-        strict || unobservedReceiver
-          ? id(receiverName, span)
-          : // An ordinary object receiver is its own ToObject; only nullish
-            // and primitive receivers need the sloppy conversion.
-            temporary(
-              scalarBranch(
-                scalarBinary(
-                  "!==",
-                  runtimeCall(
-                    "viewObjectValue",
-                    [
-                      id(receiverName, span),
-                      member(id("$errors"), "objectPrototype", span),
-                    ],
-                    span,
-                  ),
-                  id("undefined", span),
-                  span,
-                ),
-                id(receiverName, span),
-                checkedRuntimeValue(
-                  "sloppyCallReceiver",
-                  [
-                    id(receiverName, span),
-                    member(id("$global"), "thisValue", span),
-                    member(id("$global"), "hooks", span),
-                    id("$errors"),
-                  ],
-                  span,
-                ),
-                span,
-              ),
-              true,
-            );
+    if (!arrow) {
+      if (strict || unobservedReceiver) receiver = id(receiverName, span);
+      else {
+        // An ordinary object receiver is its own ToObject; nullish receivers
+        // bind to the realm's global thisValue; only primitives box via the
+        // cold sloppyCallReceiver helper.
+        const boundReceiver = temporary(id(receiverName, span), true, true);
+        const rawReceiver = id(receiverName, span);
+        const slow = nestedStatements(() => {
+          expression({
+            ...at(span),
+            kind: "assignment",
+            target: boundReceiver,
+            value: checkedRuntimeValue(
+              "sloppyCallReceiver",
+              [
+                { ...rawReceiver },
+                member(id("$global"), "thisValue", span),
+                member(id("$global"), "hooks", span),
+                id("$errors"),
+              ],
+              span,
+            ),
+          });
+        });
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: scalarBinary(
+            "===",
+            runtimeCall(
+              "viewObjectValue",
+              [
+                { ...rawReceiver },
+                member(id("$errors"), "objectPrototype", span),
+              ],
+              span,
+            ),
+            id("undefined", span),
+            span,
+          ),
+          consequent: {
+            ...at(span),
+            kind: "if",
+            test: scalarBinary(
+              "||",
+              nullOperand({ ...rawReceiver }, span),
+              undefinedOperand({ ...rawReceiver }, span),
+              span,
+            ),
+            consequent: {
+              ...at(span),
+              kind: "expression",
+              expression: {
+                ...at(span),
+                kind: "assignment",
+                target: boundReceiver,
+                value: member(id("$global"), "thisValue", span),
+              },
+            },
+            alternate: block(slow, span),
+          },
+          alternate: undefined,
+        });
+        receiver = boundReceiver;
+      }
+    }
 
     const parameterEval =
       !strict &&
@@ -7084,6 +7312,9 @@ function lowerScriptEntry(
     inheritedCatches = outerInheritedCatches;
     home = outerHome;
     inFunction = outerInFunction;
+    tryDepth = outerTryDepth;
+    withDepth = outerWithDepth;
+    functionHasDirectEval = outerFunctionHasDirectEval;
     inClassFieldInitializer = outerFieldInitializer;
     derivedContext = outerDerivedContext;
     activeConstructor = outerConstructor;
@@ -8824,6 +9055,22 @@ function lowerScriptEntry(
             forwarding,
             node,
           );
+        if (
+          nativeScriptCalls &&
+          !compactResults &&
+          !isTailCall(node) &&
+          target.kind === "member" &&
+          !target.private &&
+          !target.optional &&
+          target.property === "call" &&
+          !node.arguments.some((argument) => argument?.kind === "spread")
+        )
+          return invokeForwardedCall(
+            callee,
+            evaluated.receiver,
+            node.arguments,
+            node,
+          );
         if (isDirectEvalCandidate(node))
           return invokeEvalCandidate(
             callee,
@@ -10080,7 +10327,9 @@ function lowerScriptEntry(
         true,
       );
       resetCompletion(node);
+      withDepth++;
       statement(node.body);
+      withDepth--;
       scope = outerScope;
       return;
     }
@@ -10359,6 +10608,81 @@ function lowerScriptEntry(
       // pointer is updated before the increment, including after continue.
       const fixed = iterationContext(initializedSlots, node);
       resetCompletion(node);
+      const specialized =
+        node.kind === "for" &&
+        !suppressingNumericLoopSpec &&
+        !compactResults &&
+        functionDepth > 0 &&
+        tryDepth === 0 &&
+        withDepth === 0 &&
+        !functionHasDirectEval &&
+        labels.length === 0 &&
+        fixed === undefined &&
+        iterationNames.length === 0 &&
+        resources === undefined
+          ? specializeNumericForLoop(node, {
+              freshName: (prefix) => prefix + serial++,
+              resolveLocalSlot: (span, forWrite) => {
+                const binding = localBindingReferences.get(span.start);
+                if (binding === undefined || slotInitialization.has(binding))
+                  return undefined;
+                const boundEntry = boundBindings[binding];
+                if (boundEntry === undefined) return undefined;
+                if (
+                  bindingContracts.has(boundEntry.node.start) ||
+                  bindingRecordContracts.has(boundEntry.node.start)
+                )
+                  return undefined;
+                const slot = localSlot(span, forWrite);
+                if (slot === undefined) return undefined;
+                return { binding, slot };
+              },
+              resolveVarDeclarationSlot: (span) => {
+                const binding = variableDeclarationBindings.get(span.start);
+                if (binding === undefined || slotInitialization.has(binding))
+                  return undefined;
+                const boundEntry = boundBindings[binding];
+                if (boundEntry === undefined) return undefined;
+                if (
+                  bindingContracts.has(boundEntry.node.start) ||
+                  bindingRecordContracts.has(boundEntry.node.start)
+                )
+                  return undefined;
+                const slot = localSlots.get(binding);
+                if (slot === undefined) return undefined;
+                return { binding, slot };
+              },
+              resolveCapturedReadOnlyBinding: (span) =>
+                capturedFunctionReadBindings.get(span.start),
+              evaluateGeneralIdentifier: (identNode) =>
+                temporary(value(identNode), true),
+              viewObjectValueCall: (target, span) =>
+                runtimeCall(
+                  "viewObjectValue",
+                  [target, member(id("$errors"), "objectPrototype", span)],
+                  span,
+                ),
+              lowerGeneralLoopTail: (innerFor, outerUpdate) => {
+                const prev = suppressingNumericLoopSpec;
+                suppressingNumericLoopSpec = true;
+                const tailStart = statements.length;
+                statement({ ...innerFor, initializer: undefined });
+                if (outerUpdate !== undefined) expression(value(outerUpdate));
+                suppressingNumericLoopSpec = prev;
+                return statements.splice(tailStart);
+              },
+              markElementAccess: () => {
+                usesElementAccess = true;
+              },
+            })
+          : undefined;
+      if (specialized !== undefined) {
+        for (const stmt of specialized.statements) statements.push(stmt);
+      }
+      const prevSuppressGeneralBody = suppressingNumericLoopSpec;
+      if (specialized !== undefined && specialized.nested)
+        suppressingNumericLoopSpec = true;
+      const generalLoopStart = statements.length;
       const first = temporary(
         { ...at(node), kind: "boolean", value: true },
         false,
@@ -10460,6 +10784,7 @@ function lowerScriptEntry(
         if (test !== undefined) loopTest(test);
       }
       statement(node.body);
+      suppressingNumericLoopSpec = prevSuppressGeneralBody;
       const body: BlockStatement = {
         ...at(node),
         kind: "block",
@@ -10476,6 +10801,25 @@ function lowerScriptEntry(
           labels,
         ),
       );
+      if (specialized !== undefined) {
+        const generalLoopStatements = statements.splice(generalLoopStart);
+        statements.push({
+          ...at(node),
+          kind: "if",
+          test: {
+            ...at(node),
+            kind: "unary",
+            operator: "!",
+            operand: specialized.doneFlag,
+          },
+          consequent: {
+            ...at(node),
+            kind: "block",
+            statements: generalLoopStatements,
+          },
+          alternate: undefined,
+        });
+      }
       finishResources(resources, node);
       releaseLocalSlots(initializedSlots);
       scope = outerScope;
@@ -10683,7 +11027,9 @@ function lowerScriptEntry(
     }
     if (node.kind === "try") {
       resetCompletion(node);
+      tryDepth++;
       const body = branchStatement(node.body);
+      tryDepth--;
       let handler: CatchClause | undefined;
       if (node.handler !== undefined) {
         const clause = node.handler;
