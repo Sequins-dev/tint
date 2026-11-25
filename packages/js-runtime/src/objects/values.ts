@@ -137,7 +137,7 @@ export function createSourceInstance(
     viewObjectValue(prototype, realm.objectPrototype) ?? realm.objectPrototype;
   if (!proto.internalUsedAsPrototype)
     markPrototype<ScriptPropertyKey, unknown>(proto);
-  return {
+  const instance: OrdinaryObject<ScriptPropertyKey, unknown> = {
     internalShape: proto.internalChildShape,
     prototype: proto,
     extensible: true,
@@ -165,6 +165,7 @@ export function createSourceInstance(
     internalValue6: undefined,
     internalValue7: undefined,
   };
+  return instance;
 }
 
 /** Native-only checked view, explicitly bound by the embedding build request.
