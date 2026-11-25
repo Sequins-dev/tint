@@ -3620,6 +3620,7 @@ export function emitModule(
         label === done ||
         label === fnLabel + ":debug-body" ||
         label.startsWith(local + "safepoint:") ||
+        label.endsWith(":return-pc") ||
         label.startsWith(local + "cfi:"),
     );
   }
