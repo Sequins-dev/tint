@@ -14,6 +14,7 @@ import {
   utf8Text,
   utf8WholeText,
   writeUTF8,
+  writeUTF8Bytes,
 } from "@tint/foundation/text/utf8";
 
 /** The scalar at index (a pair inside [index, limit) is one; a lone
@@ -161,6 +162,19 @@ function checkWrite(text: string, begin: number, limit: number): number {
         i >= 3 && i < 3 + (written ?? 0) ? (whole[i - 3] ?? -1) : 0xcc;
       if (bytes[i] !== expected) return 2;
     }
+    const bytesWritten = new Uint8Array(capacity + 5).fill(0xcc);
+    if (
+      writeUTF8Bytes(
+        text,
+        begin,
+        limit,
+        bytesWritten.subarray(0, capacity + 3),
+        3,
+      ) !== (written ?? 0)
+    )
+      return 3;
+    for (let i = 0; i < bytes.length; i++)
+      if (bytesWritten[i] !== bytes[i]) return 4;
   }
   return 0;
 }

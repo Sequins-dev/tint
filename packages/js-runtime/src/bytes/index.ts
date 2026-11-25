@@ -101,7 +101,7 @@ export function adoptByteStorage(
   maxByteLength: number,
   resizable: boolean,
   allocationLimit: number,
-  allocator: ByteAllocator,
+  allocator: ByteAllocator | undefined,
 ): StorageResult {
   const error = validAllocation(
     data.length,

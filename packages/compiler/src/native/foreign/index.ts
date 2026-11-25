@@ -281,7 +281,10 @@ export function prepareForeignLibrary(
   const expanded = expandForeignLibrary(
     parsed.value,
     target,
-    image.optional && target.name !== "darwin-arm64" ? image.name : undefined,
+    image.runtimeResolved === true ||
+      (image.optional && target.name !== "darwin-arm64")
+      ? image.name
+      : undefined,
   );
   if (!expanded.ok) return { ok: false, error: id + ": " + expanded.error };
   const views = foreignViews(parsed.value, target);

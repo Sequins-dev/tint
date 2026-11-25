@@ -49,6 +49,15 @@ runs:
         sudo /usr/sbin/DevToolsSecurity -enable
         lldb --version
 
+    - name: Ensure macOS OpenSSL 3 is installed
+      if: runner.os == 'macOS' && inputs.tools == 'true'
+      shell: bash
+      run: |
+        if ! brew list --versions openssl@3; then
+          brew install openssl@3
+        fi
+        test -f "$(brew --prefix openssl@3)/lib/libcrypto.3.dylib"
+
     - name: Install Linux host tools
       if: runner.os == 'Linux' && (inputs.debugger == 'true' || inputs.tools == 'true')
       shell: bash

@@ -1,0 +1,2662 @@
+{
+  "node": "26.13.1",
+  "images": [
+    {
+      "label": "textMain",
+      "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-encoding-text-main-QJqtid/encoding-text-main",
+      "sha256": "e36ab286399537975a033f023405b385d6107e8e6f36407c3b866c3f60db2b51"
+    },
+    {
+      "label": "textBranch",
+      "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-encoding-text-branch-LUlCoF/encoding-text-branch",
+      "sha256": "fc9b318e09adf1dc38b5227192ae1e70c037809acf7099629b1da9e67ac25495"
+    },
+    {
+      "label": "bufferBranch",
+      "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-encoding-buffer-branch-B6cGdG/encoding-buffer-branch",
+      "sha256": "0f65ded89c487946d2a00eede3cf60c5f492f283a49841427ce3eb84ffbd38c6"
+    }
+  ],
+  "rounds": [
+    {
+      "order": [
+        "textMain",
+        "textBranch",
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer"
+      ],
+      "load": [
+        10.951171875,
+        8.2890625,
+        8.0419921875
+      ],
+      "results": {
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 226.27500295639038,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 166.42500162124634,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 775.4666447639465,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 575.3770470619202,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 12034.166812896729,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 6825.275039672852,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 67.45834350585938,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 74.80205297470093,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 156.59375190734863,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 229.812490940094,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 2018.3000087738037,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1677.9415607452393,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1584.2437505722046,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1558.2333445549011,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1626.9646048545837,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1689.7812604904175,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4545.4833984375,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 2999.0500450134277,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 448.36459159851074,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 332.8937530517578,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 289.34580087661743,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 330.13960123062134,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 389.4917964935303,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 817.8084373474121,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 174.35624599456787,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 136.466646194458,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 109.28335189819336,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 163.54999542236328,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 237.23320960998535,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 661.4083766937256,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "textBranch",
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer",
+        "textMain"
+      ],
+      "load": [
+        12.06396484375,
+        8.69580078125,
+        8.19140625
+      ],
+      "results": {
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 38.34794759750366,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 44.374990463256836,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 105.06250858306885,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 117.57500171661377,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1626.5583992004395,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1409.3915939331055,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1387.6770496368408,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1416.4978981018066,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1474.8229026794434,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1405.9916496276855,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 3742.933416366577,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 2982.9418182373047,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 285.06669998168945,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 312.33540773391724,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 325.9374976158142,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 267.26040840148926,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 257.791805267334,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 694.0999984741211,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 141.0228967666626,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 126.97290182113647,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 100.75420141220093,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 138.64375352859497,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 213.7833595275879,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 659.7249984741211,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 246.80835008621216,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 183.4499955177307,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 876.8312454223633,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 646.4312434196472,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 14597.07498550415,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 7635.016775131226,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer",
+        "textMain",
+        "textBranch"
+      ],
+      "load": [
+        11.47802734375,
+        8.72705078125,
+        8.21044921875
+      ],
+      "results": {
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1489.0541553497314,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1505.3541541099548,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1584.2041969299316,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1673.072898387909,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 3822.3668098449707,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3094.7999954223633,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 406.1979413032532,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 543.5728907585144,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 349.05625581741333,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 327.7187466621399,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 352.0918369293213,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 829.224967956543,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 146.29169702529907,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 174.85209703445435,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 106.61458969116211,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 154.22290563583374,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 297.8583812713623,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 840.3083801269531,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 205.79580068588257,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 143.85415315628052,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 709.5145463943481,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 505.6604504585266,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 11702.566623687744,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 6047.125005722046,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 42.235445976257324,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 46.28329277038574,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 100.87704658508301,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 162.4354600906372,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1750.3000259399414,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1360.0500106811523,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeText",
+        "nodeBuffer",
+        "textMain",
+        "textBranch",
+        "bufferBranch"
+      ],
+      "load": [
+        10.64111328125,
+        8.74853515625,
+        8.232421875
+      ],
+      "results": {
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 371.68750762939453,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 316.949999332428,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 348.675000667572,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 286.1917018890381,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 324.7084140777588,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 743.9584255218506,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 127.39584445953369,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 122.3583459854126,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 100.82709789276123,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 132.9770565032959,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 206.71682357788086,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 661.8666172027588,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 197.76455163955688,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 145.33960819244385,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 725.347900390625,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 478.2541513442993,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 10868.674993515015,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 6142.799997329712,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 37.05415725708008,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 34.937500953674316,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 83.89999866485596,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 134.2042088508606,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1371.8334197998047,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1092.1500205993652,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1608.395791053772,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1484.597909450531,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1816.5395498275757,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1827.762496471405,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4491.383218765259,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3586.891794204712,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeBuffer",
+        "textMain",
+        "textBranch",
+        "bufferBranch",
+        "nodeText"
+      ],
+      "load": [
+        9.7783203125,
+        8.66845703125,
+        8.21484375
+      ],
+      "results": {
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 392.95414686203003,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 160.76040267944336,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 118.14374923706055,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 175.04165172576904,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 255.07502555847168,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 779.416561126709,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 253.41665744781494,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 188.9062523841858,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 911.4083051681519,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 661.8958473205566,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 14151.56660079956,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 7962.650012969971,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 49.695801734924316,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 53.41249704360962,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 118.41250658035278,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 141.39585494995117,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1851.6499996185303,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1624.8499870300293,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1563.6187434196472,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1538.6166453361511,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1462.5083565711975,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1557.4291467666626,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4429.79998588562,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3308.2000255584717,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 320.72705030441284,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 309.65625047683716,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 311.05209589004517,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 338.98539543151855,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 352.7167797088623,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 833.2499980926514,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "textMain",
+        "textBranch",
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer"
+      ],
+      "load": [
+        10.529296875,
+        8.87451171875,
+        8.29345703125
+      ],
+      "results": {
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 194.9291467666626,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 140.30834436416626,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 701.5895962715149,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 473.5187530517578,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 10867.650032043457,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 6225.449991226196,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 43.764543533325195,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 50.53955316543579,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 110.0395917892456,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 129.3375015258789,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1392.4499988555908,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1441.4082050323486,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1813.7478947639465,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1919.2541599273682,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 2041.3957953453064,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1924.9646067619324,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4937.258243560791,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3491.7582035064697,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 487.4020576477051,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 376.2145519256592,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 372.2041964530945,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 412.19375133514404,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 482.94997215270996,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 957.7084064483643,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 175.06250143051147,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 171.037495136261,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 128.4479022026062,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 185.51044464111328,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 246.2167739868164,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 801.3334274291992,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "textBranch",
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer",
+        "textMain"
+      ],
+      "load": [
+        10.2265625,
+        8.8623046875,
+        8.29541015625
+      ],
+      "results": {
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 65.12290239334106,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 61.73750162124634,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 141.16874933242798,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 169.26250457763672,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 2374.3250370025635,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1919.225025177002,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1842.7250027656555,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1945.7937479019165,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1995.410394668579,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1909.668743610382,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4931.850004196167,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3694.741630554199,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 341.6728973388672,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 317.84374713897705,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 323.20624589920044,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 366.6229009628296,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 395.7334041595459,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 964.9417877197266,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 163.00625801086426,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 147.10829257965088,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 111.21664047241211,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 163.31664323806763,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 289.4333839416504,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 791.0834312438965,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 255.9499979019165,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 185.99789142608643,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 974.5562553405762,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 682.1146011352539,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 15016.475009918213,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 8666.341781616211,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer",
+        "textMain",
+        "textBranch"
+      ],
+      "load": [
+        10.0478515625,
+        8.84765625,
+        8.29345703125
+      ],
+      "results": {
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1944.2020535469055,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1906.5312504768372,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1971.191656589508,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 2016.0708546638489,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4770.483207702637,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3607.416582107544,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 312.3604416847229,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 324.6271014213562,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 328.25000286102295,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 357.9957962036133,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 459.05842781066895,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 887.2166156768799,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 184.4395399093628,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 158.1624984741211,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 106.37705326080322,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 165.81460237503052,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 244.37499046325684,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 870.4750061035156,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 212.69584894180298,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 153.30204963684082,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 798.0000019073486,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 539.8749947547913,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 12501.49998664856,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 7047.483396530151,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 52.31040716171265,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 69.36665773391724,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 152.6458501815796,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 155.2999973297119,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 2127.6999950408936,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1843.3000087738037,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeText",
+        "nodeBuffer",
+        "textMain",
+        "textBranch",
+        "bufferBranch"
+      ],
+      "load": [
+        10.38916015625,
+        8.96630859375,
+        8.341796875
+      ],
+      "results": {
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 329.3458580970764,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 343.90209913253784,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 359.6021056175232,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 395.6833481788635,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 461.7584228515625,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 996.341609954834,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 191.14375114440918,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 150.4291534423828,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 106.06039762496948,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 188.79165649414062,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 296.4165687561035,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 845.1916217803955,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 242.20420122146606,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 189.37499523162842,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 926.4062523841858,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 629.4458508491516,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 14237.241554260254,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 8100.658416748047,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 46.48540019989014,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 51.81459188461304,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 117.66045093536377,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 142.9208517074585,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1933.466625213623,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1531.1168193817139,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1875.6291508674622,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1898.018753528595,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 2096.095848083496,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1785.9979510307312,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4096.250009536743,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3077.1917819976807,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeBuffer",
+        "textMain",
+        "textBranch",
+        "bufferBranch",
+        "nodeText"
+      ],
+      "load": [
+        12.06298828125,
+        9.38134765625,
+        8.49853515625
+      ],
+      "results": {
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 360.47085523605347,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 300.3958463668823,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 198.4604001045227,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 203.49169969558716,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 294.5417881011963,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 808.433198928833,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 171.63540124893188,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 124.86454248428345,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 588.2999897003174,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 450.3312587738037,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 9449.475002288818,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 5587.800025939941,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 34.36039686203003,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 43.43539476394653,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 98.92915487289429,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 149.05624389648438,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1508.7833881378174,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1199.7915744781494,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1365.6749963760376,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1504.9499988555908,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1777.9062509536743,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1614.231252670288,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4210.683393478394,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3292.6334381103516,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 293.5667037963867,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 303.99580001831055,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 287.3979091644287,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 308.0562472343445,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 344.27499771118164,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 784.4749927520752,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "textMain",
+        "textBranch",
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer"
+      ],
+      "load": [
+        11.13037109375,
+        9.26953125,
+        8.46923828125
+      ],
+      "results": {
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 213.9541506767273,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 161.67709827423096,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 783.5479021072388,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 529.6771049499512,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 11844.96660232544,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 6552.624988555908,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 45.57085037231445,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 45.93539237976074,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 141.38954877853394,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 142.08544492721558,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1604.991626739502,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1367.1165943145752,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1654.1333556175232,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1613.072955608368,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1741.347897052765,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1783.3166480064392,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4182.008409500122,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 2952.516794204712,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 349.30830001831055,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 323.5978960990906,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 415.68124294281006,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 695.7958459854126,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 408.7416172027588,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1589.2000198364258,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 162.94164657592773,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 162.87084817886353,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 126.0562539100647,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 174.71874952316284,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 295.15819549560547,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 831.4084053039551,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "textBranch",
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer",
+        "textMain"
+      ],
+      "load": [
+        10.95947265625,
+        9.2646484375,
+        8.47216796875
+      ],
+      "results": {
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 43.641650676727295,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 62.77289390563965,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 129.12501096725464,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 133.70835781097412,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1717.0333862304688,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1854.1582107543945,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1517.0875072479248,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1693.3292031288147,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1876.8583536148071,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1742.2229528427124,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4651.841592788696,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3600.6499767303467,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 297.9583501815796,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 327.76249647140503,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 329.6604514122009,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 326.854145526886,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 382.8667640686035,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 785.5999946594238,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 163.61039876937866,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 130.82499504089355,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 87.23335266113281,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 137.8270983695984,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 244.0499782562256,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 774.0250110626221,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 258.62499475479126,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 190.02084732055664,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 928.4583568572998,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 604.9104452133179,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 14041.324996948242,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 8021.116638183594,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "bufferBranch",
+        "nodeText",
+        "nodeBuffer",
+        "textMain",
+        "textBranch"
+      ],
+      "load": [
+        11.1796875,
+        9.3701171875,
+        8.5185546875
+      ],
+      "results": {
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1765.443754196167,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1846.6645956039429,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1931.1728954315186,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1845.214605331421,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4787.60838508606,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3734.774971008301,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 334.42920446395874,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 395.02915143966675,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 304.0979027748108,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 360.83539724349976,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 395.89996337890625,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 944.9999809265137,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 176.14585161209106,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 156.90419673919678,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 114.52294588088989,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 177.0708441734314,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 246.7750072479248,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 737.283182144165,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 236.53124570846558,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 174.78954792022705,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 897.7229475975037,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 596.8166470527649,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 13478.583431243896,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 7636.824989318848,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 49.79584217071533,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 60.187506675720215,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 135.22919416427612,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 148.7020969390869,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1457.2165966033936,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1795.3417778015137,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeText",
+        "nodeBuffer",
+        "textMain",
+        "textBranch",
+        "bufferBranch"
+      ],
+      "load": [
+        10.98486328125,
+        9.3896484375,
+        8.53515625
+      ],
+      "results": {
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 329.57295179367065,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 360.337495803833,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 327.0750045776367,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 357.20415115356445,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 423.80003929138184,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 891.0250186920166,
+            "checksum": 7006250
+          }
+        ],
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 177.22079753875732,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 153.53955030441284,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 100.49375295639038,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 135.4583501815796,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 277.95000076293945,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 776.0000228881836,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 233.2687497138977,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 169.7603940963745,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 847.5167036056519,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 581.6812515258789,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 13036.808204650879,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 7482.433366775513,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 51.191699504852295,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 47.3583459854126,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 126.14375352859497,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 157.8853964805603,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 2145.5667972564697,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1779.166603088379,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 1685.0708603858948,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 1774.6895551681519,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 1850.0062584877014,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 1875.5583047866821,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 4892.624998092651,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 3330.1167964935303,
+            "checksum": 7006250
+          }
+        ]
+      }
+    },
+    {
+      "order": [
+        "nodeBuffer",
+        "textMain",
+        "textBranch",
+        "bufferBranch",
+        "nodeText"
+      ],
+      "load": [
+        10.82568359375,
+        9.3828125,
+        8.53759765625
+      ],
+      "results": {
+        "nodeBuffer": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 169.06664371490479,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 158.66249799728394,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 115.1604413986206,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 173.14999103546143,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 235.45842170715332,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 813.2415771484375,
+            "checksum": 7006250
+          }
+        ],
+        "textMain": [
+          {
+            "name": "text-ascii-16",
+            "ns": 243.09580326080322,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 173.03540706634521,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 880.7250022888184,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 588.1583452224731,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 13737.891817092896,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 7736.983394622803,
+            "checksum": 7006250
+          }
+        ],
+        "textBranch": [
+          {
+            "name": "text-ascii-16",
+            "ns": 63.643741607666016,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 55.17915487289429,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 141.4562463760376,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 158.45625400543213,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 1806.5750122070312,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1733.1916332244873,
+            "checksum": 7006250
+          }
+        ],
+        "bufferBranch": [
+          {
+            "name": "buffer-ascii-16",
+            "ns": 2100.433301925659,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-unicode-16",
+            "ns": 2060.629153251648,
+            "checksum": 2825000
+          },
+          {
+            "name": "buffer-ascii-64",
+            "ns": 2356.3541531562805,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-unicode-64",
+            "ns": 2178.210401535034,
+            "checksum": 4025000
+          },
+          {
+            "name": "buffer-ascii-1024",
+            "ns": 7022.9918003082275,
+            "checksum": 7006250
+          },
+          {
+            "name": "buffer-unicode-1024",
+            "ns": 4290.299987792969,
+            "checksum": 7006250
+          }
+        ],
+        "nodeText": [
+          {
+            "name": "text-ascii-16",
+            "ns": 431.90834522247314,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-unicode-16",
+            "ns": 403.000009059906,
+            "checksum": 2825000
+          },
+          {
+            "name": "text-ascii-64",
+            "ns": 497.3625063896179,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-unicode-64",
+            "ns": 505.7083487510681,
+            "checksum": 4025000
+          },
+          {
+            "name": "text-ascii-1024",
+            "ns": 529.4834136962891,
+            "checksum": 7006250
+          },
+          {
+            "name": "text-unicode-1024",
+            "ns": 1093.866777420044,
+            "checksum": 7006250
+          }
+        ]
+      }
+    }
+  ]
+}

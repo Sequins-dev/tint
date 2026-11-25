@@ -96,6 +96,7 @@ export {
   findSymbol,
   closeLibrary,
   optionalSymbol,
+  registerOptionalLibrary,
   type ForeignFunction,
   type DynamicCallback,
   type LibraryHandle,

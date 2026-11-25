@@ -602,9 +602,10 @@ export function callRegisterObjectValue(
   if (
     entry !== undefined &&
     invoke !== undefined &&
-    active !== undefined &&
-    active.realm === entry.context.realm &&
-    active.scriptOrModule === entry.context.scriptOrModule
+    (object.internalExecutionContext === undefined ||
+      (active !== undefined &&
+        active.realm === entry.context.realm &&
+        active.scriptOrModule === entry.context.scriptOrModule))
   )
     return invoke(value, receiver, undefined, count, first, second);
   const args: readonly unknown[] =
