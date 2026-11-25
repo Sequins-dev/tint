@@ -1,13 +1,48 @@
 import type { NativeHostBinding } from "@tint/compiler/native";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
+const strings = "packages/native-runtime/src/intrinsics/shared-strings.ts";
 const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "mapMemory", operation: "memory-map" },
   { module: memory, name: "unmapMemory", operation: "memory-unmap" },
   { module: memory, name: "parkNativeWord", operation: "word-park" },
   { module: memory, name: "wakeNativeWord", operation: "word-wake" },
   { module: memory, name: "startNativeThread", operation: "thread-start" },
+  // The identity page recording the isolate's shared block registry
+  // (shared-buffers.ts).
+  {
+    module: memory,
+    name: "currentContextDomain",
+    operation: "context-domain",
+  },
+  // Message packets (packet-memory.ts).
+  {
+    module: packet,
+    name: "readMemoryFloat64",
+    operation: "memory-read-float64",
+  },
+  {
+    module: packet,
+    name: "writeMemoryFloat64",
+    operation: "memory-write-float64",
+  },
+  {
+    module: packet,
+    name: "readMemoryString",
+    operation: "memory-read-string",
+  },
+  {
+    module: packet,
+    name: "writeMemoryString",
+    operation: "memory-write-string",
+  },
+  // Shared string bodies (shared-strings.ts).
+  { module: strings, name: "stringAddress", operation: "string-address" },
+  { module: strings, name: "stringAt", operation: "string-at" },
+  { module: strings, name: "copyString", operation: "string-copy" },
+  { module: memory, name: "isFlatString", operation: "string-flat" },
   {
     module: memory,
     name: "hostedThreadEntry",
@@ -41,15 +76,61 @@ const bindings: readonly NativeHostBinding[] = [
   },
 ];
 
+const sharedMemoryRuntime = {
+  module: shared,
+  namespace: "worker-threads-shared-memory",
+  retainedExports: bindings
+    .filter((binding) => binding.module === shared)
+    .map((binding) => binding.name),
+};
+// Typed `new SharedArrayBuffer` (the isolate's shared block service).
+const sharedBufferRuntime = {
+  module: "packages/native-runtime/src/shared-buffers.ts",
+  namespace: "native-shared-buffer",
+};
+// Message packets' raw-window accesses (packet-memory.ts).
+const packetMemoryRuntime = {
+  module: packet,
+  namespace: "native-packet-memory",
+  retainedExports: bindings
+    .filter((binding) => binding.module === packet)
+    .map((binding) => binding.name),
+};
+// Shared string bodies' address, view and copy operations.
+const sharedStringRuntime = {
+  module: strings,
+  namespace: "native-shared-strings",
+  retainedExports: bindings
+    .filter((binding) => binding.module === strings)
+    .map((binding) => binding.name),
+};
 export const workerFixtureRuntimes = [
+  sharedMemoryRuntime,
+  sharedBufferRuntime,
+  packetMemoryRuntime,
+  sharedStringRuntime,
+];
+
+/** A program without Workers whose typed code creates SharedArrayBuffers:
+ * the shared buffer runtime and the memory and atomic leaves its isolate's
+ * shared block service binds. */
+export const sharedBufferFixtureRuntimes = [
+  sharedMemoryRuntime,
+  sharedBufferRuntime,
   {
-    module: shared,
-    namespace: "worker-threads-shared-memory",
-    retainedExports: bindings
-      .filter((binding) => binding.module === shared)
-      .map((binding) => binding.name),
+    module: memory,
+    namespace: "native-shared-buffer-memory",
+    retainedExports: ["mapMemory", "unmapMemory", "currentContextDomain"],
   },
 ];
+export const sharedBufferHostBindings: readonly NativeHostBinding[] =
+  bindings.filter(
+    (binding) =>
+      binding.module === shared ||
+      binding.operation === "memory-map" ||
+      binding.operation === "memory-unmap" ||
+      binding.operation === "context-domain",
+  );
 
 export function workerFixtureOptions(
   workerModules: readonly string[],

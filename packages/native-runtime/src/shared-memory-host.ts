@@ -171,6 +171,51 @@ export function readNumber(
     throw "NATIVE_SHARED_METADATA_READ";
   return numberFromScratch(scratch);
 }
+/** Unlocked re-reads of a contended registry lock word before parking. */
+const lockSpins = 200;
+/** The word parking the registry locks use (NativeWaiterParkingHost). */
+export interface NativeWordParking {
+  park(address: number, expected: number, timeoutNanoseconds: number): number;
+  wake(address: number, all?: boolean): number;
+}
+/** A registry lock word: 0 free, 1 held, 2 held with possible sleepers.
+ * Uncontended acquire and release are one compare-exchange each; only a
+ * release after a sleeper marked the word contended wakes the address. The
+ * bounded park only guards against a lost wake. Critical sections are a few
+ * shared accesses, so a contender first re-reads the word for a while
+ * before it parks: a sleep and wake cost far more than the hold. */
+export function lockRegistryWord(
+  host: NativeSharedMemoryHost,
+  parking: NativeWordParking,
+  registry: NativeSharedBlockRegistry,
+  offset: number,
+  scratch: Uint32Array,
+): void {
+  let state = compareNumber(host, registry, offset, 0, 1, scratch);
+  for (let spin = 0; state !== 0 && spin < lockSpins; spin++) {
+    if (readNumber(host, registry, offset, scratch, 0) === 0)
+      state = compareNumber(host, registry, offset, 0, 1, scratch);
+  }
+  while (state !== 0) {
+    if (
+      state === 2 ||
+      compareNumber(host, registry, offset, 1, 2, scratch) !== 0
+    )
+      parking.park(registry.base + offset, 2, 1000000);
+    state = compareNumber(host, registry, offset, 0, 2, scratch);
+  }
+}
+export function unlockRegistryWord(
+  host: NativeSharedMemoryHost,
+  parking: NativeWordParking,
+  registry: NativeSharedBlockRegistry,
+  offset: number,
+  scratch: Uint32Array,
+): void {
+  if (compareNumber(host, registry, offset, 1, 0, scratch) === 1) return;
+  writeNumber(host, registry, offset, 0);
+  parking.wake(registry.base + offset);
+}
 export function writeNumber(
   host: NativeSharedMemoryHost,
   registry: NativeSharedBlockRegistry,

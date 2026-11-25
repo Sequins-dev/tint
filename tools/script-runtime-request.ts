@@ -120,6 +120,8 @@ export const scriptRuntimeGlobals = [
   "Uint32Array",
   "Float64Array",
   "ArrayBuffer",
+  "SharedArrayBuffer",
+  "Atomics",
   "DataView",
   "TextEncoder",
   "TextDecoder",
@@ -207,6 +209,10 @@ export function createScriptRuntimeRequest(
       "createArray2",
       "createArray3",
       "createArray4",
+      "scriptAtomicsAddFast",
+      "scriptAtomicsLoadFast",
+      "scriptAtomicsStoreFast",
+      "scriptAtomicsInt32View",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

@@ -1,5 +1,6 @@
 import type {
   ActivationField,
+  ArrayAtomicOperation,
   Block,
   Environment,
   EnvironmentCell,
@@ -238,6 +239,17 @@ function recordOperation(code: number): "read" | "write" {
   if (code === 2) return "write";
   throw "packed IR record operation";
 }
+const atomicOperations: readonly ArrayAtomicOperation[] = [
+  "load",
+  "store",
+  "add",
+  "sub",
+  "and",
+  "or",
+  "xor",
+  "exchange",
+  "compare-exchange",
+];
 function writeList(writer: ByteWriter, values: readonly number[]): void {
   writeUnsigned(writer, values.length);
   for (const value of values) {
@@ -886,6 +898,29 @@ export function encodeInstruction(
       writeSigned(writer, op.begin);
       writeSigned(writer, op.length);
       return true;
+    case "array-view":
+      writePrefix(writer, 103, op, 0);
+      writeSigned(writer, op.id);
+      writeByte(writer, scalarCode(op.type));
+      writeSigned(writer, op.buffer);
+      writeSigned(writer, op.byteOffset);
+      writeSigned(writer, op.length);
+      return true;
+    case "array-buffer-byte-length":
+      writePrefix(writer, 104, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.buffer);
+      return true;
+    case "array-atomic": {
+      const id = op.id;
+      writePrefix(writer, 105, op, bit(id !== undefined, 2));
+      writeByte(writer, atomicOperations.indexOf(op.operation));
+      if (id !== undefined) writeSigned(writer, id);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.index);
+      writeList(writer, op.operands);
+      return true;
+    }
     case "weak-slot-new":
       writePrefix(writer, 48, op, 0);
       writeSigned(writer, op.id);
@@ -1425,6 +1460,44 @@ export function decodeInstruction(
         begin = readSigned(reader),
         length = readSigned(reader);
       return { kind: "array-subarray", id, array, begin, length, ...span };
+    }
+    case 103: {
+      const id = readSigned(reader),
+        type = arrayType(readByte(reader)),
+        buffer = readSigned(reader),
+        byteOffset = readSigned(reader),
+        length = readSigned(reader);
+      return {
+        kind: "array-view",
+        id,
+        type,
+        buffer,
+        byteOffset,
+        length,
+        ...span,
+      };
+    }
+    case 104: {
+      const id = readSigned(reader),
+        buffer = readSigned(reader);
+      return { kind: "array-buffer-byte-length", id, buffer, ...span };
+    }
+    case 105: {
+      const operation = atomicOperations[readByte(reader)];
+      if (operation === undefined) throw "packed IR atomic operation";
+      const id = flagged(flags, 2) ? readSigned(reader) : undefined,
+        array = readSigned(reader),
+        index = readSigned(reader),
+        operands = readList(reader);
+      return {
+        kind: "array-atomic",
+        operation,
+        id,
+        array,
+        index,
+        operands,
+        ...span,
+      };
     }
     case 48: {
       const id = readSigned(reader),

@@ -235,16 +235,20 @@ test("raw reference unsigned CAS validates without truncation and preserves adja
   assert.equal(host.compareExchangeSharedUnsigned(base, 64, 64, 1, 0, 1), -1);
 });
 
-test("native atomic calls allocate independent metadata scratch and retain registry quotas", () => {
+test("native atomic calls keep metadata scratch separate from caller output and retain registry quotas", () => {
   const { host, service } = nativeService();
   const made = service.create(16, 16, false);
   assert.ok(made.ok);
   const atomics = service.atomics;
   assert.ok(atomics);
   const captured = new Set<Uint32Array>();
+  let registryReads = 0;
   const read = host.readSharedWord64.bind(host);
   host.readSharedWord64 = (address, length, offset, order, scratch) => {
-    if (address === service.registry.base) captured.add(scratch);
+    if (address === service.registry.base) {
+      captured.add(scratch);
+      registryReads++;
+    }
     return read(address, length, offset, order, scratch);
   };
   const output = new Uint32Array(2);
@@ -252,19 +256,35 @@ test("native atomic calls allocate independent metadata scratch and retain regis
     atomics.compareExchangeWord64(made.value.handle, 0, 0, 0, 1, 0, output),
     "none",
   );
-  assert.equal(captured.size, 1);
+  // First access resolves and caches the fixed-length descriptor; later calls
+  // reuse it without re-reading the immutable length word.
+  const afterFirst = registryReads;
+  assert.ok(afterFirst > 0);
   assert.deepEqual(
     atomics.compareExchangeUnsigned(made.value.handle, 0, 4, 1, 2),
     { ok: true, value: 1 },
   );
-  assert.equal(captured.size, 2);
+  assert.equal(registryReads, afterFirst);
   assert.equal(
     atomics.compareExchangeWord64(made.value.handle, 0, 2, 0, 2, 0, output),
     "none",
   );
-  assert.equal(captured.size, 3);
+  assert.equal(registryReads, afterFirst);
   assert.ok(!captured.has(output));
-  assert.ok(service.create(0, 0, false).ok);
+  // Growable blocks still read the authoritative length on every operation.
+  const growable = service.create(8, 16, true);
+  assert.ok(growable.ok);
+  assert.equal(
+    atomics.compareExchangeWord64(growable.value.handle, 0, 0, 0, 3, 0, output),
+    "none",
+  );
+  const afterGrowableFirst = registryReads;
+  assert.equal(
+    atomics.compareExchangeWord64(growable.value.handle, 0, 3, 0, 4, 0, output),
+    "none",
+  );
+  assert.ok(registryReads > afterGrowableFirst);
+  assert.ok(!captured.has(output));
   assert.deepEqual(service.create(0, 0, false), {
     ok: false,
     error: "allocation-limit",

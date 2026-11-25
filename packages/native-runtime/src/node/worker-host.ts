@@ -1,6 +1,8 @@
 import {
   installAtomicsIntrinsics,
+  installProgramTypedArrayIntrinsics,
   installSharedArrayBufferIntrinsics,
+  programRealmCore,
   processAtomicWaitEvents,
   type ErrorRealm,
   type OrdinaryObject,
@@ -29,6 +31,12 @@ import {
   type NativeSharedBlockRegistry,
 } from "../shared-memory-host.ts";
 import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
+import { installIsolateSharedBlocks } from "../shared-buffers.ts";
+import { nativePacketMemory } from "../packet-memory.ts";
+import {
+  createNativeSharedStrings,
+  createSharedStringArena,
+} from "../shared-strings.ts";
 import {
   startNativeWorker,
   type NativeWorkerEngineGrant,
@@ -83,7 +91,11 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     const sequence = memory.mapMemory(page);
     if (sequence <= 0)
       throw new Error("cannot allocate worker thread identity sequence");
-    engine = { sequence, shared: service.registry };
+    engine = {
+      sequence,
+      shared: service.registry,
+      strings: createSharedStringArena(memory),
+    };
   } else {
     const descriptor = control.engine;
     const waiters = control.waiters;
@@ -108,6 +120,9 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     engine = descriptor;
     reactor.watchReadable(active.input, (): void => {}).unref();
   }
+  // Typed SharedArrayBuffers use the same blocks (shared-buffers.ts).
+  installIsolateSharedBlocks(service);
+  const blocks = service;
   const sequence: NativeSharedBlockRegistry = {
     base: engine.sequence,
     byteLength: page,
@@ -129,6 +144,14 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     lockFree2: true,
     lockFree8: true,
   });
+  // Messages can carry typed arrays and ArrayBuffers, which need their
+  // prototypes even when no source names their constructors (typed code
+  // tests received arrays against the same intrinsics).
+  const core = programRealmCore();
+  if (core.realm === realm) {
+    core.installed.add("installSharedArrayBufferIntrinsics");
+    installProgramTypedArrayIntrinsics(core);
+  }
   function nextThreadId(): number {
     let previous = readNumber(memory, sequence, 0, scratch);
     for (;;) {
@@ -167,6 +190,9 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     parking,
     threads: host.threads,
     shared: service,
+    sharedBlockAt: (address: number): number => blocks.handleAt(address),
+    packets: nativePacketMemory(),
+    strings: createNativeSharedStrings(memory, engine.strings),
     threadId: host.threadId,
     prepare: (filename, requested): NodeWorkerPlan => {
       const moduleId = host.lookup(filename);
@@ -216,6 +242,13 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
   let timeout: EventLoopHandle | undefined;
   let deadline: number = Infinity;
   function checkpointAtomicWaits(): number {
+    // The common checkpoint: no wait pending and nothing to tear down.
+    if (
+      realm.agent.pendingAtomicWaits.length === 0 &&
+      reference === undefined &&
+      timeout === undefined
+    )
+      return 0;
     const completed = processAtomicWaitEvents(realm.agent, true);
     const pending = realm.agent.pendingAtomicWaits;
     if (pending.length === 0) {

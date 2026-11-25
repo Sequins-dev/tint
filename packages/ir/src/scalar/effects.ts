@@ -37,6 +37,7 @@ export function instructionEffects(op: Instruction): number {
     case "array-buffer":
     case "array-byte-offset":
     case "array-byte-length":
+    case "array-buffer-byte-length":
     case "array-valid":
     case "closure-environment":
     case "record-read":
@@ -75,6 +76,10 @@ export function instructionEffects(op: Instruction): number {
     case "array-write":
     case "array-store":
       return effectWriteHeap;
+    // An atomic access synchronizes with other agents, so even a load must
+    // not be merged with or moved across another heap access.
+    case "array-atomic":
+      return effectReadHeap | effectWriteHeap;
     // A leaf C call cannot allocate, throw, invoke managed code or retain a
     // managed pointer past its return; it may read and write any memory its
     // byte operands reach.
@@ -113,6 +118,7 @@ export function instructionEffects(op: Instruction): number {
     case "array-new":
     case "reference-vector-new":
     case "array-subarray":
+    case "array-view":
     case "string-concat":
     case "string-slice":
     case "string-from-code-units":

@@ -4,7 +4,10 @@ import {
 } from "./managed-contracts.ts";
 import type { CheckedClosures } from "@tint/typescript/checker";
 import type { CollectionElement } from "@tint/ts-native/scalar";
-import { visitRuntimeFunctions } from "@tint/ts-native/runtime";
+import {
+  visitRuntimeFunctions,
+  type RuntimeFunctionKind,
+} from "@tint/ts-native/runtime";
 import type { ModuleEntryOptions } from "@tint/ts-native/closure/lowering";
 import type { ManagedSurfaceContractPlan } from "./managed-contracts.ts";
 import { planManagedSurfaceRuntimes } from "./managed-runtimes.ts";
@@ -14,8 +17,7 @@ import type { SerializedManagedSurfaceDirectory } from "./managed-directory-data
 import { managedSurfaceContract } from "./managed-directory-reader.ts";
 
 export interface ManagedRuntimeKey {
-  readonly kind:
-    "list" | "set" | "map" | "primitive" | "number-text" | "bigint";
+  readonly kind: RuntimeFunctionKind;
   readonly element: string;
   readonly value: string;
 }

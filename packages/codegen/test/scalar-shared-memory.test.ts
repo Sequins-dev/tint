@@ -100,6 +100,11 @@ test("shared integer leaves touch one whole selected width with distinct ordered
         loads[0]!.op,
         order ? "ldar" : width === 1 ? "ldrb" : width === 2 ? "ldrh" : "ldr",
       );
+      // A seq-cst load is fenced on both sides; an unordered one is not.
+      assert.equal(
+        read.accesses.filter((access) => access.op === "dmb").length,
+        order ? 2 : 0,
+      );
       const write = sharedLeafMachine(
         sharedMemoryPrimitive("shared-write-unsigned"),
         [0x1000n, 16n, 0n, BigInt(width), maximum, BigInt(order)],

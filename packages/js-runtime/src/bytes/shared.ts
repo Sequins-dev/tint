@@ -46,6 +46,32 @@ export interface SharedBlockAtomics {
     replacementHi: number,
     scratch: Uint32Array,
   ): SharedStatus;
+  /** One indivisible read-modify-write of an unsigned element: `operand`
+   * is already the element's unsigned encoding. Returns the element's
+   * previous unsigned value. */
+  updateUnsigned(
+    handle: number,
+    offset: number,
+    width: SharedUnsignedWidth,
+    operation: SharedUpdate,
+    operand: number,
+  ): SharedResult<number>;
+}
+export type SharedUpdate = "exchange" | "add" | "sub" | "and" | "or" | "xor";
+/** The unsigned `width`-byte result of `operation` on unsigned encodings. */
+export function sharedUpdateValue(
+  operation: SharedUpdate,
+  previous: number,
+  operand: number,
+  width: SharedUnsignedWidth,
+): number {
+  const modulus = width === 1 ? 256 : width === 2 ? 65536 : 4294967296;
+  if (operation === "exchange") return operand;
+  if (operation === "add") return (previous + operand) % modulus;
+  if (operation === "sub") return (previous - operand + modulus) % modulus;
+  if (operation === "and") return (previous & operand) >>> 0;
+  if (operation === "or") return (previous | operand) >>> 0;
+  return (previous ^ operand) >>> 0;
 }
 
 /** Notification authority for an engine-owned waiter registry. Width selects a
@@ -118,6 +144,10 @@ export interface SharedBlockService {
     growable: boolean,
   ): SharedResult<SharedBlockDescriptor>;
   describe(handle: number): SharedResult<SharedBlockDescriptor>;
+  /** Trusted: a nonmoving byte view of the block's whole reservation
+   * (maxByteLength bytes), which typed code may view directly; undefined
+   * for an invalid handle or a service that cannot expose its payload. */
+  bytes(handle: number): Uint8Array | undefined;
   length(handle: number, order: SharedOrder): SharedResult<number>;
   /** Atomically revalidate current <= target <= maximum and publish target.
    * Equality also follows the ordered publication path. Never copy or shrink. */

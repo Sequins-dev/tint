@@ -459,8 +459,9 @@ export function enqueueScriptJob(
 /** Host checkpoint only: active Script executions keep their targets alive. */
 export function clearKeptObjects(agent: ScriptAgent): void {
   if (agent.activeContext === undefined) {
-    agent.keptAlive.length = 0;
-    enqueueFinalizationCleanupJobs(agent, enqueueScriptJob);
+    if (agent.keptAlive.length !== 0) agent.keptAlive.length = 0;
+    if (agent.registries.length !== 0)
+      enqueueFinalizationCleanupJobs(agent, enqueueScriptJob);
   }
 }
 export function drainScriptJobs(
@@ -470,6 +471,7 @@ export function drainScriptJobs(
 ): number {
   if (agent.activeContext !== undefined || agent.jobs.draining) return 0;
   clearKeptObjects(agent);
+  if (agent.jobs.size === 0) return 0;
   return drainJobs<QueuedScriptJob>(agent.jobs, (job, queued): void => {
     const invoke = (): unknown => {
       const active = agent.activeContext;

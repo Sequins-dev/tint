@@ -41,6 +41,32 @@ test("detachment is idempotent and distinct from an empty live buffer", () => {
     error: "detached",
   });
 });
+test("detachment runs its hook once, before the bytes go, and transfer detaches", () => {
+  const buffer = create(4, 4, false);
+  let seen: Uint8Array | undefined,
+    runs = 0;
+  buffer.onDetach = (): void => {
+    runs++;
+    seen = storage.byteStorageData(buffer);
+  };
+  assert.equal(storage.detachByteStorage(buffer), "none");
+  storage.detachByteStorage(buffer);
+  assert.equal(runs, 1);
+  assert.equal(seen?.length, 4);
+  assert.equal(buffer.onDetach, undefined);
+  const source = create(4, 4, false);
+  let transferred = 0;
+  source.onDetach = (): void => {
+    transferred++;
+  };
+  assert.ok(storage.transferByteStorage(source, 4, "fixed-length").ok);
+  assert.equal(transferred, 1);
+  // An immutable buffer never detaches, so its hook never runs.
+  const fixed = storage.transferByteStorage(create(), 4, "immutable");
+  assert.ok(fixed.ok);
+  fixed.value.onDetach = (): void => assert.fail("immutable detached");
+  assert.equal(storage.detachByteStorage(fixed.value), "immutable");
+});
 test("transfer commits detachment only after successful destination creation", () => {
   const buffer = create(4, 8, true, 16);
   storage.byteStorageData(buffer, "write")!.set([1, 2, 3, 4]);
