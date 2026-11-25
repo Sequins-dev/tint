@@ -120,6 +120,7 @@ export {
   addPrivateField,
   addPrivateMethod,
   addPrivateAccessor,
+  findPrivateElement,
   getPrivateElement,
   setPrivateElement,
   type PrivateName,
@@ -204,6 +205,7 @@ export {
   type DataAlias,
   type ObjectHooks,
   type ObjectCall,
+  type ObjectRegisterCall,
   type ObjectExecutionContext,
   type ObjectConstruct,
   type Receiver,
@@ -309,6 +311,7 @@ export {
   createErrorRealm,
   installErrorIntrinsics,
   createRuntimeError,
+  createCodedRuntimeError,
   createNativeErrorView,
   createNativeCodedErrorView,
   createNativeSystemErrorView,
@@ -473,9 +476,14 @@ export { installReflectIntrinsics } from "./reflect-intrinsics.ts";
 export { getFunctionRealm } from "./function-realms.ts";
 
 export {
+  adoptArrayBuffer,
   installArrayBufferIntrinsics,
   detachArrayBuffer,
 } from "./array-buffer.ts";
+export {
+  bufferStorageByteLength,
+  type BufferStorage,
+} from "./buffer-storage.ts";
 
 export { installSharedArrayBufferIntrinsics } from "./shared-array-buffer.ts";
 export {
@@ -612,6 +620,7 @@ export {
 export {
   builtinAccessor,
   builtinFunction,
+  builtinRegisterFunction,
   builtinFunctionMetadata,
   builtinProperty,
 } from "./intrinsics.ts";

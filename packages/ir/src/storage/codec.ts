@@ -738,7 +738,7 @@ export function encodeInstruction(
       writeSigned(writer, op.limit);
       return true;
     case "string-write-utf8":
-      writePrefix(writer, 95, op, 0);
+      writePrefix(writer, 95, op, bit(op.written === true, 2));
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
       writeSigned(writer, op.begin);
@@ -1929,6 +1929,18 @@ export function decodeInstruction(
         limit = readSigned(reader),
         bytes = readSigned(reader),
         offset = readSigned(reader);
+      if (flagged(flags, 2))
+        return {
+          kind: "string-write-utf8",
+          id,
+          string,
+          begin,
+          limit,
+          bytes,
+          offset,
+          written: true,
+          ...span,
+        };
       return {
         kind: "string-write-utf8",
         id,

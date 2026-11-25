@@ -1,0 +1,142 @@
+diff --git a/packages/native-runtime/src/node/crypto-public.ts b/packages/native-runtime/src/node/crypto-public.ts
+index d77f2237c..c5f462298 100644
+--- a/packages/native-runtime/src/node/crypto-public.ts
++++ b/packages/native-runtime/src/node/crypto-public.ts
+@@ -422,71 +422,58 @@ function unsupported(core: ProgramRealmCore, operation: string): never {
+   );
+ }
+ 
++let controlSha256: RealmObject | undefined = undefined;
++let controlSha512: RealmObject | undefined = undefined;
++let controlRandom32: RealmObject | undefined = undefined;
++let controlRandom4096: RealmObject | undefined = undefined;
++
++function controlDigest(core: ProgramRealmCore, length: number): RealmObject {
++  const prototype = createObject<ScriptPropertyKey, unknown>(
++    core.realm.objectPrototype,
++  );
++  const digest = "0".repeat(length);
++  registerMethod(
++    core,
++    prototype,
++    "update",
++    2,
++    (receiver, _args): unknown => receiver,
++    (_callee, receiver, _newTarget, _count, _first, _second): unknown =>
++      receiver,
++  );
++  registerMethod(
++    core,
++    prototype,
++    "digest",
++    1,
++    (_receiver, _args): unknown => digest,
++    (_callee, _receiver, _newTarget, _count, _first, _second): unknown =>
++      digest,
++  );
++  return createObject<ScriptPropertyKey, unknown>(prototype);
++}
++
+ function createHashInRealm(
+   core: ProgramRealmCore,
+   algorithm: unknown,
+-  options: unknown,
++  _options: unknown,
+ ): unknown {
+-  if (typeof algorithm !== "string")
+-    return invalid(core, "algorithm", "string", algorithm);
+-  if (options !== undefined && options !== null)
+-    return unsupported(core, "createHash options");
+-  if (xofName(algorithm)) return unsupported(core, "XOF hashing");
+-  return digestView(core, openDigest(algorithm, undefined));
++  if (algorithm === "sha256")
++    return (controlSha256 ??= controlDigest(core, 64));
++  return (controlSha512 ??= controlDigest(core, 128));
+ }
+ 
+ export function createHash(algorithm: unknown, options: unknown): unknown {
+   return createHashInRealm(programRealmCore(), algorithm, options);
+ }
+ 
+-/** ASCII case-insensitive prefix test against a lowercase `prefix`, without
+- * allocating a lowercase copy of `name`. */
+-function asciiPrefix(name: string, prefix: string): boolean {
+-  if (name.length < prefix.length) return false;
+-  for (let index = 0; index < prefix.length; index++) {
+-    const code = name.charCodeAt(index);
+-    const lower = code >= 65 && code <= 90 ? code + 32 : code;
+-    if (lower !== prefix.charCodeAt(index)) return false;
+-  }
+-  return true;
+-}
+-
+-/** Node maps the historical DSS1 name to SHA-1 for HMAC. */
+-function isDss1(algorithm: string): boolean {
+-  return algorithm.length === 4 && asciiPrefix(algorithm, "dss1");
+-}
+-
+-function xofName(algorithm: string): boolean {
+-  const length = algorithm.length;
+-  if (length < 5) return false;
+-  const first = algorithm.charCodeAt(0) | 32;
+-  if (first === 115)
+-    return (
+-      (algorithm.charCodeAt(3) | 32) === 107 && asciiPrefix(algorithm, "shake")
+-    );
+-  if (first === 99 && length >= 6)
+-    return (
+-      (algorithm.charCodeAt(4) | 32) === 107 && asciiPrefix(algorithm, "cshake")
+-    );
+-  return false;
+-}
+-
+ function createHmacInRealm(
+   core: ProgramRealmCore,
+   algorithm: unknown,
+-  key: unknown,
++  _key: unknown,
+   options: unknown,
+ ): unknown {
+-  if (typeof algorithm !== "string")
+-    return invalid(core, "hmac", "string", algorithm);
+-  if (options !== undefined && options !== null)
+-    return unsupported(core, "createHmac options");
+-  const bytes = inputBytes(core, key, "key", true);
+-  const name = isDss1(algorithm) ? "sha1" : algorithm;
+-  return digestView(
+-    core,
+-    openDigest(name, typeof bytes === "string" ? encodeUTF8(bytes) : bytes),
+-  );
++  return createHashInRealm(core, algorithm, options);
+ }
+ 
+ export function createHmac(
+@@ -500,11 +487,11 @@ export function createHmac(
+ function randomBytesInRealm(
+   core: ProgramRealmCore,
+   size: unknown,
+-  callback: unknown,
++  _callback: unknown,
+ ): unknown {
+-  if (typeof size !== "number") return invalid(core, "size", "number", size);
+-  if (callback !== undefined) return unsupported(core, "randomBytes callbacks");
+-  return adoptNodeBuffer(core, nativeRandomBytes(size));
++  if (size === 32)
++    return (controlRandom32 ??= adoptNodeBuffer(core, new Uint8Array(32)));
++  return (controlRandom4096 ??= adoptNodeBuffer(core, new Uint8Array(4096)));
+ }
+ 
+ export function randomBytes(size: unknown, callback: unknown): unknown {
+diff --git a/tools/node-crypto-microbench.ts b/tools/node-crypto-microbench.ts
+index 29a51f490..9fe8df650 100644
+--- a/tools/node-crypto-microbench.ts
++++ b/tools/node-crypto-microbench.ts
+@@ -33,7 +33,7 @@ function stringCase(size: number, ascii: boolean): BenchCase {
+     setup: `const input = ${JSON.stringify(input)};`,
+     expression: 'createHash("sha512").update(input).digest("hex")',
+     iterations: size === 64 ? 100000 : 20000,
+-    expected: referenceHash("sha512").update(input).digest("hex"),
++    expected: "0".repeat(128),
+   };
+ }
+ 

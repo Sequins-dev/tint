@@ -15939,19 +15939,52 @@ function emitModuleForms(
                   setFlags: false,
                 });
                 callHelper("string-write-utf8");
-                // The helper yields the units encoded; the result is the
-                // index after them.
-                latin1Index(op.begin, 11);
-                emit({
-                  op: "add-reg",
-                  width: 64,
-                  rd: 9,
-                  rn: 9,
-                  rm: 11,
-                  shift: "lsl",
-                  amount: 0,
-                  setFlags: false,
-                });
+                if (op.written === true) {
+                  // Remaining capacity is in x12; bytes written = (bytes.length - offset) - x12.
+                  rawValue(10, op.bytes);
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 13,
+                    rn: 10,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  latin1Index(op.offset, 14);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: 13,
+                    rn: 13,
+                    rm: 14,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 13,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                } else {
+                  // The helper yields the units encoded; the result is the
+                  // index after them.
+                  latin1Index(op.begin, 11);
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                }
                 latin1Count(op.id);
                 break;
               case "string-flat": {

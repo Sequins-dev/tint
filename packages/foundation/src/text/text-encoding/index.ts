@@ -22,12 +22,19 @@ export interface EncodeResult {
   readonly read: number;
   readonly written: number;
 }
+
+/** Start at a UTF-16 offset within the input. Counts are relative to that
+ * offset. A scalar that does not fit is left for the next call. */
 export function encodeUTF8Into(
   value: string,
   destination: Uint8Array,
+  start: number = 0,
 ): EncodeResult {
-  const read = writeUTF8(value, 0, value.length, destination, 0);
-  return { read, written: utf8ByteLength(value, 0, read) };
+  const length = value.length;
+  if (!Number.isInteger(start) || start < 0 || start >= length)
+    return { read: 0, written: 0 };
+  const next = writeUTF8(value, start, length, destination, 0);
+  return { read: next - start, written: utf8ByteLength(value, start, next) };
 }
 export function encodeUTF8(value: string): Uint8Array {
   const length = value.length;

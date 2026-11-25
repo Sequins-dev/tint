@@ -174,6 +174,27 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
           TINT_CI_BUILD_BUNDLE_SHA256: ${{ needs.bootstrap.outputs.build-bundle-sha256 }}
+      - name: Run pinned Node crypto cases
+        if: matrix.shard == 1
+        env:
+          TINT_GATE_EXCLUSIVE_LOCK: ${{ runner.temp }}/tint-gate/exclusive.lock
+          TZ: UTC
+        run: |
+          set -eu
+          archive="$RUNNER_TEMP/node-v26.13.1.tar.gz"
+          curl -fsSL --retry 4 https://nodejs.org/dist/v26.13.1/node-v26.13.1.tar.gz -o "$archive"
+          printf '%s  %s\n' 60c6cdf11c3e9d5932fccd0eafae77f1152661584e129047684cb8646f228d3e "$archive" | shasum -a 256 -c
+          for suite in hash hmac pbkdf2 random; do
+            tar -xzf "$archive" -C "$RUNNER_TEMP" "node-v26.13.1/test/parallel/test-crypto-$suite.js"
+          done
+          mkdir -p "$RUNNER_TEMP/tint-gate"
+          node tools/node-crypto-native-conformance.ts "$RUNNER_TEMP/node-v26.13.1" "$RUNNER_TEMP/crypto-conformance.json"
+      - name: Upload pinned Node crypto case results
+        if: always() && matrix.shard == 1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: crypto-conformance-${{ inputs.id }}
+          path: ${{ runner.temp }}/crypto-conformance.json
       - if: always()
         uses: ./.github/actions/gate-evidence
         with:
