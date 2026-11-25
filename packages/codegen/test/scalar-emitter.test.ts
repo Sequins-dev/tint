@@ -477,6 +477,168 @@ test("a property load with spill storage walks chunks in a cold stub", () => {
   assert.equal(count(propertyLoadWords(true, false)), 0);
 });
 
+test("call-indirect skips descriptor and signature checks for script-entry callees", () => {
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "reference", mutable: false }],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "reference", mutable: false },
+          { offset: 16, type: "boolean", mutable: false },
+          { offset: 24, type: "optional-reference", mutable: false },
+        ],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "reference", mutable: false },
+          { offset: 16, type: "general", mutable: false },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "scriptTarget",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "general-none", id: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "provenCaller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "script-entry",
+                id: 2,
+                callee: 0,
+                realm: 1,
+                construct: false,
+                realmRecord: 1,
+                agentField: 0,
+                agentRecord: 2,
+                activeField: 0,
+                objectRecord: 3,
+                registerCallField: 0,
+                entryRecord: 4,
+                invokeField: 2,
+                contextField: 0,
+                constructibleField: 1,
+                contextRecord: 5,
+                realmField: 0,
+                scriptOrModuleField: 1,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+              { kind: "load", id: 3, slot: 2, ...span },
+              { kind: "reference-value", id: 4, value: 3, ...span },
+              { kind: "general-none", id: 5, ...span },
+              { kind: "reference-none", id: 6, ...span },
+              {
+                kind: "call-indirect",
+                id: 7,
+                callee: 4,
+                target: 0,
+                arguments: [0, 5, 5, 6],
+                scriptArguments: [],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 7, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "unprovenCaller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["reference", "general"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "general-none", id: 2, ...span },
+              { kind: "reference-none", id: 3, ...span },
+              {
+                kind: "call-indirect",
+                id: 4,
+                callee: 0,
+                target: 0,
+                arguments: [1, 2, 2, 3],
+                scriptArguments: [],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const sigLoad = encode({
+    op: "ldr",
+    width: 64,
+    rt: 10,
+    rn: 12,
+    offset: 24,
+  });
+  assert.ok(sigLoad.ok);
+  const view = new DataView(result.value.code.buffer);
+  const countSigLoads = (fnIndex: number): number => {
+    const fn = result.value.functions[fnIndex]!;
+    let hits = 0;
+    for (
+      let offset = fn.offset;
+      offset < fn.offset + fn.byteLength;
+      offset += 4
+    )
+      if (view.getUint32(offset, true) === sigLoad.value) hits++;
+    return hits;
+  };
+  assert.equal(countSigLoads(1), 0);
+  assert.equal(countSigLoads(2), 1);
+});
+
 test("reference vector copies are one indexed loop with at most one barrier", () => {
   function words(rebase: boolean, generationalBarriers: boolean): number[] {
     const module: ModuleIR = {

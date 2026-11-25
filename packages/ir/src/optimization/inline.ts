@@ -178,6 +178,28 @@ function supported(op: Instruction, references: boolean = true): boolean {
 /** Largest inlined expansion (instructions, terminators, parameter copies
  * and result slot). */
 const maxExpansion = 128;
+/** Single-instruction script cache / call-entry bindings (`boundBody`):
+ * inlining replaces one call with one IR instruction, so they are exempt
+ * from per-caller growth caps (especially the fixed `referenceAllowance`). */
+function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
+  if (fn.blocks.length !== 1) return false;
+  const block = fn.blocks[0];
+  if (block === undefined || block.terminator.kind !== "return") return false;
+  const count = block.instructions.length;
+  if (count === 0) return false;
+  for (let i = 0; i < count - 1; i++)
+    if (block.instructions[i]?.kind !== "load") return false;
+  const last = block.instructions[count - 1];
+  if (last === undefined) return false;
+  return (
+    last.kind === "property-load" ||
+    last.kind === "property-store" ||
+    last.kind === "element-load" ||
+    last.kind === "element-store" ||
+    last.kind === "script-entry" ||
+    last.kind === "global-cell"
+  );
+}
 /** Most non-trap blocks of an inlined scalar or void callee. */
 function maxCalleeBlocks(guarded: boolean): number {
   return guarded ? 32 : 24;
@@ -264,6 +286,7 @@ export function inlineSmallFunctions(
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
     effectful = new Uint8Array(module.functions.length),
+    intrinsic = new Uint8Array(module.functions.length),
     costs: number[] = [];
   let visited = 0,
     inlined = 0,
@@ -384,6 +407,8 @@ export function inlineSmallFunctions(
     const expansion = original ? cost : cost + overhead;
     eligible[fn.id] =
       good && expansion <= maxExpansion && returns > 0 ? (original ? 1 : 2) : 0;
+    if (eligible[fn.id] !== 0 && isScriptInlineIntrinsic(fn))
+      intrinsic[fn.id] = 1;
     costs[fn.id] = expansion;
   }
   const functions: FunctionIR[] = [];
@@ -477,18 +502,19 @@ export function inlineSmallFunctions(
         visited++;
         const callee =
             op.kind === "call" ? module.functions[op.target] : undefined,
-          cost = callee === undefined ? 0 : (costs[callee.id] ?? 0);
+          cost = callee === undefined ? 0 : (costs[callee.id] ?? 0),
+          isIntrinsic = callee !== undefined && intrinsic[callee.id] === 1;
         if (
           op.kind !== "call" ||
           callee === undefined ||
           !eligible[callee.id] ||
           callee.id === fn.id ||
           op.environment !== undefined ||
-          cost > allowance ||
+          (!isIntrinsic && cost > allowance) ||
           (shapeRecognized(fn) && effectful[callee.id] === 1) ||
           (eligible[callee.id] === 2 &&
             ((!nonallocatingCaller && shapeRecognized(fn)) ||
-              cost > referenceAllowance))
+              (!isIntrinsic && cost > referenceAllowance)))
         ) {
           if (remarks !== undefined && op.kind === "call")
             pendingRemarks.push({
@@ -1251,8 +1277,10 @@ export function inlineSmallFunctions(
             end: op.end,
             inline: callInline,
           });
-        allowance -= cost;
-        if (eligible[callee.id] === 2) referenceAllowance -= cost;
+        if (!isIntrinsic) {
+          allowance -= cost;
+          if (eligible[callee.id] === 2) referenceAllowance -= cost;
+        }
         inlined++;
         changed = true;
         if (remarks !== undefined)

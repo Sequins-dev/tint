@@ -1495,6 +1495,26 @@ function lowerScriptEntry(
     });
     return id(name, value);
   }
+  /** An uninitialized mutable `unknown` temporary, used when every branch of
+   * an immediately following `if`/`else` assigns it before any read. */
+  function uninitializedGeneralTemporary(span: Span): Expression {
+    const name = "$value" + serial++;
+    statements.push({
+      ...at(span),
+      kind: "variable",
+      mode: "let",
+      exported: false,
+      declarations: [
+        {
+          ...at(span),
+          name,
+          type: named("unknown"),
+          initializer: undefined,
+        },
+      ],
+    });
+    return id(name, span);
+  }
   function resetCompletion(
     span: Span,
     result: Expression = id("undefined"),
@@ -3968,7 +3988,7 @@ function lowerScriptEntry(
       return temporary(value(argument), true);
     });
     const { entry, accepts } = scriptEntryGuard(target, true, span);
-    const result = temporary(id("undefined", span), true, true);
+    const result = uninitializedGeneralTemporary(span);
     const general = statements.length;
     expression({
       ...at(span),
@@ -4292,7 +4312,7 @@ function lowerScriptEntry(
         return argumentValue(argument, index);
       });
       const { entry, accepts } = scriptEntryGuard(target, false, span);
-      const result = temporary(id("undefined", span), true, true);
+      const result = uninitializedGeneralTemporary(span);
       const start = statements.length;
       const slow = invokeList(
         target,

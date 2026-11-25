@@ -1459,3 +1459,102 @@ test("callees with local string slots inline", () => {
     ),
   );
 });
+test("single-instruction script cache intrinsics inline past the reference allowance", () => {
+  const calls: FunctionIR["blocks"][number]["instructions"] = [
+    { kind: "load", id: 0, slot: 0, ...span },
+    { kind: "load", id: 1, slot: 1, ...span },
+  ];
+  for (let i = 0; i < 30; i++)
+    calls.push({
+      kind: "call",
+      id: 2 + i,
+      target: 1,
+      arguments: [0, 1],
+      ...span,
+    });
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+        ],
+      },
+      {
+        byteLength: 24,
+        fields: [
+          { offset: 8, type: "reference", mutable: true },
+          { offset: 16, type: "number", mutable: true },
+        ],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: calls,
+            terminator: { kind: "return", value: 31, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "cachedRead",
+        exported: false,
+        parameters: [0, 1],
+        slots: ["general", "reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "property-load",
+                id: 2,
+                object: 0,
+                site: 1,
+                record: 1,
+                field: 1,
+                count: 1,
+                siteRecord: 2,
+                siteField: 0,
+                inherited: false,
+                entries: 1,
+                epochRecord: 3,
+                epochField: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 100000)!;
+  assert.equal(result.inlined, 30);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.ok(
+    !result.module.functions[0]!.blocks.some((block) =>
+      block.instructions.some((op) => op.kind === "call"),
+    ),
+  );
+});

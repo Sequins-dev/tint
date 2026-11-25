@@ -95,7 +95,10 @@ export type {
 } from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import { fallsThrough, forwardableEntries } from "./block-entries.ts";
-import { fusedPropertyAccesses } from "../../scalar/property-fusion.ts";
+import {
+  fusedPropertyAccesses,
+  scriptEntryCalleeValues,
+} from "../../scalar/property-fusion.ts";
 import {
   createWordBuffer,
   appendWord,
@@ -6175,15 +6178,14 @@ function emitModuleForms(
         if (fn.scriptEntry === true) {
           const listSlot = fn.parameters[3];
           if (listSlot === undefined) throw "script entry header invariant";
-          emit({ op: "ubfm", width: 64, rd: 16, rn: 2, immr: 0, imms: 0 });
           emit({
-            op: "sub-imm",
+            op: "ands-imm",
             width: 64,
             rd: "zr",
-            rn: 16,
-            immediate: 0,
-            shift: 0,
-            setFlags: true,
+            rn: 2,
+            n: 1,
+            immr: 0,
+            imms: 0,
           });
           emit({
             op: "csel",
@@ -8723,6 +8725,7 @@ function emitModuleForms(
         const fusedAccesses = viewAccesses
           ? undefined
           : fusedPropertyAccesses(fn);
+        const scriptEntryCallees = scriptEntryCalleeValues(fn);
         /** The token of Uint8Array value `id` (fresh when unknown). */
         function viewValueToken(id: number): number {
           const known = viewValueTokens.get(id);
@@ -12028,6 +12031,145 @@ function emitModuleForms(
                 });
                 const contextCheck = instructions.length;
                 emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                if (coldStubsAvailable()) {
+                  const doneAt = instructions.length;
+                  stackWords.clear();
+                  saveRaw(11, op.id);
+                  const realmOffset = realm.offset,
+                    scriptOrModuleOffset = scriptOrModule.offset;
+                  coldStubs.push((): void => {
+                    farBranch(contextCheck, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - contextCheck) * 4,
+                    });
+                    stackWords.clear();
+                    const slowCbz = instructions.length;
+                    emit({
+                      op: "cbz",
+                      width: 64,
+                      rt: active,
+                      displacement: 0,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: 9,
+                      offset: realmOffset,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 13,
+                      rn: active,
+                      offset: realmOffset,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      rm: 13,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const realmNe = instructions.length;
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 12,
+                      rt2: 13,
+                      rn: 9,
+                      offset: scriptOrModuleOffset,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 14,
+                      rt2: 15,
+                      rn: active,
+                      offset: scriptOrModuleOffset,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      rm: 14,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const somTagNe = instructions.length;
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 13,
+                      rm: 15,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const hitSlow = instructions.length;
+                    emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                    farBranch(hitSlow, {
+                      op: "b.cond",
+                      condition: "eq",
+                      displacement: (doneAt - hitSlow) * 4,
+                    });
+                    const missAt = instructions.length;
+                    for (const site of neMisses)
+                      farBranch(site, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (missAt - site) * 4,
+                      });
+                    for (const site of cbzMisses)
+                      farBranch(site.index, {
+                        op: "cbz",
+                        width: 64,
+                        rt: site.rt,
+                        displacement: (missAt - site.index) * 4,
+                      });
+                    patchInstruction(slowCbz, {
+                      op: "cbz",
+                      width: 64,
+                      rt: active,
+                      displacement: (missAt - slowCbz) * 4,
+                    });
+                    patchInstruction(realmNe, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (missAt - realmNe) * 4,
+                    });
+                    patchInstruction(somTagNe, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (missAt - somTagNe) * 4,
+                    });
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: "zr",
+                      rm: "zr",
+                    });
+                    const back = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    farBranch(back, {
+                      op: "b",
+                      displacement: (doneAt - back) * 4,
+                    });
+                  });
+                  break;
+                }
                 const hitFast = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 // Distinct context records with the same realm and
@@ -18405,63 +18547,74 @@ function emitModuleForms(
                 else address(3, resultOffset);
                 if (op.kind === "call-indirect") {
                   rawValue(12, op.callee);
-                  guardDescriptor(12, functionRecord);
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: 10,
-                    rn: 12,
-                    offset: nativeFunctionSignatureOffset,
-                  });
-                  functionSignaturePointer(11, op.target);
-                  const alternate =
-                    op.discardResult === true &&
-                    !signatureImports.has(op.target) &&
-                    (localSignatures.byFunction[op.target] ?? 0) === 0
-                      ? discardResultTargets.get(parameterKeys[op.target] ?? "")
-                      : undefined;
-                  emit({
-                    op: "sub-reg",
-                    width: 64,
-                    rd: "zr",
-                    rn: 10,
-                    rm: 11,
-                    shift: "lsl",
-                    amount: 0,
-                    setFlags: true,
-                  });
-                  if (alternate === undefined)
-                    trapIf({ op: "b.cond", condition: "ne" });
-                  else {
-                    // The callee writes its normal result into the same
-                    // completion buffer. A void call consumes only the status.
-                    const matching: number[] = [];
-                    for (const candidate of alternate) {
-                      if (candidate === undefined)
-                        throw "discarded result signature invariant";
-                      matching.push(instructions.length);
-                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
-                      functionSignaturePointer(11, candidate);
-                      emit({
-                        op: "sub-reg",
-                        width: 64,
-                        rd: "zr",
-                        rn: 10,
-                        rm: 11,
-                        shift: "lsl",
-                        amount: 0,
-                        setFlags: true,
-                      });
-                    }
-                    trapIf({ op: "b.cond", condition: "ne" });
-                    for (const match of matching) {
-                      if (match === undefined)
-                        throw "discarded result branch invariant";
-                      patchInstruction(match, {
-                        op: "b.cond",
-                        condition: "eq",
-                        displacement: (instructions.length - match) * 4,
-                      });
+                  if (
+                    actuals === undefined ||
+                    scriptEntryCallees?.has(op.callee) !== true
+                  ) {
+                    guardDescriptor(12, functionRecord);
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: 12,
+                      offset: nativeFunctionSignatureOffset,
+                    });
+                    functionSignaturePointer(11, op.target);
+                    const alternate =
+                      op.discardResult === true &&
+                      !signatureImports.has(op.target) &&
+                      (localSignatures.byFunction[op.target] ?? 0) === 0
+                        ? discardResultTargets.get(
+                            parameterKeys[op.target] ?? "",
+                          )
+                        : undefined;
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    if (alternate === undefined)
+                      trapIf({ op: "b.cond", condition: "ne" });
+                    else {
+                      // The callee writes its normal result into the same
+                      // completion buffer. A void call consumes only the status.
+                      const matching: number[] = [];
+                      for (const candidate of alternate) {
+                        if (candidate === undefined)
+                          throw "discarded result signature invariant";
+                        matching.push(instructions.length);
+                        emit({
+                          op: "b.cond",
+                          condition: "eq",
+                          displacement: 0,
+                        });
+                        functionSignaturePointer(11, candidate);
+                        emit({
+                          op: "sub-reg",
+                          width: 64,
+                          rd: "zr",
+                          rn: 10,
+                          rm: 11,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: true,
+                        });
+                      }
+                      trapIf({ op: "b.cond", condition: "ne" });
+                      for (const match of matching) {
+                        if (match === undefined)
+                          throw "discarded result branch invariant";
+                        patchInstruction(match, {
+                          op: "b.cond",
+                          condition: "eq",
+                          displacement: (instructions.length - match) * 4,
+                        });
+                      }
                     }
                   }
                   emit({

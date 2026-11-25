@@ -281,3 +281,91 @@ export function fusedPropertyAccesses(
   }
   return fused;
 }
+
+/** Value IDs within `fn` proven to hold the closure returned by a
+ * `script-entry` instruction (always a `functionRecord` with the script-entry
+ * ABI signature). Undefined when `fn` contains no `script-entry`. */
+export function scriptEntryCalleeValues(
+  fn: FunctionIR,
+): ReadonlySet<number> | undefined {
+  let hasScriptEntry = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "script entry analysis block invariant";
+    for (const op of block.instructions) {
+      if (op !== undefined && op.kind === "script-entry") {
+        hasScriptEntry = true;
+        break;
+      }
+    }
+    if (hasScriptEntry) break;
+  }
+  if (!hasScriptEntry) return undefined;
+  const ineligible = new Set<number>();
+  for (const param of fn.parameters)
+    if (param !== undefined) ineligible.add(param);
+  if (fn.receiverSlot !== undefined) ineligible.add(fn.receiverSlot);
+  if (fn.closureEnvironment !== undefined)
+    ineligible.add(fn.closureEnvironment);
+  const slotStores = new Map<number, number[]>();
+  const proven = new Set<number>();
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "script entry analysis block invariant";
+    if (block.exception !== undefined) ineligible.add(block.exception.slot);
+    const t = block.terminator;
+    if (
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell") &&
+      t.operation === "read"
+    )
+      ineligible.add(t.slot);
+    for (const op of block.instructions) {
+      if (op === undefined) throw "script entry analysis instruction invariant";
+      if (op.kind === "script-entry") proven.add(op.id);
+      else if (op.kind === "store") {
+        let list = slotStores.get(op.slot);
+        if (list === undefined) {
+          list = [];
+          slotStores.set(op.slot, list);
+        }
+        list.push(op.value);
+      }
+    }
+  }
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "script entry analysis block invariant";
+      for (const op of block.instructions) {
+        if (op === undefined)
+          throw "script entry analysis instruction invariant";
+        if (
+          op.kind === "reference-value" &&
+          proven.has(op.value) &&
+          !proven.has(op.id)
+        ) {
+          proven.add(op.id);
+          changed = true;
+        } else if (
+          op.kind === "load" &&
+          !ineligible.has(op.slot) &&
+          !proven.has(op.id)
+        ) {
+          const stores = slotStores.get(op.slot);
+          if (stores !== undefined && stores.length > 0) {
+            let allProven = true;
+            for (const stored of stores)
+              if (stored === undefined || !proven.has(stored)) {
+                allProven = false;
+                break;
+              }
+            if (allProven) {
+              proven.add(op.id);
+              changed = true;
+            }
+          }
+        }
+      }
+    }
+  }
+  return proven;
+}

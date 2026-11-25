@@ -53,6 +53,7 @@ import {
   writeWord64,
 } from "@tint/foundation/binary/bytes";
 import type { Word64 } from "@tint/foundation/binary/word64";
+import { scriptEntryCalleeValues } from "../../scalar/property-fusion.ts";
 import {
   instructionResult,
   optionalNumberAbsentHigh,
@@ -661,6 +662,7 @@ export function emitModule(
   }
 
   function body(fn: FunctionIR): void {
+    const scriptEntryCallees = scriptEntryCalleeValues(fn);
     const fnLabel = functionLabel(fn.id);
     const interruptible =
       workerFunctions?.has(
@@ -901,29 +903,37 @@ export function emitModule(
       if (callee.import === true && imported === undefined)
         fail("UNSUPPORTED", "unsupported managed import " + callee.name);
       if (op.kind === "call-indirect") {
-        guardRecord(op.callee, functionRecord, trapLabel);
-        emit({
-          op: "mov",
-          dst: rax,
-          src: mem(9, nativeFunctionSignatureOffset),
-        });
-        address(scratch, signature(op.target));
-        emit({ op: "cmp", dst: rax, src: scratch });
-        if (op.discardResult === true && !signatureImports.has(op.target)) {
-          const shape = signatures[op.target];
-          if (shape === undefined) throw "discarded result signature invariant";
-          const valid = fnLabel + ":signature:" + String(instructionCount);
-          const matches = discardSignatures.get(shape.parameters);
-          if (matches !== undefined)
-            for (const match of matches) {
-              if (match === undefined || match === shape.name) continue;
-              branch(emit, "e", valid);
-              emit({ op: "lea", dst: scratch, src: rip(match) });
-              emit({ op: "cmp", dst: rax, src: scratch });
-            }
-          branch(emit, "ne", trapLabel);
-          emit({ op: "label", name: valid });
-        } else branch(emit, "ne", trapLabel);
+        if (
+          op.scriptArguments !== undefined &&
+          scriptEntryCallees?.has(op.callee) === true
+        )
+          emit({ op: "mov", dst: r9, src: frame(home(op.callee)) });
+        else {
+          guardRecord(op.callee, functionRecord, trapLabel);
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(9, nativeFunctionSignatureOffset),
+          });
+          address(scratch, signature(op.target));
+          emit({ op: "cmp", dst: rax, src: scratch });
+          if (op.discardResult === true && !signatureImports.has(op.target)) {
+            const shape = signatures[op.target];
+            if (shape === undefined)
+              throw "discarded result signature invariant";
+            const valid = fnLabel + ":signature:" + String(instructionCount);
+            const matches = discardSignatures.get(shape.parameters);
+            if (matches !== undefined)
+              for (const match of matches) {
+                if (match === undefined || match === shape.name) continue;
+                branch(emit, "e", valid);
+                emit({ op: "lea", dst: scratch, src: rip(match) });
+                emit({ op: "cmp", dst: rax, src: scratch });
+              }
+            branch(emit, "ne", trapLabel);
+            emit({ op: "label", name: valid });
+          } else branch(emit, "ne", trapLabel);
+        }
         emit({
           op: "mov",
           dst: environment,
