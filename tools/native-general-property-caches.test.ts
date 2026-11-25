@@ -8,7 +8,10 @@
 // the in-place slots, inherited methods (also two and three prototypes
 // up), own methods at method sites, redefinitions, deletions, prototype
 // changes, accessors, symbols, non-extensible receivers and builtin
-// objects, so a stale shape, slot or transition changes an observation. Node computes the expected
+// objects, so a stale shape, slot or transition changes an observation. Object literals of static-key data
+// definitions take the shape their site recorded, beside Object.prototype
+// setters, duplicate and index keys, keys past the in-place slots, named
+// function values, abrupt values, __proto__ forms and literal prototypes. Node computes the expected
 // observations from the same source; the native image runs under LLDB
 // through the general path.
 import assert from "node:assert/strict";
@@ -335,6 +338,65 @@ function ownMethods() {
     for (const o of [...objects, ...many]) out.push(call(o));
   return out.join(",");
 }
+function literals() {
+  const out = [];
+  const make = (a, b) => ({ left: a, right: b });
+  const made = [];
+  for (let i = 0; i < 4; i++) made.push(make(i, "r" + i));
+  out.push(made.map((o) => o.left + ":" + o.right).join("/"));
+  const d = Object.getOwnPropertyDescriptor(made[3], "right");
+  out.push(Object.keys(made[3]).join("/"), d.writable, d.enumerable, d.configurable);
+  made[0].extra = 1;
+  delete made[1].left;
+  out.push(Object.keys(make(5, 6)).join("/"), made[2].left, readX({ x: 7 }), readX({ x: 8 }));
+  let seen = "";
+  Object.defineProperty(Object.prototype, "left", {
+    set(v) { seen += "set " + v; },
+    get() { return "inherited"; },
+    configurable: true,
+  });
+  const after = make(9, 10);
+  out.push(after.left, Object.hasOwn(after, "left"), seen, ({ right: 1 }).left);
+  delete Object.prototype.left;
+  const dup = () => ({ a: 1, b: 2, a: 3 });
+  for (let i = 0; i < 2; i++) out.push(Object.keys(dup()).join("/") + "=" + dup().a);
+  const indexed = () => ({ x: 1, 1: "one", 0: "zero" });
+  for (let i = 0; i < 2; i++) out.push(Object.keys(indexed()).join("/"));
+  const many = (b) => ({ k0: b, k1: b + 1, k2: b + 2, k3: b + 3, k4: b + 4, k5: b + 5,
+    k6: b + 6, k7: b + 7, k8: b + 8, k9: b + 9, k10: b + 10 });
+  for (let i = 0; i < 3; i++) out.push(readK(many(i * 100)), many(i).k10);
+  const named = () => ({ f: function () {}, g: () => 1, h: class {} });
+  const n1 = named(), n2 = named();
+  out.push(n1.f.name, n1.g.name, n1.h.name, n1.f !== n2.f);
+  const log = [];
+  const at = (k, v) => { log.push(k); return v; };
+  try {
+    ({ a: at("a", 1), b: (() => { throw new RangeError("b"); })(), c: at("c", 3) });
+  } catch (e) {
+    out.push(e.constructor.name, log.join(""));
+  }
+  const ordered = () => ({ p: at("p", 1), q: at("q", 2) });
+  ordered();
+  ordered();
+  out.push(log.join(""));
+  const __proto__ = 5;
+  const own = () => ({ __proto__ });
+  out.push(own().__proto__, Object.getPrototypeOf(own()) === Object.prototype);
+  const setter = () => ({ __proto__: null, z: 1 });
+  out.push(Object.getPrototypeOf(setter()) === null, setter().z);
+  const base = make(1, 2);
+  const child = Object.create(base);
+  out.push(child.left + child.right, make(3, 4).right, Object.keys(base).join("/"));
+  base.left = 40;
+  out.push(child.left, make(5, 6).left);
+  const sealed = Object.freeze(make(7, 8));
+  out.push(Object.isFrozen(sealed), Object.isFrozen(make(7, 8)));
+  const stored = make(1, 1);
+  stored.left = "s";
+  stored.more = "m";
+  out.push(stored.left, stored.more, make(2, 2).more === undefined);
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -349,6 +411,7 @@ export function sections() {
     deepChains(),
     polymorphic(),
     ownMethods(),
+    literals(),
   ];
 }
 `;
@@ -366,7 +429,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 12);
+  assert.equal(expected.length, 13);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

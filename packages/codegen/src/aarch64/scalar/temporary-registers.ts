@@ -21,6 +21,9 @@ function transparent(op: Instruction): boolean {
     // An own cached property load uses x9..x13 only (an inherited one
     // also x14), none of them a temporary home.
     (op.kind === "property-load" && !op.inherited) ||
+    // Element loads and stores use x9..x13, d0 and d1 only.
+    op.kind === "element-load" ||
+    op.kind === "element-store" ||
     op.kind === "record-has" ||
     op.kind === "reference-vector-is" ||
     op.kind === "reference-vector-length" ||

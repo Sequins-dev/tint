@@ -42,6 +42,8 @@ import {
   bindPropertyLoad,
   bindPropertyStore,
   bindAbsentTest,
+  bindElementLoad,
+  bindElementStore,
   bindRecordOperation,
   bindScriptEntry,
 } from "./record-bindings.ts";
@@ -224,7 +226,9 @@ export interface RecordBinding {
   readonly field?: string | undefined;
   readonly count?: number | undefined;
   /** Property cache operations: the site record's first cache field (see
-   * the IR property-load and property-store). */
+   * the IR property-load and property-store). Element operations (`field`
+   * names the witness's elements field): the elements record's count field,
+   * which its storage field immediately follows. */
   readonly siteField?: string | undefined;
   /** Property cache reads: the site's consecutive entries (default 1). */
   readonly entries?: number | undefined;
@@ -4539,6 +4543,86 @@ function lowerEntries(
               epochField,
               span,
             );
+        continue;
+      }
+      if (
+        binding.operation === "element-load" ||
+        binding.operation === "element-store"
+      ) {
+        const store = binding.operation === "element-store";
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const elementsName = binding.field,
+          countName = binding.siteField;
+        const field =
+          record === undefined || elementsName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, elementsName);
+        // The elements field holds `Elements | undefined`.
+        const witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        const property =
+          witness?.kind === "object" && elementsName !== undefined
+            ? witness.properties.find(
+                (item) => item !== undefined && item.name === elementsName,
+              )
+            : undefined;
+        let elementsType: number | undefined = undefined;
+        const declared =
+          property === undefined ? undefined : checked.types[property.type];
+        if (declared?.kind === "union") {
+          for (const member of declared.members) {
+            if (member === undefined) throw "element binding union invariant";
+            if (checked.types[member]?.kind === "undefined") continue;
+            elementsType = elementsType === undefined ? member : -1;
+          }
+        } else if (property !== undefined) elementsType = property.type;
+        const elementsRecord =
+          elementsType === undefined || elementsType < 0
+            ? undefined
+            : recordContracts.forType(elementsType);
+        const countField =
+          elementsRecord === undefined || countName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, countName);
+        const third = fn.parameters[2],
+          fourth = fn.parameters[3];
+        if (
+          first === undefined ||
+          second === undefined ||
+          third === undefined ||
+          (store && fourth === undefined) ||
+          fn.parameters.length !== (store ? 4 : 3) ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.slots[third] !== "number" ||
+          (store && fourth !== undefined && fn.slots[fourth] !== "general") ||
+          fn.returnType !== (store ? "boolean" : "general") ||
+          record === undefined ||
+          field === undefined ||
+          elementsRecord === undefined ||
+          countField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "element bindings take a record witness with an elements field, an unknown value and a number index",
+          );
+        const layout = {
+          record,
+          field,
+          elementsRecord,
+          countField,
+          storageField: countField + 1,
+        };
+        functions[fn.id] =
+          store && fourth !== undefined
+            ? bindElementStore(fn, second, third, fourth, layout, span)
+            : bindElementLoad(fn, second, third, layout, span);
         continue;
       }
       if (binding.operation === "slot-read") {

@@ -1,4 +1,5 @@
 import { joinIndexedProperties } from "./join-indexed-properties.ts";
+import { appendPackedElement } from "./array-append.ts";
 import { installArraySorting } from "./array-sorting.ts";
 import { scriptBoolean, scriptStrictEqual } from "./values.ts";
 import { installArrayCopying } from "./array-copying.ts";
@@ -155,6 +156,15 @@ export function installArrayPrototype(
     1,
     (receiver, args): unknown => {
       const object = toObject(receiver);
+      // A packed array's own append, when nothing else can observe it.
+      if (args.length === 1) {
+        const elements = object.internalArrayElements;
+        if (
+          elements !== undefined &&
+          appendPackedElement(object, args[0], realm)
+        )
+          return elements.length;
+      }
       let length = lengthOf(object);
       if (args.length > 9007199254740991 - length)
         throw createRuntimeError(realm, "type");
@@ -189,6 +199,8 @@ export function installArrayPrototype(
     hooks,
   );
   builtinProperty(realm.arrayPrototype, "push", push, true, true, hooks);
+  // Generated calls append to a packed array inline (scriptArrayPush).
+  realm.intrinsicFunctions.arrayPush = push;
   function removalMethod(name: string, front: boolean): void {
     const method = builtinFunction(
       realm.functionPrototype,

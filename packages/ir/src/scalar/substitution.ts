@@ -138,6 +138,21 @@ export function substituteInstructionValues(
         ? op
         : { ...op, callee, realm };
     }
+    case "element-load": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index);
+      return object === op.object && index === op.index
+        ? op
+        : { ...op, object, index };
+    }
+    case "element-store": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index),
+        value = substitutedValue(values, op.value);
+      return object === op.object && index === op.index && value === op.value
+        ? op
+        : { ...op, object, index, value };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };

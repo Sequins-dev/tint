@@ -5,7 +5,8 @@ import {
   type Instruction,
 } from "@tint/ir/scalar";
 
-/** The part a block plays in a fused cached property access: the access
+/** The part a block plays in a fused cached property access (or inline
+ * element access, which misses and tests the same way): the access
  * itself (`access`, whose miss jumps to `miss` directly), the miss test the
  * branch reads (`test`, not emitted; the branch goes to `hit`), or both. */
 export interface FusedPropertyAccess {
@@ -96,6 +97,10 @@ function slotsLiveAt(
  * slots it was stored to) as the block's last instruction. Every slot those
  * stores write must be dead where the miss continues, so skipping them is
  * unobservable. */
+/** A load whose miss is the absent value. */
+function missingLoad(op: Instruction | undefined): boolean {
+  return op?.kind === "property-load" || op?.kind === "element-load";
+}
 /** Predecessor counts over normal and exceptional edges. */
 function predecessorCounts(fn: FunctionIR): Uint32Array {
   const counts = new Uint32Array(fn.blocks.length);
@@ -158,7 +163,7 @@ export function fusedPropertyAccesses(
       t.kind === "branch" &&
       t.consequent !== t.alternate &&
       final !== undefined &&
-      final.kind === "property-store" &&
+      (final.kind === "property-store" || final.kind === "element-store") &&
       final.id === t.condition
     ) {
       fused.set(block.id, {
@@ -170,12 +175,15 @@ export function fusedPropertyAccesses(
       });
       continue;
     }
-    // The last property-load and what follows it.
+    // The last property-load (or element-load) and what follows it.
     let index = block.instructions.length - 1;
-    while (index >= 0 && block.instructions[index]?.kind !== "property-load")
-      index--;
+    while (index >= 0 && !missingLoad(block.instructions[index])) index--;
     const load = block.instructions[index];
-    if (load === undefined || load.kind !== "property-load") continue;
+    if (
+      load === undefined ||
+      (load.kind !== "property-load" && load.kind !== "element-load")
+    )
+      continue;
     const uses: LoadUses = {
       aliases: new Set<number>(),
       aliasSlots: [],

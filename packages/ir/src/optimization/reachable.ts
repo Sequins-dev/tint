@@ -159,6 +159,11 @@ function pruneTracedModule(
               entryRecord,
               contextRecord,
             };
+        } else if (op.kind === "element-load" || op.kind === "element-store") {
+          const record = recordId(op.record),
+            elementsRecord = recordId(op.elementsRecord);
+          if (record !== op.record || elementsRecord !== op.elementsRecord)
+            rewritten = { ...op, record, elementsRecord };
         }
         if (rewritten !== op && instructions === undefined)
           instructions = block.instructions.slice(0, i);

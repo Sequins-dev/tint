@@ -1,12 +1,12 @@
 import { viewObjectValue } from "./values.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
-  createDataProperty,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
-import { createArrayObject } from "./arrays.ts";
+import { createArrayWithElements } from "./arrays.ts";
+import { createArrayElementsFromList } from "./array-elements.ts";
 import { numberValue } from "./coercion.ts";
 import {
   createRuntimeError,
@@ -41,24 +41,18 @@ export function createArrayFromList(
   hooks: ObjectHooks<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const length = Math.max(0, args.length - start);
-  const object = createArrayObject<ScriptPropertyKey, unknown>(
+  const elements = createArrayElementsFromList(
+    realm.arrayHooks,
+    hooks.undefinedValue,
+    args,
+    start,
     length,
+  );
+  return createArrayWithElements<ScriptPropertyKey, unknown>(
     prototype,
     realm.arrayHooks,
-    hooks,
+    elements,
   );
-  for (let index = 0; index < length; index++) {
-    if (
-      !createDataProperty<ScriptPropertyKey, unknown>(
-        object,
-        String(index),
-        args[start + index],
-        hooks,
-      )
-    )
-      throw "ARRAY_LIST_INVARIANT";
-  }
-  return object;
 }
 
 /** Copy a typed internal string list into an independently mutable Script Array. */

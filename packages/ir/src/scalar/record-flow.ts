@@ -287,6 +287,11 @@ export function provenRecordFacts(
               for (let slot = 0; slot < op.count; slot++)
                 edge(field(op.record, op.field + slot), result);
               break;
+            case "element-load":
+            case "element-store":
+              // Numbers (or the absent value) and booleans: binary64
+              // elements hold no record, so nothing flows in or out.
+              break;
             case "property-store":
               for (let slot = 0; slot < op.count; slot++)
                 edge(value(fn.id, op.value), field(op.record, op.field + slot));

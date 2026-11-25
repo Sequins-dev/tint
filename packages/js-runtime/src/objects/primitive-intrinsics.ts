@@ -186,6 +186,7 @@ export function installPrimitiveIntrinsics(
   }
   install("boolean", "Boolean", realm.booleanPrototype);
   const constructor = install("number", "Number", realm.numberPrototype);
+  realm.intrinsicFunctions.number = constructor;
   const stringConstructor = install("string", "String", realm.stringPrototype);
   function convertedString(value: unknown): string {
     const converted = stringValue(value, hooks, realm);
@@ -364,11 +365,17 @@ export function installPrimitiveIntrinsics(
   stringSearch("startsWith");
   stringSearch("endsWith");
   stringSearch("includes");
-  stringMethod("charCodeAt", 1, (value, args): unknown =>
-    value.charCodeAt(number(args[0])),
+  // Generated calls perform these inline for a String receiver and Number
+  // position (intrinsic-functions.ts) with the same typed operations.
+  realm.intrinsicFunctions.stringCharCodeAt = stringMethod(
+    "charCodeAt",
+    1,
+    (value, args): unknown => value.charCodeAt(number(args[0])),
   );
-  stringMethod("charAt", 1, (value, args): unknown =>
-    value.charAt(number(args[0])),
+  realm.intrinsicFunctions.stringCharAt = stringMethod(
+    "charAt",
+    1,
+    (value, args): unknown => value.charAt(number(args[0])),
   );
   stringMethod("substr", 2, (value, args): unknown => {
     const start = Math.trunc(number(args[0])) || 0;

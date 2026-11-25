@@ -945,7 +945,17 @@ test("an inline property store checks the shape after evaluating its RHS", () =>
 test("computed writes use the indexed path after evaluating the value", () => {
   const source = "function store(o, key, value) { o[key] = value(); }";
   assert.equal(runtimeCalls(source, "writeObjectValuePropertyKey"), 1);
+  assert.equal(runtimeCalls(source, "storePackedNumberElement"), 1);
   assert.equal(runtimeCalls(source, "objectPropertyKey"), 0);
+});
+
+test("calls named like inline builtins keep the register call when the guard misses", () => {
+  // o.add and o.get may be Set.prototype.add and Map.prototype.get; when
+  // they are not, the evaluated operands go to the ordinary register call.
+  const source = "function f(o){return o.add(1) + o.get(2) + Math.floor(o)}";
+  assert.equal(runtimeCalls(source, "callRegisterObjectValue"), 3);
+  assert.equal(runtimeCalls(source, "callObjectValue"), 0);
+  assert.equal(runtimeCalls(source, "scriptStrictEqual"), 0);
 });
 
 test("fixed-arity calls construct one argument list after evaluating operands", () => {

@@ -38,6 +38,12 @@ export type RecordOperation =
   | "property-store"
   /** `(witness: T): number`: the word index of a named field of T. */
   | "field-word"
+  /** `(witness: T, value: unknown, index: number): unknown`: the packed
+   * binary64 element of an object value, or a miss (IR element-load). */
+  | "element-load"
+  /** `(witness: T, target: unknown, index: number, value: unknown):
+   * boolean`: overwrite a packed binary64 element (IR element-store). */
+  | "element-store"
   /** Native activation chain reads (IR activation-read), without a record
    * witness: `(): number` the innermost record; `(record: number): F` a
    * record's previous record, kind, actual count (numbers) or callee
@@ -244,6 +250,72 @@ export function bindPropertyLoad(
       entries,
       epochRecord,
       epochField,
+    }),
+    span,
+  );
+}
+/** The record fields element-load and element-store read: the witness
+ * record's elements field, and the elements record's count and storage. */
+export interface ElementLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly elementsRecord: number;
+  readonly countField: number;
+  readonly storageField: number;
+}
+/** The body of an element-load binding: its value and index parameters. */
+export function bindElementLoad(
+  fn: FunctionIR,
+  value: number,
+  index: number,
+  layout: ElementLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value, index],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "element-load",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      countField: layout.countField,
+      storageField: layout.storageField,
+    }),
+    span,
+  );
+}
+/** The body of an element-store binding: its target, index and value
+ * parameters. */
+export function bindElementStore(
+  fn: FunctionIR,
+  target: number,
+  index: number,
+  value: number,
+  layout: ElementLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [target, index, value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "element-store",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+      value: loaded[2] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      countField: layout.countField,
+      storageField: layout.storageField,
     }),
     span,
   );

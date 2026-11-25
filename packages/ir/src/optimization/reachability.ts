@@ -101,6 +101,9 @@ export function traceModuleReferences(
           includeRecord(op.objectRecord);
           includeRecord(op.entryRecord);
           includeRecord(op.contextRecord);
+        } else if (op.kind === "element-load" || op.kind === "element-store") {
+          includeRecord(op.record);
+          includeRecord(op.elementsRecord);
         }
       }
       const t = block.terminator;

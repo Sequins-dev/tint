@@ -127,31 +127,28 @@ export function installSetIntrinsics(
   );
   for (const name of ["has", "add", "delete", "clear"]) {
     if (name === undefined) throw "SET_METHOD_NAME_INVARIANT";
-    builtinProperty(
-      prototype,
+    const method = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(
-        realm.functionPrototype,
-        name,
-        name === "clear" ? 0 : 1,
-        (receiver, args): unknown => {
-          const set = requireSet(receiver, realm);
-          const value = args[0] === 0 ? 0 : args[0];
-          if (name === "has") return hasMap<unknown, unknown>(set, value);
-          if (name === "delete") return deleteMap<unknown, unknown>(set, value);
-          if (name === "clear") {
-            clearMap<unknown, unknown>(set);
-            return undefined;
-          }
-          setMap<unknown, unknown>(set, value, value);
-          return receiver;
-        },
-        hooks,
-      ),
-      true,
-      true,
+      name === "clear" ? 0 : 1,
+      (receiver, args): unknown => {
+        const set = requireSet(receiver, realm);
+        const value = args[0] === 0 ? 0 : args[0];
+        if (name === "has") return hasMap<unknown, unknown>(set, value);
+        if (name === "delete") return deleteMap<unknown, unknown>(set, value);
+        if (name === "clear") {
+          clearMap<unknown, unknown>(set);
+          return undefined;
+        }
+        setMap<unknown, unknown>(set, value, value);
+        return receiver;
+      },
       hooks,
     );
+    builtinProperty(prototype, name, method, true, true, hooks);
+    // Generated calls perform these inline on a Set receiver's storage.
+    if (name === "has") realm.intrinsicFunctions.setHas = method;
+    else if (name === "add") realm.intrinsicFunctions.setAdd = method;
   }
   installSetAlgebra(realm, hooks);
   builtinProperty(

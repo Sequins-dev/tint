@@ -646,6 +646,17 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "sourceArgument",
     "resolveScriptCallEntry",
     "resolveScriptConstructEntry",
+    "packedNumberElement",
+    "absentElementValue",
+    "storePackedNumberElement",
+    "readCachedLengthValue",
+    "scriptMapGet",
+    "scriptMapHas",
+    "scriptMapSet",
+    "scriptSetAdd",
+    "scriptArrayPush",
+    "createObjectLiteralSite",
+    "createLiteralObject",
   ];
   const old = {
     ...snapshot,
@@ -655,7 +666,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
         for (const name of fastPaths)
           source = source
             .replace(`  ${name},\n`, "")
-            .replace(`, ${name} }`, " }");
+            .replace(`, ${name} }`, " }")
+            .replace(`export { ${name} } from "./array-append.ts";\n`, "");
         return { ...input, bytes: new TextEncoder().encode(source) };
       }
       if (input.id === "packages/js-runtime/src/environments/global/index.ts") {
@@ -688,8 +700,9 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   assert.equal(previous.values.length, 136);
   // The inline property caches import two value readers (own and
   // inherited), their miss test and the cached store where they imported
-  // one slot reader; native script entries add their six helpers.
-  assert.equal(current.values.length, 161);
+  // one slot reader; native script entries add six helpers; step 5a adds
+  // eleven helpers for element access, builtin intrinsics and object literals.
+  assert.equal(current.values.length, 172);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

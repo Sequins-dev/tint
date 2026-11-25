@@ -82,6 +82,15 @@ export function visitInstructionOperands(
       visit(op.callee);
       visit(op.realm);
       return;
+    case "element-load":
+      visit(op.object);
+      visit(op.index);
+      return;
+    case "element-store":
+      visit(op.object);
+      visit(op.index);
+      visit(op.value);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;

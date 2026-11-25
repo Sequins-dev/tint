@@ -251,32 +251,31 @@ export function installMapIntrinsics(
   );
   for (const name of ["get", "has", "set", "delete", "clear"]) {
     if (name === undefined) throw "MAP_METHOD_NAME_INVARIANT";
-    builtinProperty(
-      prototype,
+    const method = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(
-        realm.functionPrototype,
-        name,
-        name === "set" ? 2 : name === "clear" ? 0 : 1,
-        (receiver, args): unknown => {
-          const map = requireMap(receiver, realm);
-          const key = args[0] === 0 ? 0 : args[0];
-          if (name === "get") return getMap<unknown, unknown>(map, key);
-          if (name === "has") return hasMap<unknown, unknown>(map, key);
-          if (name === "delete") return deleteMap<unknown, unknown>(map, key);
-          if (name === "clear") {
-            clearMap<unknown, unknown>(map);
-            return undefined;
-          }
-          setMap<unknown, unknown>(map, key, args[1]);
-          return receiver;
-        },
-        hooks,
-      ),
-      true,
-      true,
+      name === "set" ? 2 : name === "clear" ? 0 : 1,
+      (receiver, args): unknown => {
+        const map = requireMap(receiver, realm);
+        const key = args[0] === 0 ? 0 : args[0];
+        if (name === "get") return getMap<unknown, unknown>(map, key);
+        if (name === "has") return hasMap<unknown, unknown>(map, key);
+        if (name === "delete") return deleteMap<unknown, unknown>(map, key);
+        if (name === "clear") {
+          clearMap<unknown, unknown>(map);
+          return undefined;
+        }
+        setMap<unknown, unknown>(map, key, args[1]);
+        return receiver;
+      },
       hooks,
     );
+    builtinProperty(prototype, name, method, true, true, hooks);
+    // Generated calls perform these inline on a Map receiver's storage.
+    const intrinsics = realm.intrinsicFunctions;
+    if (name === "get") intrinsics.mapGet = method;
+    else if (name === "has") intrinsics.mapHas = method;
+    else if (name === "set") intrinsics.mapSet = method;
   }
   builtinProperty(
     prototype,

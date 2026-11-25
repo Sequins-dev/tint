@@ -2575,3 +2575,117 @@ test("property loads verify every entry of their site layout", () => {
   assert.equal(verify(load(1, false)).ok, true);
   assert.equal(verify(load(2, false)).ok, false);
 });
+
+test("element access requires an elements reference with a number count and Float64Array storage", () => {
+  function module(
+    elementsType: "optional-reference" | "number",
+    countType: "number" | "general",
+    storageType: "Float64Array" | "reference",
+    indexType: "number" | "general",
+    store: boolean,
+  ) {
+    const instructions: Block["instructions"][number][] = [
+      { kind: "load", id: 0, slot: 0, ...span },
+      { kind: "load", id: 1, slot: 1, ...span },
+    ];
+    const layout = {
+      record: 0,
+      field: 1,
+      elementsRecord: 1,
+      countField: 0,
+      storageField: 1,
+    };
+    instructions.push(
+      store
+        ? {
+            kind: "element-store",
+            id: 2,
+            object: 0,
+            index: 1,
+            value: 0,
+            ...layout,
+            ...span,
+          }
+        : {
+            kind: "element-load",
+            id: 2,
+            object: 0,
+            index: 1,
+            ...layout,
+            ...span,
+          },
+    );
+    return verify({
+      functions: [
+        {
+          id: 0,
+          name: "element",
+          exported: true,
+          parameters: [0, 1],
+          slots: ["general", indexType],
+          returnType: store ? "boolean" : "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: 2, ...span },
+            },
+          ],
+        },
+      ],
+      records: [
+        {
+          byteLength: 24,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: elementsType, mutable: true },
+          ],
+        },
+        {
+          byteLength: 32,
+          fields: [
+            {
+              offset: 8,
+              type: countType,
+              mutable: true,
+            },
+            {
+              offset: countType === "general" ? 24 : 16,
+              type: storageType,
+              mutable: true,
+            },
+          ],
+        },
+      ],
+    });
+  }
+  for (const store of [false, true]) {
+    const valid = module(
+      "optional-reference",
+      "number",
+      "Float64Array",
+      "number",
+      store,
+    );
+    assert.ok(valid.ok, JSON.stringify(valid));
+    assert.equal(
+      module("number", "number", "Float64Array", "number", store).ok,
+      false,
+    );
+    assert.equal(
+      module("optional-reference", "general", "Float64Array", "number", store)
+        .ok,
+      false,
+    );
+    assert.equal(
+      module("optional-reference", "number", "reference", "number", store).ok,
+      false,
+    );
+    assert.equal(
+      module("optional-reference", "number", "Float64Array", "general", store)
+        .ok,
+      false,
+    );
+  }
+});
