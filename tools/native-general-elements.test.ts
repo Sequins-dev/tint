@@ -330,7 +330,8 @@ function appends() {
   delete Array.prototype.unrelatedPushTag;
   // Deleting Array.prototype.push throws TypeError at the call site.
   delete Array.prototype.push;
-  try { push([], 1); out.push("pushed"); } catch (e) { out.push(e.constructor.name); }
+  let deletedPushErr = "pushed";
+  try { push([], 1); } catch (e) { deletedPushErr = e.constructor.name; }
   // Accessor on Array.prototype.push must be invoked.
   let getterHits = 0;
   Object.defineProperty(Array.prototype, "push", {
@@ -338,13 +339,14 @@ function appends() {
     configurable: true,
   });
   const viaGetter = [];
-  out.push(push(viaGetter, 7), getterHits, viaGetter[0]);
+  const getterLen = push(viaGetter, 7);
   Object.defineProperty(Array.prototype, "push", {
     value: original,
     writable: true,
     enumerable: false,
     configurable: true,
   });
+  out.push(deletedPushErr, getterLen, getterHits, viaGetter[0]);
   // Push across capacity growth and number -> value transition, and on unpacked arrays.
   const growing = [];
   for (let i = 0; i < 20; i++) push(growing, i);

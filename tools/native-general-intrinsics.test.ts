@@ -181,7 +181,7 @@ function collections() {
   const seen = [];
   for (const [k, v] of live) {
     seen.push(k + v);
-    if (k === "a") {
+    if (k === "a" && v === 1) {
       live.delete("b");
       live.delete("a");
       live.set("a", 9);
