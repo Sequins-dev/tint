@@ -205,6 +205,7 @@ export {
   type DataAlias,
   type ObjectHooks,
   type ObjectCall,
+  type ObjectRegisterCall,
   type ObjectExecutionContext,
   type ObjectConstruct,
   type Receiver,
@@ -619,6 +620,7 @@ export {
 export {
   builtinAccessor,
   builtinFunction,
+  builtinRegisterFunction,
   builtinFunctionMetadata,
   builtinProperty,
 } from "./intrinsics.ts";

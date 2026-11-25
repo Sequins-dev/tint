@@ -5,7 +5,7 @@ import {
   copyLatin1,
 } from "@tint/foundation/text/latin1";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
-import { utf8ByteLength, writeUTF8 } from "@tint/foundation/text/utf8";
+import { writeUTF8Bytes } from "@tint/foundation/text/utf8";
 import {
   ERR_clear_error,
   EVP_get_digestbyname,
@@ -212,26 +212,31 @@ function updateString(
       : (bufferEncoding(encoding) ?? "utf8");
   if (name === "utf8") {
     // OpenSSL consumes the scratch window synchronously and cannot reenter
-    // JavaScript. ASCII strings fitting in scratch move in one bulk copy.
+    // JavaScript. Pure ASCII strings copy directly in bulk; mixed strings
+    // encode in one pass (at most 3 UTF-8 bytes per UTF-16 unit, so chunkUnits
+    // always fits without truncating a scalar).
     const length = data.length;
     if (length === 0) {
       updateBytes(address, hmac, updateScratch, 0);
       return;
     }
-    if (
-      length <= updateScratch.length &&
-      asciiEndOfText(data, 0, length) === length
-    ) {
+    const scratchLength = updateScratch.length;
+    if (length <= scratchLength && asciiEndOfText(data, 0, length) === length) {
       copyLatin1(data, 0, length, updateScratch, 0);
       updateBytes(address, hmac, updateScratch, length);
       return;
     }
+    const chunkUnits = Math.floor(scratchLength / 3);
     let read = 0;
     while (read < length) {
-      const next = writeUTF8(data, read, length, updateScratch, 0);
-      const written = utf8ByteLength(data, read, next);
+      let end = read + chunkUnits;
+      if (end < length) {
+        const last = data.charCodeAt(end - 1);
+        if (last >= 0xd800 && last <= 0xdbff) end--;
+      } else end = length;
+      const written = writeUTF8Bytes(data, read, end, updateScratch, 0);
       updateBytes(address, hmac, updateScratch, written);
-      read = next;
+      read = end;
     }
     return;
   }

@@ -255,6 +255,11 @@ export function projectBuildRequest(
     },
     { module: utf8, name: "utf8ByteLength", operation: "string-utf8-length" },
     { module: utf8, name: "writeUTF8", operation: "string-write-utf8" },
+    {
+      module: utf8,
+      name: "writeUTF8Bytes",
+      operation: "string-write-utf8-bytes",
+    },
     { module: utf8, name: "utf8Text", operation: "string-from-utf8" },
     {
       module: utf8,

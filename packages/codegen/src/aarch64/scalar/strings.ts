@@ -1950,7 +1950,14 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     branch("two-multi", "cs");
     advance(9, 1);
     step(2, 1, 0, 0);
-    branch("two-scalar");
+    compareImmediate(15, 0);
+    branch("done", "eq");
+    emit({ op: "ldrh", rt: 16, rn: 13, offset: 0 });
+    compareImmediate(16, 0x80);
+    branch("two-multi", "cs");
+    advance(9, 1);
+    step(2, 1, 0, 0);
+    branch("two-pairs");
     label("two-multi");
     compareImmediate(16, 0x800);
     branch("two-two", "cc");
@@ -1968,13 +1975,13 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     branch("two-three", "cs");
     advance(9, 4);
     step(4, 2, 0, 0);
-    branch("two-pairs");
+    branch("two-scalar");
     label("two-three");
     advance(9, 1);
     label("two-two");
     advance(9, 2);
     step(2, 1, 0, 0);
-    branch("two-pairs");
+    branch("two-scalar");
     label("done");
     emit({ op: "ret", rn: 30 });
   } else if (kind === "string-write-utf8") {
@@ -2052,7 +2059,14 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     asm.zeroBranch("done", 12, false);
     emit({ op: "strb", rt: 16, rn: 14, offset: 0 });
     step(2, 1, 1, 1);
-    branch("two-unit");
+    asm.zeroBranch("done", 15, false);
+    emit({ op: "ldrh", rt: 16, rn: 13, offset: 0 });
+    compareImmediate(16, 0x80);
+    branch("two-multi", "cs");
+    asm.zeroBranch("done", 12, false);
+    emit({ op: "strb", rt: 16, rn: 14, offset: 0 });
+    step(2, 1, 1, 1);
+    branch("two-vectors");
     label("two-multi");
     compareImmediate(16, 0x800);
     branch("two-wide", "cs");
@@ -2063,7 +2077,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     emit({ op: "strb", rt: 10, rn: 14, offset: 0 });
     continuation(16, 0, 1);
     step(2, 1, 2, 2);
-    branch("two-vectors");
+    branch("two-unit");
     label("two-wide");
     // x10 = unit - 0xD800: not a surrogate at 0x800 or more, a low one
     // (alone: U+FFFD) at 0x400 or more.
@@ -2093,7 +2107,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     continuation(16, 6, 2);
     continuation(16, 0, 3);
     step(4, 2, 4, 4);
-    branch("two-vectors");
+    branch("two-unit");
     label("two-lone");
     emit({ op: "movz", width: 64, rd: 16, immediate: 0xfffd, shift: 0 });
     label("two-three");
@@ -2105,7 +2119,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     continuation(16, 6, 1);
     continuation(16, 0, 2);
     step(2, 1, 3, 3);
-    branch("two-vectors");
+    branch("two-unit");
     label("done");
     emit({
       op: "sub-reg",

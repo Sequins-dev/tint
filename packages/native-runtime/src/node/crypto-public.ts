@@ -1,18 +1,17 @@
 import { byteStorageData } from "@tint/js-runtime/bytes";
 import {
-  addPrivateField,
   builtinAccessor,
   builtinFunction,
   builtinProperty,
+  builtinRegisterFunction,
   callObjectValue,
   createArrayFromList,
   createCodedRuntimeError,
   createDataProperty,
   createObject,
-  createPrivateName,
   createRuntimeError,
+  ensureRareSlots,
   exoticSlots,
-  findPrivateElement,
   getProperty,
   isArrayValue,
   isCallableObject,
@@ -22,6 +21,7 @@ import {
   typedArrayElementWidth,
   viewObjectValue,
   type ObjectCall,
+  type ObjectRegisterCall,
   type OrdinaryObject,
   type ProgramRealmCore,
   type ScriptPropertyKey,
@@ -136,7 +136,8 @@ function unavailableDigest(
  * synchronous step without projecting a range record. Other views (DataView,
  * shared, length-tracking, detached or out of bounds) return undefined. */
 function typedArrayBytes(object: RealmObject): Uint8Array | undefined {
-  const data = exoticSlots(object).internalTypedArrayData;
+  const exotic = object.internalExoticSlots;
+  const data = exotic === undefined ? undefined : exotic.internalTypedArrayData;
   if (data === undefined) return undefined;
   const storage = data.storage;
   const length = data.length;
@@ -144,7 +145,12 @@ function typedArrayBytes(object: RealmObject): Uint8Array | undefined {
   const bytes = storage.data;
   if (bytes === undefined) return undefined;
   const start = data.byteOffset;
-  const end = start + length * typedArrayElementWidth(data.kind);
+  const kind = data.kind;
+  const width =
+    kind === "Uint8" || kind === "Uint8Clamped" || kind === "Int8"
+      ? 1
+      : typedArrayElementWidth(kind);
+  const end = start + length * width;
   if (end > bytes.length) return undefined;
   return start === 0 && end === bytes.length
     ? bytes
@@ -184,18 +190,21 @@ function inputBytes(
   return invalid(core, name, "string, Buffer, TypedArray, or DataView", input);
 }
 
-function method(
+function registerMethod(
   core: ProgramRealmCore,
   object: RealmObject,
   name: string,
   length: number,
   body: ObjectCall<unknown>,
+  invoke: ObjectRegisterCall<unknown>,
 ): void {
-  const fn = builtinFunction(
+  const fn = builtinRegisterFunction(
     core.realm.functionPrototype,
+    core.realm,
     name,
     length,
     body,
+    invoke,
     core.hooks,
   );
   builtinProperty(object, name, fn, true, true, core.hooks);
@@ -217,8 +226,6 @@ function unsupportedProperty(
   builtinAccessor(object, key, getter, undefined, core.hooks);
 }
 
-const digestState = createPrivateName("node:crypto digest");
-
 /** Bound by the image compiler to an exact DigestLifetime record check. */
 export function viewDigestLifetime(value: unknown): DigestLifetime | undefined {
   throw "UNBOUND_DIGEST_LIFETIME_VIEW";
@@ -232,13 +239,10 @@ function viewDigestState(
   // Shared methods can be borrowed, including by an object with a digest
   // instance on its prototype chain.
   while (object !== undefined) {
-    const element = findPrivateElement<ScriptPropertyKey, unknown>(
-      object,
-      digestState,
-    );
-    if (element !== undefined) {
-      if (element.kind !== "field") throw "CRYPTO_DIGEST_STATE_INVARIANT";
-      const lifetime = viewDigestLifetime(element.value);
+    const rare = object.internalRareSlots;
+    const raw = rare === undefined ? undefined : rare.internalCryptoDigest;
+    if (raw !== undefined) {
+      const lifetime = viewDigestLifetime(raw);
       if (lifetime === undefined) throw "CRYPTO_DIGEST_STATE_INVARIANT";
       return lifetime;
     }
@@ -262,14 +266,8 @@ function digestView(
   const object = createObject<ScriptPropertyKey, unknown>(
     digestPrototype(core, lifetime.hmac),
   );
-  if (
-    addPrivateField<ScriptPropertyKey, unknown>(
-      object,
-      digestState,
-      lifetime,
-    ) !== "none"
-  )
-    throw "CRYPTO_DIGEST_STATE_INVARIANT";
+  ensureRareSlots<ScriptPropertyKey, unknown>(object).internalCryptoDigest =
+    lifetime;
   trackDigest(lifetime, object);
   return object;
 }
@@ -383,13 +381,30 @@ function createDigestPrototype(
     );
     builtinProperty(prototype, "update", update, true, true, core.hooks);
   } else {
-    method(core, prototype, "update", 2, (receiver, args): unknown => {
-      updateView(core, viewDigestState(core, receiver), args[0], args[1]);
-      return receiver;
-    });
+    registerMethod(
+      core,
+      prototype,
+      "update",
+      2,
+      (receiver, args): unknown => {
+        updateView(core, viewDigestState(core, receiver), args[0], args[1]);
+        return receiver;
+      },
+      (_callee, receiver, _newTarget, _count, first, second): unknown => {
+        updateView(core, viewDigestState(core, receiver), first, second);
+        return receiver;
+      },
+    );
   }
-  method(core, prototype, "digest", 1, (receiver, args): unknown =>
-    digestOfView(core, viewDigestState(core, receiver), args[0], hmac),
+  registerMethod(
+    core,
+    prototype,
+    "digest",
+    1,
+    (receiver, args): unknown =>
+      digestOfView(core, viewDigestState(core, receiver), args[0], hmac),
+    (_callee, receiver, _newTarget, _count, first, _second): unknown =>
+      digestOfView(core, viewDigestState(core, receiver), first, hmac),
   );
   for (const stream of streamProperties)
     unsupportedProperty(core, prototype, stream, kind + "." + stream);
@@ -407,14 +422,21 @@ function unsupported(core: ProgramRealmCore, operation: string): never {
   );
 }
 
-export function createHash(algorithm: unknown, options: unknown): unknown {
-  const core = programRealmCore();
+function createHashInRealm(
+  core: ProgramRealmCore,
+  algorithm: unknown,
+  options: unknown,
+): unknown {
   if (typeof algorithm !== "string")
     return invalid(core, "algorithm", "string", algorithm);
   if (options !== undefined && options !== null)
     return unsupported(core, "createHash options");
   if (xofName(algorithm)) return unsupported(core, "XOF hashing");
   return digestView(core, openDigest(algorithm, undefined));
+}
+
+export function createHash(algorithm: unknown, options: unknown): unknown {
+  return createHashInRealm(programRealmCore(), algorithm, options);
 }
 
 /** ASCII case-insensitive prefix test against a lowercase `prefix`, without
@@ -435,15 +457,26 @@ function isDss1(algorithm: string): boolean {
 }
 
 function xofName(algorithm: string): boolean {
-  return asciiPrefix(algorithm, "shake") || asciiPrefix(algorithm, "cshake");
+  const length = algorithm.length;
+  if (length < 5) return false;
+  const first = algorithm.charCodeAt(0) | 32;
+  if (first === 115)
+    return (
+      (algorithm.charCodeAt(3) | 32) === 107 && asciiPrefix(algorithm, "shake")
+    );
+  if (first === 99 && length >= 6)
+    return (
+      (algorithm.charCodeAt(4) | 32) === 107 && asciiPrefix(algorithm, "cshake")
+    );
+  return false;
 }
 
-export function createHmac(
+function createHmacInRealm(
+  core: ProgramRealmCore,
   algorithm: unknown,
   key: unknown,
   options: unknown,
 ): unknown {
-  const core = programRealmCore();
   if (typeof algorithm !== "string")
     return invalid(core, "hmac", "string", algorithm);
   if (options !== undefined && options !== null)
@@ -456,11 +489,26 @@ export function createHmac(
   );
 }
 
-export function randomBytes(size: unknown, callback: unknown): unknown {
-  const core = programRealmCore();
+export function createHmac(
+  algorithm: unknown,
+  key: unknown,
+  options: unknown,
+): unknown {
+  return createHmacInRealm(programRealmCore(), algorithm, key, options);
+}
+
+function randomBytesInRealm(
+  core: ProgramRealmCore,
+  size: unknown,
+  callback: unknown,
+): unknown {
   if (typeof size !== "number") return invalid(core, "size", "number", size);
   if (callback !== undefined) return unsupported(core, "randomBytes callbacks");
   return adoptNodeBuffer(core, nativeRandomBytes(size));
+}
+
+export function randomBytes(size: unknown, callback: unknown): unknown {
+  return randomBytesInRealm(programRealmCore(), size, callback);
 }
 
 export function pbkdf2(
@@ -606,58 +654,110 @@ export function createNodeCryptoModules(
   const buffer = createObject<ScriptPropertyKey, unknown>(
     core.realm.objectPrototype,
   );
-  function operation(
-    name: string,
-    length: number,
-    body: ObjectCall<unknown>,
-  ): void {
-    method(core, crypto, name, length, (receiver, args): unknown => {
-      try {
-        return body(receiver, args);
-      } catch (error) {
-        const adapted = toRealmError(error);
-        const object = viewObjectValue(adapted, core.object);
-        if (object !== undefined) {
-          const code = getProperty<ScriptPropertyKey, unknown>(
-            object,
-            "code",
-            object,
-            core.hooks,
-          );
-          if (
-            code === "ERR_CRYPTO_INVALID_DIGEST" ||
-            code === "ERR_OSSL_EVP_UNSUPPORTED"
-          ) {
-            const message = getProperty<ScriptPropertyKey, unknown>(
-              object,
-              "message",
-              object,
-              core.hooks,
-            );
-            if (typeof message === "string") {
-              if (code === "ERR_CRYPTO_INVALID_DIGEST")
-                return fail(core, "type", message, code);
-              return unavailableDigest(core, name, message);
-            }
-          }
+  function adaptError(name: string, error: unknown): never {
+    const adapted = toRealmError(error);
+    const object = viewObjectValue(adapted, core.object);
+    if (object !== undefined) {
+      const code = getProperty<ScriptPropertyKey, unknown>(
+        object,
+        "code",
+        object,
+        core.hooks,
+      );
+      if (
+        code === "ERR_CRYPTO_INVALID_DIGEST" ||
+        code === "ERR_OSSL_EVP_UNSUPPORTED"
+      ) {
+        const message = getProperty<ScriptPropertyKey, unknown>(
+          object,
+          "message",
+          object,
+          core.hooks,
+        );
+        if (typeof message === "string") {
+          if (code === "ERR_CRYPTO_INVALID_DIGEST")
+            return fail(core, "type", message, code);
+          return unavailableDigest(core, name, message);
         }
-        throw adapted;
       }
-    });
+    }
+    throw adapted;
   }
-  operation("createHash", 2, (_receiver, args): unknown =>
-    createHash(args[0], args[1]),
+  registerMethod(
+    core,
+    crypto,
+    "createHash",
+    2,
+    (_receiver, args): unknown => {
+      try {
+        return createHashInRealm(core, args[0], args[1]);
+      } catch (error) {
+        return adaptError("createHash", error);
+      }
+    },
+    (_callee, _receiver, _newTarget, _count, first, second): unknown => {
+      try {
+        return createHashInRealm(core, first, second);
+      } catch (error) {
+        return adaptError("createHash", error);
+      }
+    },
   );
-  operation("createHmac", 3, (_receiver, args): unknown =>
-    createHmac(args[0], args[1], args[2]),
+  registerMethod(
+    core,
+    crypto,
+    "createHmac",
+    3,
+    (_receiver, args): unknown => {
+      try {
+        return createHmacInRealm(core, args[0], args[1], args[2]);
+      } catch (error) {
+        return adaptError("createHmac", error);
+      }
+    },
+    (_callee, _receiver, _newTarget, _count, first, second): unknown => {
+      try {
+        return createHmacInRealm(core, first, second, undefined);
+      } catch (error) {
+        return adaptError("createHmac", error);
+      }
+    },
   );
-  operation("randomBytes", 2, (_receiver, args): unknown =>
-    randomBytes(args[0], args[1]),
+  registerMethod(
+    core,
+    crypto,
+    "randomBytes",
+    2,
+    (_receiver, args): unknown => {
+      try {
+        return randomBytesInRealm(core, args[0], args[1]);
+      } catch (error) {
+        return adaptError("randomBytes", error);
+      }
+    },
+    (_callee, _receiver, _newTarget, _count, first, second): unknown => {
+      try {
+        return randomBytesInRealm(core, first, second);
+      } catch (error) {
+        return adaptError("randomBytes", error);
+      }
+    },
   );
-  operation("pbkdf2", 6, (_receiver, args): unknown => {
-    pbkdf2(args[0], args[1], args[2], args[3], args[4], args[5]);
-    return undefined;
-  });
+  const pbkdf2Fn = builtinFunction(
+    core.realm.functionPrototype,
+    "pbkdf2",
+    6,
+    (_receiver, args): unknown => {
+      try {
+        pbkdf2(args[0], args[1], args[2], args[3], args[4], args[5]);
+        return undefined;
+      } catch (error) {
+        return adaptError("pbkdf2", error);
+      }
+    },
+    core.hooks,
+  );
+  builtinProperty(crypto, "pbkdf2", pbkdf2Fn, true, true, core.hooks);
   for (const key of unsupportedCryptoExports)
     unsupportedProperty(core, crypto, key, key);
   const constructor = installNodeBuffer(core);
