@@ -163,11 +163,7 @@ import {
   type SafepointEntry,
   type WideStackMapPlan,
 } from "../../scalar/stack-maps.ts";
-import {
-  frameStackMaps,
-  isRootType,
-  type PendingSafepoint,
-} from "./stack-maps.ts";
+import { frameStackMaps, isRootType } from "./stack-maps.ts";
 
 export {
   imageRelocations,
@@ -407,9 +403,10 @@ export function emitModule(
   const assembler = createAssembler(far);
   let instructionCount = 0;
   const unwind: LabeledUnwind[] = [];
+  const resolvedUnwind: UnwindRange[] = [];
   const sourceLabels: { readonly name: string; readonly span: Span }[] = [];
   const debugFrames = new Map<number, readonly X64DebugParameter[]>();
-  const pendingMaps: PendingSafepoint[] = [];
+  const resolvedMaps: SafepointEntry[] = [];
   const emit: Emit = (insn) => {
     assembler.instruction(insn);
     instructionCount++;
@@ -662,6 +659,7 @@ export function emitModule(
   }
 
   function body(fn: FunctionIR): void {
+    assembler.beginScope();
     const scriptEntryCallees = scriptEntryCalleeValues(fn);
     const fnLabel = functionLabel(fn.id);
     const interruptible =
@@ -3925,9 +3923,16 @@ export function emitModule(
     if (host !== undefined) cfi.record(dwarfStackPointer, 8, [returnSave]);
     emit({ op: "ret" });
     emit({ op: "label", name: fnEnd });
-    if (host !== undefined)
-      unwind.push({ start: fnLabel, end: fnEnd, rule: "rows", rows: cfi.rows });
-    if (callSites.length > 0)
+    if (host !== undefined) {
+      for (const range of resolveUnwind(
+        [{ start: fnLabel, end: fnEnd, rule: "rows", rows: cfi.rows }],
+        assembler.labels,
+      ))
+        if (range !== undefined) resolvedUnwind.push(range);
+    }
+    if (callSites.length > 0) {
+      const fnStart = assembler.labels.get(fnLabel);
+      if (fnStart === undefined) throw "x86-64 safepoint label invariant";
       for (const map of frameStackMaps(
         fn,
         fnLabel,
@@ -3937,8 +3942,22 @@ export function emitModule(
         types,
         callSites,
         fn.closureEnvironment === undefined ? undefined : savedEnvironment,
-      ))
-        if (map !== undefined) pendingMaps.push(map);
+      )) {
+        if (map === undefined) continue;
+        const offset = assembler.labels.get(map.label);
+        if (offset === undefined) throw "x86-64 safepoint label invariant";
+        resolvedMaps.push({ offset, start: fnStart, map: map.map });
+      }
+    }
+    const debugBody = fnLabel + ":debug-body";
+    assembler.endScope(
+      (name) =>
+        name === fnLabel ||
+        name === fnEnd ||
+        name === debugBody ||
+        name === done ||
+        (debugSpans && name.startsWith("source:")),
+    );
   }
 
   function collectorLeaves(): void {
@@ -4236,17 +4255,8 @@ export function emitModule(
     const stackMaps: X64Module["stackMaps"][number][] = [];
     let stackMapPlan: WideStackMapPlan | undefined;
     if (host !== undefined) {
-      const entries: SafepointEntry[] = [];
-      for (const site of pendingMaps) {
-        if (site === undefined) throw "x86-64 safepoint invariant";
-        const offset = assembler.labels.get(site.label);
-        const start = assembler.labels.get(site.functionLabel);
-        if (offset === undefined || start === undefined)
-          throw "x86-64 safepoint label invariant";
-        entries.push({ offset, start, map: site.map });
-      }
-      pendingMaps.length = 0;
-      stackMapPlan = planWideStackMapTable(entries);
+      stackMapPlan = planWideStackMapTable(resolvedMaps);
+      resolvedMaps.length = 0;
       const thunkStart = assembler.labels.get(callbackThunksLabel);
       stackMaps.push({
         codeOffset: 0,
@@ -4478,6 +4488,8 @@ export function emitModule(
       if (end > offset)
         sourceRanges.push({ ...row.span, offset, byteLength: end - offset });
     }
+    for (const range of resolveUnwind(unwind, encoded.labels))
+      if (range !== undefined) resolvedUnwind.push(range);
     return {
       ok: true,
       value: {
@@ -4503,7 +4515,7 @@ export function emitModule(
         ...(functionDescriptor === undefined ? {} : { functionDescriptor }),
         signatures: nativeSignatures,
         records: nativeRecords,
-        unwind: resolveUnwind(unwind, encoded.labels),
+        unwind: resolvedUnwind,
         sourceRanges,
         probes: probes.resolve(encoded.labels),
         ...(callbackKeyOffset === undefined ? {} : { callbackKeyOffset }),
