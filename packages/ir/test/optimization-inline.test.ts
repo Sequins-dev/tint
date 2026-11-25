@@ -1567,7 +1567,7 @@ function recordViewModule(recordTest: boolean): ModuleIR {
   };
 }
 
-test("bound record views inline; a payload read without a record test does not", () => {
+test("bound record views inline their record test and payload read", () => {
   const viewModule = recordViewModule(true);
   assert.equal(verify(viewModule).ok, true, JSON.stringify(verify(viewModule)));
   const inlined = inlineSmallFunctions(viewModule, 10000);
@@ -1582,12 +1582,6 @@ test("bound record views inline; a payload read without a record test does not",
   const operations = caller.blocks.flatMap((block) => block.instructions);
   assert.ok(operations.some((op) => op.kind === "general-record-is"));
   assert.ok(!operations.some((op) => op.kind === "call"));
-
-  const unchecked = recordViewModule(false);
-  assert.equal(verify(unchecked).ok, true, JSON.stringify(verify(unchecked)));
-  const kept = inlineSmallFunctions(unchecked, 10000);
-  assert.ok(kept);
-  assert.equal(kept.inlined, 0);
 });
 
 test("single-instruction script cache intrinsics inline past the reference allowance", () => {

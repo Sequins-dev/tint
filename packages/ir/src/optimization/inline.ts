@@ -108,11 +108,7 @@ function nonTrapBlocks(fn: FunctionIR): number {
       count++;
   return count;
 }
-function supported(
-  op: Instruction,
-  references: boolean = true,
-  recordView: boolean = false,
-): boolean {
+function supported(op: Instruction, references: boolean = true): boolean {
   switch (op.kind) {
     case "constant":
     case "load":
@@ -177,14 +173,6 @@ function supported(
     case "record-new":
     case "reference-vector-new":
       return references;
-    // A bound record view tests a general value's record tag and descriptor
-    // and takes its reference payload; neither allocates nor throws. Only
-    // callees that test a record admit these, so code without record views
-    // inlines exactly as before.
-    case "general-record-is":
-      return references && recordView;
-    case "general-value":
-      return references && recordView && op.type === "reference";
     // A direct call stays a call in the caller: an exception it throws
     // reaches the caller's handler, as it did through the callee.
     case "call":
@@ -375,10 +363,6 @@ export function inlineSmallFunctions(
       overhead = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
     if (incremental && !good) continue;
-    let recordView = false;
-    for (const block of fn.blocks)
-      for (const op of block?.instructions ?? [])
-        if (op?.kind === "general-record-is") recordView = true;
     for (let slot = 0; slot < fn.slots.length; slot++) {
       if (incremental) {
         if (visited >= budget) return exhausted();
@@ -428,12 +412,12 @@ export function inlineSmallFunctions(
         // more level).
         if (op.kind === "call" && op.target === fn.id) good = false;
         if (
-          !supported(op, false, recordView) ||
+          !supported(op, false) ||
           (op.kind === "store" && fn.parameters.includes(op.slot))
         )
           original = false;
         if (
-          !supported(op, true, recordView) ||
+          !supported(op) ||
           (op.kind === "store" &&
             fn.blocks.length === 1 &&
             fn.parameters.includes(op.slot))
