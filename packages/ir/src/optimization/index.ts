@@ -62,7 +62,9 @@ import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
 import { hoistLoopInvariants } from "./licm.ts";
+import { buildLoopStrings } from "./string-builders.ts";
 import { boundCountedLoops, versionNonzeroDivisors } from "./counted-loops.ts";
+import { versionStringLoops } from "./string-loops.ts";
 import { layoutBlocks } from "./block-layout.ts";
 export { hoistLoopInvariants } from "./licm.ts";
 export { versionNonzeroDivisors } from "./counted-loops.ts";
@@ -1418,6 +1420,32 @@ export function optimizeModuleVersion(
     );
   used += hoisted.visited;
   if (completed("hoist-loop-invariants", hoisted, false)) return stop();
+  // Loops appending to a string local build it in a buffer instead of
+  // copying the whole string at every append.
+  const built = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = buildLoopStrings(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (built.exhausted)
+    return exhausted(
+      "build-loop-strings",
+      maxInstructions - used - accessVisited,
+    );
+  used += built.visited;
+  if (completed("build-loop-strings", built, false)) return stop();
   // Interval facts select unchecked typed-array accesses (and fold the
   // defaults of reads that can no longer be absent).
   const selected = rewriteFunctions(
@@ -1733,14 +1761,38 @@ export function optimizeModuleVersion(
     if (completed("select-array-access", reselected, false)) return stop();
     reselectedVisited = reselected.visited;
   }
-  // Layout only: each block is followed by its preferred successor, so the
-  // emitter elides that edge's branch (block-layout.ts).
-  const layoutBudget =
+  // Small loops reading code units of a string they never change enter a
+  // copy for its flat kind, without a kind dispatch per read. Copying whole
+  // loops keeps their list vector caches and interval facts current.
+  const stringBudget =
     vectorBudget -
     vectors.visited -
     bounded.visited -
     divided.visited -
     reselectedVisited;
+  const versioned = rewriteFunctions(
+    version,
+    stringBudget,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = versionStringLoops(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.versioned,
+            refused: false,
+          };
+    },
+  );
+  if (versioned.exhausted)
+    return exhausted("version-string-loops", versioned.visited);
+  if (completed("version-string-loops", versioned, false)) return stop();
+  // Layout only: each block is followed by its preferred successor, so the
+  // emitter elides that edge's branch (block-layout.ts).
+  const layoutBudget = stringBudget - versioned.visited;
   const laid = rewriteFunctions(
     version,
     layoutBudget,

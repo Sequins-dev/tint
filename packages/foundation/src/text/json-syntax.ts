@@ -57,10 +57,21 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
     return code >= 48 && code <= 57;
   }
   function string(): string | undefined {
-    if (source.charAt(position) !== '"') return undefined;
+    if (source.charCodeAt(position) !== 34) return undefined;
     position++;
+    // A string without escapes is one slice of the source.
+    const begin = position;
+    while (position < source.length) {
+      const unit = source.charCodeAt(position);
+      if (unit === 34) {
+        position++;
+        return source.slice(begin, position - 1);
+      }
+      if (unit === 92 || unit < 32) break;
+      position++;
+    }
     const parts: string[] = [];
-    let start = position;
+    let start = begin;
     while (position < source.length) {
       const unit = source.charCodeAt(position++);
       if (unit === 34) {
@@ -109,21 +120,21 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
   function value(): Value {
     whitespace();
     const start = position,
-      first = source.charAt(position);
-    if (first === '"') {
+      first = source.charCodeAt(position);
+    if (first === 34) {
       const decoded = string();
       return decoded === undefined
         ? fail(start)
         : builder.string(decoded, start, position);
     }
-    if (first === "[" || first === "{") {
-      const array = first === "[",
-        close = array ? "]" : "}";
+    if (first === 91 || first === 123) {
+      const array = first === 91,
+        close = array ? 93 : 125;
       const arrayState = array ? builder.openArray(start) : undefined,
         objectState = array ? undefined : builder.openObject(start);
       position++;
       whitespace();
-      if (source.charAt(position) !== close) {
+      if (source.charCodeAt(position) !== close) {
         while (true) {
           whitespace();
           let key = "";
@@ -132,7 +143,7 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
             if (decoded === undefined) return fail(start);
             key = decoded;
             whitespace();
-            if (source.charAt(position++) !== ":") return fail(start);
+            if (source.charCodeAt(position++) !== 58) return fail(start);
           }
           const child = value();
           if (!ok) return child;
@@ -140,41 +151,44 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
           else if (objectState !== undefined)
             builder.entry(objectState, key, child);
           whitespace();
-          if (source.charAt(position) !== ",") break;
+          if (source.charCodeAt(position) !== 44) break;
           position++;
         }
       }
-      if (source.charAt(position++) !== close) return fail(start);
+      if (source.charCodeAt(position++) !== close) return fail(start);
       if (arrayState !== undefined)
         return builder.closeArray(arrayState, start, position);
       if (objectState === undefined) throw "JSON_CONTAINER_INVARIANT";
       return builder.closeObject(objectState, start, position);
     }
-    for (const literal of ["null", "true", "false"]) {
-      if (literal === undefined) throw "JSON_LITERAL_INVARIANT";
-      if (source.slice(position, position + literal.length) === literal) {
-        position += literal.length;
-        return literal === "null"
-          ? builder.null(start, position)
-          : builder.boolean(literal === "true", start, position);
-      }
+    if (source.startsWith("null", position)) {
+      position += 4;
+      return builder.null(start, position);
     }
-    if (first === "-") position++;
-    if (source.charAt(position) === "0") position++;
+    if (source.startsWith("true", position)) {
+      position += 4;
+      return builder.boolean(true, start, position);
+    }
+    if (source.startsWith("false", position)) {
+      position += 5;
+      return builder.boolean(false, start, position);
+    }
+    if (first === 45) position++;
+    if (source.charCodeAt(position) === 48) position++;
     else {
       if (!digit()) return fail(start);
       while (digit()) position++;
     }
-    if (source.charAt(position) === ".") {
+    if (source.charCodeAt(position) === 46) {
       position++;
       if (!digit()) return fail(start);
       while (digit()) position++;
     }
-    const exponent = source.charAt(position);
-    if (exponent === "e" || exponent === "E") {
+    const exponent = source.charCodeAt(position);
+    if (exponent === 101 || exponent === 69) {
       position++;
-      if (source.charAt(position) === "+" || source.charAt(position) === "-")
-        position++;
+      const sign = source.charCodeAt(position);
+      if (sign === 43 || sign === 45) position++;
       if (!digit()) return fail(start);
       while (digit()) position++;
     }

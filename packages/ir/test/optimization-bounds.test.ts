@@ -684,3 +684,49 @@ test("code units stay checked without the length relation", () => {
     false,
   );
 });
+
+test("slice bound slots stay tracked as integer slots", () => {
+  const fn: FunctionIR = {
+    id: 0,
+    name: "sliceSlot",
+    exported: true,
+    parameters: [0],
+    slots: ["string", "number"],
+    returnType: "string",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "string-length", id: 1, string: 0, ...span },
+          { kind: "constant", id: 2, value: 4, ...span },
+          { kind: "binary", id: 3, operator: "+", left: 1, right: 2, ...span },
+          { kind: "store", slot: 1, value: 3, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 4, slot: 0, ...span },
+          { kind: "load", id: 5, slot: 1, ...span },
+          { kind: "undefined", id: 6, ...span },
+          {
+            kind: "string-slice",
+            id: 7,
+            string: 4,
+            begin: 5,
+            limit: 6,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 7, ...span },
+      },
+    ],
+  };
+  assert.ok(verify({ functions: [fn] }).ok);
+  const result = selectArrayAccesses(fn, 100000);
+  assert.ok(result);
+  assert.deepEqual(result.fn.integerSlots, [1]);
+});

@@ -1,6 +1,8 @@
 import {
   nativeAllocatorShutdownRequest,
   nativeGenerationalStateWords,
+  nativeNumberStringCacheWord,
+  nativeStringSplitCacheWord,
 } from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
 import {
@@ -182,10 +184,16 @@ export function initializeGenerationalRuntime(
   const heap = createCheneyCollector(managedBase, managedLength);
   // Pool evacuation for collections large enough to repay waking workers;
   // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
+  // Workspaces and threads are created lazily on the first parallel collection
+  // so short-lived Workers pay no mmap/munmap or thread-join cost.
+  const processors = processorCount();
   const parallel = createParallelEvacuator(
     managedBase,
     managedLength,
-    collectorWorkerCount(processorCount(), cgroupProcessorLimit()),
+    collectorWorkerCount(
+      processors,
+      processors === 1 ? 0 : cgroupProcessorLimit(),
+    ),
     bits,
     roots,
     dirty,
@@ -269,6 +277,9 @@ export function initializeGenerationalRuntime(
   }
   function collect(forceMajor: boolean): boolean {
     if (exhausted) return false;
+    // The number-string and string-split caches are never traced: drop them.
+    allocation[nativeNumberStringCacheWord] = 0;
+    allocation[nativeStringSplitCacheWord] = 0;
     const youngTop = allocation[0] ?? 0,
       oldTop = allocation[3] ?? 0,
       // What the space has used: the old fill, and the nursery's when it is

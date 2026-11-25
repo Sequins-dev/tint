@@ -458,7 +458,7 @@ export function encodeInstruction(
         index = op.index;
       writePrefix(
         writer,
-        88,
+        117,
         op,
         bit(record !== undefined, 2) + bit(index !== undefined, 4),
       );
@@ -473,7 +473,7 @@ export function encodeInstruction(
       writeSigned(writer, op.id);
       return true;
     case "record-slot-read":
-      writePrefix(writer, 85, op, 0);
+      writePrefix(writer, 114, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
       writeSigned(writer, op.record);
@@ -486,7 +486,7 @@ export function encodeInstruction(
         spillField = op.spillField;
       writePrefix(
         writer,
-        86,
+        115,
         op,
         bit(op.inherited, 2) |
           bit(spillRecord !== undefined && spillField !== undefined, 4),
@@ -509,7 +509,7 @@ export function encodeInstruction(
       return true;
     }
     case "property-store":
-      writePrefix(writer, 87, op, 0);
+      writePrefix(writer, 116, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
       writeSigned(writer, op.value);
@@ -523,7 +523,7 @@ export function encodeInstruction(
       writeSigned(writer, op.epochField);
       return true;
     case "script-entry":
-      writePrefix(writer, 89, op, bit(op.construct, 2));
+      writePrefix(writer, 118, op, bit(op.construct, 2));
       writeSigned(writer, op.id);
       writeSigned(writer, op.callee);
       writeSigned(writer, op.realm);
@@ -542,7 +542,7 @@ export function encodeInstruction(
       writeSigned(writer, op.scriptOrModuleField);
       return true;
     case "global-cell":
-      writePrefix(writer, 90, op, 0);
+      writePrefix(writer, 119, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.scope);
       writeSigned(writer, op.cache);
@@ -627,13 +627,22 @@ export function encodeInstruction(
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
       return true;
+    case "string-two-byte":
+      writePrefix(writer, 85, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
     case "string-code-unit": {
-      const inBounds = op.inBounds;
+      const inBounds = op.inBounds,
+        unitKind = op.unitKind;
       writePrefix(
         writer,
         33,
         op,
-        bit(inBounds !== undefined, 2) + bit(inBounds === true, 4),
+        bit(inBounds !== undefined, 2) +
+          bit(inBounds === true, 4) +
+          bit(unitKind !== undefined, 8) +
+          bit(unitKind === "two-byte", 16),
       );
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
@@ -642,6 +651,110 @@ export function encodeInstruction(
     }
     case "string-starts-with":
       writePrefix(writer, 34, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.search);
+      writeSigned(writer, op.position);
+      return true;
+    case "string-from-latin1":
+    case "bytes-ascii-prefix":
+      writePrefix(writer, op.kind === "string-from-latin1" ? 87 : 90, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "number-string-cached":
+      writePrefix(writer, 97, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
+    case "number-string-cache":
+      writePrefix(writer, 98, op, 0);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-index-cached":
+      writePrefix(writer, 99, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-index-cache":
+      writePrefix(writer, 100, op, 0);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.value);
+      return true;
+    case "string-split-cached":
+      writePrefix(writer, 101, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.separator);
+      writeSigned(writer, op.template);
+      return true;
+    case "string-split-cache":
+      writePrefix(writer, 102, op, 0);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.separator);
+      writeSigned(writer, op.value);
+      return true;
+    case "string-utf8-length":
+      writePrefix(writer, 94, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "string-write-utf8":
+      writePrefix(writer, 95, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.offset);
+      return true;
+    case "string-from-utf8":
+      writePrefix(writer, 96, op, bit(op.whole === true, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "string-copy-latin1":
+      writePrefix(writer, 88, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      writeSigned(writer, op.bytes);
+      writeSigned(writer, op.offset);
+      return true;
+    case "string-ascii-case":
+      writePrefix(writer, 91, op, bit(op.upper, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-flat":
+      writePrefix(writer, 92, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-flatten-into":
+      writePrefix(writer, 93, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.address);
+      writeSigned(writer, op.byteLength);
+      writeSigned(writer, op.string);
+      return true;
+    case "string-ascii-prefix":
+      writePrefix(writer, 89, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.string);
+      writeSigned(writer, op.begin);
+      writeSigned(writer, op.limit);
+      return true;
+    case "string-index-of":
+      writePrefix(writer, 86, op, bit(op.reverse, 2));
       writeSigned(writer, op.id);
       writeSigned(writer, op.string);
       writeSigned(writer, op.search);
@@ -669,6 +782,7 @@ export function encodeInstruction(
       writePrefix(writer, 38, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.length);
+      writeSigned(writer, op.twoByte);
       return true;
     case "string-write":
       writePrefix(writer, 39, op, 0);
@@ -1144,9 +1258,32 @@ export function decodeInstruction(
       const id = readSigned(reader),
         string = readSigned(reader),
         index = readSigned(reader);
-      if (!flagged(flags, 2))
+      const unitKind: "one-byte" | "two-byte" = flagged(flags, 16)
+        ? "two-byte"
+        : "one-byte";
+      if (!flagged(flags, 2)) {
+        if (flagged(flags, 8))
+          return {
+            kind: "string-code-unit",
+            id,
+            string,
+            index,
+            unitKind,
+            ...span,
+          };
         return { kind: "string-code-unit", id, string, index, ...span };
+      }
       const inBounds = flagged(flags, 4);
+      if (flagged(flags, 8))
+        return {
+          kind: "string-code-unit",
+          id,
+          string,
+          index,
+          inBounds,
+          unitKind,
+          ...span,
+        };
       return { kind: "string-code-unit", id, string, index, inBounds, ...span };
     }
     case 34: {
@@ -1183,8 +1320,9 @@ export function decodeInstruction(
     }
     case 38: {
       const id = readSigned(reader),
-        length = readSigned(reader);
-      return { kind: "string-allocate", id, length, ...span };
+        length = readSigned(reader),
+        twoByte = readSigned(reader);
+      return { kind: "string-allocate", id, length, twoByte, ...span };
     }
     case 39: {
       const target = readSigned(reader),
@@ -1416,7 +1554,7 @@ export function decodeInstruction(
       };
     case 83:
       return { kind: "script-argument-count", id: readSigned(reader), ...span };
-    case 88: {
+    case 117: {
       const id = readSigned(reader),
         field = activationFields[readByte(reader)];
       if (field === undefined) throw "packed activation field invariant";
@@ -1428,7 +1566,7 @@ export function decodeInstruction(
         return { kind: "activation-read", id, field, record, ...span };
       return { kind: "activation-read", id, field, record, index, ...span };
     }
-    case 85: {
+    case 114: {
       const id = readSigned(reader),
         object = readSigned(reader),
         record = readSigned(reader),
@@ -1446,7 +1584,7 @@ export function decodeInstruction(
         ...span,
       };
     }
-    case 86: {
+    case 115: {
       const id = readSigned(reader),
         object = readSigned(reader),
         site = readSigned(reader),
@@ -1481,7 +1619,7 @@ export function decodeInstruction(
         ...span,
       };
     }
-    case 87: {
+    case 116: {
       const id = readSigned(reader),
         object = readSigned(reader),
         value = readSigned(reader),
@@ -1509,7 +1647,7 @@ export function decodeInstruction(
         ...span,
       };
     }
-    case 89: {
+    case 118: {
       const id = readSigned(reader),
         callee = readSigned(reader),
         realm = readSigned(reader),
@@ -1548,7 +1686,7 @@ export function decodeInstruction(
         ...span,
       };
     }
-    case 90: {
+    case 119: {
       const id = readSigned(reader),
         scope = readSigned(reader),
         cache = readSigned(reader),
@@ -1631,6 +1769,173 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
+        ...span,
+      };
+    }
+    case 85: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return { kind: "string-two-byte", id, string, ...span };
+    }
+    case 87:
+    case 90: {
+      const id = readSigned(reader),
+        bytes = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      return opcode === 87
+        ? { kind: "string-from-latin1", id, bytes, begin, limit, ...span }
+        : { kind: "bytes-ascii-prefix", id, bytes, begin, limit, ...span };
+    }
+    case 88: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader),
+        bytes = readSigned(reader),
+        offset = readSigned(reader);
+      return {
+        kind: "string-copy-latin1",
+        id,
+        string,
+        begin,
+        limit,
+        bytes,
+        offset,
+        ...span,
+      };
+    }
+    case 97: {
+      const id = readSigned(reader),
+        value = readSigned(reader);
+      return { kind: "number-string-cached", id, value, ...span };
+    }
+    case 98: {
+      const value = readSigned(reader),
+        string = readSigned(reader);
+      return { kind: "number-string-cache", value, string, ...span };
+    }
+    case 99: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return { kind: "string-index-cached", id, string, ...span };
+    }
+    case 100: {
+      const string = readSigned(reader),
+        value = readSigned(reader);
+      return { kind: "string-index-cache", string, value, ...span };
+    }
+    case 101: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        separator = readSigned(reader),
+        template = readSigned(reader);
+      return {
+        kind: "string-split-cached",
+        id,
+        string,
+        separator,
+        template,
+        ...span,
+      };
+    }
+    case 102: {
+      const string = readSigned(reader),
+        separator = readSigned(reader),
+        value = readSigned(reader);
+      return { kind: "string-split-cache", string, separator, value, ...span };
+    }
+    case 94: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      return { kind: "string-utf8-length", id, string, begin, limit, ...span };
+    }
+    case 95: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader),
+        bytes = readSigned(reader),
+        offset = readSigned(reader);
+      return {
+        kind: "string-write-utf8",
+        id,
+        string,
+        begin,
+        limit,
+        bytes,
+        offset,
+        ...span,
+      };
+    }
+    case 96: {
+      const id = readSigned(reader),
+        bytes = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      if (flagged(flags, 2))
+        return {
+          kind: "string-from-utf8",
+          id,
+          bytes,
+          begin,
+          limit,
+          whole: true,
+          ...span,
+        };
+      return { kind: "string-from-utf8", id, bytes, begin, limit, ...span };
+    }
+    case 92: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return { kind: "string-flat", id, string, ...span };
+    }
+    case 93: {
+      const id = readSigned(reader),
+        address = readSigned(reader),
+        byteLength = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-flatten-into",
+        id,
+        address,
+        byteLength,
+        string,
+        ...span,
+      };
+    }
+    case 91: {
+      const id = readSigned(reader),
+        string = readSigned(reader);
+      return {
+        kind: "string-ascii-case",
+        id,
+        string,
+        upper: flagged(flags, 2),
+        ...span,
+      };
+    }
+    case 89: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        begin = readSigned(reader),
+        limit = readSigned(reader);
+      return { kind: "string-ascii-prefix", id, string, begin, limit, ...span };
+    }
+    case 86: {
+      const id = readSigned(reader),
+        string = readSigned(reader),
+        search = readSigned(reader),
+        position = readSigned(reader);
+      return {
+        kind: "string-index-of",
+        id,
+        string,
+        search,
+        position,
+        reverse: flagged(flags, 2),
         ...span,
       };
     }

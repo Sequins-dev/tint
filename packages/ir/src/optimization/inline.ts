@@ -145,6 +145,21 @@ function supported(op: Instruction, references: boolean = true): boolean {
     // Element loads and stores are inline, nonallocating and nonthrowing.
     case "element-load":
     case "element-store":
+    // The nonallocating Latin-1 and ASCII primitives (bound foundation
+    // functions): inline sequences with a private helper call, so a bound
+    // body inlines into its callers like a typed-array access.
+    case "string-ascii-prefix":
+    case "bytes-ascii-prefix":
+    case "string-copy-latin1":
+    // And the nonallocating UTF-8 primitives.
+    case "string-utf8-length":
+    case "string-write-utf8":
+    // The string-transfer primitives (#15's realm bindings).
+    case "string-flat":
+    case "string-flatten-into":
+    // Strings' cached array indices (a load, and a store into the field).
+    case "string-index-cached":
+    case "string-index-cache":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -1066,6 +1081,79 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   object: value(instruction.object),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-flat":
+              case "string-index-cached":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  string: value(instruction.string),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-index-cache":
+                cloned.push({
+                  ...instruction,
+                  string: value(instruction.string),
+                  value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-flatten-into":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  address: value(instruction.address),
+                  byteLength: value(instruction.byteLength),
+                  string: value(instruction.string),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-ascii-prefix":
+              case "string-utf8-length":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  string: value(instruction.string),
+                  begin: value(instruction.begin),
+                  limit: value(instruction.limit),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "bytes-ascii-prefix":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  bytes: value(instruction.bytes),
+                  begin: value(instruction.begin),
+                  limit: value(instruction.limit),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-copy-latin1":
+              case "string-write-utf8":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  string: value(instruction.string),
+                  begin: value(instruction.begin),
+                  limit: value(instruction.limit),
+                  bytes: value(instruction.bytes),
+                  offset: value(instruction.offset),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

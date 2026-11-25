@@ -71,10 +71,13 @@ For the compiler itself, build a debug bootstrap compiler as in
   booleans are `{ value, present }` pairs; general values are a tagged
   `general` structure (`tag` enumerates undefined, number, boolean, string,
   null, object, symbol and bigint; `payload` is a union).
-- **Strings** are shown as their UTF-16 code units: a `char16_t[]` whose
-  length is read from the string header, as C compilers describe VLAs.
-  Strings inside objects are pointers to a `string` structure (`length`,
-  `units`).
+- **Strings** are pointers to a `string` structure: `__header`, `length` in
+  UTF-16 code units, then the data. `units` (`char16_t[]`) describes a
+  two-byte string's data and `bytes` (`latin1[]`) a one-byte string's (kind
+  flag 1 in the header, docs/design-one-byte-strings.md); both overlay the
+  same storage. A fixed DWARF element type cannot describe both kinds, so
+  the Tint LLDB and GDB formatters (`tools/lldb/tint.py`, `tools/gdb/tint.py`)
+  read the header and show the text.
 - **Objects** whose type statically selects one record layout are pointers to
   a structure named after the class (or `{field, ...}` for object types), with
   the header words and one member per field at its realized offset. Other

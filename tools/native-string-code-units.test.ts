@@ -73,6 +73,23 @@ function skipping(value: string): number {
   }
   return total;
 }
+function low32CodeUnits(value: string, index: number): number {
+  let h = 0;
+  h = (Math.imul(h, 31) + (value.length + value.charCodeAt(index))) | 0;
+  h = (Math.imul(h - 1000000, 31) + (value.length + value.charCodeAt(index))) | 0;
+  h = (h ^ ((100 - value.charCodeAt(index)) | 0)) | 0;
+  h = (h ^ ((value.charCodeAt(index) - 100) | 0)) | 0;
+  h = (h + ((value.charCodeAt(index) + value.charCodeAt(index)) | 0)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) & 0xff)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) ^ 0x55)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) | 0x55)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) >>> 1)) | 0;
+  h = (h + ((value.charCodeAt(index) + 17) << 2)) | 0;
+  h = (h + Math.imul(value.charCodeAt(index) + 3, 31)) | 0;
+  h = (h + ~((value.length + value.charCodeAt(index)) | 0)) | 0;
+  h = (h + ((9007199254740990 + value.charCodeAt(index)) | 0)) | 0;
+  return h;
+}
 export function checksum(): number {
   const inputs: string[] = [
     "",
@@ -96,6 +113,13 @@ export function checksum(): number {
     total = (total * 31 + other(text, next)) % 1000003;
     total = (total * 31 + shrinking(text)) % 1000003;
     total = (total * 31 + skipping(text)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, 0) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, 3) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, 99) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(text, -1) & 0xffff)) % 1000003;
+    const sliced = text.slice(2);
+    total = (total * 31 + (low32CodeUnits(sliced, 3) & 0xffff)) % 1000003;
+    total = (total * 31 + (low32CodeUnits(sliced, 99) & 0xffff)) % 1000003;
   }
   return total;
 }

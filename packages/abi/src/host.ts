@@ -10,8 +10,8 @@ export const nativeGenerationalNurseryAddressOffset = 64;
  * allocator's policy compares against it instead of deriving it. */
 export const nativeGenerationalLargeObjectOffset = 72;
 /** The generational state block's minimum length in uint32 words, through the
- * large-object threshold; publication rejects a shorter block. */
-export const nativeGenerationalStateWords = 19;
+ * string-split cache word; publication rejects a shorter block. */
+export const nativeGenerationalStateWords = 20;
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
@@ -326,9 +326,10 @@ export const nativeStackMapFooterBytes = 16;
 /** Managed object header: one word. Bits 0-47 hold the layout marker (1
  * string, 2-5 typed arrays of 1-, 2-, 4- and 8-byte elements, 6 reference
  * vector, 7 weak slot) or the address of a record or function descriptor;
- * bits 48-50 hold the kind flags (arrays: 0 owned, 1 borrowed, 2 view; weak
- * slots: 0 weak, 1 ephemeron). Records, functions, strings and vectors
- * always have flags 0, so their header equals the marker or descriptor.
+ * bits 48-50 hold the kind flags (strings: 0 two-byte, 1 one-byte; arrays:
+ * 0 owned, 1 borrowed, 2 view; weak slots: 0 weak, 1 ephemeron). Records,
+ * functions and vectors always have flags 0, so their header equals the
+ * marker or descriptor.
  * Collectors reserve bit 51 (an evacuation in progress) and bit 52 (a
  * forwarded object: the low bits hold its destination). Every header is
  * below 2^53, so runtime code reads it exactly as a number. */
@@ -341,9 +342,121 @@ export const nativeHeaderFlagUnit = 281474976710656;
 export const nativeHeaderClaimed = 2251799813685248;
 /** Collector-only: forwarded to the destination in the low bits (2^52). */
 export const nativeHeaderForwarded = 4503599627370496;
-/** Strings: UTF-16 code-unit length, then the code units. */
+/** Strings: the length in UTF-16 code units, then the code units. A
+ * two-byte string (kind flags 0) stores each unit in two bytes; a one-byte
+ * string (kind flag 1) stores each unit, all at most 0xFF, in one byte.
+ * Strings are canonical: a string is one-byte exactly when every unit is at
+ * most 0xFF, so equal strings have equal headers (docs/design-one-byte-strings.md).
+ * Every string has at least nativeStringMinimumDataBytes of data space,
+ * which inline comparisons read unchecked. */
 export const nativeStringLengthOffset = 8;
+/** The word at nativeStringLengthOffset holds the length in its low 32
+ * bits and the string's index field (a u32 at this offset) in its high
+ * ones; readers take the length as 32 bits (the word modulo 2^32). The
+ * field stays below 2^21, so the word is an exact number. It is 0 until
+ * computed; `(value << 1) | 1` when the string is the canonical decimal of
+ * an array index `value` below nativeStringIndexLimit (digits only, no
+ * leading zero but "0" itself), as V8 caches array indices in a string's
+ * hash field; even nonzero values are reserved. Every producer writes the
+ * whole word, so a new string's field is 0. It is written lazily, once,
+ * by a relaxed 32-bit store of the one value its text determines, and only
+ * while it is still 0; pool literals, which are read-only, carry it
+ * precomputed. Copies keep it, or clear it to 0. */
+export const nativeStringIndexFieldOffset = 12;
+/** Array indices cached in a string's index field are below 2^20. */
+export const nativeStringIndexLimit = 1048576;
+/** The index field `text` carries: `(value << 1) | 1` when `text` is the
+ * canonical decimal of an array index below nativeStringIndexLimit, else
+ * 0 (as for pool literals, which are precomputed). */
+export function nativeStringIndexField(text: string): number {
+  const length = text.length;
+  if (length === 0 || length > 7) return 0;
+  if (length > 1 && text.charCodeAt(0) === 48) return 0;
+  let value = 0;
+  for (let i = 0; i < length; i++) {
+    const digit = text.charCodeAt(i) - 48;
+    if (digit < 0 || digit > 9) return 0;
+    value = value * 10 + digit;
+  }
+  return value < nativeStringIndexLimit ? value * 2 + 1 : 0;
+}
 export const nativeStringDataOffset = 16;
+export const nativeStringMinimumDataBytes = 8;
+/** Kind flag of a one-byte string. */
+export const nativeStringOneByteFlag = 1;
+/** Headers of the two flat string kinds. */
+export const nativeStringTwoByteHeader = 1;
+export const nativeStringOneByteHeader = 281474976710657;
+/** Sliced strings (kind flag 2, plus flag 1 for one-byte units) share a flat
+ * parent's units, as V8's sliced strings do: the byte offset of their first
+ * unit within the parent's units at nativeStringSlicedStartOffset, and the
+ * flat parent at nativeStringParentOffset, an ordinary reference slot.
+ * Nothing in a slice depends on its own or its parent's address. A slice
+ * has at least nativeStringSlicedMinimumLength units, which must exceed
+ * eight (inline compares with literals of up to eight data bytes read flat
+ * data directly), and its parent's kind, so strings stay canonical. Nine,
+ * the smallest allowed, made slicing fastest in a sweep of 9-32
+ * (docs/results/string-slice-minimum-v1.md; V8 uses 13). Slices
+ * are AArch64-only and never leave their isolate: transfers flatten them
+ * (string-flatten-into). */
+/** The number-string cache (V8's NumberStringCache), behind
+ * numberToString: a direct-mapped table of nativeNumberStringCacheEntries
+ * pairs (a number's bits, then its string). A number's entry is the low
+ * bits of its truncation (saturating) plus its bits' low 32-bit word and
+ * that word's upper 24 bits: like V8's index of a small integer by its low
+ * bits, consecutive integers below 2^21, whose low words are zero, take
+ * consecutive entries and never evict each other. Word
+ * nativeNumberStringCacheWord of the published allocation state (context
+ * +56) holds the table's managed offset, 0 when there is none. The table
+ * is a one-byte string object whose units are those pairs; the first store
+ * after a collection allocates it. Every collection clears the word before
+ * tracing, so the table is never traced, and it and any string only it
+ * references die there: no entry outlives a move, and nothing is retained
+ * across collections. */
+export const nativeNumberStringCacheWord = 15;
+export const nativeNumberStringCacheEntries = 256;
+/** The string-split cache (V8's StringSplitCache): a direct-mapped table of
+ * nativeStringSplitCacheEntries 32-byte entries (string pointer, separator
+ * pointer, immutable snapshot list pointer, 0). Word
+ * nativeStringSplitCacheWord of the published allocation state holds the
+ * table's managed offset (0 when none); every collection clears the word
+ * before tracing so nothing is retained across collections or outlives a
+ * move. */
+export const nativeStringSplitCacheWord = 19;
+export const nativeStringSplitCacheEntries = 16;
+export const nativeStringSlicedFlag = 2;
+export const nativeStringSlicedStartOffset = 16;
+export const nativeStringParentOffset = 24;
+export const nativeStringSlicedByteLength = 32;
+export const nativeStringSlicedMinimumLength = 9;
+export const nativeStringSlicedTwoByteHeader = 562949953421313;
+export const nativeStringSlicedOneByteHeader = 844424930131969;
+/** Whether a string header is a flat string's, which owns its units. A flat
+ * string's object is position-independent and pointer-free: header,
+ * length and units, nothing per-isolate, so it can be copied verbatim. */
+export function nativeStringIsFlat(header: number): boolean {
+  return (
+    header === nativeStringTwoByteHeader || header === nativeStringOneByteHeader
+  );
+}
+/** A flat string's byte extent (header, length and at least
+ * nativeStringMinimumDataBytes of units, padded to the 8-byte allocation
+ * granule) from its header and length alone, or -1 when the header is not
+ * a flat string's (slices and other objects). */
+export function nativeFlatStringExtent(header: number, length: number): number {
+  if (!nativeStringIsFlat(header)) return -1;
+  const bytes =
+    nativeStringDataOffset +
+    nativeStringDataBytes(length, header === nativeStringOneByteHeader);
+  return bytes + ((8 - (bytes % 8)) % 8);
+}
+/** Data bytes of a string with `units` code units of the given width. */
+export function nativeStringDataBytes(units: number, oneByte: boolean): number {
+  const bytes = oneByte ? units : units * 2;
+  return bytes < nativeStringMinimumDataBytes
+    ? nativeStringMinimumDataBytes
+    : bytes;
+}
 /** Typed arrays and reference vectors: element count (vectors: capacity),
  * then the data address (vectors: a reserved zero word); owned elements
  * follow inline. A view holds its owner after the data address. */

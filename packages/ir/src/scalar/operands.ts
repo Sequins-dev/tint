@@ -142,6 +142,13 @@ export function visitInstructionOperands(
       visit(op.message);
       return;
     case "string-length":
+    case "string-two-byte":
+    case "string-flat":
+      visit(op.string);
+      return;
+    case "string-flatten-into":
+      visit(op.address);
+      visit(op.byteLength);
       visit(op.string);
       return;
     case "string-code-unit":
@@ -149,9 +156,34 @@ export function visitInstructionOperands(
       visit(op.index);
       return;
     case "string-starts-with":
+    case "string-index-of":
       visit(op.string);
       visit(op.search);
       visit(op.position);
+      return;
+    case "string-from-latin1":
+    case "bytes-ascii-prefix":
+    case "string-from-utf8":
+      visit(op.bytes);
+      visit(op.begin);
+      visit(op.limit);
+      return;
+    case "string-ascii-prefix":
+    case "string-utf8-length":
+      visit(op.string);
+      visit(op.begin);
+      visit(op.limit);
+      return;
+    case "string-ascii-case":
+      visit(op.string);
+      return;
+    case "string-copy-latin1":
+    case "string-write-utf8":
+      visit(op.string);
+      visit(op.begin);
+      visit(op.limit);
+      visit(op.bytes);
+      visit(op.offset);
       return;
     case "string-slice":
       visit(op.string);
@@ -160,11 +192,36 @@ export function visitInstructionOperands(
       return;
     case "string-allocate":
       visit(op.length);
+      visit(op.twoByte);
       return;
     case "string-write":
       visit(op.target);
       visit(op.offset);
       visit(op.source);
+      return;
+    case "number-string-cached":
+      visit(op.value);
+      return;
+    case "number-string-cache":
+      visit(op.value);
+      visit(op.string);
+      return;
+    case "string-index-cached":
+      visit(op.string);
+      return;
+    case "string-index-cache":
+      visit(op.string);
+      visit(op.value);
+      return;
+    case "string-split-cached":
+      visit(op.string);
+      visit(op.separator);
+      visit(op.template);
+      return;
+    case "string-split-cache":
+      visit(op.string);
+      visit(op.separator);
+      visit(op.value);
       return;
     case "string-from-code-units":
       for (const id of op.values) {
@@ -278,7 +335,10 @@ export function instructionResult(
     instruction.kind === "weak-slot-clear" ||
     instruction.kind === "reference-vector-write" ||
     instruction.kind === "reference-vector-copy" ||
-    instruction.kind === "string-write"
+    instruction.kind === "string-write" ||
+    instruction.kind === "number-string-cache" ||
+    instruction.kind === "string-index-cache" ||
+    instruction.kind === "string-split-cache"
   )
     return undefined;
   return instruction.id;

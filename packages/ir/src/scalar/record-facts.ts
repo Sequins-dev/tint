@@ -130,6 +130,10 @@ function everyHostOperation(
         for (const op of block.instructions) {
           if (op === undefined) throw "layout effect instruction invariant";
           if (op.kind === "host-call" && !allowed(op.operation)) return false;
+          // A bound raw-window write that is an IR instruction: like
+          // memory-write-bytes, its window may be any writable memory.
+          if (op.kind === "string-flatten-into" && !allowed(op.kind))
+            return false;
         }
       }
     } finally {

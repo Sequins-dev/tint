@@ -1,0 +1,37 @@
+lldb exit 0
+(lldb) script print('STATE', lldb.process.GetState() == lldb.eStateExited, lldb.process.GetExitStatus())
+STATE True 0
+ 4:53  up 19 days, 16:19, 1 user, load averages: 4.63 5.92 5.70
+base         69.16 s  326575744574 cycles  1623149461776 instructions  2226143232 RSS
+round 1 native exit 0
+ 4:55  up 19 days, 16:20, 1 user, load averages: 3.90 5.46 5.54
+node         73.44 s  440253695716 cycles  1826792164918 instructions  3932798976 RSS
+round 1 node exit 0
+ 4:56  up 19 days, 16:21, 1 user, load averages: 4.63 5.38 5.50
+node         77.55 s  445044036786 cycles  1819584388015 instructions  3943579648 RSS
+round 2 node exit 0
+ 4:57  up 19 days, 16:23, 1 user, load averages: 5.09 5.36 5.48
+base         70.57 s  328768125190 cycles  1623440247064 instructions  2227552256 RSS
+round 2 native exit 0
+ 4:58  up 19 days, 16:24, 1 user, load averages: 6.06 5.51 5.53
+base         71.06 s  330608800063 cycles  1623175465828 instructions  2227093504 RSS
+round 3 native exit 0
+ 4:59  up 19 days, 16:25, 1 user, load averages: 5.78 5.45 5.49
+node         81.05 s  447958082695 cycles  1807298291024 instructions  3933405184 RSS
+round 3 node exit 0
+ 5:01  up 19 days, 16:26, 1 user, load averages: 5.32 5.42 5.48
+node         76.74 s  443204991313 cycles  1829368257966 instructions  3926605824 RSS
+round 4 node exit 0
+ 5:02  up 19 days, 16:28, 1 user, load averages: 5.25 5.40 5.46
+base         70.80 s  328640314964 cycles  1622813696843 instructions  2226028544 RSS
+round 4 native exit 0
+ 5:03  up 19 days, 16:29, 1 user, load averages: 4.51 5.15 5.36
+base         69.53 s  326428899528 cycles  1622984049790 instructions  2227159040 RSS
+round 5 native exit 0
+ 5:04  up 19 days, 16:30, 1 user, load averages: 4.79 5.14 5.34
+node         72.10 s  433426224852 cycles  1803419579407 instructions  3858268160 RSS
+round 5 node exit 0
+out-lldb 
+out-base 
+out-node 
+selfcompile done

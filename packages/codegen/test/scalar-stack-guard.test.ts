@@ -285,7 +285,8 @@ test("string extents above the maximum length clamp instead of trapping", () => 
             id: 0,
             instructions: [
               { kind: "load", id: 0, slot: 0, ...s },
-              { kind: "string-allocate", id: 1, length: 0, ...s },
+              { kind: "constant", id: 2, value: false, ...s },
+              { kind: "string-allocate", id: 1, length: 0, twoByte: 2, ...s },
             ],
             terminator: { kind: "return", value: 1, ...s },
           },

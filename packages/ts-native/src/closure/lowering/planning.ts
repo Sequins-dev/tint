@@ -727,6 +727,9 @@ export function scalarType(
         ? "boolean"
         : undefined;
   if (t.kind === "union") {
+    // Each member's type once: nested unions (a narrowed discriminated
+    // union is a chain of two-member unions) then cost linear time, where
+    // recomputing members per test cost three times as much per level.
     const members = t.members.map((m) => scalarType(checked, m)),
       first = members[0];
     if (first !== undefined && members.every((m) => m === first)) return first;
@@ -735,16 +738,17 @@ export function scalarType(
       members.every((m) => m === "number" || m === "optional-number")
     )
       return "optional-number";
-    if (
-      members.length > 0 &&
-      t.members.every(
-        (m) =>
-          checked.types[m]?.kind === "undefined" ||
-          scalarType(checked, m) === "boolean" ||
-          scalarType(checked, m) === "optional-boolean",
+    let optionalBoolean = members.length > 0;
+    for (let index = 0; index < members.length; index++) {
+      const member = members[index];
+      if (
+        checked.types[t.members[index] ?? -1]?.kind !== "undefined" &&
+        member !== "boolean" &&
+        member !== "optional-boolean"
       )
-    )
-      return "optional-boolean";
+        optionalBoolean = false;
+    }
+    if (optionalBoolean) return "optional-boolean";
   }
   return undefined;
 }

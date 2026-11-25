@@ -163,23 +163,40 @@ export type Instruction =
       readonly rn: Register;
       readonly offset: number;
     }
-  /** ADD Vd.4S, Vn.4S, Vm.4S and the ARMv8 SHA-256 extension (FEAT_SHA256). */
+  /** ADD Vd.4S, Vn.4S, Vm.4S, the ARMv8 SHA-256 extension (FEAT_SHA256),
+   * and the bytewise SUB, CMHI (unsigned higher), AND and EOR on Vd.16B. */
   | {
-      readonly op: "add-4s" | "sha256h" | "sha256h2" | "sha256su1";
+      readonly op:
+        | "add-4s"
+        | "sha256h"
+        | "sha256h2"
+        | "sha256su1"
+        | "sub-16b"
+        | "cmhi-16b"
+        | "and-16b"
+        | "eor-16b";
       readonly vd: number;
       readonly vn: number;
       readonly vm: number;
     }
-  /** MOV Vd.16B, Vn.16B (ORR with Vm = Vn) and SHA256SU0 Vd.4S, Vn.4S. */
+  /** MOV Vd.16B, Vn.16B (ORR with Vm = Vn), SHA256SU0 Vd.4S, Vn.4S, and
+   * the string unit conversions UXTL Vd.8H, Vn.8B (USHLL #0: widen eight
+   * bytes), XTN Vd.8B, Vn.8H (narrow eight halfwords) and SHRN Vd.8B,
+   * Vn.8H, #8 (eight halfwords' high bytes). */
   | {
-      readonly op: "mov-16b" | "sha256su0";
+      readonly op: "mov-16b" | "sha256su0" | "uxtl-8h" | "xtn-8b" | "shrn-8b-8";
       readonly vd: number;
       readonly vn: number;
     }
+  /** MOVI Vd.16B, #imm8: the byte in every lane. */
+  | { readonly op: "movi-16b"; readonly vd: number; readonly immediate: number }
   | { readonly op: "fcmp"; readonly rn: number; readonly rm: number }
   | { readonly op: "fmov-d-x"; readonly rd: number; readonly rn: DataRegister }
   /** SXTW Xd, Wn (SBFM Xd, Xn, #0, #31): sign-extend the low 32 bits. */
   | { readonly op: "sxtw"; readonly rd: number; readonly rn: number }
+  /** RBIT Xd, Xn (bit reversal) and CLZ Xd, Xn (leading zeros, 64 for
+   * zero): together the trailing zero count of a word. */
+  | { readonly op: "rbit" | "clz"; readonly rd: number; readonly rn: number }
   /** FMOV (scalar, immediate); see float64Immediate for the encoding. */
   | { readonly op: "fmov-d-imm"; readonly rd: number; readonly imm8: number }
   | { readonly op: "fmov-x-d"; readonly rd: DataRegister; readonly rn: number }
@@ -703,7 +720,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "add-4s":
     case "sha256h":
     case "sha256h2":
-    case "sha256su1": {
+    case "sha256su1":
+    case "sub-16b":
+    case "cmhi-16b":
+    case "and-16b":
+    case "eor-16b": {
       if (
         !integer(i.vd, 0, 31) ||
         !integer(i.vn, 0, 31) ||
@@ -717,18 +738,45 @@ export function encode(instruction: Instruction): EncodingResult<number> {
             ? 0x5e004000
             : i.op === "sha256h2"
               ? 0x5e005000
-              : 0x5e006000;
+              : i.op === "sha256su1"
+                ? 0x5e006000
+                : i.op === "sub-16b"
+                  ? 0x6e208400
+                  : i.op === "cmhi-16b"
+                    ? 0x6e203400
+                    : i.op === "and-16b"
+                      ? 0x4e201c00
+                      : 0x6e201c00;
       return word(base + i.vm * 65536 + i.vn * 32 + i.vd);
     }
+    case "movi-16b": {
+      if (!integer(i.vd, 0, 31)) return fail("INVALID_REGISTER");
+      if (!integer(i.immediate, 0, 255)) return fail("INVALID_IMMEDIATE");
+      return word(
+        0x4f00e400 +
+          Math.floor(i.immediate / 32) * 65536 +
+          (i.immediate % 32) * 32 +
+          i.vd,
+      );
+    }
     case "mov-16b":
-    case "sha256su0": {
+    case "sha256su0":
+    case "uxtl-8h":
+    case "xtn-8b":
+    case "shrn-8b-8": {
       if (!integer(i.vd, 0, 31) || !integer(i.vn, 0, 31))
         return fail("INVALID_REGISTER");
-      return word(
-        i.op === "mov-16b"
-          ? 0x4ea01c00 + i.vn * 65536 + i.vn * 32 + i.vd
-          : 0x5e282800 + i.vn * 32 + i.vd,
-      );
+      if (i.op === "mov-16b")
+        return word(0x4ea01c00 + i.vn * 65536 + i.vn * 32 + i.vd);
+      const base =
+        i.op === "sha256su0"
+          ? 0x5e282800
+          : i.op === "uxtl-8h"
+            ? 0x2f08a400
+            : i.op === "xtn-8b"
+              ? 0x0e212800
+              : 0x0f088400;
+      return word(base + i.vn * 32 + i.vd);
     }
     case "fadd":
     case "fsub":
@@ -760,6 +808,14 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (!integer(i.rd, 0, 30) || !integer(i.rn, 0, 30))
         return fail("INVALID_REGISTER");
       return word(0x93407c00 + i.rn * 32 + i.rd);
+    }
+    case "rbit":
+    case "clz": {
+      if (!integer(i.rd, 0, 30) || !integer(i.rn, 0, 30))
+        return fail("INVALID_REGISTER");
+      return word(
+        (i.op === "rbit" ? 0xdac00000 : 0xdac01000) + i.rn * 32 + i.rd,
+      );
     }
     case "fmov-d-imm": {
       if (!integer(i.rd, 0, 31)) return fail("INVALID_REGISTER");

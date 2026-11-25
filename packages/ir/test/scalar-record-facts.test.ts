@@ -379,6 +379,34 @@ test("the generational write proof admits executable calls only under the truste
       operation,
     );
 });
+test("raw-window string images prevent closed-module layout proofs", () => {
+  // string-flatten-into is an IR instruction, not a host call, but its
+  // window may be any writable memory, like memory-write-bytes.
+  const base = fixture();
+  const fn: FunctionIR = {
+    ...base,
+    blocks: base.blocks.map((block) =>
+      block.id !== 1
+        ? block
+        : {
+            ...block,
+            instructions: [
+              {
+                kind: "string-flatten-into",
+                id: 4,
+                address: 1,
+                byteLength: 1,
+                string: 0,
+                ...span,
+              },
+              ...block.instructions,
+            ],
+          },
+    ),
+  };
+  assert.equal(stableRecordLayouts({ functions: [fn] }), false);
+  assert.equal(stableDescriptors({ functions: [fn] }), false);
+});
 function fixture(): FunctionIR {
   return {
     id: 0,

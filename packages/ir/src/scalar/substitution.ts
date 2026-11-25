@@ -164,9 +164,21 @@ export function substituteInstructionValues(
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };
     }
-    case "string-length": {
+    case "string-length":
+    case "string-two-byte":
+    case "string-flat": {
       const string = substitutedValue(values, op.string);
       return string === op.string ? op : { ...op, string };
+    }
+    case "string-flatten-into": {
+      const address = substitutedValue(values, op.address),
+        byteLength = substitutedValue(values, op.byteLength),
+        string = substitutedValue(values, op.string);
+      return address === op.address &&
+        byteLength === op.byteLength &&
+        string === op.string
+        ? op
+        : { ...op, address, byteLength, string };
     }
     case "string-code-unit": {
       const string = substitutedValue(values, op.string),
@@ -175,7 +187,46 @@ export function substituteInstructionValues(
         ? op
         : { ...op, string, index };
     }
-    case "string-starts-with": {
+    case "string-from-latin1":
+    case "bytes-ascii-prefix":
+    case "string-from-utf8": {
+      const bytes = substitutedValue(values, op.bytes),
+        begin = substitutedValue(values, op.begin),
+        limit = substitutedValue(values, op.limit);
+      return bytes === op.bytes && begin === op.begin && limit === op.limit
+        ? op
+        : { ...op, bytes, begin, limit };
+    }
+    case "string-ascii-case": {
+      const string = substitutedValue(values, op.string);
+      return string === op.string ? op : { ...op, string };
+    }
+    case "string-ascii-prefix":
+    case "string-utf8-length": {
+      const string = substitutedValue(values, op.string),
+        begin = substitutedValue(values, op.begin),
+        limit = substitutedValue(values, op.limit);
+      return string === op.string && begin === op.begin && limit === op.limit
+        ? op
+        : { ...op, string, begin, limit };
+    }
+    case "string-copy-latin1":
+    case "string-write-utf8": {
+      const string = substitutedValue(values, op.string),
+        begin = substitutedValue(values, op.begin),
+        limit = substitutedValue(values, op.limit),
+        bytes = substitutedValue(values, op.bytes),
+        offset = substitutedValue(values, op.offset);
+      return string === op.string &&
+        begin === op.begin &&
+        limit === op.limit &&
+        bytes === op.bytes &&
+        offset === op.offset
+        ? op
+        : { ...op, string, begin, limit, bytes, offset };
+    }
+    case "string-starts-with":
+    case "string-index-of": {
       const string = substitutedValue(values, op.string),
         search = substitutedValue(values, op.search),
         position = substitutedValue(values, op.position);
@@ -372,8 +423,11 @@ export function substituteInstructionValues(
       return mapped === op.values ? op : { ...op, values: mapped };
     }
     case "string-allocate": {
-      const length = substitutedValue(values, op.length);
-      return length === op.length ? op : { ...op, length };
+      const length = substitutedValue(values, op.length),
+        twoByte = substitutedValue(values, op.twoByte);
+      return length === op.length && twoByte === op.twoByte
+        ? op
+        : { ...op, length, twoByte };
     }
     case "string-write": {
       const target = substitutedValue(values, op.target),
@@ -384,6 +438,48 @@ export function substituteInstructionValues(
         source === op.source
         ? op
         : { ...op, target, offset, source };
+    }
+    case "number-string-cached": {
+      const value = substitutedValue(values, op.value);
+      return value === op.value ? op : { ...op, value };
+    }
+    case "number-string-cache": {
+      const value = substitutedValue(values, op.value),
+        string = substitutedValue(values, op.string);
+      return value === op.value && string === op.string
+        ? op
+        : { ...op, value, string };
+    }
+    case "string-index-cached": {
+      const string = substitutedValue(values, op.string);
+      return string === op.string ? op : { ...op, string };
+    }
+    case "string-index-cache": {
+      const string = substitutedValue(values, op.string),
+        value = substitutedValue(values, op.value);
+      return string === op.string && value === op.value
+        ? op
+        : { ...op, string, value };
+    }
+    case "string-split-cached": {
+      const string = substitutedValue(values, op.string),
+        separator = substitutedValue(values, op.separator),
+        template = substitutedValue(values, op.template);
+      return string === op.string &&
+        separator === op.separator &&
+        template === op.template
+        ? op
+        : { ...op, string, separator, template };
+    }
+    case "string-split-cache": {
+      const string = substitutedValue(values, op.string),
+        separator = substitutedValue(values, op.separator),
+        value = substitutedValue(values, op.value);
+      return string === op.string &&
+        separator === op.separator &&
+        value === op.value
+        ? op
+        : { ...op, string, separator, value };
     }
   }
   throw "unsupported instruction substitution";
@@ -436,6 +532,9 @@ export function renumberInstructionResult(
     case "reference-vector-write":
     case "reference-vector-copy":
     case "string-write":
+    case "number-string-cache":
+    case "string-index-cache":
+    case "string-split-cache":
       return op;
     default:
       return { ...op, id };

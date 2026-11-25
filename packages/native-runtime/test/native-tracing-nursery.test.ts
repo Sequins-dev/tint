@@ -243,6 +243,43 @@ test("nested typed-array views preserve owners and derived data after breadth-fi
   assert.equal(f.memory.get(640), 73);
 });
 
+test("sliced strings keep their flat parents through their parent slots", () => {
+  const f = fixture(256, 32, {
+    byteLength: 256,
+    forwarding: new Uint32Array(16),
+    publish: () => true,
+  });
+  f.starts[0] = (1 << 0) | (1 << 3);
+  // A two-byte flat string of 12 units (16 + 24 bytes, in 48) at 256 and a
+  // 9-unit slice from unit 2 at 304 (marker 1, flags 2; length, first
+  // unit's byte offset, parent). The collector does not check the slice's
+  // minimum length. Only the slice is a root.
+  f.memory.set(256, 1);
+  f.memory.set(264, 12);
+  f.memory.set(272, 0x0041004200430044);
+  f.memory.set(304, 1 + 2 * nativeHeaderFlagUnit);
+  f.memory.set(312, 9);
+  f.memory.set(320, 4);
+  f.memory.set(328, 256);
+  f.memory.set(8208, 304);
+  // The remembered slot holds an external address, and nothing else is in
+  // the nursery.
+  f.memory.set(9008, 5000);
+  for (let address = 336; address < 384; address += 8) f.memory.delete(address);
+  assert.equal(f.collector.prepare(80, f.head), true);
+  assert.equal(f.summary[0], 2);
+  assert.equal(f.summary[1], 80);
+  assert.equal(f.collector.commit(), true);
+  const sliced = f.memory.get(8208) ?? 0,
+    parent = f.memory.get(sliced + 24) ?? 0;
+  assert.notEqual(sliced, 304);
+  assert.notEqual(parent, 256);
+  assert.equal(f.memory.get(parent), 1);
+  assert.equal(f.memory.get(parent + 16), 0x0041004200430044);
+  assert.equal(f.memory.get(sliced + 16), 4);
+  assert.equal(f.memory.get(sliced + 8), 9);
+});
+
 test("minor tracing read cost does not scale with dead nursery capacity", () => {
   const small = fixture();
   assert.equal(small.collector.prepare(128, small.head), true);

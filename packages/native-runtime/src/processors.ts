@@ -1,7 +1,9 @@
+import { nativeTargetOSLinux } from "@tint/abi/host";
 import {
   closeRuntimeFile,
   openRuntimeFile,
   readRuntimeFile,
+  runtimeTargetOS,
 } from "./intrinsics/memory.ts";
 /** CPU bandwidth limits of Linux control groups, which bound how many
  * threads can usefully run at once even when the affinity mask allows more
@@ -222,6 +224,7 @@ function appendText(target: Uint8Array, at: number, text: string): number {
  * v1 cpu controller's) and their ancestors (CPUs, rounded up), or 0 when
  * none applies or none is visible. */
 export function cgroupProcessorLimit(): number {
+  if (runtimeTargetOS() !== nativeTargetOSLinux) return 0;
   return cgroupProcessorLimitFrom(readStart);
 }
 /** cgroupProcessorLimit over `readFile(path, buffer)`, which fills buffer
