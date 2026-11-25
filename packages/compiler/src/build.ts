@@ -1044,6 +1044,11 @@ function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
       },
       {
         module: request.memoryModule,
+        name: "runtimeTargetOS",
+        operation: "target-os",
+      },
+      {
+        module: request.memoryModule,
         name: "openRuntimeFile",
         operation: "open-read",
       },

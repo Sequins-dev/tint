@@ -155,7 +155,7 @@ interface Worker {
   free: number;
   limit: number;
   scan: number;
-  readonly record: number;
+  record: number;
   /** Raw address of the start bitmap's data. */
   readonly startsData: number;
   readonly managedBase: number;
@@ -163,7 +163,7 @@ interface Worker {
   /** Mark-compact: the region's live bits' raw address, this worker's
    * mark stack (raw words) and depth, and the bytes it marked. */
   liveData: number;
-  readonly markStack: number;
+  markStack: number;
   markDepth: number;
   liveBytes: number;
   /** Evacuation: the weak slots this worker copied, as lists of source
@@ -175,7 +175,7 @@ interface Worker {
   /** Mark: the weak slots this worker marked (raw words: pending
    * ephemerons first, then the rest), their count and whether a slot did
    * not fit. */
-  readonly weakList: number;
+  weakList: number;
   weakCount: number;
   weakOverflowed: boolean;
   /** Pending ephemerons (either phase). */
@@ -956,9 +956,10 @@ export interface ParallelEvacuator extends CompactHelpers {
   ) => number;
 }
 
-/** Creates the shared record, per-worker state and (lazily) the pool threads.
- * Must run while the runtime initializes: every object created here is
- * permanent control storage that workers may touch. */
+/** Creates per-worker permanent state and (lazily) the raw workspace mapping
+ * and pool threads on first parallel collection. Must run while the runtime
+ * initializes: every managed object created here is permanent control storage
+ * that workers may touch without allocating during a pause. */
 export function createParallelEvacuator(
   managedBase: number,
   managedLength: number,
@@ -969,13 +970,11 @@ export function createParallelEvacuator(
 ): ParallelEvacuator | undefined {
   if (!Number.isInteger(workers) || workers < 2 || workers > 64)
     return undefined;
-  const record = mapMemory(recordBytes),
-    startsData = permanentArrayAddress(starts);
-  if (!Number.isSafeInteger(record) || record <= 0) return undefined;
-  if (!Number.isSafeInteger(startsData) || startsData <= 0) {
-    unmapMemory(record, recordBytes);
-    return undefined;
-  }
+  const startsData = permanentArrayAddress(starts);
+  if (!Number.isSafeInteger(startsData) || startsData <= 0) return undefined;
+  const workspaceBytes =
+    recordBytes + workers * (markStackCapacity * 8 + weakListCapacity * 8);
+  let record = 0;
   let states: Worker | undefined = undefined;
   for (let index = workers - 1; index >= 0; index--)
     states = {
@@ -991,17 +990,17 @@ export function createParallelEvacuator(
       limit: 0,
       scan: 0,
       liveData: 0,
-      markStack: mapMemory(markStackCapacity * 8),
+      markStack: 0,
       markDepth: 0,
       liveBytes: 0,
       weakPending: 0,
       weakDone: 0,
-      weakList: mapMemory(weakListCapacity * 8),
+      weakList: 0,
       weakCount: 0,
       weakPendingCount: 0,
       weakOverflowed: false,
       traced: 0,
-      record,
+      record: 0,
       startsData,
       managedBase,
       managedLength,
@@ -1010,28 +1009,17 @@ export function createParallelEvacuator(
   const head = states;
   if (head === undefined) return undefined;
   function releaseWorkspaces(): void {
+    if (record === 0) return;
+    const workspace = record;
+    record = 0;
     for (let state: Worker | undefined = head; state !== undefined;) {
       const current: Worker = state;
-      if (current.markStack > 0)
-        unmapMemory(current.markStack, markStackCapacity * 8);
-      if (current.weakList > 0)
-        unmapMemory(current.weakList, weakListCapacity * 8);
+      current.record = 0;
+      current.markStack = 0;
+      current.weakList = 0;
       state = current.next;
     }
-    unmapMemory(record, recordBytes);
-  }
-  for (let state: Worker | undefined = head; state !== undefined;) {
-    const current: Worker = state;
-    if (
-      !Number.isSafeInteger(current.markStack) ||
-      current.markStack <= 0 ||
-      !Number.isSafeInteger(current.weakList) ||
-      current.weakList <= 0
-    ) {
-      releaseWorkspaces();
-      return undefined;
-    }
-    state = current.next;
+    unmapMemory(workspace, workspaceBytes);
   }
   // Created here, so permanent: the caller (worker 0) scans the stack.
   const mainState: Worker = head;
@@ -1114,9 +1102,7 @@ export function createParallelEvacuator(
       wakeNativeWord(address + recordFinished, 1);
     }
   };
-  write(record + recordWorker, permanentFunctionAddress(worker));
-  write(record + recordNextIndex, 1);
-  write(record + recordWorkers, workers);
+  const workerAddress = permanentFunctionAddress(worker);
   const handles = new Float64Array(workers - 1);
   let count = 0;
   let started = false;
@@ -1138,14 +1124,31 @@ export function createParallelEvacuator(
     started = false;
   }
   function start(): boolean {
+    if (record === 0) {
+      const workspace = mapMemory(workspaceBytes);
+      if (!Number.isSafeInteger(workspace) || workspace <= 0) return false;
+      record = workspace;
+      let at = workspace + recordBytes;
+      for (let state: Worker | undefined = head; state !== undefined;) {
+        const current: Worker = state;
+        current.record = workspace;
+        current.markStack = at;
+        at += markStackCapacity * 8;
+        current.weakList = at;
+        at += weakListCapacity * 8;
+        state = current.next;
+      }
+      write(record + recordWorker, workerAddress);
+      write(record + recordNextIndex, 1);
+      write(record + recordWorkers, workers);
+    }
     const entry = collectorWorkerEntry();
     for (let index = 1; index < workers; index++) {
       const handle = startNativeThread(entry, record);
       if (handle <= 0) {
         stopWorkers();
+        releaseWorkspaces();
         epoch = 0;
-        write(record + recordEpoch, 0);
-        write(record + recordNextIndex, 1);
         return false;
       }
       handles[count++] = handle;

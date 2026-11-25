@@ -37,6 +37,7 @@ const factBindings = [
     operation: "memory-page-bytes",
   },
   { module: memory, name: "processorCount", operation: "processor-count" },
+  { module: memory, name: "runtimeTargetOS", operation: "target-os" },
   { module: memory, name: "openRuntimeFile", operation: "open-read" },
   { module: memory, name: "readRuntimeFile", operation: "read" },
   { module: memory, name: "closeRuntimeFile", operation: "close" },
