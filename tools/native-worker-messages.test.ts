@@ -12,6 +12,11 @@ import type {
   NativeWorkerBackingGrant,
 } from "../packages/native-runtime/src/worker-backing.ts";
 import type { NativeMessagePort } from "../packages/native-runtime/src/worker-ports.ts";
+import type {
+  NativeAgentPacket,
+  NativeAgentPacketEntry,
+} from "../packages/native-runtime/src/agent-messages.ts";
+import type { NativePacketMemory } from "../packages/native-runtime/src/packet-memory.ts";
 import { bindHostRecordViews } from "../packages/js-runtime/test/ordinary-object-host-record-views.ts";
 
 const views = bindHostRecordViews();
@@ -78,10 +83,60 @@ function fixture() {
       mapped.clear();
     },
   };
+  // Packets live in ordinary byte arrays keyed by a fake address.
+  const packets = new Map<number, Uint8Array>();
+  let nextPacket = 1 << 30;
+  function packet(base: number): Uint8Array {
+    const bytes = packets.get(base);
+    assert.ok(bytes, "live packet");
+    return bytes;
+  }
+  const memory: NativePacketMemory = {
+    view: (address, byteLength) => {
+      const bytes = packet(address);
+      assert.equal(bytes.length, byteLength);
+      return bytes;
+    },
+    readFloat64: (address, _length, offset) =>
+      new DataView(packet(address).buffer).getFloat64(offset, true),
+    writeFloat64: (address, _length, offset, value) => {
+      assert.equal(offset % 8, 0);
+      new DataView(packet(address).buffer).setFloat64(offset, value, true);
+      return 0;
+    },
+    readString: (address, _length, offset, units) => {
+      const bytes = packet(address);
+      let text = "";
+      for (let index = 0; index < units; index++)
+        text += String.fromCharCode(
+          bytes[offset + index * 2]! + bytes[offset + index * 2 + 1]! * 256,
+        );
+      return text;
+    },
+    writeString: (address, _length, offset, value) => {
+      const bytes = packet(address);
+      for (let index = 0; index < value.length; index++) {
+        bytes[offset + index * 2] = value.charCodeAt(index) & 255;
+        bytes[offset + index * 2 + 1] = value.charCodeAt(index) >> 8;
+      }
+      return 0;
+    },
+  };
+  function allocatePacket(payload: number): NativeAgentPacket {
+    const byteLength = Math.ceil((32 + payload) / 16384) * 16384;
+    const base = nextPacket;
+    nextPacket += byteLength;
+    packets.set(base, new Uint8Array(byteLength));
+    return { base, byteLength, segment: 0 };
+  }
+  function releasePacket(value: NativeAgentPacket): void {
+    assert.ok(packets.delete(value.base), "packet released once");
+  }
   const messages = createNativeWorkerMessages({
     realm,
     shared: undefined,
     backing,
+    packets: memory,
     ports: {
       create() {
         throw new Error("unexpected port creation");
@@ -98,27 +153,34 @@ function fixture() {
       throw new Error("unexpected port");
     },
   });
-  return { root, hooks, realm, mapped, messages };
+  /** A port whose sends hand `publish` the packet and its payload length. */
+  function target(
+    publish: (entry: NativeAgentPacketEntry, commit?: () => void) => boolean,
+  ): NativeMessagePort {
+    return port((packet, used, commit) => publish({ packet, used }, commit));
+  }
+  function port(send: NativeMessagePort["send"]): NativeMessagePort {
+    return {
+      allocate: allocatePacket,
+      release: releasePacket,
+      send,
+      inspect: () => ({ base: 1, side: 0, generation: 0 }),
+      take: () => undefined,
+      watch: () => {
+        throw new Error("unexpected watch");
+      },
+      transfer: () => {
+        throw new Error("unexpected transfer");
+      },
+      close: () => {},
+    };
+  }
+  return { root, hooks, realm, mapped, messages, packets, target, port };
 }
 
-function target(send: NativeMessagePort["send"]): NativeMessagePort {
-  return {
-    send,
-    inspect: () => ({ base: 1, side: 0, generation: 0 }),
-    take: () => undefined,
-    watch: () => {
-      throw new Error("unexpected watch");
-    },
-    transfer: () => {
-      throw new Error("unexpected transfer");
-    },
-    close: () => {},
-  };
-}
-
-function buffer(f: ReturnType<typeof fixture>) {
+function buffer(f: ReturnType<typeof fixture>, byteLength = 2097152) {
   const object = o.createObject(f.realm.arrayBufferPrototype);
-  const bytes = new Uint8Array(65536);
+  const bytes = new Uint8Array(byteLength);
   bytes[0] = 42;
   bytes[bytes.length - 1] = 69;
   const storage = adoptByteStorage(
@@ -133,29 +195,25 @@ function buffer(f: ReturnType<typeof fixture>) {
   return { object, bytes, storage: storage.value };
 }
 
-test("worker messages put cloned buffer bytes in a mapping and preserve aliases", () => {
+test("worker messages put large cloned buffer bytes in a mapping and preserve aliases", () => {
   const f = fixture();
   const original = buffer(f);
   const graph = o.createObject(f.root);
   o.createDataProperty(graph, "left", original.object, f.hooks);
   o.createDataProperty(graph, "right", original.object, f.hooks);
-  let packet = "";
-  f.messages.send(
-    target((value, commit) => {
-      commit?.();
-      packet = value;
-      return true;
-    }),
-    graph,
-    [],
-  );
-  assert.ok(
-    packet.length > 0 && packet.length < 256,
-    "buffer bytes went into the text packet",
-  );
+  let sent: NativeAgentPacketEntry | undefined;
+  const port = f.target((entry, commit) => {
+    commit?.();
+    sent = entry;
+    return true;
+  });
+  f.messages.send(port, graph, []);
+  assert.ok(sent !== undefined);
+  assert.ok(sent.used < 256, "buffer bytes went into the packet");
   assert.equal(f.mapped.size, 1);
   original.bytes[0] = 9;
-  const copy = f.messages.receive(packet) as ObjectValue;
+  const copy = f.messages.receive(port, sent) as ObjectValue;
+  assert.equal(f.packets.size, 0, "the receiver released the packet");
   const left = o.getOwnProperty(copy, "left")?.value as ObjectValue;
   assert.equal(o.getOwnProperty(copy, "right")?.value, left);
   assert.notEqual(left, original.object);
@@ -169,11 +227,30 @@ test("worker messages put cloned buffer bytes in a mapping and preserve aliases"
   assert.equal(byteStorageData(original.storage), original.bytes);
 });
 
+test("small cloned buffers travel inside the packet", () => {
+  const f = fixture();
+  const original = buffer(f, 4096);
+  let sent: NativeAgentPacketEntry | undefined;
+  const port = f.target((entry, commit) => {
+    commit?.();
+    sent = entry;
+    return true;
+  });
+  f.messages.send(port, original.object, []);
+  assert.ok(sent !== undefined);
+  assert.ok(sent.used > 4096, "the bytes are in the packet");
+  assert.equal(f.mapped.size, 0);
+  const copy = f.messages.receive(port, sent) as ObjectValue;
+  assert.equal(o.exoticSlots(copy).internalArrayBufferData?.data?.[0], 42);
+  assert.equal(o.exoticSlots(copy).internalArrayBufferData?.data?.at(-1), 69);
+  assert.equal(f.packets.size, 0);
+});
+
 test("unpublished buffer copies release their mappings and keep the original live", () => {
   const f = fixture();
   const original = buffer(f);
   f.messages.send(
-    target((_packet, commit) => {
+    f.target((_packet, commit) => {
       assert.equal(f.mapped.size, 1);
       commit?.();
       return false;
@@ -182,6 +259,7 @@ test("unpublished buffer copies release their mappings and keep the original liv
     [],
   );
   assert.equal(f.mapped.size, 0);
+  assert.equal(f.packets.size, 0, "the unsent packet was released");
   assert.equal(byteStorageData(original.storage), original.bytes);
 });
 
@@ -194,7 +272,7 @@ test("a clone error releases earlier buffer copies without publishing", () => {
   let published = false;
   assert.throws(() =>
     f.messages.send(
-      target(() => {
+      f.target(() => {
         published = true;
         return true;
       }),
@@ -204,5 +282,48 @@ test("a clone error releases earlier buffer copies without publishing", () => {
   );
   assert.equal(published, false);
   assert.equal(f.mapped.size, 0);
+  assert.equal(f.packets.size, 0);
   assert.equal(byteStorageData(original.storage), original.bytes);
+});
+
+test("re-entrant send from a serialization getter keeps both packets independent", () => {
+  const f = fixture();
+  const sent: NativeAgentPacketEntry[] = [];
+  const port = f.target((entry, commit) => {
+    commit?.();
+    sent.push(entry);
+    return true;
+  });
+  const outer = o.createObject(f.root);
+  const getter = o.createCallableObject(
+    f.realm.functionPrototype,
+    () => {
+      f.messages.send(port, "inner-message", []);
+      return "outer-value";
+    },
+    f.realm.executionContext,
+  );
+  assert.equal(
+    o.defineOwnProperty(
+      outer,
+      "nested",
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: getter,
+        set: undefined,
+        enumerable: true,
+        configurable: true,
+      },
+      f.hooks,
+    ),
+    "accepted",
+  );
+  f.messages.send(port, outer, []);
+  assert.equal(sent.length, 2);
+  assert.equal(f.messages.receive(port, sent[0]!), "inner-message");
+  const receivedOuter = f.messages.receive(port, sent[1]!) as ObjectValue;
+  assert.equal(o.getOwnProperty(receivedOuter, "nested")?.value, "outer-value");
+  assert.equal(f.packets.size, 0);
 });

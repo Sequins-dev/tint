@@ -409,21 +409,21 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "mov", dst: rax, src: gpr(11) });
   } else emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
-  if (threaded || live) {
-    // The inaccessible identity page outlives this heap and prevents address
-    // reuse from aliasing context-owned values after a join.
-    emit({ op: "xor", dst: edi, src: edi });
-    emit({ op: "mov", dst: esi, src: imm(pageBytes) });
-    emit({ op: "xor", dst: edx, src: edx });
-    emit({ op: "mov", dst: word(1), src: imm(host.anonymousPrivateFlags) });
-    emit({ op: "mov", dst: word(8), src: imm(-1) });
-    emit({ op: "xor", dst: word(9), src: word(9) });
-    call(host.symbolPrefix + "mmap");
-    emit({ op: "mov", dst: gpr(11), src: bits(0xffffffff, 0x1fffff) });
-    emit({ op: "cmp", dst: rax, src: gpr(11) });
-    emit({ op: "jcc", cc: "a", target: label("guard-failed") });
-    emit({ op: "mov", dst: mem(12, nativeContextDomainOffset), src: rax });
-  }
+  // Every context issues an identity page, as on arm64: it outlives this
+  // heap and prevents address reuse from aliasing context-owned values after
+  // a join. Its address is the context's domain; its first words record the
+  // isolate's shared block registry (native-runtime shared-buffers.ts).
+  emit({ op: "xor", dst: edi, src: edi });
+  emit({ op: "mov", dst: esi, src: imm(pageBytes) });
+  emit({ op: "mov", dst: edx, src: imm(3) });
+  emit({ op: "mov", dst: word(1), src: imm(host.anonymousPrivateFlags) });
+  emit({ op: "mov", dst: word(8), src: imm(-1) });
+  emit({ op: "xor", dst: word(9), src: word(9) });
+  call(host.symbolPrefix + "mmap");
+  emit({ op: "mov", dst: gpr(11), src: bits(0xffffffff, 0x1fffff) });
+  emit({ op: "cmp", dst: rax, src: gpr(11) });
+  emit({ op: "jcc", cc: "a", target: label("guard-failed") });
+  emit({ op: "mov", dst: mem(12, nativeContextDomainOffset), src: rax });
 
   const local = new Map<string, number>();
   local.set("invoke", request.invocation);

@@ -6,6 +6,7 @@ import {
   builtinFunctionMetadata,
   builtinProperty,
   callObjectValue,
+  createCallableObject,
   createConstructorObject,
   createDataProperty,
   createObject,
@@ -43,6 +44,8 @@ import type {
 } from "../worker-lifecycle.ts";
 import type { NativeSharedMemoryHost } from "../shared-memory-host.ts";
 import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
+import type { NativePacketMemory } from "../packet-memory.ts";
+import type { NativeSharedStrings } from "../shared-strings.ts";
 
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 
@@ -75,6 +78,11 @@ export interface NodeWorkerThreadsOptions {
   readonly threads: NativeWorkerThreadHost;
   readonly reactor: ReactorEventLoop;
   readonly shared: SharedBlockService | undefined;
+  /** See NativeWorkerMessageOptions.sharedBlockAt. */
+  readonly sharedBlockAt?: (address: number) => number;
+  readonly packets: NativePacketMemory;
+  /** See NativeWorkerMessageOptions.strings. */
+  readonly strings?: NativeSharedStrings;
   prepare(
     filename: string,
     resourceLimits: WorkerResourceLimits,
@@ -89,11 +97,42 @@ export interface NodeWorkerThreads {
   readonly parentPort: ScriptObject | null;
   readonly workerData: unknown;
   readonly resourceLimits: ScriptObject;
+  /** Posts as `object.postMessage(value, transfer)` does when `method`, the
+   * object's postMessage, is still the intrinsic one, without a realm call
+   * (the typed facade's fast path). False, having done nothing, otherwise. */
+  post(
+    object: ScriptObject,
+    method: unknown,
+    value: unknown,
+    transfer: readonly unknown[] | undefined,
+  ): boolean;
+  /** Registers a typed listener when `method`, the object's `on`/`once`, is
+   * still the intrinsic one so delivery can call `listener` directly without
+   * a realm trampoline. False, having done nothing, otherwise. */
+  listen(
+    object: ScriptObject,
+    method: unknown,
+    name: string,
+    listener: (value: unknown) => void,
+    once: boolean,
+  ): boolean;
   close(): void;
+}
+/** An intrinsic postMessage, by its function object's identity, and the
+ * endpoint of its receivers. */
+interface PostMethod {
+  readonly identity: number;
+  readonly state: (receiver: unknown) => Endpoint;
+}
+interface ListenMethod {
+  readonly identity: number;
+  readonly once: boolean;
+  readonly state: (receiver: unknown) => Endpoint;
 }
 interface Listener {
   readonly event: ScriptPropertyKey;
   readonly fn: ScriptObject;
+  readonly typed?: ((value: unknown) => void) | undefined;
   readonly once: boolean;
   active: boolean;
 }
@@ -120,6 +159,8 @@ const resourceNames: readonly string[] = [
   "codeRangeSizeMb",
   "stackSizeMb",
 ];
+const emptyTransfer: readonly unknown[] = [];
+const emptyArgs: readonly unknown[] = [];
 
 /** Create the public module in a fresh realm. A host selects image-local
  * worker entry modules and owns their per-isolate startup configuration. */
@@ -141,6 +182,9 @@ export function createNodeWorkerThreads(
   const portObjects = new Map<number, Endpoint>();
   const workerObjects = new Map<number, WorkerState>();
   const endpoints: Endpoint[] = [];
+  const postMethods: PostMethod[] = [];
+  const listenMethods: ListenMethod[] = [];
+  let cachedSingleArg: unknown[] | undefined;
   function read(object: ScriptObject, name: string): unknown {
     return getProperty<ScriptPropertyKey, unknown>(object, name, object, hooks);
   }
@@ -165,15 +209,16 @@ export function createNodeWorkerThreads(
     name: string,
     arity: number,
     call: ObjectCall<unknown>,
-  ): void {
-    builtinProperty(
-      object,
+  ): ScriptObject {
+    const fn = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(realm.functionPrototype, name, arity, call, hooks),
-      true,
-      true,
+      arity,
+      call,
       hooks,
     );
+    builtinProperty(object, name, fn, true, true, hooks);
+    return fn;
   }
   function getter(
     object: ScriptObject,
@@ -218,7 +263,7 @@ export function createNodeWorkerThreads(
     return worker;
   }
   function transferList(value: unknown): readonly unknown[] {
-    if (value === undefined) return [];
+    if (value === undefined) return emptyTransfer;
     const array = viewObjectValue(value, realm.objectPrototype);
     if (array === undefined || !array.internalArrayData)
       return typeError("transferList must be an array");
@@ -230,20 +275,49 @@ export function createNodeWorkerThreads(
       if (listener.active && listener.event === event) count++;
     return count;
   }
-  function emit(
+  function invokeListener(
     endpoint: Endpoint,
-    event: string,
+    listener: Listener,
     args: readonly unknown[],
   ): void {
-    const listeners = endpoint.listeners.filter(
-      (entry): boolean => entry.active && entry.event === event,
+    if (listener.once) {
+      listener.active = false;
+      endpoint.changed();
+    }
+    const direct = listener.typed;
+    if (direct !== undefined) {
+      direct(args[0]);
+      return;
+    }
+    const called = callObjectValue(
+      listener.fn,
+      endpoint.object,
+      args,
+      realm.objectPrototype,
     );
-    if (listeners.length === 0 && event === "error") throw args[0];
-    for (const listener of listeners) {
-      if (listener.once) {
-        listener.active = false;
-        endpoint.changed();
-      }
+    if (called.error !== "none") throw called.value;
+  }
+  function invokeListenerOne(
+    endpoint: Endpoint,
+    listener: Listener,
+    arg: unknown,
+  ): void {
+    if (listener.once) {
+      listener.active = false;
+      endpoint.changed();
+    }
+    const direct = listener.typed;
+    if (direct !== undefined) {
+      direct(arg);
+      return;
+    }
+    let args: unknown[];
+    if (cachedSingleArg !== undefined) {
+      args = cachedSingleArg;
+      cachedSingleArg = undefined;
+    } else args = [undefined];
+    args[0] = arg;
+    try {
       const called = callObjectValue(
         listener.fn,
         endpoint.object,
@@ -251,6 +325,67 @@ export function createNodeWorkerThreads(
         realm.objectPrototype,
       );
       if (called.error !== "none") throw called.value;
+    } finally {
+      args[0] = undefined;
+      if (cachedSingleArg === undefined) cachedSingleArg = args;
+    }
+  }
+  function emit(
+    endpoint: Endpoint,
+    event: string,
+    args: readonly unknown[],
+  ): void {
+    const all = endpoint.listeners;
+    let first: Listener | undefined;
+    let snapshot: Listener[] | undefined;
+    for (let index = 0; index < all.length; index++) {
+      const entry = all[index];
+      if (entry === undefined || !entry.active || entry.event !== event)
+        continue;
+      if (first === undefined) first = entry;
+      else {
+        if (snapshot === undefined) snapshot = [first];
+        snapshot.push(entry);
+      }
+    }
+    if (first === undefined) {
+      if (event === "error") throw args[0];
+      return;
+    }
+    if (snapshot === undefined) {
+      invokeListener(endpoint, first, args);
+      return;
+    }
+    for (let index = 0; index < snapshot.length; index++) {
+      const listener = snapshot[index];
+      if (listener !== undefined) invokeListener(endpoint, listener, args);
+    }
+  }
+  function emitOne(endpoint: Endpoint, event: string, arg: unknown): void {
+    const all = endpoint.listeners;
+    let first: Listener | undefined;
+    let snapshot: Listener[] | undefined;
+    for (let index = 0; index < all.length; index++) {
+      const entry = all[index];
+      if (entry === undefined || !entry.active || entry.event !== event)
+        continue;
+      if (first === undefined) first = entry;
+      else {
+        if (snapshot === undefined) snapshot = [first];
+        snapshot.push(entry);
+      }
+    }
+    if (first === undefined) {
+      if (event === "error") throw arg;
+      return;
+    }
+    if (snapshot === undefined) {
+      invokeListenerOne(endpoint, first, arg);
+      return;
+    }
+    for (let index = 0; index < snapshot.length; index++) {
+      const listener = snapshot[index];
+      if (listener !== undefined) invokeListenerOne(endpoint, listener, arg);
     }
   }
   function eventMethods(
@@ -275,11 +410,28 @@ export function createNodeWorkerThreads(
     }
     const on: ObjectCall<unknown> = (receiver, args): unknown =>
       add(receiver, args, false);
-    method(prototype, "on", 2, on);
-    method(prototype, "addListener", 2, on);
-    method(prototype, "once", 2, (receiver, args): unknown =>
+    const onFn = method(prototype, "on", 2, on);
+    const onId = realm.agent.nextObjectIdentity++;
+    ensureExoticSlots(onFn).internalIdentity = onId;
+    listenMethods.push({ identity: onId, once: false, state });
+    const addListenerFn = method(prototype, "addListener", 2, on);
+    const addListenerId = realm.agent.nextObjectIdentity++;
+    ensureExoticSlots(addListenerFn).internalIdentity = addListenerId;
+    listenMethods.push({
+      identity: addListenerId,
+      once: false,
+      state,
+    });
+    const onceFn = method(prototype, "once", 2, (receiver, args): unknown =>
       add(receiver, args, true),
     );
+    const onceId = realm.agent.nextObjectIdentity++;
+    ensureExoticSlots(onceFn).internalIdentity = onceId;
+    listenMethods.push({
+      identity: onceId,
+      once: true,
+      state,
+    });
     const remove: ObjectCall<unknown> = (receiver, args): unknown => {
       const endpoint = state(receiver);
       for (let index = endpoint.listeners.length - 1; index >= 0; index--) {
@@ -299,10 +451,18 @@ export function createNodeWorkerThreads(
     };
     method(prototype, "removeListener", 2, remove);
     method(prototype, "off", 2, remove);
-    method(prototype, "postMessage", 2, (receiver, args): unknown => {
-      messages.send(state(receiver).port, args[0], transferList(args[1]));
-      return undefined;
-    });
+    const post = method(
+      prototype,
+      "postMessage",
+      2,
+      (receiver, args): unknown => {
+        messages.send(state(receiver).port, args[0], transferList(args[1]));
+        return undefined;
+      },
+    );
+    const postId = realm.agent.nextObjectIdentity++;
+    ensureExoticSlots(post).internalIdentity = postId;
+    postMethods.push({ identity: postId, state });
   }
   function closePort(endpoint: Endpoint, notify: boolean): void {
     if (endpoint.closed) return;
@@ -310,7 +470,7 @@ export function createNodeWorkerThreads(
     endpoint.watch = undefined;
     endpoint.port.close();
     if (notify)
-      reactor.loop.enqueueClose((): void => emit(endpoint, "close", []));
+      reactor.loop.enqueueClose((): void => emit(endpoint, "close", emptyArgs));
   }
   function watch(endpoint: Endpoint, onClose: () => void): void {
     if (
@@ -319,15 +479,15 @@ export function createNodeWorkerThreads(
       endpoint.port.inspect() === undefined
     )
       return;
-    endpoint.watch = endpoint.port.watch((packet: string): void => {
+    endpoint.watch = endpoint.port.watch((entry): void => {
       let value: unknown;
       try {
-        value = messages.receive(packet);
+        value = messages.receive(endpoint.port, entry);
       } catch (error) {
-        emit(endpoint, "messageerror", [error]);
+        emitOne(endpoint, "messageerror", error);
         return;
       }
-      emit(endpoint, "message", [value]);
+      emitOne(endpoint, "message", value);
     }, onClose);
   }
   function makePort(port: NativeMessagePort): ScriptObject {
@@ -368,13 +528,18 @@ export function createNodeWorkerThreads(
     options.parking,
     options.threads,
     reactor,
-    (packet: string): void => messages.discard(packet),
+    (entry): void => messages.discard(entry),
   );
   const messages: NativeWorkerMessages = createNativeWorkerMessages({
     realm,
     shared: options.shared,
+    ...(options.sharedBlockAt === undefined
+      ? {}
+      : { sharedBlockAt: options.sharedBlockAt }),
     backing,
     ports,
+    packets: options.packets,
+    ...(options.strings === undefined ? {} : { strings: options.strings }),
     portForObject: (object): NativeMessagePort | undefined =>
       portObjects.get(exoticSlots(object).internalIdentity)?.port,
     objectForPort: makePort,
@@ -559,13 +724,13 @@ export function createNodeWorkerThreads(
         if (failure !== undefined) {
           const error = createRuntimeError(realm, "error");
           builtinProperty(error, "message", failure, true, true, hooks);
-          emit(endpoint, "error", [error]);
+          emitOne(endpoint, "error", error);
         }
       } finally {
         for (const termination of worker.terminations)
           termination.resolve(status);
         worker.terminations.length = 0;
-        emit(endpoint, "exit", [status]);
+        emitOne(endpoint, "exit", status);
       }
     }
     let child: NodeWorkerChild;
@@ -664,9 +829,9 @@ export function createNodeWorkerThreads(
   let data: unknown = null;
   let resources = limitsObject(undefined);
   if (parent !== undefined) {
-    const packet = parent.take();
-    if (packet === undefined) throw "NODE_WORKER_DATA_PACKET";
-    const envelope = ensureObject(messages.receive(packet));
+    const entry = parent.take();
+    if (entry === undefined) throw "NODE_WORKER_DATA_PACKET";
+    const envelope = ensureObject(messages.receive(parent, entry));
     data = read(envelope, "data");
     resources = ensureObject(read(envelope, "limits"));
   }
@@ -679,6 +844,48 @@ export function createNodeWorkerThreads(
     parentPort: parent === undefined ? null : makePort(parent),
     workerData: data,
     resourceLimits: resources,
+    post: (object, method, value, transfer): boolean => {
+      const fn = viewObjectValue(method, realm.objectPrototype);
+      if (fn === undefined) return false;
+      const identity = exoticSlots(fn).internalIdentity;
+      for (const entry of postMethods)
+        if (entry.identity === identity) {
+          messages.send(
+            entry.state(object).port,
+            value,
+            transfer === undefined ? emptyTransfer : transfer,
+          );
+          return true;
+        }
+      return false;
+    },
+    listen: (object, method, name, listener, once): boolean => {
+      const fn = viewObjectValue(method, realm.objectPrototype);
+      if (fn === undefined) return false;
+      const identity = exoticSlots(fn).internalIdentity;
+      for (const entry of listenMethods)
+        if (entry.identity === identity && entry.once === once) {
+          const endpoint = entry.state(object);
+          const callback = createCallableObject<ScriptPropertyKey, unknown>(
+            realm.functionPrototype,
+            (_receiver, args): unknown => {
+              listener(args[0]);
+              return undefined;
+            },
+            realm.executionContext,
+          );
+          endpoint.listeners.push({
+            event: name,
+            fn: callback,
+            typed: listener,
+            once,
+            active: true,
+          });
+          endpoint.changed();
+          return true;
+        }
+      return false;
+    },
     close: (): void => {
       for (const endpoint of endpoints) closePort(endpoint, false);
       backing.close();

@@ -237,3 +237,27 @@ test("the entry checkpoint defers host turns until the current job has finished"
   loop.run("callback");
   assert.equal(calls, 1);
 });
+
+test("checkpointWithin runs a callback's checkpoint between the events it delivers", () => {
+  const order: string[] = [];
+  const microtasks: (() => void)[] = [];
+  const loop = createEventLoop({
+    drainMicrotasks: (): void => {
+      while (microtasks.length > 0) microtasks.shift()?.();
+    },
+    poll: (): void => {},
+    now: (): number => 0,
+  });
+  assert.throws(() => loop.checkpointWithin());
+  loop.enqueueIO((): void => {
+    for (const name of ["first", "second"]) {
+      order.push(name);
+      microtasks.push((): void => {
+        order.push("after " + name);
+      });
+      if (name === "first") loop.checkpointWithin();
+    }
+  });
+  loop.run("callback");
+  assert.deepEqual(order, ["first", "after first", "second", "after second"]);
+});

@@ -42,6 +42,12 @@ export interface DynamicObjectRuntime {
   readonly speculativeBinary?: number | undefined;
   readonly speculativeString?: number | undefined;
   readonly speculativeUnary?: number | undefined;
+  /** projectNativeTypedArray: a realm typed array passed to a native
+   * typed-array parameter, viewed natively (scalar nativeArrayArgument). */
+  readonly projectTypedArray?: number | undefined;
+  /** projectNativeSharedArrayBuffer: a realm SharedArrayBuffer projected to
+   * its borrowed native byte array (scalar nativeSharedArrayBufferArgument). */
+  readonly projectSharedArrayBuffer?: number | undefined;
   /** String() of a value typed as unknown (see stringConstructor). */
   readonly stringConstructor?: number | undefined;
   readonly bindingObject?: number;
@@ -94,6 +100,8 @@ export const realmInstanceofHelpers: readonly string[] = [
   "realmGlobal",
   "realmInstanceOf",
   "invokeArrayMethod",
+  "projectNativeTypedArray",
+  "projectNativeSharedArrayBuffer",
 ];
 
 /** The receiver's checked brand is independent of its physical carrier. */
@@ -138,6 +146,17 @@ export function arrayFlowReceiver(
       return undefined;
   }
 }
+function hasSharedArrayBuffer(checked: CheckedClosures, id: number): boolean {
+  const type = checked.types[id];
+  if (type === undefined) return false;
+  if (type.kind === "SharedArrayBuffer") return true;
+  return (
+    type.kind === "union" &&
+    type.members.some(
+      (member) => member !== undefined && hasSharedArrayBuffer(checked, member),
+    )
+  );
+}
 function isNativeRealmGuard(
   intrinsic: string,
   site: Span,
@@ -145,6 +164,7 @@ function isNativeRealmGuard(
 ): boolean {
   return (
     intrinsic === "array-instanceof" ||
+    intrinsic === "shared-buffer-instanceof" ||
     ((intrinsic === "error-is" ||
       intrinsic === "type-error-is" ||
       intrinsic === "range-error-is" ||
@@ -170,6 +190,10 @@ export function usesRealmInstanceof(
     )
       used = true;
   });
+  if (realmGuards)
+    checked.downcasts?.forEach((type, _node) => {
+      if (hasSharedArrayBuffer(checked, type)) used = true;
+    });
   return used;
 }
 
@@ -556,6 +580,10 @@ export function insertDynamicObjectRuntime(
   checked.dynamicEnrollments?.forEach((_type, node) => {
     uses.push(node);
   });
+  if (realmInstanceof)
+    checked.downcasts?.forEach((type, node) => {
+      if (hasSharedArrayBuffer(checked, type)) uses.push(node);
+    });
   for (const binding of checked.bindings.bindings) {
     if (binding === undefined) continue;
     const type = checked.bindingTypes[binding.id];

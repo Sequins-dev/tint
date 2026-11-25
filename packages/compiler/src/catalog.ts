@@ -2919,6 +2919,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/native-array-detach.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/intrinsics/packet-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/process.ts",
       packageId: "native-runtime",
     },
@@ -2928,6 +2936,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/intrinsics/shared-strings.ts",
       packageId: "native-runtime",
     },
     {
@@ -3007,6 +3019,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/packet-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/processors.ts",
       packageId: "native-runtime",
     },
@@ -3023,7 +3039,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/shared-buffers.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/shared-memory-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-string-arena.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-strings.ts",
       packageId: "native-runtime",
     },
     {

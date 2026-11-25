@@ -15,8 +15,23 @@ export const nativeGenerationalStateWords = 20;
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
- * Realms within one context share this token; it is not an agent identifier. */
+ * Realms within one context share this token; it is not an agent identifier.
+ * The mapping is a zeroed read-write page whose first two words record the
+ * isolate's shared block registry (native-runtime shared-buffers.ts). */
 export const nativeContextDomainOffset = 96;
+/** Identity page word 2: the address of the isolate's shared string hold
+ * table, published by its collector runtime (native-runtime
+ * external-memory.ts), or 0. */
+export const nativeIdentityHoldTableOffset = 16;
+/** Identity page words 3 and 4: the base and byte length of the one region
+ * besides the managed mapping whose pages memory-release may return (the
+ * process's shared string arena), recorded once by the runtime before any
+ * release in it; 0 for none. */
+export const nativeIdentityReleasableBaseOffset = 24;
+export const nativeIdentityReleasableLengthOffset = 32;
+/** Hosted context words holding the managed mapping's base and byte length. */
+export const nativeContextManagedBaseOffset = 8;
+export const nativeContextManagedLengthOffset = 32;
 /** Innermost native activation record (a script entry's frame record, see
  * docs/design-general-runtime-rearchitecture.md, "Activation records"), or 0.
  * Script entries link and unlink their record; the runtime walks the chain

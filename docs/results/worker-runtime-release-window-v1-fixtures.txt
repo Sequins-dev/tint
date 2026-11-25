@@ -1,0 +1,82 @@
+Fixtures at da16bafc2 under LLDB (stop at entry, then exit).
+macOS arm64 lines: variant, image SHA-256 prefix, workspace source snapshot prefix.
+
+== macos memory-release 536787898f1e7c00 790b9652bd134147
+STOPPED_AT_ENTRY
+STATE True 42
+== macos serial stress=0 457d35c7db6ec34e 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== macos serial stress=1 b6b1474d6e008726 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== macos parallel stress=0 230d6998e712dce4 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== macos parallel stress=1 27813224473d96e2 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== macos copying stress=0 b34ddf090bda7de8 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== macos copying stress=1 26359ddaca75538d 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+linux exit 0
+
+Linux arm64 (dev container):
+head da16bafc2aedd264b1e0cb8b590fe04d317b4e96 aarch64 2026-11-23T20:37:07Z
+== memory-release /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-memory-release-binkGv/memory-release
+STOPPED_AT_ENTRY
+STATE True 42
+== serial /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-serial-adK9M7/worker-shared-strings-serial
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== stress serial /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-stress-serial-nkiypo/worker-shared-strings-stress-serial
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== parallel /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-parallel-BozMGr/worker-shared-strings-parallel
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== stress parallel /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-stress-parallel-BnmdiB/worker-shared-strings-stress-parallel
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== copying /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-copying-nt0anR/worker-shared-strings-copying
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== stress copying /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-stress-copying-OtimkN/worker-shared-strings-stress-copying
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+
+Linux x86-64 (Debian 13 VM), images cross-built at da16bafc2's tree:
+== memory-release bbeb83ff99365e86 790b9652bd134147
+STOPPED_AT_ENTRY
+STATE True 42
+== serial-0 62367c2286c3717b 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== serial-1 76623fd5350d716f 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== parallel-0 1faac0f9212dadfe 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== parallel-1 f1d9c0d08b3dbbaf 790b9652bd134147
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42

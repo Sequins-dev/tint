@@ -57,6 +57,14 @@ export type Instruction =
       readonly rt: DataRegister;
       readonly rn: BaseRegister;
     }
+  | {
+      /** ARMv8.1 LSE sequentially consistent atomic add (LDADDAL/LDADDALB/LDADDALH). */
+      readonly op: "ldaddal";
+      readonly width: MemoryAccessWidth;
+      readonly rs: DataRegister;
+      readonly rt: DataRegister;
+      readonly rn: BaseRegister;
+    }
   | { readonly op: "brk"; readonly immediate: number }
   | {
       readonly op: "ccmp-imm";
@@ -504,7 +512,8 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "ldar":
     case "stlr":
     case "ldaxr":
-    case "stlxr": {
+    case "stlxr":
+    case "ldaddal": {
       const size =
         i.width === 8
           ? 0
@@ -520,6 +529,13 @@ export function encode(instruction: Instruction): EncodingResult<number> {
         rn = register(i.rn, "sp");
       if (rt < 0 || rn < 0) return fail("INVALID_REGISTER");
       let base: number;
+      if (i.op === "ldaddal") {
+        const rs = register(i.rs, "zr");
+        if (rs < 0) return fail("INVALID_REGISTER");
+        return word(
+          (size * 0x40000000 + 0x38e00000 + rs * 65536 + rn * 32 + rt) >>> 0,
+        );
+      }
       if (i.op === "stlxr") {
         const rs = register(i.rs, "zr");
         if (rs < 0) return fail("INVALID_REGISTER");

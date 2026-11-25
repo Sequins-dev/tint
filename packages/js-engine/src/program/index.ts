@@ -11,6 +11,7 @@ import {
   type NativeRecordBinding,
   type BoundaryRecord,
   type BoundaryRecordUse,
+  type WorkerEvaluation,
 } from "@tint/compiler/native";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -182,7 +183,9 @@ export function createGeneralLowering(
       : {
           prepareTypedWorkers: (
             request: GeneralProgramRequest,
-          ): GeneralProgram => lowerGeneralProgram(request, options, true),
+            typedGuests: boolean,
+          ): GeneralProgram =>
+            lowerGeneralProgram(request, options, true, typedGuests),
         }),
     runtimes: [
       {
@@ -223,10 +226,20 @@ export function createGeneralLowering(
   };
 }
 
+/** A typed Worker entry (docs/design-worker-runtime.md): the host calls `start`
+ * in that Worker's isolate; it evaluates the entry and the modules of its
+ * graph that use the Worker bindings. */
+interface TypedGuestPlan {
+  readonly entry: string;
+  readonly start: SourceModule;
+  readonly deferred: readonly string[];
+}
+
 function lowerGeneralProgram(
   original: GeneralProgramRequest,
   options: GeneralLoweringOptions,
   typedWorkerEntry = false,
+  typedGuests = false,
 ): GeneralProgram {
   const runtime = options.runtime;
   const workers = options.nodeWorkers;
@@ -265,11 +278,11 @@ function lowerGeneralProgram(
   // Only the modules that depend on the worker bindings need to move into
   // the checked entry's evaluation scope. Shared runtime modules such as
   // source text and syntax must remain accessible to the host too.
-  const typedWorkerModules = new Set<string>();
-  if (typedGraph !== undefined) {
+  function workerDependents(graph: Set<string>): Set<string> {
+    const dependents = new Set<string>();
     const importers = new Map<string, string[]>();
     for (const source of original.modules) {
-      if (source === undefined || !typedGraph.has(source.id)) continue;
+      if (source === undefined || !graph.has(source.id)) continue;
       for (const [, dependency] of source.dependencies) {
         const found = importers.get(dependency);
         if (found === undefined) importers.set(dependency, [source.id]);
@@ -279,11 +292,103 @@ function lowerGeneralProgram(
     const pending = ["node:worker_threads"];
     for (let index = 0; index < pending.length; index++) {
       const id = pending[index];
-      if (id === undefined || typedWorkerModules.has(id)) continue;
-      typedWorkerModules.add(id);
+      if (id === undefined || dependents.has(id)) continue;
+      dependents.add(id);
       for (const importer of importers.get(id) ?? [])
         if (importer !== undefined) pending.push(importer);
     }
+    return dependents;
+  }
+  const typedWorkerModules =
+    typedGraph === undefined ? new Set<string>() : workerDependents(typedGraph);
+  const typedGuestPlans: TypedGuestPlan[] = [];
+  const typedGuestModules: string[] = [];
+  if (typedGuests) {
+    const planned = planTypedGuests();
+    if (planned !== undefined) return { ok: false, error: planned };
+  }
+  /** Plans each Worker entry as a typed start function, or explains why the
+   * entries keep the general guest path. */
+  function planTypedGuests(): string | undefined {
+    if (typedGraph === undefined)
+      return "typed Worker entries require a typed main entry";
+    const entries = original.workerEntries ?? [];
+    const claimed = new Map<string, string>();
+    for (const id of typedWorkerModules)
+      if (id !== "node:worker_threads") claimed.set(id, original.entry);
+    // A module reached from one Worker entry alone evaluates only in that
+    // Worker's isolates, as under Node; shared modules initialize in every
+    // isolate, as the main entry's do.
+    const reached = new Map<string, number>();
+    for (const id of typedGraph) reached.set(id, 1);
+    const graphs: Set<string>[] = [];
+    for (const entry of entries) {
+      if (entry === undefined) throw "worker entry invariant";
+      const graph = applicationGraph([entry]);
+      graphs.push(graph);
+      for (const id of graph) reached.set(id, (reached.get(id) ?? 0) + 1);
+    }
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index],
+        graph = graphs[index];
+      if (entry === undefined || graph === undefined)
+        throw "worker entry invariant";
+      if (entry === original.entry || !available.has(entry))
+        return "Worker entry " + entry + " is not an application module";
+      for (const source of original.modules) {
+        if (source === undefined) throw "general module invariant";
+        for (const [, dependency] of source.dependencies)
+          if (dependency === entry)
+            return "Worker entry " + entry + " is imported by " + source.id;
+      }
+      const deferred: string[] = [entry];
+      for (const id of workerDependents(graph))
+        if (id !== "node:worker_threads" && id !== entry) deferred.push(id);
+      for (const source of original.modules)
+        if (
+          source !== undefined &&
+          graph.has(source.id) &&
+          reached.get(source.id) === 1 &&
+          !deferred.includes(source.id)
+        )
+          deferred.push(source.id);
+      for (const id of deferred) {
+        const owner = claimed.get(id);
+        if (owner !== undefined)
+          return (
+            "module " +
+            id +
+            " uses the Worker bindings in the graphs of " +
+            owner +
+            " and " +
+            entry
+          );
+        claimed.set(id, entry);
+      }
+      for (const source of original.modules)
+        if (
+          source !== undefined &&
+          graph.has(source.id) &&
+          !typedGuestModules.includes(source.id)
+        )
+          typedGuestModules.push(source.id);
+      const text =
+        'import "./worker-entry";\nexport function start(): number { return 0; }\n';
+      const parsed = parseModule(createSourceTextView(text));
+      if (!parsed.ok) throw "typed Worker start invariant";
+      const dependencies = new Map<string, string>();
+      dependencies.set("./worker-entry", entry);
+      typedGuestPlans.push({
+        entry,
+        start: {
+          id: fresh("$typed-worker:" + entry),
+          module: parsed.value,
+          dependencies,
+        },
+        deferred,
+      });
+    }
+    return undefined;
   }
   const guestGraph = typedWorkerEntry
     ? applicationGraph(original.workerEntries ?? [])
@@ -336,9 +441,11 @@ function lowerGeneralProgram(
     guestGraph !== undefined
       ? {
           ...original,
-          modules: original.modules.filter(
-            (source) => source !== undefined && guestGraph.has(source.id),
-          ),
+          modules: typedGuests
+            ? []
+            : original.modules.filter(
+                (source) => source !== undefined && guestGraph.has(source.id),
+              ),
         }
       : mixed === undefined
         ? companions === undefined
@@ -644,8 +751,11 @@ function lowerGeneralProgram(
     return { ok: false, error: "entry module is not lowered" };
   const output = options.output;
   const eventLoop = options.nodeEventLoop;
-  const names = request.modules.map((module): string => module.id);
-  const moduleCount = names.length + request.boundaries.length;
+  // Worker filenames resolve to module records, or to typed entries' indices.
+  const names = typedGuests
+    ? (original.workerEntries ?? []).slice()
+    : request.modules.map((module): string => module.id);
+  const moduleCount = request.modules.length + request.boundaries.length;
   const crypto = options.nodeCrypto;
   const builtinStart = moduleCount + (workers === undefined ? 0 : 1);
   if (workers !== undefined) {
@@ -716,7 +826,11 @@ function lowerGeneralProgram(
     typedGraph !== undefined
   ) {
     for (const source of original.modules) {
-      if (source === undefined || !typedGraph.has(source.id)) continue;
+      if (
+        source === undefined ||
+        (!typedGraph.has(source.id) && !typedGuestModules.includes(source.id))
+      )
+        continue;
       const dependencies = new Map<string, string>();
       let usesWorker = false;
       for (const [specifier, target] of source.dependencies) {
@@ -735,6 +849,17 @@ function lowerGeneralProgram(
       ";\n";
     imports +=
       'import {initializeWorkerThreads} from "typed-worker-bindings";\n';
+    for (let k = 0; k < typedGuestPlans.length; k++) {
+      const plan = typedGuestPlans[k];
+      if (plan === undefined) throw "typed Worker plan invariant";
+      generated.push(plan.start);
+      imports +=
+        "import {start as typedWorker" +
+        k +
+        "} from " +
+        JSON.stringify(plan.start.id) +
+        ";\n";
+    }
   }
   const text = generalHostSource(
     imports,
@@ -751,6 +876,7 @@ function lowerGeneralProgram(
     names,
     mixed,
     typedWorkerEntry,
+    typedGuestPlans.length,
     crypto === undefined
       ? undefined
       : {
@@ -848,11 +974,12 @@ function lowerGeneralProgram(
         typedEntry === undefined
           ? {}
           : {
-              workerEvaluation: {
-                entry: typedEntry.id,
-                start: request.start,
-                modules: [...typedWorkerModules],
-              },
+              workerEvaluation: workerEvaluations(
+                typedEntry.id,
+                request.start,
+                typedWorkerModules,
+                typedGuestPlans,
+              ),
               moduleConstructors: [
                 {
                   module: typedBindings,
@@ -861,9 +988,15 @@ function lowerGeneralProgram(
                 },
               ],
             }),
-        ...(workerModules === undefined ? {} : { workerModules }),
+        ...(typedGuests
+          ? { workerModules: typedGuestModules }
+          : workerModules === undefined
+            ? {}
+            : { workerModules }),
       },
     };
+  if (typedGuests)
+    return { ok: false, error: "typed Worker entries require no boundaries" };
   const viewsParsed = parseModule(
     createSourceTextView(adapters.stubs + errors.stubs),
   );
@@ -916,6 +1049,29 @@ function lowerGeneralProgram(
   };
 }
 
+/** The deferred evaluation scopes: the main entry's, then each typed Worker
+ * entry's start function. */
+function workerEvaluations(
+  entry: string,
+  start: string,
+  mainModules: Set<string>,
+  guests: readonly TypedGuestPlan[],
+): WorkerEvaluation[] {
+  const modules: string[] = [];
+  for (const id of mainModules) modules.push(id);
+  const evaluations: WorkerEvaluation[] = [{ entry, start, modules }];
+  for (const guest of guests) {
+    if (guest === undefined) throw "typed Worker plan invariant";
+    const deferred: string[] = [guest.start.id];
+    for (const id of guest.deferred) deferred.push(id);
+    evaluations.push({
+      entry: guest.start.id,
+      start: "start",
+      modules: deferred,
+    });
+  }
+  return evaluations;
+}
 /** The retained stubs see only native layout identities and traced slots.
  * Publication lives in the host, where the shared realm is available. */
 function errorAdapters(
@@ -1250,6 +1406,18 @@ const installerArguments: ReadonlyMap<string, string> = new Map<string, string>(
  * first request and resolved per referrer, as the source graph resolved
  * them; the start export's result (a number, or undefined for 0) is the
  * exit status, and an uncaught exception or rejected evaluation exits 1. */
+/** Each typed Worker isolate runs its entry's start function, then its loop. */
+function typedGuestDispatch(count: number): string {
+  if (count === 0) return "";
+  let cases = "";
+  for (let k = 0; k < count; k++)
+    cases += "case " + k + ":status=typedWorker" + k + "();break;";
+  return (
+    "{let status=0;switch(moduleId){" +
+    cases +
+    'default:throw "unknown typed Worker entry";}events.loop.run("callback");return failed?1:status;}'
+  );
+}
 function generalHostSource(
   imports: string,
   creates: string,
@@ -1265,6 +1433,7 @@ function generalHostSource(
   names: readonly string[],
   mixed?: FunctionFallbackPlan,
   typedWorkerEntry = false,
+  typedGuests = 0,
   crypto?: {
     readonly crypto: number;
     readonly buffer: number;
@@ -1349,21 +1518,21 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
  });
  workerHost=session;
  const workers=session.exports;
- ${typedWorkerEntry ? 'initializeWorkerThreads(workers,realm);if(threadId===0){const status=typedStart();events.loop.run("callback");return failed?1:status;}' : ""}`;
-  const drainJobs =
-    "drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});";
+ ${typedWorkerEntry ? 'initializeWorkerThreads(workers,realm);if(threadId===0){const status=typedStart();events.loop.run("callback");return failed?1:status;}' + typedGuestDispatch(typedGuests) : ""}`;
+  const drainJobs = "drainScriptJobs(realm.agent,rethrowScriptJobError);";
   const drainCheckpoint =
     workers === undefined
       ? drainJobs
       : `workerHost?.checkpointAtomicWaits();do{${drainJobs}}while((workerHost?.checkpointAtomicWaits()??0)>0);`;
   const eventSetup = nodeEventLoop
-    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;"}
+    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;const noopWake=():void=>{};"}
  ${crypto === undefined ? "" : "let cryptoJobs:CryptoJobs|undefined=undefined;"}
+ const rethrowScriptJobError=(error:unknown):void=>{throw error;};
  const events:ReactorEventLoop=createReactorEventLoop({
   createReactor:()=>createReactor(),
   now:():number=>monotonicMilliseconds(),
   drainMicrotasks:():void=>{${drainCheckpoint}},
-  onWake:():void=>{${crypto === undefined ? "" : "cryptoJobs?.receive();"}${workers === undefined ? "" : "events.loop.enqueueIO(():void=>{});"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
+  onWake:():void=>{${crypto === undefined ? "" : "cryptoJobs?.receive();"}${workers === undefined ? "" : "events.loop.enqueueIO(noopWake);"}},${workers === undefined ? "" : "\n  stopRequested:():boolean=>control?.stopRequested()===true"}
  });
  try {
   installNodeEventLoopGlobals(events.loop,object,realm,hooks);

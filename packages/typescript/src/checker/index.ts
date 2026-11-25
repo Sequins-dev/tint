@@ -58,6 +58,7 @@ export interface CheckedDowncast {
   readonly records: readonly number[];
   readonly errors?:
     readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
+  readonly sharedBuffer?: boolean | undefined;
 }
 export interface RestArguments {
   readonly start: number;
@@ -71,6 +72,8 @@ export interface ExpressionInfo {
   readonly realmMember?: boolean | undefined;
   readonly realmInstanceOf?: number | undefined;
   readonly arrayInstance?: NativeTypedArray | undefined;
+  readonly sharedBufferInstance?: boolean | undefined;
+  readonly sharedBufferFlow?: boolean | undefined;
   readonly arrayReceiver?: NativeTypedArray | "realm" | undefined;
   readonly arrayMethod?: number | undefined;
   readonly arraySetSource?: NativeTypedArray | undefined;
@@ -186,6 +189,9 @@ export interface ExpressionInfo {
     | "sign"
     | "floor"
     | "math-imul"
+    | "atomics-uint8"
+    | "atomics-uint16"
+    | "atomics-uint32"
     | "math-min"
     | "math-max"
     | "array-set"
@@ -207,6 +213,10 @@ export interface ExpressionInfo {
     | "array-byte-offset"
     | "array-byte-length"
     | "array-new"
+    | "array-view-new"
+    | "array-buffer-new"
+    | "shared-array-buffer-new"
+    | "array-buffer-byte-length"
     | "array-join"
     | "array-at"
     | "array-reverse"

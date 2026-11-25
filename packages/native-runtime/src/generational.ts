@@ -4,11 +4,15 @@ import {
   nativeNumberStringCacheWord,
   nativeStringSplitCacheWord,
 } from "@tint/abi/host";
-import { initializeExternalMemory } from "./external-memory.ts";
+import {
+  createSharedStringHolds,
+  initializeExternalMemory,
+} from "./external-memory.ts";
 import {
   clearBytes,
   createCheneyCollector,
   createCompactor,
+  noSharedStrings,
   recordObjectStarts,
 } from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
@@ -181,7 +185,17 @@ export function initializeGenerationalRuntime(
     (releasePage & (releasePage - 1)) !== 0
   )
     throw "GENERATIONAL_PAGE_SIZE";
-  const heap = createCheneyCollector(managedBase, managedLength);
+  // Holds on the process's shared string bodies, in workspaces this runtime
+  // does not otherwise use: the collecting runtime's `sizes` (the mutator's
+  // table) and `offsets`, and `marks` past the dirty cards.
+  const holds = createSharedStringHolds(
+    sizes,
+    offsets,
+    marks.subarray(dirty.length),
+    releasePage,
+  );
+  const sharedStrings = holds !== undefined ? holds.space : noSharedStrings();
+  const heap = createCheneyCollector(managedBase, managedLength, sharedStrings);
   // Pool evacuation for collections large enough to repay waking workers;
   // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
   // Workspaces and threads are created lazily on the first parallel collection
@@ -197,6 +211,7 @@ export function initializeGenerationalRuntime(
     bits,
     roots,
     dirty,
+    sharedStrings,
   );
   // Majors mark and forward on the same pool (inside the pause) when the
   // space is large enough to repay waking it.
@@ -205,6 +220,7 @@ export function initializeGenerationalRuntime(
     managedLength,
     parallel,
     parallelMinimum,
+    sharedStrings,
   );
   // Survivors of a major collection that no longer fit the old prefix would
   // overlap the nursery: the heap is then exhausted for good, and the young
@@ -286,9 +302,11 @@ export function initializeGenerationalRuntime(
       // not empty (the gap between them is untouched).
       reach = youngTop > 0 ? oldCapacity + youngTop : oldTop;
     collecting = true;
+    holds?.begin();
     if (youngTop > 0 && youngTop <= oldCapacity - oldTop) {
       evacuateNursery(youngTop, oldTop);
       if (!forceMajor) {
+        holds?.finish(true);
         collecting = false;
         return true;
       }
@@ -331,6 +349,8 @@ export function initializeGenerationalRuntime(
       end = Math.floor((base + reach) / releasePage) * releasePage;
     if (end > start && releaseMemory(start, end - start) !== 0)
       throw "GENERATIONAL_RELEASE";
+    // Compaction marked every live arena reference: a full finish.
+    holds?.finish(false);
     allocation[0] = exhausted ? youngCapacity : 0;
     clearRemembered();
     collecting = false;
@@ -343,6 +363,7 @@ export function initializeGenerationalRuntime(
   // host's $262.gc); it returns +0 and allocates nothing.
   return (bytes) => {
     if (bytes === nativeAllocatorShutdownRequest && !collecting) {
+      holds?.shutdown();
       if (parallel !== undefined) parallel.dispose();
       return 0;
     }

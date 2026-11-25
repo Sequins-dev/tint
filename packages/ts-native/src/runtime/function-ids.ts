@@ -1,7 +1,13 @@
 import type { ModuleEntryOptions } from "../closure/lowering/index.ts";
 
 export type RuntimeFunctionKind =
-  "list" | "set" | "map" | "primitive" | "number-text" | "bigint";
+  | "list"
+  | "set"
+  | "map"
+  | "primitive"
+  | "number-text"
+  | "bigint"
+  | "shared-buffer";
 export type RuntimeFunctionVisitor = (
   id: number,
   kind: RuntimeFunctionKind,
@@ -138,6 +144,7 @@ export function visitRuntimeFunctions(
   }
   add(options.numberToString, "number-text", -1, "toString");
   add(options.numberFromString, "number-text", -1, "fromString");
+  add(options.sharedBlock, "shared-buffer", -1, "create");
 }
 
 /** Keep first-use order stable when representations share one helper. */

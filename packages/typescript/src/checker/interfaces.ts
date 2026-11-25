@@ -59,6 +59,7 @@ export function realmConstructorInstance(name: string): string | undefined {
     case "TypeError":
     case "RangeError":
     case "ArrayBuffer":
+    case "SharedArrayBuffer":
       return name;
     default:
       return isNativeTypedArrayKind(name) || realmOnlyTypedArrays.includes(name)
@@ -228,6 +229,7 @@ export function resolveInterfaceTypes(
     { kind: "Int16Array" },
     { kind: "Int32Array" },
     { kind: "Float32Array" },
+    { kind: "SharedArrayBuffer" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {

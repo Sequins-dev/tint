@@ -671,8 +671,18 @@ export function bindForeignCalls(
     const instructions: Instruction[] = [],
       args: number[] = [];
     for (let index = 0; index < parameters.length; index++) {
-      const slot = fn.parameters[index];
-      if (slot === undefined || fn.slots[slot] !== parameters[index])
+      const slot = fn.parameters[index],
+        actual = slot === undefined ? undefined : fn.slots[slot];
+      if (
+        slot === undefined ||
+        actual === undefined ||
+        (actual !== parameters[index] &&
+          !(
+            memory?.operation === "address" &&
+            index === 0 &&
+            actual === "reference"
+          ))
+      )
         return {
           ok: false,
           error: label + ": foreign binding parameter mismatch",

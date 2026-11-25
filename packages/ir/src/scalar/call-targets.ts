@@ -587,10 +587,14 @@ function functionFlows(
           case "string-concat":
           case "string-allocate":
           case "string-write":
+            break;
           case "constant":
           case "error-message":
           case "error-is":
           case "array-subarray":
+          case "array-view":
+          case "array-buffer-byte-length":
+          case "array-atomic":
           case "reference-vector-new":
           case "reference-vector-length":
           case "reference-vector-is":

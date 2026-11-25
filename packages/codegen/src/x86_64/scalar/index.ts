@@ -23,6 +23,7 @@ import {
   nativeArrayLengthOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeBuiltinMarkerLimit,
   nativeHeaderFlagsShift,
   nativeHeaderFlagUnit,
   nativeStringDataOffset,
@@ -62,6 +63,7 @@ import type { Word64 } from "@tint/foundation/binary/word64";
 import { scriptEntryCalleeValues } from "../../scalar/property-fusion.ts";
 import {
   instructionResult,
+  naturalLoops,
   optionalNumberAbsentHigh,
   isNativeTypedArray,
   nativeTypedArray,
@@ -76,6 +78,7 @@ import {
   type FunctionIR,
   type GeneralTest,
   type Instruction,
+  type ArrayAtomicOperation,
   type ModuleIR,
   type RecordField,
   type RecordLayout,
@@ -177,9 +180,8 @@ import {
   type NativeManagedPointerImport,
 } from "../../scalar/managed-abi.ts";
 import {
-  planWideStackMapTable,
+  createWideStackMapBuilder,
   rootHeadBinding,
-  type SafepointEntry,
   type WideStackMapPlan,
 } from "../../scalar/stack-maps.ts";
 import { frameStackMaps, isRootType } from "./stack-maps.ts";
@@ -427,7 +429,8 @@ export function emitModule(
   const resolvedUnwind: UnwindRange[] = [];
   const sourceLabels: { readonly name: string; readonly span: Span }[] = [];
   const debugFrames = new Map<number, readonly X64DebugParameter[]>();
-  const resolvedMaps: SafepointEntry[] = [];
+  const stackMapBuilder =
+    host === undefined ? undefined : createWideStackMapBuilder();
   const emit: Emit = (insn) => {
     assembler.instruction(insn);
     instructionCount++;
@@ -690,6 +693,28 @@ export function emitModule(
       workerFunctions?.has(
         fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
       ) === true;
+    // Worker functions poll for stop requests at loop headers and, when they
+    // call, on entry (as on AArch64); a function whose loops exceed the
+    // analysis budget keeps the per-call and per-allocation polls.
+    const stopLoops = interruptible ? naturalLoops(fn, 1000000) : undefined;
+    const callSitePolls = interruptible && stopLoops === undefined;
+    const pollHeaders = new Set<number>();
+    let pollEntry = false;
+    if (stopLoops !== undefined) {
+      for (const loop of stopLoops.loops) {
+        if (loop === undefined) throw "stop poll loop invariant";
+        pollHeaders.add(loop.header);
+      }
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "stop poll block invariant";
+        for (const op of block.instructions)
+          if (
+            op !== undefined &&
+            (op.kind === "call" || op.kind === "call-indirect")
+          )
+            pollEntry = true;
+      }
+    }
     const fnEnd = fnLabel + ":end";
     const done = fnLabel + ":return";
     const slots: number[] = [];
@@ -901,7 +926,9 @@ export function emitModule(
       }
     }
     function pollWorkerStop(): void {
-      if (!interruptible) return;
+      if (callSitePolls) workerStopPoll();
+    }
+    function workerStopPoll(): void {
       const resumed = fnLabel + ":worker-resumed:" + String(instructionCount);
       emit({ op: "mov", dst: scratch, src: frame(savedContext) });
       emit({
@@ -1375,6 +1402,99 @@ export function emitModule(
       define(op.id, type);
     }
 
+    /** The byte length of typed ArrayBuffer `buffer` (an owning or borrowed
+     * array: marker < nativeBuiltinMarkerLimit with low three bits 2-5 for
+     * 1-, 2-, 4- and 8-byte elements) into `output`; rcx keeps the element
+     * width's shift. */
+    function bufferByteLength(buffer: Gpr<64>, output: Gpr<64>): void {
+      const shift = gpr(1);
+      marker(buffer, shift);
+      emit({ op: "cmp", dst: shift, src: imm(nativeBuiltinMarkerLimit) });
+      branch(emit, "ae", trapLabel);
+      emit({ op: "and", dst: shift, src: imm(7) });
+      emit({ op: "sub", dst: shift, src: imm(2) });
+      emit({ op: "cmp", dst: shift, src: imm(3) });
+      branch(emit, "a", trapLabel);
+      emit({
+        op: "mov",
+        dst: output,
+        src: mem(buffer.index, nativeArrayLengthOffset),
+      });
+      emit({ op: "shl", dst: output, count: "cl" });
+    }
+    /** A typed-array view over a typed ArrayBuffer (`array-view`): the
+     * subarray layout with the target type's marker, its data at the
+     * buffer's data plus `byteOffset`, and the buffer as owner. */
+    function bufferView(
+      op: {
+        readonly id: number;
+        readonly type: NativeTypedArray;
+        readonly buffer: number;
+        readonly byteOffset: number;
+        readonly length: number;
+      },
+      block: Block,
+      index: number,
+    ): void {
+      const site = fnLabel + ":buffer-view:" + String(op.id);
+      const denied = site + ":invalid";
+      const width = arrayWidth(op.type);
+      const length = gpr(8);
+      function operands(): void {
+        exactInteger(emit, frame(home(op.byteOffset)), r9, trapLabel);
+        exactInteger(emit, frame(home(op.length)), length, trapLabel);
+      }
+      operands();
+      emit({ op: "cmp", dst: r9, src: imm(0) });
+      branch(emit, "l", trapLabel);
+      emit({ op: "cmp", dst: length, src: imm(0) });
+      branch(emit, "l", trapLabel);
+      if (width > 1) {
+        // The offset is a multiple of the element width.
+        emit({ op: "test", dst: r9, src: imm(width - 1) });
+        branch(emit, "ne", trapLabel);
+      }
+      // The view's end lies within the buffer's bytes.
+      emit({
+        op: "lea",
+        dst: r10,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 9, index: 8, scale: width, disp: 0 },
+        },
+      });
+      emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
+      bufferByteLength(rdx, scratch);
+      emit({ op: "cmp", dst: r10, src: scratch });
+      branch(emit, "a", trapLabel);
+      emit({ op: "mov", dst: r10, src: imm(nativeArrayViewByteLength) });
+      allocate(block, index, site, denied);
+      if (generational) operands();
+      // A slow allocation can move the buffer: reload it.
+      emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: bits(
+          typedArrayMarker(op.type),
+          2 * (nativeHeaderFlagUnit / 4294967296),
+        ),
+      });
+      emit({ op: "mov", dst: mem(0, 0), src: scratch });
+      emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: length });
+      emit({ op: "mov", dst: scratch, src: mem(2, nativeArrayDataOffset) });
+      emit({ op: "add", dst: scratch, src: r9 });
+      emit({ op: "mov", dst: mem(0, nativeArrayDataOffset), src: scratch });
+      emit({ op: "mov", dst: mem(0, nativeArrayOwnerOffset), src: rdx });
+      emit({
+        op: "mov",
+        dst: mem(0, nativeArrayViewByteLength - 8),
+        src: imm(0),
+      });
+      define(op.id, op.type);
+    }
+
     function marker(object: Gpr<64>, output: Gpr<64>): void {
       emit({ op: "mov", dst: output, src: mem(object.index, 0) });
       emit({ op: "shl", dst: output, count: 64 - nativeHeaderFlagsShift });
@@ -1471,6 +1591,95 @@ export function emitModule(
       branch(emit, "ae", done);
       emit({ op: "cvtsd2si", dst: eax, src: x0 });
       emit({ op: "label", name: done });
+    }
+    /** An Atomics operation on a native integer array (the IR's
+     * `array-atomic`). Locked instructions (and xchg, which is locked with
+     * a memory operand) order every access sequentially consistently under
+     * x86-TSO, so a load is a plain load. The element's previous value
+     * ends in eax, zero-extended. */
+    function arrayAtomic(op: {
+      readonly operation: ArrayAtomicOperation;
+      readonly id: number | undefined;
+      readonly array: number;
+      readonly index: number;
+      readonly operands: readonly number[];
+    }): void {
+      const width = arrayWidth(typeOf(op.array)),
+        rcx = gpr(1);
+      if (width === 8) throw "atomic array type invariant";
+      const bits: 8 | 16 | 32 = width === 1 ? 8 : width === 2 ? 16 : 32;
+      const sized = (index: number): Gpr<8 | 16 | 32> => ({
+        kind: "gpr",
+        width: bits,
+        index,
+      });
+      // The lowering validated the index.
+      exactInteger(emit, frame(home(op.index)), r9, trapLabel);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
+      branch(emit, "ae", trapLabel);
+      // ToUint32 (eax) preserves r9 and r10. A compare-exchange's
+      // replacement goes to r10 and its expected value to eax, the
+      // comparand of cmpxchg; other operations' value ends in eax.
+      const [first, second] = op.operands;
+      if (second !== undefined) {
+        numbers.toWord(frame(home(second)));
+        emit({ op: "mov", dst: r10, src: rax });
+      }
+      if (first !== undefined) numbers.toWord(frame(home(first)));
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      const element: Memory<8 | 16 | 32> = {
+        kind: "mem",
+        width: bits,
+        address: { kind: "base", base: 11, index: 9, scale: width, disp: 0 },
+      };
+      // eax = the element, zero-extended.
+      function loadElement(): void {
+        if (bits === 32) emit({ op: "mov", dst: eax, src: element });
+        else emit({ op: "movzx", dst: eax, src: element });
+      }
+      switch (op.operation) {
+        case "load":
+          loadElement();
+          break;
+        case "store":
+        case "exchange":
+          emit({ op: "xchg", dst: element, src: sized(0) });
+          break;
+        case "add":
+        case "sub":
+          if (op.operation === "sub") emit({ op: "neg", dst: eax });
+          emit({ op: "lock-xadd", dst: element, src: sized(0) });
+          break;
+        case "compare-exchange":
+          emit({ op: "lock-cmpxchg", dst: element, src: sized(10) });
+          break;
+        default: {
+          // and, or, xor: retry a compare-exchange of the combined value
+          // (ecx) until the element is unchanged since it was read (eax).
+          const retry =
+            fnLabel + ":atomic:" + String(instructionCount) + ":retry";
+          emit({ op: "mov", dst: r10, src: rax });
+          loadElement();
+          emit({ op: "label", name: retry });
+          emit({ op: "mov", dst: rcx, src: rax });
+          if (op.operation === "and") emit({ op: "and", dst: rcx, src: r10 });
+          else if (op.operation === "or")
+            emit({ op: "or", dst: rcx, src: r10 });
+          else emit({ op: "xor", dst: rcx, src: r10 });
+          emit({ op: "lock-cmpxchg", dst: element, src: sized(1) });
+          branch(emit, "ne", retry);
+        }
+      }
+      const id = op.id;
+      if (id === undefined) return;
+      // A compare-exchange that stored leaves its comparand in eax, whose
+      // ToUint32 conversion may have left bits above it in rax.
+      if (bits === 32) emit({ op: "mov", dst: eax, src: eax });
+      else emit({ op: "movzx", dst: eax, src: sized(0) });
+      numberBits();
+      define(id, "number");
     }
     function arrayElement(
       op:
@@ -2893,6 +3102,157 @@ export function emitModule(
             return frame(home(arg));
           }
           const operation = op.operation;
+          if (operation === "memory-read-string" && host !== undefined) {
+            // Check the window, allocate the string, then copy its units
+            // out of the caller-owned raw memory. Invalid input traps.
+            if (id === undefined) throw "string read result invariant";
+            const memmove = host.symbolPrefix + "memmove";
+            const limit = scratch,
+              address = gpr(8),
+              length = gpr(1);
+            emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+            // Each argument is an exact integer below 2^48.
+            function boundedArgument(index: number, target: Gpr<64>): void {
+              exactInteger(emit, argument(index), target, trapLabel);
+              emit({ op: "cmp", dst: target, src: limit });
+              branch(emit, "ae", trapLabel);
+            }
+            boundedArgument(0, address);
+            boundedArgument(1, length);
+            boundedArgument(2, receiver);
+            boundedArgument(3, r9);
+            emit({ op: "test", dst: address, src: address });
+            branch(emit, "e", trapLabel);
+            emit({ op: "sub", dst: limit, src: address });
+            emit({ op: "cmp", dst: length, src: limit });
+            branch(emit, "a", trapLabel);
+            emit({ op: "sub", dst: length, src: receiver });
+            branch(emit, "b", trapLabel);
+            emit({ op: "mov", dst: rax, src: r9 });
+            emit({ op: "shl", dst: rax, count: 1 });
+            emit({ op: "cmp", dst: rax, src: length });
+            branch(emit, "a", trapLabel);
+            // Scan the UTF-16 units for any high byte != 0 so the allocated
+            // string keeps the canonical one-byte/two-byte representation.
+            const readSite =
+              fnLabel + ":read-string:" + String(instructionCount);
+            const scanLoop = readSite + ":scan",
+              scanWide = readSite + ":wide",
+              scanDone = readSite + ":scan-done",
+              packLoop = readSite + ":pack",
+              copyWide = readSite + ":copy-wide",
+              copyDone = readSite + ":copy-done";
+            emit({ op: "mov", dst: environment, src: address });
+            emit({ op: "add", dst: environment, src: receiver });
+            emit({ op: "mov", dst: r8, src: imm(1) });
+            emit({ op: "mov", dst: r10, src: r9 });
+            emit({ op: "label", name: scanLoop });
+            emit({ op: "test", dst: r10, src: r10 });
+            branch(emit, "e", scanDone);
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: { ...mem(6, 1), width: 8 },
+            });
+            emit({ op: "test", dst: eax, src: eax });
+            branch(emit, "ne", scanWide);
+            emit({ op: "add", dst: environment, src: imm(2) });
+            emit({ op: "sub", dst: r10, src: imm(1) });
+            emit({ op: "jmp", target: label(scanLoop) });
+            emit({ op: "label", name: scanWide });
+            emit({ op: "xor", dst: word(8), src: word(8) });
+            emit({ op: "label", name: scanDone });
+            allocateString(id, block, index);
+            define(id, "string");
+            emit({
+              op: "lea",
+              dst: context,
+              src: mem(0, nativeStringDataOffset),
+            });
+            exactInteger(emit, argument(0), environment, trapLabel);
+            exactInteger(emit, argument(2), r10, trapLabel);
+            emit({ op: "add", dst: environment, src: r10 });
+            exactInteger(emit, argument(3), receiver, trapLabel);
+            testTwoByte(0);
+            branch(emit, "e", copyWide);
+            emit({ op: "label", name: packLoop });
+            emit({ op: "test", dst: receiver, src: receiver });
+            branch(emit, "e", copyDone);
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: { ...mem(6, 0), width: 8 },
+            });
+            emit({
+              op: "mov",
+              dst: { ...mem(7, 0), width: 8 },
+              src: { kind: "gpr", width: 8, index: 0 },
+            });
+            emit({ op: "add", dst: environment, src: imm(2) });
+            emit({ op: "add", dst: context, src: imm(1) });
+            emit({ op: "sub", dst: receiver, src: imm(1) });
+            emit({ op: "jmp", target: label(packLoop) });
+            emit({ op: "label", name: copyWide });
+            emit({ op: "shl", dst: receiver, count: 1 });
+            bytesOperation(memmove);
+            emit({ op: "label", name: copyDone });
+            return;
+          }
+          if (operation === "string-at") {
+            // The caller proves a string object lives at the address; any
+            // other input than an exact, nonzero, eight-byte-aligned integer
+            // below 2^53 traps.
+            if (id === undefined) throw "string address result invariant";
+            exactInteger(emit, argument(0), rax, trapLabel);
+            emit({ op: "test", dst: rax, src: rax });
+            branch(emit, "le", trapLabel);
+            emit({ op: "test", dst: rax, src: imm(7) });
+            branch(emit, "ne", trapLabel);
+            emit({ op: "mov", dst: scratch, src: bits(0xffffffff, 0x1fffff) });
+            emit({ op: "cmp", dst: rax, src: scratch });
+            branch(emit, "a", trapLabel);
+            define(id, "string");
+            return;
+          }
+          if (operation === "native-array-detach") {
+            // Only a reference (tag 5) to a typed-array view (marker 2-5,
+            // flags 2) detaches: length 0, data one word before its owner's.
+            const input = args[0];
+            if (input === undefined) throw "array detach invariant";
+            const done = fnLabel + ":array-detach:" + String(instructionCount);
+            const value = home(input);
+            emit({
+              op: "cmp",
+              dst: frame(value),
+              src: imm(generalTag("reference")),
+            });
+            branch(emit, "ne", done);
+            emit({ op: "mov", dst: r9, src: frame(value + 8) });
+            emit({ op: "test", dst: r9, src: r9 });
+            branch(emit, "e", done);
+            emit({ op: "mov", dst: rax, src: mem(9, 0) });
+            emit({ op: "mov", dst: rdx, src: rax });
+            emit({ op: "shl", dst: rdx, count: 16 });
+            emit({ op: "shr", dst: rdx, count: 16 });
+            emit({ op: "sub", dst: rdx, src: imm(2) });
+            emit({ op: "cmp", dst: rdx, src: imm(3) });
+            branch(emit, "a", done);
+            emit({ op: "shr", dst: rax, count: nativeHeaderFlagsShift });
+            emit({ op: "and", dst: rax, src: imm(7) });
+            emit({ op: "cmp", dst: rax, src: imm(2) });
+            branch(emit, "ne", done);
+            emit({
+              op: "mov",
+              dst: { ...mem(9, nativeArrayLengthOffset), width: 32 },
+              src: imm(0),
+            });
+            emit({ op: "mov", dst: rax, src: mem(9, nativeArrayOwnerOffset) });
+            emit({ op: "mov", dst: rax, src: mem(0, nativeArrayDataOffset) });
+            emit({ op: "sub", dst: rax, src: imm(8) });
+            emit({ op: "mov", dst: mem(9, nativeArrayDataOffset), src: rax });
+            emit({ op: "label", name: done });
+            return;
+          }
           if (operation === "stack-overflow-is" && host !== undefined) {
             const input = args[0];
             if (id === undefined || input === undefined)
@@ -3160,6 +3520,21 @@ export function emitModule(
         case "array-subarray":
           if (host === undefined) break;
           arrayView(op, block, index);
+          return;
+        case "array-view":
+          if (host === undefined) break;
+          bufferView(op, block, index);
+          return;
+        case "array-atomic":
+          if (host === undefined) break;
+          arrayAtomic(op);
+          return;
+        case "array-buffer-byte-length":
+          if (host === undefined) break;
+          emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
+          bufferByteLength(rdx, rax);
+          numberBits();
+          define(op.id, "number");
           return;
         case "array-length":
         case "array-byte-length":
@@ -5689,6 +6064,8 @@ export function emitModule(
       if (block === undefined) throw "block invariant";
       blockId = block.id;
       emit({ op: "label", name: blockLabel(fn.id, block.id) });
+      if (pollHeaders.has(block.id) || (pollEntry && block.id === fn.entry))
+        workerStopPoll();
       for (let index = 0; index < block.instructions.length; index++) {
         const op = block.instructions[index];
         if (op === undefined) throw "instruction invariant";
@@ -5722,9 +6099,7 @@ export function emitModule(
       ))
         if (range !== undefined) resolvedUnwind.push(range);
     }
-    if (callSites.length > 0) {
-      const fnStart = assembler.labels.get(fnLabel);
-      if (fnStart === undefined) throw "x86-64 safepoint label invariant";
+    if (callSites.length > 0 && stackMapBuilder !== undefined) {
       for (const map of frameStackMaps(
         fn,
         fnLabel,
@@ -5738,7 +6113,7 @@ export function emitModule(
         if (map === undefined) continue;
         const offset = assembler.labels.get(map.label);
         if (offset === undefined) throw "x86-64 safepoint label invariant";
-        resolvedMaps.push({ offset, start: fnStart, map: map.map });
+        stackMapBuilder.add(offset, map.map);
       }
     }
     const debugBody = fnLabel + ":debug-body";
@@ -5888,6 +6263,37 @@ export function emitModule(
         }
       }
     }
+    // Emit the trap target and collector leaves before function bodies so each
+    // function's endScope resolves and drops those high-frequency fixups
+    // immediately instead of retaining millions of fixup records until finish.
+    const leafPrologueStart = "tint:leaf-prologue";
+    const leafPrologueEnd = leafPrologueStart + ":end";
+    assembler.beginScope();
+    emit({ op: "label", name: leafPrologueStart });
+    emit({ op: "label", name: trapLabel });
+    emit({ op: "ud2" });
+    if (generational) collectorLeaves();
+    emit({ op: "label", name: leafPrologueEnd });
+    if (host !== undefined) {
+      for (const range of resolveUnwind(
+        [
+          {
+            start: leafPrologueStart,
+            end: leafPrologueEnd,
+            rule: "leaf",
+            rows: [],
+          },
+        ],
+        assembler.labels,
+      ))
+        if (range !== undefined) resolvedUnwind.push(range);
+    }
+    assembler.endScope(
+      (name) =>
+        name === trapLabel ||
+        name === clearAllocationLabel ||
+        name === rememberLabel,
+    );
     for (let index = 0; index < module.functions.length; index++) {
       const fn = module.functions[index];
       if (fn === undefined) throw "function invariant";
@@ -5922,7 +6328,6 @@ export function emitModule(
     const leafEnd = leafStart + ":end";
     emit({ op: "label", name: leafStart });
     numbers.helpers();
-    if (generational) collectorLeaves();
     probes.emitStubs();
     if (jitDebug) {
       emit({ op: "label", name: debugRegister });
@@ -6024,8 +6429,6 @@ export function emitModule(
       }
       emit({ op: "label", name: callbackThunksLabel + ":end" });
     }
-    emit({ op: "label", name: trapLabel });
-    emit({ op: "ud2" });
     const callbackKeyOffset = needsCallbackKey
       ? constants.length * 8
       : undefined;
@@ -6048,9 +6451,8 @@ export function emitModule(
     const tableOffset = Math.ceil(withPool / 8) * 8;
     const stackMaps: X64Module["stackMaps"][number][] = [];
     let stackMapPlan: WideStackMapPlan | undefined;
-    if (host !== undefined) {
-      stackMapPlan = planWideStackMapTable(resolvedMaps);
-      resolvedMaps.length = 0;
+    if (stackMapBuilder !== undefined) {
+      stackMapPlan = stackMapBuilder.finish();
       const thunkStart = assembler.labels.get(callbackThunksLabel);
       stackMaps.push({
         codeOffset: 0,
@@ -6347,7 +6749,7 @@ export function emitModule(
         message:
           typeof caught === "string"
             ? caught
-            : "x86-64 scalar: encoding failed",
+            : "x86-64 scalar: encoding failed (" + typeof caught + ")",
         function: functionId,
         block: blockId,
         span,

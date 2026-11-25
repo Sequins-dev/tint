@@ -343,6 +343,32 @@ export function substituteInstructionValues(
         ? op
         : { ...op, array, begin, length };
     }
+    case "array-view": {
+      const buffer = substitutedValue(values, op.buffer),
+        byteOffset = substitutedValue(values, op.byteOffset),
+        length = substitutedValue(values, op.length);
+      return buffer === op.buffer &&
+        byteOffset === op.byteOffset &&
+        length === op.length
+        ? op
+        : { ...op, buffer, byteOffset, length };
+    }
+    case "array-buffer-byte-length": {
+      const buffer = substitutedValue(values, op.buffer);
+      return buffer === op.buffer ? op : { ...op, buffer };
+    }
+    case "array-atomic": {
+      const array = substitutedValue(values, op.array),
+        index = substitutedValue(values, op.index),
+        operands: number[] = [];
+      let changed = array !== op.array || index !== op.index;
+      for (const operand of op.operands) {
+        const replaced = substitutedValue(values, operand);
+        if (replaced !== operand) changed = true;
+        operands.push(replaced);
+      }
+      return changed ? { ...op, array, index, operands } : op;
+    }
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":

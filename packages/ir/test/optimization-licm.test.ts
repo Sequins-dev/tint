@@ -211,6 +211,54 @@ test("invariant operations a kept operation still uses are kept", () => {
   hoist(withCallee);
 });
 
+test("typed-array lengths move unless the loop runs code that may change them", () => {
+  // total += array.length, with or without a call in the body.
+  const sum = (call: boolean): Instruction[] => [
+    ...(call
+      ? [
+          {
+            kind: "call",
+            id: undefined,
+            target: 1,
+            arguments: [],
+            ...span,
+          } satisfies Instruction,
+        ]
+      : []),
+    { kind: "load", id: 30, slot: 4, ...span },
+    { kind: "array-length", id: 31, array: 30, ...span },
+    { kind: "load", id: 32, slot: 3, ...span },
+    { kind: "binary", id: 33, operator: "+", left: 32, right: 31, ...span },
+    { kind: "store", slot: 3, value: 33, ...span },
+  ];
+  const callee: FunctionIR = {
+    id: 1,
+    name: "detach",
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+    ],
+  };
+  const lengthIn = (fn: FunctionIR, id: number): boolean =>
+    kinds(fn.blocks.find((block) => block.id === id)).includes("array-length");
+  const plain = hoist(loop(sum(false), { slots: ["Uint8Array"] }));
+  assert.ok(lengthIn(plain, 0) && !lengthIn(plain, 2));
+  // The call may detach a view of a realm ArrayBuffer: its length becomes 0.
+  const module = loop(sum(true), { slots: ["Uint8Array"] });
+  const calling = hoist({
+    functions: [module.functions[0]!, callee],
+  });
+  assert.ok(!lengthIn(calling, 0) && lengthIn(calling, 2));
+});
+
 test("checked reads of immutable fields move with their check; mutable fields stay", () => {
   for (const mutable of [false, true]) {
     const module = loop(
