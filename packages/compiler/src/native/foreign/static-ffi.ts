@@ -689,7 +689,7 @@ export function makeStaticFfiModule(
   if (!parsed.ok) throw "static FFI module invariant";
   const module = scriptEntries
     ? rewriteModule(parsed.value, {
-        expression: (mapped): Expression => {
+        expression: (mapped, _original): Expression => {
           if (mapped.kind === "arrow" && mapped.parameters.length === 4) {
             const first = mapped.parameters[0];
             if (
@@ -699,33 +699,36 @@ export function makeStaticFfiModule(
             )
               return { ...mapped, scriptEntry: true };
           }
-          if (mapped.kind === "call" && mapped.callee.kind === "identifier") {
-            if (mapped.callee.name === "sourceArgumentCount")
-              return { ...mapped, scriptArgument: "count" };
-            if (mapped.callee.name === "sourceArgument")
-              return { ...mapped, scriptArgument: "index" };
-            if (mapped.callee.name === "__ffiScriptCall1") {
-              const entryArg = mapped.arguments[0],
-                calleeArg = mapped.arguments[1],
-                inputArg = mapped.arguments[2];
-              if (
-                entryArg === undefined ||
-                calleeArg === undefined ||
-                inputArg === undefined
-              )
-                throw "static FFI script call invariant";
-              const undef: Expression = {
-                kind: "identifier",
-                name: "undefined",
-                start: mapped.start,
-                end: mapped.end,
-              };
-              return {
-                ...mapped,
-                callee: entryArg,
-                scriptCall: true,
-                arguments: [calleeArg, undef, undef, undef, inputArg],
-              };
+          if (mapped.kind === "call") {
+            const callee = mapped.callee;
+            if (callee.kind === "identifier") {
+              if (callee.name === "sourceArgumentCount")
+                return { ...mapped, scriptArgument: "count" };
+              if (callee.name === "sourceArgument")
+                return { ...mapped, scriptArgument: "index" };
+              if (callee.name === "__ffiScriptCall1") {
+                const entryArg = mapped.arguments[0],
+                  calleeArg = mapped.arguments[1],
+                  inputArg = mapped.arguments[2];
+                if (
+                  entryArg === undefined ||
+                  calleeArg === undefined ||
+                  inputArg === undefined
+                )
+                  throw "static FFI script call invariant";
+                const undef: Expression = {
+                  kind: "identifier",
+                  name: "undefined",
+                  start: mapped.start,
+                  end: mapped.end,
+                };
+                return {
+                  ...mapped,
+                  callee: entryArg,
+                  scriptCall: true,
+                  arguments: [calleeArg, undef, undef, undef, inputArg],
+                };
+              }
             }
           }
           return mapped;

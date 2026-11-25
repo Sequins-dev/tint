@@ -1441,3 +1441,43 @@ test("fixed unary Buffer calls can borrow a stable backing through a typed entry
     ),
   );
 });
+
+test("static FFI module emits native script entries only when requested", () => {
+  const plans = addFixedFfiPlans([], [0, 1]);
+  const withScripts = makeStaticFfiModule(plans, true, [0, 1], true);
+  let scriptEntries = 0,
+    argCounts = 0,
+    argIndexes = 0,
+    scriptCalls = 0;
+  rewriteModule(withScripts.module, {
+    expression: (expression, _original) => {
+      if (expression.kind === "arrow" && expression.scriptEntry === true)
+        scriptEntries++;
+      if (expression.kind === "call") {
+        if (expression.scriptArgument === "count") argCounts++;
+        if (expression.scriptArgument === "index") argIndexes++;
+        if (expression.scriptCall === true) scriptCalls++;
+      }
+      return expression;
+    },
+  });
+  assert.ok(scriptEntries >= 4);
+  assert.ok(argCounts >= 4);
+  assert.ok(argIndexes >= 4);
+  assert.equal(scriptCalls, 1);
+
+  const withoutScripts = makeStaticFfiModule(plans, true, [0, 1], false);
+  let disabledEntries = 0,
+    disabledCalls = 0;
+  rewriteModule(withoutScripts.module, {
+    expression: (expression, _original) => {
+      if (expression.kind === "arrow" && expression.scriptEntry === true)
+        disabledEntries++;
+      if (expression.kind === "call" && expression.scriptCall === true)
+        disabledCalls++;
+      return expression;
+    },
+  });
+  assert.equal(disabledEntries, 0);
+  assert.equal(disabledCalls, 0);
+});

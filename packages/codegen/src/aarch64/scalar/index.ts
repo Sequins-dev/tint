@@ -6870,7 +6870,7 @@ function emitModuleForms(
         const siteReferences = new Map<number, readonly number[]>();
         const siteGeneralArguments = new Map<number, number>();
         let siteIndex = 0;
-        function safepoint(at: number = instructions.length): void {
+        function safepointAt(at: number): void {
           const block = blockId;
           if (block === undefined) throw "safepoint block invariant";
           callSites.push({
@@ -6878,6 +6878,9 @@ function emitModuleForms(
             block,
             index: siteIndex,
           });
+        }
+        function safepoint(): void {
+          safepointAt(instructions.length);
         }
         forwardSites = [];
         const orderedBlocks = orderBlocks(fn),
@@ -9757,7 +9760,7 @@ function emitModuleForms(
             rd: 12,
             displacement: (returnPC - returnAddressAt) * 4,
           });
-          safepoint(returnPC);
+          safepointAt(returnPC);
           siteReferences.set(callSites.length - 1, words);
           dataPointer(state, 14, false, 0);
           emit({
