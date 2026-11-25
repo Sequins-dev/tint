@@ -191,7 +191,7 @@ function buffer(f: ReturnType<typeof fixture>, byteLength = 2097152) {
     (length) => new Uint8Array(length),
   );
   assert.ok(storage.ok);
-  object.internalArrayBufferData = storage.value;
+  o.ensureExoticSlots(object).internalArrayBufferData = storage.value;
   return { object, bytes, storage: storage.value };
 }
 
@@ -217,13 +217,13 @@ test("worker messages put large cloned buffer bytes in a mapping and preserve al
   const left = o.getOwnProperty(copy, "left")?.value as ObjectValue;
   assert.equal(o.getOwnProperty(copy, "right")?.value, left);
   assert.notEqual(left, original.object);
-  assert.equal(left.internalArrayBufferData?.resizable, true);
+  assert.equal(o.exoticSlots(left).internalArrayBufferData?.resizable, true);
   assert.equal(
-    left.internalArrayBufferData?.maxByteLength,
+    o.exoticSlots(left).internalArrayBufferData?.maxByteLength,
     original.bytes.length * 2,
   );
-  assert.equal(left.internalArrayBufferData?.data?.[0], 42);
-  assert.equal(left.internalArrayBufferData?.data?.at(-1), 69);
+  assert.equal(o.exoticSlots(left).internalArrayBufferData?.data?.[0], 42);
+  assert.equal(o.exoticSlots(left).internalArrayBufferData?.data?.at(-1), 69);
   assert.equal(byteStorageData(original.storage), original.bytes);
 });
 
@@ -241,8 +241,8 @@ test("small cloned buffers travel inside the packet", () => {
   assert.ok(sent.used > 4096, "the bytes are in the packet");
   assert.equal(f.mapped.size, 0);
   const copy = f.messages.receive(port, sent) as ObjectValue;
-  assert.equal(copy.internalArrayBufferData?.data?.[0], 42);
-  assert.equal(copy.internalArrayBufferData?.data?.at(-1), 69);
+  assert.equal(o.exoticSlots(copy).internalArrayBufferData?.data?.[0], 42);
+  assert.equal(o.exoticSlots(copy).internalArrayBufferData?.data?.at(-1), 69);
   assert.equal(f.packets.size, 0);
 });
 

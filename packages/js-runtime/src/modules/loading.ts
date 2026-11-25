@@ -10,7 +10,11 @@ import {
   createPromiseObject,
   createScriptPromiseHooks,
 } from "../objects/promises.ts";
-import type { ObjectHooks, OrdinaryObject } from "../objects/operations.ts";
+import {
+  exoticSlots,
+  type ObjectHooks,
+  type OrdinaryObject,
+} from "../objects/operations.ts";
 import type { ScriptPropertyKey } from "../objects/symbols.ts";
 import {
   createResolvingFunctions,
@@ -52,7 +56,7 @@ export function createModuleCapability(
   hooks: ObjectHooks<unknown>,
 ): ModuleCapability {
   const promise = createPromiseObject(realm.promisePrototype),
-    record = promise.internalPromiseData;
+    record = exoticSlots(promise).internalPromiseData;
   if (record === undefined) throw "MODULE_PROMISE_INVARIANT";
   const protocol = createScriptPromiseHooks(
     realm,

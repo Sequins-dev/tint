@@ -215,7 +215,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 147, types: 27, genericFunctions: 34, genericTypes: 12 },
+    { functions: 192, types: 27, genericFunctions: 34, genericTypes: 12 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -258,7 +258,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 147);
+  assert.equal(table.value.surface.entries.length, 192);
   assert.equal(table.value.surface.types.length, 27);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -270,6 +270,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     registryEntries.map((entry) => entry.specifier),
   );
   const samples = [
+    "function equal(x,y){ return x == null || x == y; } equal(1,2);",
     "function f(a,b){return [a,b,function(){return a;}];}var r=f(1,2);r.length;f.call(null,...r);",
     'var o={a:1,b:"x"};var n=0;for(var k in o){n++;}try{throw new TypeError("t");}catch(e){n+=1;}n;',
     'var g=(x)=>x*2;var arr=[1,2,3].map(g);typeof arr;arr[0]===2?"y":"n";',
@@ -329,9 +330,10 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(twice.ok);
     assert.equal(twice.value.erased, 0);
   }
-  // Fixed binding slots and positional entries reduce generic applications.
-  // Global identifier caches keep their surface applications.
-  assert.deepEqual(erased, [18, 28, 18]);
+  // Fixed binding slots, positional entries, and dense array/object literal
+  // helpers reduce generic applications. Global identifier caches keep their
+  // surface applications.
+  assert.deepEqual(erased, [6, 14, 27, 14]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));
@@ -376,21 +378,28 @@ test("Script surface instantiations match the real linked export namespaces and 
   // number-list provider.
   // Property-cache guards add three anchors and two list providers.
   // Numeric property layouts and global stub buckets reuse existing providers.
-  assert.equal(census.value.anchors.length, 129);
-  assert.equal(census.value.collections.length, 57);
+  // Shapes record each key's kind in one more number-list anchor.
+  // Shapes with many keys index their string keys' positions in one more
+  // string-to-number map anchor (a map collection with eleven operations).
+  // Packed general element cells (ElementCell[]) and static-key object literal
+  // sites (keys) add two list anchors and one list class (eight operations).
+  // Linked 16-slot PropertySpill chunks replace the OrdinaryObject.internalValues
+  // list anchor (-1 anchor).
+  assert.equal(census.value.anchors.length, 132);
+  assert.equal(census.value.collections.length, 59);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [49, 2, 6],
+    [50, 2, 7],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    478,
+    497,
   );
 
   assert.ok(
@@ -418,8 +427,9 @@ test("Script surface instantiations match the real linked export namespaces and 
     globals,
   });
   assert.ok(facts.ok, JSON.stringify(facts));
-  // Map buckets and object contract lists reuse existing physical signatures.
-  assert.equal(facts.value.runtimes.length, 59);
+  // Map buckets and object contract lists reuse existing physical signatures;
+  // the shape key index map adds a provider with two new ones.
+  assert.equal(facts.value.runtimes.length, 61);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -428,14 +438,14 @@ test("Script surface instantiations match the real linked export namespaces and 
         ),
       ),
     ).size,
-    43,
+    45,
   );
 
   const operationCount = facts.value.runtimes.reduce(
     (sum, row) => sum + row.operations.length,
     0,
   );
-  assert.equal(operationCount, 501);
+  assert.equal(operationCount, 520);
   assert.ok(
     facts.value.runtimes.every((row) =>
       row.operations.every((operation) => operation.returnType !== undefined),
@@ -618,9 +628,10 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      // The cache list providers each contribute eight distinct targets.
+      // The cache list providers each contribute eight distinct targets, and
+      // the shape key index map eleven.
       assert.equal(names.value.providers.length, facts.value.runtimes.length);
-      assert.equal(names.value.targets.length, 453);
+      assert.equal(names.value.targets.length, 472);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
@@ -628,14 +639,14 @@ test("Script surface instantiations match the real linked export namespaces and 
       );
       assert.ok(exported.ok, JSON.stringify(exported));
       assert.equal(exported.value.slots.length, operationCount);
-      assert.equal(exported.value.stubs.declarations.length, 496);
+      assert.equal(exported.value.stubs.declarations.length, 517);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
         names.value.targets.length,
       );
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.signature)).size,
-        43,
+        45,
       );
 
       assert.equal(
@@ -666,6 +677,7 @@ test("Script surface instantiations match the real linked export namespaces and 
       );
       return table.ok ? { ok: true, value: table.value.module } : table;
     },
+    16384,
   );
   // Serialize only the failure: the prepared module exceeds V8's string limit.
   assert.ok(
@@ -685,13 +697,13 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 147);
+  assert.equal(finalValues.length, 192);
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    51,
+    53,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 430);
+  assert.equal(new Set(collectionOperations.flat()).size, 449);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(

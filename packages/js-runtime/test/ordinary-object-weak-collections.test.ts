@@ -6,6 +6,7 @@ import type {
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
+import { exoticSlots } from "../src/objects/operations.ts";
 const views = bindHostRecordViews();
 after(() => views.deregister());
 const o = await import("../src/objects/index.ts");
@@ -170,7 +171,7 @@ test("WeakRef retains constructor/deref targets until the host checkpoint and re
   assert.equal(f.call(ref, "deref"), key);
   assert.ok(f.realm.agent.keptAlive.includes(key));
   o.clearKeptObjects(f.realm.agent);
-  const data = ref.internalWeakData;
+  const data = exoticSlots(ref).internalWeakData;
   assert.equal(data?.kind, "ref");
   if (data?.kind !== "ref") throw Error("brand");
   data.storage.clear(data.cell);
@@ -236,7 +237,7 @@ test("finalization cleanup is queued outside collection, removes cells before ca
   const registry = built.value as Obj;
   f.call(registry, "register", [f.key(), 19]);
   f.call(registry, "register", [f.key(), 23]);
-  const data = registry.internalWeakData;
+  const data = exoticSlots(registry).internalWeakData;
   if (data?.kind !== "registry") throw Error("brand");
   for (const cell of data.cells) data.storage.clear(cell.target);
   assert.deepEqual(seen, []);
@@ -293,7 +294,7 @@ test("weak cells survive delete and reinsertion churn and mixed symbol keys", ()
     assert.equal(f.call(set, "has", [symbols[round % 5]]), false);
     f.call(set, "add", [symbols[round % 5]]);
   }
-  const data = map.internalWeakData;
+  const data = exoticSlots(map).internalWeakData;
   assert.ok(data !== undefined && data.kind === "map");
   if (data.kind !== "map") throw Error("brand");
   assert.ok(data.identities.length <= 2 * keys.length + 64);

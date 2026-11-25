@@ -1,0 +1,92 @@
+{
+ "kind": "tint-warm-call-traces",
+ "tool": "tools/general-call-bench/count_call.py",
+ "call": 501,
+ "note": "Each count is one warm call (the 501st) from entry to return, callees included, single-stepped under LLDB. Images are untyped general programs built by tools/hosted-fixture.ts with debug symbols and operation ranges.",
+ "sources": {
+  "prop": "function Point(x, y) { this.x = x; this.y = y; }\nPoint.prototype.sum = function () { return this.x + this.y; };\nfunction readX(p) { return p.x; }\nexport function run() {\n  let s = 0;\n  for (let i = 0; i < 1000; i++) {\n    const p = new Point(i, 2);\n    s += readX(p) + p.sum();\n  }\n  return s > 0 ? 42 : 1;\n}\n",
+  "prop2b": "function Point(x, y) { this.x = x; this.y = y; }\nPoint.prototype.sum = function () { return this.x + this.y; };\nfunction readX(p) { return p.x; }\nfunction callSum(p) { return p.sum(); }\nfunction setX(p, v) { p.x = v; }\nexport function run() {\n  let s = 0;\n  for (let i = 0; i < 1000; i++) {\n    const p = new Point(i, 2);\n    setX(p, i + 1);\n    s += readX(p) + callSum(p);\n  }\n  return s > 0 ? 42 : 1;\n}\n",
+  "regress": "function score(value) {\n  if (typeof value === \"number\") return value;\n  if (typeof value === \"string\") return value.length;\n  return 2;\n}\nfunction mixedStep(i) {\n  const lane = i % 3;\n  const value = lane === 0 ? i & 7 : lane === 1 ? \"oak\" : undefined;\n  return score(value);\n}\nfunction numberStep(i) { return Number(i & 7); }\nfunction charAtStep(text) { return text.charAt(10) === \"b\" ? 1 : 0; }\nfunction maxStep(i) { return Math.max(i & 7, 3); }\nexport function run() {\n  let s = 0;\n  const text = \"abcabcabcabcabc\";\n  for (let i = 0; i < 1000; i++) s += mixedStep(i) + numberStep(i) + charAtStep(text) + maxStep(i);\n  return s > 0 ? 42 : 1;\n}\n",
+  "kernels": "                    \n                 \n                             \n \n\nfunction firstReceivers() {\n  return [\n    {\n      offset: 1,\n      add(value        ) {\n        return this.offset + value;\n      },\n    },\n    {\n      label: \"b\",\n      offset: 2,\n      add(value        ) {\n        return value + this.offset;\n      },\n    },\n    {\n      offset: 3,\n      extra: true,\n      add(value        ) {\n        return value + this.offset;\n      },\n    },\n    {\n      add(value        ) {\n        return this.offset + value;\n      },\n      offset: 4,\n    },\n  ];\n}\n\nexport function receivers2(iterations        )         {\n  const list             = firstReceivers();\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) sum += list[i & 1] .add(i & 7);\n  return sum;\n}\n\nexport function receivers4(iterations        )         {\n  const list             = firstReceivers();\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) sum += list[i & 3] .add(i & 7);\n  return sum;\n}\n\nexport function receivers8(iterations        )         {\n  const list             = firstReceivers();\n  const other = [\n    {\n      offset: 5,\n      add(value        ) {\n        return this.offset + value;\n      },\n      e: 0,\n    },\n    {\n      f: 0,\n      add(value        ) {\n        return this.offset + value;\n      },\n      offset: 6,\n    },\n    {\n      offset: 7,\n      g: 0,\n      add(value        ) {\n        return this.offset + value;\n      },\n    },\n    {\n      h: 0,\n      offset: 8,\n      add(value        ) {\n        return this.offset + value;\n      },\n    },\n  ];\n  list.push(...other);\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) sum += list[i & 7] .add(i & 7);\n  return sum;\n}\n\nfunction three(a        , b        , c        )         {\n  return a + b * 2 + c * 3;\n}\n\nfunction four(a        , b        , c        , d        )         {\n  return a + b * 2 + c * 3 + d * 4;\n}\n\nfunction five(a        , b        , c        , d        , e        )         {\n  return a + b * 2 + c * 3 + d * 4 + e * 5;\n}\n\nfunction six(\n  a        ,\n  b        ,\n  c        ,\n  d        ,\n  e        ,\n  f        ,\n)         {\n  return a + b * 2 + c * 3 + d * 4 + e * 5 + f * 6;\n}\n\nexport function arguments3(iterations        )         {\n  const functions = { operation: three };\n  let sum = 0;\n  for (let i = 0; i < iterations; i++)\n    sum += functions.operation(i & 7, i & 1, 1);\n  return sum;\n}\n\nexport function arguments4(iterations        )         {\n  const functions = { operation: four };\n  let sum = 0;\n  for (let i = 0; i < iterations; i++)\n    sum += functions.operation(i & 7, i & 1, 1, 1);\n  return sum;\n}\n\nexport function arguments5(iterations        )         {\n  const functions = { operation: five };\n  let sum = 0;\n  for (let i = 0; i < iterations; i++)\n    sum += functions.operation(i & 7, i & 1, 1, 1, 1);\n  return sum;\n}\n\nexport function arguments6(iterations        )         {\n  const functions = { operation: six };\n  let sum = 0;\n  for (let i = 0; i < iterations; i++)\n    sum += functions.operation(i & 7, i & 1, 1, 1, 1, 1);\n  return sum;\n}\n\n                       \n               \n                \n \n\nfunction update(record             , value        )              {\n  record.left = value;\n  return record;\n}\n\nfunction makeRecord(value        )              {\n  return { left: value, right: value + 1 };\n}\n\nexport function objectRoundTrip(iterations        )         {\n  const object = { left: 0, right: 2 };\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    const returned = update(object, i & 7);\n    if (returned !== object) throw new Error(\"object identity\");\n    sum += returned.left + returned.right;\n  }\n  return sum;\n}\n\nexport function allocateObjects(iterations        )         {\n  const initial = { left: 0, right: 1 };\n  const retained = [\n    initial,\n    initial,\n    initial,\n    initial,\n    initial,\n    initial,\n    initial,\n    initial,\n  ];\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    const record = makeRecord(i & 15);\n    const previous = retained[i & 7] ;\n    retained[i & 7] = record;\n    sum += previous.right + record.left;\n  }\n  for (const record of retained) sum += record.right;\n  return sum;\n}\n\nfunction makeExchange(initial        )                            {\n  let previous = initial;\n  return (value        )         => {\n    const returned = previous;\n    previous = value;\n    return returned;\n  };\n}\n\nexport function mutableCapture(iterations        )         {\n  const exchange = makeExchange(\"sun\");\n  let sum = 0;\n  for (let i = 0; i < iterations; i++)\n    sum += exchange((i & 1) === 0 ? \"oak\" : \"ash!\").length;\n  return sum;\n}\n\nexport function concatenateStrings(iterations        )         {\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    const prefix = (i & 1) === 0 ? \"oak\" : \"ash\";\n    const text = prefix + \"!!\";\n    sum += text.length;\n    if (text === \"oak!!\") sum++;\n  }\n  return sum;\n}\n\nexport function buildString(iterations        )         {\n  let text = \"\";\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    text += (i & 1) === 0 ? \"a\" : \"bc\";\n    if ((i & 15) === 15) {\n      sum += text.length + (text.charAt(10) === \"b\" ? 1 : 0);\n      text = \"\";\n    }\n  }\n  return sum + text.length;\n}\n\nfunction mayThrow(value        )         {\n  if ((value & 63) === 0) throw 5;\n  return value & 7;\n}\n\nexport function catchInLoop(iterations        )         {\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    try {\n      sum += mayThrow(i);\n    } catch (caught) {\n      if (typeof caught !== \"number\") throw caught;\n      sum += caught;\n    }\n  }\n  return sum;\n}\n\nexport function objectArray(iterations        )         {\n  const values = [\n    { x: 1, y: 10 },\n    { x: 2, y: 11 },\n    { x: 3, y: 12 },\n    { x: 4, y: 13 },\n    { x: 5, y: 14 },\n    { x: 6, y: 15 },\n    { x: 7, y: 16 },\n    { x: 8, y: 17 },\n  ];\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    const value = values[i & 7] ;\n    sum += value.x + value.y;\n  }\n  return sum;\n}\n\nfunction score(value                             )         {\n  if (typeof value === \"number\") return value;\n  if (typeof value === \"string\") return value.length;\n  return 2;\n}\n\nexport function mixedCall(iterations        )         {\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    const lane = i % 3;\n    const value = lane === 0 ? i & 7 : lane === 1 ? \"oak\" : undefined;\n    sum += score(value);\n  }\n  return sum;\n}\n\n// Untyped calls of builtins: a constructor called as a function, a static\n// method of a builtin namespace object, and a method of a builtin-created\n// object (realm objects and their prototypes).\nexport function numberCall(iterations        )         {\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) sum += Number(i & 7);\n  return sum;\n}\n\nexport function mathMax(iterations        )         {\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) sum += Math.max(i & 7, 3);\n  return sum;\n}\n\nexport function builtinMethod(iterations        )         {\n  const map = new Map                ();\n  for (let key = 0; key < 4; key++) map.set(key, key * 2);\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) sum += map.get(i & 3) ;\n  return sum;\n}\n\nexport function run() {\n  let s = 0;\n  for (let i = 0; i < 1000; i++) s += mixedCall(3) + numberCall(3) + catchInLoop(3) + mutableCapture(3) + buildString(16);\n  return s > 0 ? 42 : 1;\n}\n",
+  "mixedonly": "function score(value) {\n  if (typeof value === \"number\") return value;\n  if (typeof value === \"string\") return value.length;\n  return 2;\n}\nexport function mixedCall(iterations) {\n  let sum = 0;\n  for (let i = 0; i < iterations; i++) {\n    const lane = i % 3;\n    const value = lane === 0 ? i & 7 : lane === 1 ? \"oak\" : undefined;\n    sum += score(value);\n  }\n  return sum;\n}\nexport function run() {\n  let s = 0;\n  for (let i = 0; i < 1000; i++) s += mixedCall(3);\n  return s > 0 ? 42 : 1;\n}\n"
+ },
+ "images": {
+  "prop@d6e4162d9": "d7b85be0bf82de397a9a37dfe93b9ea0bb324318b5ade272133981108aef4101",
+  "prop2b@3d10cb5c0": "0e3404ce39cd2d2f0b39ac817b4133526b44600e38ada073f433f44d989ac802",
+  "prop2b@24af2993b": "2bbe30d56d2017fa1be1fec551ea5a6eacda74f18c97e57f81298e1718ea7877",
+  "prop2b@d6e4162d9": "3c6a671957ecf5cd7a64f0066c6ec0e221784b3fc0bd398c6cd757bd7a2873d0",
+  "regress@1a2e47097": "55da3f7b25bb9d0b7c3b4907d84a48be1da431bdf7a0b007a07c25523e3c479e",
+  "regress@24af2993b": "5b2646dc0855be8506c02b7590fc163ed5a8097d1c40c55865d183e9ee9cc591",
+  "regress@d6e4162d9": "fc13482e7c94322f2cdcdf36cafca92ff866070ae1038e60a9d81627a81881ad",
+  "kernels@1a2e47097": "ae4897a4356a3c0c88c886586f061d2bc048dad4337af6d686e5318ae6dd07ac",
+  "kernels@24af2993b": "a01a6ba2ebe449eb9d26942e3698eb6cce48da7e456ae2fc08e080b9a8eacf5a",
+  "mixedonly@1a2e47097": "4154d5edb6e3081ce46d78c3bbfa14924000bc9b32091d33e085a0f6863f2dc7",
+  "mixedonly@24af2993b": "f4dd30a6a3f26cf88db64d86e425377735b8943250e377537182f78dd5139b4f"
+ },
+ "traces": {
+  "prop@d6e4162d9": {
+   "Point": 151,
+   "readX": 99,
+   "Point.prototype.sum": 171
+  },
+  "prop2b@3d10cb5c0": {
+   "Point": 12259,
+   "readX": 249,
+   "callSum": 746,
+   "setX": 2906,
+   "Point.prototype.sum": 475
+  },
+  "prop2b@24af2993b": {
+   "Point": 11963,
+   "readX": 120,
+   "callSum": 549,
+   "setX": 142,
+   "Point.prototype.sum": 209
+  },
+  "prop2b@d6e4162d9": {
+   "Point": 151,
+   "readX": 99,
+   "callSum": 500,
+   "setX": 109,
+   "Point.prototype.sum": 171
+  },
+  "regress@1a2e47097": {
+   "mixedStep": 1825,
+   "numberStep": 1618,
+   "charAtStep": 3705,
+   "maxStep": 3631
+  },
+  "regress@24af2993b": {
+   "mixedStep": 1843,
+   "numberStep": 1644,
+   "charAtStep": 3598,
+   "maxStep": 3677
+  },
+  "regress@d6e4162d9": {
+   "mixedStep": 1835,
+   "numberStep": 1661,
+   "charAtStep": 3179,
+   "maxStep": 2615
+  },
+  "kernels@1a2e47097": {
+   "mixedCall": 4065,
+   "numberCall": 8711,
+   "catchInLoop": 3587,
+   "mutableCapture": 10063,
+   "buildString": 9142
+  },
+  "kernels@24af2993b": {
+   "mixedCall": 4228,
+   "numberCall": 8728,
+   "catchInLoop": 3532,
+   "mutableCapture": 10942,
+   "buildString": 9040
+  },
+  "mixedonly@1a2e47097": {
+   "mixedCall": 3719
+  },
+  "mixedonly@24af2993b": {
+   "mixedCall": 3871
+  }
+ }
+}

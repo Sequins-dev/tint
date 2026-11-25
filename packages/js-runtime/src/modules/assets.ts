@@ -10,7 +10,11 @@ import {
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "../objects/errors.ts";
-import { createObject, type ObjectHooks } from "../objects/operations.ts";
+import {
+  ensureExoticSlots,
+  createObject,
+  type ObjectHooks,
+} from "../objects/operations.ts";
 import type { ScriptPropertyKey } from "../objects/symbols.ts";
 import { createTypedArrayView } from "../objects/typed-array-data.ts";
 
@@ -60,7 +64,7 @@ export function createBytesModule(
   const buffer = createObject<ScriptPropertyKey, unknown>(
     realm.arrayBufferPrototype,
   );
-  buffer.internalArrayBufferData = immutable.value;
+  ensureExoticSlots(buffer).internalArrayBufferData = immutable.value;
   const value = createTypedArrayView(
     parent,
     {

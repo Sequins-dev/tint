@@ -2,6 +2,7 @@ import {
   acceptsPropertyContract,
   attachPropertyContract,
   getOwnProperty,
+  ordinaryHasOwnProperty,
   ownKeys,
   type OrdinaryObject,
 } from "./operations.ts";
@@ -103,7 +104,9 @@ function sameSchema(
   return left.types === right.types && left.root === right.root;
 }
 function attached(object: ObjectRecord, schema: ObjectShapeContract): boolean {
-  const contract = object.internalPropertyContract;
+  const rare = object.internalRareSlots;
+  const contract =
+    rare === undefined ? undefined : rare.internalPropertyContract;
   return (
     contract !== undefined &&
     contract.schemas.some(
@@ -118,7 +121,10 @@ function requiredFieldsPresent(
   for (const field of rule.fields) {
     if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
     if (!field.required) continue;
-    const descriptor = object.properties.get(field.name);
+    const descriptor = getOwnProperty<ScriptPropertyKey, unknown>(
+      object,
+      field.name,
+    );
     if (descriptor === undefined || descriptor.accessor) return false;
   }
   return true;
@@ -144,25 +150,15 @@ function validateObject(
   } else if (rule?.kind !== "array-elements" || !object.internalArrayData)
     return false;
   pending.push({ object, schema });
-  if (object.internalArrayElements !== undefined) {
-    for (const key of ownKeys<ScriptPropertyKey, unknown>(
-      object,
-      scriptPropertyKeyOrder,
-    )) {
-      if (key === undefined) throw "array contract key invariant";
-      const descriptor = getOwnProperty<ScriptPropertyKey, unknown>(
-        object,
-        key,
-      );
-      if (descriptor === undefined) throw "array contract descriptor invariant";
-      if (!validateDescriptor(key, descriptor, schema, pending, realm, false))
-        return false;
-    }
-  } else {
-    for (const [key, descriptor] of object.properties) {
-      if (!validateDescriptor(key, descriptor, schema, pending, realm, false))
-        return false;
-    }
+  for (const key of ownKeys<ScriptPropertyKey, unknown>(
+    object,
+    scriptPropertyKeyOrder,
+  )) {
+    if (key === undefined) throw "contract key invariant";
+    const descriptor = getOwnProperty<ScriptPropertyKey, unknown>(object, key);
+    if (descriptor === undefined) throw "contract descriptor invariant";
+    if (!validateDescriptor(key, descriptor, schema, pending, realm, false))
+      return false;
   }
   return true;
 }
@@ -382,8 +378,11 @@ export function findClassMethodContract(
 ): ClassMethodContract | undefined {
   let cursor = viewObjectValue(base, realm.objectPrototype);
   while (cursor !== undefined && cursor.internalMethods === undefined) {
-    if (cursor.properties.has(key)) {
-      const schemas = cursor.internalPropertyContract?.schemas;
+    if (ordinaryHasOwnProperty<ScriptPropertyKey, unknown>(cursor, key)) {
+      const rare = cursor.internalRareSlots;
+      const contract =
+        rare === undefined ? undefined : rare.internalPropertyContract;
+      const schemas = contract === undefined ? undefined : contract.schemas;
       for (const schema of schemas ?? []) {
         if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
         const rule = schema.types[schema.root];
@@ -433,7 +432,9 @@ function commit(pending: readonly Enrollment[], realm: ErrorRealm): void {
     if (item === undefined) throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
     const object = item.object;
     if (attached(object, item.schema)) continue;
-    const existing = object.internalPropertyContract;
+    const rare = object.internalRareSlots;
+    const existing =
+      rare === undefined ? undefined : rare.internalPropertyContract;
     const schemas: ObjectShapeContract[] =
       existing === undefined ? [] : existing.schemas.slice();
     schemas.push(item.schema);

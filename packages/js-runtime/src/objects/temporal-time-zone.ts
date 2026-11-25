@@ -14,6 +14,7 @@ import {
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "./errors.ts";
+import { exoticSlots } from "./operations.ts";
 export interface TemporalFixedTimeZone {
   readonly kind: "fixed";
   readonly identifier: string;
@@ -161,7 +162,9 @@ export function temporalTimeZoneLike(
 ): TemporalTimeZone {
   const object = viewObjectValue(value, realm.objectPrototype);
   const zoned =
-    object === undefined ? undefined : object.internalTemporalZonedDateTime;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTemporalZonedDateTime;
   if (zoned !== undefined) return zoned.zone;
   if (typeof value !== "string") throw createRuntimeError(realm, "type");
   const identifier = parseISOTimeZoneString(value);

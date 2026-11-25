@@ -54,7 +54,8 @@ import {
   type EmissionFormHints,
   type NativeOperationRange,
 } from "@tint/codegen/aarch64/scalar";
-/** An emitted function at an image offset (see onEmittedFunctions). */
+/** An emitted function, or a private leaf helper named `helper:<kind>`, at
+ * an image offset (see onEmittedFunctions). */
 export interface ImageFunctionRange {
   readonly module: "allocator" | "runtime" | "program";
   readonly name: string;
@@ -209,8 +210,9 @@ export interface BuildRequest extends ModuleRequest {
   /** Analysis tooling: receives the program's per-IR-operation code ranges,
    * at image offsets in the same space as debug symbols. */
   readonly onOperationRanges?: (ranges: readonly ImageOperationRange[]) => void;
-  /** Analysis tooling: every emitted function of the allocator, runtime and
-   * program modules, at image offsets (code size reports, disassembly). */
+  /** Analysis tooling: every emitted function and private leaf helper of the
+   * allocator, runtime and program modules, at image offsets (code size
+   * reports, disassembly, profiles). */
   readonly onEmittedFunctions?: (
     functions: readonly ImageFunctionRange[],
   ) => void;
@@ -1715,15 +1717,26 @@ function linkHostedImage(
         base = hosted.value.moduleOffsets[index];
       if (native === undefined || base === undefined)
         throw "emitted function placement invariant";
+      const module =
+        index === 0 ? "allocator" : index === 1 ? "runtime" : "program";
       for (const fn of native.functions) {
         if (fn === undefined) throw "emitted function invariant";
         if (fn.import === true) continue;
         emitted.push({
-          module:
-            index === 0 ? "allocator" : index === 1 ? "runtime" : "program",
+          module,
           name: fn.name,
           offset: base + fn.offset,
           byteLength: fn.byteLength,
+        });
+      }
+      // Private leaf helpers follow the functions; profiles name them too.
+      for (const helper of native.helpers) {
+        if (helper === undefined) throw "emitted helper invariant";
+        emitted.push({
+          module,
+          name: "helper:" + helper.kind,
+          offset: base + helper.offset,
+          byteLength: helper.byteLength,
         });
       }
     }

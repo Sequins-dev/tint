@@ -43,6 +43,7 @@ test("foundation numeric capabilities have explicit independent dependency-free 
     [
       "big-integer.ts",
       "integer-rounding.ts",
+      "number-string-cache.ts",
       "number-text/decimal-format.ts",
       "number-text/decimal.ts",
       "number-text/index.ts",

@@ -108,7 +108,8 @@ test("a variadic source call lowers its argument reads and roots its overflow ar
       site.offset <= source.offset + source.byteLength,
   );
   assert.ok(inside);
-  assert.equal(inside.generals.length, 3);
+  // The activation record's callee and the three register actuals.
+  assert.equal(inside.generals.length, 4);
   assert.ok(
     maps.some(
       (site) =>

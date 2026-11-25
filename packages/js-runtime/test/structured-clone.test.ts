@@ -119,7 +119,7 @@ test("worker clone preserves Error causes and shared backing among copied views"
     resizable: false,
     allocationLimit: 4,
   };
-  buffer.internalArrayBufferData = storage;
+  o.ensureExoticSlots(buffer).internalArrayBufferData = storage;
   const view = o.createTypedArrayView(
     source.realm.typedArrayPrototypes.get("Uint8"),
     {
@@ -145,11 +145,14 @@ test("worker clone preserves Error causes and shared backing among copied views"
   ) as ObjectValue;
   const clonedView = o.getOwnProperty(copy, "first")!.value as ObjectValue;
   const backing = o.getOwnProperty(copy, "backing")!.value as ObjectValue;
-  assert.equal(clonedView.internalTypedArrayData?.buffer, backing);
-  assert.equal(clonedView.internalTypedArrayData?.byteOffset, 1);
-  assert.equal(clonedView.internalTypedArrayData?.length, 2);
+  assert.equal(
+    o.exoticSlots(clonedView).internalTypedArrayData?.buffer,
+    backing,
+  );
+  assert.equal(o.exoticSlots(clonedView).internalTypedArrayData?.byteOffset, 1);
+  assert.equal(o.exoticSlots(clonedView).internalTypedArrayData?.length, 2);
   assert.notEqual(backing, buffer);
-  assert.deepEqual(backing.internalArrayBufferData?.data, bytes);
+  assert.deepEqual(o.exoticSlots(backing).internalArrayBufferData?.data, bytes);
   const cloneError = o.getOwnProperty(copy, "error")!.value as ObjectValue;
   assert.equal(cloneError.prototype, target.realm.prototypes.get("type"));
   assert.equal(o.getOwnProperty(cloneError, "message")!.value, "failure");
@@ -195,10 +198,10 @@ test("worker clone carries every number, long keys and dates", () => {
   const holder = o.createObject(source.root);
   o.createDataProperty(holder, key, array, source.hooks);
   const date = o.createObject(source.realm.datePrototype);
-  date.internalDateValue = -8.64e15;
+  o.ensureExoticSlots(date).internalDateValue = -8.64e15;
   o.createDataProperty(holder, "date", date, source.hooks);
   const invalid = o.createObject(source.realm.datePrototype);
-  invalid.internalDateValue = NaN;
+  o.ensureExoticSlots(invalid).internalDateValue = NaN;
   o.createDataProperty(holder, "invalid", invalid, source.hooks);
   const copy = deserialize(
     serialize(holder, source.realm),
@@ -213,9 +216,9 @@ test("worker clone carries every number, long keys and dates", () => {
     ),
   );
   const copiedDate = o.getOwnProperty(copy, "date")!.value as ObjectValue;
-  assert.equal(copiedDate.internalDateValue, -8.64e15);
+  assert.equal(o.exoticSlots(copiedDate).internalDateValue, -8.64e15);
   const copiedInvalid = o.getOwnProperty(copy, "invalid")!.value as ObjectValue;
-  assert.ok(Number.isNaN(copiedInvalid.internalDateValue));
+  assert.ok(Number.isNaN(o.exoticSlots(copiedInvalid).internalDateValue));
 });
 
 test("worker clone keeps length-tracking views and rejects truncated packets", () => {
@@ -231,7 +234,7 @@ test("worker clone keeps length-tracking views and rejects truncated packets", (
     resizable: true,
     allocationLimit: 16,
   };
-  buffer.internalArrayBufferData = storage;
+  o.ensureExoticSlots(buffer).internalArrayBufferData = storage;
   const tracking = o.createTypedArrayView(
     source.realm.typedArrayPrototypes.get("Uint16"),
     {
@@ -247,11 +250,15 @@ test("worker clone keeps length-tracking views and rejects truncated packets", (
   );
   const packet = serialize(tracking, source.realm);
   const copy = deserialize(packet, target.realm) as ObjectValue;
-  assert.equal(copy.internalTypedArrayData?.length, undefined);
-  assert.equal(copy.internalTypedArrayData?.byteOffset, 2);
-  const backing = copy.internalTypedArrayData?.buffer as ObjectValue;
-  assert.equal(backing.internalArrayBufferData?.maxByteLength, 16);
-  assert.equal(backing.internalArrayBufferData?.resizable, true);
+  assert.equal(o.exoticSlots(copy).internalTypedArrayData?.length, undefined);
+  assert.equal(o.exoticSlots(copy).internalTypedArrayData?.byteOffset, 2);
+  const backing = o.exoticSlots(copy).internalTypedArrayData
+    ?.buffer as ObjectValue;
+  assert.equal(
+    o.exoticSlots(backing).internalArrayBufferData?.maxByteLength,
+    16,
+  );
+  assert.equal(o.exoticSlots(backing).internalArrayBufferData?.resizable, true);
   for (let cut = 0; cut < packet.length; cut++)
     assert.throws(() => deserialize(packet.slice(0, cut), target.realm));
 });
@@ -357,7 +364,7 @@ test("repeated property keys are written once and shared by the copies", () => {
     source.realm,
   );
   const text = String.fromCharCode(...packet);
-  assert.equal(text.split("i\0d\0e\0n\0").length - 1, 1, "one key copy");
+  assert.equal(text.split("identifier").length - 1, 1, "one key copy");
   const copy = deserialize(packet, target.realm) as ObjectValue;
   for (let index = 0; index < 3; index++) {
     const record = o.getOwnProperty(copy, String(index))!.value as ObjectValue;
@@ -461,13 +468,13 @@ test("a typed program's native typed array arrives as the realm typed array it r
   for (let index = 0; index < backing.length; index++) backing[index] = index;
   const view = new Uint16Array(backing.buffer, 4, 3);
   const copy = deserialize(serialize(view, realm), realm) as ObjectValue;
-  const data = copy.internalTypedArrayData;
+  const data = o.exoticSlots(copy).internalTypedArrayData;
   assert.ok(data !== undefined);
   assert.equal(data.kind, "Uint16");
   assert.equal(data.byteOffset, 4);
   assert.equal(data.length, 3);
   assert.deepEqual(
-    [...(data.buffer.internalArrayBufferData?.data ?? [])],
+    [...(o.exoticSlots(data.buffer).internalArrayBufferData?.data ?? [])],
     [...backing],
   );
   // The rest of the HTML algorithm still applies to realm values.
@@ -559,7 +566,7 @@ test("native typed arrays keep later references aligned and share a shared block
   const shared = o.createObject<objects.ScriptPropertyKey, unknown>(
     target.realm.arrayBufferPrototype,
   );
-  shared.internalArrayBufferData = {
+  o.ensureExoticSlots(shared).internalArrayBufferData = {
     kind: "ordinary" as const,
     data: new Uint8Array(16),
     immutable: false,
@@ -578,13 +585,16 @@ test("native typed arrays keep later references aligned and share a shared block
   assert.equal(decoded, 1);
   const read = (name: string): ObjectValue =>
     o.getProperty(copy, name, copy, target.hooks) as ObjectValue;
-  const wordView = read("words").internalTypedArrayData;
-  const byteView = read("bytes").internalTypedArrayData;
+  const wordView = o.exoticSlots(read("words")).internalTypedArrayData;
+  const byteView = o.exoticSlots(read("bytes")).internalTypedArrayData;
   assert.equal(wordView?.buffer, shared);
   assert.equal(byteView?.buffer, shared);
   assert.equal(wordView?.byteOffset, 4);
   assert.equal(wordView?.length, 2);
-  assert.notEqual(read("copied").internalTypedArrayData?.buffer, shared);
+  assert.notEqual(
+    o.exoticSlots(read("copied")).internalTypedArrayData?.buffer,
+    shared,
+  );
   // Two indices per native view kept the later alias aligned.
   assert.equal(read("left"), read("right"));
 });
@@ -606,7 +616,7 @@ test("native SharedArrayBuffer shares its block with views and preserves aliases
   const shared = o.createObject<objects.ScriptPropertyKey, unknown>(
     target.realm.sharedArrayBufferPrototype,
   );
-  shared.internalArrayBufferData = {
+  o.ensureExoticSlots(shared).internalArrayBufferData = {
     kind: "ordinary" as const,
     data: new Uint8Array(16),
     immutable: false,
@@ -626,7 +636,7 @@ test("native SharedArrayBuffer shares its block with views and preserves aliases
   const read = (name: string): ObjectValue =>
     o.getProperty(copy, name, copy, target.hooks) as ObjectValue;
   assert.equal(read("buffer"), shared);
-  const wordView = read("words").internalTypedArrayData;
+  const wordView = o.exoticSlots(read("words")).internalTypedArrayData;
   assert.equal(wordView?.buffer, shared);
   assert.equal(wordView?.byteOffset, 4);
   assert.equal(wordView?.length, 2);

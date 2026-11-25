@@ -53,7 +53,10 @@ test("Intl.PluralRules exposes its constructor, branded prototype and method met
   assert.equal(objects.getOwnProperty(constructor, "length")?.value, 0);
   const prototype = objects.getOwnProperty(constructor, "prototype")!
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
-  assert.equal(prototype.internalPluralRulesData, undefined);
+  assert.equal(
+    objects.exoticSlots(prototype).internalPluralRulesData,
+    undefined,
+  );
   for (const [name, length] of [
     ["resolvedOptions", 0],
     ["select", 1],

@@ -444,3 +444,135 @@ test("an indirect call that may write the header on every iteration keeps ordina
   const result = cacheListVectors({ functions }, Number.MAX_SAFE_INTEGER, true);
   assert.equal(result?.rewritten, 0);
 });
+
+test("cached list vectors cover optional-string dense list readers", () => {
+  const base = reader(0, 0),
+    stringReader: FunctionIR = {
+      ...base,
+      returnType: "optional-string",
+      blocks: [
+        base.blocks[0]!,
+        {
+          id: 1,
+          instructions: [
+            { kind: "load", id: 1, slot: 2, ...s },
+            { kind: "binary", id: 2, operator: "===", left: 1, right: 1, ...s },
+            { kind: "string-none", id: 3, ...s },
+          ],
+          terminator: { kind: "return", value: 3, ...s },
+        },
+      ],
+    };
+  const functions: FunctionIR[] = [stringReader, noop(1, 1), loop(2, 0, 1)];
+  const result = cacheListVectors({ functions }, Number.MAX_SAFE_INTEGER);
+  assert.ok(result !== undefined);
+  assert.equal(result.rewritten, 1);
+  const readCalls = calls(
+    result.module.functions[2],
+    "__tint_reference_list_readv$",
+    result.module,
+  );
+  assert.equal(readCalls.length, 1);
+  const cachedFn =
+    readCalls[0]?.kind === "call"
+      ? result.module.functions[readCalls[0].target]
+      : undefined;
+  assert.equal(cachedFn?.returnType, "optional-string");
+});
+
+test("cached list vectors hoist proven length reads for unmodified headers", () => {
+  const fn: FunctionIR = {
+    id: 2,
+    name: "loopWithLength",
+    exported: false,
+    parameters: [],
+    slots: ["reference", "number", "number"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "reference-none", id: 11, ...s },
+          { kind: "record-new", id: 12, record: 0, arguments: [0, 11], ...s },
+          { kind: "store", slot: 0, value: 12, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          object: 1,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 2,
+          alternate: 4,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 2, slot: 2, ...s },
+          { kind: "unary", id: 3, operator: "uint32", operand: 2, ...s },
+          { kind: "load", id: 4, slot: 1, ...s },
+          { kind: "binary", id: 5, operator: "<", left: 4, right: 3, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 3,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 1, ...s },
+          { kind: "call", id: 8, target: 0, arguments: [6, 7], ...s },
+          { kind: "constant", id: 9, value: 1, ...s },
+          { kind: "binary", id: 10, operator: "+", left: 7, right: 9, ...s },
+          { kind: "store", slot: 1, value: 10, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "trap", ...s },
+      },
+      {
+        id: 5,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+  const result = cacheListVectors(
+    { functions: [reader(0, 0), noop(1, 0), fn] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(result !== undefined);
+  assert.equal(result.rewritten, 2);
+  const rewritten = result.module.functions[2];
+  assert.ok(rewritten !== undefined);
+  assert.equal(rewritten.blocks[1]?.terminator.kind, "branch");
+  assert.ok(
+    calls(rewritten, "__tint_list_length$", result.module).length === 1,
+  );
+  assert.ok((rewritten.integerSlots?.length ?? 0) === 1);
+  // No unary:uint32 remains inside block 2: replaced with a direct load of the hoisted integer slot.
+  assert.ok(
+    !rewritten.blocks[2]?.instructions.some(
+      (op) => op?.kind === "unary" && op.operator === "uint32",
+    ),
+  );
+});

@@ -11,6 +11,8 @@ import {
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
+  nativeStringSlicedFlag,
+  nativeStringParentOffset,
 } from "@tint/abi/host";
 import {
   readMemoryWord,
@@ -503,6 +505,9 @@ function scanHeaded(
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     referenceSlot(w, starts, address + nativeArrayOwnerOffset);
+  else if (marker === 1 && flags >= nativeStringSlicedFlag)
+    // A slice holds its parent like any reference field.
+    referenceSlot(w, starts, address + nativeStringParentOffset);
 }
 
 /** Scans this worker's LAB and shared segments until every worker is idle
@@ -843,7 +848,8 @@ function markChildren(w: Worker, region: CompactRegion, address: number): void {
   } else if (marker >= 2 && headerFlags(header) === 2) {
     write(w.record + recordSawView, 1);
     markReference(w, region, read(address + nativeArrayOwnerOffset));
-  }
+  } else if (marker === 1 && headerFlags(header) >= nativeStringSlicedFlag)
+    markReference(w, region, read(address + nativeStringParentOffset));
 }
 /** Traces this worker's and the shared mark stack until every worker is
  * idle and the shared stack is empty (the drain's termination protocol). */

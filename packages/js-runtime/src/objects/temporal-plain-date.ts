@@ -17,6 +17,8 @@ import {
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -35,7 +37,9 @@ import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 function requireDate(value: unknown, realm: ErrorRealm): GregorianDate {
   const object = viewObjectValue(value, realm.objectPrototype);
   const date =
-    object === undefined ? undefined : object.internalTemporalPlainDate;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTemporalPlainDate;
   if (date === undefined) throw createRuntimeError(realm, "type");
   return date;
 }
@@ -61,8 +65,12 @@ export function installTemporalPlainDate(
       const object = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "temporal-plain-date", realm, hooks),
       );
-      object.internalTemporalCalendar = calendar;
-      object.internalTemporalPlainDate = { year, month, day };
+      ensureExoticSlots(object).internalTemporalCalendar = calendar;
+      ensureExoticSlots(object).internalTemporalPlainDate = {
+        year,
+        month,
+        day,
+      };
       return object;
     },
   );
@@ -71,8 +79,8 @@ export function installTemporalPlainDate(
     calendar: string,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
-    object.internalTemporalCalendar = calendar;
-    object.internalTemporalPlainDate = {
+    ensureExoticSlots(object).internalTemporalCalendar = calendar;
+    ensureExoticSlots(object).internalTemporalPlainDate = {
       year: date.year,
       month: date.month,
       day: date.day,

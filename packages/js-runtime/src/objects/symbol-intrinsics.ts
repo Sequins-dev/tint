@@ -9,6 +9,7 @@ import {
   type ScriptPropertyKey,
 } from "./symbols.ts";
 import {
+  exoticSlots,
   createConstructorObject,
   defineOwnProperty,
   type OrdinaryObject,
@@ -46,7 +47,9 @@ export function installSymbolIntrinsics(
     if (direct !== undefined) return direct;
     const object = viewObjectValue(value, realm.objectPrototype);
     const data =
-      object === undefined ? undefined : object.internalPrimitiveData;
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalPrimitiveData;
     if (data !== undefined && data.kind === "symbol") {
       const symbol = viewSymbolValue(data.value);
       if (symbol !== undefined) return symbol;

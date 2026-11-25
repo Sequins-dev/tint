@@ -1,13 +1,13 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 verifyHostedFixture(
   `
-import {createTypedArrayView,createObject,createErrorRealm,createCallableObject,createDataProperty,getProperty,setProperty,ownKeys,viewObjectValue,callObject,bigIntToString,viewBigIntValue,scriptSameValue,type ScriptPropertyKey,type ObjectHooks,type TypedArrayData} from "objects";
+import {createTypedArrayView,createObject,createErrorRealm,createCallableObject,createDataProperty,getProperty,setProperty,ownKeys,viewObjectValue,callObject,bigIntToString,viewBigIntValue,scriptSameValue,ensureExoticSlots,type ScriptPropertyKey,type ObjectHooks,type TypedArrayData} from "objects";
 import {createByteStorage,resizeByteStorage,detachByteStorage} from "storage";
 export function run():number{
  const root=createObject<ScriptPropertyKey,unknown>(undefined);
  const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:scriptSameValue,call:(fn,receiver,args):unknown=>{const result=callObject<ScriptPropertyKey,unknown>(viewObjectValue(fn,root),receiver,args,undefined);if(result.error!=="none")throw "CALL_FAILED";return result.value;}};
  const realm=createErrorRealm(root,hooks),allocated=createByteStorage(16,32,true,32);if(!allocated.ok)return 1;
- const storage=allocated.value,buffer=createObject<ScriptPropertyKey,unknown>(undefined);buffer.internalArrayBufferData=storage;
+ const storage=allocated.value,buffer=createObject<ScriptPropertyKey,unknown>(undefined);ensureExoticSlots(buffer).internalArrayBufferData=storage;
  const data:TypedArrayData={buffer,storage,byteOffset:2,length:2,kind:"Uint16",endian:"little"};
  const fixed=createTypedArrayView(root,data,realm,hooks),tracking=createTypedArrayView(root,{...data,length:undefined},realm,hooks);
  if(!setProperty<ScriptPropertyKey,unknown>(fixed,"0",65537,{object:fixed,value:fixed},hooks)||getProperty<ScriptPropertyKey,unknown>(tracking,"0",tracking,hooks)!==1)return 2;

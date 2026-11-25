@@ -14,6 +14,7 @@ import {
   type Duration,
 } from "@tint/foundation/chrono/temporal-duration";
 import {
+  ensureExoticSlots,
   createObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -172,13 +173,14 @@ export function installZonedDifferenceMethods(
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,
           );
-          object.internalTemporalDuration = zonedDateTimeDifference(
-            own,
-            other,
-            settings,
-            name === "since",
-            realm,
-          );
+          ensureExoticSlots(object).internalTemporalDuration =
+            zonedDateTimeDifference(
+              own,
+              other,
+              settings,
+              name === "since",
+              realm,
+            );
           return object;
         },
         hooks,

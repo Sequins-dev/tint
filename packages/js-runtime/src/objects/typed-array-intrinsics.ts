@@ -31,6 +31,7 @@ import {
 } from "./typed-array-data.ts";
 import { bufferIndex } from "./array-buffer.ts";
 import {
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -119,7 +120,9 @@ export function installTypedArrayIntrinsics(
     (receiver, args): unknown => {
       const object = viewObjectValue(receiver, realm.objectPrototype);
       const data =
-        object === undefined ? undefined : object.internalTypedArrayData;
+        object === undefined
+          ? undefined
+          : exoticSlots(object).internalTypedArrayData;
       return data === undefined ? undefined : data.kind + "Array";
     },
   );
@@ -149,7 +152,8 @@ export function installTypedArrayIntrinsics(
         }
         const selected = constructorPrototype(target, kind, realm, hooks);
         const storage: BufferStorage | undefined =
-          input.internalArrayBufferData ?? input.internalSharedArrayBufferData;
+          exoticSlots(input).internalArrayBufferData ??
+          exoticSlots(input).internalSharedArrayBufferData;
         if (storage === undefined)
           return typedArrayFromObject(
             input,

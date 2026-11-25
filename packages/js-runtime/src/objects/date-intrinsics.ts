@@ -25,6 +25,8 @@ import {
   dateFields,
 } from "./date-values.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   getProperty,
   createObject,
   createConstructorObject,
@@ -114,13 +116,17 @@ export function installDateIntrinsics(
     value: unknown,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = viewObjectValue(value, prototype);
-    if (object === undefined || object.internalDateValue === undefined)
+    if (
+      object === undefined ||
+      exoticSlots(object).internalDateValue === undefined
+    )
       throw createRuntimeError(realm, "type");
     return object;
   }
   function dateArgument(input: unknown): number {
     const source = viewObjectValue(input, prototype);
-    const stored = source === undefined ? undefined : source.internalDateValue;
+    const stored =
+      source === undefined ? undefined : exoticSlots(source).internalDateValue;
     if (stored !== undefined) return stored;
     const primitive = primitiveValue(input, "default", hooks, realm);
     if (primitive.error === "unsupported")
@@ -144,7 +150,7 @@ export function installDateIntrinsics(
       const object = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "date", realm, hooks),
       );
-      object.internalDateValue = clipDateTime(time);
+      ensureExoticSlots(object).internalDateValue = clipDateTime(time);
       return object;
     },
   );
@@ -211,7 +217,7 @@ export function installDateIntrinsics(
       "toTemporalInstant",
       0,
       (receiver, args): unknown => {
-        const value = requireDate(receiver).internalDateValue;
+        const value = exoticSlots(requireDate(receiver)).internalDateValue;
         if (value === undefined) throw "DATE_SLOT_INVARIANT";
         const epoch = temporalEpochFromMilliseconds(value);
         if (epoch === undefined) throw createRuntimeError(realm, "range");
@@ -231,7 +237,7 @@ export function installDateIntrinsics(
     "toUTCString",
     0,
     (receiver, args): unknown => {
-      const value = requireDate(receiver).internalDateValue;
+      const value = exoticSlots(requireDate(receiver)).internalDateValue;
       if (value === undefined) throw "DATE_SLOT_INVARIANT";
       return dateUTCText(value);
     },
@@ -247,7 +253,7 @@ export function installDateIntrinsics(
       "toISOString",
       0,
       (receiver, args): unknown => {
-        const value = requireDate(receiver).internalDateValue;
+        const value = exoticSlots(requireDate(receiver)).internalDateValue;
         if (value === undefined) throw "DATE_SLOT_INVARIANT";
         const text = dateISOText(value);
         if (text === undefined) throw createRuntimeError(realm, "range");
@@ -276,7 +282,7 @@ export function installDateIntrinsics(
         name,
         0,
         (receiver, args): unknown => {
-          const value = requireDate(receiver).internalDateValue;
+          const value = exoticSlots(requireDate(receiver)).internalDateValue;
           if (value === undefined) throw "DATE_SLOT_INVARIANT";
           if (
             name === "toLocaleString" ||
@@ -415,7 +421,7 @@ export function installDateIntrinsics(
         name,
         0,
         (receiver, args): unknown => {
-          const value = requireDate(receiver).internalDateValue;
+          const value = exoticSlots(requireDate(receiver)).internalDateValue;
           if (value === undefined) throw "DATE_SLOT_INVARIANT";
           if (name === "getTime" || name === "valueOf") return value;
           if (name === "getTimezoneOffset")

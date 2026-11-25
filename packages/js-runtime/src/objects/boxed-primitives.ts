@@ -1,5 +1,6 @@
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
+  ensureExoticSlots,
   createObject,
   defineOwnProperty,
   type OrdinaryObject,
@@ -18,7 +19,7 @@ export function createPrimitiveObject(
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   if (typeof value !== kind) throw "PRIMITIVE_OBJECT_PAYLOAD_INVARIANT";
   const object = createObject<ScriptPropertyKey, unknown>(prototype);
-  object.internalPrimitiveData = { kind, value };
+  ensureExoticSlots(object).internalPrimitiveData = { kind, value };
   function immutable(key: string, item: unknown, enumerable: boolean): void {
     if (
       defineOwnProperty<ScriptPropertyKey, unknown>(

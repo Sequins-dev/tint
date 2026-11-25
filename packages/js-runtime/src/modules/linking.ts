@@ -5,7 +5,12 @@ import {
 } from "../environments/records/index.ts";
 import { createRuntimeError } from "../objects/errors.ts";
 import { runScriptContext } from "../objects/jobs.ts";
-import { loadedModule, getModuleSource, type ModuleRecord } from "./records.ts";
+import {
+  loadedModule,
+  getModuleSource,
+  moduleExecutionContext,
+  type ModuleRecord,
+} from "./records.ts";
 import { resolveExport, type ResolvedBinding } from "./resolve.ts";
 import { getModuleNamespace } from "./namespace.ts";
 export type ModuleLinkResult =
@@ -94,7 +99,7 @@ function initializeEnvironment(module: ModuleRecord): ModuleLinkResult {
   }
   runScriptContext<void>(
     module.realm.agent,
-    { realm: module.realm, scriptOrModule: module },
+    moduleExecutionContext(module),
     module.instantiate,
   );
   module.environmentInitialized = true;

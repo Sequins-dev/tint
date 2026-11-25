@@ -36,7 +36,7 @@ export function run():number {
  inner.moduleLoader=(referrer,request,host,payload):void=>{if(referrer.realm!==inner)throw "FIXTURE_IMPORT_REALM";finishLoadingImportedModule(referrer,request,payload,{ok:true,module});};
  const importValue=getProperty<ScriptPropertyKey,unknown>(instance,"importValue",instance,hooks),result=hooks.call(importValue,instance,["./entry.js","value"]),promise=viewObjectValue(result,root);
  if(promise===undefined||promise.prototype!==outer.promisePrototype)return 10;
- drainScriptJobs(outer.agent,(error):void=>{throw error;});const record=promise.internalPromiseData;
+ drainScriptJobs(outer.agent,(error):void=>{throw error;});const record=promise.internalExoticSlots?.internalPromiseData;
  if(record===undefined||record.state!=="fulfilled"||record.result!==42||outer.agent.activeContext!==undefined)return 11;
  const caller=createSourceFunction((receiver,args,callee,newTarget):unknown=>hooks.call(method,instance,["caller"]),true,outer,hooks,"outer",0,undefined,"legacy");
  if(hooks.call(caller,undefined,[])!==true)return 12;

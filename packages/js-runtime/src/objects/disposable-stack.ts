@@ -5,6 +5,8 @@ import {
   type DisposalStack,
 } from "../disposal/index.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -36,8 +38,8 @@ function requireStack(
       object === undefined
         ? undefined
         : asynchronous
-          ? object.internalAsyncDisposableStack
-          : object.internalDisposableStack;
+          ? exoticSlots(object).internalAsyncDisposableStack
+          : exoticSlots(object).internalDisposableStack;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -66,8 +68,9 @@ export function installDisposalStackIntrinsics(
     parent: OrdinaryObject<ScriptPropertyKey, unknown>,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(parent);
-    if (asynchronous) object.internalAsyncDisposableStack = data;
-    else object.internalDisposableStack = data;
+    if (asynchronous)
+      ensureExoticSlots(object).internalAsyncDisposableStack = data;
+    else ensureExoticSlots(object).internalDisposableStack = data;
     return object;
   }
   const constructor = createConstructorObject<ScriptPropertyKey, unknown>(

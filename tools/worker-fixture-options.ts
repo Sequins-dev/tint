@@ -42,6 +42,12 @@ const bindings: readonly NativeHostBinding[] = [
   { module: strings, name: "stringAddress", operation: "string-address" },
   { module: strings, name: "stringAt", operation: "string-at" },
   { module: strings, name: "copyString", operation: "string-copy" },
+  { module: memory, name: "isFlatString", operation: "string-flat" },
+  {
+    module: memory,
+    name: "flattenStringInto",
+    operation: "string-flatten-into",
+  },
   {
     module: memory,
     name: "hostedThreadEntry",

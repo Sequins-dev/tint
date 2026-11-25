@@ -12,6 +12,7 @@ import {
   type Block,
   type Instruction,
 } from "../scalar/index.ts";
+import { hasScriptOperations } from "./control-flow.ts";
 export interface ForwardedLoads {
   readonly fn: FunctionIR;
   readonly forwarded: number;
@@ -61,9 +62,59 @@ export function forwardLocalLoads(
   function operand(_id: number): void {
     visited++;
   }
+  const hasGeneral = hasScriptOperations(fn);
+  const numberValues = hasGeneral ? new Set<number>() : undefined;
+  const wrappedNumbers = hasGeneral ? new Map<number, number>() : undefined;
+  function producesNumber(op: Instruction): boolean {
+    switch (op.kind) {
+      case "constant":
+        return typeof op.value === "number";
+      case "load":
+        return fn.slots[op.slot] === "number";
+      case "general-value":
+        return op.type === "number";
+      case "string-length":
+      case "string-code-unit":
+        return true;
+      case "unary":
+        return (
+          op.operator === "-" ||
+          op.operator === "+" ||
+          op.operator === "~" ||
+          op.operator === "ceil" ||
+          op.operator === "trunc" ||
+          op.operator === "sqrt" ||
+          op.operator === "uint32" ||
+          op.operator === "boolean-number"
+        );
+      case "binary":
+        switch (op.operator) {
+          case "+":
+          case "-":
+          case "*":
+          case "/":
+          case "%":
+          case "**":
+          case "&":
+          case "|":
+          case "^":
+          case "<<":
+          case ">>":
+          case ">>>":
+          case "imul":
+          case "min":
+          case "max":
+            return true;
+        }
+        return false;
+    }
+    return false;
+  }
   for (const block of fn.blocks) {
     if (block === undefined) throw "forward block invariant";
     epoch++;
+    numberValues?.clear();
+    wrappedNumbers?.clear();
     const instructions: Instruction[] = [];
     let changed = false;
     for (const op of block.instructions) {
@@ -83,8 +134,48 @@ export function forwardLocalLoads(
         epochs[op.slot] = epoch;
       }
       const rewritten = substituteInstructionValues(op, aliases);
+      if (
+        wrappedNumbers !== undefined &&
+        rewritten.kind === "general-value" &&
+        rewritten.type === "number"
+      ) {
+        const unwrapped = wrappedNumbers.get(rewritten.value);
+        if (unwrapped !== undefined) {
+          aliases[rewritten.id] = unwrapped + 1;
+          forwarded++;
+          changed = true;
+          continue;
+        }
+      }
+      if (
+        wrappedNumbers !== undefined &&
+        rewritten.kind === "general-is" &&
+        rewritten.type === "number" &&
+        wrappedNumbers.has(rewritten.value)
+      ) {
+        instructions.push({
+          kind: "constant",
+          id: rewritten.id,
+          value: true,
+          start: rewritten.start,
+          end: rewritten.end,
+        });
+        forwarded++;
+        changed = true;
+        continue;
+      }
       instructions.push(rewritten);
       if (rewritten !== op) changed = true;
+      if (numberValues !== undefined) {
+        const resultId = instructionResult(rewritten);
+        if (resultId !== undefined && producesNumber(rewritten))
+          numberValues.add(resultId);
+        if (
+          rewritten.kind === "general-wrap" &&
+          numberValues.has(rewritten.value)
+        )
+          wrappedNumbers?.set(rewritten.id, rewritten.value);
+      }
       if (rewritten.kind === "store") {
         slots[rewritten.slot] = rewritten.value + 1;
         epochs[rewritten.slot] = epoch;

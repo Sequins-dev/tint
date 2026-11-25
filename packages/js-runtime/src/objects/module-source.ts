@@ -6,6 +6,8 @@ import {
   builtinAccessor,
 } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createConstructorObject,
   createObject,
   type OrdinaryObject,
@@ -43,7 +45,7 @@ export function installModuleSourceIntrinsic(
         const object = viewObjectValue(receiver, realm.objectPrototype);
         return object === undefined
           ? undefined
-          : object.internalModuleSourceClassName;
+          : exoticSlots(object).internalModuleSourceClassName;
       },
       hooks,
     ),
@@ -62,6 +64,6 @@ export function createModuleSourceObject(
   if (prototype.prototype !== realm.abstractModuleSourcePrototype)
     throw "MODULE_SOURCE_PROTOTYPE_INVARIANT";
   const source = createObject<ScriptPropertyKey, unknown>(prototype);
-  source.internalModuleSourceClassName = className;
+  ensureExoticSlots(source).internalModuleSourceClassName = className;
   return source;
 }

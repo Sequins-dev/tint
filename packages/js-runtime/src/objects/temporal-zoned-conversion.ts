@@ -32,6 +32,7 @@ import {
 import { viewObjectValue } from "./values.ts";
 import type { ObjectHooks } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
+import { exoticSlots } from "./operations.ts";
 export interface TemporalZonedPosition {
   readonly epoch: BigIntValue;
   readonly zone: TemporalTimeZone;
@@ -120,7 +121,7 @@ export function zonedDateTimeFrom(
 ): TemporalZonedInput {
   const object = viewObjectValue(item, realm.objectPrototype);
   if (object !== undefined) {
-    const branded = object.internalTemporalZonedDateTime;
+    const branded = exoticSlots(object).internalTemporalZonedDateTime;
     if (branded === undefined) {
       const calendar = objectTemporalCalendarIdentifier(
         object,
@@ -167,7 +168,7 @@ export function zonedDateTimeFrom(
       epoch: branded.epoch,
       zone: branded.zone,
       calendar: canonicalTemporalCalendar(
-        object.internalTemporalCalendar,
+        exoticSlots(object).internalTemporalCalendar,
         realm,
       ),
     };

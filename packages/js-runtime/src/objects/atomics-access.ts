@@ -28,7 +28,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import { readNumericElement, writeNumericElement } from "./numeric-element.ts";
-import type { ObjectHooks } from "./operations.ts";
+import { exoticSlots, type ObjectHooks } from "./operations.ts";
 import {
   requireTypedArray,
   typedArrayWindow,
@@ -56,7 +56,10 @@ function sharedIntegerData(
   realm: ErrorRealm,
 ): TypedArrayData | undefined {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const data = object === undefined ? undefined : object.internalTypedArrayData;
+  const data =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTypedArrayData;
   if (
     data === undefined ||
     data.storage.kind !== "shared" ||

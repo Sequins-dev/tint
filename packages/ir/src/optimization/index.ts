@@ -1,8 +1,9 @@
 import { bulkListCopies } from "./bulk-list-copies.ts";
 import { unbounded } from "./budget.ts";
-import { simplifyControlFlow } from "./control-flow.ts";
+import { hasScriptOperations, simplifyControlFlow } from "./control-flow.ts";
 import { promoteLoopCells } from "./cell-promotion.ts";
 import { splitOptionalNumbers } from "./optional-split.ts";
+import { shadowGeneralNumbers } from "./general-numbers.ts";
 import { threadBranches } from "./branch-threading.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
@@ -11,6 +12,8 @@ export { unboundedWork } from "./budget.ts";
 export { simplifyControlFlow } from "./control-flow.ts";
 import { lowerProvenRecordReads } from "./record-access.ts";
 export { lowerProvenRecordReads } from "./record-access.ts";
+import { sinkEnvironmentLoads } from "./sink-environment-loads.ts";
+export { sinkEnvironmentLoads } from "./sink-environment-loads.ts";
 import { reuseUnionReads } from "./union-reads.ts";
 export { reuseUnionReads } from "./union-reads.ts";
 import { proveCellStates } from "./cell-states.ts";
@@ -22,6 +25,10 @@ import { forwardLocalLoads } from "./forward-loads.ts";
 import { propagateSlotCopies } from "./slot-copies.ts";
 import { cacheListVectors } from "./list-vectors.ts";
 export { cacheListVectors } from "./list-vectors.ts";
+import { cacheElementStorage } from "./element-cache.ts";
+export { cacheElementStorage } from "./element-cache.ts";
+import { cacheLoopProperties } from "./property-cache.ts";
+export { cacheLoopProperties } from "./property-cache.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
@@ -59,7 +66,10 @@ import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
 import { hoistLoopInvariants } from "./licm.ts";
+import { buildLoopStrings } from "./string-builders.ts";
 import { boundCountedLoops, versionNonzeroDivisors } from "./counted-loops.ts";
+import { versionStringLoops } from "./string-loops.ts";
+import { layoutBlocks } from "./block-layout.ts";
 export { hoistLoopInvariants } from "./licm.ts";
 export { versionNonzeroDivisors } from "./counted-loops.ts";
 export { selectArrayAccesses } from "./bounds.ts";
@@ -1417,6 +1427,32 @@ export function optimizeModuleVersion(
     );
   used += hoisted.visited;
   if (completed("hoist-loop-invariants", hoisted, false)) return stop();
+  // Loops appending to a string local build it in a buffer instead of
+  // copying the whole string at every append.
+  const built = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = buildLoopStrings(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (built.exhausted)
+    return exhausted(
+      "build-loop-strings",
+      maxInstructions - used - accessVisited,
+    );
+  used += built.visited;
+  if (completed("build-loop-strings", built, false)) return stop();
   // Interval facts select unchecked typed-array accesses (and fold the
   // defaults of reads that can no longer be absent).
   const selected = rewriteFunctions(
@@ -1470,6 +1506,61 @@ export function optimizeModuleVersion(
     );
   used += split.visited;
   if (completed("split-optional-numbers", split, false)) return stop();
+  // General slots tested as numbers keep a presence and a number shadow, so
+  // their tests read registers and proven reads skip the tag check.
+  const shadows = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = shadowGeneralNumbers(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.shadowed,
+            refused: false,
+          };
+    },
+  );
+  if (shadows.exhausted)
+    return exhausted(
+      "shadow-general-numbers",
+      maxInstructions - used - accessVisited,
+    );
+  used += shadows.visited;
+  if (completed("shadow-general-numbers", shadows, false)) return stop();
+  // Loop-invariant global-cell and property-load accesses cache their results
+  // in the loop preheader and refresh after cold invalidating calls/writes.
+  // Running before thread-branches, cleanup, sink-environment-loads and
+  // compact-slots lets those passes remove dead IC operands and compact slots.
+  const cachedProperties = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = cacheLoopProperties(fn, version.module, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (cachedProperties.exhausted)
+    return exhausted(
+      "cache-loop-properties",
+      maxInstructions - used - accessVisited,
+    );
+  used += cachedProperties.visited;
+  if (completed("cache-loop-properties", cachedProperties, false))
+    return stop();
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
   const threaded = rewriteFunctions(
@@ -1536,12 +1627,25 @@ export function optimizeModuleVersion(
     if (completed("function-local-cleanup", sweep, true)) return stop();
     used += sweep.visited;
   }
+  const generalControlChanged = new Uint8Array(version.module.functions.length);
+  let hasGeneralControlChanged = false;
   const control = rewriteFunctions(
     version,
     maxInstructions - used - accessVisited,
     undefined,
     undefined,
-    controlFlowRewrite,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = controlFlowRewrite(fn, budget);
+      if (
+        result !== undefined &&
+        result.rewritten > 0 &&
+        hasScriptOperations(result.fn)
+      ) {
+        generalControlChanged[fn.id] = 1;
+        hasGeneralControlChanged = true;
+      }
+      return result;
+    },
   );
   if (control.exhausted)
     return exhausted(
@@ -1549,10 +1653,49 @@ export function optimizeModuleVersion(
       maxInstructions - used - accessVisited,
     );
   if (completed("simplify-control-flow", control, false)) return stop();
-  const controlVisited = control.visited;
-  const compacted = rewriteFunctions(
+  let controlVisited = control.visited;
+  // Jump-chain merging in general functions exposes block-local forwarding
+  // (e.g. wrap/unwrap pairs and merged loop increments) before slot
+  // compaction, element caching, and counted-loop induction.
+  if (hasGeneralControlChanged) {
+    const postControl = cleanupSelectedFunctions(
+      version,
+      maxInstructions - used - accessVisited - controlVisited,
+      generalControlChanged,
+    );
+    if (completed("function-local-cleanup", postControl, true)) return stop();
+    controlVisited += postControl.visited;
+  }
+  // Sink cold closure-environment loads from the entry block to the lowest
+  // common dominator of their uses outside loops, freeing callee-saved
+  // registers on hot paths.
+  const sunk = rewriteFunctions(
     version,
     maxInstructions - used - accessVisited - controlVisited,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = sinkEnvironmentLoads(fn, version.module, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.sunk,
+            refused: false,
+          };
+    },
+  );
+  if (sunk.exhausted)
+    return exhausted(
+      "sink-environment-loads",
+      maxInstructions - used - accessVisited - controlVisited,
+    );
+  if (completed("sink-environment-loads", sunk, false)) return stop();
+  const sinkVisited = sunk.visited;
+  const compacted = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited - controlVisited - sinkVisited,
     undefined,
     undefined,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1570,7 +1713,7 @@ export function optimizeModuleVersion(
   if (compacted.exhausted)
     return exhausted(
       "compact-slots",
-      maxInstructions - used - accessVisited - controlVisited,
+      maxInstructions - used - accessVisited - controlVisited - sinkVisited,
     );
   if (completed("compact-slots", compacted, false)) return stop();
   const compactVisited = compacted.visited;
@@ -1579,7 +1722,12 @@ export function optimizeModuleVersion(
   // trusts that cache, so nothing may move code after this; copying a whole
   // loop with its refreshes keeps it current).
   const vectorBudget =
-    maxInstructions - used - accessVisited - controlVisited - compactVisited;
+    maxInstructions -
+    used -
+    accessVisited -
+    controlVisited -
+    sinkVisited -
+    compactVisited;
   const vectors = rewriteModuleVersion(
     version,
     undefined,
@@ -1588,14 +1736,37 @@ export function optimizeModuleVersion(
   );
   if (vectors.exhausted) return exhausted("cache-list-vectors", vectorBudget);
   if (completed("cache-list-vectors", vectors, false)) return stop();
+  // Loop-invariant packed binary64 array accesses cache (storage, count) in
+  // the loop preheader and invalidate count to 0 after cold calls/writes.
+  const elementBudget = vectorBudget - vectors.visited;
+  const boundChanges: number[] = [];
+  const cachedElements = rewriteFunctions(
+    version,
+    elementBudget,
+    undefined,
+    boundChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = cacheElementStorage(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (cachedElements.exhausted)
+    return exhausted("cache-element-storage", elementBudget);
+  if (completed("cache-element-storage", cachedElements, false)) return stop();
   // Last: counted loops with unknown bounds compare against a word bound,
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
-  const boundChanges: number[] = [];
   const bounded = rewriteFunctions(
     version,
-    vectorBudget - vectors.visited,
+    elementBudget - cachedElements.visited,
     undefined,
     boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1618,7 +1789,7 @@ export function optimizeModuleVersion(
   // positive divisor, whose remainders codegen keeps integers.
   const divided = rewriteFunctions(
     version,
-    vectorBudget - vectors.visited - bounded.visited,
+    elementBudget - cachedElements.visited - bounded.visited,
     undefined,
     boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1649,28 +1820,85 @@ export function optimizeModuleVersion(
       reboundSelection[id] = 1;
       rebound = true;
     }
-  if (!rebound) return { passes, budgetExhausted: false };
-  const reselected = rewriteFunctions(
+  let reselectedVisited = 0;
+  if (rebound) {
+    const reselected = rewriteFunctions(
+      version,
+      elementBudget -
+        cachedElements.visited -
+        bounded.visited -
+        divided.visited,
+      reboundSelection,
+      undefined,
+      (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+        const result = selectArrayAccesses(fn, budget, remarks);
+        // New facts alone are a rewrite here: the module must adopt them.
+        return result === undefined
+          ? undefined
+          : {
+              fn: result.fn,
+              visited: result.visited,
+              rewritten: result.rewritten + (result.fn === fn ? 0 : 1),
+              refused: false,
+            };
+      },
+    );
+    if (reselected.exhausted)
+      return exhausted("select-array-access", reselected.visited);
+    if (completed("select-array-access", reselected, false)) return stop();
+    reselectedVisited = reselected.visited;
+  }
+  // Small loops reading code units of a string they never change enter a
+  // copy for its flat kind, without a kind dispatch per read. Copying whole
+  // loops keeps their list vector caches and interval facts current.
+  const stringBudget =
+    elementBudget -
+    cachedElements.visited -
+    bounded.visited -
+    divided.visited -
+    reselectedVisited;
+  const versioned = rewriteFunctions(
     version,
-    vectorBudget - vectors.visited - bounded.visited - divided.visited,
-    reboundSelection,
+    stringBudget,
+    undefined,
     undefined,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
-      const result = selectArrayAccesses(fn, budget, remarks);
-      // New facts alone are a rewrite here: the module must adopt them.
+      const result = versionStringLoops(fn, budget, remarks);
       return result === undefined
         ? undefined
         : {
             fn: result.fn,
             visited: result.visited,
-            rewritten: result.rewritten + (result.fn === fn ? 0 : 1),
+            rewritten: result.versioned,
             refused: false,
           };
     },
   );
-  if (reselected.exhausted)
-    return exhausted("select-array-access", reselected.visited);
-  if (completed("select-array-access", reselected, false)) return stop();
+  if (versioned.exhausted)
+    return exhausted("version-string-loops", versioned.visited);
+  if (completed("version-string-loops", versioned, false)) return stop();
+  // Layout only: each block is followed by its preferred successor, so the
+  // emitter elides that edge's branch (block-layout.ts).
+  const layoutBudget = stringBudget - versioned.visited;
+  const laid = rewriteFunctions(
+    version,
+    layoutBudget,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = layoutBlocks(fn, budget);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.moved,
+            refused: false,
+          };
+    },
+  );
+  if (laid.exhausted) return exhausted("layout-blocks", layoutBudget);
+  if (completed("layout-blocks", laid, false)) return stop();
   return { passes, budgetExhausted: false };
 }
 
@@ -1682,7 +1910,9 @@ function removable(op: Instruction): boolean {
     case "string-literal":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
+    case "activation-read":
+    case "script-entry":
+    case "global-cell":
     case "general-null":
     case "general-wrap":
     case "load":

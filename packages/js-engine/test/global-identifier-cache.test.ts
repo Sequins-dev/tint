@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createSourceTextView } from "@tint/source/text";
-import { parseScript, rewriteModule } from "@tint/typescript/syntax";
-import { lowerScript } from "../src/lowering/index.ts";
+import {
+  parseModule,
+  parseScript,
+  rewriteModule,
+} from "@tint/typescript/syntax";
+import { lowerScript, lowerSourceTextModule } from "../src/lowering/index.ts";
 import { createLoweredRealm } from "./lowered-node-host.ts";
 
 /** Calls of name in the lowered Script, and how many of the identifier
@@ -212,4 +216,42 @@ test("AOT entries declare caches inside the context arrow, not as captures", () 
   );
   assert.equal(outer.length, 0);
   assert.equal(lowered(source).caches > 0, true);
+});
+
+test("ES modules without dynamic bindings pass $globalScope to cachedGlobalIdentifierCell", () => {
+  const source = "export function f(x) { return Math.floor(x); }";
+  const parsed = parseModule(createSourceTextView(source));
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const result = lowerSourceTextModule(parsed.value, source);
+  assert.ok(result.ok, JSON.stringify(result));
+  let globalScopeDecls = 0,
+    cachedGlobalScopeCalls = 0;
+  rewriteModule(result.value, {
+    statement(node) {
+      if (node.kind === "variable") {
+        for (const decl of node.declarations) {
+          if (
+            decl.kind !== "object-binding" &&
+            decl.kind !== "array-binding" &&
+            decl.name === "$globalScope"
+          )
+            globalScopeDecls++;
+        }
+      }
+      return node;
+    },
+    expression(node) {
+      if (
+        node.kind === "call" &&
+        node.callee.kind === "identifier" &&
+        node.callee.name === "cachedGlobalIdentifierCell" &&
+        node.arguments[0]?.kind === "identifier" &&
+        node.arguments[0].name === "$globalScope"
+      )
+        cachedGlobalScopeCalls++;
+      return node;
+    },
+  });
+  assert.equal(globalScopeDecls, 1);
+  assert.equal(cachedGlobalScopeCalls, 1);
 });

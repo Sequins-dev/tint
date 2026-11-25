@@ -162,9 +162,60 @@ export function createScriptRuntimeRequest(
       "createScriptPropertyCache",
       "readCachedObjectValueProperty",
       "writeCachedObjectValueProperty",
+      "scriptIsHTMLDDA",
+      "looselyEqualOrThrow",
+      "excludeHTMLDDAObjects",
+      "cachedOwnPropertyValue",
+      "cachedInheritedPropertyValue",
+      "absentPropertyValue",
+      "cachedPropertyStore",
+      "propertySlotWord",
+      // Native script entries (later than the positional calls).
+      "createNativeSourceFunction",
+      "createSourceInstance",
+      "sourceArgumentCount",
+      "sourceArgument",
+      "resolveScriptCallEntry",
+      "resolveScriptConstructEntry",
+      // Inline element access, builtin intrinsics, and object literal sites (step 5a).
+      "packedNumberElement",
+      "absentElementValue",
+      "storePackedNumberElement",
+      "packedArrayLength",
+      "readCachedLengthValue",
+      "readFloat64Element",
+      "writeFloat64Element",
+      "isOrdinaryObject",
+      "scriptMapGet",
+      "scriptMapGetFast",
+      "scriptMapHas",
+      "scriptMapHasFast",
+      "scriptMapSet",
+      "scriptMapSetFast",
+      "scriptSetAdd",
+      "scriptSetAddFast",
+      "scriptArrayPush",
+      "scriptArrayPushFast",
+      "scriptArrayPop",
+      "createObjectLiteralSite",
+      "createLiteralObject",
+      "createLiteralObject1",
+      "createLiteralObject2",
+      "createLiteralObject3",
+      "createLiteralObject4",
+      "createArray0",
+      "createArray1",
+      "createArray2",
+      "createArray3",
+      "createArray4",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }
+    const global = capturedModuleExports(modules).get(
+      "packages/js-runtime/src/environments/global/index.ts",
+    );
+    if (!global?.has("cachedGlobalIdentifierCell"))
+      missingFastPaths.add("cachedGlobalIdentifierCell");
   }
   const imports = scriptRuntimeImports(
       { start: 0, end: 0 },

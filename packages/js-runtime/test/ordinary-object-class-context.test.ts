@@ -6,6 +6,7 @@ import type {
   OrdinaryObject,
   ScriptPropertyKey,
 } from "../src/objects/index.ts";
+import { ensureExoticSlots } from "../src/objects/operations.ts";
 bindHostRecordViews();
 const objects = await import("../src/objects/index.ts");
 const hooks: ObjectHooks<unknown> = {
@@ -279,8 +280,8 @@ test("base OrdinaryCreateFromConstructor runs before entering the class realm", 
     target: objects.createObject(callee.objectPrototype),
     handler: objects.createObject(callee.objectPrototype),
   };
-  newTarget.internalProxyData = state as NonNullable<
-    typeof newTarget.internalProxyData
+  ensureExoticSlots(newTarget).internalProxyData = state as NonNullable<
+    ReturnType<typeof ensureExoticSlots>["internalProxyData"]
   >;
   // GetFunctionRealm(revoked proxy) reports in the caller's realm.
   throwsIn(

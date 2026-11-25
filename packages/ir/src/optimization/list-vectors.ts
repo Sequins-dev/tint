@@ -10,6 +10,8 @@ import {
   instructionResult,
   naturalLoops,
   blockSuccessors,
+  visitInstructionOperands,
+  visitTerminatorOperands,
   type Block,
   type Dominators,
   type FunctionIR,
@@ -28,6 +30,7 @@ import {
   unary,
   vectorProperty,
 } from "./function-builder.ts";
+import { recordReadsKept } from "./counted-loops.ts";
 
 export interface ListVectorCaching {
   readonly module: ModuleIR;
@@ -42,7 +45,8 @@ const span = { start: 0, end: 0 };
 function readHeader(fn: FunctionIR): number | undefined {
   if (
     !fn.name.startsWith("__tint_reference_list_read$") ||
-    fn.returnType !== "optional-reference" ||
+    (fn.returnType !== "optional-reference" &&
+      fn.returnType !== "optional-string") ||
     fn.parameters.length !== 2 ||
     fn.parameters[0] !== 0 ||
     fn.parameters[1] !== 1 ||
@@ -316,6 +320,8 @@ export function cacheListVectors(
   function cachedReader(reader: number): number {
     const existing = cached.get(reader);
     if (existing !== undefined) return existing;
+    const target = module.functions[reader];
+    if (target === undefined) throw "list vector reader invariant";
     const id = functions.length,
       readArguments: number[] = [0, 1];
     functions.push({
@@ -324,7 +330,7 @@ export function cacheListVectors(
       exported: false,
       parameters: [0, 1, 2],
       slots: ["optional-reference", "reference", "number"],
-      returnType: "optional-reference",
+      returnType: target.returnType,
       entry: 0,
       blocks: [
         {
@@ -375,6 +381,45 @@ export function cacheListVectors(
     b.end({ kind: "return", value: b.load(none(b)), start: 0, end: 0 });
     functions.push(b.finish());
     vectorAccessors.set(header, id);
+    readOnly.add(id);
+    return id;
+  }
+  // Length accessors, created on first use, by header record: the list's
+  // length (field 0) wrapped as optional-number when it has the expected
+  // header, else optional-none (never traps; preheader applies unary:uint32 so
+  // interval analysis proves [0, 2^32 - 1] on the cached length slot).
+  const lengthAccessors = new Map<number, number>();
+  function lengthAccessor(header: number): number {
+    const existing = lengthAccessors.get(header);
+    if (existing !== undefined) return existing;
+    const id = functions.length,
+      b = createFunctionBuilder(
+        id,
+        "__tint_list_length$" + String(id),
+        ["optional-reference"],
+        "optional-number",
+      ),
+      present = b.block(),
+      absent = b.block(),
+      length = b.slot("number");
+    branch(b, unary(b, "truthy", 0, "boolean"), present, absent);
+    b.at(present);
+    field(b, reference(b, 0, false), header, 0, length, false, absent);
+    const wrapped = b.next();
+    b.emit({
+      kind: "optional-wrap",
+      id: wrapped,
+      value: b.load(length),
+      start: 0,
+      end: 0,
+    });
+    b.end({ kind: "return", value: wrapped, start: 0, end: 0 });
+    b.at(absent);
+    const missing = b.next();
+    b.emit({ kind: "undefined", id: missing, start: 0, end: 0 });
+    b.end({ kind: "return", value: missing, start: 0, end: 0 });
+    functions.push(b.finish());
+    lengthAccessors.set(header, id);
     readOnly.add(id);
     return id;
   }
@@ -635,6 +680,44 @@ export function cacheListVectors(
         });
       }
     }
+    const allLoops = forest.loops;
+    /** Outermost enclosing loop where `listSlot` and `headerIdx` are both
+     * unmodified and a preheader exists, so invariant caches hoist out of
+     * nested loops too. */
+    function outerCacheLoop(
+      inner: NaturalLoop,
+      listSlot: number,
+      headerIdx: number,
+    ): NaturalLoop {
+      let best = inner;
+      if (headerIdx < 0) return best;
+      for (const outer of allLoops) {
+        if (
+          outer === undefined ||
+          outer === best ||
+          outer.body.size <= best.body.size ||
+          !outer.body.has(inner.header) ||
+          outer.writes.has(listSlot) ||
+          preheader(outer) === undefined
+        )
+          continue;
+        const outerSites = sites(outer);
+        if (outerSites === undefined) continue;
+        let written = false;
+        for (const site of outerSites) {
+          if (
+            site === undefined ||
+            site.headers === undefined ||
+            site.headers.has(headerIdx)
+          ) {
+            written = true;
+            break;
+          }
+        }
+        if (!written) best = outer;
+      }
+      return best;
+    }
     // Per loop: list slot -> its cache.
     const caches = new Map<NaturalLoop, Map<number, CachedList>>();
     const slots: ScalarType[] = fn.slots.slice();
@@ -649,8 +732,14 @@ export function cacheListVectors(
         const op = block.instructions[at];
         if (op === undefined) throw "list vector instruction invariant";
         work++;
-        const read = cacheableRead(op, loop);
-        let vectors = caches.get(loop);
+        const read = cacheableRead(op, loop),
+          headerIdx =
+            read === undefined ? -1 : (headers.get(read.header) ?? -1),
+          target =
+            read === undefined
+              ? loop
+              : outerCacheLoop(loop, read.slot, headerIdx);
+        let vectors = caches.get(target);
         const known = read === undefined ? undefined : vectors?.get(read.slot);
         if (
           op.kind !== "call" ||
@@ -658,7 +747,7 @@ export function cacheListVectors(
           (known === undefined &&
             !profitable(
               loop,
-              headers.get(read.header) ?? -1,
+              headerIdx,
               readCounts.get(loop)?.get(read.slot) ?? {
                 count: 0,
                 everyIteration: false,
@@ -670,7 +759,7 @@ export function cacheListVectors(
         }
         if (vectors === undefined) {
           vectors = new Map<number, CachedList>();
-          caches.set(loop, vectors);
+          caches.set(target, vectors);
         }
         const vector = known === undefined ? slots.length : known.vector;
         if (known === undefined) {
@@ -810,31 +899,353 @@ export function cacheListVectors(
         },
       });
     }
-    // Ahead of each loop header, fill its caches.
-    for (const [loop, vectors] of caches) {
-      const entry = preheader(loop);
-      if (entry === undefined) throw "list vector preheader invariant";
-      const original = replaced.get(entry.id) ?? entry,
-        instructions = original.instructions.slice();
-      const lists: CachedList[] = [];
-      for (const [list, cache] of vectors) {
-        if (cache.list !== list) throw "list vector cache invariant";
-        lists.push(cache);
-      }
-      refresh(lists, instructions);
-      replaced.set(entry.id, { ...original, instructions });
-    }
-    const blocks: Block[] = [];
+    // Ahead of each loop header, fill its caches. For lists whose header has
+    // zero writes in the loop, also hoist proven length reads (field 0
+    // followed by unary:uint32) into an integer preheader slot so counted
+    // loops and nonzero-divisor versioning see an invariant integer length.
+    const addedIntegerSlots: number[] = [];
+    const slotReaders = new Uint32Array(slots.length);
     for (const block of fn.blocks) {
       if (block === undefined) throw "list vector block invariant";
-      blocks.push(replaced.get(block.id) ?? block);
+      for (const op of block.instructions) {
+        if (op !== undefined && op.kind === "load")
+          slotReaders[op.slot] = (slotReaders[op.slot] ?? 0) + 1;
+      }
+      const term = block.terminator;
+      if (
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation !== "read"
+      )
+        slotReaders[term.slot] = (slotReaders[term.slot] ?? 0) + 1;
     }
-    for (const block of added) {
-      if (block === undefined) throw "list vector element invariant";
-      if (block.id !== blocks.length) throw "list vector block id invariant";
-      blocks.push(block);
+    const hoistedLengths = new Map<
+      NaturalLoop,
+      {
+        readonly cache: CachedList;
+        readonly lengthSlot: number;
+        readonly hasSlot: number;
+      }[]
+    >();
+    const lengthReplaced = new Map<number, Block>();
+    const lengthSlotsStart = slots.length;
+    if (closed) {
+      // Replacing a guarded `record` terminator with a cached header-flag
+      // branch removes a layout guard that a later unchecked `record-read` on
+      // the same list slot might depend on; skip slots that have any.
+      const recordReadSlots = new Set<number>();
+      for (const block of fn.blocks) {
+        if (block === undefined) continue;
+        for (const op of block.instructions) {
+          if (op === undefined || op.kind !== "record-read") continue;
+          let obj = definitions.get(op.object);
+          if (obj !== undefined && obj.kind === "reference-value")
+            obj = definitions.get(obj.value);
+          if (obj !== undefined && obj.kind === "load")
+            recordReadSlots.add(obj.slot);
+        }
+      }
+      for (const [loop, vectors] of caches) {
+        const loopWriteSites = sites(loop) ?? [];
+        const unmodified = new Map<number, CachedList>();
+        for (const [listSlot, cache] of vectors) {
+          if (cache.list !== listSlot) throw "list vector cache invariant";
+          if (recordReadSlots.has(listSlot)) continue;
+          const headerIdx = headers.get(cache.header) ?? -1;
+          if (headerIdx < 0) continue;
+          let written = false;
+          for (const site of loopWriteSites) {
+            if (
+              site === undefined ||
+              site.headers === undefined ||
+              site.headers.has(headerIdx)
+            ) {
+              written = true;
+              break;
+            }
+          }
+          if (!written) unmodified.set(listSlot, cache);
+        }
+        if (unmodified.size === 0) continue;
+        const lengthSlots = new Map<
+          number,
+          { readonly lengthSlot: number; readonly hasSlot: number }
+        >();
+        const loopHoisted: {
+          readonly cache: CachedList;
+          readonly lengthSlot: number;
+          readonly hasSlot: number;
+        }[] = [];
+        for (const id of loop.body) {
+          const block =
+            lengthReplaced.get(id) ?? replaced.get(id) ?? fn.blocks[id];
+          if (block === undefined) continue;
+          const term = block.terminator;
+          if (
+            term.kind !== "record" ||
+            term.operation !== "read" ||
+            term.field !== 0 ||
+            fn.slots[term.slot] !== "number"
+          )
+            continue;
+          let source = definitions.get(term.object),
+            optional = false;
+          if (source !== undefined && source.kind === "reference-value") {
+            source = definitions.get(source.value);
+            optional = true;
+          }
+          if (source === undefined || source.kind !== "load") continue;
+          const cache = unmodified.get(source.slot);
+          if (
+            cache === undefined ||
+            cache.header !== term.record ||
+            cache.optional !== optional
+          )
+            continue;
+          if (!loop.body.has(term.consequent)) continue;
+          if ((predecessors.get(term.consequent)?.length ?? 0) !== 1) continue;
+          const consequent =
+            lengthReplaced.get(term.consequent) ??
+            replaced.get(term.consequent) ??
+            fn.blocks[term.consequent];
+          if (consequent === undefined) continue;
+          // Every load of term.slot in the function must be in consequent
+          // (before any overwrite) and consumed solely by unary:uint32 so
+          // hoisting ToUint32(field 0) is exact for any double.
+          const useCount = new Map<number, number>();
+          for (const op of consequent.instructions) {
+            if (op === undefined) continue;
+            visitInstructionOperands(op, (vid) => {
+              useCount.set(vid, (useCount.get(vid) ?? 0) + 1);
+            });
+          }
+          visitTerminatorOperands(consequent.terminator, (vid) => {
+            useCount.set(vid, (useCount.get(vid) ?? 0) + 1);
+          });
+          const droppedLoads = new Set<number>(),
+            rewrittenUint = new Set<number>();
+          let valid = true;
+          for (const op of consequent.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "store" && op.slot === term.slot) break;
+            if (op.kind === "load" && op.slot === term.slot) {
+              if ((useCount.get(op.id) ?? 0) !== 1) {
+                valid = false;
+                break;
+              }
+              droppedLoads.add(op.id);
+            } else if (
+              op.kind === "unary" &&
+              op.operator === "uint32" &&
+              droppedLoads.has(op.operand)
+            )
+              rewrittenUint.add(op.id);
+          }
+          if (
+            !valid ||
+            droppedLoads.size === 0 ||
+            rewrittenUint.size !== droppedLoads.size ||
+            (slotReaders[term.slot] ?? 0) !== droppedLoads.size
+          )
+            continue;
+          let entry = lengthSlots.get(cache.list);
+          if (entry === undefined) {
+            const lengthSlot = slots.length;
+            slots.push("number");
+            addedIntegerSlots.push(lengthSlot);
+            const hasSlot = slots.length;
+            slots.push("boolean");
+            entry = { lengthSlot, hasSlot };
+            lengthSlots.set(cache.list, entry);
+            loopHoisted.push({ cache, lengthSlot, hasSlot });
+          }
+          const nextInstructions: Instruction[] = [];
+          for (const op of consequent.instructions) {
+            if (op === undefined) continue;
+            if (op.kind === "load" && droppedLoads.has(op.id)) continue;
+            if (op.kind === "unary" && rewrittenUint.has(op.id)) {
+              nextInstructions.push({
+                kind: "load",
+                id: op.id,
+                slot: entry.lengthSlot,
+                start: op.start,
+                end: op.end,
+              });
+              continue;
+            }
+            nextInstructions.push(op);
+          }
+          lengthReplaced.set(consequent.id, {
+            ...consequent,
+            instructions: nextInstructions,
+          });
+          slotReaders[term.slot] = 0;
+          const blockInstructions = block.instructions.slice(),
+            hasHeader = nextValue++;
+          blockInstructions.push({
+            kind: "load",
+            id: hasHeader,
+            slot: entry.hasSlot,
+            start: term.start,
+            end: term.end,
+          });
+          const branchTerminator: Terminator = {
+            kind: "branch",
+            condition: hasHeader,
+            consequent: term.consequent,
+            alternate: term.alternate,
+            start: term.start,
+            end: term.end,
+          };
+          lengthReplaced.set(block.id, {
+            ...block,
+            instructions: blockInstructions,
+            terminator: branchTerminator,
+          });
+          count++;
+        }
+        if (loopHoisted.length > 0) hoistedLengths.set(loop, loopHoisted);
+      }
     }
-    return { fn: { ...fn, slots, blocks }, visited: work, rewritten: count };
+    const buildUpdated = (withLengths: boolean): FunctionIR => {
+      const preheaderReplaced = new Map<number, Block>();
+      for (const [loop, vectors] of caches) {
+        const entry = preheader(loop);
+        if (entry === undefined) throw "list vector preheader invariant";
+        const original =
+          (withLengths ? lengthReplaced.get(entry.id) : undefined) ??
+          replaced.get(entry.id) ??
+          entry;
+        const instructions = original.instructions.slice();
+        const lists: CachedList[] = [];
+        for (const [list, cache] of vectors) {
+          if (cache.list !== list) throw "list vector cache invariant";
+          lists.push(cache);
+        }
+        refresh(lists, instructions);
+        const lengthEntries = withLengths
+          ? hoistedLengths.get(loop)
+          : undefined;
+        if (lengthEntries !== undefined) {
+          for (const item of lengthEntries) {
+            if (item === undefined) throw "list length entry invariant";
+            const object = nextValue++,
+              optionalLength = nextValue++,
+              present = nextValue++,
+              zero = nextValue++,
+              rawLength = nextValue++,
+              uintLength = nextValue++;
+            instructions.push({
+              kind: "load",
+              id: object,
+              slot: item.cache.list,
+              start: 0,
+              end: 0,
+            });
+            let argument = object;
+            if (!item.cache.optional) {
+              argument = nextValue++;
+              instructions.push({
+                kind: "reference-wrap",
+                id: argument,
+                value: object,
+                start: 0,
+                end: 0,
+              });
+            }
+            const lengthArguments: number[] = [argument];
+            instructions.push(
+              {
+                kind: "call",
+                id: optionalLength,
+                target: lengthAccessor(item.cache.header),
+                arguments: lengthArguments,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "optional-present",
+                id: present,
+                value: optionalLength,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "store",
+                slot: item.hasSlot,
+                value: present,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "constant",
+                id: zero,
+                value: 0,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "optional-value-or",
+                id: rawLength,
+                value: optionalLength,
+                fallback: zero,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "unary",
+                id: uintLength,
+                operator: "uint32",
+                operand: rawLength,
+                start: 0,
+                end: 0,
+              },
+              {
+                kind: "store",
+                slot: item.lengthSlot,
+                value: uintLength,
+                start: 0,
+                end: 0,
+              },
+            );
+          }
+        }
+        preheaderReplaced.set(entry.id, { ...original, instructions });
+      }
+      const nextSlots = withLengths ? slots : slots.slice(0, lengthSlotsStart);
+      const blocks: Block[] = [];
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "list vector block invariant";
+        blocks.push(
+          preheaderReplaced.get(block.id) ??
+            (withLengths ? lengthReplaced.get(block.id) : undefined) ??
+            replaced.get(block.id) ??
+            block,
+        );
+      }
+      for (const block of added) {
+        if (block === undefined) throw "list vector element invariant";
+        if (block.id !== blocks.length) throw "list vector block id invariant";
+        blocks.push(block);
+      }
+      if (withLengths && addedIntegerSlots.length > 0) {
+        const integerSlots: number[] = [];
+        for (const slot of fn.integerSlots ?? [])
+          if (slot !== undefined) integerSlots.push(slot);
+        for (const slot of addedIntegerSlots)
+          if (slot !== undefined) integerSlots.push(slot);
+        return { ...fn, slots: nextSlots, blocks, integerSlots };
+      }
+      return { ...fn, slots: nextSlots, blocks };
+    };
+    let updated = buildUpdated(hoistedLengths.size > 0);
+    if (hoistedLengths.size > 0 && !recordReadsKept(fn, updated)) {
+      updated = buildUpdated(false);
+    }
+    return {
+      fn: updated,
+      visited: work,
+      rewritten: count,
+    };
   }
   return { module: { ...module, functions }, visited, rewritten };
 }

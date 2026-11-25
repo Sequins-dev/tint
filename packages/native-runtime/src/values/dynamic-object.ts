@@ -26,6 +26,7 @@ import {
   createObject,
   createRuntimeError,
   deleteObjectValueProperty,
+  exoticSlots,
   finishObjectPropertyContract,
   installProgramObjectIntrinsics,
   installProgramConstructorGroup,
@@ -412,7 +413,10 @@ export function projectNativeTypedArray(
 ): unknown {
   const core = programRealmCore();
   const object = viewObjectValue(value, core.realm.objectPrototype);
-  const data = object?.internalTypedArrayData;
+  const data =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTypedArrayData;
   if (
     data === undefined ||
     data.kind + "Array" !== nativeKind ||
@@ -470,7 +474,10 @@ export function projectNativeTypedArray(
 export function projectNativeSharedArrayBuffer(value: unknown): unknown {
   const core = programRealmCore();
   const object = viewObjectValue(value, core.realm.objectPrototype);
-  const storage = object?.internalSharedArrayBufferData;
+  const storage =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalSharedArrayBufferData;
   if (storage === undefined || storage.growable) return undefined;
   return storage.service.bytes(storage.handle);
 }

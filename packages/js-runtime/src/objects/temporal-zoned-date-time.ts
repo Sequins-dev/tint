@@ -18,6 +18,7 @@ import type { ISODateTime } from "@tint/foundation/chrono/iso-date-time";
 import { zonedDateTimeText } from "./temporal-zoned-format.ts";
 import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
+  exoticSlots,
   createConstructorObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -56,7 +57,9 @@ function requireZoned(
 ): TemporalZonedDateTime {
   const object = viewObjectValue(receiver, realm.objectPrototype);
   const data =
-    object === undefined ? undefined : object.internalTemporalZonedDateTime;
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalTemporalZonedDateTime;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }

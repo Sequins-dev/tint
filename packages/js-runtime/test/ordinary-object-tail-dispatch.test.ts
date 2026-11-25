@@ -4,6 +4,7 @@ import { callObject } from "../src/objects/call.ts";
 import {
   createCallableObject,
   createObject,
+  ensureRareSlots,
   type OrdinaryObject,
 } from "../src/objects/operations.ts";
 
@@ -17,21 +18,22 @@ test("internal call transfers run 100,000 mutual steps without growing the host 
     [left, right],
     [right, left],
   ]) {
-    Object.assign(self!, {
-      internalTailDispatch: (receiver: number, args: readonly number[]) => {
-        calls++;
-        const remaining = args[0]!;
-        assert.equal(receiver, 42);
-        return remaining === 0
-          ? { kind: "return", value: 7 }
-          : {
-              kind: "call",
-              target: next!,
-              receiver,
-              arguments: [remaining - 1],
-            };
-      },
-    });
+    ensureRareSlots(self!).internalTailDispatch = (
+      receiver: number,
+      args: readonly number[],
+    ) => {
+      calls++;
+      const remaining = args[0]!;
+      assert.equal(receiver, 42);
+      return remaining === 0
+        ? { kind: "return", value: 7 }
+        : {
+            kind: "call",
+            target: next!,
+            receiver,
+            arguments: [remaining - 1],
+          };
+    };
   }
   assert.deepEqual(callObject(left, 42, [100000], 0), {
     error: "none",
@@ -71,18 +73,16 @@ test("a transfer releases its own context before entering a legacy target", () =
       run: () => assert.fail("the dispatch owns its source context"),
     },
   );
-  Object.assign(source, {
-    internalTailDispatch: () => {
-      assert.equal(active, "caller");
-      active = "source";
-      try {
-        order.push("source");
-      } finally {
-        active = "caller";
-      }
-      return { kind: "call", target, receiver: 42, arguments: [7] };
-    },
-  });
+  ensureRareSlots(source).internalTailDispatch = () => {
+    assert.equal(active, "caller");
+    active = "source";
+    try {
+      order.push("source");
+    } finally {
+      active = "caller";
+    }
+    return { kind: "call", target, receiver: 42, arguments: [7] };
+  };
   assert.deepEqual(callObject(source, undefined, [], undefined), {
     error: "none",
     value: 49,
@@ -101,9 +101,7 @@ test("returned JavaScript values cannot forge an internal transfer", () => {
   const fn = createCallableObject<string, unknown>(undefined, () =>
     assert.fail("legacy"),
   );
-  Object.assign(fn, {
-    internalTailDispatch: () => ({ kind: "return", value }),
-  });
+  ensureRareSlots(fn).internalTailDispatch = () => ({ kind: "return", value });
   assert.equal(callObject(fn, undefined, [], undefined).value, value);
 });
 
@@ -116,25 +114,25 @@ test("nested dispatches keep their arguments and propagate thrown identity", () 
     assert.fail("legacy"),
   );
   const original = [42];
-  Object.assign(outer, {
-    internalTailDispatch: (_receiver: unknown, args: readonly unknown[]) => {
-      assert.equal(args, original);
-      assert.throws(
-        () => callObject(inner, undefined, [7], undefined),
-        (error) => error === failure,
-      );
-      assert.equal(args, original);
-      return { kind: "return", value: args[0] };
-    },
-  });
+  ensureRareSlots(outer).internalTailDispatch = (
+    _receiver: unknown,
+    args: readonly unknown[],
+  ) => {
+    assert.equal(args, original);
+    assert.throws(
+      () => callObject(inner, undefined, [7], undefined),
+      (error) => error === failure,
+    );
+    assert.equal(args, original);
+    return { kind: "return", value: args[0] };
+  };
   assert.equal(callObject(outer, undefined, original, undefined).value, 42);
 });
 
 test("dispatch cannot make a non-callable target callable", () => {
   const plain: OrdinaryObject<string, unknown> = createObject(undefined);
-  Object.assign(plain, {
-    internalTailDispatch: () => assert.fail("non-callable dispatch"),
-  });
+  ensureRareSlots(plain).internalTailDispatch = () =>
+    assert.fail("non-callable dispatch");
   assert.deepEqual(callObject(plain, undefined, [], undefined), {
     error: "type",
     value: undefined,

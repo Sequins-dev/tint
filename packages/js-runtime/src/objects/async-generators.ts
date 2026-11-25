@@ -15,6 +15,8 @@ import { createResolvingFunctions } from "../promises/index.ts";
 import {
   createObject,
   createCallableObject,
+  ensureExoticSlots,
+  exoticSlots,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
@@ -43,7 +45,10 @@ export function takeAsyncGeneratorStart(
   realm: ErrorRealm,
 ): AsyncGeneratorContinuation<unknown> {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const slot = object?.internalAsyncGeneratorData;
+  const slot =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalAsyncGeneratorData;
   if (slot === undefined) throw "DYNAMIC_ASYNC_GENERATOR_CARRIER_INVARIANT";
   const record = slot.record;
   if (
@@ -188,7 +193,11 @@ export function createAsyncGeneratorObject(
       });
     },
   };
-  generator.internalAsyncGeneratorData = { record, hooks: protocol, context };
+  ensureExoticSlots(generator).internalAsyncGeneratorData = {
+    record,
+    hooks: protocol,
+    context,
+  };
   return generator;
 }
 
@@ -254,7 +263,7 @@ export function installAsyncGeneratorIntrinsics(
         1,
         (receiver, args): unknown => {
           const promise = createPromiseObject(realm.promisePrototype);
-          const promiseRecord = promise.internalPromiseData;
+          const promiseRecord = exoticSlots(promise).internalPromiseData;
           if (promiseRecord === undefined)
             throw "ASYNC_GENERATOR_PROMISE_INVARIANT";
           const promises = createScriptPromiseHooks(
@@ -271,7 +280,7 @@ export function installAsyncGeneratorIntrinsics(
           const slot =
             object === undefined
               ? undefined
-              : object.internalAsyncGeneratorData;
+              : exoticSlots(object).internalAsyncGeneratorData;
           if (slot === undefined) {
             functions.reject(createRuntimeError(realm, "type"));
             return promise;

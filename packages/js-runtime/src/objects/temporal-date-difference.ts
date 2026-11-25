@@ -32,6 +32,7 @@ import {
 } from "./temporal-time-difference.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
   createObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -425,7 +426,7 @@ export function installDateDifferenceMethods(
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,
           );
-          object.internalTemporalDuration = duration;
+          ensureExoticSlots(object).internalTemporalDuration = duration;
           return object;
         },
         hooks,

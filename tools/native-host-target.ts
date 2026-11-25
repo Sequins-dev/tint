@@ -18,6 +18,18 @@ export function nodeHostTarget(
 
 /** The target whose images native fixtures build, independent of the runner.
  * Defaults to this Node host; TINT_NATIVE_TARGET selects a cross-build. */
+/** Whether general lowering gives compiled JavaScript functions native
+ * script entries (direct register calls with activation records): the
+ * default where the target's code generator implements the entry ABI
+ * (aarch64). TINT_NATIVE_SCRIPT_CALLS=0 or 1 overrides it. Read per build. */
+export function nativeScriptCallsEnabled(): boolean {
+  const named = process.env.TINT_NATIVE_SCRIPT_CALLS;
+  if (named === "0") return false;
+  if (named === "1") return true;
+  if (named !== undefined)
+    throw Error("TINT_NATIVE_SCRIPT_CALLS must be 0 or 1: " + named);
+  return nativeFixtureTarget().arch === "aarch64";
+}
 export function nativeFixtureTarget(): NativeTarget {
   const named = process.env.TINT_NATIVE_TARGET;
   if (named !== undefined) {

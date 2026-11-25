@@ -17,6 +17,7 @@ import {
 import { createRuntimeError, type ErrorRealm } from "../objects/errors.ts";
 import type { OrdinaryObject } from "../objects/operations.ts";
 import type { ScriptPropertyKey } from "../objects/symbols.ts";
+import type { ScriptExecutionContext } from "../objects/jobs.ts";
 
 export interface LoadedModuleRequest {
   readonly request: ModuleRequest;
@@ -59,6 +60,22 @@ export interface ModuleRecord {
   namespace: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   deferredNamespace: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   importMeta: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** The module's execution context record, shared by linking and
+   * evaluation so functions created in either compare by identity. */
+  executionContext: ScriptExecutionContext | undefined;
+}
+/** The execution context of a module's code (moduleExecutionContext). */
+export function moduleExecutionContext(
+  module: ModuleRecord,
+): ScriptExecutionContext {
+  const existing = module.executionContext;
+  if (existing !== undefined) return existing;
+  const created: ScriptExecutionContext = {
+    realm: module.realm,
+    scriptOrModule: module,
+  };
+  module.executionContext = created;
+  return created;
 }
 /** Allocate local cells before linking, so cyclic imports can share their identity.
  * Declaration callbacks must only create cells; link-time initialization is separate. */
@@ -165,6 +182,7 @@ function createModuleRecord(
     namespace: undefined,
     deferredNamespace: undefined,
     importMeta: undefined,
+    executionContext: undefined,
   };
 }
 

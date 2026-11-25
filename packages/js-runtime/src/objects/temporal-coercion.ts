@@ -16,6 +16,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import {
+  exoticSlots,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
@@ -69,9 +70,11 @@ export function temporalCalendarSlot(
   value: unknown,
   realm: ErrorRealm,
 ): string {
+  const object = viewObjectValue(value, realm.objectPrototype);
   return (
-    viewObjectValue(value, realm.objectPrototype)?.internalTemporalCalendar ??
-    "iso8601"
+    (object === undefined
+      ? undefined
+      : exoticSlots(object).internalTemporalCalendar) ?? "iso8601"
   );
 }
 
@@ -82,7 +85,7 @@ export function temporalCalendarIdentifier(
 ): string {
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object !== undefined) {
-    const identifier = object.internalTemporalCalendar;
+    const identifier = exoticSlots(object).internalTemporalCalendar;
     if (identifier !== undefined) {
       return canonicalTemporalCalendar(identifier, realm);
     }
@@ -109,7 +112,7 @@ export function objectTemporalCalendarIdentifier(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): string {
-  const calendar = object.internalTemporalCalendar;
+  const calendar = exoticSlots(object).internalTemporalCalendar;
   if (calendar !== undefined) {
     return canonicalTemporalCalendar(calendar, realm);
   }

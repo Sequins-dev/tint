@@ -278,6 +278,15 @@ test("observing a build leaves the image byte-identical and writes every report"
         (fn) => fn.module === "program" && fn.source === "fixture:run",
       ),
     );
+    // Private leaf helpers are listed too, and no two ranges overlap.
+    assert.ok(size.functions.some((fn) => fn.name.startsWith("helper:")));
+    const ranges = [...size.functions].sort((a, b) => a.offset - b.offset);
+    for (let index = 1; index < ranges.length; index++) {
+      const before = ranges[index - 1],
+        range = ranges[index];
+      assert.ok(before !== undefined && range !== undefined);
+      assert.ok(before.offset + before.bytes <= range.offset, range.name);
+    }
     assert.equal(size.ir?.passes.length, statistics.passes.length);
     assert.match(log, /IR size by pass/);
   } finally {

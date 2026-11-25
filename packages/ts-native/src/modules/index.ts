@@ -269,7 +269,15 @@ export function linkModules(
       // Internal names cannot collide with any identifier accepted by the source parser.
       for (const binding of bound.value.bindings) {
         if (binding === undefined) throw "missing binding";
-        const name = "@" + String(i) + ":value:" + String(binding.id);
+        const name =
+          binding.scope === 0 && binding.name.startsWith("__tint_spec_loop_")
+            ? "@" +
+              String(i) +
+              ":value:" +
+              String(binding.id) +
+              ":" +
+              binding.name
+            : "@" + String(i) + ":value:" + String(binding.id);
         names.set(binding.id, name);
         sourceNames?.set(name, binding.name);
         if (binding.scope === 0 && binding.kind !== "import")

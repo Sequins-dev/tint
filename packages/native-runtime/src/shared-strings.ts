@@ -1,14 +1,18 @@
 import {
   nativeIdentityReleasableBaseOffset,
   nativeIdentityReleasableLengthOffset,
+  nativeStringDataOffset,
+  nativeStringOneByteHeader,
 } from "@tint/abi/host";
-import { currentContextDomain } from "./intrinsics/memory.ts";
-import { readMemoryString } from "./intrinsics/packet-memory.ts";
+import { latin1Text } from "@tint/foundation/text/latin1";
+import { adoptExternal } from "./ffi/primitives.ts";
 import {
-  copyString,
-  stringAddress,
-  stringAt,
-} from "./intrinsics/shared-strings.ts";
+  currentContextDomain,
+  flattenStringInto,
+  isFlatString,
+} from "./intrinsics/memory.ts";
+import { readMemoryString } from "./intrinsics/packet-memory.ts";
+import { stringAddress, stringAt } from "./intrinsics/shared-strings.ts";
 import {
   createWeakSlot,
   weakSlotKey,
@@ -169,11 +173,9 @@ function arenaMemory(memory: NativeSharedMemoryHost): SharedStringMemory {
   };
 }
 
-/** Whether a string is one flat object, which a body copies verbatim. Every
- * string is flat until sliced strings exist (PR #18); a slice will then be
- * flattened into its body here instead. */
+/** Whether a string is one flat object, which already owns its units. */
 function flatString(value: string): boolean {
-  return typeof value === "string";
+  return isFlatString(value) === 1;
 }
 
 /** The isolate's service over the arena with control page `control` (0 when
@@ -275,6 +277,11 @@ export function createNativeSharedStrings(
   }
   /** A body of the arena's string, copied into this isolate's heap. */
   function copy(body: number): string {
+    const header = words.load(
+      body,
+      sharedStringObjectOffset + nativeStringDataOffset,
+      sharedStringObjectOffset,
+    );
     const units = memory.readSharedUnsigned(
       body,
       sharedStringObjectOffset * 2,
@@ -282,6 +289,14 @@ export function createNativeSharedStrings(
       4,
       1,
     );
+    if (header === nativeStringOneByteHeader) {
+      const view = adoptExternal(
+        new Uint8Array(0),
+        body + sharedStringObjectOffset + nativeStringDataOffset,
+        units,
+      );
+      return latin1Text(view, 0, units);
+    }
     return readMemoryString(
       body,
       sharedStringObjectOffset * 2 + units * 2,
@@ -309,11 +324,11 @@ export function createNativeSharedStrings(
   return {
     minimumUnits,
     send(value: string): number {
-      if (value.length < minimumUnits || !attach() || !flatString(value))
-        return 0;
+      if (value.length < minimumUnits || !attach()) return 0;
+      const flat = flatString(value);
       const address = stringAddress(value);
       // A string this isolate received (or sent before): it holds the body.
-      if (address >= base && address < end) {
+      if (flat && address >= base && address < end) {
         const body = address - sharedStringObjectOffset;
         retainSharedStringBody(words, body);
         return body;
@@ -328,17 +343,10 @@ export function createNativeSharedStrings(
         return 0;
       }
       // The sender's hold and the message's reference.
-      const extent = sharedStringObjectOffset + value.length * 2,
+      const extent = nativeStringDataOffset + value.length * 2,
         body = allocateSharedStringBody(words, control, base, extent, 2);
       if (body === 0) return 0;
-      if (
-        copyString(
-          body,
-          sharedStringObjectOffset + extent,
-          sharedStringObjectOffset,
-          value,
-        ) < 0
-      )
+      if (flattenStringInto(body + sharedStringObjectOffset, extent, value) < 0)
         throw "SHARED_STRING_COPY";
       const granule = (body - base) / (1 << shift);
       if (

@@ -3,6 +3,7 @@ import {
   type ISODateTime,
 } from "@tint/foundation/chrono/iso-date-time";
 import {
+  ensureExoticSlots,
   createObject,
   type OrdinaryObject,
   type ObjectHooks,
@@ -120,10 +121,11 @@ export function installDateTimeCopyMethods(
               : realm.temporalPlainTimePrototype,
           );
           if (date) {
-            result.internalTemporalPlainDate = data.date;
-            result.internalTemporalCalendar = data.calendar ?? "iso8601";
+            ensureExoticSlots(result).internalTemporalPlainDate = data.date;
+            ensureExoticSlots(result).internalTemporalCalendar =
+              data.calendar ?? "iso8601";
           } else
-            result.internalTemporalPlainTime = {
+            ensureExoticSlots(result).internalTemporalPlainTime = {
               hour: data.hour,
               minute: data.minute,
               second: data.second,

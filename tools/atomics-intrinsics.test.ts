@@ -1208,10 +1208,16 @@ test("positive waitAsync installs an owner-local intrinsic Promise and same-agen
   assert.equal(f.get(result, "async"), true);
   const promise = f.get(result, "value") as ObjectValue;
   assert.equal(promise.prototype, f.realm.promisePrototype);
-  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "pending",
+  );
   assert.equal(f.invoke("notify", [view, 0, 1]), 1);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
-  assert.equal(promise.internalPromiseData?.result, "ok");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
+  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, "ok");
 });
 test("an unrelated same-agent notify does not synchronously resolve an externally notified Promise", async () => {
   const f = await asynchronousWaitFixture(),
@@ -1223,11 +1229,17 @@ test("an unrelated same-agent notify does not synchronously resolve an externall
     value: 1,
   });
   assert.equal(f.invoke("notify", [view, 2, 1]), 0);
-  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "pending",
+  );
   const { processAtomicWaitEvents } =
     await import("../packages/js-runtime/src/objects/atomics-wait.ts");
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 1);
-  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "fulfilled",
+  );
 });
 test("external waitAsync completions preserve notification order across locations and enqueue reactions on the owner", async () => {
   const f = await asynchronousWaitFixture(),
@@ -1276,7 +1288,10 @@ test("owner timeout processing settles once and removes the waiter before a late
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 0);
   f.setNow(1);
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 1);
-  assert.equal(promise.internalPromiseData?.result, "timed-out");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.result,
+    "timed-out",
+  );
   assert.equal(f.invoke("notify", [view, 0, 1]), 0);
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 0);
   assert.equal(f.realm.agent.pendingAtomicWaits.length, 0);
@@ -1313,7 +1328,10 @@ test("continuous Promise jobs do not starve owner waitAsync timeouts", async () 
     polls++;
     events.push("poll" + polls);
     f.setNow(polls);
-    if (promise.internalPromiseData?.state === "pending" && polls < 5)
+    if (
+      promise.internalExoticSlots?.internalPromiseData?.state === "pending" &&
+      polls < 5
+    )
       o.enqueueScriptJob(f.realm.agent, poll, undefined);
   }
   o.enqueueScriptJob(f.realm.agent, poll, undefined);
@@ -1342,6 +1360,9 @@ test("continuous Promise jobs do not starve owner waitAsync timeouts", async () 
     "a live Promise queue must not defer owner events until quiescence",
   );
   assert.deepEqual(events, ["poll1", "queued", "poll2", "reaction"]);
-  assert.equal(promise.internalPromiseData?.result, "timed-out");
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.result,
+    "timed-out",
+  );
   assert.equal(f.realm.agent.pendingAtomicWaits.length, 0);
 });

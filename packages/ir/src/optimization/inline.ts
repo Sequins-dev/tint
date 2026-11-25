@@ -91,6 +91,12 @@ function crossingType(
 function shapeRecognized(fn: FunctionIR): boolean {
   return fn.name.startsWith("__tint_reference_list_");
 }
+/** Outlined pre-loop-proven numeric loop kernels stay out-of-line so they keep
+ * `fn.environment === undefined` and run with intraprocedural integer slots
+ * without polluting their general script callers. */
+function outlinedSpecLoop(fn: FunctionIR): boolean {
+  return fn.name.includes("__tint_spec_loop_");
+}
 /** Blocks other than empty traps (the failure edges of checked record
  * accesses), which add no code worth bounding. */
 function nonTrapBlocks(fn: FunctionIR): number {
@@ -126,6 +132,39 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-write":
     case "array-store":
     case "array-atomic":
+    // Tag tests and payload views of general values are pure inline
+    // sequences (a mismatched checked view traps).
+    case "general-is":
+    case "general-record-is":
+    case "general-value":
+    case "record-slot-read":
+    case "property-load":
+    // A cached property store is a nonallocating, nonthrowing inline
+    // sequence; its write keeps heap effects (see instructionEffects).
+    case "property-store":
+    case "script-entry":
+    case "global-cell":
+    // Element loads, stores, and length reads are inline, nonallocating and nonthrowing.
+    case "element-load":
+    case "element-store":
+    case "element-length":
+    case "element-storage":
+    case "element-count":
+    // The nonallocating Latin-1 and ASCII primitives (bound foundation
+    // functions): inline sequences with a private helper call, so a bound
+    // body inlines into its callers like a typed-array access.
+    case "string-ascii-prefix":
+    case "bytes-ascii-prefix":
+    case "string-copy-latin1":
+    // And the nonallocating UTF-8 primitives.
+    case "string-utf8-length":
+    case "string-write-utf8":
+    // The string-transfer primitives (#15's realm bindings).
+    case "string-flat":
+    case "string-flatten-into":
+    // Strings' cached array indices (a load, and a store into the field).
+    case "string-index-cached":
+    case "string-index-cache":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -167,6 +206,32 @@ function supported(op: Instruction, references: boolean = true): boolean {
 /** Largest inlined expansion (instructions, terminators, parameter copies
  * and result slot). */
 const maxExpansion = 128;
+/** Single-instruction script cache / call-entry bindings (`boundBody`):
+ * inlining replaces one call with one IR instruction, so they are exempt
+ * from per-caller growth caps (especially the fixed `referenceAllowance`). */
+function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
+  if (fn.blocks.length !== 1) return false;
+  const block = fn.blocks[0];
+  if (block === undefined || block.terminator.kind !== "return") return false;
+  const count = block.instructions.length;
+  if (count === 0) return false;
+  for (let i = 0; i < count - 1; i++)
+    if (block.instructions[i]?.kind !== "load") return false;
+  const last = block.instructions[count - 1];
+  if (last === undefined) return false;
+  return (
+    last.kind === "property-load" ||
+    last.kind === "property-store" ||
+    last.kind === "element-load" ||
+    last.kind === "element-store" ||
+    last.kind === "array-element" ||
+    last.kind === "array-store" ||
+    last.kind === "element-length" ||
+    last.kind === "script-entry" ||
+    last.kind === "global-cell" ||
+    last.kind === "general-record-is"
+  );
+}
 /** Most non-trap blocks of an inlined scalar or void callee. */
 function maxCalleeBlocks(guarded: boolean): number {
   return guarded ? 32 : 24;
@@ -196,7 +261,8 @@ function inlineRefusal(
       callee.receiverSlot !== undefined
     )
       return "callee uses an environment or receiver";
-    if (shapeRecognized(callee)) return "callee is a shape-recognized helper";
+    if (shapeRecognized(callee) || outlinedSpecLoop(callee))
+      return "callee is a shape-recognized helper";
     if (cost > maxExpansion)
       return (
         "callee cost " + String(cost) + " exceeds limit " + String(maxExpansion)
@@ -288,6 +354,7 @@ export function inlineSmallFunctions(
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
     effectful = new Uint8Array(module.functions.length),
+    intrinsic = new Uint8Array(module.functions.length),
     costs: number[] = [];
   let visited = 0,
     inlined = 0,
@@ -314,13 +381,17 @@ export function inlineSmallFunctions(
     let good =
         fn.import !== true &&
         !shapeRecognized(fn) &&
+        !outlinedSpecLoop(fn) &&
         fn.receiverSlot === undefined &&
         fn.environment === undefined &&
         fn.closureEnvironment === undefined &&
         (fn.returnType === "void" ||
           scalar(fn.returnType) ||
           fn.returnType === "reference" ||
-          fn.returnType === "optional-reference"),
+          fn.returnType === "optional-reference" ||
+          // A straight-line general result (such as a bound property
+          // cache read) needs only the caller's general result slot.
+          (fn.returnType === "general" && fn.blocks.length === 1)),
       // Charge actual expansion work: instructions, terminators, parameter
       // copies and the result slot. Empty jump/trap blocks do not need a
       // separate size heuristic that excludes otherwise small helpers.
@@ -405,6 +476,8 @@ export function inlineSmallFunctions(
     const expansion = original ? cost : cost + overhead;
     eligible[fn.id] =
       good && expansion <= maxExpansion && returns > 0 ? (original ? 1 : 2) : 0;
+    if (eligible[fn.id] !== 0 && isScriptInlineIntrinsic(fn))
+      intrinsic[fn.id] = 1;
     costs[fn.id] = expansion;
   }
   const functions: FunctionIR[] = [];
@@ -501,7 +574,8 @@ export function inlineSmallFunctions(
         visited++;
         const callee =
             op.kind === "call" ? module.functions[op.target] : undefined,
-          cost = callee === undefined ? 0 : (costs[callee.id] ?? 0);
+          cost = callee === undefined ? 0 : (costs[callee.id] ?? 0),
+          isIntrinsic = callee !== undefined && intrinsic[callee.id] === 1;
         if (
           op.kind !== "call" ||
           callee === undefined ||
@@ -509,11 +583,11 @@ export function inlineSmallFunctions(
           callee.id === fn.id ||
           op.environment !== undefined ||
           separated(fn, callee.id) ||
-          cost > allowance ||
+          (!isIntrinsic && cost > allowance) ||
           (shapeRecognized(fn) && effectful[callee.id] === 1) ||
           (eligible[callee.id] === 2 &&
             ((!nonallocatingCaller && shapeRecognized(fn)) ||
-              cost > referenceAllowance))
+              (!isIntrinsic && cost > referenceAllowance)))
         ) {
           if (remarks !== undefined && op.kind === "call")
             pendingRemarks.push({
@@ -936,6 +1010,9 @@ export function inlineSmallFunctions(
               case "reference-value":
               case "string-reference":
               case "reference-string":
+              case "general-is":
+              case "general-record-is":
+              case "general-value":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -968,11 +1045,210 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
+              case "record-slot-read":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "property-load":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  site: value(instruction.site),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "property-store":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  value: value(instruction.value),
+                  site: value(instruction.site),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "script-entry":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  callee: value(instruction.callee),
+                  realm: value(instruction.realm),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "global-cell":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  scope: value(instruction.scope),
+                  cache: value(instruction.cache),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "element-load": {
+                const cachedStorage = instruction.cachedStorage,
+                  cachedCount = instruction.cachedCount;
+                cloned.push(
+                  cachedStorage !== undefined && cachedCount !== undefined
+                    ? {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        cachedStorage: value(cachedStorage),
+                        cachedCount: value(cachedCount),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      }
+                    : {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      },
+                );
+                break;
+              }
+              case "element-store": {
+                const cachedStorage = instruction.cachedStorage,
+                  cachedCount = instruction.cachedCount;
+                cloned.push(
+                  cachedStorage !== undefined && cachedCount !== undefined
+                    ? {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        value: value(instruction.value),
+                        cachedStorage: value(cachedStorage),
+                        cachedCount: value(cachedCount),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      }
+                    : {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        value: value(instruction.value),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      },
+                );
+                break;
+              }
+              case "element-length":
+              case "element-storage":
+              case "element-count":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
               case "record-read":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
                   object: value(instruction.object),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-flat":
+              case "string-index-cached":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  string: value(instruction.string),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-index-cache":
+                cloned.push({
+                  ...instruction,
+                  string: value(instruction.string),
+                  value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-flatten-into":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  address: value(instruction.address),
+                  byteLength: value(instruction.byteLength),
+                  string: value(instruction.string),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-ascii-prefix":
+              case "string-utf8-length":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  string: value(instruction.string),
+                  begin: value(instruction.begin),
+                  limit: value(instruction.limit),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "bytes-ascii-prefix":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  bytes: value(instruction.bytes),
+                  begin: value(instruction.begin),
+                  limit: value(instruction.limit),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-copy-latin1":
+              case "string-write-utf8":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  string: value(instruction.string),
+                  begin: value(instruction.begin),
+                  limit: value(instruction.limit),
+                  bytes: value(instruction.bytes),
+                  offset: value(instruction.offset),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,
@@ -1210,8 +1486,10 @@ export function inlineSmallFunctions(
             end: op.end,
             inline: callInline,
           });
-        allowance -= cost;
-        if (eligible[callee.id] === 2) referenceAllowance -= cost;
+        if (!isIntrinsic) {
+          allowance -= cost;
+          if (eligible[callee.id] === 2) referenceAllowance -= cost;
+        }
         inlined++;
         changed = true;
         if (remarks !== undefined)

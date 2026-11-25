@@ -5,12 +5,18 @@ import {
   nativeGenerationalStateWords,
   nativeIdentityReleasableBaseOffset,
   nativeIdentityReleasableLengthOffset,
+  nativeHeaderFlagsShift,
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryEntryBytes,
   nativeStringDataOffset,
   nativeStringLengthOffset,
+  nativeStringMinimumDataBytes,
+  nativeStringOneByteFlag,
+  nativeStringParentOffset,
+  nativeStringSlicedFlag,
+  nativeStringSlicedStartOffset,
   nativeTargetOSLinux,
   nativeTargetArchX86_64,
   type PosixHostFacts,
@@ -730,12 +736,60 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "shl", dst: rdx, count: 1 });
       emit({ op: "cmp", dst: rdx, src: rsi });
       branch(emit, "a", failed);
+      const flat = site + ":string-flat",
+        sourceReady = site + ":string-src",
+        twoByte = site + ":string-two-byte",
+        widenLoop = site + ":string-widen",
+        copied = site + ":string-copied";
+      emit({ op: "mov", dst: rax, src: mem(10, 0) });
+      emit({ op: "shr", dst: rax, count: nativeHeaderFlagsShift });
+      emit({ op: "and", dst: rax, src: imm(3) });
+      emit({ op: "cmp", dst: rax, src: imm(nativeStringSlicedFlag) });
+      branch(emit, "b", flat);
+      emit({
+        op: "mov",
+        dst: rsi,
+        src: mem(10, nativeStringSlicedStartOffset),
+      });
+      emit({ op: "mov", dst: r10, src: mem(10, nativeStringParentOffset) });
       emit({
         op: "lea",
         dst: rsi,
-        src: mem(10, nativeStringDataOffset),
+        src: {
+          kind: "mem",
+          width: 64,
+          address: {
+            kind: "base",
+            base: 10,
+            index: 6,
+            scale: 1,
+            disp: nativeStringDataOffset,
+          },
+        },
       });
+      emit({ op: "jmp", target: label(sourceReady) });
+      emit({ op: "label", name: flat });
+      emit({ op: "lea", dst: rsi, src: mem(10, nativeStringDataOffset) });
+      emit({ op: "label", name: sourceReady });
+      emit({ op: "test", dst: rax, src: imm(nativeStringOneByteFlag) });
+      branch(emit, "e", twoByte);
+      emit({ op: "shr", dst: rdx, count: 1 });
+      emit({ op: "label", name: widenLoop });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", copied);
+      emit({ op: "movzx", dst: eax, src: { ...mem(6, 0), width: 8 } });
+      emit({
+        op: "mov",
+        dst: { ...mem(7, 0), width: 16 },
+        src: { kind: "gpr", width: 16, index: 0 },
+      });
+      emit({ op: "add", dst: rsi, src: imm(1) });
+      emit({ op: "add", dst: rdi, src: imm(2) });
+      emit({ op: "sub", dst: rdx, src: imm(1) });
+      emit({ op: "jmp", target: label(widenLoop) });
+      emit({ op: "label", name: twoByte });
       libc("memmove");
+      emit({ op: "label", name: copied });
       emit({ op: "xor", dst: eax, src: eax });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: failed });
@@ -757,19 +811,31 @@ export function emitHostCall(request: HostCall): boolean {
         done = site + ":copy-done";
       const limit = r11;
       /** RDX = the flat extent of the string in R10, or a branch to -1. */
-      function extent(): void {
+      function extent(tag: string): void {
+        const oneByte = site + ":copy-one-" + tag;
         emit({ op: "mov", dst: r10, src: argument(3) });
         emit({ op: "mov", dst: rax, src: mem(10, 0) });
-        emit({ op: "shl", dst: rax, count: 16 });
-        emit({ op: "shr", dst: rax, count: 16 });
-        emit({ op: "cmp", dst: rax, src: imm(1) });
+        emit({ op: "mov", dst: rdx, src: rax });
+        emit({ op: "shl", dst: rdx, count: 16 });
+        emit({ op: "shr", dst: rdx, count: 16 });
+        emit({ op: "cmp", dst: rdx, src: imm(1) });
         branch(emit, "ne", failed);
+        emit({ op: "shr", dst: rax, count: nativeHeaderFlagsShift });
+        emit({ op: "and", dst: rax, src: imm(7) });
+        emit({ op: "cmp", dst: rax, src: imm(nativeStringOneByteFlag) });
+        branch(emit, "a", failed);
         emit({
           op: "mov",
           dst: edx,
           src: { ...mem(10, nativeStringLengthOffset), width: 32 },
         });
+        emit({ op: "test", dst: rax, src: rax });
+        branch(emit, "ne", oneByte);
         emit({ op: "shl", dst: rdx, count: 1 });
+        emit({ op: "label", name: oneByte });
+        emit({ op: "mov", dst: rax, src: imm(nativeStringMinimumDataBytes) });
+        emit({ op: "cmp", dst: rdx, src: rax });
+        emit({ op: "cmovcc", cc: "b", dst: rdx, src: rax });
         emit({ op: "add", dst: rdx, src: imm(nativeStringDataOffset + 7) });
         emit({ op: "shr", dst: rdx, count: 3 });
         emit({ op: "shl", dst: rdx, count: 3 });
@@ -793,13 +859,13 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "add", dst: rdi, src: rdx });
       // RSI is the room after the offset; the extent must fit it.
       emit({ op: "mov", dst: limit, src: rsi });
-      extent();
+      extent("a");
       emit({ op: "cmp", dst: rdx, src: limit });
       branch(emit, "a", failed);
       emit({ op: "mov", dst: rsi, src: r10 });
       libc("memmove");
       // The call clobbers RDX and R10: read the extent again.
-      extent();
+      extent("b");
       emit({ op: "mov", dst: rax, src: rdx });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: failed });

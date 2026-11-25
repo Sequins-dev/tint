@@ -28,6 +28,7 @@ export {
   createDeclarativeScope,
   resolveBinding,
   getIdentifierValue,
+  cachedGlobalIdentifierCell,
   createGlobalIdentifierCache,
   getBindingReference,
   getBindingReferenceForTypeof,

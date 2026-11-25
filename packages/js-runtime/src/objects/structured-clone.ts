@@ -1,7 +1,10 @@
-import { setMap } from "@tint/foundation/collections/linked-map";
+import { copyLatin1, latin1Text } from "@tint/foundation/text/latin1";
+import { setScriptMap, syncScriptMapNumbers } from "./collection-data.ts";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
 import {
   arrayElementCount,
+  firstCapacity,
+  noNumbers,
   readArrayElement,
   writeArrayElement,
 } from "./array-elements.ts";
@@ -17,6 +20,8 @@ import { stringValue } from "./coercion.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { builtinProperty } from "./intrinsics.ts";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createDataProperty,
   createObject,
   getOwnProperty,
@@ -75,44 +80,50 @@ export function throwWorkerCloneError(
 }
 
 function unsupportedObject(object: ScriptObject): boolean {
-  return (
+  const rare = object.internalRareSlots;
+  if (
     object.internalCall !== undefined ||
     object.internalConstruct !== undefined ||
-    object.internalPromiseData !== undefined ||
-    object.internalProxyData !== undefined ||
-    object.internalWeakData !== undefined ||
-    object.internalGeneratorData !== undefined ||
-    object.internalAsyncGeneratorData !== undefined ||
-    object.internalSyncIteratorData !== undefined ||
-    object.internalIteratorHelperData !== undefined ||
-    object.internalWrappedIteratorData !== undefined ||
-    object.internalMapIteratorData !== undefined ||
-    object.internalSetIteratorData !== undefined ||
-    object.internalRegExpIteratorData !== undefined ||
-    object.internalArrayIteratorData !== undefined ||
-    object.internalStringIteratorData !== undefined ||
-    object.internalSharedArrayBufferData !== undefined ||
-    object.internalDisposableStack !== undefined ||
-    object.internalAsyncDisposableStack !== undefined ||
-    object.internalTemporalPlainYearMonth !== undefined ||
-    object.internalTemporalPlainMonthDay !== undefined ||
-    object.internalTemporalPlainDate !== undefined ||
-    object.internalTemporalDuration !== undefined ||
-    object.internalTemporalPlainTime !== undefined ||
-    object.internalTemporalPlainDateTime !== undefined ||
-    object.internalTemporalZonedDateTime !== undefined ||
-    object.internalTemporalCalendar !== undefined ||
-    object.internalTemporalInstant !== undefined ||
-    object.internalLocaleData !== undefined ||
-    object.internalListFormatData !== undefined ||
-    object.internalSegmenterData !== undefined ||
-    object.internalCollatorData !== undefined ||
-    object.internalPluralRulesData !== undefined ||
-    object.internalIntlFormatData !== undefined ||
-    object.internalRelativeTimeData !== undefined ||
-    object.internalNumberFormatData !== undefined ||
-    object.internalArgumentsData ||
-    object.internalShadowRealm !== undefined
+    (rare !== undefined && rare.internalArgumentsData)
+  )
+    return true;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return false;
+  return (
+    exotic.internalPromiseData !== undefined ||
+    exotic.internalProxyData !== undefined ||
+    exotic.internalWeakData !== undefined ||
+    exotic.internalGeneratorData !== undefined ||
+    exotic.internalAsyncGeneratorData !== undefined ||
+    exotic.internalSyncIteratorData !== undefined ||
+    exotic.internalIteratorHelperData !== undefined ||
+    exotic.internalWrappedIteratorData !== undefined ||
+    exotic.internalMapIteratorData !== undefined ||
+    exotic.internalSetIteratorData !== undefined ||
+    exotic.internalRegExpIteratorData !== undefined ||
+    exotic.internalArrayIteratorData !== undefined ||
+    exotic.internalStringIteratorData !== undefined ||
+    exotic.internalSharedArrayBufferData !== undefined ||
+    exotic.internalDisposableStack !== undefined ||
+    exotic.internalAsyncDisposableStack !== undefined ||
+    exotic.internalTemporalPlainYearMonth !== undefined ||
+    exotic.internalTemporalPlainMonthDay !== undefined ||
+    exotic.internalTemporalPlainDate !== undefined ||
+    exotic.internalTemporalDuration !== undefined ||
+    exotic.internalTemporalPlainTime !== undefined ||
+    exotic.internalTemporalPlainDateTime !== undefined ||
+    exotic.internalTemporalZonedDateTime !== undefined ||
+    exotic.internalTemporalCalendar !== undefined ||
+    exotic.internalTemporalInstant !== undefined ||
+    exotic.internalLocaleData !== undefined ||
+    exotic.internalListFormatData !== undefined ||
+    exotic.internalSegmenterData !== undefined ||
+    exotic.internalCollatorData !== undefined ||
+    exotic.internalPluralRulesData !== undefined ||
+    exotic.internalIntlFormatData !== undefined ||
+    exotic.internalRelativeTimeData !== undefined ||
+    exotic.internalNumberFormatData !== undefined ||
+    exotic.internalShadowRealm !== undefined
   );
 }
 
@@ -162,6 +173,7 @@ const tagTrue = 84; // T
 const tagFalse = 70; // F
 const tagInt32 = 73; // I: zigzag varint
 const tagDouble = 78; // N: padding to eight bytes, then binary64
+const tagOneByteString = 34; // ": varint units, then Latin-1 bytes
 const tagString = 99; // c: varint units, then UTF-16 units
 const tagBigInt = 90; // Z: decimal digits as a string payload
 const tagReference = 94; // ^: varint object index
@@ -182,7 +194,8 @@ const tagNumberArray = 80; // P: packed binary64 elements, then properties, $
 const tagSparseArray = 97; // a: properties, then @
 const tagObject = 111; // o: properties, then {
 const tagHole = 45; // -
-const tagNewKey = 107; // k: a property key's string payload
+const tagNewKey = 107; // k: a one-byte property key's payload
+const tagTwoByteKey = 108; // l: a UTF-16 property key's payload
 const tagKeyReference = 75; // K: varint index of an earlier key
 const endObject = 123; // {
 const endDenseArray = 36; // $
@@ -254,18 +267,27 @@ function serializeWorkerString(
     }
   }
   const units = value.length;
-  const needed = 9 + units * 2;
-  if (position + needed > bytes.length) {
-    sink.grow(position, needed);
+  const oneByteNeeded = 9 + units;
+  if (position + oneByteNeeded > bytes.length) {
+    sink.grow(position, oneByteNeeded);
     bytes = sink.bytes;
   }
-  bytes[position++] = tagString;
+  const tagAt = position;
+  bytes[position++] = tagOneByteString;
   let remaining = units;
   while (remaining >= 128) {
     bytes[position++] = (remaining % 128) + 128;
     remaining = Math.floor(remaining / 128);
   }
   bytes[position++] = remaining;
+  const copied = copyLatin1(value, 0, units, bytes, position);
+  if (copied >= 0) return position + copied;
+  const twoByteNeeded = units * 2;
+  if (position + twoByteNeeded > bytes.length) {
+    sink.grow(position, twoByteNeeded);
+    bytes = sink.bytes;
+  }
+  bytes[tagAt] = tagString;
   if (units <= inlineStringUnits) {
     for (let index = 0; index < units; index++) {
       const unit = value.charCodeAt(index);
@@ -274,7 +296,7 @@ function serializeWorkerString(
     }
   } else {
     sink.writeString(position, value);
-    position += units * 2;
+    position += twoByteNeeded;
   }
   return position;
 }
@@ -378,6 +400,36 @@ function serializeWorkerGraph(
       position += units * 2;
     }
   }
+  function taggedString(
+    value: string,
+    oneByteTag: number,
+    twoByteTag: number,
+  ): void {
+    const units = value.length;
+    reserve(9 + units);
+    const tagAt = position;
+    bytes[position++] = oneByteTag;
+    varint(units);
+    reserve(units);
+    const copied = copyLatin1(value, 0, units, bytes, position);
+    if (copied >= 0) {
+      position += copied;
+      return;
+    }
+    const twoByteNeeded = units * 2;
+    reserve(twoByteNeeded);
+    bytes[tagAt] = twoByteTag;
+    if (units <= inlineStringUnits)
+      for (let index = 0; index < units; index++) {
+        const unit = value.charCodeAt(index);
+        bytes[position++] = unit % 256;
+        bytes[position++] = Math.floor(unit / 256);
+      }
+    else {
+      sink.writeString(position, value);
+      position += twoByteNeeded;
+    }
+  }
   function key(value: string): void {
     const known = keyIndices.get(value);
     if (known !== undefined) {
@@ -385,8 +437,7 @@ function serializeWorkerGraph(
       return varint(known);
     }
     keyIndices.set(value, keyIndices.size);
-    tag(tagNewKey);
-    string(value);
+    taggedString(value, tagNewKey, tagTwoByteKey);
   }
   /** Enumerable own string properties from `keys`, re-checked as each is
    * visited because a getter may delete a later one. */
@@ -511,8 +562,7 @@ function serializeWorkerGraph(
           return varint(grant);
         }
       }
-      tag(tagString);
-      return string(value);
+      return taggedString(value, tagOneByteString, tagString);
     }
     const big = viewBigIntValue(value);
     if (big !== undefined) {
@@ -528,14 +578,17 @@ function serializeWorkerGraph(
       if (nativeTypedArray(value)) return;
       return throwWorkerCloneError(realm, "The value could not be cloned");
     }
-    if (object.internalIdentity === 0)
-      object.internalIdentity = realm.agent.nextObjectIdentity++;
-    const seen = objects.get(object.internalIdentity);
+    let identity = exoticSlots(object).internalIdentity;
+    if (identity === 0) {
+      identity = realm.agent.nextObjectIdentity++;
+      ensureExoticSlots(object).internalIdentity = identity;
+    }
+    const seen = objects.get(identity);
     if (seen !== undefined) {
       tag(tagReference);
       return varint(seen);
     }
-    objects.set(object.internalIdentity, objectCount++);
+    objects.set(identity, objectCount++);
     const grant = attachments?.encode?.(object);
     if (grant !== undefined) {
       tag(tagAttachment);
@@ -543,7 +596,7 @@ function serializeWorkerGraph(
     }
     if (unsupportedObject(object))
       return throwWorkerCloneError(realm, "The object could not be cloned");
-    const primitive = object.internalPrimitiveData;
+    const primitive = exoticSlots(object).internalPrimitiveData;
     if (primitive !== undefined) {
       if (primitive.kind === "symbol")
         return throwWorkerCloneError(
@@ -553,7 +606,7 @@ function serializeWorkerGraph(
       tag(tagBoxed);
       return encode(primitive.value);
     }
-    const typed = object.internalTypedArrayData;
+    const typed = exoticSlots(object).internalTypedArrayData;
     if (typed !== undefined) {
       if (typedArrayWindow(typed) === undefined)
         return throwWorkerCloneError(realm, "The typed array is out of bounds");
@@ -567,7 +620,7 @@ function serializeWorkerGraph(
       varint(typed.length === undefined ? 0 : typed.length + 1);
       return encode(typed.buffer);
     }
-    const view = object.internalDataViewData;
+    const view = exoticSlots(object).internalDataViewData;
     if (view !== undefined) {
       if (
         bufferStorageWindow(
@@ -583,7 +636,7 @@ function serializeWorkerGraph(
       varint(view.byteLength === undefined ? 0 : view.byteLength + 1);
       return encode(view.buffer);
     }
-    if (object.internalErrorData) {
+    if (exoticSlots(object).internalErrorData) {
       tag(tagError);
       const name = getProperty<ScriptPropertyKey, unknown>(
         object,
@@ -602,7 +655,7 @@ function serializeWorkerGraph(
         if (coerced.error !== "none") throw createRuntimeError(realm, "type");
         text = coerced.value;
       }
-      const stack = object.internalErrorStack;
+      const stack = exoticSlots(object).internalErrorStack;
       const cause = getOwnProperty<ScriptPropertyKey, unknown>(object, "cause");
       const hasCause = cause !== undefined && !cause.accessor;
       tag(
@@ -615,9 +668,10 @@ function serializeWorkerGraph(
       if (cause !== undefined && !cause.accessor) encode(cause.value);
       return;
     }
-    const map = object.internalMapData;
-    const set = object.internalSetData;
+    const map = exoticSlots(object).internalMapData;
+    const set = exoticSlots(object).internalSetData;
     if (map !== undefined || set !== undefined) {
+      if (map !== undefined && map.numDirty) syncScriptMapNumbers(map);
       let head = map === undefined ? set?.head : map.head;
       const keys: unknown[] = [];
       const values: unknown[] = [];
@@ -634,18 +688,18 @@ function serializeWorkerGraph(
       }
       return;
     }
-    const date = object.internalDateValue;
+    const date = exoticSlots(object).internalDateValue;
     if (date !== undefined) {
       tag(tagDate);
       return float(date);
     }
-    const expression = object.internalRegExpData;
+    const expression = exoticSlots(object).internalRegExpData;
     if (expression !== undefined) {
       tag(tagRegExp);
       string(expression.originalSource);
       return string(expression.originalFlags);
     }
-    const storage = object.internalArrayBufferData;
+    const storage = exoticSlots(object).internalArrayBufferData;
     if (storage !== undefined) {
       const data = byteStorageData(storage);
       if (data === undefined)
@@ -681,8 +735,8 @@ function serializeWorkerGraph(
         object,
         scriptPropertyKeyOrder,
       );
-      const numbers = elements.numbers;
-      if (numbers !== undefined) {
+      if (elements.values === undefined) {
+        const numbers = elements.numbers;
         // Encoding numbers runs no script, so the run is one snapshot.
         tag(tagNumberArray);
         varint(length);
@@ -779,6 +833,21 @@ export function deserializeWorkerValue(
           if (bytes[at] !== 0) padded = false;
         if (padded) return source.readFloat64(value);
       }
+    } else if (kind === tagOneByteString) {
+      let units = 0,
+        scale = 1,
+        position = start + 1;
+      while (position < end) {
+        const byte = bytes[position++] ?? 0;
+        units += (byte % 128) * scale;
+        if (byte < 128) {
+          if (Number.isSafeInteger(units) && position + units === end)
+            return latin1Text(bytes, position, end);
+          break;
+        }
+        scale *= 128;
+        if (scale > 9007199254740992) break;
+      }
     } else if (kind === tagString) {
       let units = 0,
         scale = 1,
@@ -858,6 +927,13 @@ function deserializeWorkerGraph(
     position += 8;
     return value;
   }
+  function oneByteString(): string {
+    const units = varint();
+    if (units > end - position) return invalid();
+    const value = latin1Text(bytes, position, position + units);
+    position += units;
+    return value;
+  }
   function string(): string {
     const units = varint();
     if (units > (end - position) / 2) return invalid();
@@ -868,6 +944,11 @@ function deserializeWorkerGraph(
   function key(): string {
     const kind = next();
     if (kind === tagNewKey) {
+      const value = oneByteString();
+      keys.push(value);
+      return value;
+    }
+    if (kind === tagTwoByteKey) {
       const value = string();
       keys.push(value);
       return value;
@@ -918,6 +999,7 @@ function deserializeWorkerGraph(
       return zigzag % 2 === 0 ? zigzag / 2 : -(zigzag + 1) / 2;
     }
     if (kind === tagDouble) return float();
+    if (kind === tagOneByteString) return oneByteString();
     if (kind === tagString) return string();
     if (kind === tagSharedString) {
       const value = attachments?.decodeString?.(varint());
@@ -939,7 +1021,7 @@ function deserializeWorkerGraph(
       const date = createObject<ScriptPropertyKey, unknown>(
         realm.datePrototype,
       );
-      date.internalDateValue = float();
+      ensureExoticSlots(date).internalDateValue = float();
       return remember(date);
     }
     if (kind === tagBoxed) {
@@ -961,7 +1043,8 @@ function deserializeWorkerGraph(
       if (flags > 7) return invalid();
       if ((flags & 1) !== 0)
         builtinProperty(error, "message", string(), true, false, hooks);
-      error.internalErrorStack = (flags & 2) !== 0 ? string() : undefined;
+      ensureExoticSlots(error).internalErrorStack =
+        (flags & 2) !== 0 ? string() : undefined;
       if ((flags & 4) !== 0)
         builtinProperty(error, "cause", decode(), true, false, hooks);
       return error;
@@ -979,7 +1062,8 @@ function deserializeWorkerGraph(
       const buffer = viewObjectValue(decode(), realm.objectPrototype);
       if (buffer === undefined) return invalid();
       const storage =
-        buffer.internalArrayBufferData ?? buffer.internalSharedArrayBufferData;
+        exoticSlots(buffer).internalArrayBufferData ??
+        exoticSlots(buffer).internalSharedArrayBufferData;
       if (storage === undefined) return invalid();
       let object: ScriptObject;
       if (element === undefined) {
@@ -988,8 +1072,8 @@ function deserializeWorkerGraph(
         object = createObject<ScriptPropertyKey, unknown>(
           realm.dataViewPrototype,
         );
-        object.internalArrayBufferView = true;
-        object.internalDataViewData = {
+        ensureExoticSlots(object).internalArrayBufferView = true;
+        ensureExoticSlots(object).internalDataViewData = {
           buffer,
           storage,
           byteOffset,
@@ -1034,7 +1118,7 @@ function deserializeWorkerGraph(
       const buffer = createObject<ScriptPropertyKey, unknown>(
         realm.arrayBufferPrototype,
       );
-      buffer.internalArrayBufferData = storage.value;
+      ensureExoticSlots(buffer).internalArrayBufferData = storage.value;
       return remember(buffer);
     }
     if (kind === tagSet || kind === tagMap) {
@@ -1045,12 +1129,12 @@ function deserializeWorkerGraph(
         ),
       );
       const data = createSetData();
-      if (isMap) object.internalMapData = data;
-      else object.internalSetData = data;
+      if (isMap) ensureExoticSlots(object).internalMapData = data;
+      else ensureExoticSlots(object).internalSetData = data;
       const length = varint();
       for (let index = 0; index < length; index++) {
         const key = decode();
-        setMap<unknown, unknown>(data, key, isMap ? decode() : key);
+        setScriptMap(data, key, isMap ? decode() : key);
       }
       return object;
     }
@@ -1071,12 +1155,16 @@ function deserializeWorkerGraph(
       if (kind === tagNumberArray) {
         align(8);
         if (count > (end - position) / 8) return invalid();
-        const numbers = elements.numbers;
-        if (numbers === undefined) throw "WORKER_CLONE_ARRAY_INVARIANT";
+        const numbers =
+          count === 0
+            ? noNumbers
+            : new Float64Array(count < firstCapacity ? firstCapacity : count);
         for (let index = 0; index < count; index++) {
-          numbers.push(source.readFloat64(position));
+          numbers[index] = source.readFloat64(position);
           position += 8;
         }
+        elements.numbers = numbers;
+        elements.numberCount = count;
       } else {
         // Elements append to packed storage until the first hole; later
         // ones are ordinary index properties.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ModuleIR } from "@tint/ir/scalar";
+import type { GeneralTest, ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
 import { encode, type Condition } from "../src/aarch64/isa.ts";
 const s = { start: 0, end: 0 };
@@ -74,6 +74,58 @@ test("a comparison used only by its branch does not materialize a boolean", () =
 });
 test("a comparison saved before its branch retains its boolean value", () => {
   assert.equal(conditionSets(fixture(true)), 1);
+});
+test("a tag guard used only by its branch keeps the test in flags", () => {
+  for (const [type, shared] of [
+    ["number", false],
+    ["number", true],
+    ["nullish", false],
+    ["nullish", true],
+  ] satisfies readonly (readonly [GeneralTest, boolean])[]) {
+    const module = fixture(shared);
+    const fn = module.functions[0]!;
+    const guard: ModuleIR = {
+      functions: [
+        {
+          ...fn,
+          slots: ["general", "general", "boolean"],
+          blocks: fn.blocks.map((block) =>
+            block.id !== 0
+              ? block
+              : {
+                  ...block,
+                  instructions: [
+                    { kind: "load", id: 0, slot: 0, ...s },
+                    {
+                      kind: "general-is",
+                      id: 2,
+                      value: 0,
+                      type,
+                      branch: true,
+                      ...s,
+                    },
+                    ...block.instructions.slice(3),
+                  ],
+                },
+          ),
+        },
+      ],
+    };
+    assert.equal(conditionSets(guard, "eq"), shared ? 1 : 0);
+  }
+});
+test("CCMP immediate encodes the condition and selected NZCV fallback", () => {
+  assert.deepEqual(
+    encode({
+      op: "ccmp-imm",
+      width: 64,
+      rn: 9,
+      immediate: 0,
+      condition: "ne",
+      nzcv: 4,
+    }),
+    { ok: true, value: 0xfa401924 },
+  );
 });
 test("all comparison flags work with either successor in fallthrough position", () => {
   for (const [operator, condition] of [

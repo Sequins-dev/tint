@@ -9,6 +9,8 @@ import { durationTimeNanoseconds } from "@tint/foundation/chrono/temporal-durati
 import { durationFrom } from "./temporal-duration-conversion.ts";
 import { compare, add, subtract } from "@tint/foundation/numeric/big-integer";
 import {
+  ensureExoticSlots,
+  exoticSlots,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -39,7 +41,10 @@ import { viewObjectValue } from "./values.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 function requireInstant(value: unknown, realm: ErrorRealm): BigIntValue {
   const object = viewObjectValue(value, realm.objectPrototype),
-    epoch = object === undefined ? undefined : object.internalTemporalInstant;
+    epoch =
+      object === undefined
+        ? undefined
+        : exoticSlots(object).internalTemporalInstant;
   if (epoch === undefined) throw createRuntimeError(realm, "type");
   return epoch;
 }
@@ -223,7 +228,7 @@ export function installTemporalInstant(
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,
           );
-          object.internalTemporalDuration = duration;
+          ensureExoticSlots(object).internalTemporalDuration = duration;
           return object;
         },
         hooks,
