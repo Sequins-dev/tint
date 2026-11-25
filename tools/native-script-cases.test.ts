@@ -2,12 +2,12 @@
 // build dominates the gate's native batch, so every case here runs in it.
 //
 // The Annex B [[IsHTMLDDA]] host capability selects how Scripts lower
-// `x == null`. Scripts lowered for a host that declares it keep the brand
-// check; Scripts lowered without it test the tag alone and exclude such
-// objects when they evaluate. The image runs both beside the Test262 host,
-// which marks `$262.IsHTMLDDA` before any Script runs: the declared Script
-// completes, and the mismatched Script must refuse to run rather than
-// observe `$262.IsHTMLDDA == null` as false.
+// `x == null` and `ToBoolean` (`if (x)`). Scripts lowered for a host that
+// declares it keep the brand check; Scripts lowered without it test the tag
+// alone and exclude such objects when they evaluate. The image runs both beside
+// the Test262 host, which marks `$262.IsHTMLDDA` before any Script runs: the
+// declared Script completes, and the mismatched Script must refuse to run
+// rather than observe `$262.IsHTMLDDA == null` as false or `Boolean($262.IsHTMLDDA)` as true.
 //
 // Native script entries replace heap bookkeeping with activation records,
 // so stack traces and legacy caller and arguments reflection merge them
@@ -45,8 +45,8 @@ const htmlDDACases: readonly {
   readonly expected: unknown;
 }[] = [
   {
-    // The declared capability keeps Annex B loose equality.
-    source: String.raw`const d=$262.IsHTMLDDA;if(!(d==null)||d!=undefined||!(null==d))throw 1;`,
+    // The declared capability keeps Annex B loose equality and ToBoolean.
+    source: String.raw`const d=$262.IsHTMLDDA;if(!(d==null)||d!=undefined||!(null==d)||d||Boolean(d))throw 1;`,
     host: test262ScriptHost,
     expected: { kind: "completed" },
   },
@@ -56,6 +56,18 @@ const htmlDDACases: readonly {
     // the entry uncaught (status 70 on aarch64, 1 on x86-64; see
     // runtime-diagnostics.test.ts).
     source: String.raw`if($262.IsHTMLDDA==null)throw 1;`,
+    host: benchmarkScriptHost,
+    expected: {
+      kind: "crash",
+      detail:
+        "unexpected native exit status " +
+        (nativeFixtureTarget().arch === "x86_64" ? 1 : 70),
+    },
+  },
+  {
+    // Truthiness without the capability also skips the [[IsHTMLDDA]] check and
+    // must refuse to run beside a host that marked one.
+    source: String.raw`if($262.IsHTMLDDA)throw 1;`,
     host: benchmarkScriptHost,
     expected: {
       kind: "crash",
@@ -394,7 +406,7 @@ const cases: readonly {
   readonly host: NativeScriptHost;
 }[] = [
   ...htmlDDACases,
-  ...callSources.map((source) => ({ source, host: benchmarkScriptHost })),
+  ...callSources.map((source) => ({ source, host: test262ScriptHost })),
 ];
 const deferred = cases.map(({ source, host }) => {
   const plan = executionPlan(source, "raw", {
