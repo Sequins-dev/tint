@@ -562,8 +562,16 @@ export function encodeInstruction(
       writeSigned(writer, op.cacheCellField);
       return true;
     case "element-load":
-    case "element-store":
-      writePrefix(writer, op.kind === "element-load" ? 120 : 121, op, 0);
+    case "element-store": {
+      const cachedStorage = op.cachedStorage,
+        cachedCount = op.cachedCount;
+      const hasCache = cachedStorage !== undefined && cachedCount !== undefined;
+      writePrefix(
+        writer,
+        op.kind === "element-load" ? 120 : 121,
+        op,
+        hasCache ? 2 : 0,
+      );
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
       writeSigned(writer, op.index);
@@ -573,7 +581,12 @@ export function encodeInstruction(
       writeSigned(writer, op.elementsRecord);
       writeSigned(writer, op.countField);
       writeSigned(writer, op.storageField);
+      if (cachedStorage !== undefined && cachedCount !== undefined) {
+        writeSigned(writer, cachedStorage);
+        writeSigned(writer, cachedCount);
+      }
       return true;
+    }
     case "element-length":
       writePrefix(writer, 122, op, 0);
       writeSigned(writer, op.id);
@@ -582,6 +595,17 @@ export function encodeInstruction(
       writeSigned(writer, op.field);
       writeSigned(writer, op.elementsRecord);
       writeSigned(writer, op.lengthField);
+      return true;
+    case "element-storage":
+    case "element-count":
+      writePrefix(writer, op.kind === "element-storage" ? 123 : 124, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.countField);
+      writeSigned(writer, op.storageField);
       return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
@@ -1606,6 +1630,24 @@ export function decodeInstruction(
         elementsRecord = readSigned(reader),
         countField = readSigned(reader),
         storageField = readSigned(reader);
+      if ((flags & 2) !== 0) {
+        const cachedStorage = readSigned(reader),
+          cachedCount = readSigned(reader);
+        return {
+          kind: "element-load",
+          id,
+          object,
+          index,
+          record,
+          field,
+          elementsRecord,
+          countField,
+          storageField,
+          cachedStorage,
+          cachedCount,
+          ...span,
+        };
+      }
       return {
         kind: "element-load",
         id,
@@ -1629,6 +1671,25 @@ export function decodeInstruction(
         elementsRecord = readSigned(reader),
         countField = readSigned(reader),
         storageField = readSigned(reader);
+      if ((flags & 2) !== 0) {
+        const cachedStorage = readSigned(reader),
+          cachedCount = readSigned(reader);
+        return {
+          kind: "element-store",
+          id,
+          object,
+          index,
+          value,
+          record,
+          field,
+          elementsRecord,
+          countField,
+          storageField,
+          cachedStorage,
+          cachedCount,
+          ...span,
+        };
+      }
       return {
         kind: "element-store",
         id,
@@ -1658,6 +1719,46 @@ export function decodeInstruction(
         field,
         elementsRecord,
         lengthField,
+        ...span,
+      };
+    }
+    case 123: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      return {
+        kind: "element-storage",
+        id,
+        object,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
+        ...span,
+      };
+    }
+    case 124: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      return {
+        kind: "element-count",
+        id,
+        object,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
         ...span,
       };
     }

@@ -140,6 +140,8 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "element-load":
     case "element-store":
     case "element-length":
+    case "element-storage":
+    case "element-count":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -1029,30 +1031,67 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
-              case "element-load":
-                cloned.push({
-                  ...instruction,
-                  id: value(instruction.id),
-                  object: value(instruction.object),
-                  index: value(instruction.index),
-                  start: at.start,
-                  end: at.end,
-                  inline: at.inline,
-                });
+              case "element-load": {
+                const cachedStorage = instruction.cachedStorage,
+                  cachedCount = instruction.cachedCount;
+                cloned.push(
+                  cachedStorage !== undefined && cachedCount !== undefined
+                    ? {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        cachedStorage: value(cachedStorage),
+                        cachedCount: value(cachedCount),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      }
+                    : {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      },
+                );
                 break;
-              case "element-store":
-                cloned.push({
-                  ...instruction,
-                  id: value(instruction.id),
-                  object: value(instruction.object),
-                  index: value(instruction.index),
-                  value: value(instruction.value),
-                  start: at.start,
-                  end: at.end,
-                  inline: at.inline,
-                });
+              }
+              case "element-store": {
+                const cachedStorage = instruction.cachedStorage,
+                  cachedCount = instruction.cachedCount;
+                cloned.push(
+                  cachedStorage !== undefined && cachedCount !== undefined
+                    ? {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        value: value(instruction.value),
+                        cachedStorage: value(cachedStorage),
+                        cachedCount: value(cachedCount),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      }
+                    : {
+                        ...instruction,
+                        id: value(instruction.id),
+                        object: value(instruction.object),
+                        index: value(instruction.index),
+                        value: value(instruction.value),
+                        start: at.start,
+                        end: at.end,
+                        inline: at.inline,
+                      },
+                );
                 break;
+              }
               case "element-length":
+              case "element-storage":
+              case "element-count":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),

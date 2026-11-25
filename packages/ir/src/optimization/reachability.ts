@@ -113,7 +113,9 @@ export function traceModuleReferences(
         } else if (
           op.kind === "element-load" ||
           op.kind === "element-store" ||
-          op.kind === "element-length"
+          op.kind === "element-length" ||
+          op.kind === "element-storage" ||
+          op.kind === "element-count"
         ) {
           includeRecord(op.record);
           includeRecord(op.elementsRecord);

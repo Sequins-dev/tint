@@ -348,3 +348,138 @@ test("slots written by exception edges keep their representation", () => {
   );
   assert.equal(result?.shadowed, 0);
 });
+
+test("conditional dead edges and unshadowed merge temporaries keep loop counters proven", () => {
+  const fn = shadowed({
+    id: 0,
+    name: "counted",
+    exported: true,
+    parameters: [0],
+    slots: ["general", "general", "general"],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "general-wrap", id: 1, value: 0, ...s },
+          { kind: "store", slot: 1, value: 1, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 2, slot: 1, ...s },
+          { kind: "general-is", id: 3, value: 2, type: "number", ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 2,
+          alternate: 3,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 4, slot: 1, ...s },
+          { kind: "general-value", id: 5, value: 4, type: "number", ...s },
+          { kind: "constant", id: 6, value: 1, ...s },
+          { kind: "binary", id: 7, operator: "+", left: 5, right: 6, ...s },
+          { kind: "general-wrap", id: 8, value: 7, ...s },
+          { kind: "store", slot: 2, value: 8, ...s },
+        ],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      {
+        // Unreachable when slot 1 is proven a number; would otherwise poison slot 2.
+        id: 3,
+        instructions: [
+          { kind: "load", id: 9, slot: 0, ...s },
+          { kind: "store", slot: 2, value: 9, ...s },
+        ],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 10, slot: 2, ...s },
+          { kind: "store", slot: 1, value: 10, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+    ],
+  });
+  // Dead alternate edge b1 -> b3 is ignored, so b1's tag test folds to true.
+  const test1 = block(fn, 1)[1];
+  assert.ok(test1?.kind === "constant" && test1.value === true);
+  // Store into slot 1 in b4 skips a checked general-is tag test.
+  assert.ok(!kinds(block(fn, 4)).includes("general-is"));
+});
+
+test("element-load non-absent edge proves the loaded slot holds a number", () => {
+  const result = shadowGeneralNumbers(
+    {
+      id: 0,
+      name: "elemLoad",
+      exported: true,
+      parameters: [0, 1],
+      slots: ["general", "number", "general"],
+      returnType: "general",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "load", id: 0, slot: 0, ...s },
+            { kind: "load", id: 1, slot: 1, ...s },
+            {
+              kind: "element-load",
+              id: 2,
+              object: 0,
+              index: 1,
+              record: 0,
+              field: 0,
+              elementsRecord: 1,
+              countField: 0,
+              storageField: 1,
+              ...s,
+            },
+            { kind: "store", slot: 2, value: 2, ...s },
+            { kind: "general-is", id: 3, value: 2, type: "absent", ...s },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 3,
+            consequent: 2,
+            alternate: 1,
+            ...s,
+          },
+        },
+        {
+          id: 1,
+          instructions: [
+            { kind: "load", id: 4, slot: 2, ...s },
+            { kind: "general-is", id: 5, value: 4, type: "number", ...s },
+            { kind: "general-value", id: 6, value: 4, type: "number", ...s },
+            { kind: "general-wrap", id: 7, value: 6, ...s },
+          ],
+          terminator: { kind: "return", value: 7, ...s },
+        },
+        {
+          id: 2,
+          instructions: [{ kind: "general-none", id: 8, ...s }],
+          terminator: { kind: "return", value: 8, ...s },
+        },
+      ],
+    },
+    100000,
+  );
+  assert.ok(result !== undefined);
+  const hitTest = block(result.fn, 1)[1];
+  assert.ok(hitTest?.kind === "constant" && hitTest.value === true);
+  assert.ok(!kinds(block(result.fn, 1)).includes("general-value"));
+});

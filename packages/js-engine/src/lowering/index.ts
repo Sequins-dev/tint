@@ -4870,27 +4870,44 @@ function lowerScriptEntry(
         [base, member(id("$errors"), "objectPrototype", span)],
         span,
       );
-      const slots = optionalMember(view, "internalExoticSlots", span);
-      const storage = (property: string, data: string): Expression =>
-        scalarBranch(
-          is(property),
-          optionalMember(slots, data, span),
+      let dataExpr: Expression;
+      if (shape === "has") {
+        const isMap = temporary(is("mapHas"));
+        const isSet = temporary(
+          scalarBranch(
+            isMap,
+            { ...at(span), kind: "boolean", value: false },
+            is("setHas"),
+            span,
+          ),
+        );
+        const slots = temporary(
+          scalarBranch(
+            scalarBinary("||", isMap, isSet, span),
+            optionalMember(view, "internalExoticSlots", span),
+            id("undefined", span),
+            span,
+          ),
+        );
+        dataExpr = scalarBranch(
+          isMap,
+          optionalMember(slots, "internalMapData", span),
+          optionalMember(slots, "internalSetData", span),
+          span,
+        );
+      } else {
+        dataExpr = scalarBranch(
+          is(field ?? ""),
+          optionalMember(
+            optionalMember(view, "internalExoticSlots", span),
+            shape === "set" ? "internalSetData" : "internalMapData",
+            span,
+          ),
           id("undefined", span),
           span,
         );
-      const data = temporary(
-        shape === "has"
-          ? scalarBranch(
-              is("mapHas"),
-              optionalMember(slots, "internalMapData", span),
-              storage("setHas", "internalSetData"),
-              span,
-            )
-          : storage(
-              field ?? "",
-              shape === "set" ? "internalSetData" : "internalMapData",
-            ),
-      );
+      }
+      const data = temporary(dataExpr);
       test = scalarBinary("!==", data, id("undefined", span), span);
       const operation =
         shape === "has"
@@ -10714,11 +10731,85 @@ function lowerScriptEntry(
       if (specialized !== undefined && specialized.nested)
         suppressingNumericLoopSpec = true;
       const generalLoopStart = statements.length;
-      const first = temporary(
-        { ...at(node), kind: "boolean", value: true },
-        false,
-        true,
-      );
+      function hasContinueTargetingLoop(
+        stmt: Statement,
+        insideInnerLoop: boolean,
+      ): boolean {
+        switch (stmt.kind) {
+          case "continue":
+            return stmt.label === undefined
+              ? !insideInnerLoop
+              : labels.includes(stmt.label);
+          case "block":
+            for (const item of stmt.statements)
+              if (
+                item !== undefined &&
+                hasContinueTargetingLoop(item, insideInnerLoop)
+              )
+                return true;
+            return false;
+          case "if":
+            return (
+              hasContinueTargetingLoop(stmt.consequent, insideInnerLoop) ||
+              (stmt.alternate !== undefined &&
+                hasContinueTargetingLoop(stmt.alternate, insideInnerLoop))
+            );
+          case "try":
+            return (
+              hasContinueTargetingLoop(stmt.body, insideInnerLoop) ||
+              (stmt.handler !== undefined &&
+                hasContinueTargetingLoop(stmt.handler.body, insideInnerLoop)) ||
+              (stmt.finalizer !== undefined &&
+                hasContinueTargetingLoop(stmt.finalizer, insideInnerLoop))
+            );
+          case "switch":
+            for (const clause of stmt.clauses) {
+              if (clause === undefined) continue;
+              for (const item of clause.statements)
+                if (
+                  item !== undefined &&
+                  hasContinueTargetingLoop(item, insideInnerLoop)
+                )
+                  return true;
+            }
+            return false;
+          case "with":
+          case "label":
+            return hasContinueTargetingLoop(stmt.body, insideInnerLoop);
+          case "for":
+          case "while":
+          case "do-while":
+          case "for-of":
+          case "for-in":
+          case "for-of-assignment":
+          case "for-in-assignment":
+            return hasContinueTargetingLoop(stmt.body, true);
+          case "expression":
+          case "variable":
+          case "empty":
+          case "debugger":
+          case "break":
+          case "return":
+          case "throw":
+          case "function":
+          case "class":
+          case "interface":
+          case "type-alias":
+          case "import":
+          case "export":
+          case "export-default":
+            return false;
+        }
+        return true;
+      }
+      const directLoop =
+        fixed === undefined &&
+        iterationNames.length === 0 &&
+        (node.kind === "while" ||
+          (node.kind === "for" && !hasContinueTargetingLoop(node.body, false)));
+      const first = directLoop
+        ? undefined
+        : temporary({ ...at(node), kind: "boolean", value: true }, false, true);
       const start = statements.length;
       if (fixed !== undefined) {
         const record = fixed.record;
@@ -10783,39 +10874,48 @@ function lowerScriptEntry(
           value: call("createDeclarativeScope", [outerScope, next], node),
         });
       }
-      // Put the increment (and do-while test) at the next loop entry. Native
-      // continue, including one unwinding finally, then reaches it naturally.
-      const laterStart = statements.length;
-      if (node.kind === "for") {
-        const update = node.update;
-        if (update !== undefined) expression(value(update));
-      } else if (node.kind === "do-while") {
-        loopTest(node.test);
+      if (first !== undefined) {
+        // Put the increment (and do-while test) at the next loop entry. Native
+        // continue, including one unwinding finally, then reaches it naturally.
+        const laterStart = statements.length;
+        if (node.kind === "for") {
+          const update = node.update;
+          if (update !== undefined) expression(value(update));
+        } else if (node.kind === "do-while") {
+          loopTest(node.test);
+        }
+        const later: BlockStatement = {
+          ...at(node),
+          kind: "block",
+          statements: statements.splice(laterStart),
+        };
+        statements.push({
+          ...at(node),
+          kind: "if",
+          test: { ...at(node), kind: "unary", operator: "!", operand: first },
+          consequent: later,
+          alternate: undefined,
+        });
+        expression({
+          ...at(node),
+          kind: "assignment",
+          target: first,
+          value: { ...at(node), kind: "boolean", value: false },
+        });
       }
-      const later: BlockStatement = {
-        ...at(node),
-        kind: "block",
-        statements: statements.splice(laterStart),
-      };
-      statements.push({
-        ...at(node),
-        kind: "if",
-        test: { ...at(node), kind: "unary", operator: "!", operand: first },
-        consequent: later,
-        alternate: undefined,
-      });
-      expression({
-        ...at(node),
-        kind: "assignment",
-        target: first,
-        value: { ...at(node), kind: "boolean", value: false },
-      });
       if (node.kind !== "do-while") {
         const test = node.test;
         if (test !== undefined) loopTest(test);
       }
       statement(node.body);
+<<<<<<< HEAD
       suppressingNumericLoopSpec = prevSuppressGeneralBody;
+=======
+      if (first === undefined && node.kind === "for") {
+        const update = node.update;
+        if (update !== undefined) expression(value(update));
+      }
+>>>>>>> 375ca840f (Optimize element loops, Math intrinsics, and Map/Set hot paths (Step 5a-4))
       const body: BlockStatement = {
         ...at(node),
         kind: "block",

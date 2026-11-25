@@ -429,6 +429,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "sink-environment-loads",
       "compact-slots",
       "cache-list-vectors",
+      "cache-element-storage",
       "bound-counted-loops",
       "version-nonzero-divisors",
       "layout-blocks",

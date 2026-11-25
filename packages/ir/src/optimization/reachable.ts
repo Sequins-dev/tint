@@ -188,7 +188,9 @@ function pruneTracedModule(
         } else if (
           op.kind === "element-load" ||
           op.kind === "element-store" ||
-          op.kind === "element-length"
+          op.kind === "element-length" ||
+          op.kind === "element-storage" ||
+          op.kind === "element-count"
         ) {
           const record = recordId(op.record),
             elementsRecord = recordId(op.elementsRecord);

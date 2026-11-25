@@ -124,6 +124,15 @@ function replaced() {
   out.push(Number(5));
   const custom = { max(a, b) { return "custom " + a + b; } };
   out.push(custom.max(1, 2));
+  // Replacing globalThis.Math mid-loop must invalidate module-level global cache.
+  const OriginalMath = globalThis.Math;
+  let midSum = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) globalThis.Math = { floor: (x) => x + 100 };
+    midSum += Math.floor(i + 0.5);
+  }
+  globalThis.Math = OriginalMath;
+  out.push(midSum, Math.floor(2.9));
   return out.join(",");
 }
 function collections() {

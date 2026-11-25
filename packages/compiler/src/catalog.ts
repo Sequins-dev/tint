@@ -919,6 +919,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/element-cache.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/forward-loads.ts",
       packageId: "ir",
     },

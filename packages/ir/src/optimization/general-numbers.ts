@@ -1,4 +1,6 @@
 import {
+  effectInvoke,
+  instructionEffects,
   instructionResult,
   naturalLoops,
   type Block,
@@ -31,12 +33,24 @@ function numericBinary(operator: string): boolean {
     case "<<":
     case ">>":
     case ">>>":
+    case "imul":
+    case "min":
+    case "max":
       return true;
   }
   return false;
 }
 function numericUnary(operator: string): boolean {
-  return operator === "-" || operator === "+" || operator === "~";
+  return (
+    operator === "-" ||
+    operator === "+" ||
+    operator === "~" ||
+    operator === "ceil" ||
+    operator === "trunc" ||
+    operator === "sqrt" ||
+    operator === "uint32" ||
+    operator === "boolean-number"
+  );
 }
 
 /** The ID of the scalar number (not general value) `op` defines, if any. */
@@ -180,36 +194,58 @@ export function shadowGeneralNumbers(
         depth[block] = (depth[block] ?? 0) + 1;
   }
   const uses = new Float64Array(slotCount),
-    costs = new Float64Array(slotCount);
+    costs = new Float64Array(slotCount),
+    wrappedStores = new Uint8Array(slotCount);
+  const copyEdges: {
+    readonly from: number;
+    readonly to: number;
+    readonly weight: number;
+  }[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "general number block invariant";
     const weight = depthWeights[depth[block.id] ?? 0] ?? 4096;
-    // The cost model counts only wrapped numbers as cheap stores: other
-    // stores that write the shadows directly (absent values, wraps of other
-    // categories) still weigh like tested ones, which keeps slots whose
-    // stores are mostly initializers unshadowed.
     const loads = new Map<number, number>(),
       wrapped = new Map<number, boolean>(),
-      numbers = new Set<number>();
+      knownNonNumber = new Set<number>(),
+      numbers = new Set<number>(),
+      nonNumbers = new Set<number>(),
+      slotWrapped = new Map<number, boolean>();
     for (const op of block.instructions) {
       if (op === undefined) throw "general number instruction invariant";
       if (++visited > budget) return undefined;
       const scalar = numberResult(op, fn.slots);
       if (scalar !== undefined) numbers.add(scalar);
+      const other = nonNumberResult(op, fn.slots);
+      if (other !== undefined) nonNumbers.add(other);
       if (op.kind === "load") {
         if (candidates[op.slot] === 1) loads.set(op.id, op.slot);
+        if (slotWrapped.get(op.slot) === true) wrapped.set(op.id, true);
       } else if (op.kind === "general-wrap") {
-        wrapped.set(op.id, numbers.has(op.value));
+        const isNum = numbers.has(op.value);
+        wrapped.set(op.id, isNum);
+        if (!isNum && nonNumbers.has(op.value)) knownNonNumber.add(op.id);
+      } else if (op.kind === "general-none" || op.kind === "general-null") {
+        knownNonNumber.add(op.id);
       } else if (
         (op.kind === "general-is" || op.kind === "general-value") &&
         op.type === "number"
       ) {
         const slot = loads.get(op.value);
         if (slot !== undefined) uses[slot] = (uses[slot] ?? 0) + 2 * weight;
-      } else if (op.kind === "store" && candidates[op.slot] === 1) {
-        const number = wrapped.get(op.value);
-        costs[op.slot] =
-          (costs[op.slot] ?? 0) + (number === true ? 1 : 3) * weight;
+      } else if (op.kind === "store") {
+        const number = wrapped.get(op.value) === true;
+        const cheapNonNumber = knownNonNumber.has(op.value);
+        slotWrapped.set(op.slot, number);
+        if (candidates[op.slot] === 1) {
+          if (number) wrappedStores[op.slot] = 1;
+          costs[op.slot] =
+            (costs[op.slot] ?? 0) + (number || cheapNonNumber ? 1 : 3) * weight;
+          const sourceSlot = loads.get(op.value);
+          if (sourceSlot !== undefined && sourceSlot !== op.slot)
+            copyEdges.push({ from: sourceSlot, to: op.slot, weight });
+        }
+      } else if ((instructionEffects(op) & effectInvoke) !== 0) {
+        slotWrapped.clear();
       }
     }
   }
@@ -222,6 +258,28 @@ export function shadowGeneralNumbers(
     const benefit = uses[slot] ?? 0;
     if (benefit > 0 && benefit >= (costs[slot] ?? 0))
       shadows[slot] = ++shadowed;
+  }
+  // Also shadow merge temporaries that feed an already-shadowed slot (e.g.
+  // `sum += x` merge slots): shadowing them avoids a `general-is` tag check on
+  // every store into the shadowed destination.
+  if (shadowed > 0) {
+    for (const edge of copyEdges) {
+      if (edge === undefined) continue;
+      if (
+        (shadows[edge.to] ?? 0) > 0 &&
+        (shadows[edge.from] ?? 0) === 0 &&
+        wrappedStores[edge.from] === 1
+      ) {
+        const multiplier = edge.weight > 1 ? 6 : 3;
+        uses[edge.from] = (uses[edge.from] ?? 0) + multiplier * edge.weight;
+      }
+    }
+    for (let slot = 0; slot < slotCount; slot++) {
+      if (candidates[slot] !== 1 || (shadows[slot] ?? 0) > 0) continue;
+      const benefit = uses[slot] ?? 0;
+      if (benefit > 0 && benefit >= (costs[slot] ?? 0))
+        shadows[slot] = ++shadowed;
+    }
   }
   if (shadowed === 0) return { fn, visited, shadowed: 0 };
 
@@ -239,70 +297,164 @@ export function shadowGeneralNumbers(
     slots.push("number");
   }
 
-  // Forward must-analysis: which shadowed slots hold a Number at block
-  // entry. Optimistic start, intersected over edges; the entry and exception
-  // targets know nothing.
-  const known = new Uint8Array(blockCount * shadowed).fill(1);
-  for (let index = 0; index < shadowed; index++)
-    known[fn.entry * shadowed + index] = 0;
+  // Track every candidate general slot in the forward must-analysis so known
+  // numbers propagate across merge blocks through unshadowed temporaries
+  // (e.g. writeAssignment / binary-op merge slots).
+  const trackedSlots = new Uint32Array(slotCount);
+  const tracked = (slot: number): number => (trackedSlots[slot] ?? 0) - 1;
+  let trackedCount = 0;
+  for (let slot = 0; slot < slotCount; slot++)
+    if (candidates[slot] === 1) trackedSlots[slot] = ++trackedCount;
+  const trackedSlotOf = new Uint32Array(trackedCount);
+  for (let slot = 0; slot < slotCount; slot++) {
+    const index = tracked(slot);
+    if (index >= 0) trackedSlotOf[index] = slot;
+  }
+
+  // Forward conditional must-analysis: which candidate general slots hold a
+  // Number at each reachable block entry. Optimistic start intersected over
+  // executable edges; entry and exception targets know nothing.
+  const reachable = new Uint8Array(blockCount);
+  reachable[fn.entry] = 1;
+  const known = new Uint8Array(blockCount * trackedCount).fill(1);
+  for (let index = 0; index < trackedCount; index++)
+    known[fn.entry * trackedCount + index] = 0;
   const exceptionTargets = new Uint8Array(blockCount);
   for (const block of fn.blocks) {
     if (block === undefined) throw "general number block invariant";
     const exception = block.exception;
     if (exception !== undefined) {
       exceptionTargets[exception.target] = 1;
-      for (let index = 0; index < shadowed; index++)
-        known[exception.target * shadowed + index] = 0;
+      for (let index = 0; index < trackedCount; index++)
+        known[exception.target * trackedCount + index] = 0;
     }
   }
-  const state = new Uint8Array(shadowed);
+  const state = new Uint8Array(trackedCount);
   // A load or test describes its slot only until the slot's next store:
-  // entries record the slot's store generation with its shadow index.
-  const generations = new Uint32Array(shadowed);
+  // entries record the slot's store generation with its tracked index.
+  const generations = new Uint32Array(trackedCount);
   const describe = (index: number): number =>
-    index + shadowed * (generations[index] ?? 0);
+    index + trackedCount * (generations[index] ?? 0);
   const described = (code: number | undefined): number => {
     if (code === undefined) return -1;
-    const index = code % shadowed;
-    return Math.floor(code / shadowed) === (generations[index] ?? 0)
+    const index = code % trackedCount;
+    return Math.floor(code / trackedCount) === (generations[index] ?? 0)
       ? index
       : -1;
   };
-  /** Applies the block's instructions to `state`; returns the shadow index
-   * proven by the block's branch on its consequent edge, or -1. */
-  function transfer(block: Block): number {
+  /** Applies the block's instructions to `state`; returns the tracked indices
+   * proven on the branch's consequent (true) and alternate (false) edges, plus
+   * a known branch outcome (1 = consequent only, 0 = alternate only, -1 = both
+   * edges feasible). */
+  function transfer(block: Block): {
+    readonly onTrue: number;
+    readonly onFalse: readonly number[];
+    readonly branchOutcome: number;
+  } {
+    generations.fill(0);
     const loads = new Map<number, number>(),
       numbers = new Set<number>(),
+      nonNumbers = new Set<number>(),
       wraps = new Set<number>(),
-      tests = new Map<number, number>();
+      notNumbers = new Set<number>(),
+      elementResults = new Set<number>(),
+      elementValueSlots = new Map<number, number[]>(),
+      slotElementValue = new Map<number, number>(),
+      tests = new Map<number, number>(),
+      absentTests = new Map<number, number[]>(),
+      boolValues = new Map<number, number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "general number instruction invariant";
       visited++;
       const scalar = numberResult(op, fn.slots);
       if (scalar !== undefined) numbers.add(scalar);
-      if (op.kind === "load") {
-        const index = shadow(op.slot);
+      const other = nonNumberResult(op, fn.slots);
+      if (other !== undefined) nonNumbers.add(other);
+      if (op.kind === "constant" && typeof op.value === "boolean") {
+        boolValues.set(op.id, op.value ? 1 : 0);
+      } else if (op.kind === "unary" && op.operator === "!") {
+        const operand = boolValues.get(op.operand);
+        if (operand !== undefined) boolValues.set(op.id, operand === 1 ? 0 : 1);
+        const tested = tests.get(op.operand);
+        if (tested !== undefined) absentTests.set(op.id, [tested]);
+      } else if (op.kind === "element-load" || op.kind === "element-length") {
+        elementResults.add(op.id);
+      } else if (op.kind === "general-none" || op.kind === "general-null") {
+        notNumbers.add(op.id);
+      } else if (op.kind === "load") {
+        const index = tracked(op.slot);
         if (index >= 0) loads.set(op.id, describe(index));
       } else if (op.kind === "general-wrap") {
         if (numbers.has(op.value)) wraps.add(op.id);
+        else if (nonNumbers.has(op.value)) notNumbers.add(op.id);
       } else if (op.kind === "general-is" && op.type === "number") {
-        const index = described(loads.get(op.value));
-        if (index >= 0) tests.set(op.id, describe(index));
+        if (wraps.has(op.value)) {
+          boolValues.set(op.id, 1);
+        } else if (notNumbers.has(op.value)) {
+          boolValues.set(op.id, 0);
+        } else {
+          const index = described(loads.get(op.value));
+          if (index >= 0) {
+            tests.set(op.id, describe(index));
+            if (state[index] === 1) boolValues.set(op.id, 1);
+          }
+        }
+      } else if (op.kind === "general-is" && op.type === "absent") {
+        let elemId: number | undefined;
+        if (elementResults.has(op.value)) elemId = op.value;
+        else {
+          const index = described(loads.get(op.value));
+          if (index >= 0) elemId = slotElementValue.get(index);
+        }
+        if (elemId !== undefined) {
+          const boundSlots = elementValueSlots.get(elemId);
+          if (boundSlots !== undefined && boundSlots.length > 0)
+            absentTests.set(op.id, boundSlots.slice());
+        }
       } else if (op.kind === "store") {
-        const index = shadow(op.slot);
+        const index = tracked(op.slot);
         if (index < 0) continue;
         const copied = described(loads.get(op.value));
-        state[index] = wraps.has(op.value)
-          ? 1
+        const isNumber =
+          wraps.has(op.value) || (copied >= 0 && (state[copied] ?? 0) === 1);
+        state[index] = isNumber ? 1 : 0;
+        const nextGen = (generations[index] ?? 0) + 1;
+        generations[index] = nextGen;
+        const elemId = elementResults.has(op.value)
+          ? op.value
           : copied >= 0
-            ? (state[copied] ?? 0)
-            : 0;
-        generations[index] = (generations[index] ?? 0) + 1;
+            ? slotElementValue.get(copied)
+            : undefined;
+        if (elemId !== undefined) {
+          slotElementValue.set(index, elemId);
+          let list = elementValueSlots.get(elemId);
+          if (list === undefined) {
+            list = [];
+            elementValueSlots.set(elemId, list);
+          }
+          list.push(describe(index));
+        } else {
+          slotElementValue.delete(index);
+        }
       }
     }
     const term = block.terminator;
-    if (term.kind !== "branch") return -1;
-    return described(tests.get(term.condition));
+    if (term.kind !== "branch")
+      return { onTrue: -1, onFalse: [], branchOutcome: -1 };
+    const outcome = boolValues.get(term.condition);
+    const onFalse: number[] = [];
+    const falseCodes = absentTests.get(term.condition);
+    if (falseCodes !== undefined) {
+      for (const code of falseCodes) {
+        const idx = described(code);
+        if (idx >= 0) onFalse.push(idx);
+      }
+    }
+    return {
+      onTrue: described(tests.get(term.condition)),
+      onFalse,
+      branchOutcome: outcome === undefined ? -1 : outcome,
+    };
   }
   const order = reversePostorder(fn);
   let changed = true;
@@ -310,23 +462,37 @@ export function shadowGeneralNumbers(
     changed = false;
     for (const id of order) {
       if (visited > budget) return undefined;
+      if (reachable[id] !== 1) continue;
       const block = fn.blocks[id];
       if (block === undefined) throw "general number block invariant";
-      for (let index = 0; index < shadowed; index++)
-        state[index] = known[id * shadowed + index] ?? 0;
+      for (let index = 0; index < trackedCount; index++)
+        state[index] = known[id * trackedCount + index] ?? 0;
       const proven = transfer(block);
+      const exception = block.exception;
+      if (exception !== undefined && reachable[exception.target] !== 1) {
+        reachable[exception.target] = 1;
+        changed = true;
+      }
       const term = block.terminator;
       const successors = normalSuccessors(term);
       for (let edge = 0; edge < successors.length; edge++) {
+        if (proven.branchOutcome === 1 && edge === 1) continue;
+        if (proven.branchOutcome === 0 && edge === 0) continue;
         const successor = successors[edge];
-        if (successor === undefined || exceptionTargets[successor] === 1)
-          continue;
-        for (let index = 0; index < shadowed; index++) {
+        if (successor === undefined) continue;
+        if (reachable[successor] !== 1) {
+          reachable[successor] = 1;
+          changed = true;
+        }
+        if (exceptionTargets[successor] === 1) continue;
+        for (let index = 0; index < trackedCount; index++) {
           const fact =
-            (state[index] ?? 0) === 1 || (edge === 0 && index === proven)
+            (state[index] ?? 0) === 1 ||
+            (edge === 0 && index === proven.onTrue) ||
+            (edge === 1 && proven.onFalse.includes(index))
               ? 1
               : 0;
-          const at = successor * shadowed + index;
+          const at = successor * trackedCount + index;
           if (fact === 0 && known[at] === 1) {
             known[at] = 0;
             changed = true;
@@ -341,8 +507,13 @@ export function shadowGeneralNumbers(
   const blocks: Block[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "general number block invariant";
-    for (let index = 0; index < shadowed; index++)
-      state[index] = known[block.id * shadowed + index] ?? 0;
+    generations.fill(0);
+    if (reachable[block.id] === 1) {
+      for (let index = 0; index < trackedCount; index++)
+        state[index] = known[block.id * trackedCount + index] ?? 0;
+    } else {
+      state.fill(0);
+    }
     const instructions: Instruction[] = [];
     const span = { start: block.terminator.start, end: block.terminator.end };
     if (block.id === fn.entry) {
@@ -397,7 +568,13 @@ export function shadowGeneralNumbers(
       wraps = new Map<number, number>(),
       // General values that are never a Number: absent values and wrapped
       // scalars of another category.
-      notNumbers = new Set<number>();
+      notNumbers = new Set<number>(),
+      // Block-local values written to unshadowed general slots (e.g.
+      // writeAssignment's temporary slot) so forwarding through them preserves
+      // known scalar numbers without re-testing the general tag.
+      unshadowedWrap = new Map<number, number>(),
+      unshadowedCopy = new Map<number, number>(),
+      unshadowedNotNumber = new Set<number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "general number instruction invariant";
       if (++visited > budget) return undefined;
@@ -407,10 +584,31 @@ export function shadowGeneralNumbers(
       if (other !== undefined) nonNumbers.add(other);
       if (op.kind === "load") {
         instructions.push(op);
-        const index = shadow(op.slot);
-        if (index >= 0) {
-          loads.set(op.id, describe(index));
-          if (state[index] === 1) knownLoads.add(op.id);
+        const trackIndex = tracked(op.slot);
+        if (trackIndex >= 0) {
+          const wrappedNumber =
+            shadow(op.slot) < 0 ? unshadowedWrap.get(op.slot) : undefined;
+          if (wrappedNumber !== undefined) {
+            wraps.set(op.id, wrappedNumber);
+          } else {
+            const copiedDesc =
+              shadow(op.slot) < 0 ? unshadowedCopy.get(op.slot) : undefined;
+            if (copiedDesc !== undefined) {
+              const copiedTrack = described(copiedDesc);
+              if (copiedTrack >= 0) {
+                loads.set(op.id, copiedDesc);
+                if (state[copiedTrack] === 1) knownLoads.add(op.id);
+              } else {
+                loads.set(op.id, describe(trackIndex));
+                if (state[trackIndex] === 1) knownLoads.add(op.id);
+              }
+            } else {
+              if (shadow(op.slot) < 0 && unshadowedNotNumber.has(op.slot))
+                notNumbers.add(op.id);
+              loads.set(op.id, describe(trackIndex));
+              if (state[trackIndex] === 1) knownLoads.add(op.id);
+            }
+          }
         }
         continue;
       }
@@ -428,27 +626,42 @@ export function shadowGeneralNumbers(
         continue;
       }
       if (op.kind === "general-is" && op.type === "number") {
-        const index = described(loads.get(op.value));
-        if (index >= 0) {
+        if (wraps.has(op.value)) {
           proofs++;
-          instructions.push(
-            knownLoads.has(op.value)
-              ? {
-                  kind: "constant",
-                  id: op.id,
-                  value: true,
-                  start: op.start,
-                  end: op.end,
-                }
-              : {
-                  kind: "load",
-                  id: op.id,
-                  slot: presence[index] ?? 0,
-                  start: op.start,
-                  end: op.end,
-                },
-          );
+          instructions.push({
+            kind: "constant",
+            id: op.id,
+            value: true,
+            start: op.start,
+            end: op.end,
+          });
           continue;
+        }
+        const trackIndex = described(loads.get(op.value));
+        if (trackIndex >= 0) {
+          if (knownLoads.has(op.value)) {
+            proofs++;
+            instructions.push({
+              kind: "constant",
+              id: op.id,
+              value: true,
+              start: op.start,
+              end: op.end,
+            });
+            continue;
+          }
+          const shadowIndex = shadow(trackedSlotOf[trackIndex] ?? 0);
+          if (shadowIndex >= 0) {
+            proofs++;
+            instructions.push({
+              kind: "load",
+              id: op.id,
+              slot: presence[shadowIndex] ?? 0,
+              start: op.start,
+              end: op.end,
+            });
+            continue;
+          }
         }
       }
       if (
@@ -456,26 +669,57 @@ export function shadowGeneralNumbers(
         op.type === "number" &&
         knownLoads.has(op.value)
       ) {
-        const index = described(loads.get(op.value));
-        if (index >= 0) {
-          proofs++;
-          instructions.push({
-            kind: "load",
-            id: op.id,
-            slot: payload[index] ?? 0,
-            start: op.start,
-            end: op.end,
-          });
-          continue;
+        const trackIndex = described(loads.get(op.value));
+        if (trackIndex >= 0) {
+          const shadowIndex = shadow(trackedSlotOf[trackIndex] ?? 0);
+          if (shadowIndex >= 0) {
+            proofs++;
+            instructions.push({
+              kind: "load",
+              id: op.id,
+              slot: payload[shadowIndex] ?? 0,
+              start: op.start,
+              end: op.end,
+            });
+            continue;
+          }
+          if (op.unchecked !== true) {
+            proofs++;
+            instructions.push({ ...op, unchecked: true });
+            continue;
+          }
         }
       }
       instructions.push(op);
-      if (op.kind !== "store") continue;
+      if (op.kind !== "store") {
+        if ((instructionEffects(op) & effectInvoke) !== 0) {
+          unshadowedWrap.clear();
+          unshadowedCopy.clear();
+          unshadowedNotNumber.clear();
+        }
+        continue;
+      }
+      const trackIndex = tracked(op.slot);
+      if (trackIndex < 0) continue;
       const index = shadow(op.slot);
-      if (index < 0) continue;
-      const at = { start: op.start, end: op.end };
       const number = wraps.get(op.value),
-        copied = described(loads.get(op.value));
+        copiedTrack = described(loads.get(op.value)),
+        copiedShadow =
+          copiedTrack >= 0 ? shadow(trackedSlotOf[copiedTrack] ?? 0) : -1;
+      if (index < 0) {
+        unshadowedWrap.delete(op.slot);
+        unshadowedCopy.delete(op.slot);
+        unshadowedNotNumber.delete(op.slot);
+        if (number !== undefined) unshadowedWrap.set(op.slot, number);
+        else if (copiedShadow >= 0)
+          unshadowedCopy.set(op.slot, describe(copiedTrack));
+        else if (notNumbers.has(op.value)) unshadowedNotNumber.add(op.slot);
+        state[trackIndex] =
+          number !== undefined || knownLoads.has(op.value) ? 1 : 0;
+        generations[trackIndex] = (generations[trackIndex] ?? 0) + 1;
+        continue;
+      }
+      const at = { start: op.start, end: op.end };
       if (number !== undefined) {
         const yes = nextId++;
         instructions.push(
@@ -501,8 +745,8 @@ export function shadowGeneralNumbers(
             end: at.end,
           },
         );
-        state[index] = 1;
-      } else if (copied >= 0) {
+        state[trackIndex] = 1;
+      } else if (copiedShadow >= 0) {
         // A copy between shadowed slots copies the shadows.
         const test = nextId++,
           value = nextId++;
@@ -510,7 +754,7 @@ export function shadowGeneralNumbers(
           {
             kind: "load",
             id: test,
-            slot: presence[copied] ?? 0,
+            slot: presence[copiedShadow] ?? 0,
             start: at.start,
             end: at.end,
           },
@@ -524,7 +768,7 @@ export function shadowGeneralNumbers(
           {
             kind: "load",
             id: value,
-            slot: payload[copied] ?? 0,
+            slot: payload[copiedShadow] ?? 0,
             start: at.start,
             end: at.end,
           },
@@ -536,7 +780,45 @@ export function shadowGeneralNumbers(
             end: at.end,
           },
         );
-        state[index] = knownLoads.has(op.value) ? 1 : 0;
+        state[trackIndex] = knownLoads.has(op.value) ? 1 : 0;
+      } else if (knownLoads.has(op.value)) {
+        // A copy from an unshadowed slot proven to hold a Number skips the
+        // tag test and keeps the destination proven.
+        const yes = nextId++,
+          value = nextId++;
+        instructions.push(
+          {
+            kind: "constant",
+            id: yes,
+            value: true,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: presence[index] ?? 0,
+            value: yes,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "general-value",
+            id: value,
+            value: op.value,
+            type: "number",
+            unchecked: true,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: payload[index] ?? 0,
+            value,
+            start: at.start,
+            end: at.end,
+          },
+        );
+        state[trackIndex] = 1;
       } else if (notNumbers.has(op.value)) {
         // Both shadows are written on every store, so they are initialized
         // wherever the general slot is.
@@ -572,7 +854,7 @@ export function shadowGeneralNumbers(
             end: at.end,
           },
         );
-        state[index] = 0;
+        state[trackIndex] = 0;
       } else {
         const test = nextId++,
           value = nextId++;
@@ -609,10 +891,10 @@ export function shadowGeneralNumbers(
             end: at.end,
           },
         );
-        state[index] = 0;
+        state[trackIndex] = 0;
       }
       // Earlier loads of this slot no longer describe its value.
-      generations[index] = (generations[index] ?? 0) + 1;
+      generations[trackIndex] = (generations[trackIndex] ?? 0) + 1;
     }
     blocks.push({ ...block, instructions });
   }

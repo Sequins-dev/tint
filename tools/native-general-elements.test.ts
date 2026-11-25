@@ -576,6 +576,51 @@ function popAndSpecLoops() {
   out.push(gridSolve(shortGrid, 2, 2), shortGrid.length, shortGrid[5], shortGrid[10]);
   return out.join(",");
 }
+function cachedLoops() {
+  const out = [];
+  const shrink = (arr) => { arr.length = 2; };
+  const unpack = (arr) => { arr[4] = "text"; };
+  const freeze = (arr) => { Object.freeze(arr); };
+  const a = [1, 2, 3, 4, 5, 6];
+  let sumA = 0;
+  for (let i = 0; i < 6; i++) {
+    if (i === 2) shrink(a);
+    const v = a[i];
+    if (typeof v === "number") sumA += v;
+    else out.push("shrunk:" + i + ":" + String(v));
+  }
+  out.push(sumA, a.length);
+  const b = [10, 20, 30, 40, 50, 60];
+  let traceB = "";
+  for (let i = 0; i < 6; i++) {
+    if (i === 3) unpack(b);
+    traceB += String(b[i]) + "/";
+  }
+  out.push(traceB);
+  const c = [1, 2, 3, 4, 5, 6];
+  let froze = "";
+  for (let i = 0; i < 6; i++) {
+    if (i === 2) freeze(c);
+    try { c[i] = i * 10; } catch (e) { froze += i + ":" + e.constructor.name + ";"; }
+  }
+  out.push(c.join("/"), froze);
+  // Direct and continue-bearing for loops (unlabelled, labelled, nested inner continue).
+  let s1 = 0;
+  for (let i = 0; i < 8; i++) {
+    if (i % 2 === 0) continue;
+    s1 += i;
+  }
+  let s2 = 0;
+  outer: for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      if (j === 1) continue;
+      if (i === 2 && j === 2) continue outer;
+      s2 += i * 10 + j;
+    }
+  }
+  out.push(s1, s2);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -588,6 +633,7 @@ export function sections() {
     appends(),
     literals(),
     popAndSpecLoops(),
+    cachedLoops(),
   ];
 }
 `;

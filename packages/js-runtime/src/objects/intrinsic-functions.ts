@@ -1,9 +1,3 @@
-import {
-  getScriptMap,
-  hasScriptMap,
-  setScriptMap,
-  type ScriptMap,
-} from "./collection-data.ts";
 import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 
@@ -73,29 +67,4 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     arrayPop: undefined,
     arrayPushEpoch: -1,
   };
-}
-
-// The inline forms of the collection methods on a receiver's storage
-// (Map.prototype.get and friends after their receiver check): keys compare
-// with SameValueZero, so -0 is stored and found as +0.
-
-export function scriptMapGet(data: ScriptMap, key: unknown): unknown {
-  return getScriptMap(data, key);
-}
-
-export function scriptMapHas(data: ScriptMap, key: unknown): boolean {
-  return hasScriptMap(data, key);
-}
-
-export function scriptMapSet(
-  data: ScriptMap,
-  key: unknown,
-  value: unknown,
-): void {
-  setScriptMap(data, key, value);
-}
-
-export function scriptSetAdd(data: ScriptMap, value: unknown): void {
-  const key = value === 0 ? 0 : value;
-  setScriptMap(data, key, key);
 }

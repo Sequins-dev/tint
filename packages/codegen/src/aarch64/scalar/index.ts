@@ -4986,6 +4986,14 @@ function emitModuleForms(
                 id = op.id;
                 type = "general";
                 break;
+              case "element-storage":
+                id = op.id;
+                type = "optional-reference";
+                break;
+              case "element-count":
+                id = op.id;
+                type = "number";
+                break;
               case "error-is":
               case "general-equal":
               case "record-has":
@@ -8910,6 +8918,8 @@ function emitModuleForms(
           }
           let comparisonBranch: Condition | undefined = undefined;
           const fusion = fusedAccesses?.get(b.id);
+          let fusedNumberElement = -1;
+          const wrappedNumberValues = new Map<number, number>();
           for (
             let operationIndex = 0;
             operationIndex < b.instructions.length;
@@ -9307,6 +9317,16 @@ function emitModuleForms(
                     emit({ op: "cset", rd: target, condition: "eq" });
                     saveRaw(target, op.id);
                   }
+                  break;
+                }
+                if (
+                  op.type === "number" &&
+                  fusedNumberElement === op.value &&
+                  op.id !== comparisonValue
+                ) {
+                  const target = rawTarget(op.id, 12);
+                  imm(target, 1);
+                  saveRaw(target, op.id);
                   break;
                 }
                 const tag =
@@ -10081,6 +10101,7 @@ function emitModuleForms(
               }
               case "general-wrap": {
                 const t = value(op.value).type;
+                if (t === "number") wrappedNumberValues.set(op.id, op.value);
                 const tag =
                   t === "number"
                     ? 1
@@ -12492,9 +12513,10 @@ function emitModuleForms(
                   fusion !== undefined && fusion.access === op.id
                     ? fusion.miss
                     : undefined;
-                // Unfused miss branches: "ne" sites, then "cs" (unsigned
-                // higher or same) sites, then cbz sites, patched at the miss.
+                // Unfused miss branches: "ne" sites, "lt" sites, "cs" (unsigned
+                // higher or same) sites, and cbz sites, patched at the miss.
                 const misses: number[] = [];
+                const ltMisses: number[] = [];
                 const boundMisses: number[] = [];
                 const cbzMisses: number[] = [];
                 function missUnless(bound: boolean): void {
@@ -12506,11 +12528,25 @@ function emitModuleForms(
                     emit({ op: "b.cond", condition, displacement: 0 });
                   }
                 }
+                function missIfNegative(): void {
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition: "lt" }, fn.id, fusedMiss);
+                  else {
+                    ltMisses.push(instructions.length);
+                    emit({ op: "b.cond", condition: "lt", displacement: 0 });
+                  }
+                }
                 function patchMisses(): void {
                   for (const site of misses)
                     patchInstruction(site, {
                       op: "b.cond",
                       condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of ltMisses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "lt",
                       displacement: (instructions.length - site) * 4,
                     });
                   for (const site of boundMisses)
@@ -12527,7 +12563,14 @@ function emitModuleForms(
                       displacement: (instructions.length - site) * 4,
                     });
                 }
-                if (op.kind === "element-store") {
+                const wrappedNumber =
+                  op.kind === "element-store"
+                    ? wrappedNumberValues.get(op.value)
+                    : undefined;
+                if (
+                  op.kind === "element-store" &&
+                  wrappedNumber === undefined
+                ) {
                   // Only a Number (tag 1) overwrites a binary64 element.
                   rawLoad(13, value(op.value).offset);
                   emit({
@@ -12541,58 +12584,69 @@ function emitModuleForms(
                   });
                   missUnless(false);
                 }
-                // The object's tag (x9) and payload (x10); its record's
-                // descriptor; its elements (x10), or none.
-                generalPair(9, value(op.object).offset, true);
-                emit({
-                  op: "sub-imm",
-                  width: 64,
-                  rd: "zr",
-                  rn: 9,
-                  immediate: 5,
-                  shift: 0,
-                  setFlags: true,
-                });
-                missUnless(false);
-                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
-                descriptorPointer(op.record);
-                emit({
-                  op: "sub-reg",
-                  width: 64,
-                  rd: "zr",
-                  rn: 9,
-                  rm: 11,
-                  shift: "lsl",
-                  amount: 0,
-                  setFlags: true,
-                });
-                missUnless(false);
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 10,
-                  rn: 10,
-                  offset: elementsField.offset,
-                });
-                if (fusedMiss !== undefined)
-                  branch({ op: "cbz", width: 64, rt: 10 }, fn.id, fusedMiss);
-                else {
-                  cbzMisses.push(instructions.length);
-                  emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                const cachedStorage = op.cachedStorage,
+                  cachedCount = op.cachedCount;
+                const cached =
+                  cachedStorage !== undefined && cachedCount !== undefined;
+                if (!cached) {
+                  // The object's tag (x9) and payload (x10); its record's
+                  // descriptor; its elements (x10), or none.
+                  generalPair(9, value(op.object).offset, true);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 5,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  missUnless(false);
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                  descriptorPointer(op.record);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  missUnless(false);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 10,
+                    offset: elementsField.offset,
+                  });
+                  if (fusedMiss !== undefined)
+                    branch({ op: "cbz", width: 64, rt: 10 }, fn.id, fusedMiss);
+                  else {
+                    cbzMisses.push(instructions.length);
+                    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                  }
                 }
                 // The index as an unsigned integer (x12) below the count
-                // (d1): an exact integer compares unsigned (negative ones
-                // are huge), any other number must convert back exactly.
+                // (d1 or cachedCount): an exact integer compares unsigned
+                // (negative ones are huge), any other number must convert back
+                // exactly.
                 let index = 12;
                 if (exactInteger(op.index)) {
                   index = intRegister(op.index, 12);
-                  emit({
-                    op: "ldr-d",
-                    rt: 1,
-                    rn: 10,
-                    offset: countField.offset,
-                  });
-                  emit({ op: "fcvtzu-x-d", rd: 11, rn: 1 });
+                  let countReg = 1;
+                  if (cachedCount !== undefined)
+                    countReg = floatOperand(cachedCount, 1);
+                  else
+                    emit({
+                      op: "ldr-d",
+                      rt: 1,
+                      rn: 10,
+                      offset: countField.offset,
+                    });
+                  emit({ op: "fcvtzu-x-d", rd: 11, rn: countReg });
                   emit({
                     op: "sub-reg",
                     width: 64,
@@ -12604,6 +12658,34 @@ function emitModuleForms(
                     setFlags: true,
                   });
                   missUnless(true);
+                } else if (jsConvert) {
+                  const number = floatOperand(op.index, 0);
+                  // FEAT_JSCVT: Z=1 iff exact int32 and not -0.0; non-negative
+                  // int32 zero-extends into x12 directly with no ucvtf round-trip.
+                  emit({ op: "fjcvtzs", rd: 12, rn: number });
+                  missUnless(false);
+                  emit({
+                    op: "sub-imm",
+                    width: 32,
+                    rd: "zr",
+                    rn: 12,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  missIfNegative();
+                  let countReg = 1;
+                  if (cachedCount !== undefined)
+                    countReg = floatOperand(cachedCount, 1);
+                  else
+                    emit({
+                      op: "ldr-d",
+                      rt: 1,
+                      rn: 10,
+                      offset: countField.offset,
+                    });
+                  emit({ op: "fcmp", rn: number, rm: countReg });
+                  missUnless(true);
                 } else {
                   const number = floatOperand(op.index, 0);
                   emit({ op: "fcvtzu-x-d", rd: 12, rn: number });
@@ -12611,24 +12693,32 @@ function emitModuleForms(
                   emit({ op: "ucvtf-d-x", rd: 1, rn: 12 });
                   emit({ op: "fcmp", rn: 1, rm: number });
                   missUnless(false);
-                  emit({
-                    op: "ldr-d",
-                    rt: 1,
-                    rn: 10,
-                    offset: countField.offset,
-                  });
+                  let countReg = 1;
+                  if (cachedCount !== undefined)
+                    countReg = floatOperand(cachedCount, 1);
+                  else
+                    emit({
+                      op: "ldr-d",
+                      rt: 1,
+                      rn: 10,
+                      offset: countField.offset,
+                    });
                   // Unordered (NaN) also sets C; NaN failed above anyway.
-                  emit({ op: "fcmp", rn: number, rm: 1 });
+                  emit({ op: "fcmp", rn: number, rm: countReg });
                   missUnless(true);
                 }
                 // The storage's data words.
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 10,
-                  rn: 10,
-                  offset: storageField.offset,
-                });
+                if (cachedStorage !== undefined) {
+                  rawValue(10, cachedStorage);
+                } else {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 10,
+                    offset: storageField.offset,
+                  });
+                }
                 emit({
                   op: "ldr",
                   width: 64,
@@ -12637,16 +12727,29 @@ function emitModuleForms(
                   offset: nativeArrayDataOffset,
                 });
                 if (op.kind === "element-store") {
-                  rawLoad(13, value(op.value).offset + 8);
-                  emit({
-                    op: "str-indexed",
-                    size: 3,
-                    fp: false,
-                    rt: 13,
-                    rn: 10,
-                    rm: index,
-                    scaled: true,
-                  });
+                  if (wrappedNumber !== undefined) {
+                    const fpVal = floatOperand(wrappedNumber, 0);
+                    emit({
+                      op: "str-indexed",
+                      size: 3,
+                      fp: true,
+                      rt: fpVal,
+                      rn: 10,
+                      rm: index,
+                      scaled: true,
+                    });
+                  } else {
+                    rawLoad(13, value(op.value).offset + 8);
+                    emit({
+                      op: "str-indexed",
+                      size: 3,
+                      fp: false,
+                      rt: 13,
+                      rn: 10,
+                      rm: index,
+                      scaled: true,
+                    });
+                  }
                   if (fusedMiss !== undefined) break;
                   const target = rawTarget(op.id, 12);
                   imm(target, 1);
@@ -12674,7 +12777,10 @@ function emitModuleForms(
                 imm(9, 1);
                 const offset = value(op.id).offset;
                 generalPair(9, offset, false);
-                if (fusedMiss !== undefined) break;
+                if (fusedMiss !== undefined) {
+                  fusedNumberElement = op.id;
+                  break;
+                }
                 const hit = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 patchMisses();
@@ -12759,7 +12865,10 @@ function emitModuleForms(
                 imm(9, 1);
                 const offset = value(op.id).offset;
                 generalPair(9, offset, false);
-                if (fusedMiss !== undefined) break;
+                if (fusedMiss !== undefined) {
+                  fusedNumberElement = op.id;
+                  break;
+                }
                 const hit = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 for (const site of misses)
@@ -12782,6 +12891,124 @@ function emitModuleForms(
                   op: "b",
                   displacement: (instructions.length - hit) * 4,
                 });
+                break;
+              }
+              case "element-storage":
+              case "element-count": {
+                const elementsField =
+                    module.records?.[op.record]?.fields[op.field],
+                  elementFields = module.records?.[op.elementsRecord]?.fields,
+                  countField = elementFields?.[op.countField],
+                  storageField = elementFields?.[op.storageField];
+                if (
+                  elementsField === undefined ||
+                  countField === undefined ||
+                  storageField === undefined
+                )
+                  throw "element cache layout invariant";
+                const misses: number[] = [];
+                const cbzMisses: number[] = [];
+                generalPair(9, value(op.object).offset, true);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                misses.push(instructions.length);
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                descriptorPointer(op.record);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                misses.push(instructions.length);
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: elementsField.offset,
+                });
+                cbzMisses.push(instructions.length);
+                emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                if (op.kind === "element-storage") {
+                  const target = rawTarget(op.id, 10);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: target,
+                    rn: 10,
+                    offset: storageField.offset,
+                  });
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: target,
+                    rn: "zr",
+                    rm: "zr",
+                  });
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  saveRaw(target, op.id);
+                } else {
+                  const target = floatTarget(op.id, 0);
+                  emit({
+                    op: "ldr-d",
+                    rt: target,
+                    rn: 10,
+                    offset: countField.offset,
+                  });
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  for (const site of cbzMisses)
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  emit({ op: "fmov-d-x", rd: target, rn: "zr" });
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  floatStore(target, op.id);
+                }
                 break;
               }
               case "record-has": {

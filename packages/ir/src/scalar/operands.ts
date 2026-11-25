@@ -86,16 +86,28 @@ export function visitInstructionOperands(
       visit(op.scope);
       visit(op.cache);
       return;
-    case "element-load":
+    case "element-load": {
       visit(op.object);
       visit(op.index);
+      const cachedStorage = op.cachedStorage,
+        cachedCount = op.cachedCount;
+      if (cachedStorage !== undefined) visit(cachedStorage);
+      if (cachedCount !== undefined) visit(cachedCount);
       return;
-    case "element-store":
+    }
+    case "element-store": {
       visit(op.object);
       visit(op.index);
       visit(op.value);
+      const cachedStorage = op.cachedStorage,
+        cachedCount = op.cachedCount;
+      if (cachedStorage !== undefined) visit(cachedStorage);
+      if (cachedCount !== undefined) visit(cachedCount);
       return;
+    }
     case "element-length":
+    case "element-storage":
+    case "element-count":
       visit(op.object);
       return;
     case "function-new":

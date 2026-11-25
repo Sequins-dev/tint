@@ -147,20 +147,53 @@ export function substituteInstructionValues(
     }
     case "element-load": {
       const object = substitutedValue(values, op.object),
-        index = substitutedValue(values, op.index);
-      return object === op.object && index === op.index
-        ? op
+        index = substitutedValue(values, op.index),
+        cachedStorage =
+          op.cachedStorage === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedStorage),
+        cachedCount =
+          op.cachedCount === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedCount);
+      if (
+        object === op.object &&
+        index === op.index &&
+        cachedStorage === op.cachedStorage &&
+        cachedCount === op.cachedCount
+      )
+        return op;
+      return cachedStorage !== undefined && cachedCount !== undefined
+        ? { ...op, object, index, cachedStorage, cachedCount }
         : { ...op, object, index };
     }
     case "element-store": {
       const object = substitutedValue(values, op.object),
         index = substitutedValue(values, op.index),
-        value = substitutedValue(values, op.value);
-      return object === op.object && index === op.index && value === op.value
-        ? op
+        value = substitutedValue(values, op.value),
+        cachedStorage =
+          op.cachedStorage === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedStorage),
+        cachedCount =
+          op.cachedCount === undefined
+            ? undefined
+            : substitutedValue(values, op.cachedCount);
+      if (
+        object === op.object &&
+        index === op.index &&
+        value === op.value &&
+        cachedStorage === op.cachedStorage &&
+        cachedCount === op.cachedCount
+      )
+        return op;
+      return cachedStorage !== undefined && cachedCount !== undefined
+        ? { ...op, object, index, value, cachedStorage, cachedCount }
         : { ...op, object, index, value };
     }
-    case "element-length": {
+    case "element-length":
+    case "element-storage":
+    case "element-count": {
       const object = substitutedValue(values, op.object);
       return object === op.object ? op : { ...op, object };
     }
