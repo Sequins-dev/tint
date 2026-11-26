@@ -2301,12 +2301,11 @@ function emitSingleCandidate(
     canDirectStore: boolean,
   ): void {
     const cache = ctx.sharedPropertyCache(prop, targetSpan, false, true);
-    if (
-      canDirectStore &&
-      isRootTransaction &&
-      tx.pendingStores.length === 0 &&
-      tx.conditionalDepth === 0
-    ) {
+    // When this store is the final action of the root transaction (no later
+    // statement can bail) and no earlier staged stores are pending, commit
+    // directly with `cachedPropertyStore` even inside a terminal `if`/`else`
+    // arm, skipping the 50+ instruction staging guard and double store.
+    if (canDirectStore && isRootTransaction && tx.pendingStores.length === 0) {
       out.push({
         ...atSpan(targetSpan),
         kind: "if",

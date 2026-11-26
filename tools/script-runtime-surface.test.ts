@@ -331,10 +331,10 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(twice.ok);
     assert.equal(twice.value.erased, 0);
   }
-  // Fixed binding slots, positional entries, and dense array/object literal
-  // helpers reduce generic applications. Global identifier caches keep their
-  // surface applications.
-  assert.deepEqual(erased, [6, 14, 27, 14]);
+  // Fixed binding slots, positional entries, dense array/object literal
+  // helpers, and per-name shared global identifier caches reduce generic
+  // applications while keeping their surface applications.
+  assert.deepEqual(erased, [6, 12, 25, 13]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));

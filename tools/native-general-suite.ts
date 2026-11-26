@@ -765,6 +765,36 @@ function flatGeneralArrays() {
   out.push(sum, popped.k, popped.nested.s, retained.length, retained[49].nested.s, retained[50].k, retained[51], retained[52]);
   return out.join(",");
 }
+function milestone4PushFastSplit() {
+  const out = [];
+  // Numeric steady-state push loop (exercises inlined scriptArrayPushFast).
+  const nums = [];
+  for (let i = 0; i < 200; i++) nums.push(i * 1.5);
+  let numSum = 0;
+  for (let i = 0; i < nums.length; i++) numSum += nums[i];
+  out.push(nums.length, numSum);
+  // General steady-state push loop (exercises scriptArrayPushGeneralFast split).
+  const objs = [];
+  for (let i = 0; i < 150; i++) objs.push({ v: i, label: "o" + i });
+  objs.push("str", true, false, null, undefined, -0, 42.5);
+  for (let g = 0; g < 800; g++) {
+    const tmp = { x: g, y: [g, g + 1] };
+    if (tmp.x < 0) out.push("never");
+  }
+  out.push(
+    objs.length,
+    objs[0].label,
+    objs[149].v,
+    objs[150],
+    objs[151],
+    objs[152],
+    String(objs[153]),
+    String(objs[154]),
+    Object.is(objs[155], -0),
+    objs[156],
+  );
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -779,6 +809,7 @@ export function sections() {
     popAndSpecLoops(),
     cachedLoops(),
     flatGeneralArrays(),
+    milestone4PushFastSplit(),
   ];
 }
 `;
@@ -1842,6 +1873,87 @@ function milestone3PolymorphicStoreAndForwarding() {
   out.push(eqOut.join(""));
   return out.join("|");
 }
+function milestone4DirectTargetsAndCaches() {
+  const out = [];
+  // 1. Shared global-identifier cache invalidation across delete, redefine, and getter.
+  globalThis.__m4SharedGlobal = 10;
+  function readSharedGlobal() {
+    return __m4SharedGlobal + __m4SharedGlobal * 2;
+  }
+  out.push(readSharedGlobal());
+  globalThis.__m4SharedGlobal = 25;
+  out.push(readSharedGlobal());
+  let gCalls = 0;
+  Object.defineProperty(globalThis, "__m4SharedGlobal", {
+    get() { gCalls++; return 100 + gCalls; },
+    configurable: true,
+  });
+  out.push(readSharedGlobal(), gCalls);
+  delete globalThis.__m4SharedGlobal;
+  let refErr = "none";
+  try { readSharedGlobal(); } catch (e) { refErr = e.constructor.name; }
+  out.push(refErr);
+
+  // 2. Terminal conditional property stores inside inlined methods + bailout.
+  function CondTarget(x, y) { this.x = x; this.y = y; }
+  CondTarget.prototype.setBranch = function (flag, v) {
+    if (flag) {
+      this.x = v + 1;
+    } else {
+      this.y = v + 2;
+    }
+  };
+  const ct = new CondTarget(0, 0);
+  for (let i = 0; i < 20; i++) ct.setBranch((i & 1) === 0, i);
+  out.push(ct.x, ct.y);
+  const frozenCt = Object.freeze(new CondTarget(3, 4));
+  let frozenCondErr = "none";
+  try { CondTarget.prototype.setBranch.call(frozenCt, true, 99); } catch (e) { frozenCondErr = e.constructor.name; }
+  out.push(frozenCondErr, frozenCt.x, frozenCt.y);
+
+  // 3. Old-gen generational write barrier on property-store: transition + primitive + young ref.
+  const oldHolders = [];
+  for (let i = 0; i < 40; i++) oldHolders.push({ a: i, b: null });
+  // Churn nursery so oldHolders are promoted to old generation.
+  for (let g = 0; g < 3000; g++) {
+    const tmp = { p: g, q: "s" + g, r: [g, g + 1] };
+    if (tmp.p < 0) out.push("never");
+  }
+  // Write primitives (must NOT corrupt or mis-remember), transitions, and young objects into oldHolders.
+  for (let i = 0; i < oldHolders.length; i++) {
+    oldHolders[i].a = i * 10;
+    oldHolders[i].b = { child: i, tag: "young-" + i };
+    oldHolders[i].extra = i + 500;
+  }
+  // Force another nursery GC cycle to verify remembered young objects survived intact.
+  for (let g = 0; g < 3000; g++) {
+    const tmp = { p: g, q: "t" + g, r: [g, g + 2] };
+    if (tmp.p < 0) out.push("never");
+  }
+  let childSum = 0;
+  let extraSum = 0;
+  for (let i = 0; i < oldHolders.length; i++) {
+    childSum += oldHolders[i].b.child;
+    extraSum += oldHolders[i].extra;
+  }
+  out.push(childSum, extraSum, oldHolders[0].b.tag, oldHolders[39].b.tag);
+
+  // 4. Direct-to-slot self-overwrite (cur = cur.next) and call-indirect return.
+  let head = null;
+  for (let i = 0; i < 15; i++) head = { val: i, next: head };
+  let cur = head;
+  let listSum = 0;
+  while (cur != null) {
+    listSum += cur.val;
+    cur = cur.next;
+  }
+  function stepFn(n) { return { doubled: n * 2 }; }
+  const fns = [stepFn];
+  let callRes = null;
+  for (let i = 0; i < 10; i++) callRes = fns[0](i);
+  out.push(listSum, callRes.doubled);
+  return out.join("|");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -1862,6 +1974,7 @@ export function sections() {
     milestone2ConstructAndMethods(),
     milestone2ArraysMathLoops(),
     milestone3PolymorphicStoreAndForwarding(),
+    milestone4DirectTargetsAndCaches(),
   ];
 }
 `;
@@ -1957,10 +2070,10 @@ async function allNodeExpectations() {
     computeNodeSections(numbersSource, "tint-general-numbers-"),
     computeNodeSections(propertyCachesSource, "tint-property-caches-"),
   ]);
-  assert.equal(elements.length, 12);
+  assert.equal(elements.length, 13);
   assert.equal(intrinsics.length, 5);
   assert.equal(numbers.length, 12);
-  assert.equal(propertyCaches.length, 18);
+  assert.equal(propertyCaches.length, 19);
   cachedExpected = { elements, intrinsics, numbers, propertyCaches };
   return cachedExpected;
 }

@@ -3,8 +3,143 @@ import {
   nativeArrayInlineOffset,
   nativeArrayLengthOffset,
 } from "@tint/abi/host";
-import type { RecordLayout } from "@tint/ir/scalar";
+import {
+  scalarByteLength,
+  type Block,
+  type RecordLayout,
+  type ScalarType,
+} from "@tint/ir/scalar";
 import type { Instruction as MachineInstruction } from "../isa.ts";
+
+export interface DirectGeneralTargetPlanContext {
+  readonly block: Block;
+  readonly slots: readonly (ScalarType | undefined)[];
+  readonly slotOffset: (slot: number) => number;
+  readonly valueUses: Uint32Array;
+  readonly internValue: (id: number) => number;
+  readonly foldedConstants: Uint8Array;
+  readonly skippedStores?: readonly number[] | undefined;
+  readonly fusionAccessId?: number | undefined;
+  readonly fusionTestId?: number | undefined;
+}
+
+/** Plans direct-to-slot stack targets for single-use `general`-producing
+ * instructions (`property-load`, `general-element-load`, `general-slot-load`,
+ * `general-wrap`, `general-none`, `general-null`) stored into a `general` slot
+ * in the same block, eliminating dead SSA temp round-trips and STLF stalls. */
+export function planDirectGeneralTargets(
+  ctx: DirectGeneralTargetPlanContext,
+): Map<number, number> {
+  const {
+    block,
+    slots,
+    slotOffset,
+    valueUses,
+    internValue,
+    foldedConstants,
+    skippedStores,
+    fusionAccessId,
+    fusionTestId,
+  } = ctx;
+  const targets = new Map<number, number>();
+  const directAtIndex = new Map<number, number>();
+  const instructions = block.instructions;
+  function overlaps(
+    offA: number,
+    bytesA: number,
+    offB: number,
+    bytesB: number,
+  ): boolean {
+    return offA < offB + bytesB && offB < offA + bytesA;
+  }
+  for (let sIdx = 0; sIdx < instructions.length; sIdx++) {
+    const sOp = instructions[sIdx];
+    if (
+      sOp === undefined ||
+      sOp.kind !== "store" ||
+      slots[sOp.slot] !== "general"
+    )
+      continue;
+    if (skippedStores !== undefined && skippedStores.indexOf(sIdx) >= 0)
+      continue;
+    const valId = sOp.value;
+    const valIdx = internValue(valId);
+    if (foldedConstants[valIdx] === 1 || targets.has(valId)) continue;
+    let expectedUses = 1;
+    if (fusionAccessId === valId && fusionTestId !== undefined) {
+      for (let tIdx = 0; tIdx < instructions.length; tIdx++) {
+        const tOp = instructions[tIdx];
+        if (
+          tOp !== undefined &&
+          tOp.kind === "general-is" &&
+          tOp.id === fusionTestId &&
+          tOp.value === valId
+        ) {
+          expectedUses = 2;
+          break;
+        }
+      }
+    }
+    if ((valueUses[valIdx] ?? 0) !== expectedUses) continue;
+    const destOffset = slotOffset(sOp.slot);
+    let defIdx = -1;
+    let safe = true;
+    for (let k = sIdx - 1; k >= 0; k--) {
+      const mid = instructions[k];
+      if (mid === undefined) {
+        safe = false;
+        break;
+      }
+      if (
+        (mid.kind === "property-load" ||
+          mid.kind === "general-element-load" ||
+          mid.kind === "general-slot-load" ||
+          mid.kind === "general-wrap" ||
+          mid.kind === "general-none" ||
+          mid.kind === "general-null" ||
+          mid.kind === "call" ||
+          mid.kind === "call-indirect") &&
+        mid.id === valId
+      ) {
+        defIdx = k;
+        break;
+      }
+      const existingDirect = directAtIndex.get(k);
+      if (
+        existingDirect !== undefined &&
+        overlaps(existingDirect, 16, destOffset, 16)
+      ) {
+        safe = false;
+        break;
+      }
+      if (mid.kind === "load" || mid.kind === "store") {
+        const midType = slots[mid.slot];
+        const midBytes = midType === undefined ? 16 : scalarByteLength(midType);
+        if (overlaps(slotOffset(mid.slot), midBytes, destOffset, 16)) {
+          safe = false;
+          break;
+        }
+        continue;
+      }
+      if (
+        mid.kind !== "constant" &&
+        mid.kind !== "reference-none" &&
+        mid.kind !== "boolean-none" &&
+        mid.kind !== "string-none" &&
+        mid.kind !== "general-none" &&
+        mid.kind !== "general-null" &&
+        mid.kind !== "general-is"
+      ) {
+        safe = false;
+        break;
+      }
+    }
+    if (!safe || defIdx < 0) continue;
+    targets.set(valId, destOffset);
+    directAtIndex.set(defIdx, destOffset);
+  }
+  return targets;
+}
 
 export type GeneralElementOp =
   | {
@@ -64,6 +199,7 @@ export interface GeneralElementEmitContext {
   readonly jsConvert: boolean;
   readonly contextOffset: number;
   readonly fusedMiss: number | undefined;
+  readonly directTargetOffset?: number;
   readonly instructionCount: () => number;
   readonly emit: (instruction: MachineInstruction) => void;
   readonly patchInstruction: (
@@ -98,7 +234,6 @@ export interface PropertyStoreEmitContext {
   readonly siteShapeOffset: number;
   readonly shapeFieldOffset: number;
   readonly epochFieldOffset: number;
-  readonly contextOffset: number;
   readonly useColdStubs: boolean;
   readonly generationalBarriers: boolean;
   readonly fusedMiss: number | undefined;
@@ -120,7 +255,6 @@ export interface PropertyStoreEmitContext {
     load: boolean,
   ) => void;
   readonly valueOffset: (id: number) => number;
-  readonly rawLoad: (register: number, offset: number) => void;
   readonly rawTarget: (id: number, fallback: number) => number;
   readonly saveRaw: (register: number, id: number) => void;
   readonly rememberTransitionOrValue: (valueOffset: number) => void;
@@ -141,7 +275,6 @@ export function emitPolymorphicPropertyStore(
     siteShapeOffset,
     shapeFieldOffset,
     epochFieldOffset,
-    contextOffset,
     useColdStubs,
     generationalBarriers,
     fusedMiss,
@@ -156,7 +289,6 @@ export function emitPolymorphicPropertyStore(
     entryPair,
     generalPair,
     valueOffset,
-    rawLoad,
     rawTarget,
     saveRaw,
     rememberTransitionOrValue,
@@ -292,10 +424,12 @@ export function emitPolymorphicPropertyStore(
     setFlags: false,
   });
   if (generationalBarriers)
+    // Preserve `transition` (x14) in x11 across `generalPair(14, ...)` and
+    // `rememberObject` (which clobbers x12/x13 before running `unneeded`).
     emit({
       op: "orr-reg",
       width: 64,
-      rd: 12,
+      rd: 11,
       rn: "zr",
       rm: 14,
     });
@@ -310,11 +444,9 @@ export function emitPolymorphicPropertyStore(
     mode: "offset",
   });
   if (generationalBarriers) {
-    // An old object may now refer to a young value or shape:
-    // remember it unless no transition was stored (x12) and the
+    // An old object (x10) may now refer to a young value or shape:
+    // remember it unless no transition was stored (x11) and the
     // value is no reference.
-    emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: 10 });
-    rawLoad(10, contextOffset);
     rememberTransitionOrValue(valueOffset(op.value));
   }
   let storeMissAt = -1;
@@ -408,6 +540,7 @@ export function emitGeneralElementAccess(
     jsConvert,
     contextOffset,
     fusedMiss,
+    directTargetOffset,
     instructionCount,
     emit,
     patchInstruction,
@@ -665,7 +798,7 @@ export function emitGeneralElementAccess(
       scaled: true,
     });
     const storeResult = instructionCount();
-    const offset = valueOffset(op.id);
+    const offset = directTargetOffset ?? valueOffset(op.id);
     generalPair(9, offset, false);
     const doneFromHit = instructionCount();
     emit({ op: "b", displacement: 0 });

@@ -34,9 +34,14 @@ export interface ModulePropertySites {
   readonly visited: number;
 }
 
+interface SiteTableInfo {
+  readonly record: number;
+  readonly names: readonly (string | undefined)[];
+}
+
 /** Cap cached globals/properties per loop to keep register pressure bounded. */
-const maxCachedGlobalsPerLoop = 4;
-const maxCachedPropertiesPerLoop = 8;
+const maxCachedGlobalsPerLoop = 12;
+const maxCachedPropertiesPerLoop = 16;
 const maxInvariantChainDepth = 8;
 
 /** Scan the module once to collect mutated record fields and map immutable
@@ -47,123 +52,353 @@ export function analyzeModulePropertySites(
   budget: number,
 ): ModulePropertySites | undefined {
   let hasScript = false;
+  const siteRecords = new Set<number>();
   for (const fn of module.functions) {
-    if (fn !== undefined && fn.import !== true && hasScriptOperations(fn)) {
-      hasScript = true;
-      break;
+    if (fn === undefined || fn.import === true) continue;
+    if (!hasScript && hasScriptOperations(fn)) hasScript = true;
+    for (const block of fn.blocks) {
+      if (block === undefined) continue;
+      for (const op of block.instructions) {
+        if (
+          op !== undefined &&
+          (op.kind === "property-load" || op.kind === "property-store")
+        )
+          siteRecords.add(op.siteRecord);
+      }
     }
   }
   const mutatedRecordFields = new Set<string>();
   const siteFieldName = new Map<string, string>();
   if (!hasScript) return { mutatedRecordFields, siteFieldName, visited: 0 };
+
+  // Identify property-cache factory functions (`createScriptPropertyCache` and
+  // its mangled/specialized direct twins) by IR shape: takes a `string` or
+  // `optional-string` key as parameter 0 and constructs a `siteRecords` record
+  // (or delegates to another factory function).
+  const siteFactoryFunctions = new Set<number>();
+  for (const fn of module.functions) {
+    if (fn === undefined || fn.import === true) continue;
+    if (fn.name.includes("createScriptPropertyCache")) {
+      siteFactoryFunctions.add(fn.id);
+      continue;
+    }
+    if (fn.returnType !== "reference" || fn.parameters.length === 0) continue;
+    const p0 = fn.parameters[0];
+    const p0Type = p0 === undefined ? undefined : fn.slots[p0];
+    if (p0Type !== "string" && p0Type !== "optional-string") continue;
+    let constructsSite = false;
+    for (const block of fn.blocks) {
+      if (block === undefined) continue;
+      for (const op of block.instructions) {
+        if (
+          op !== undefined &&
+          op.kind === "record-new" &&
+          siteRecords.has(op.record)
+        ) {
+          constructsSite = true;
+          break;
+        }
+      }
+      if (constructsSite) break;
+    }
+    if (constructsSite) siteFactoryFunctions.add(fn.id);
+  }
+  // One extra pass to catch wrapper functions delegating directly to a factory.
+  if (siteFactoryFunctions.size > 0) {
+    for (const fn of module.functions) {
+      if (
+        fn === undefined ||
+        fn.import === true ||
+        siteFactoryFunctions.has(fn.id)
+      )
+        continue;
+      if (fn.returnType !== "reference" || fn.parameters.length === 0) continue;
+      const p0 = fn.parameters[0];
+      const p0Type = p0 === undefined ? undefined : fn.slots[p0];
+      if (p0Type !== "string" && p0Type !== "optional-string") continue;
+      let callsFactory = false;
+      for (const block of fn.blocks) {
+        if (block === undefined) continue;
+        for (const op of block.instructions) {
+          if (
+            op !== undefined &&
+            op.kind === "call" &&
+            siteFactoryFunctions.has(op.target)
+          ) {
+            callsFactory = true;
+            break;
+          }
+        }
+        if (callsFactory) break;
+      }
+      if (callsFactory) siteFactoryFunctions.add(fn.id);
+    }
+  }
+
   const siteFieldAmbiguous = new Set<string>();
+  const writtenRecordFields = new Set<string>();
   let visited = 0;
   for (const other of module.functions) {
     if (other === undefined || other.import === true) continue;
-    const slotStrLit = new Map<number, string>();
-    const slotStrAmbiguous = new Set<number>();
-    const slotSiteName = new Map<number, string>();
-    const slotSiteAmbiguous = new Set<number>();
+    let hasSiteFactoryCall = false;
     for (const block of other.blocks) {
       if (block === undefined) continue;
       if (++visited > budget) return undefined;
+      const term = block.terminator;
+      if (
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation !== "read"
+      ) {
+        const fk = String(term.record) + ":" + String(term.field);
+        mutatedRecordFields.add(fk);
+        if (term.operation === "write") writtenRecordFields.add(fk);
+      }
+      if (!hasSiteFactoryCall) {
+        for (const op of block.instructions) {
+          if (
+            op !== undefined &&
+            op.kind === "call" &&
+            siteFactoryFunctions.has(op.target)
+          ) {
+            hasSiteFactoryCall = true;
+            break;
+          }
+        }
+      }
+    }
+    if (!hasSiteFactoryCall) continue;
+    // Propagate string literals, property-cache factory results, and chunked
+    // `$pc` table field-name maps forward in RPO. Recording both leaf keys
+    // (`pcRec:field`) and 2-level container keys (`envRec:envField->pcRec:field`)
+    // preserves exact property names across 24-slot `$pc` chunks that share a
+    // structural `RecordLayout`.
+    function recordSiteField(fk: string, name: string | undefined): void {
+      if (siteFieldAmbiguous.has(fk)) return;
+      if (name !== undefined) {
+        const prev = siteFieldName.get(fk);
+        if (prev === undefined) siteFieldName.set(fk, name);
+        else if (prev !== name) {
+          siteFieldName.delete(fk);
+          siteFieldAmbiguous.add(fk);
+        }
+      } else if (siteFieldName.has(fk)) {
+        siteFieldName.delete(fk);
+        siteFieldAmbiguous.add(fk);
+      }
+    }
+    function recordNestedTable(
+      containerRec: number,
+      containerField: number,
+      table: SiteTableInfo,
+    ): void {
+      const prefix =
+        String(containerRec) +
+        ":" +
+        String(containerField) +
+        "->" +
+        String(table.record) +
+        ":";
+      for (let f = 0; f < table.names.length; f++) {
+        recordSiteField(prefix + String(f), table.names[f]);
+      }
+    }
+    const nBlocks = other.blocks.length;
+    const seenBlk = new Uint8Array(nBlocks);
+    const post: number[] = [];
+    const sBlk: number[] = [other.entry];
+    const sIdx: number[] = [0];
+    seenBlk[other.entry] = 1;
+    while (sBlk.length > 0) {
+      const top = sBlk.length - 1;
+      const bid = sBlk[top];
+      const ni = sIdx[top];
+      if (bid === undefined || ni === undefined) break;
+      const blk = other.blocks[bid];
+      if (blk === undefined) {
+        sBlk.pop();
+        sIdx.pop();
+        continue;
+      }
+      const succs = blockSuccessors(blk);
+      if (ni < succs.length) {
+        sIdx[top] = ni + 1;
+        const s = succs[ni];
+        if (s !== undefined && seenBlk[s] === 0) {
+          seenBlk[s] = 1;
+          sBlk.push(s);
+          sIdx.push(0);
+        }
+      } else {
+        sBlk.pop();
+        sIdx.pop();
+        post.push(bid);
+      }
+    }
+    const order: number[] = [];
+    const predsOf: number[][] = [];
+    for (let i = 0; i < nBlocks; i++) predsOf.push([]);
+    for (let i = post.length - 1; i >= 0; i--) {
+      const bid = post[i];
+      if (bid !== undefined) order.push(bid);
+    }
+    for (const bid of order) {
+      const blk = other.blocks[bid];
+      if (blk === undefined) continue;
+      for (const s of blockSuccessors(blk)) {
+        if (s !== undefined && seenBlk[s] === 1) {
+          const list = predsOf[s];
+          if (list !== undefined && list.indexOf(bid) < 0) list.push(bid);
+        }
+      }
+    }
+    const outStr = new Map<number, Map<number, string>>();
+    const outSite = new Map<number, Map<number, string>>();
+    const outTable = new Map<number, Map<number, SiteTableInfo>>();
+    for (const bid of order) {
+      const blk = other.blocks[bid];
+      if (blk === undefined) continue;
+      if (++visited > budget) return undefined;
+      const curSlotStr = new Map<number, string>();
+      const curSlotSite = new Map<number, string>();
+      const curSlotTable = new Map<number, SiteTableInfo>();
+      const ps = predsOf[bid];
+      if (bid !== other.entry && ps !== undefined && ps.length > 0) {
+        const ready: number[] = [];
+        for (const p of ps)
+          if (p !== undefined && outSite.has(p)) ready.push(p);
+        const first = ready[0];
+        if (first !== undefined) {
+          const fStr = outStr.get(first);
+          const fSite = outSite.get(first);
+          const fTable = outTable.get(first);
+          if (fStr !== undefined) {
+            for (const [k, v] of fStr) {
+              let ok = true;
+              for (let j = 1; j < ready.length; j++) {
+                const p = ready[j];
+                if (p === undefined || outStr.get(p)?.get(k) !== v) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) curSlotStr.set(k, v);
+            }
+          }
+          if (fSite !== undefined) {
+            for (const [k, v] of fSite) {
+              let ok = true;
+              for (let j = 1; j < ready.length; j++) {
+                const p = ready[j];
+                if (p === undefined || outSite.get(p)?.get(k) !== v) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) curSlotSite.set(k, v);
+            }
+          }
+          if (fTable !== undefined) {
+            for (const [k, v] of fTable) {
+              let ok = true;
+              for (let j = 1; j < ready.length; j++) {
+                const p = ready[j];
+                if (p === undefined || outTable.get(p)?.get(k) !== v) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) curSlotTable.set(k, v);
+            }
+          }
+        }
+      }
       const strLits = new Map<number, string>();
       const valSiteName = new Map<number, string>();
-      for (const op of block.instructions) {
+      const valSiteTable = new Map<number, SiteTableInfo>();
+      for (const op of blk.instructions) {
         if (op === undefined) continue;
         if (op.kind === "string-literal") {
           strLits.set(op.id, op.value);
+        } else if (op.kind === "string-wrap") {
+          const s = strLits.get(op.value);
+          if (s !== undefined) strLits.set(op.id, s);
         } else if (op.kind === "load") {
-          if (!slotStrAmbiguous.has(op.slot)) {
-            const s = slotStrLit.get(op.slot);
-            if (s !== undefined) strLits.set(op.id, s);
-          }
-          if (!slotSiteAmbiguous.has(op.slot)) {
-            const sn = slotSiteName.get(op.slot);
-            if (sn !== undefined) valSiteName.set(op.id, sn);
-          }
+          const s = curSlotStr.get(op.slot);
+          if (s !== undefined) strLits.set(op.id, s);
+          const sn = curSlotSite.get(op.slot);
+          if (sn !== undefined) valSiteName.set(op.id, sn);
+          const tbl = curSlotTable.get(op.slot);
+          if (tbl !== undefined) valSiteTable.set(op.id, tbl);
         } else if (op.kind === "call") {
-          const callee = module.functions[op.target];
           const callId = op.id;
-          if (
-            callee !== undefined &&
-            callee.name.includes("createScriptPropertyCache") &&
-            callId !== undefined
-          ) {
+          if (siteFactoryFunctions.has(op.target) && callId !== undefined) {
             const arg0 = op.arguments[0];
             const lit = arg0 === undefined ? undefined : strLits.get(arg0);
             if (lit !== undefined) valSiteName.set(callId, lit);
           }
         } else if (op.kind === "store") {
           const s = strLits.get(op.value);
-          if (s !== undefined) {
-            if (!slotStrAmbiguous.has(op.slot)) {
-              const prev = slotStrLit.get(op.slot);
-              if (prev === undefined) slotStrLit.set(op.slot, s);
-              else if (prev !== s) {
-                slotStrLit.delete(op.slot);
-                slotStrAmbiguous.add(op.slot);
-              }
-            }
-          } else {
-            slotStrLit.delete(op.slot);
-            slotStrAmbiguous.add(op.slot);
-          }
+          if (s !== undefined) curSlotStr.set(op.slot, s);
+          else curSlotStr.delete(op.slot);
           const sn = valSiteName.get(op.value);
-          if (sn !== undefined) {
-            if (!slotSiteAmbiguous.has(op.slot)) {
-              const prev = slotSiteName.get(op.slot);
-              if (prev === undefined) slotSiteName.set(op.slot, sn);
-              else if (prev !== sn) {
-                slotSiteName.delete(op.slot);
-                slotSiteAmbiguous.add(op.slot);
-              }
-            }
-          } else {
-            slotSiteName.delete(op.slot);
-            slotSiteAmbiguous.add(op.slot);
-          }
+          if (sn !== undefined) curSlotSite.set(op.slot, sn);
+          else curSlotSite.delete(op.slot);
+          const tbl = valSiteTable.get(op.value);
+          if (tbl !== undefined) curSlotTable.set(op.slot, tbl);
+          else curSlotTable.delete(op.slot);
         } else if (op.kind === "record-new") {
+          const names: (string | undefined)[] = [];
+          let hasSiteArg = false;
           for (let f = 0; f < op.arguments.length; f++) {
             const argId = op.arguments[f];
             const name =
               argId === undefined ? undefined : valSiteName.get(argId);
-            const fk = String(op.record) + ":" + String(f);
-            if (siteFieldAmbiguous.has(fk)) continue;
-            if (name !== undefined) {
-              const prev = siteFieldName.get(fk);
-              if (prev === undefined) siteFieldName.set(fk, name);
-              else if (prev !== name) {
-                siteFieldName.delete(fk);
-                siteFieldAmbiguous.add(fk);
-              }
-            } else if (siteFieldName.has(fk)) {
-              siteFieldName.delete(fk);
-              siteFieldAmbiguous.add(fk);
-            }
+            names.push(name);
+            if (name !== undefined) hasSiteArg = true;
+            recordSiteField(String(op.record) + ":" + String(f), name);
+            const nested =
+              argId === undefined ? undefined : valSiteTable.get(argId);
+            if (nested !== undefined) recordNestedTable(op.record, f, nested);
           }
+          if (hasSiteArg) valSiteTable.set(op.id, { record: op.record, names });
         }
       }
-      const term = block.terminator;
+      const term = blk.terminator;
       if (
-        (term.kind === "record" || term.kind === "record-cell") &&
-        term.operation !== "read"
-      ) {
-        mutatedRecordFields.add(String(term.record) + ":" + String(term.field));
-      } else if (
         (term.kind === "record" ||
           term.kind === "record-cell" ||
           term.kind === "cell") &&
         term.operation === "read"
       ) {
-        slotStrLit.delete(term.slot);
-        slotStrAmbiguous.add(term.slot);
-        slotSiteName.delete(term.slot);
-        slotSiteAmbiguous.add(term.slot);
+        curSlotStr.delete(term.slot);
+        curSlotSite.delete(term.slot);
+        curSlotTable.delete(term.slot);
+      } else if (
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation !== "read"
+      ) {
+        const tbl = curSlotTable.get(term.slot);
+        if (tbl !== undefined) recordNestedTable(term.record, term.field, tbl);
       }
+      outStr.set(bid, curSlotStr);
+      outSite.set(bid, curSlotSite);
+      outTable.set(bid, curSlotTable);
     }
   }
   for (const fk of mutatedRecordFields) siteFieldName.delete(fk);
+  if (writtenRecordFields.size > 0) {
+    const staleKeys: string[] = [];
+    for (const [key] of siteFieldName) {
+      const arrow = key.indexOf("->");
+      if (arrow > 0) {
+        const parent = key.slice(0, arrow);
+        const child = key.slice(arrow + 2);
+        if (writtenRecordFields.has(parent) || mutatedRecordFields.has(child))
+          staleKeys.push(key);
+      }
+    }
+    for (const key of staleKeys) siteFieldName.delete(key);
+  }
   return { mutatedRecordFields, siteFieldName, visited };
 }
 
@@ -669,7 +904,15 @@ export function cacheLoopProperties(
 
   function siteExprPropName(expr: InvariantExpr): string | undefined {
     if (expr.kind !== "record-read") return undefined;
-    return siteFieldName.get(String(expr.record) + ":" + String(expr.field));
+    const leaf = String(expr.record) + ":" + String(expr.field);
+    const parent = expr.object;
+    if (parent.kind === "record-read") {
+      const nested = siteFieldName.get(
+        String(parent.record) + ":" + String(parent.field) + "->" + leaf,
+      );
+      if (nested !== undefined) return nested;
+    }
+    return siteFieldName.get(leaf);
   }
 
   // Whole-module call-effect memoization: a direct callee is property-safe iff
@@ -3638,9 +3881,13 @@ export function cacheLoopProperties(
 
 interface PropDef {
   readonly id: number;
+  readonly kind: "property-load" | "global-cell";
   readonly blockId: number;
   readonly opIndex: number;
-  readonly op: PropertyLoadOp;
+  readonly propOp: PropertyLoadOp | undefined;
+  readonly globalOp: GlobalCellOp | undefined;
+  /** Receiver slot for `property-load`, or scope slot (`-1` when from an
+   * immutable expression) for `global-cell`. */
   readonly objSlot: number;
   readonly propKey: string;
   readonly key: string;
@@ -3648,19 +3895,19 @@ interface PropDef {
 }
 
 /**
- * Eliminates redundant same-receiver `property-load` probes across dominating
- * paths (including across sibling cold miss blocks by refreshing on those cold
- * blocks).
+ * Eliminates redundant same-receiver `property-load` and `global-cell` probes
+ * across dominating paths (including across sibling cold miss blocks by
+ * refreshing on those cold blocks).
  *
- * Every dominating `property-load` stores its raw result (`V` on hit, `absent`
- * on miss) into a dedicated `probeSlot`. Because `probeSlot` is initialized at
- * the dominating producer, every dominated redundant `property-load` for the
- * same `(objSlot, propKey)` can load `probeSlot` directly: on the fast path it
- * sees `V` without re-probing the IC; on a miss of the producer (e.g. a getter
- * or proxy) it sees `absent` and takes its own slow path. Any cold miss block
- * of an unrelated access between producer and use refreshes `probeSlot` via
- * `property-load`, preserving exact mutation semantics even if that unrelated
- * slow path invoked a mutating getter.
+ * Every dominating `property-load` (or `global-cell`) stores its raw result
+ * (`V` on hit, `absent`/`undefined` on miss) into a dedicated `probeSlot`.
+ * Because `probeSlot` is initialized at the dominating producer, every
+ * dominated redundant probe for the same receiver/key can load `probeSlot`
+ * directly: on the fast path it sees the cached hit without re-probing; on a
+ * miss of the producer (e.g. a getter or proxy) it sees `absent`/`undefined`
+ * and takes its own slow path. Any cold miss block of an unrelated access
+ * between producer and use refreshes `probeSlot`, preserving exact mutation
+ * semantics even if that unrelated slow path invoked a mutating getter.
  */
 export function forwardDominatingProperties(
   fn: FunctionIR,
@@ -3675,6 +3922,7 @@ export function forwardDominatingProperties(
 
   let visited = 0,
     propLoadCount = 0,
+    globalCellCount = 0,
     nextValue = 0;
   const watchedRecords = new Set<number>();
   for (const block of fn.blocks) {
@@ -3690,16 +3938,23 @@ export function forwardDominatingProperties(
         watchedRecords.add(op.siteRecord);
         watchedRecords.add(op.epochRecord);
         if (op.spillRecord !== undefined) watchedRecords.add(op.spillRecord);
+      } else if (op.kind === "global-cell") {
+        globalCellCount++;
+        watchedRecords.add(op.scopeRecord);
+        watchedRecords.add(op.globalRecord);
+        watchedRecords.add(op.globalObjectRecord);
+        watchedRecords.add(op.cacheRecord);
       }
     }
   }
-  if (propLoadCount < 2) return { fn, visited, rewritten: 0 };
+  if (propLoadCount + globalCellCount < 2) return { fn, visited, rewritten: 0 };
 
   const sites =
     shared ?? analyzeModulePropertySites(module, Math.max(1, budget - visited));
   if (sites === undefined) return undefined;
   if (shared === undefined) visited += sites.visited;
   const siteFieldName = sites.siteFieldName;
+  const mutatedRecordFields = sites.mutatedRecordFields;
 
   // Whole-module call-effect memoization (0 = computing, 1 = clean, 2 = invalidates).
   const callState = new Map<number, number>();
@@ -3767,65 +4022,6 @@ export function forwardDominatingProperties(
     if (op.kind === "call") return calleeInvalidates(op.target);
     return false;
   }
-
-  // Resolve single-definition site slots so hoisted/copied `$pc` reads keep
-  // their static property name.
-  const slotSiteKey = new Map<number, string>();
-  const slotSiteAmbiguous = new Set<number>();
-  for (const p of fn.parameters) if (p !== undefined) slotSiteAmbiguous.add(p);
-  if (fn.receiverSlot !== undefined) slotSiteAmbiguous.add(fn.receiverSlot);
-  for (const block of fn.blocks) {
-    if (block === undefined) continue;
-    if (block.exception !== undefined)
-      slotSiteAmbiguous.add(block.exception.slot);
-    const term = block.terminator;
-    if (
-      (term.kind === "record" ||
-        term.kind === "record-cell" ||
-        term.kind === "cell") &&
-      term.operation === "read"
-    ) {
-      const termName =
-        term.kind === "record"
-          ? siteFieldName.get(String(term.record) + ":" + String(term.field))
-          : undefined;
-      if (termName !== undefined && !slotSiteAmbiguous.has(term.slot)) {
-        const prev = slotSiteKey.get(term.slot);
-        if (prev === undefined) slotSiteKey.set(term.slot, termName);
-        else if (prev !== termName) {
-          slotSiteKey.delete(term.slot);
-          slotSiteAmbiguous.add(term.slot);
-        }
-      } else {
-        slotSiteKey.delete(term.slot);
-        slotSiteAmbiguous.add(term.slot);
-      }
-    }
-    const localSite = new Map<number, string>();
-    for (const op of block.instructions) {
-      if (op === undefined) continue;
-      if (op.kind === "record-read") {
-        const name = siteFieldName.get(
-          String(op.record) + ":" + String(op.field),
-        );
-        if (name !== undefined) localSite.set(op.id, name);
-      } else if (op.kind === "store") {
-        const name = localSite.get(op.value);
-        if (name !== undefined && !slotSiteAmbiguous.has(op.slot)) {
-          const prev = slotSiteKey.get(op.slot);
-          if (prev === undefined) slotSiteKey.set(op.slot, name);
-          else if (prev !== name) {
-            slotSiteKey.delete(op.slot);
-            slotSiteAmbiguous.add(op.slot);
-          }
-        } else {
-          slotSiteKey.delete(op.slot);
-          slotSiteAmbiguous.add(op.slot);
-        }
-      }
-    }
-  }
-  for (const s of slotSiteAmbiguous) slotSiteKey.delete(s);
 
   // Reachable blocks in reverse postorder, predecessors, exception targets,
   // and immediate dominators (Cooper-Harvey-Kennedy).
@@ -3925,7 +4121,211 @@ export function forwardDominatingProperties(
     return a === fn.entry;
   }
 
-  // Identify dedicated cold miss edges from property/element IC probes.
+  // Forward must-dataflow for:
+  //  - `refField`: reference slot -> immutable `"record:field"` key (resolving
+  //    `$pc` property-cache and `$gc` global-cache sites even through reused
+  //    temporary slots).
+  //  - `genAlias`: general slot -> canonical root general slot (copy aliasing
+  //    across inlined method receiver/parameter copies).
+  function cloneStrMap(src: Map<number, string>): Map<number, string> {
+    const out = new Map<number, string>();
+    for (const [k, v] of src) out.set(k, v);
+    return out;
+  }
+  function strMapsEqual(
+    a: Map<number, string> | undefined,
+    b: Map<number, string>,
+  ): boolean {
+    if (a === undefined || a.size !== b.size) return false;
+    for (const [k, v] of a) if (b.get(k) !== v) return false;
+    return true;
+  }
+  function cloneNumMap(src: Map<number, number>): Map<number, number> {
+    const out = new Map<number, number>();
+    for (const [k, v] of src) out.set(k, v);
+    return out;
+  }
+  function numMapsEqual(
+    a: Map<number, number> | undefined,
+    b: Map<number, number>,
+  ): boolean {
+    if (a === undefined || a.size !== b.size) return false;
+    for (const [k, v] of a) if (b.get(k) !== v) return false;
+    return true;
+  }
+  function resolveAlias(slot: number, alias: Map<number, number>): number {
+    let cur = slot;
+    for (let hop = 0; hop < 6; hop++) {
+      const next = alias.get(cur);
+      if (next === undefined || next === cur) return cur;
+      cur = next;
+    }
+    return cur;
+  }
+  function killAliasSlot(slot: number, alias: Map<number, number>): void {
+    alias.delete(slot);
+    for (const [k, r] of alias) if (r === slot) alias.delete(k);
+  }
+  function immutableFieldKey(
+    record: number,
+    field: number,
+    parentFk?: string,
+  ): string | undefined {
+    const layoutField = module.records?.[record]?.fields[field];
+    const leaf = String(record) + ":" + String(field);
+    const immutable =
+      (layoutField !== undefined && !layoutField.mutable) ||
+      !mutatedRecordFields.has(leaf);
+    if (!immutable) return undefined;
+    return parentFk !== undefined ? parentFk + "->" + leaf : leaf;
+  }
+  function lookupPropSiteName(fk: string | undefined): string | undefined {
+    if (fk === undefined) return undefined;
+    const direct = siteFieldName.get(fk);
+    if (direct !== undefined) return direct;
+    const arrow = fk.lastIndexOf("->");
+    if (arrow > 0) {
+      const twoLevel = fk.indexOf("->", 0);
+      if (twoLevel !== arrow) {
+        const suffix = siteFieldName.get(fk.slice(twoLevel + 2));
+        if (suffix !== undefined) return suffix;
+      }
+      return siteFieldName.get(fk.slice(arrow + 2));
+    }
+    return undefined;
+  }
+
+  const refFieldIn = new Map<number, Map<number, string>>();
+  const refFieldOut = new Map<number, Map<number, string>>();
+  const aliasIn = new Map<number, Map<number, number>>();
+  const aliasOut = new Map<number, Map<number, number>>();
+  let metaChanged = true;
+  let metaIters = 0;
+  const maxMetaIters = Math.max(8, rpo.length * 2);
+  while (metaChanged && metaIters < maxMetaIters) {
+    metaChanged = false;
+    metaIters++;
+    for (const bid of rpo) {
+      let curRef: Map<number, string>;
+      let curAlias: Map<number, number>;
+      if (bid === fn.entry || exceptionTargets.has(bid)) {
+        curRef = new Map<number, string>();
+        curAlias = new Map<number, number>();
+      } else {
+        curRef = new Map<number, string>();
+        curAlias = new Map<number, number>();
+        const ps = preds[bid];
+        if (ps !== undefined && ps.length > 0) {
+          let firstRef: Map<number, string> | undefined;
+          let firstAlias: Map<number, number> | undefined;
+          const readyPreds: number[] = [];
+          for (const p of ps) {
+            if (p === undefined) continue;
+            const ro = refFieldOut.get(p);
+            const ao = aliasOut.get(p);
+            if (ro !== undefined && ao !== undefined) {
+              readyPreds.push(p);
+              if (firstRef === undefined) {
+                firstRef = ro;
+                firstAlias = ao;
+              }
+            }
+          }
+          if (firstRef !== undefined) {
+            for (const [s, fk] of firstRef) {
+              let ok = true;
+              for (let j = 1; j < readyPreds.length; j++) {
+                const p = readyPreds[j];
+                if (p === undefined || refFieldOut.get(p)?.get(s) !== fk) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) curRef.set(s, fk);
+            }
+          }
+          if (firstAlias !== undefined) {
+            for (const [s, r] of firstAlias) {
+              let ok = true;
+              for (let j = 1; j < readyPreds.length; j++) {
+                const p = readyPreds[j];
+                if (p === undefined || aliasOut.get(p)?.get(s) !== r) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) curAlias.set(s, r);
+            }
+          }
+        }
+      }
+      refFieldIn.set(bid, cloneStrMap(curRef));
+      aliasIn.set(bid, cloneNumMap(curAlias));
+      const blk = fn.blocks[bid];
+      if (blk !== undefined) {
+        const valRefField = new Map<number, string>();
+        const valGenSlot = new Map<number, number>();
+        for (const op of blk.instructions) {
+          if (op === undefined) continue;
+          if (++visited > budget) return undefined;
+          if (op.kind === "record-read") {
+            const fk = immutableFieldKey(
+              op.record,
+              op.field,
+              valRefField.get(op.object),
+            );
+            if (fk !== undefined) valRefField.set(op.id, fk);
+          } else if (op.kind === "load") {
+            const fk = curRef.get(op.slot);
+            if (fk !== undefined) valRefField.set(op.id, fk);
+            if (fn.slots[op.slot] === "general") valGenSlot.set(op.id, op.slot);
+          } else if (op.kind === "store") {
+            const fk = valRefField.get(op.value);
+            if (fk !== undefined) curRef.set(op.slot, fk);
+            else curRef.delete(op.slot);
+            const srcSlot = valGenSlot.get(op.value);
+            const srcRoot =
+              srcSlot !== undefined && fn.slots[op.slot] === "general"
+                ? resolveAlias(srcSlot, curAlias)
+                : undefined;
+            killAliasSlot(op.slot, curAlias);
+            if (srcRoot !== undefined && srcRoot !== op.slot)
+              curAlias.set(op.slot, srcRoot);
+          }
+        }
+        const term = blk.terminator;
+        if (
+          (term.kind === "record" ||
+            term.kind === "record-cell" ||
+            term.kind === "cell") &&
+          term.operation === "read"
+        ) {
+          const fk =
+            term.kind === "record" || term.kind === "record-cell"
+              ? immutableFieldKey(
+                  term.record,
+                  term.field,
+                  valRefField.get(term.object),
+                )
+              : undefined;
+          if (fk !== undefined) curRef.set(term.slot, fk);
+          else curRef.delete(term.slot);
+          killAliasSlot(term.slot, curAlias);
+        }
+      }
+      if (!strMapsEqual(refFieldOut.get(bid), curRef)) {
+        refFieldOut.set(bid, curRef);
+        metaChanged = true;
+      }
+      if (!numMapsEqual(aliasOut.get(bid), curAlias)) {
+        aliasOut.set(bid, curAlias);
+        metaChanged = true;
+      }
+    }
+  }
+  if (metaChanged) return { fn, visited, rewritten: 0 };
+
+  // Identify dedicated cold miss edges from property/element/global-cell probes.
   const missEdges = new Set<string>();
   const loadSelfMiss = new Map<number, number>();
   for (const bid of rpo) {
@@ -3936,13 +4336,19 @@ export function forwardDominatingProperties(
     let lastLoadId = -1;
     let lastLoadIsProp = false;
     let lastStoreId = -1;
+    let lastGlobalId = -1;
     const loadAliases = new Set<number>();
     const loadAliasSlots = new Set<number>();
     const storeAliases = new Set<number>();
     const storeAliasSlots = new Set<number>();
+    const globalAliases = new Set<number>();
+    const globalAliasSlots = new Set<number>();
+    const refNones = new Set<number>();
     const absentVals = new Set<number>();
     const notAbsentVals = new Set<number>();
     const notStoreVals = new Set<number>();
+    const globalMissVals = new Set<number>();
+    const globalHitVals = new Set<number>();
     for (const op of blk.instructions) {
       if (op === undefined) continue;
       if (
@@ -3968,41 +4374,72 @@ export function forwardDominatingProperties(
         storeAliasSlots.clear();
         notStoreVals.clear();
         storeAliases.add(op.id);
+      } else if (op.kind === "global-cell") {
+        lastGlobalId = op.id;
+        globalAliases.clear();
+        globalAliasSlots.clear();
+        globalMissVals.clear();
+        globalHitVals.clear();
+        globalAliases.add(op.id);
+      } else if (op.kind === "reference-none") {
+        refNones.add(op.id);
       } else if (op.kind === "store") {
         if (loadAliases.has(op.value)) loadAliasSlots.add(op.slot);
         else loadAliasSlots.delete(op.slot);
         if (storeAliases.has(op.value)) storeAliasSlots.add(op.slot);
         else storeAliasSlots.delete(op.slot);
+        if (globalAliases.has(op.value)) globalAliasSlots.add(op.slot);
+        else globalAliasSlots.delete(op.slot);
       } else if (op.kind === "load") {
         if (loadAliasSlots.has(op.slot)) loadAliases.add(op.id);
         if (storeAliasSlots.has(op.slot)) storeAliases.add(op.id);
+        if (globalAliasSlots.has(op.slot)) globalAliases.add(op.id);
       } else if (
         op.kind === "general-is" &&
         op.type === "absent" &&
         loadAliases.has(op.value)
       ) {
         absentVals.add(op.id);
+      } else if (
+        op.kind === "binary" &&
+        (op.operator === "===" || op.operator === "!==")
+      ) {
+        const cmpGlobal =
+          (globalAliases.has(op.left) && refNones.has(op.right)) ||
+          (globalAliases.has(op.right) && refNones.has(op.left));
+        if (cmpGlobal) {
+          if (op.operator === "===") globalMissVals.add(op.id);
+          else globalHitVals.add(op.id);
+        }
       } else if (op.kind === "unary" && op.operator === "!") {
         if (absentVals.has(op.operand)) notAbsentVals.add(op.id);
         if (storeAliases.has(op.operand)) notStoreVals.add(op.id);
+        if (globalMissVals.has(op.operand)) globalHitVals.add(op.id);
+        if (globalHitVals.has(op.operand)) globalMissVals.add(op.id);
       }
     }
     let missTarget: number | undefined;
-    let isPropLoadMiss = false;
+    let selfProbeId = -1;
     if (lastLoadId >= 0 && absentVals.has(term.condition)) {
       missTarget = term.consequent;
-      isPropLoadMiss = lastLoadIsProp;
+      if (lastLoadIsProp) selfProbeId = lastLoadId;
     } else if (lastLoadId >= 0 && notAbsentVals.has(term.condition)) {
       missTarget = term.alternate;
-      isPropLoadMiss = lastLoadIsProp;
+      if (lastLoadIsProp) selfProbeId = lastLoadId;
     } else if (lastStoreId >= 0 && storeAliases.has(term.condition)) {
       missTarget = term.alternate;
     } else if (lastStoreId >= 0 && notStoreVals.has(term.condition)) {
       missTarget = term.consequent;
+    } else if (lastGlobalId >= 0 && globalMissVals.has(term.condition)) {
+      missTarget = term.consequent;
+      selfProbeId = lastGlobalId;
+    } else if (lastGlobalId >= 0 && globalHitVals.has(term.condition)) {
+      missTarget = term.alternate;
+      selfProbeId = lastGlobalId;
     }
     if (missTarget !== undefined) {
       missEdges.add(String(bid) + "->" + String(missTarget));
-      if (isPropLoadMiss) loadSelfMiss.set(lastLoadId, missTarget);
+      if (selfProbeId >= 0) loadSelfMiss.set(selfProbeId, missTarget);
     }
   }
 
@@ -4040,8 +4477,8 @@ export function forwardDominatingProperties(
     }
   }
 
-  // Pre-scan per-block `property-load` descriptors, `property-store` keys,
-  // and written slots.
+  // Pre-scan per-block `property-load` and `global-cell` descriptors,
+  // `property-store` keys, and written slots.
   const defs: PropDef[] = [];
   const opToDef = new Map<number, number>();
   const storeOpKey = new Map<number, string>();
@@ -4049,41 +4486,72 @@ export function forwardDominatingProperties(
   for (const bid of rpo) {
     const blk = fn.blocks[bid];
     if (blk === undefined) continue;
-    const valSlot = new Map<number, number>();
-    const valSite = new Map<number, string>();
+    const curRef = cloneStrMap(
+      refFieldIn.get(bid) ?? new Map<number, string>(),
+    );
+    const curAlias = cloneNumMap(aliasIn.get(bid) ?? new Map<number, number>());
+    const valGenSlot = new Map<number, number>();
+    const valRefSlot = new Map<number, number>();
+    const valRefField = new Map<number, string>();
+    const valIsClosureEnv = new Set<number>();
     const written = new Set<number>();
     for (let idx = 0; idx < blk.instructions.length; idx++) {
       const op = blk.instructions[idx];
       if (op === undefined) continue;
-      if (op.kind === "load") {
-        if (fn.slots[op.slot] === "general") valSlot.set(op.id, op.slot);
-        const sk = slotSiteKey.get(op.slot);
-        if (sk !== undefined) valSite.set(op.id, sk);
+      if (op.kind === "closure-environment") {
+        valIsClosureEnv.add(op.id);
+      } else if (op.kind === "load") {
+        if (fn.slots[op.slot] === "general") valGenSlot.set(op.id, op.slot);
+        if (fn.slots[op.slot] === "reference") valRefSlot.set(op.id, op.slot);
+        const fk = curRef.get(op.slot);
+        if (fk !== undefined) valRefField.set(op.id, fk);
       } else if (op.kind === "record-read") {
-        const sk = siteFieldName.get(
-          String(op.record) + ":" + String(op.field),
+        const fk = immutableFieldKey(
+          op.record,
+          op.field,
+          valRefField.get(op.object),
         );
-        if (sk !== undefined) valSite.set(op.id, sk);
+        if (fk !== undefined) valRefField.set(op.id, fk);
       } else if (op.kind === "store") {
         written.add(op.slot);
+        const fk = valRefField.get(op.value);
+        if (fk !== undefined) curRef.set(op.slot, fk);
+        else curRef.delete(op.slot);
+        const srcSlot = valGenSlot.get(op.value);
+        const srcRoot =
+          srcSlot !== undefined && fn.slots[op.slot] === "general"
+            ? resolveAlias(srcSlot, curAlias)
+            : undefined;
+        killAliasSlot(op.slot, curAlias);
+        if (srcRoot !== undefined && srcRoot !== op.slot)
+          curAlias.set(op.slot, srcRoot);
       } else if (op.kind === "property-load") {
-        const objSlot = valSlot.get(op.object);
-        const propKey = valSite.get(op.site);
+        const rawSlot = valGenSlot.get(op.object);
+        const fk = valRefField.get(op.site);
+        const propKey = lookupPropSiteName(fk);
         if (
-          objSlot !== undefined &&
+          rawSlot !== undefined &&
           propKey !== undefined &&
           isSafeDisambiguatedKey(propKey)
         ) {
+          const objSlot = resolveAlias(rawSlot, curAlias);
           const defId = defs.length;
           const selfMiss = loadSelfMiss.get(op.id);
           defs.push({
             id: defId,
+            kind: "property-load",
             blockId: bid,
             opIndex: idx,
-            op,
+            propOp: op,
+            globalOp: undefined,
             objSlot,
             propKey,
-            key: String(objSlot) + ":" + propKey,
+            key:
+              "p:" +
+              String(objSlot) +
+              ":" +
+              propKey +
+              (op.inherited ? ":i" : ":o"),
             selfMissBlock:
               selfMiss !== undefined && coldMissBlocks.has(selfMiss)
                 ? selfMiss
@@ -4091,8 +4559,47 @@ export function forwardDominatingProperties(
           });
           opToDef.set(op.id, defId);
         }
+      } else if (op.kind === "global-cell") {
+        const cacheFk = valRefField.get(op.cache);
+        if (cacheFk !== undefined) {
+          const scopeFk = valRefField.get(op.scope);
+          const scopeSlotVal = valRefSlot.get(op.scope);
+          let scopeKey: string | undefined;
+          let trackedSlot = -1;
+          if (scopeFk !== undefined) {
+            scopeKey = "f:" + scopeFk;
+            trackedSlot = -1;
+          } else if (valIsClosureEnv.has(op.scope)) {
+            scopeKey = "env";
+            trackedSlot = -1;
+          } else if (scopeSlotVal !== undefined) {
+            scopeKey = "s:" + String(scopeSlotVal);
+            trackedSlot = scopeSlotVal;
+          }
+          if (scopeKey !== undefined) {
+            const defId = defs.length;
+            const selfMiss = loadSelfMiss.get(op.id);
+            defs.push({
+              id: defId,
+              kind: "global-cell",
+              blockId: bid,
+              opIndex: idx,
+              propOp: undefined,
+              globalOp: op,
+              objSlot: trackedSlot,
+              propKey: "",
+              key: "g:" + scopeKey + ":" + cacheFk,
+              selfMissBlock:
+                selfMiss !== undefined && coldMissBlocks.has(selfMiss)
+                  ? selfMiss
+                  : undefined,
+            });
+            opToDef.set(op.id, defId);
+          }
+        }
       } else if (op.kind === "property-store") {
-        const propKey = valSite.get(op.site);
+        const fk = valRefField.get(op.site);
+        const propKey = lookupPropSiteName(fk);
         if (propKey !== undefined) storeOpKey.set(op.id, propKey);
       }
     }
@@ -4134,7 +4641,7 @@ export function forwardDominatingProperties(
     for (const op of blk.instructions) {
       if (op === undefined) continue;
       if (++visited > budget) return undefined;
-      if (op.kind === "property-load") {
+      if (op.kind === "property-load" || op.kind === "global-cell") {
         const defId = opToDef.get(op.id);
         if (defId !== undefined) {
           const def = defs[defId];
@@ -4144,14 +4651,24 @@ export function forwardDominatingProperties(
       } else if (op.kind === "store") {
         for (const [k, d] of state) {
           const def = defs[d];
-          if (def === undefined || def.objSlot === op.slot) state.delete(k);
+          if (
+            def === undefined ||
+            (def.objSlot >= 0 && def.objSlot === op.slot)
+          )
+            state.delete(k);
         }
       } else if (op.kind === "property-store") {
         const sk = storeOpKey.get(op.id);
         for (const [k, d] of state) {
           const def = defs[d];
-          if (def === undefined || storeConflictsWithLoad(sk, def.propKey))
+          if (def === undefined) {
             state.delete(k);
+          } else if (
+            def.kind === "property-load" &&
+            storeConflictsWithLoad(sk, def.propKey)
+          ) {
+            state.delete(k);
+          }
         }
       } else if (mayHardInvalidate(op)) {
         if (effectBudgetExhausted) return undefined;
@@ -4165,13 +4682,21 @@ export function forwardDominatingProperties(
       else if (term.operation === "read") {
         for (const [k, d] of state) {
           const def = defs[d];
-          if (def === undefined || def.objSlot === term.slot) state.delete(k);
+          if (
+            def === undefined ||
+            (def.objSlot >= 0 && def.objSlot === term.slot)
+          )
+            state.delete(k);
         }
       }
     } else if (term.kind === "cell" && term.operation === "read") {
       for (const [k, d] of state) {
         const def = defs[d];
-        if (def === undefined || def.objSlot === term.slot) state.delete(k);
+        if (
+          def === undefined ||
+          (def.objSlot >= 0 && def.objSlot === term.slot)
+        )
+          state.delete(k);
       }
     }
     return state;
@@ -4243,7 +4768,7 @@ export function forwardDominatingProperties(
                 if (
                   def.blockId === cp ||
                   !dominates(def.blockId, cp) ||
-                  cpWritten?.has(def.objSlot) === true
+                  (def.objSlot >= 0 && cpWritten?.has(def.objSlot) === true)
                 ) {
                   coldSafe = false;
                   break;
@@ -4265,7 +4790,7 @@ export function forwardDominatingProperties(
   }
   if (changed) return { fn, visited, rewritten: 0 };
 
-  // Collect dominated redundant `property-load` uses.
+  // Collect dominated redundant `property-load` and `global-cell` uses.
   const useToDef = new Map<number, number>();
   const activeDefs = new Set<number>();
   for (const bid of rpo) {
@@ -4276,7 +4801,7 @@ export function forwardDominatingProperties(
     for (let idx = 0; idx < blk.instructions.length; idx++) {
       const op = blk.instructions[idx];
       if (op === undefined) continue;
-      if (op.kind === "property-load") {
+      if (op.kind === "property-load" || op.kind === "global-cell") {
         const defId = opToDef.get(op.id);
         if (defId !== undefined) {
           const def = defs[defId];
@@ -4299,14 +4824,24 @@ export function forwardDominatingProperties(
       } else if (op.kind === "store") {
         for (const [k, d] of state) {
           const def = defs[d];
-          if (def === undefined || def.objSlot === op.slot) state.delete(k);
+          if (
+            def === undefined ||
+            (def.objSlot >= 0 && def.objSlot === op.slot)
+          )
+            state.delete(k);
         }
       } else if (op.kind === "property-store") {
         const sk = storeOpKey.get(op.id);
         for (const [k, d] of state) {
           const def = defs[d];
-          if (def === undefined || storeConflictsWithLoad(sk, def.propKey))
+          if (def === undefined) {
             state.delete(k);
+          } else if (
+            def.kind === "property-load" &&
+            storeConflictsWithLoad(sk, def.propKey)
+          ) {
+            state.delete(k);
+          }
         }
       } else if (mayHardInvalidate(op)) {
         state.clear();
@@ -4343,21 +4878,27 @@ export function forwardDominatingProperties(
     }
   }
 
-  // Allocate probe slots (and site slots only when cold refreshes exist).
+  // Allocate probe slots (and site/scope slots only when cold refreshes exist).
   const slots = fn.slots.slice();
   const probeSlots = new Map<number, number>();
   const siteSlots = new Map<number, number>();
+  const scopeSlots = new Map<number, number>();
   const defsByBlock = new Map<number, PropDef[]>();
   for (const defId of activeDefs) {
     const def = defs[defId];
     if (def === undefined) continue;
     const probe = slots.length;
-    slots.push("general");
+    slots.push(def.kind === "global-cell" ? "optional-reference" : "general");
     probeSlots.set(defId, probe);
     if (needsSiteSlot.has(defId)) {
       const site = slots.length;
       slots.push("reference");
       siteSlots.set(defId, site);
+      if (def.kind === "global-cell") {
+        const sc = slots.length;
+        slots.push("reference");
+        scopeSlots.set(defId, sc);
+      }
     }
     let list = defsByBlock.get(def.blockId);
     if (list === undefined) {
@@ -4378,7 +4919,7 @@ export function forwardDominatingProperties(
     for (let idx = 0; idx < blk.instructions.length; idx++) {
       const op = blk.instructions[idx];
       if (op === undefined) continue;
-      if (op.kind === "property-load") {
+      if (op.kind === "property-load" || op.kind === "global-cell") {
         const prodId = useToDef.get(op.id);
         const probe = prodId === undefined ? undefined : probeSlots.get(prodId);
         if (probe !== undefined) {
@@ -4401,22 +4942,52 @@ export function forwardDominatingProperties(
           if (def.opIndex !== idx) continue;
           const probe = probeSlots.get(def.id);
           if (probe === undefined) continue;
-          instructions.push({
-            kind: "store",
-            slot: probe,
-            value: def.op.id,
-            start: def.op.start,
-            end: def.op.end,
-          });
-          const siteSlot = siteSlots.get(def.id);
-          if (siteSlot !== undefined) {
+          const propOp = def.propOp;
+          const globalOp = def.globalOp;
+          if (def.kind === "property-load" && propOp !== undefined) {
             instructions.push({
               kind: "store",
-              slot: siteSlot,
-              value: def.op.site,
-              start: def.op.start,
-              end: def.op.end,
+              slot: probe,
+              value: propOp.id,
+              start: propOp.start,
+              end: propOp.end,
             });
+            const siteSlot = siteSlots.get(def.id);
+            if (siteSlot !== undefined) {
+              instructions.push({
+                kind: "store",
+                slot: siteSlot,
+                value: propOp.site,
+                start: propOp.start,
+                end: propOp.end,
+              });
+            }
+          } else if (def.kind === "global-cell" && globalOp !== undefined) {
+            instructions.push({
+              kind: "store",
+              slot: probe,
+              value: globalOp.id,
+              start: globalOp.start,
+              end: globalOp.end,
+            });
+            const siteSlot = siteSlots.get(def.id);
+            const scopeSlot = scopeSlots.get(def.id);
+            if (siteSlot !== undefined && scopeSlot !== undefined) {
+              instructions.push({
+                kind: "store",
+                slot: scopeSlot,
+                value: globalOp.scope,
+                start: globalOp.start,
+                end: globalOp.end,
+              });
+              instructions.push({
+                kind: "store",
+                slot: siteSlot,
+                value: globalOp.cache,
+                start: globalOp.start,
+                end: globalOp.end,
+              });
+            }
           }
         }
       }
@@ -4428,54 +4999,108 @@ export function forwardDominatingProperties(
         const siteSlot = siteSlots.get(defId);
         if (def === undefined || probe === undefined || siteSlot === undefined)
           continue;
-        const objVal = nextValue++;
-        const siteVal = nextValue++;
-        const propVal = nextValue++;
-        instructions.push({
-          kind: "load",
-          id: objVal,
-          slot: def.objSlot,
-          start: blk.terminator.start,
-          end: blk.terminator.end,
-        });
-        instructions.push({
-          kind: "load",
-          id: siteVal,
-          slot: siteSlot,
-          start: blk.terminator.start,
-          end: blk.terminator.end,
-        });
-        const tpl = def.op;
-        instructions.push({
-          kind: "property-load",
-          id: propVal,
-          object: objVal,
-          site: siteVal,
-          record: tpl.record,
-          field: tpl.field,
-          count: tpl.count,
-          siteRecord: tpl.siteRecord,
-          siteField: tpl.siteField,
-          inherited: tpl.inherited,
-          entries: tpl.entries,
-          epochRecord: tpl.epochRecord,
-          epochField: tpl.epochField,
-          ...(tpl.spillRecord === undefined
-            ? {}
-            : { spillRecord: tpl.spillRecord }),
-          ...(tpl.spillField === undefined
-            ? {}
-            : { spillField: tpl.spillField }),
-          start: blk.terminator.start,
-          end: blk.terminator.end,
-        });
-        instructions.push({
-          kind: "store",
-          slot: probe,
-          value: propVal,
-          start: blk.terminator.start,
-          end: blk.terminator.end,
-        });
+        const propTpl = def.propOp;
+        const globalTpl = def.globalOp;
+        if (def.kind === "property-load" && propTpl !== undefined) {
+          const objVal = nextValue++;
+          const siteVal = nextValue++;
+          const propVal = nextValue++;
+          instructions.push({
+            kind: "load",
+            id: objVal,
+            slot: def.objSlot,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+          instructions.push({
+            kind: "load",
+            id: siteVal,
+            slot: siteSlot,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+          const tpl = propTpl;
+          instructions.push({
+            kind: "property-load",
+            id: propVal,
+            object: objVal,
+            site: siteVal,
+            record: tpl.record,
+            field: tpl.field,
+            count: tpl.count,
+            siteRecord: tpl.siteRecord,
+            siteField: tpl.siteField,
+            inherited: tpl.inherited,
+            entries: tpl.entries,
+            epochRecord: tpl.epochRecord,
+            epochField: tpl.epochField,
+            ...(tpl.spillRecord === undefined
+              ? {}
+              : { spillRecord: tpl.spillRecord }),
+            ...(tpl.spillField === undefined
+              ? {}
+              : { spillField: tpl.spillField }),
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+          instructions.push({
+            kind: "store",
+            slot: probe,
+            value: propVal,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+        } else if (def.kind === "global-cell" && globalTpl !== undefined) {
+          const scopeSlot = scopeSlots.get(defId);
+          if (scopeSlot === undefined) continue;
+          const scopeVal = nextValue++;
+          const cacheVal = nextValue++;
+          const cellVal = nextValue++;
+          instructions.push({
+            kind: "load",
+            id: scopeVal,
+            slot: scopeSlot,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+          instructions.push({
+            kind: "load",
+            id: cacheVal,
+            slot: siteSlot,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+          const tpl = globalTpl;
+          instructions.push({
+            kind: "global-cell",
+            id: cellVal,
+            scope: scopeVal,
+            cache: cacheVal,
+            scopeRecord: tpl.scopeRecord,
+            declarativeField: tpl.declarativeField,
+            objectField: tpl.objectField,
+            globalField: tpl.globalField,
+            globalRecord: tpl.globalRecord,
+            lexicalEpochField: tpl.lexicalEpochField,
+            globalObjectField: tpl.globalObjectField,
+            globalObjectRecord: tpl.globalObjectRecord,
+            propertyEpochField: tpl.propertyEpochField,
+            cacheRecord: tpl.cacheRecord,
+            cacheGlobalField: tpl.cacheGlobalField,
+            cacheLexicalEpochField: tpl.cacheLexicalEpochField,
+            cacheObjectEpochField: tpl.cacheObjectEpochField,
+            cacheCellField: tpl.cacheCellField,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+          instructions.push({
+            kind: "store",
+            slot: probe,
+            value: cellVal,
+            start: blk.terminator.start,
+            end: blk.terminator.end,
+          });
+        }
       }
     }
     newBlocks.push(blockChanged ? { ...blk, instructions } : blk);
@@ -4488,7 +5113,7 @@ export function forwardDominatingProperties(
     function: fn.name,
     start: first?.terminator.start ?? 0,
     end: first?.terminator.end ?? 0,
-    message: String(rewritten) + " redundant property loads forwarded",
+    message: String(rewritten) + " redundant property/global loads forwarded",
   });
   return { fn: { ...fn, slots, blocks: newBlocks }, visited, rewritten };
 }
