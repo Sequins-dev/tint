@@ -585,10 +585,11 @@ export function createWideStackMapBuilder(): WideStackMapBuilder {
       if (indices === undefined) throw "safepoint builder finalized";
       let relative = indices.get(map);
       if (relative === undefined) {
+        const stored = map.slice();
         relative = mapWords;
-        mapWords += map.length;
-        indices.set(map, relative);
-        maps.push(map);
+        mapWords += stored.length;
+        indices.set(stored, relative);
+        maps.push(stored);
       }
       if (used === directoryChunkEntries * 2) {
         chunk = new Float64Array(directoryChunkEntries * 2);

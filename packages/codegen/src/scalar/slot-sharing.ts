@@ -33,11 +33,13 @@ export function shareFrameSlots(
   if (work > budget) return undefined;
   // Predecessor links: (source, slot killed on this edge or -1, exceptional).
   // Heads hold link index + 1; zero ends a predecessor list.
-  const heads = new Uint32Array(blockCount),
-    linkSource: number[] = [],
-    linkKill: number[] = [],
-    linkExceptional: number[] = [],
-    linkNext: number[] = [];
+  const heads = new Uint32Array(blockCount);
+  let linkCapacity = Math.max(64, blockCount * 2),
+    linkCount = 0,
+    linkSource = new Int32Array(linkCapacity),
+    linkKill = new Int32Array(linkCapacity),
+    linkExceptional = new Uint8Array(linkCapacity),
+    linkNext = new Int32Array(linkCapacity);
   function link(
     source: number,
     target: number,
@@ -45,11 +47,28 @@ export function shareFrameSlots(
     exceptional: number,
   ): void {
     if (target < 0 || target >= blockCount) throw "slot sharing edge invariant";
-    linkSource.push(source);
-    linkKill.push(kill);
-    linkExceptional.push(exceptional);
-    linkNext.push((heads[target] ?? 0) - 1);
-    heads[target] = linkSource.length;
+    if (linkCount === linkCapacity) {
+      const nextCapacity = linkCapacity * 2,
+        nextSource = new Int32Array(nextCapacity),
+        nextKill = new Int32Array(nextCapacity),
+        nextExceptional = new Uint8Array(nextCapacity),
+        nextNext = new Int32Array(nextCapacity);
+      nextSource.set(linkSource);
+      nextKill.set(linkKill);
+      nextExceptional.set(linkExceptional);
+      nextNext.set(linkNext);
+      linkSource = nextSource;
+      linkKill = nextKill;
+      linkExceptional = nextExceptional;
+      linkNext = nextNext;
+      linkCapacity = nextCapacity;
+    }
+    const edge = linkCount++;
+    linkSource[edge] = source;
+    linkKill[edge] = kill;
+    linkExceptional[edge] = exceptional;
+    linkNext[edge] = (heads[target] ?? 0) - 1;
+    heads[target] = linkCount;
   }
   const defs: number[][] = [],
     refs: number[][] = [],
@@ -112,18 +131,36 @@ export function shareFrameSlots(
     if (handler !== undefined) link(index, handler.target, -1, 1);
   }
   // Per-slot liveness; slot + 1 stamps avoid clearing per-block scratch.
+  // Flat typed buffers avoid per-slot managed NumberList overhead on large functions.
   const liveStamp = new Uint32Array(blockCount),
     defStamp = new Uint32Array(blockCount),
-    occupancy: number[][] = [],
-    liveIns: number[][] | undefined = trackOwners ? [] : undefined;
-  const stack: number[] = [];
+    stack = new Uint32Array(blockCount),
+    occStart = new Uint32Array(slotCount + 1),
+    liveStart = new Uint32Array(trackOwners ? slotCount + 1 : 0);
+  let occData = new Uint32Array(Math.max(64, slotCount * 2)),
+    occLength = 0,
+    liveData = new Uint32Array(trackOwners ? Math.max(64, slotCount * 2) : 0),
+    liveLength = 0;
+  function growOcc(): void {
+    const next = new Uint32Array(occData.length * 2);
+    next.set(occData);
+    occData = next;
+  }
+  function growLive(): void {
+    const next = new Uint32Array(liveData.length * 2);
+    next.set(liveData);
+    liveData = next;
+  }
   for (let slot = 0; slot < slotCount; slot++) {
-    const occupied: number[] = [],
-      liveIn: number[] | undefined = trackOwners ? [] : undefined;
-    occupancy.push(occupied);
-    if (liveIns !== undefined && liveIn !== undefined) liveIns.push(liveIn);
-    if (!eligible(slot)) continue;
+    occStart[slot] = occLength;
+    if (trackOwners) liveStart[slot] = liveLength;
+    if (!eligible(slot)) {
+      occStart[slot + 1] = occLength;
+      if (trackOwners) liveStart[slot + 1] = liveLength;
+      continue;
+    }
     const stamp = slot + 1;
+    let stackTop = 0;
     for (const block of defs[slot] ?? []) {
       if (block === undefined) throw "slot sharing def invariant";
       defStamp[block] = stamp;
@@ -132,13 +169,16 @@ export function shareFrameSlots(
       if (block === undefined) throw "slot sharing seed invariant";
       if (liveStamp[block] === stamp) continue;
       liveStamp[block] = stamp;
-      occupied.push(block);
-      if (liveIn !== undefined) liveIn.push(block);
-      stack.push(block);
+      if (occLength === occData.length) growOcc();
+      occData[occLength++] = block;
+      if (trackOwners) {
+        if (liveLength === liveData.length) growLive();
+        liveData[liveLength++] = block;
+      }
+      stack[stackTop++] = block;
     }
-    while (stack.length > 0) {
-      const block = stack.pop();
-      if (block === undefined) throw "slot sharing stack invariant";
+    while (stackTop > 0) {
+      const block = stack[--stackTop] ?? 0;
       for (let at = (heads[block] ?? 0) - 1; at >= 0; at = linkNext[at] ?? -1) {
         if (++work > budget) return undefined;
         if (linkKill[at] === slot) continue;
@@ -148,32 +188,57 @@ export function shareFrameSlots(
         if (linkExceptional[at] !== 1 && defStamp[source] === stamp) continue;
         if (liveStamp[source] === stamp) continue;
         liveStamp[source] = stamp;
-        occupied.push(source);
-        if (liveIn !== undefined) liveIn.push(source);
-        stack.push(source);
+        if (occLength === occData.length) growOcc();
+        occData[occLength++] = source;
+        if (trackOwners) {
+          if (liveLength === liveData.length) growLive();
+          liveData[liveLength++] = source;
+        }
+        stack[stackTop++] = source;
       }
     }
     for (const block of refs[slot] ?? []) {
       if (block === undefined) throw "slot sharing reference invariant";
-      if (liveStamp[block] !== stamp) occupied.push(block);
+      if (liveStamp[block] !== stamp) {
+        if (occLength === occData.length) growOcc();
+        occData[occLength++] = block;
+      }
     }
-    work += occupied.length;
+    const occupiedCount = occLength - (occStart[slot] ?? 0);
+    occStart[slot + 1] = occLength;
+    if (trackOwners) liveStart[slot + 1] = liveLength;
+    work += occupiedCount;
     if (work > budget) return undefined;
   }
-  // Greedy grouping by type in order of first occupied block.
-  const order: number[] = [];
-  const first = new Uint32Array(slotCount).fill(blockCount);
+  // Greedy grouping by type in order of first occupied block (counting sort
+  // preserves ascending slot tie-breaking in linear time).
+  const first = new Uint32Array(slotCount).fill(blockCount),
+    firstCounts = new Uint32Array(blockCount + 1);
+  let orderCount = 0;
   for (let slot = 0; slot < slotCount; slot++) {
-    const occupied = occupancy[slot];
-    if (occupied === undefined || !eligible(slot) || occupied.length === 0)
-      continue;
+    const start = occStart[slot] ?? 0,
+      end = occStart[slot + 1] ?? 0;
+    if (start === end || !eligible(slot)) continue;
     let minimum = blockCount;
-    for (const block of occupied)
-      if (block !== undefined && block < minimum) minimum = block;
+    for (let at = start; at < end; at++) {
+      const block = occData[at] ?? 0;
+      if (block < minimum) minimum = block;
+    }
     first[slot] = minimum;
-    order.push(slot);
+    firstCounts[minimum + 1] = (firstCounts[minimum + 1] ?? 0) + 1;
+    orderCount++;
   }
-  order.sort((a, b) => (first[a] ?? 0) - (first[b] ?? 0) || a - b);
+  for (let block = 0; block < blockCount; block++)
+    firstCounts[block + 1] =
+      (firstCounts[block + 1] ?? 0) + (firstCounts[block] ?? 0);
+  const order = new Uint32Array(orderCount);
+  for (let slot = 0; slot < slotCount; slot++) {
+    const minimum = first[slot] ?? blockCount;
+    if (minimum >= blockCount) continue;
+    const position = firstCounts[minimum] ?? 0;
+    firstCounts[minimum] = position + 1;
+    order[position] = slot;
+  }
   const color = new Uint32Array(slotCount),
     blockWords = (blockCount + 31) >>> 5;
   // Probe at most the first 64 groups of each kind; groups past that cap are
@@ -189,10 +254,12 @@ export function shareFrameSlots(
   // compiler's self-compile). Capacity is a power of two above twice the
   // live-in total, so probing always reaches an empty slot.
   let ownerCapacity = 0;
-  if (liveIns !== undefined) {
+  if (trackOwners) {
     let liveTotal = 0;
-    for (const slot of order)
-      if (slot !== undefined) liveTotal += liveIns[slot]?.length ?? 0;
+    for (let index = 0; index < orderCount; index++) {
+      const slot = order[index] ?? 0;
+      liveTotal += (liveStart[slot + 1] ?? 0) - (liveStart[slot] ?? 0);
+    }
     ownerCapacity = 16;
     while (ownerCapacity < liveTotal * 2 + 1) ownerCapacity *= 2;
   }
@@ -215,11 +282,11 @@ export function shareFrameSlots(
       at = (at + 1) & ownerMask;
     return at;
   }
-  for (const slot of order) {
-    if (slot === undefined) throw "slot sharing order invariant";
+  for (let orderIndex = 0; orderIndex < orderCount; orderIndex++) {
+    const slot = order[orderIndex] ?? 0;
     const type = kind === undefined ? (fn.slots[slot] ?? "") : kind(slot);
-    const occupied = occupancy[slot];
-    if (occupied === undefined) throw "slot sharing slot invariant";
+    const start = occStart[slot] ?? 0,
+      end = occStart[slot + 1] ?? 0;
     let candidates = probedByType.get(type);
     if (candidates === undefined) {
       candidates = [];
@@ -232,12 +299,10 @@ export function shareFrameSlots(
       if (candidate === undefined) throw "slot sharing candidate invariant";
       const bits = candidate.bits;
       let free = true;
-      for (const block of occupied) {
+      for (let at = start; at < end; at++) {
         if (++work > budget) return undefined;
-        if (
-          block !== undefined &&
-          ((bits[block >>> 5] ?? 0) & (1 << (block & 31))) !== 0
-        ) {
+        const block = occData[at] ?? 0;
+        if (((bits[block >>> 5] ?? 0) & (1 << (block & 31))) !== 0) {
           free = false;
           break;
         }
@@ -258,21 +323,28 @@ export function shareFrameSlots(
       if (work > budget) return undefined;
     }
     if (chosenBits !== undefined)
-      for (const block of occupied)
-        if (block !== undefined) {
-          const word = block >>> 5;
-          chosenBits[word] = (chosenBits[word] ?? 0) | (1 << (block & 31));
-        }
-    if (liveIns !== undefined)
-      for (const block of liveIns[slot] ?? [])
-        if (block !== undefined) {
-          const at = ownerAt(chosen, block);
-          ownerGroup[at] = chosen + 1;
-          ownerBlock[at] = block;
-          ownerSlot[at] = slot;
-        }
+      for (let at = start; at < end; at++) {
+        const block = occData[at] ?? 0;
+        const word = block >>> 5;
+        chosenBits[word] = (chosenBits[word] ?? 0) | (1 << (block & 31));
+      }
+    if (trackOwners) {
+      const lStart = liveStart[slot] ?? 0,
+        lEnd = liveStart[slot + 1] ?? 0;
+      for (let at = lStart; at < lEnd; at++) {
+        const block = liveData[at] ?? 0;
+        const pos = ownerAt(chosen, block);
+        ownerGroup[pos] = chosen + 1;
+        ownerBlock[pos] = block;
+        ownerSlot[pos] = slot;
+      }
+    }
     color[slot] = chosen + 1;
   }
+  // Release temporary flat buffers so the returned `otherLiveIn` closure
+  // retains only the owner lookup tables.
+  occData = new Uint32Array(0);
+  liveData = new Uint32Array(0);
   return {
     color,
     colors: groupCount,

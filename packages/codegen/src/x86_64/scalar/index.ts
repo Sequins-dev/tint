@@ -62,7 +62,9 @@ import {
 import type { Word64 } from "@tint/foundation/binary/word64";
 import { scriptEntryCalleeValues } from "../../scalar/property-fusion.ts";
 import {
+  cachedListReadPrefix,
   instructionResult,
+  listVectorPrefix,
   naturalLoops,
   optionalNumberAbsentHigh,
   isNativeTypedArray,
@@ -73,6 +75,8 @@ import {
   optionalNumberAbsentLow,
   scalarByteLength,
   trackedManagedWrites,
+  uncheckedListReadPrefix,
+  uncheckedListWritePrefix,
   verify,
   type Block,
   type FunctionIR,
@@ -187,7 +191,7 @@ import {
   rootHeadBinding,
   type WideStackMapPlan,
 } from "../../scalar/stack-maps.ts";
-import { frameStackMaps, isRootType } from "./stack-maps.ts";
+import { emitFrameStackMaps, isRootType } from "./stack-maps.ts";
 
 export {
   imageRelocations,
@@ -650,6 +654,14 @@ export function emitModule(
 
   const signatures: { parameters: string; name: string }[] = [];
   const discardSignatures = new Map<string, Set<string>>();
+  // Pre-classify cacheListVectors helpers so x86-64 inlines them directly
+  // instead of emitting nested full-frame calls inside loops.
+  // listReadModes: 1 = unchecked readu, 2 = cached readv.
+  const listReadModes = new Uint8Array(module.functions.length);
+  const listWriteUnchecked = new Uint8Array(module.functions.length);
+  // Header record ID + 1 (0 means not that helper).
+  const listVectorHeaders = new Uint32Array(module.functions.length);
+  const listLengthHeaders = new Uint32Array(module.functions.length);
   function signature(target: number): Memory<64> {
     const imported = signatureImports.get(target);
     if (imported !== undefined) return importedAddress(imported);
@@ -5386,9 +5398,183 @@ export function emitModule(
           return;
         }
         case "call-indirect":
-        case "call":
           call(op, block, index);
           return;
+        case "call": {
+          if (op.environment === undefined) {
+            const callee = module.functions[op.target];
+            const resultId = op.id;
+            const readMode = listReadModes[op.target] ?? 0;
+            if (
+              readMode !== 0 &&
+              resultId !== undefined &&
+              callee !== undefined &&
+              callee.returnType !== "void"
+            ) {
+              const resultType: ScalarType =
+                callee.returnType === "optional-string"
+                  ? "optional-string"
+                  : "optional-reference";
+              const vector = op.arguments[0],
+                indexArg = op.arguments[2];
+              if (vector === undefined || indexArg === undefined)
+                throw "x86-64 list read argument invariant";
+              if (readMode === 1) {
+                // Preheader-guarded unchecked list vector read.
+                emit({ op: "mov", dst: scratch, src: frame(home(vector)) });
+                emit({
+                  op: "cvttsd2si",
+                  dst: r9,
+                  src: frame(home(indexArg)),
+                });
+                emit({
+                  op: "mov",
+                  dst: rax,
+                  src: {
+                    kind: "mem",
+                    width: 64,
+                    address: {
+                      kind: "base",
+                      base: 11,
+                      index: 9,
+                      scale: 8,
+                      disp: nativeArrayInlineOffset,
+                    },
+                  },
+                });
+                emit({ op: "xor", dst: edx, src: edx });
+                emit({ op: "cmp", dst: rax, src: scratch });
+                emit({ op: "cmovcc", cc: "e", dst: rax, src: rdx });
+                define(resultId, resultType);
+                return;
+              }
+              // Cached list vector read with fallback to the full accessor.
+              const slow =
+                fnLabel + ":list-read:" + String(instructionCount) + ":slow";
+              const done =
+                fnLabel + ":list-read:" + String(instructionCount) + ":done";
+              emit({ op: "mov", dst: scratch, src: frame(home(vector)) });
+              emit({ op: "test", dst: scratch, src: scratch });
+              branch(emit, "e", slow);
+              exactInteger(emit, frame(home(indexArg)), r9, slow);
+              emit({
+                op: "cmp",
+                dst: r9,
+                src: mem(11, nativeArrayLengthOffset),
+              });
+              branch(emit, "ae", slow);
+              emit({
+                op: "mov",
+                dst: rax,
+                src: {
+                  kind: "mem",
+                  width: 64,
+                  address: {
+                    kind: "base",
+                    base: 11,
+                    index: 9,
+                    scale: 8,
+                    disp: nativeArrayInlineOffset,
+                  },
+                },
+              });
+              emit({ op: "xor", dst: edx, src: edx });
+              emit({ op: "cmp", dst: rax, src: scratch });
+              emit({ op: "cmovcc", cc: "e", dst: rax, src: rdx });
+              define(resultId, resultType);
+              emit({ op: "jmp", target: label(done) });
+              emit({ op: "label", name: slow });
+              call(op, block, index);
+              emit({ op: "label", name: done });
+              return;
+            }
+            if ((listWriteUnchecked[op.target] ?? 0) === 1) {
+              const vector = op.arguments[0],
+                indexArg = op.arguments[2],
+                value = op.arguments[3];
+              if (
+                vector === undefined ||
+                indexArg === undefined ||
+                value === undefined
+              )
+                throw "x86-64 list write argument invariant";
+              emit({ op: "mov", dst: scratch, src: frame(home(vector)) });
+              emit({ op: "cvttsd2si", dst: r9, src: frame(home(indexArg)) });
+              emit({ op: "mov", dst: rax, src: frame(home(value)) });
+              emit({ op: "test", dst: rax, src: rax });
+              emit({ op: "cmovcc", cc: "e", dst: rax, src: scratch });
+              emit({
+                op: "mov",
+                dst: {
+                  kind: "mem",
+                  width: 64,
+                  address: {
+                    kind: "base",
+                    base: 11,
+                    index: 9,
+                    scale: 8,
+                    disp: nativeArrayInlineOffset,
+                  },
+                },
+                src: rax,
+              });
+              emit({ op: "mov", dst: r9, src: scratch });
+              remember();
+              return;
+            }
+            const vecHeader = (listVectorHeaders[op.target] ?? 0) - 1;
+            if (vecHeader >= 0 && resultId !== undefined) {
+              const listArg = op.arguments[0];
+              const rootField = module.records?.[vecHeader]?.fields[1];
+              if (listArg === undefined || rootField === undefined)
+                throw "x86-64 list vector invariant";
+              const miss =
+                fnLabel + ":list-vec:" + String(instructionCount) + ":miss";
+              const done =
+                fnLabel + ":list-vec:" + String(instructionCount) + ":done";
+              guardRecord(listArg, vecHeader, miss);
+              emit({ op: "mov", dst: rax, src: mem(9, rootField.offset) });
+              emit({ op: "test", dst: rax, src: rax });
+              branch(emit, "e", miss);
+              emit({ op: "cmp", dst: mem(0, 0), src: imm(6) });
+              branch(emit, "e", done);
+              emit({ op: "label", name: miss });
+              emit({ op: "xor", dst: eax, src: eax });
+              emit({ op: "label", name: done });
+              define(resultId, "optional-reference");
+              return;
+            }
+            const lenHeader = (listLengthHeaders[op.target] ?? 0) - 1;
+            if (lenHeader >= 0 && resultId !== undefined) {
+              const listArg = op.arguments[0];
+              const lengthField = module.records?.[lenHeader]?.fields[0];
+              if (listArg === undefined || lengthField === undefined)
+                throw "x86-64 list length invariant";
+              const miss =
+                fnLabel + ":list-len:" + String(instructionCount) + ":miss";
+              const done =
+                fnLabel + ":list-len:" + String(instructionCount) + ":done";
+              guardRecord(listArg, lenHeader, miss);
+              emit({ op: "mov", dst: rax, src: mem(9, lengthField.offset) });
+              emit({ op: "mov", dst: scratch, src: absent });
+              emit({ op: "cmp", dst: rax, src: scratch });
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: bits(optionalNumberAbsentLow, 0xffffffff),
+              });
+              emit({ op: "cmovcc", cc: "e", dst: rax, src: scratch });
+              emit({ op: "jmp", target: label(done) });
+              emit({ op: "label", name: miss });
+              emit({ op: "mov", dst: rax, src: absent });
+              emit({ op: "label", name: done });
+              define(resultId, "optional-number");
+              return;
+            }
+          }
+          call(op, block, index);
+          return;
+        }
         case "weak-slot-new": {
           if (host === undefined) break;
           const site = fnLabel + ":weak-slot:" + String(op.id);
@@ -6131,21 +6317,21 @@ export function emitModule(
         if (range !== undefined) resolvedUnwind.push(range);
     }
     if (callSites.length > 0 && stackMapBuilder !== undefined) {
-      for (const map of frameStackMaps(
+      const builder = stackMapBuilder;
+      emitFrameStackMaps(
         fn,
-        fnLabel,
         frameBytes,
         slots,
         homes,
         types,
         callSites,
         fn.closureEnvironment === undefined ? undefined : savedEnvironment,
-      )) {
-        if (map === undefined) continue;
-        const offset = assembler.labels.get(map.label);
-        if (offset === undefined) throw "x86-64 safepoint label invariant";
-        stackMapBuilder.add(offset, map.map);
-      }
+        (siteLabel, map) => {
+          const offset = assembler.labels.get(siteLabel);
+          if (offset === undefined) throw "x86-64 safepoint label invariant";
+          builder.add(offset, map);
+        },
+      );
     }
     const debugBody = fnLabel + ":debug-body";
     assembler.endScope(
@@ -6278,6 +6464,78 @@ export function emitModule(
     }
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
+      if (fn.import !== true) {
+        if (
+          fn.name.startsWith(uncheckedListReadPrefix) &&
+          (fn.returnType === "optional-reference" ||
+            fn.returnType === "optional-string") &&
+          fn.parameters.length === 3 &&
+          fn.slots[0] === "optional-reference" &&
+          fn.slots[1] === "reference" &&
+          fn.slots[2] === "number"
+        )
+          listReadModes[fn.id] = 1;
+        else if (
+          fn.name.startsWith(cachedListReadPrefix) &&
+          (fn.returnType === "optional-reference" ||
+            fn.returnType === "optional-string") &&
+          fn.parameters.length === 3 &&
+          fn.slots[0] === "optional-reference" &&
+          fn.slots[1] === "reference" &&
+          fn.slots[2] === "number"
+        )
+          listReadModes[fn.id] = 2;
+        else if (
+          fn.name.startsWith(uncheckedListWritePrefix) &&
+          fn.returnType === "void" &&
+          fn.parameters.length === 4 &&
+          fn.slots[0] === "reference" &&
+          fn.slots[1] === "reference" &&
+          fn.slots[2] === "number" &&
+          (fn.slots[3] === "optional-reference" ||
+            fn.slots[3] === "optional-string")
+        )
+          listWriteUnchecked[fn.id] = 1;
+        else if (
+          fn.name.startsWith(listVectorPrefix) &&
+          fn.returnType === "optional-reference" &&
+          fn.parameters.length === 1 &&
+          fn.parameters[0] === 0 &&
+          fn.slots[0] === "optional-reference"
+        ) {
+          for (const block of fn.blocks) {
+            const t = block?.terminator;
+            if (t !== undefined && t.kind === "record") {
+              if (
+                t.operation === "read" &&
+                t.field === 1 &&
+                module.records?.[t.record]?.fields[1] !== undefined
+              )
+                listVectorHeaders[fn.id] = t.record + 1;
+              break;
+            }
+          }
+        } else if (
+          fn.name.startsWith("__tint_list_length$") &&
+          fn.returnType === "optional-number" &&
+          fn.parameters.length === 1 &&
+          fn.parameters[0] === 0 &&
+          fn.slots[0] === "optional-reference"
+        ) {
+          for (const block of fn.blocks) {
+            const t = block?.terminator;
+            if (t !== undefined && t.kind === "record") {
+              if (
+                t.operation === "read" &&
+                t.field === 0 &&
+                module.records?.[t.record]?.fields[0]?.type === "number"
+              )
+                listLengthHeaders[fn.id] = t.record + 1;
+              break;
+            }
+          }
+        }
+      }
       for (const block of fn.blocks) {
         if (block === undefined) throw "block invariant";
         for (const op of block.instructions) {

@@ -1053,3 +1053,74 @@ test("closure environment with a reference cell field is scalar replaced and pro
     "scalar-replaced record-cell leaves no record-cell terminators",
   );
 });
+
+test("large devirtualized closures become forwarding thunks to their direct twin", () => {
+  // Build a 20-block closure (>= 16-block thunk threshold) that captures an
+  // environment record and returns its argument plus the captured field.
+  const blocks: FunctionIR["blocks"][number][] = [
+    {
+      id: 0,
+      instructions: [{ kind: "closure-environment", id: 0, ...span }],
+      terminator: {
+        kind: "record",
+        object: 0,
+        record: 0,
+        field: 0,
+        operation: "read",
+        slot: 1,
+        consequent: 1,
+        alternate: 19,
+        ...span,
+      },
+    },
+  ];
+  for (let b = 1; b < 18; b++)
+    blocks.push({
+      id: b,
+      instructions: [],
+      terminator: { kind: "jump", target: b + 1, ...span },
+    });
+  blocks.push({
+    id: 18,
+    instructions: [
+      { kind: "load", id: 1, slot: 0, ...span },
+      { kind: "load", id: 2, slot: 1, ...span },
+      { kind: "binary", id: 3, operator: "+", left: 1, right: 2, ...span },
+    ],
+    terminator: { kind: "return", value: 3, ...span },
+  });
+  blocks.push({
+    id: 19,
+    instructions: [],
+    terminator: { kind: "trap", ...span },
+  });
+
+  const base = closureModule();
+  const largeCaptured: FunctionIR = {
+    ...base.functions[1]!,
+    blocks,
+  };
+  const input: ModuleIR = {
+    ...base,
+    functions: [base.functions[0]!, largeCaptured, base.functions[2]!],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+
+  const result = devirtualizeClosureCalls(input, 10000);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+
+  const thunk = result.module.functions[1]!;
+  const twin = result.module.functions[3]!;
+  assert.equal(twin.name, "captured$direct");
+  assert.equal(twin.blocks.length, 20);
+  assert.equal(thunk.blocks.length, 1);
+  assert.equal(thunk.closureEnvironment, 0);
+  const forward = thunk.blocks[0]!.instructions.find(
+    (op) => op.kind === "call",
+  );
+  assert.ok(forward?.kind === "call");
+  assert.equal(forward.target, twin.id);
+  assert.equal(forward.arguments.length, 2);
+});
