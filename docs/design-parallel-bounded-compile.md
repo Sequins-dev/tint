@@ -121,6 +121,15 @@ Passing the lane ID as data restored typed Worker preparation. The
 profile and remaining stage budget guide the next replay.
 [Worker composition and checker profile](results/parallel-bounded-compile-worker-checker-cliff-v1.md)
 
+The typed native image opens shared preparation and then traps in the
+fragment label encoder at widths zero, one and two. Pass dumps locate
+the fault in loop-invariant motion. A later record layout check becomes
+unconditional when a jump block sits between it and the earlier layout
+check's failure edge. The isolated IR regression and native repro are
+in the Findings Queue. Packet equality and the worker speed gate depend
+on repairing that motion.
+[Native fragment label guard](results/parallel-bounded-compile-native-fragment-label-guard-v1.md)
+
 ## Compiler actor candidates
 
 Native Worker microbenchmarks isolated two substrate costs. One mapped
