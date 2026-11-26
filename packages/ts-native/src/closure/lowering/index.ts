@@ -256,6 +256,8 @@ export interface ModuleEntryOptions {
   readonly atomicsWait?: number;
   /** Typed Atomics.notify helper (native-runtime shared-buffers nativeAtomicsNotify). */
   readonly atomicsNotify?: number;
+  /** On-demand stdlib helper functions keyed as `<namespace>:<exportName>`. */
+  readonly builtinHelpers?: ReadonlyMap<string, number> | undefined;
   readonly lists?: readonly ListRuntimeBinding[];
   readonly sets?: readonly SetRuntimeBinding[];
   readonly maps?: readonly MapRuntimeBinding[];
@@ -378,6 +380,7 @@ export function lowerModuleEntries(
     primitives: options?.primitives,
     bigints: options?.bigints,
     bigIntRepresentation: options?.bigIntRepresentation,
+    builtinHelpers: options?.builtinHelpers,
     realmTypeof: options?.realmTypeof,
     realmCall: options?.realmCall,
     fixedFfiCalls: options?.fixedFfiCalls,
@@ -401,6 +404,140 @@ export function lowerModuleEntries(
     ...(atomicsNotify === undefined ? {} : { atomicsNotify }),
   });
 }
+function mathHelperKey(intrinsic: string | undefined): string | undefined {
+  if (intrinsic === undefined) return undefined;
+  switch (intrinsic) {
+    case "math-pow":
+      return "math:mathPow";
+    case "math-exp":
+      return "math:mathExp";
+    case "math-expm1":
+      return "math:mathExpm1";
+    case "math-log":
+      return "math:mathLog";
+    case "math-log2":
+      return "math:mathLog2";
+    case "math-log10":
+      return "math:mathLog10";
+    case "math-log1p":
+      return "math:mathLog1p";
+    case "math-cbrt":
+      return "math:mathCbrt";
+    case "math-fround":
+      return "math:mathFround";
+    case "math-f16round":
+      return "math:mathF16round";
+    case "math-sin":
+      return "math:mathSin";
+    case "math-cos":
+      return "math:mathCos";
+    case "math-tan":
+      return "math:mathTan";
+    case "math-asin":
+      return "math:mathAsin";
+    case "math-acos":
+      return "math:mathAcos";
+    case "math-atan":
+      return "math:mathAtan";
+    case "math-atan2":
+      return "math:mathAtan2";
+    case "math-sinh":
+      return "math:mathSinh";
+    case "math-cosh":
+      return "math:mathCosh";
+    case "math-tanh":
+      return "math:mathTanh";
+    case "math-asinh":
+      return "math:mathAsinh";
+    case "math-acosh":
+      return "math:mathAcosh";
+    case "math-atanh":
+      return "math:mathAtanh";
+    default:
+      return undefined;
+  }
+}
+function stringHelperKey(intrinsic: string | undefined): string | undefined {
+  if (intrinsic === undefined) return undefined;
+  switch (intrinsic) {
+    case "string-to-lower":
+      return "unicode-casing:unicodeLowercase";
+    case "string-to-upper":
+      return "unicode-casing:unicodeUppercase";
+    case "string-replace":
+      return "string-builtins:stringReplace";
+    case "string-replace-all":
+      return "string-builtins:stringReplaceAll";
+    case "string-is-well-formed":
+      return "text-encoding:isWellFormedUTF16";
+    case "string-to-well-formed":
+      return "text-encoding:toWellFormedUTF16";
+    default:
+      return undefined;
+  }
+}
+function dataViewGetHelperKey(
+  intrinsic: string | undefined,
+): string | undefined {
+  if (intrinsic === undefined) return undefined;
+  switch (intrinsic) {
+    case "data-view-get-int8":
+      return "data-view:dataViewGetInt8";
+    case "data-view-get-uint8":
+      return "data-view:dataViewGetUint8";
+    case "data-view-get-int16":
+      return "data-view:dataViewGetInt16";
+    case "data-view-get-uint16":
+      return "data-view:dataViewGetUint16";
+    case "data-view-get-int32":
+      return "data-view:dataViewGetInt32";
+    case "data-view-get-uint32":
+      return "data-view:dataViewGetUint32";
+    case "data-view-get-float16":
+      return "data-view:dataViewGetFloat16";
+    case "data-view-get-float32":
+      return "data-view:dataViewGetFloat32";
+    case "data-view-get-float64":
+      return "data-view:dataViewGetFloat64";
+    case "data-view-get-bigint64":
+      return "data-view:dataViewGetBigInt64";
+    case "data-view-get-biguint64":
+      return "data-view:dataViewGetBigUint64";
+    default:
+      return undefined;
+  }
+}
+function dataViewSetHelperKey(
+  intrinsic: string | undefined,
+): string | undefined {
+  if (intrinsic === undefined) return undefined;
+  switch (intrinsic) {
+    case "data-view-set-int8":
+      return "data-view:dataViewSetInt8";
+    case "data-view-set-uint8":
+      return "data-view:dataViewSetUint8";
+    case "data-view-set-int16":
+      return "data-view:dataViewSetInt16";
+    case "data-view-set-uint16":
+      return "data-view:dataViewSetUint16";
+    case "data-view-set-int32":
+      return "data-view:dataViewSetInt32";
+    case "data-view-set-uint32":
+      return "data-view:dataViewSetUint32";
+    case "data-view-set-float16":
+      return "data-view:dataViewSetFloat16";
+    case "data-view-set-float32":
+      return "data-view:dataViewSetFloat32";
+    case "data-view-set-float64":
+      return "data-view:dataViewSetFloat64";
+    case "data-view-set-bigint64":
+      return "data-view:dataViewSetBigInt64";
+    case "data-view-set-biguint64":
+      return "data-view:dataViewSetBigUint64";
+    default:
+      return undefined;
+  }
+}
 interface Initializer {
   readonly function: number;
   readonly body: BlockStatement;
@@ -419,6 +556,7 @@ function lowerEntries(
     sharedBlockCheck?: number;
     atomicsWait?: number;
     atomicsNotify?: number;
+    builtinHelpers?: ReadonlyMap<string, number> | undefined;
     lists: readonly ListRuntimeBinding[] | undefined;
     sets: readonly SetRuntimeBinding[] | undefined;
     maps: readonly MapRuntimeBinding[] | undefined;
@@ -494,8 +632,15 @@ function lowerEntries(
     const checkedType = checked.types[id];
     const buffer =
       checkedType?.kind === "ArrayBuffer" ||
+      checkedType?.kind === "DataView" ||
       (checkedType?.kind === "SharedArrayBuffer" &&
-        checkedType.arrayFlow !== true);
+        checkedType.arrayFlow !== true) ||
+      (checkedType?.kind === "union" &&
+        checkedType.members.length > 0 &&
+        checkedType.members.every((member) => {
+          const kind = checked.types[member]?.kind;
+          return kind === "ArrayBuffer" || kind === "SharedArrayBuffer";
+        }));
     let type: SourceScalarType | undefined = buffer
       ? "reference"
       : bigint !== undefined
@@ -1243,6 +1388,30 @@ function lowerEntries(
     /** The BigIntValue record layout, planned on first use. */
     function bigIntRecord(): number | undefined {
       const source = recordTarget?.bigIntRepresentation;
+      const type =
+        source === undefined ? undefined : bodyByFunction[source]?.result;
+      return type === undefined ? undefined : recordContracts?.forType(type);
+    }
+    /** An on-demand pure-TS stdlib runtime helper, verified top-level. */
+    function builtinHelper(key: string): number {
+      const source = recordTarget?.builtinHelpers?.get(key);
+      const target = source === undefined ? undefined : targetIds[source];
+      const helper =
+        source === undefined ? undefined : checked.bindings.functions[source];
+      if (
+        target === undefined ||
+        helper === undefined ||
+        helper.parent !== undefined ||
+        helper.captures.length !== 0
+      )
+        fail("builtin helper requires an included runtime function: " + key);
+      return target;
+    }
+    /** The NativeDataViewBox record layout, planned on first use. */
+    function dataViewRecord(): number | undefined {
+      const source = recordTarget?.builtinHelpers?.get(
+        "data-view:dataViewCreate",
+      );
       const type =
         source === undefined ? undefined : bodyByFunction[source]?.result;
       return type === undefined ? undefined : recordContracts?.forType(type);
@@ -2309,6 +2478,7 @@ function lowerEntries(
         let realmInstanceOf: number | undefined;
         let arrayInstance: ExpressionInfo["arrayInstance"];
         let sharedBufferInstance = false;
+        let dataViewRec: number | undefined;
         let generalCall: ExpressionInfo["generalCall"];
         let fixedFfiCall: number | undefined;
         if (viewUse !== undefined) {
@@ -2409,7 +2579,8 @@ function lowerEntries(
                 if (substitution === undefined)
                   fail("template substitution invariant");
                 expr(substitution);
-                if (scalar(checked.expressions.get(substitution)) === "number")
+                const subType = scalar(checked.expressions.get(substitution));
+                if (subType === "number" || subType === "optional-number")
                   callee = numberFormatter();
               }
               break;
@@ -2700,6 +2871,30 @@ function lowerEntries(
                 expr(node.object);
                 break;
               }
+              if (metadata === "array-bytes-per-element") {
+                const receiverType =
+                  receiverContract ?? checked.expressions.get(node.object);
+                const receiverKind =
+                  receiverType === undefined
+                    ? undefined
+                    : nativeTypedArray(checked.types[receiverType]?.kind);
+                if (receiverKind === undefined)
+                  fail("BYTES_PER_ELEMENT requires a typed-array receiver");
+                builtin = "array-bytes-per-element";
+                constant = numericConstant(receiverKind, "BYTES_PER_ELEMENT");
+                expr(node.object);
+                break;
+              }
+              if (
+                metadata === "data-view-buffer" ||
+                metadata === "data-view-byte-offset" ||
+                metadata === "data-view-byte-length"
+              ) {
+                builtin = metadata;
+                callee = builtinHelper("data-view:dataViewBytes");
+                expr(node.object);
+                break;
+              }
               if (
                 metadata === "array-buffer" ||
                 metadata === "array-byte-offset" ||
@@ -2855,6 +3050,12 @@ function lowerEntries(
                 sharedBufferInstance = true;
                 realmGlobal = dynamicAliases.get("realmGlobal");
                 realmInstanceOf = dynamicAliases.get("realmInstanceOf");
+                expr(node.left);
+                break;
+              }
+              if (intrinsic === "data-view-instanceof") {
+                builtin = "data-view-instanceof";
+                dataViewRec = dataViewRecord();
                 expr(node.left);
                 break;
               }
@@ -3183,6 +3384,14 @@ function lowerEntries(
               if (construction === "shared-array-buffer-new") {
                 builtin = construction;
                 callee = sharedBlockAllocator();
+                exprArguments(node.arguments);
+                break;
+              }
+              if (construction === "data-view-new") {
+                if (layout !== undefined)
+                  fail("DataView cannot enter borrowed closure environments");
+                builtin = "data-view-new";
+                callee = builtinHelper("data-view:dataViewCreate");
                 exprArguments(node.arguments);
                 break;
               }
@@ -3591,7 +3800,56 @@ function lowerEntries(
                 intrinsic === "math-imul"
               )
                 builtin = intrinsic;
-              else if (intrinsic === "atomics") {
+              else if (intrinsic === "math-hypot") {
+                builtin = "math-hypot";
+                if (node.arguments.length === 2)
+                  callee = builtinHelper("math:mathHypot2");
+                else if (node.arguments.length >= 3)
+                  callee = builtinHelper("math:mathHypot");
+              } else if (mathHelperKey(intrinsic) !== undefined) {
+                const key = mathHelperKey(intrinsic);
+                if (key === undefined) throw "math helper key invariant";
+                builtin = "helper-call";
+                callee = builtinHelper(key);
+              } else if (stringHelperKey(intrinsic) !== undefined) {
+                const key = stringHelperKey(intrinsic);
+                if (key === undefined) throw "string helper key invariant";
+                builtin = "string-helper";
+                callee = builtinHelper(key);
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid string receiver");
+                expr(target.object);
+              } else if (intrinsic === "string-normalize") {
+                builtin = "string-normalize";
+                callee = builtinHelper("unicode-normalization:normalizeString");
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid string receiver");
+                expr(target.object);
+              } else if (dataViewGetHelperKey(intrinsic) !== undefined) {
+                const key = dataViewGetHelperKey(intrinsic);
+                if (key === undefined) throw "dataView get helper invariant";
+                builtin = "data-view-get";
+                callee = builtinHelper(key);
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid DataView receiver");
+                expr(target.object);
+              } else if (dataViewSetHelperKey(intrinsic) !== undefined) {
+                const key = dataViewSetHelperKey(intrinsic);
+                if (key === undefined) throw "dataView set helper invariant";
+                builtin = "data-view-set";
+                callee = builtinHelper(key);
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid DataView receiver");
+                expr(target.object);
+              } else if (intrinsic === "atomics") {
                 // The array's checked kind: a narrowed unknown keeps its
                 // general carrier, which the lowering converts.
                 let memberTarget = node.callee;
@@ -3894,6 +4152,7 @@ function lowerEntries(
           realmInstanceOf,
           arrayInstance,
           sharedBufferInstance: sharedBufferInstance ? true : undefined,
+          ...(dataViewRec === undefined ? {} : { dataViewRecord: dataViewRec }),
           sharedBufferFlow: sharedBufferFlow ? true : undefined,
           arrayReceiver,
           arraySetSource,

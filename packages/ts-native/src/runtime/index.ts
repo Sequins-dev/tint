@@ -1108,12 +1108,79 @@ function prepareCollectionPass(
           fromWord64: bigIntHelper("bigIntFromWord64"),
         }
       : undefined;
+    const builtinHelpers = new Map<string, number>();
+    const optionalHelperKeys: readonly string[] = [
+      "math:mathPow",
+      "math:mathExp",
+      "math:mathExpm1",
+      "math:mathLog",
+      "math:mathLog2",
+      "math:mathLog10",
+      "math:mathLog1p",
+      "math:mathCbrt",
+      "math:mathFround",
+      "math:mathF16round",
+      "math:mathSin",
+      "math:mathCos",
+      "math:mathTan",
+      "math:mathAsin",
+      "math:mathAcos",
+      "math:mathAtan",
+      "math:mathAtan2",
+      "math:mathSinh",
+      "math:mathCosh",
+      "math:mathTanh",
+      "math:mathAsinh",
+      "math:mathAcosh",
+      "math:mathAtanh",
+      "math:mathHypot2",
+      "math:mathHypot",
+      "data-view:dataViewCreate",
+      "data-view:dataViewBytes",
+      "data-view:dataViewGetInt8",
+      "data-view:dataViewGetUint8",
+      "data-view:dataViewGetInt16",
+      "data-view:dataViewGetUint16",
+      "data-view:dataViewGetInt32",
+      "data-view:dataViewGetUint32",
+      "data-view:dataViewGetFloat16",
+      "data-view:dataViewGetFloat32",
+      "data-view:dataViewGetFloat64",
+      "data-view:dataViewGetBigInt64",
+      "data-view:dataViewGetBigUint64",
+      "data-view:dataViewSetInt8",
+      "data-view:dataViewSetUint8",
+      "data-view:dataViewSetInt16",
+      "data-view:dataViewSetUint16",
+      "data-view:dataViewSetInt32",
+      "data-view:dataViewSetUint32",
+      "data-view:dataViewSetFloat16",
+      "data-view:dataViewSetFloat32",
+      "data-view:dataViewSetFloat64",
+      "data-view:dataViewSetBigInt64",
+      "data-view:dataViewSetBigUint64",
+      "string-builtins:stringReplace",
+      "string-builtins:stringReplaceAll",
+      "unicode-casing:unicodeLowercase",
+      "unicode-casing:unicodeUppercase",
+      "unicode-normalization:normalizeString",
+      "text-encoding:isWellFormedUTF16",
+      "text-encoding:toWellFormedUTF16",
+    ];
+    for (const key of optionalHelperKeys) {
+      if (key === undefined) throw "builtin helper key invariant";
+      const linkedName = helpers.get(key);
+      if (linkedName !== undefined)
+        builtinHelpers.set(key, functionId(linkedName));
+    }
     return {
       ok: true,
       value: {
         checked: prepared,
         plan,
         options: {
+          builtinHelpers:
+            builtinHelpers.size === 0 ? undefined : builtinHelpers,
           ...(helpers.has("number-text:numberToString")
             ? {
                 numberToString: functionId(

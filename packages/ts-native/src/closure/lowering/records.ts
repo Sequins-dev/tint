@@ -229,7 +229,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
       current?.kind === "set" ||
       isNativeTypedArray(current?.kind) ||
       current?.kind === "ArrayBuffer" ||
-      current?.kind === "SharedArrayBuffer"
+      current?.kind === "SharedArrayBuffer" ||
+      current?.kind === "DataView"
     ) {
       if (
         current !== undefined &&
@@ -613,7 +614,20 @@ export function entryType(
   const entry = checked.types[id];
   if (
     entry?.kind === "ArrayBuffer" ||
+    entry?.kind === "DataView" ||
     (entry?.kind === "SharedArrayBuffer" && entry.arrayFlow !== true)
+  )
+    return "reference";
+  if (
+    entry?.kind === "union" &&
+    entry.members.length > 0 &&
+    entry.members.every((m) => {
+      const mt = m === undefined ? undefined : checked.types[m];
+      return (
+        mt?.kind === "ArrayBuffer" ||
+        (mt?.kind === "SharedArrayBuffer" && mt.arrayFlow !== true)
+      );
+    })
   )
     return "reference";
   const bigint = bigIntType(checked, id);
@@ -635,10 +649,26 @@ export function entryType(
       (m) => checked.types[m]?.kind !== "undefined",
     );
     const first = present[0];
+    const firstType = first === undefined ? undefined : checked.types[first];
     if (
       present.length === 1 &&
-      first !== undefined &&
-      isNativeTypedArray(checked.types[first]?.kind ?? "")
+      firstType !== undefined &&
+      (isNativeTypedArray(firstType.kind) ||
+        firstType.kind === "DataView" ||
+        firstType.kind === "ArrayBuffer" ||
+        (firstType.kind === "SharedArrayBuffer" &&
+          firstType.arrayFlow !== true))
+    )
+      return "optional-reference";
+    if (
+      present.length > 0 &&
+      present.every((m) => {
+        const mt = m === undefined ? undefined : checked.types[m];
+        return (
+          mt?.kind === "ArrayBuffer" ||
+          (mt?.kind === "SharedArrayBuffer" && mt.arrayFlow !== true)
+        );
+      })
     )
       return "optional-reference";
   }

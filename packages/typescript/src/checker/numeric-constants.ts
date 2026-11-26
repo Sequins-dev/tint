@@ -45,6 +45,25 @@ export function numericConstant(
       case "SQRT2":
         return 1.4142135623730951;
     }
+  } else if (name === "BYTES_PER_ELEMENT") {
+    switch (namespace) {
+      case "Int8Array":
+      case "Uint8Array":
+      case "Uint8ClampedArray":
+        return 1;
+      case "Int16Array":
+      case "Uint16Array":
+      case "Float16Array":
+        return 2;
+      case "Int32Array":
+      case "Uint32Array":
+      case "Float32Array":
+        return 4;
+      case "Float64Array":
+      case "BigInt64Array":
+      case "BigUint64Array":
+        return 8;
+    }
   }
   return undefined;
 }

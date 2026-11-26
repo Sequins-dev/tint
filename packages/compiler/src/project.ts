@@ -16,7 +16,11 @@ import type {
   NativeForeignBinding,
   ForeignLibrary,
 } from "./native/index.ts";
-import { dynamicObjectRuntimeModule } from "./native/runtime-contracts.ts";
+import {
+  dynamicObjectRuntimeModule,
+  isOptionalBuiltinRuntimeModule,
+  optionalBuiltinRuntimes,
+} from "./native/runtime-contracts.ts";
 import {
   foreignDeclaration,
   foreignRuntimeModules,
@@ -127,6 +131,10 @@ export function projectRoots(): string[] {
     if (source === undefined) throw "runtime root invariant";
     roots.push(source.module);
   }
+  for (const source of optionalBuiltinRuntimes) {
+    if (source === undefined) throw "optional builtin root invariant";
+    roots.push(source.module);
+  }
   return roots;
 }
 /** Ordinary imports can reach the realm. Otherwise the checker must demand it. */
@@ -138,7 +146,11 @@ export function loadCompilerSourceGraph(
   const initial = loadSourceGraphLoader(
     inputs,
     mappings,
-    roots.filter((root) => root !== dynamicObjectRuntimeModule),
+    roots.filter(
+      (root) =>
+        root !== dynamicObjectRuntimeModule &&
+        !isOptionalBuiltinRuntimeModule(root),
+    ),
   );
   if (!initial.ok) return initial;
   const loader = initial.value;
@@ -149,7 +161,10 @@ export function loadCompilerSourceGraph(
       load: loader.load,
       loadWithRoot: (root) => {
         if (!inputs.some((input) => input?.id === root)) return undefined;
-        if (root === dynamicObjectRuntimeModule)
+        if (
+          root === dynamicObjectRuntimeModule ||
+          isOptionalBuiltinRuntimeModule(root)
+        )
           return loadSourceGraph(inputs, mappings, roots);
         if (root !== foreignRuntimeModules.sysv) return undefined;
         const additional = loader.ids.slice();

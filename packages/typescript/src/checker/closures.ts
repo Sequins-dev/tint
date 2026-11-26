@@ -174,6 +174,30 @@ export type ClosureIntrinsic =
   | "math-sign"
   | "math-floor"
   | "math-imul"
+  | "math-pow"
+  | "math-exp"
+  | "math-expm1"
+  | "math-log"
+  | "math-log2"
+  | "math-log10"
+  | "math-log1p"
+  | "math-cbrt"
+  | "math-fround"
+  | "math-f16round"
+  | "math-sin"
+  | "math-cos"
+  | "math-tan"
+  | "math-asin"
+  | "math-acos"
+  | "math-atan"
+  | "math-atan2"
+  | "math-sinh"
+  | "math-cosh"
+  | "math-tanh"
+  | "math-asinh"
+  | "math-acosh"
+  | "math-atanh"
+  | "math-hypot"
   | "atomics"
   | "math-min"
   | "math-max"
@@ -186,6 +210,34 @@ export type ClosureIntrinsic =
   | "array-buffer-new"
   | "shared-array-buffer-new"
   | "array-buffer-byte-length"
+  | "array-bytes-per-element"
+  | "data-view-new"
+  | "data-view-buffer"
+  | "data-view-byte-offset"
+  | "data-view-byte-length"
+  | "data-view-instanceof"
+  | "data-view-get-int8"
+  | "data-view-get-uint8"
+  | "data-view-get-int16"
+  | "data-view-get-uint16"
+  | "data-view-get-int32"
+  | "data-view-get-uint32"
+  | "data-view-get-float16"
+  | "data-view-get-float32"
+  | "data-view-get-float64"
+  | "data-view-get-bigint64"
+  | "data-view-get-biguint64"
+  | "data-view-set-int8"
+  | "data-view-set-uint8"
+  | "data-view-set-int16"
+  | "data-view-set-uint16"
+  | "data-view-set-int32"
+  | "data-view-set-uint32"
+  | "data-view-set-float16"
+  | "data-view-set-float32"
+  | "data-view-set-float64"
+  | "data-view-set-bigint64"
+  | "data-view-set-biguint64"
   | "array-join"
   | "array-at"
   | "array-reverse"
@@ -251,6 +303,13 @@ export type ClosureIntrinsic =
   | "string-trim"
   | "string-trim-start"
   | "string-trim-end"
+  | "string-to-lower"
+  | "string-to-upper"
+  | "string-replace"
+  | "string-replace-all"
+  | "string-normalize"
+  | "string-is-well-formed"
+  | "string-to-well-formed"
   | "string-substring"
   | "string-slice"
   | "string-read"
@@ -515,6 +574,7 @@ function checkClosureModuleLayout(
     "BigUint64Array",
     "ArrayBuffer",
     "SharedArrayBuffer",
+    "DataView",
     "TypeError",
     "RangeError",
     "Error",
@@ -3151,6 +3211,247 @@ function checkClosureModuleLayout(
     result.add(narrowToken(binding.id, unionSubset(selected, node)));
     return result;
   }
+  function isBufferLike(id: number): boolean {
+    const t = types[id];
+    if (t === undefined) return false;
+    if (t.kind === "ArrayBuffer" || t.kind === "SharedArrayBuffer") return true;
+    if (t.kind === "union")
+      return t.members.every(
+        (m: number | undefined) => m !== undefined && isBufferLike(m),
+      );
+    return false;
+  }
+  function mathUnaryIntrinsic(name: string): ClosureIntrinsic | undefined {
+    switch (name) {
+      case "ceil":
+        return "math-ceil";
+      case "floor":
+        return "math-floor";
+      case "trunc":
+        return "math-trunc";
+      case "abs":
+        return "math-abs";
+      case "sign":
+        return "math-sign";
+      case "clz32":
+        return "math-clz32";
+      case "round":
+        return "math-round";
+      case "sqrt":
+        return "math-sqrt";
+      case "exp":
+        return "math-exp";
+      case "expm1":
+        return "math-expm1";
+      case "log":
+        return "math-log";
+      case "log2":
+        return "math-log2";
+      case "log10":
+        return "math-log10";
+      case "log1p":
+        return "math-log1p";
+      case "cbrt":
+        return "math-cbrt";
+      case "fround":
+        return "math-fround";
+      case "f16round":
+        return "math-f16round";
+      case "sin":
+        return "math-sin";
+      case "cos":
+        return "math-cos";
+      case "tan":
+        return "math-tan";
+      case "asin":
+        return "math-asin";
+      case "acos":
+        return "math-acos";
+      case "atan":
+        return "math-atan";
+      case "sinh":
+        return "math-sinh";
+      case "cosh":
+        return "math-cosh";
+      case "tanh":
+        return "math-tanh";
+      case "asinh":
+        return "math-asinh";
+      case "acosh":
+        return "math-acosh";
+      case "atanh":
+        return "math-atanh";
+      default:
+        return undefined;
+    }
+  }
+  function dataViewMethod(name: string):
+    | {
+        readonly intrinsic: ClosureIntrinsic;
+        readonly setter: boolean;
+        readonly bigint: boolean;
+        readonly endian: boolean;
+      }
+    | undefined {
+    switch (name) {
+      case "getInt8":
+        return {
+          intrinsic: "data-view-get-int8",
+          setter: false,
+          bigint: false,
+          endian: false,
+        };
+      case "getUint8":
+        return {
+          intrinsic: "data-view-get-uint8",
+          setter: false,
+          bigint: false,
+          endian: false,
+        };
+      case "getInt16":
+        return {
+          intrinsic: "data-view-get-int16",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getUint16":
+        return {
+          intrinsic: "data-view-get-uint16",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getInt32":
+        return {
+          intrinsic: "data-view-get-int32",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getUint32":
+        return {
+          intrinsic: "data-view-get-uint32",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getFloat16":
+        return {
+          intrinsic: "data-view-get-float16",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getFloat32":
+        return {
+          intrinsic: "data-view-get-float32",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getFloat64":
+        return {
+          intrinsic: "data-view-get-float64",
+          setter: false,
+          bigint: false,
+          endian: true,
+        };
+      case "getBigInt64":
+        return {
+          intrinsic: "data-view-get-bigint64",
+          setter: false,
+          bigint: true,
+          endian: true,
+        };
+      case "getBigUint64":
+        return {
+          intrinsic: "data-view-get-biguint64",
+          setter: false,
+          bigint: true,
+          endian: true,
+        };
+      case "setInt8":
+        return {
+          intrinsic: "data-view-set-int8",
+          setter: true,
+          bigint: false,
+          endian: false,
+        };
+      case "setUint8":
+        return {
+          intrinsic: "data-view-set-uint8",
+          setter: true,
+          bigint: false,
+          endian: false,
+        };
+      case "setInt16":
+        return {
+          intrinsic: "data-view-set-int16",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setUint16":
+        return {
+          intrinsic: "data-view-set-uint16",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setInt32":
+        return {
+          intrinsic: "data-view-set-int32",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setUint32":
+        return {
+          intrinsic: "data-view-set-uint32",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setFloat16":
+        return {
+          intrinsic: "data-view-set-float16",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setFloat32":
+        return {
+          intrinsic: "data-view-set-float32",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setFloat64":
+        return {
+          intrinsic: "data-view-set-float64",
+          setter: true,
+          bigint: false,
+          endian: true,
+        };
+      case "setBigInt64":
+        return {
+          intrinsic: "data-view-set-bigint64",
+          setter: true,
+          bigint: true,
+          endian: true,
+        };
+      case "setBigUint64":
+        return {
+          intrinsic: "data-view-set-biguint64",
+          setter: true,
+          bigint: true,
+          endian: true,
+        };
+      default:
+        return undefined;
+    }
+  }
   function isErrorKind(kind: string | undefined): boolean {
     return kind === "Error" || kind === "TypeError" || kind === "RangeError";
   }
@@ -3651,6 +3952,7 @@ function checkClosureModuleLayout(
       type?.kind === "set" ||
       type?.kind === "ArrayBuffer" ||
       type?.kind === "SharedArrayBuffer" ||
+      type?.kind === "DataView" ||
       isNativeTypedArrayKind(type?.kind) ||
       isErrorKind(type?.kind)
     );
@@ -3744,6 +4046,7 @@ function checkClosureModuleLayout(
                 type?.kind === "map" ||
                 type?.kind === "ArrayBuffer" ||
                 type?.kind === "SharedArrayBuffer" ||
+                type?.kind === "DataView" ||
                 isNativeTypedArrayKind(type?.kind) ||
                 isErrorKind(type?.kind)
               ? "object"
@@ -6095,11 +6398,30 @@ function checkClosureModuleLayout(
             if (substitution === undefined)
               throw "TEMPLATE_SUBSTITUTION_INVARIANT";
             const input = expression(substitution, owner);
-            if (
-              ![number, string, boolean, undefinedType, nullType, bigint].some(
-                (type) => system.assignable(input, type),
-              )
-            )
+            let allowed = [
+              number,
+              string,
+              boolean,
+              undefinedType,
+              nullType,
+              bigint,
+            ].some((type) => system.assignable(input, type));
+            if (!allowed) {
+              const inputType = types[input];
+              if (inputType?.kind === "union" && inputType.members.length > 0) {
+                const nonUndefined = inputType.members.filter(
+                  (m) => types[m]?.kind !== "undefined",
+                );
+                if (
+                  nonUndefined.length > 0 &&
+                  nonUndefined.length < inputType.members.length
+                )
+                  allowed = [number, string, boolean].some((base) =>
+                    nonUndefined.every((m) => system.assignable(m, base)),
+                  );
+              }
+            }
+            if (!allowed)
               unsupported(
                 substitution,
                 "template-call",
@@ -6790,18 +7112,35 @@ function checkClosureModuleLayout(
             result = number;
             break;
           }
-          if (
-            (types[obj]?.kind === "ArrayBuffer" ||
-              types[obj]?.kind === "SharedArrayBuffer") &&
-            node.property === "byteLength"
-          ) {
+          if (isBufferLike(obj) && node.property === "byteLength") {
             intrinsics.set(node, "array-buffer-byte-length");
             result = number;
             break;
           }
           if (
-            isArray(obj) &&
+            types[obj]?.kind === "DataView" &&
             ["buffer", "byteOffset", "byteLength"].includes(node.property)
+          ) {
+            intrinsics.set(
+              node,
+              node.property === "buffer"
+                ? "data-view-buffer"
+                : node.property === "byteOffset"
+                  ? "data-view-byte-offset"
+                  : "data-view-byte-length",
+            );
+            result =
+              node.property === "buffer" ? primitive("ArrayBuffer") : number;
+            break;
+          }
+          if (
+            isArray(obj) &&
+            [
+              "buffer",
+              "byteOffset",
+              "byteLength",
+              "BYTES_PER_ELEMENT",
+            ].includes(node.property)
           ) {
             intrinsics.set(
               node,
@@ -6809,7 +7148,9 @@ function checkClosureModuleLayout(
                 ? "array-buffer"
                 : node.property === "byteOffset"
                   ? "array-byte-offset"
-                  : "array-byte-length",
+                  : node.property === "byteLength"
+                    ? "array-byte-length"
+                    : "array-bytes-per-element",
             );
             result =
               node.property === "buffer" ? primitive("ArrayBuffer") : number;
@@ -7174,6 +7515,35 @@ function checkClosureModuleLayout(
             intrinsics.set(node, "shared-array-buffer-new");
             break;
           }
+          if (
+            target.kind === "identifier" &&
+            !references.has(target) &&
+            target.name === "DataView" &&
+            node.typeArguments.length <= 1
+          ) {
+            if (node.arguments.length < 1 || node.arguments.length > 3)
+              fail(
+                node,
+                "ARITY",
+                "DataView requires a buffer and optional byteOffset and byteLength",
+              );
+            const bufferArg = node.arguments[0];
+            if (bufferArg === undefined) throw "DataView buffer invariant";
+            const bufferType = expression(bufferArg, owner);
+            if (!isBufferLike(bufferType))
+              fail(
+                bufferArg,
+                "TYPE_MISMATCH",
+                "DataView first argument must be an ArrayBuffer or SharedArrayBuffer",
+              );
+            for (const arg of node.arguments.slice(1)) {
+              if (arg === undefined) throw "DataView arg invariant";
+              requireType(expression(arg, owner), optionalNumber, arg);
+            }
+            result = primitive("DataView");
+            intrinsics.set(node, "data-view-new");
+            break;
+          }
 
           if (
             target.kind !== "identifier" ||
@@ -7248,8 +7618,7 @@ function checkClosureModuleLayout(
           if (
             source !== undefined &&
             input !== undefined &&
-            (types[input]?.kind === "ArrayBuffer" ||
-              types[input]?.kind === "SharedArrayBuffer")
+            isBufferLike(input)
           ) {
             // A view of the buffer's bytes: (buffer, byteOffset?, length?).
             if (node.arguments.length > 3)
@@ -7833,13 +8202,21 @@ function checkClosureModuleLayout(
               !references.has(receiver) &&
               (target.property === "min" ||
                 target.property === "max" ||
-                target.property === "imul")
+                target.property === "imul" ||
+                target.property === "pow" ||
+                target.property === "atan2" ||
+                target.property === "hypot")
             ) {
-              if (target.property === "imul" && node.arguments.length !== 2)
+              if (
+                (target.property === "imul" ||
+                  target.property === "pow" ||
+                  target.property === "atan2") &&
+                node.arguments.length !== 2
+              )
                 fail(
                   node,
                   "ARITY",
-                  "Math.imul requires two numeric arguments in this slice",
+                  "Math." + target.property + " requires two numeric arguments",
                 );
               for (const argument of node.arguments) {
                 if (argument === undefined) throw "missing call argument";
@@ -7849,9 +8226,15 @@ function checkClosureModuleLayout(
                 node,
                 target.property === "imul"
                   ? "math-imul"
-                  : target.property === "min"
-                    ? "math-min"
-                    : "math-max",
+                  : target.property === "pow"
+                    ? "math-pow"
+                    : target.property === "atan2"
+                      ? "math-atan2"
+                      : target.property === "hypot"
+                        ? "math-hypot"
+                        : target.property === "min"
+                          ? "math-min"
+                          : "math-max",
               );
               result = number;
               break;
@@ -7876,6 +8259,12 @@ function checkClosureModuleLayout(
               result = string;
               break;
             }
+            const mathUnary =
+              receiver.kind === "identifier" &&
+              receiver.name === "Math" &&
+              !references.has(receiver)
+                ? mathUnaryIntrinsic(target.property)
+                : undefined;
             if (
               receiver.kind === "identifier" &&
               !references.has(receiver) &&
@@ -7884,44 +8273,17 @@ function checkClosureModuleLayout(
                   target.property === "isSafeInteger" ||
                   target.property === "isNaN" ||
                   target.property === "isFinite")) ||
-                (receiver.name === "Math" &&
-                  [
-                    "ceil",
-                    "floor",
-                    "trunc",
-                    "abs",
-                    "sign",
-                    "clz32",
-                    "round",
-                    "sqrt",
-                  ].includes(target.property)))
+                mathUnary !== undefined)
             ) {
               if (node.arguments.length !== 1)
                 fail(node, "ARITY", "builtin requires one argument");
               const arg = node.arguments[0];
               if (arg === undefined) throw "builtin arity invariant";
               const value = expression(arg, owner);
-              if (receiver.name === "Math") {
+              if (mathUnary !== undefined) {
                 requireType(value, number, arg);
                 result = number;
-                intrinsics.set(
-                  node,
-                  target.property === "sqrt"
-                    ? "math-sqrt"
-                    : target.property === "round"
-                      ? "math-round"
-                      : target.property === "clz32"
-                        ? "math-clz32"
-                        : target.property === "trunc"
-                          ? "math-trunc"
-                          : target.property === "abs"
-                            ? "math-abs"
-                            : target.property === "sign"
-                              ? "math-sign"
-                              : target.property === "ceil"
-                                ? "math-ceil"
-                                : "math-floor",
-                );
+                intrinsics.set(node, mathUnary);
               } else {
                 if (value === voidType)
                   fail(arg, "TYPE_MISMATCH", "void result is not a value");
@@ -8168,11 +8530,59 @@ function checkClosureModuleLayout(
               result = string;
               break;
             }
+            if (types[obj]?.kind === "DataView") {
+              const dvMethod = dataViewMethod(target.property);
+              if (dvMethod !== undefined) {
+                const minArgs = dvMethod.setter ? 2 : 1;
+                const maxArgs = minArgs + (dvMethod.endian ? 1 : 0);
+                if (
+                  node.arguments.length < minArgs ||
+                  node.arguments.length > maxArgs
+                )
+                  fail(
+                    node,
+                    "ARITY",
+                    "DataView." +
+                      target.property +
+                      " received wrong argument count",
+                  );
+                const offsetArg = node.arguments[0];
+                if (offsetArg === undefined) throw "DataView offset invariant";
+                requireType(expression(offsetArg, owner), number, offsetArg);
+                if (dvMethod.setter) {
+                  const valArg = node.arguments[1];
+                  if (valArg === undefined) throw "DataView value invariant";
+                  requireType(
+                    expression(valArg, owner),
+                    dvMethod.bigint ? bigint : number,
+                    valArg,
+                  );
+                }
+                const endianArg = dvMethod.endian
+                  ? node.arguments[minArgs]
+                  : undefined;
+                if (endianArg !== undefined)
+                  requireType(
+                    expression(endianArg, owner),
+                    unionSubset([boolean, undefinedType], endianArg),
+                    endianArg,
+                  );
+                intrinsics.set(node, dvMethod.intrinsic);
+                result = dvMethod.setter
+                  ? voidType
+                  : dvMethod.bigint
+                    ? bigint
+                    : number;
+                break;
+              }
+            }
             if (
               system.assignable(obj, string) &&
               (target.property === "trim" ||
                 target.property === "trimStart" ||
-                target.property === "trimEnd")
+                target.property === "trimEnd" ||
+                target.property === "trimLeft" ||
+                target.property === "trimRight")
             ) {
               if (node.arguments.length !== 0)
                 fail(node, "ARITY", "string trimming accepts no arguments");
@@ -8180,9 +8590,99 @@ function checkClosureModuleLayout(
                 node,
                 target.property === "trim"
                   ? "string-trim"
-                  : target.property === "trimStart"
+                  : target.property === "trimStart" ||
+                      target.property === "trimLeft"
                     ? "string-trim-start"
                     : "string-trim-end",
+              );
+              result = string;
+              break;
+            }
+            if (
+              system.assignable(obj, string) &&
+              (target.property === "toLowerCase" ||
+                target.property === "toUpperCase" ||
+                target.property === "isWellFormed" ||
+                target.property === "toWellFormed")
+            ) {
+              if (node.arguments.length !== 0)
+                fail(
+                  node,
+                  "ARITY",
+                  "string " + target.property + " accepts no arguments",
+                );
+              intrinsics.set(
+                node,
+                target.property === "toLowerCase"
+                  ? "string-to-lower"
+                  : target.property === "toUpperCase"
+                    ? "string-to-upper"
+                    : target.property === "isWellFormed"
+                      ? "string-is-well-formed"
+                      : "string-to-well-formed",
+              );
+              result = target.property === "isWellFormed" ? boolean : string;
+              break;
+            }
+            if (
+              system.assignable(obj, string) &&
+              target.property === "normalize"
+            ) {
+              if (node.arguments.length > 1)
+                fail(
+                  node,
+                  "ARITY",
+                  "normalize accepts zero or one optional string form",
+                );
+              const formArg = node.arguments[0];
+              if (formArg !== undefined)
+                requireType(
+                  expression(formArg, owner),
+                  unionSubset([string, undefinedType], formArg),
+                  formArg,
+                );
+              intrinsics.set(node, "string-normalize");
+              result = string;
+              break;
+            }
+            if (
+              system.assignable(obj, string) &&
+              (target.property === "replace" ||
+                target.property === "replaceAll")
+            ) {
+              if (node.arguments.length !== 2)
+                fail(
+                  node,
+                  "ARITY",
+                  target.property + " requires search and replacement strings",
+                );
+              const searchArg = node.arguments[0],
+                replacementArg = node.arguments[1];
+              if (searchArg === undefined || replacementArg === undefined)
+                throw "replace arity invariant";
+              const searchType = expression(searchArg, owner),
+                replacementType = expression(replacementArg, owner);
+              if (!system.assignable(searchType, string))
+                unsupported(
+                  searchArg,
+                  "realm-library-member",
+                  "typed String.prototype." +
+                    target.property +
+                    " requires a string search argument",
+                );
+              if (!system.assignable(replacementType, string))
+                unsupported(
+                  replacementArg,
+                  "realm-library-member",
+                  "typed String.prototype." +
+                    target.property +
+                    " requires a string replacement argument",
+                );
+              intrinsics.set(
+                node,
+                target.property === "replace"
+                  ? "string-replace"
+                  : "string-replace-all",
               );
               result = string;
               break;
@@ -9882,6 +10382,7 @@ function checkClosureModuleLayout(
               if (
                 isErrorKind(target.name) ||
                 target.name === "SharedArrayBuffer" ||
+                target.name === "DataView" ||
                 (candidate !== undefined &&
                   isArray(candidate) &&
                   types[candidate]?.kind !== "object")
@@ -9897,7 +10398,9 @@ function checkClosureModuleLayout(
                         ? "error-is"
                         : target.name === "SharedArrayBuffer"
                           ? "shared-buffer-instanceof"
-                          : "array-instanceof",
+                          : target.name === "DataView"
+                            ? "data-view-instanceof"
+                            : "array-instanceof",
                 );
               } else intrinsics.set(node, "realm-instanceof");
             } else intrinsics.set(node, "realm-instanceof");

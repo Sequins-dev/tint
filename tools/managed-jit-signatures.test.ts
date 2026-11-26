@@ -316,7 +316,7 @@ test("managed entry assembly emits and selects every identity before returning c
   const foreign = entry.prepareManagedSurfaceEntry({
     ...request,
     module: parse(
-      "export function execute(x:number):number{return Math.sin(x);}",
+      "export function execute(x:number):number{return Math.random() + x;}",
     ),
     runtime: { ...runtime, globals: ["undefined", "Math"] },
   });

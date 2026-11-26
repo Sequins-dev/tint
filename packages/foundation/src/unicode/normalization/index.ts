@@ -1,3 +1,4 @@
+import { asciiEndOfText } from "../../text/latin1.ts";
 import {
   decompositionPoints,
   decompositionInfo,
@@ -195,6 +196,8 @@ export function normalizeUnicode(
 ): string | undefined {
   if (form !== "NFC" && form !== "NFD" && form !== "NFKC" && form !== "NFKD")
     return undefined;
+  // Every ASCII string is already normalized in all four Unicode forms.
+  if (asciiEndOfText(text, 0, text.length) === text.length) return text;
   const compatibility = form === "NFKC" || form === "NFKD",
     composed = form === "NFC" || form === "NFKC";
   const decomposed: number[] = [];
@@ -213,4 +216,15 @@ export function normalizeUnicode(
     pieces.push(String.fromCodePoint(point));
   }
   return pieces.join("");
+}
+
+/** String.prototype.normalize(form?): throws RangeError on invalid form. */
+export function normalizeString(text: string, form?: string): string {
+  const actual = form === undefined ? "NFC" : form;
+  const result = normalizeUnicode(text, actual);
+  if (result === undefined)
+    throw new RangeError(
+      "The normalization form should be one of NFC, NFD, NFKC, NFKD.",
+    );
+  return result;
 }
