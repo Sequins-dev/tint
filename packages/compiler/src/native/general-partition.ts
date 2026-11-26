@@ -4,8 +4,10 @@ import {
 } from "./dynamic-boundaries.ts";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
+  rewriteModule,
   typeParameterCount,
   typeOnlyDeclarations,
+  type Expression,
   type Parameter,
   type Statement,
   type TypeNode,
@@ -447,10 +449,33 @@ export interface GeneralPartition {
   readonly records?: readonly BoundaryRecord[];
 }
 
+function isPureLiteralExpression(expression: Expression): boolean {
+  switch (expression.kind) {
+    case "number":
+    case "string":
+    case "boolean":
+    case "null":
+    case "bigint":
+      return true;
+    case "identifier":
+      return expression.name === "undefined";
+    case "unary":
+      return (
+        (expression.operator === "-" || expression.operator === "+") &&
+        expression.operand.kind === "number"
+      );
+    case "group":
+      return isPureLiteralExpression(expression.expression);
+    default:
+      return false;
+  }
+}
+
 /** Closes a set of general modules: every importer of a general module is
  * general (typed code consumes only typed values), and a typed module whose
- * imported exports cannot cross a checked boundary is general too. The
- * remaining typed modules keep full type-based compilation. */
+ * imported exports cannot cross a checked boundary — or whose top-level body
+ * has observable evaluation effects — is general too. The remaining typed
+ * modules keep full type-based compilation. */
 export function closeGeneralPartition(
   application: readonly SourceModule[],
   seed: ReadonlySet<string>,
@@ -473,23 +498,149 @@ export function closeGeneralPartition(
   for (const module of typeSources)
     if (module !== undefined) typeModules.set(module.id, module);
   const records = createBoundaryRecords(typeModules);
+  const observableCache = new Map<string, boolean>();
+  /** Whether evaluating a non-trusted module at program startup would have
+   * observable top-level effects (e.g., side effects, throws, or non-literal
+   * initializers) instead of being purely declarative. Such modules must stay
+   * in the general module graph so ESM evaluation order and lazy dynamic
+   * `import()` semantics are preserved. */
+  function hasObservableTopLevel(
+    module: SourceModule,
+    visiting: Set<string>,
+  ): boolean {
+    if (trustedIds.has(module.id)) return false;
+    const cached = observableCache.get(module.id);
+    if (cached !== undefined) return cached;
+    if (visiting.has(module.id)) return false;
+    visiting.add(module.id);
+    let observable = false;
+    for (const statement of module.module.statements) {
+      if (statement === undefined) continue;
+      if (
+        statement.kind === "interface" ||
+        statement.kind === "type-alias" ||
+        statement.kind === "function" ||
+        statement.kind === "empty"
+      )
+        continue;
+      if (statement.kind === "import") {
+        if (statement.declaration.typeOnly) continue;
+        const target = module.dependencies.get(statement.declaration.specifier);
+        const dependency = target === undefined ? undefined : byId.get(target);
+        if (
+          dependency !== undefined &&
+          hasObservableTopLevel(dependency, visiting)
+        ) {
+          observable = true;
+          break;
+        }
+        continue;
+      }
+      if (statement.kind === "export") {
+        const source = statement.declaration.source;
+        if (source === undefined || source.typeOnly) continue;
+        const target = module.dependencies.get(source.specifier);
+        const dependency = target === undefined ? undefined : byId.get(target);
+        if (
+          dependency !== undefined &&
+          hasObservableTopLevel(dependency, visiting)
+        ) {
+          observable = true;
+          break;
+        }
+        continue;
+      }
+      if (statement.kind === "variable") {
+        for (const declaration of statement.declarations) {
+          if (declaration === undefined) continue;
+          if (
+            declaration.kind === "object-binding" ||
+            declaration.kind === "array-binding"
+          ) {
+            observable = true;
+            break;
+          }
+          const initializer = declaration.initializer;
+          if (
+            initializer !== undefined &&
+            !isPureLiteralExpression(initializer)
+          ) {
+            observable = true;
+            break;
+          }
+        }
+        if (observable) break;
+        continue;
+      }
+      observable = true;
+      break;
+    }
+    visiting.delete(module.id);
+    observableCache.set(module.id, observable);
+    return observable;
+  }
+  const dynamicSpecifiers = new Map<string, readonly string[]>();
+  function importCallSpecifiers(module: SourceModule): readonly string[] {
+    const cached = dynamicSpecifiers.get(module.id);
+    if (cached !== undefined) return cached;
+    const found: string[] = [];
+    rewriteModule(module.module, {
+      expression: (mapped: Expression, original: Expression): Expression => {
+        if (original.kind === "import-call") {
+          const specifier = original.specifier;
+          if (specifier.kind === "string") found.push(specifier.value);
+        }
+        return mapped;
+      },
+    });
+    dynamicSpecifiers.set(module.id, found);
+    return found;
+  }
   const general = new Set<string>(seed);
   for (let changed = true; changed;) {
     changed = false;
     for (const module of application) {
       if (module === undefined || general.has(module.id)) continue;
+      let importsGeneral = false;
       for (const declaration of module.module.imports) {
         if (declaration === undefined || declaration.typeOnly) continue;
         const target = module.dependencies.get(declaration.specifier);
         if (target !== undefined && general.has(target)) {
-          general.add(module.id);
-          changed = true;
+          importsGeneral = true;
           break;
         }
+      }
+      if (!importsGeneral)
+        for (const statement of module.module.statements) {
+          if (statement === undefined || statement.kind !== "export") continue;
+          const source = statement.declaration.source;
+          if (source === undefined || source.typeOnly) continue;
+          const target = module.dependencies.get(source.specifier);
+          if (target !== undefined && general.has(target)) {
+            importsGeneral = true;
+            break;
+          }
+        }
+      if (importsGeneral) {
+        general.add(module.id);
+        changed = true;
       }
     }
     for (const module of application) {
       if (module === undefined || !general.has(module.id)) continue;
+      for (const specifier of importCallSpecifiers(module)) {
+        if (specifier === undefined) continue;
+        const target = module.dependencies.get(specifier);
+        if (
+          target !== undefined &&
+          !general.has(target) &&
+          byId.has(target) &&
+          !trustedIds.has(target)
+        ) {
+          general.add(target);
+          changed = true;
+        }
+      }
       for (const statement of module.module.statements) {
         if (statement === undefined) continue;
         const declaration =
@@ -505,6 +656,12 @@ export function closeGeneralPartition(
         if (typed === undefined) continue;
         const types = typeOnlyDeclarations(typed.module);
         let crossing = true;
+        if (
+          !trustedIds.has(target) &&
+          ((statement.kind === "import" && declaration.bindings.length === 0) ||
+            hasObservableTopLevel(typed, new Set<string>()))
+        )
+          crossing = false;
         if (statement.kind === "export") {
           const bindings = statement.declaration.bindings;
           if (bindings === undefined) crossing = false;

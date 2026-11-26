@@ -154,6 +154,7 @@ export function planFunctionFallback(
     original = request.modules[0];
   if (
     request.sourceValidated !== true ||
+    request.start === undefined ||
     request.start === "$tintCallUnit" ||
     (trigger?.capability !== "arguments-object" &&
       trigger?.capability !== "regexp-literal") ||

@@ -25,7 +25,11 @@ import {
 } from "./workspace-sources.ts";
 import { projectRoots, projectBuildRequest } from "@tint/compiler/cli";
 import { createSourceText } from "@tint/source/text";
-import { parseModule } from "@tint/typescript/syntax";
+import {
+  bindingIdentifiers,
+  parseModule,
+  type Module,
+} from "@tint/typescript/syntax";
 import {
   buildMacOSProgram,
   compileMacOSProgram,
@@ -73,6 +77,7 @@ import {
   buildNativeFixture,
   type NativeFixtureBuild,
 } from "./gate/native-fixture.ts";
+import { withGateLock } from "./gate/lock.ts";
 import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import {
@@ -338,9 +343,9 @@ export function sharedFixtureImage(
     const cache = fixtureCacheDirectory();
     const stored =
       cache === undefined ? undefined : join(cache, "image-" + id, name);
-    if (stored !== undefined && existsSync(stored + ".manifest.json"))
-      kept = stored;
-    else {
+    const prepare = (): string => {
+      if (stored !== undefined && existsSync(stored + ".manifest.json"))
+        return stored;
       const built = build();
       const staging = mkdtempSync(
         join(
@@ -350,19 +355,29 @@ export function sharedFixtureImage(
       );
       copyFixtureImage(built, join(staging, name));
       rmSync(dirname(built), { recursive: true, force: true });
-      kept = join(staging, name);
+      let location = join(staging, name);
       if (stored !== undefined)
         try {
           renameSync(staging, dirname(stored));
-          kept = stored;
+          location = stored;
         } catch {
           // Another process stored the same image first; keep this copy.
         }
-      if (kept !== stored)
+      if (location !== stored)
         process.once("exit", () =>
           rmSync(staging, { recursive: true, force: true }),
         );
-    }
+      return location;
+    };
+    if (cache !== undefined) {
+      mkdirSync(cache, { recursive: true });
+      kept = withGateLock(
+        [join(cache, "lock-" + id)],
+        "shared-fixture",
+        undefined,
+        prepare,
+      );
+    } else kept = prepare();
     sharedImages.set(id, kept);
   }
   const copy = join(
@@ -502,6 +517,35 @@ function mergeRuntimes(
   }
   return merged;
 }
+function moduleExportsName(module: Module, name: string): boolean {
+  for (const statement of module.statements) {
+    if (statement === undefined) continue;
+    if (
+      (statement.kind === "function" || statement.kind === "class") &&
+      statement.exported === true &&
+      statement.name === name
+    )
+      return true;
+    if (statement.kind === "variable" && statement.exported === true) {
+      for (const declaration of statement.declarations) {
+        if (declaration === undefined) continue;
+        for (const identifier of bindingIdentifiers(declaration))
+          if (identifier?.name === name) return true;
+      }
+    }
+    if (statement.kind === "export" && !statement.declaration.typeOnly) {
+      for (const binding of statement.declaration.bindings ?? [])
+        if (
+          binding !== undefined &&
+          !binding.typeOnly &&
+          binding.exported === name
+        )
+          return true;
+    }
+  }
+  return false;
+}
+
 function buildHostedFixture(
   text: string,
   name: string,
@@ -573,6 +617,10 @@ function buildHostedFixture(
     /** Every far-reach code form (docs/large-images.md); defaults to
      * TINT_FORCE_FAR_REACH. */
     readonly forceFarReach?: boolean;
+    /** Optional exported start function. Defaults to `"run"` when the entry
+     * module exports `run`, otherwise `undefined` (pure top-level ESM module
+     * execution exiting with `process.exitCode ?? 0`). */
+    readonly start?: string | undefined;
     /** Verification-only gap before the compiled program. The ordinary
      * allocator, runtime, program, startup and writers still run unchanged. */
     readonly programPaddingBytes?: number;
@@ -707,14 +755,23 @@ function buildHostedFixture(
   const localModuleIds = new Set(
     (replaySources ?? fixtureGenerated).map((module) => module.id),
   );
+  const allFixtureDependencies: string[] = [
+    ...dependencies.map((dependency) => dependency[1]),
+  ];
+  for (const module of generatedModules) {
+    for (const target of module.dependencies.values()) {
+      if (!allFixtureDependencies.includes(target))
+        allFixtureDependencies.push(target);
+    }
+  }
   const sysvDynamic =
     fixtureTarget.arch === "x86_64" &&
     (dependencyIds.includes(foreignRuntimeModules.unsafe) ||
-      dependencies.some(
-        (dependency) =>
-          dependency[1] === foreignRuntimeModules.nodeFfi ||
-          dependency[1] === foreignRuntimeModules.unsafe ||
-          dependency[1] === foreignRuntimeModules.index,
+      allFixtureDependencies.some(
+        (target) =>
+          target === foreignRuntimeModules.nodeFfi ||
+          target === foreignRuntimeModules.unsafe ||
+          target === foreignRuntimeModules.index,
       ));
 
   const roots = [
@@ -724,13 +781,11 @@ function buildHostedFixture(
     ...additionalRuntimes
       .map((runtime) => runtime.module)
       .filter((id) => !localModuleIds.has(id) && !projectRoots().includes(id)),
-    ...dependencies
-      .map((dependency) => dependency[1])
-      .filter(
-        (id) =>
-          !localModuleIds.has(id) &&
-          general?.syntheticModules?.includes(id) !== true,
-      ),
+    ...allFixtureDependencies.filter(
+      (id) =>
+        !localModuleIds.has(id) &&
+        general?.syntheticModules?.includes(id) !== true,
+    ),
     ...dependencyIds,
     ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
   ];
@@ -837,6 +892,12 @@ function buildHostedFixture(
   // TINT_CODE_SIZE, TINT_DUMP_PASSES, TINT_REMARKS and TINT_OPT_PASS_LIMIT.
   const observability = observabilityOptions(),
     observation = createBuildObservation(observability);
+  const entryStart =
+    "start" in options
+      ? options.start
+      : original === undefined || moduleExportsName(original.module, "run")
+        ? "run"
+        : undefined;
   const buildRequest: BuildRequest = {
     ...observation.request,
     ...request,
@@ -928,7 +989,7 @@ function buildHostedFixture(
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     entry: fixtureSource,
-    start: "run",
+    start: entryStart,
     ...(options.requireTyped === true ||
     process.env.TINT_GENERAL_FALLBACK === "0"
       ? { requireTyped: true }

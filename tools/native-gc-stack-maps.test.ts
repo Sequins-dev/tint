@@ -12,11 +12,19 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 import { pathToFileURL } from "node:url";
+import {
+  cleanupNativeBinary,
+  nodeProcessModule,
+  parseFixtureModule,
+  runNativeSuiteCase,
+  typedCaseDispatcher,
+} from "./native-suite-runner.ts";
 
 process.env.TINT_GENERAL_FALLBACK = "0";
-const { verifyHostedFixture } = await import("./hosted-fixture.ts");
+const { prepareHostedFixture, verifyHostedFixture } =
+  await import("./hosted-fixture.ts");
 
 export const stackMapFixtureSource = `interface Cell {
   readonly value: number;
@@ -272,9 +280,7 @@ test("precise stack maps keep references across many collections", async () => {
   );
 });
 
-test("wide stack maps stream into final storage on a bounded native heap", () => {
-  verifyHostedFixture(
-    `import { planWideStackMapTable, type SafepointEntry } from "stack-maps";
+const wideStackMapStreamSource = `import { planWideStackMapTable, type SafepointEntry } from "stack-maps";
 export function run(): number {
   const entries: SafepointEntry[] = [];
   const count = 128;
@@ -293,19 +299,9 @@ export function run(): number {
   return cursor === 3 + count * (roots + 6) &&
     words[2] === count && words[4] === 3 + count * 2 &&
     words[cursor - 3] === (roots + count - 2) * 8 ? 42 : 1;
-}`,
-    "wide-stack-map-stream",
-    [["stack-maps", "packages/codegen/src/scalar/stack-maps.ts"]],
-    [],
-    [],
-    [],
-    { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
-  );
-});
+}`;
 
-test("x86-64 assembly releases local fixups before allocating the final image", () => {
-  verifyHostedFixture(
-    `import { createAssembler, type Instruction } from "x64-isa";
+const x64LocalRelocationsSource = `import { createAssembler, type Instruction } from "x64-isa";
 export function run(): number {
   const assembler = createAssembler();
   const call: Instruction = { op: "call", target: { kind: "label", label: "end" } };
@@ -321,12 +317,60 @@ export function run(): number {
     layout.bytes[2] === 161 && layout.bytes[3] === 7 &&
     layout.bytes[last] === 232 && layout.bytes[last + 1] === 0 &&
     layout.externalFixups.length === 0 ? 42 : 1;
-}`,
-    "x64-local-relocations-heap",
-    [["x64-isa", "packages/codegen/src/x86_64/isa.ts"]],
+}`;
+
+let boundedHeapSuiteBinary: string | undefined;
+function boundedHeapSuite(): string {
+  if (boundedHeapSuiteBinary !== undefined) return boundedHeapSuiteBinary;
+  const cases = [
+    {
+      name: "wide-stack-map-stream",
+      specifier: "./wide-stack-map-stream.ts",
+      id: "fixture:wide-stack-map-stream",
+      text: wideStackMapStreamSource,
+      deps: [["stack-maps", "packages/codegen/src/scalar/stack-maps.ts"]] as [
+        string,
+        string,
+      ][],
+    },
+    {
+      name: "x64-local-relocations-heap",
+      specifier: "./x64-local-relocations-heap.ts",
+      id: "fixture:x64-local-relocations-heap",
+      text: x64LocalRelocationsSource,
+      deps: [["x64-isa", "packages/codegen/src/x86_64/isa.ts"]] as [
+        string,
+        string,
+      ][],
+    },
+  ];
+  boundedHeapSuiteBinary = prepareHostedFixture(
+    typedCaseDispatcher(cases),
+    "gc-stack-maps-bounds-suite",
+    [
+      ["node:process", nodeProcessModule],
+      ...cases.map(({ specifier, id }): [string, string] => [specifier, id]),
+    ],
+    cases.map(({ id, text, deps }) => parseFixtureModule(id, text, deps)),
     [],
     [],
-    [],
-    { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
+    {
+      requireTyped: true,
+      managedBytes: 24 * 1024 * 1024,
+      allocationCapacity: 1048576,
+    },
   );
+  return boundedHeapSuiteBinary;
+}
+
+after(() => {
+  cleanupNativeBinary(boundedHeapSuiteBinary);
+});
+
+test("wide stack maps stream into final storage on a bounded native heap", () => {
+  runNativeSuiteCase(boundedHeapSuite(), ["wide-stack-map-stream"]);
+});
+
+test("x86-64 assembly releases local fixups before allocating the final image", () => {
+  runNativeSuiteCase(boundedHeapSuite(), ["x64-local-relocations-heap"]);
 });

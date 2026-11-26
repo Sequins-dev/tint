@@ -1,24 +1,25 @@
 // After each major collection the generational runtime returns the evacuated
 // semispace's pages beyond a survivor-sized prefix to the OS (memory-release:
 // a fixed anonymous mapping over the range), and the next major copies into
-// that prefix and the fresh zero pages after it. These
-// fixtures churn small heaps through many majors while a slowly replaced
-// window of objects survives them: retained data, old-to-young edges written
-// into promoted objects, chains cut and rebuilt, and values carried across
-// throws must all read back exactly. The second fixture allocates arrays
-// large enough to be placed directly in the old prefix, so a full prefix
-// forces a major from the allocation path. The same source runs in Node for
-// the expected checksum and natively under LLDB.
+// that prefix and the fresh zero pages after it. Both fixtures share one
+// typed `argv`-dispatched binary and run in isolated LLDB processes.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 import { pathToFileURL } from "node:url";
+import {
+  cleanupNativeBinary,
+  nodeProcessModule,
+  parseFixtureModule,
+  runNativeSuiteCase,
+  typedCaseDispatcher,
+} from "./native-suite-runner.ts";
 
 // The fixtures must compile on the typed path, not the general fallback.
 process.env.TINT_GENERAL_FALLBACK = "0";
-const { verifyHostedFixture } = await import("./hosted-fixture.ts");
+const { prepareHostedFixture } = await import("./hosted-fixture.ts");
 
 const churn = `interface Cell {
   readonly id: number;
@@ -129,34 +130,62 @@ async function expectedChecksum(text: string): Promise<number> {
   }
 }
 
-async function verify(
-  text: string,
-  name: string,
-  managedBytes: number,
-): Promise<void> {
-  const expected = await expectedChecksum(text);
-  assert.equal(typeof expected, "number");
-  verifyHostedFixture(
-    text +
-      `export function run(): number { return checksum() === ${expected} ? 42 : 1; }\n`,
-    name,
-    [],
-    [],
+let suiteBinary: string | undefined;
+async function gcReleaseSuite(): Promise<string> {
+  if (suiteBinary !== undefined) return suiteBinary;
+  const [churnExpected, largeExpected] = await Promise.all([
+    expectedChecksum(churn),
+    expectedChecksum(large),
+  ]);
+  assert.equal(typeof churnExpected, "number");
+  assert.equal(typeof largeExpected, "number");
+  const cases = [
+    {
+      name: "churn",
+      specifier: "./churn.ts",
+      id: "fixture:gc-release-churn",
+      text:
+        churn +
+        `export function run(): number { return checksum() === ${churnExpected} ? 42 : 1; }\n`,
+    },
+    {
+      name: "large",
+      specifier: "./large.ts",
+      id: "fixture:gc-release-large",
+      text:
+        large +
+        `export function run(): number { return checksum() === ${largeExpected} ? 42 : 1; }\n`,
+    },
+  ];
+  suiteBinary = prepareHostedFixture(
+    typedCaseDispatcher(cases),
+    "gc-release-suite",
+    [
+      ["node:process", nodeProcessModule],
+      ...cases.map(({ specifier, id }): [string, string] => [specifier, id]),
+    ],
+    cases.map(({ id, text }) => parseFixtureModule(id, text)),
     [],
     [],
     {
+      requireTyped: true,
       runtimeEntry: "initializeGenerationalRuntime",
-      managedBytes,
+      managedBytes: 16777216,
       allocationCapacity: 262144,
       rootCapacity: 65536,
     },
   );
+  return suiteBinary;
 }
 
+after(() => {
+  cleanupNativeBinary(suiteBinary);
+});
+
 test("data survives majors into released semispaces", async () => {
-  await verify(churn, "gc-release-churn", 16777216);
+  runNativeSuiteCase(await gcReleaseSuite(), ["churn"]);
 });
 
 test("large old allocations force majors into released semispaces", async () => {
-  await verify(large, "gc-release-large", 16777216);
+  runNativeSuiteCase(await gcReleaseSuite(), ["large"]);
 });

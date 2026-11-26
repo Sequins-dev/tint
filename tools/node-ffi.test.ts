@@ -2,13 +2,33 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 import ts from "typescript";
-import { verifyHostedFixture } from "./hosted-fixture.ts";
-import { withDynamicLibrary as withSharedDynamicLibrary } from "./native-dynamic-fixtures.ts";
+import { prepareHostedFixture, verifyHostedFixture } from "./hosted-fixture.ts";
+import {
+  buildDynamicLibrary,
+  withDynamicLibrary as withSharedDynamicLibrary,
+} from "./native-dynamic-fixtures.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import {
+  cleanupNativeBinary,
+  generalImportDispatcher,
+  nodeProcessModule,
+  parseFixtureModule,
+  runNativeSuiteCase,
+  typedCaseDispatcher,
+} from "./native-suite-runner.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import type { NativeHostBinding } from "@tint/compiler/native";
+
+const nodeFfiModule = "packages/native-runtime/src/node/ffi.ts";
+const nodeBufferModule = "packages/native-runtime/src/node/buffer.ts";
+const memoryModule = "packages/native-runtime/src/intrinsics/memory.ts";
+const atomicsModule =
+  "packages/native-runtime/src/intrinsics/shared-atomics.ts";
+const objectsModule = "packages/js-runtime/src/objects/index.ts";
+const sharedBlocksModule = "packages/native-runtime/src/shared-blocks.ts";
 
 /** Each test file owns its own stable scratch label so concurrent native
  * shards do not overwrite one another's temporary shared library. */
@@ -23,10 +43,81 @@ function withDynamicLibrary<T>(
   );
 }
 
-function source(library: string, generic: boolean): string {
+const wideIntegers = 76;
+const wideFloats = 9;
+const widePointers = 17;
+const names = (prefix: string, count: number): string[] =>
+  Array.from({ length: count }, (_, index) => prefix + index);
+const integers = names("i", wideIntegers);
+const floats = names("f", wideFloats);
+const pointers = names("p", widePointers);
+const wideLibrary = `
+uint64_t tint_wide(${[
+  ...integers.map((name) => "uint64_t " + name),
+  ...floats.map((name) => "double " + name),
+  ...pointers.map((name) => "uint8_t *" + name),
+].join(",")}) {
+  uint64_t checksum = 0;
+  ${integers.map((name, index) => `checksum += ${name} * ${index + 1};`).join("\n")}
+  ${floats.map((name) => `checksum += (uint64_t)(${name} * 4);`).join("\n")}
+  ${pointers.map((name) => `checksum += *${name}; *${name} += 3;`).join("\n")}
+  return checksum;
+}
+`;
+
+const callbackLibrary = `
+typedef uint64_t (*TintCallback)(uint64_t, double, uint8_t *, uint64_t,
+                               uint64_t, uint64_t, uint64_t, uint64_t,
+                               uint64_t, uint64_t, uint64_t);
+static TintCallback saved_callback;
+void tint_store_callback(TintCallback callback) { saved_callback = callback; }
+uint64_t tint_invoke_saved(uint64_t level, uint8_t *bytes) {
+  return saved_callback(level, 0.5, bytes, 7, 11, 13, 17, 19, 23, 29,
+                        UINT64_C(0xfedcba9876543210));
+}
+void tint_invoke_void(void (*callback)(void)) { callback(); }
+int32_t tint_call_i32(int32_t (*callback)(int32_t), int32_t value) {
+  return callback(value);
+}
+`;
+
+const generalCallerLibrary = `
+int32_t tint_add2(int32_t left, int32_t right) { return left + right; }
+int32_t tint_first_byte(const uint8_t *bytes) { return bytes[0]; }
+`;
+
+const abortLibrary = `
+#include <pthread.h>
+int32_t tint_invoke_int(int32_t (*callback)(void)) { return callback(); }
+static void *tint_other_thread(void *data) {
+  void (*callback)(void) = data;
+  callback();
+  return 0;
+}
+void tint_invoke_thread(void (*callback)(void)) {
+  pthread_t thread;
+  if (!pthread_create(&thread, 0, tint_other_thread, callback)) pthread_join(thread, 0);
+}
+void tint_untracked_callback(void (*callback)(void)) { callback(); }
+`;
+
+const unloadLibrary = `
+static uint8_t *unload_flag;
+void tint_track_unload(uint8_t *flag) { unload_flag = flag; }
+__attribute__((destructor)) static void tint_record_unload(void) {
+  if (unload_flag) *unload_flag += 1;
+}
+`;
+
+function scalarSource(library: string | undefined, generic: boolean): string {
+  const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
+  const processImport =
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
   return `
-import ffi, { DynamicLibrary, dlclose, dlopen, dlsym, types } from "node:ffi";
-export function run() {
+${processImport}import ffi, { DynamicLibrary, dlclose, dlopen, dlsym, types } from "node:ffi";
+function checkScalar() {
   if (ffi.dlopen !== dlopen || ffi.DynamicLibrary !== DynamicLibrary ||
       ffi.types !== types || Object.getPrototypeOf(types) !== null ||
       !Object.isFrozen(types) || types.INT_64 !== "int64") return 1;
@@ -34,7 +125,7 @@ export function run() {
   if (empty.lib.path !== "" || Object.getPrototypeOf(empty.functions) !== null ||
       !Object.isFrozen(empty.functions)) return 2;
   dlclose(empty.lib);
-  const path = ${JSON.stringify(library)};
+  const path = ${pathExpr};
   const lib = new DynamicLibrary(path);
   if (DynamicLibrary.length !== 1 || lib.getFunction.length !== 2 ||
       lib.getFunctions.length !== 1 ||
@@ -91,26 +182,264 @@ export function run() {
     if (error.code !== "ERR_FFI_LIBRARY_CLOSED" || error.message !== "Library is closed") return 13;
   }
   return 42;
-}`;
+}
+process.exitCode = checkScalar();
+`;
 }
 
-const oracle =
-  process.env.NODE26 ??
-  (process.version === "v26.13.1" ? process.execPath : "");
-function runOracle(text: string): void {
-  const result = spawnSync(
-    oracle,
-    [
-      "--disable-warning=ExperimentalWarning",
-      "--input-type=module",
-      "-e",
-      text +
-        '\nif(process.version!=="v26.13.1")throw new Error(process.version); process.exitCode=run();',
-    ],
-    { encoding: "utf8" },
-  );
-  assert.equal(result.status, 42, result.error?.message ?? result.stderr);
+const memorySource = `
+import process from "node:process";
+import ffi from "node:ffi";
+import { Buffer } from "node:buffer";
+function checkMemory() {
+  const { lib, functions } = ffi.dlopen(null, {
+    malloc: { return: "pointer", arguments: ["uint64"] },
+    free: { arguments: ["pointer"] },
+  });
+  const pointer = functions.malloc(64n);
+  if (pointer === 0n) return 1;
+  try {
+    ffi.setUint64(pointer, 1, 0xfedcba9876543210n);
+    ffi.setInt64(pointer, 9, -0x8000000000000000n);
+    ffi.setFloat32(pointer, 17, 0.1);
+    ffi.setFloat64(pointer, 21, -0);
+    if (ffi.getUint64(pointer, 1) !== 0xfedcba9876543210n ||
+        ffi.getInt64(pointer, 9) !== -0x8000000000000000n ||
+        ffi.getFloat32(pointer, 17) !== Math.fround(0.1) ||
+        !Object.is(ffi.getFloat64(pointer, 21), -0)) return 2;
+    ffi.exportString("A", pointer, 8, "UCS-2");
+    const copy = ffi.toBuffer(pointer, 4);
+    if (!Buffer.isBuffer(copy) || copy.toString("hex") !== "41000000") return 3;
+    const view = ffi.toBuffer(pointer, 8, false);
+    const adopted = ffi.toArrayBuffer(pointer, 8, false);
+    if (Object.getPrototypeOf(adopted) !== ArrayBuffer.prototype ||
+        !Buffer.isBuffer(view) || ffi.getRawPointer(view.subarray(2)) !== pointer + 2n) return 4;
+    new Uint8Array(adopted)[0] = 42;
+    if (view[0] !== 42 || copy[0] !== 65 || ffi.getUint8(pointer) !== 42) return 5;
+    ffi.exportBuffer(Buffer.from([1, 2, 3, 4, 5, 6]), pointer, 6);
+    ffi.exportArrayBufferView(view.subarray(1, 4), pointer + 2n, 4);
+    if (view[0] !== 1 || view[2] !== 2 || view[3] !== 3 || view[4] !== 4 || view[5] !== 6) return 6;
+    const bytes = Buffer.from([9, 8, 7, 6]);
+    const alias = bytes.subarray(1, 3);
+    const address = ffi.getRawPointer(bytes);
+    if (ffi.getRawPointer(alias) !== address + 1n) return 7;
+    ffi.setUint8(address, 1, 42);
+    if (bytes[1] !== 42 || alias[0] !== 42) return 8;
+    if (ffi.toBuffer(0n, 0).length !== 0 || ffi.toString(0n) !== null) return 9;
+    ffi.setUint8(pointer, 0, 0xc0);
+    ffi.setUint8(pointer, 1, 0);
+    if (ffi.toString(pointer) !== "\ufffd") return 10;
+    try { ffi.getUint16(0xffffffffffffffffn); return 11; }
+    catch (error) { if (!(error instanceof TypeError) || error.code !== "ERR_INVALID_ARG_VALUE") return 11; }
+    try { ffi.toBuffer(1n, 2 ** 50); return 12; }
+    catch (error) { if (!(error instanceof RangeError) || error.code !== "ERR_MEMORY_ALLOCATION_FAILED") return 12; }
+    const definitions = { memset: { return: "pointer", arguments: ["pointer", "int32", "uint64"] } };
+    const secondary = ffi.dlopen(null, definitions);
+    try {
+      const buffer = Buffer.alloc(2);
+      const addressFromC = secondary.functions.memset(buffer, 42, 1n);
+      if (addressFromC !== ffi.getRawPointer(buffer) || buffer[0] !== 42) return 13;
+    } finally { secondary.lib.close(); }
+    try { functions.malloc(-1n); return 14; }
+    catch (error) {
+      if (error.code !== "ERR_INVALID_ARG_VALUE" || error.message !== "Argument 0 must be a uint64") return 14;
+    }
+    return 42;
+  } finally {
+    functions.free(pointer);
+    lib.close();
+  }
 }
+process.exitCode = checkMemory();
+`;
+
+function wideSource(library?: string): string {
+  const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
+  const processImport =
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
+  return `
+${processImport}import { dlopen } from "node:ffi";
+function checkWide() {
+  const types = [];
+  const values = [];
+  let expected = 0n;
+  const bytes = new Uint8Array(${widePointers});
+  for (let i = 1; i <= ${wideIntegers}; i++) {
+    types.push("uint64");
+    const value = 9007199254740993n + BigInt(i);
+    values.push(value);
+    expected += BigInt(i) * value;
+  }
+  for (let i = 1; i <= ${wideFloats}; i++) {
+    types.push("double");
+    values.push(i + 0.25);
+    expected += BigInt(i * 4 + 1);
+  }
+  for (let i = 0; i < bytes.length; i++) {
+    types.push("pointer");
+    bytes[i] = i;
+    values.push(bytes.subarray(i));
+    expected += BigInt(i);
+  }
+  const { lib, functions } = dlopen(${pathExpr}, {
+    tint_wide: { arguments: types, return: "uint64" }
+  });
+  try {
+    if (functions.tint_wide(...values) !== (expected & 0xffffffffffffffffn)) return 1;
+    for (let i = 0; i < bytes.length; i++)
+      if (bytes[i] !== i + 3) return 2;
+    if (functions.tint_wide(...values) !== ((expected + BigInt(bytes.length * 3)) & 0xffffffffffffffffn)) return 3;
+    return 42;
+  } finally {
+    lib.close();
+  }
+}
+process.exitCode = checkWide();
+`;
+}
+
+function callbacksSource(library?: string): string {
+  const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
+  const processImport =
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
+  return `
+${processImport}import ffi from "node:ffi";
+function checkCallbacks() {
+  const path = ${pathExpr};
+  const { lib, functions } = ffi.dlopen(path, {
+    tint_store_callback: { arguments: ["function"] },
+    tint_invoke_saved: { arguments: ["uint64", "buffer"], return: "uint64" },
+    tint_invoke_void: { arguments: ["function"] },
+  });
+  const separateOwner = new ffi.DynamicLibrary(path);
+  try {
+    let visits = 0;
+    const voidCallbacks = [];
+    for (let i = 0; i < 24; i++) {
+      voidCallbacks.push(separateOwner.registerCallback(() => { visits += i; return 123; }));
+    }
+    functions.tint_invoke_void(voidCallbacks[0]);
+    functions.tint_invoke_void(voidCallbacks[23]);
+    if (visits !== 23) return 1;
+    try { lib.unregisterCallback(voidCallbacks[0]); return 2; }
+    catch (error) { if (error.code !== "ERR_INVALID_ARG_VALUE") return 2; }
+    for (let i = 0; i < voidCallbacks.length; i++)
+      separateOwner.unregisterCallback(voidCallbacks[i]);
+
+    const callbacks = separateOwner;
+    const bytes = new Uint8Array([0, 8, 0]);
+    const alias = bytes.subarray(1);
+    const signature = {
+      arguments: ["uint64", "double", "pointer", "uint64", "uint64", "uint64",
+                  "uint64", "uint64", "uint64", "uint64", "uint64"],
+      return: "uint64",
+    };
+    function callback(level, fraction, pointer, a0, a1, a2, a3, a4, a5, a6, wide) {
+      if (this !== undefined || fraction !== 0.5 || pointer !== ffi.getRawPointer(alias) ||
+          ffi.getUint8(pointer) !== bytes[1] ||
+          a0 + a1 + a2 + a3 + a4 + a5 + a6 !== 119n ||
+          wide !== 0xfedcba9876543210n) throw new Error("callback ABI");
+      ffi.setUint8(pointer, 0, bytes[1] + 1);
+      return level === 0n ? wide : functions.tint_invoke_saved(level - 1n, alias) + 1n;
+    }
+    const pointer = callbacks.registerCallback(signature, callback);
+    callbacks.unrefCallback(pointer);
+    callbacks.refCallback(pointer);
+    // C stores the pointer in a previous call. The invocation does not
+    // take a callback argument and runs from a different library owner.
+    functions.tint_store_callback(pointer);
+    if (functions.tint_invoke_saved(2n, alias) !== 0xfedcba9876543212n ||
+        bytes[1] !== 11) return 3;
+    callbacks.unregisterCallback(pointer);
+    try { callbacks.refCallback(pointer); return 4; }
+    catch (error) { if (error.code !== "ERR_INVALID_ARG_VALUE") return 4; }
+    return 42;
+  } finally {
+    separateOwner.close();
+    lib.close();
+  }
+}
+process.exitCode = checkCallbacks();
+`;
+}
+
+/** General callers reach bindings through positional entries and the typed
+ * Buffer and callback entries. Each must keep Node's argument contracts. */
+function generalCallersSource(library?: string): string {
+  const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
+  const processImport =
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
+  return `
+${processImport}import { dlopen } from "node:ffi";
+import { Buffer } from "node:buffer";
+function code(run) {
+  try { run(); return "none"; }
+  catch (error) { return error.code + ":" + error.message; }
+}
+function checkGeneralCallers() {
+  const { lib, functions } = dlopen(${pathExpr}, {
+    tint_add2: { arguments: ["i32", "i32"], return: "i32" },
+    tint_first_byte: { arguments: ["buffer"], return: "i32" },
+    tint_call_i32: { arguments: ["function", "i32"], return: "i32" },
+  });
+  const add = functions.tint_add2, first = functions.tint_first_byte;
+  const call = functions.tint_call_i32;
+  try {
+    const sum = add(40, 2);
+    if (sum !== 42 || add(-2147483648, 0) !== -2147483648) return 1;
+    if (code(() => add(1)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 1") return 2;
+    if (code(() => add(1, 2, 3)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 3") return 3;
+    const fraction = code(() => add(1.5, 2)), wide = code(() => add(1, 2147483648));
+    if (!fraction.startsWith("ERR_INVALID_ARG_VALUE:Argument 0 ") ||
+        !wide.startsWith("ERR_INVALID_ARG_VALUE:Argument 1 ")) return 4;
+    if (add.call({}, 20, 22) !== 42) return 5;
+    const bytes = Buffer.from([7, 8, 9]);
+    if (first(bytes) !== 7 || first(bytes.subarray(1)) !== 8 || first(bytes) !== 7) return 6;
+    if (first("A") !== 65 || first(new Uint8Array([5, 6]).buffer) !== 5) return 7;
+    const detached = new ArrayBuffer(4);
+    detached.transfer();
+    if (!code(() => first(detached)).startsWith("ERR_INVALID_ARG_VALUE:")) return 8;
+    let depth = 0;
+    const pointer = lib.registerCallback({ arguments: ["i32"], return: "i32" }, (value) => {
+      depth++;
+      // The nested call reenters the same binding during its own call.
+      return value > 0 ? call(pointer, value - 1) + 2 : add(value, 100);
+    });
+    if (call(pointer, 3) !== 106 || depth !== 4) return 9;
+    if (add(1, 1) !== 2 || first(bytes) !== 7) return 10;
+    const both = code(() => call(1n << 70n, 1.5)), second = code(() => call(pointer, 1.5));
+    if (!both.startsWith("ERR_INVALID_ARG_VALUE:Argument 0 ") ||
+        !second.startsWith("ERR_INVALID_ARG_VALUE:Argument 1 ")) return 11;
+    if (code(() => call(pointer)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 1") return 12;
+    lib.unregisterCallback(pointer);
+    return 42;
+  } finally {
+    lib.close();
+  }
+}
+process.exitCode = checkGeneralCallers();
+`;
+}
+
+const libuvDiagnosticSource = `
+import process from "node:process";
+import ffi, { getCurrentEventLoop } from "node:ffi";
+function checkLibuvDiagnostic() {
+  if (ffi.getCurrentEventLoop !== getCurrentEventLoop) return 1;
+  try { getCurrentEventLoop(); return 2; }
+  catch (error) {
+    return error instanceof Error && error.code === "ERR_FFI_CALL_FAILED" &&
+      error.message === "getCurrentEventLoop requires a libuv embedding" ? 42 : 3;
+  }
+}
+process.exitCode = checkLibuvDiagnostic();
+`;
 
 const typedBridgeSource = `
 import ffi, { DynamicLibrary, dlopen } from "node:ffi";
@@ -220,273 +549,13 @@ export function run(): number {
 }
 `;
 
-test(
-  "the typed Node FFI bridge fixture agrees with the pinned reference",
-  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () =>
-    runOracle(
-      ts.transpileModule(typedBridgeSource, {
-        compilerOptions: {
-          module: ts.ModuleKind.ESNext,
-          target: ts.ScriptTarget.ESNext,
-        },
-      }).outputText,
-    ),
-);
-
-test("the typed Node FFI bridge preserves array aliases and callback contracts", () => {
-  verifyHostedFixture(
-    typedBridgeSource,
-    "node-ffi-typed-bridge",
-    [
-      ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
-      ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
-    ],
-    [],
-    [],
-    [],
-    {
-      requireTyped: true,
-      runtimeEntry: "initializeGenerationalRuntime",
-      allowJit: true,
-      stackBytes: 4194304,
-      managedBytes: 67108864,
-      allocationCapacity: 1048576,
-    },
-  );
-});
-
-test(
-  "the Node FFI scalar fixture agrees with the pinned reference",
-  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () => {
-    const checked = withDynamicLibrary((library) => {
-      runOracle(source(library, false));
-      return true;
-    });
-    assert.ok(checked, "clang is required");
-  },
-);
-
-test("node:ffi binds and calls a shared-library symbol natively", () => {
-  const result = withDynamicLibrary((library) => {
-    let general: readonly string[] | undefined;
-    const path = verifyHostedFixture(
-      source(library, true),
-      "node-ffi-scalar",
-      [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
-      [],
-      [],
-      [],
-      {
-        onGeneralFallback(modules) {
-          general = modules;
-        },
-        managedBytes: 67108864,
-        allocationCapacity: 1048576,
-      },
-    );
-    assert.deepEqual(general, ["fixture"]);
-    return path;
-  });
-  assert.ok(result, "clang is required");
-});
-
-const memorySource = `
-import ffi from "node:ffi";
-import { Buffer } from "node:buffer";
-export function run() {
-  const { lib, functions } = ffi.dlopen(null, {
-    malloc: { return: "pointer", arguments: ["uint64"] },
-    free: { arguments: ["pointer"] },
-  });
-  const pointer = functions.malloc(64n);
-  if (pointer === 0n) return 1;
-  try {
-    ffi.setUint64(pointer, 1, 0xfedcba9876543210n);
-    ffi.setInt64(pointer, 9, -0x8000000000000000n);
-    ffi.setFloat32(pointer, 17, 0.1);
-    ffi.setFloat64(pointer, 21, -0);
-    if (ffi.getUint64(pointer, 1) !== 0xfedcba9876543210n ||
-        ffi.getInt64(pointer, 9) !== -0x8000000000000000n ||
-        ffi.getFloat32(pointer, 17) !== Math.fround(0.1) ||
-        !Object.is(ffi.getFloat64(pointer, 21), -0)) return 2;
-    ffi.exportString("A", pointer, 8, "UCS-2");
-    const copy = ffi.toBuffer(pointer, 4);
-    if (!Buffer.isBuffer(copy) || copy.toString("hex") !== "41000000") return 3;
-    const view = ffi.toBuffer(pointer, 8, false);
-    const adopted = ffi.toArrayBuffer(pointer, 8, false);
-    if (Object.getPrototypeOf(adopted) !== ArrayBuffer.prototype ||
-        !Buffer.isBuffer(view) || ffi.getRawPointer(view.subarray(2)) !== pointer + 2n) return 4;
-    new Uint8Array(adopted)[0] = 42;
-    if (view[0] !== 42 || copy[0] !== 65 || ffi.getUint8(pointer) !== 42) return 5;
-    ffi.exportBuffer(Buffer.from([1, 2, 3, 4, 5, 6]), pointer, 6);
-    ffi.exportArrayBufferView(view.subarray(1, 4), pointer + 2n, 4);
-    if (view[0] !== 1 || view[2] !== 2 || view[3] !== 3 || view[4] !== 4 || view[5] !== 6) return 6;
-    const bytes = Buffer.from([9, 8, 7, 6]);
-    const alias = bytes.subarray(1, 3);
-    const address = ffi.getRawPointer(bytes);
-    if (ffi.getRawPointer(alias) !== address + 1n) return 7;
-    ffi.setUint8(address, 1, 42);
-    if (bytes[1] !== 42 || alias[0] !== 42) return 8;
-    if (ffi.toBuffer(0n, 0).length !== 0 || ffi.toString(0n) !== null) return 9;
-    ffi.setUint8(pointer, 0, 0xc0);
-    ffi.setUint8(pointer, 1, 0);
-    if (ffi.toString(pointer) !== "�") return 10;
-    try { ffi.getUint16(0xffffffffffffffffn); return 11; }
-    catch (error) { if (!(error instanceof TypeError) || error.code !== "ERR_INVALID_ARG_VALUE") return 11; }
-    try { ffi.toBuffer(1n, 2 ** 50); return 12; }
-    catch (error) { if (!(error instanceof RangeError) || error.code !== "ERR_MEMORY_ALLOCATION_FAILED") return 12; }
-    const definitions = { memset: { return: "pointer", arguments: ["pointer", "int32", "uint64"] } };
-    const secondary = ffi.dlopen(null, definitions);
-    try {
-      const buffer = Buffer.alloc(2);
-      const addressFromC = secondary.functions.memset(buffer, 42, 1n);
-      if (addressFromC !== ffi.getRawPointer(buffer) || buffer[0] !== 42) return 13;
-    } finally { secondary.lib.close(); }
-    try { functions.malloc(-1n); return 14; }
-    catch (error) {
-      if (error.code !== "ERR_INVALID_ARG_VALUE" || error.message !== "Argument 0 must be a uint64") return 14;
-    }
-    return 42;
-  } finally {
-    functions.free(pointer);
-    lib.close();
-  }
-}`;
-
-test(
-  "the Node FFI memory fixture agrees with the pinned reference",
-  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () => runOracle(memorySource),
-);
-
-test("node:ffi lends and adopts native memory without losing byte aliases", () => {
-  verifyHostedFixture(
-    memorySource,
-    "node-ffi-memory",
-    [
-      ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
-      ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
-    ],
-    [],
-    [],
-    [],
-    { managedBytes: 67108864, allocationCapacity: 1048576 },
-  );
-});
-
-const wideIntegers = 76;
-const wideFloats = 9;
-const widePointers = 17;
-const names = (prefix: string, count: number): string[] =>
-  Array.from({ length: count }, (_, index) => prefix + index);
-const integers = names("i", wideIntegers);
-const floats = names("f", wideFloats);
-const pointers = names("p", widePointers);
-const wideLibrary = `
-uint64_t tint_wide(${[
-  ...integers.map((name) => "uint64_t " + name),
-  ...floats.map((name) => "double " + name),
-  ...pointers.map((name) => "uint8_t *" + name),
-].join(",")}) {
-  uint64_t checksum = 0;
-  ${integers.map((name, index) => `checksum += ${name} * ${index + 1};`).join("\n")}
-  ${floats.map((name) => `checksum += (uint64_t)(${name} * 4);`).join("\n")}
-  ${pointers.map((name) => `checksum += *${name}; *${name} += 3;`).join("\n")}
-  return checksum;
-}
-`;
-function wideSource(library: string): string {
-  return `
-import { dlopen } from "node:ffi";
-export function run() {
-  const types = [];
-  const values = [];
-  let expected = 0n;
-  const bytes = new Uint8Array(${widePointers});
-  for (let i = 1; i <= ${wideIntegers}; i++) {
-    types.push("uint64");
-    const value = 9007199254740993n + BigInt(i);
-    values.push(value);
-    expected += BigInt(i) * value;
-  }
-  for (let i = 1; i <= ${wideFloats}; i++) {
-    types.push("double");
-    values.push(i + 0.25);
-    expected += BigInt(i * 4 + 1);
-  }
-  for (let i = 0; i < bytes.length; i++) {
-    types.push("pointer");
-    bytes[i] = i;
-    values.push(bytes.subarray(i));
-    expected += BigInt(i);
-  }
-  const { lib, functions } = dlopen(${JSON.stringify(library)}, {
-    tint_wide: { arguments: types, return: "uint64" }
-  });
-  try {
-    if (functions.tint_wide(...values) !== (expected & 0xffffffffffffffffn)) return 1;
-    for (let i = 0; i < bytes.length; i++)
-      if (bytes[i] !== i + 3) return 2;
-    if (functions.tint_wide(...values) !== ((expected + BigInt(bytes.length * 3)) & 0xffffffffffffffffn)) return 3;
-    return 42;
-  } finally {
-    lib.close();
-  }
-}`;
-}
-test(
-  "the wide call fixture agrees with the pinned Node reference",
-  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () =>
-    assert.ok(
-      withDynamicLibrary((library) => {
-        runOracle(wideSource(library));
-        return true;
-      }, wideLibrary),
-      "clang is required",
-    ),
-);
-test("node:ffi calls a wide scalar signature with many borrowed views", () => {
-  assert.ok(
-    withDynamicLibrary(
-      (library) =>
-        verifyHostedFixture(
-          wideSource(library),
-          "node-ffi-wide-call",
-          [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
-          [],
-          [],
-          [],
-          { managedBytes: 67108864, allocationCapacity: 1048576 },
-        ),
-      wideLibrary,
-    ),
-    "clang is required",
-  );
-});
-
-const callbackLibrary = `
-typedef uint64_t (*TintCallback)(uint64_t, double, uint8_t *, uint64_t,
-                               uint64_t, uint64_t, uint64_t, uint64_t,
-                               uint64_t, uint64_t, uint64_t);
-static TintCallback saved_callback;
-void tint_store_callback(TintCallback callback) { saved_callback = callback; }
-uint64_t tint_invoke_saved(uint64_t level, uint8_t *bytes) {
-  return saved_callback(level, 0.5, bytes, 7, 11, 13, 17, 19, 23, 29,
-                        UINT64_C(0xfedcba9876543210));
-}
-void tint_invoke_void(void (*callback)(void)) { callback(); }
-int32_t tint_call_i32(int32_t (*callback)(int32_t), int32_t value) {
-  return callback(value);
-}
-`;
-
-function typedI32CallbackSource(library: string): string {
-  return `import { dlopen } from "node:ffi";
+function typedI32CallbackSource(library?: string): string {
+  const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
+  const processImport =
+    library === undefined ? 'import { argv } from "node:process";\n' : "";
+  return `${processImport}import { dlopen } from "node:ffi";
 export function run(): number {
-  const { lib, functions } = dlopen(${JSON.stringify(library)}, {
+  const { lib, functions } = dlopen(${pathExpr}, {
     tint_call_i32: { arguments: ["function", "i32"], return: "i32" },
   });
   const fn = (input: number): number => input - 1;
@@ -510,274 +579,7 @@ export function run(): number {
 }`;
 }
 
-test("typed i32 callbacks preserve signed arguments, results, and ref changes", () => {
-  assert.ok(
-    withDynamicLibrary((library) => {
-      const fixture = typedI32CallbackSource(library);
-      if (oracle !== "")
-        runOracle(
-          ts.transpileModule(fixture, {
-            compilerOptions: {
-              module: ts.ModuleKind.ESNext,
-              target: ts.ScriptTarget.ESNext,
-            },
-          }).outputText,
-        );
-      return verifyHostedFixture(
-        fixture,
-        "node-ffi-typed-i32-callback",
-        [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
-        [],
-        [],
-        [],
-        {
-          requireTyped: true,
-          runtimeEntry: "initializeGenerationalRuntime",
-          allowJit: true,
-          stackBytes: 4194304,
-          managedBytes: 67108864,
-          allocationCapacity: 1048576,
-        },
-      );
-    }, callbackLibrary),
-    "clang is required",
-  );
-});
-
-function callbacksSource(library: string): string {
-  return `
-import ffi from "node:ffi";
-export function run() {
-  const path = ${JSON.stringify(library)};
-  const { lib, functions } = ffi.dlopen(path, {
-    tint_store_callback: { arguments: ["function"] },
-    tint_invoke_saved: { arguments: ["uint64", "buffer"], return: "uint64" },
-    tint_invoke_void: { arguments: ["function"] },
-  });
-  const separateOwner = new ffi.DynamicLibrary(path);
-  try {
-    let visits = 0;
-    const voidCallbacks = [];
-    for (let i = 0; i < 24; i++) {
-      voidCallbacks.push(separateOwner.registerCallback(() => { visits += i; return 123; }));
-    }
-    functions.tint_invoke_void(voidCallbacks[0]);
-    functions.tint_invoke_void(voidCallbacks[23]);
-    if (visits !== 23) return 1;
-    try { lib.unregisterCallback(voidCallbacks[0]); return 2; }
-    catch (error) { if (error.code !== "ERR_INVALID_ARG_VALUE") return 2; }
-    for (let i = 0; i < voidCallbacks.length; i++)
-      separateOwner.unregisterCallback(voidCallbacks[i]);
-
-    const callbacks = separateOwner;
-    const bytes = new Uint8Array([0, 8, 0]);
-    const alias = bytes.subarray(1);
-    const signature = {
-      arguments: ["uint64", "double", "pointer", "uint64", "uint64", "uint64",
-                  "uint64", "uint64", "uint64", "uint64", "uint64"],
-      return: "uint64",
-    };
-    function callback(level, fraction, pointer, a0, a1, a2, a3, a4, a5, a6, wide) {
-      if (this !== undefined || fraction !== 0.5 || pointer !== ffi.getRawPointer(alias) ||
-          ffi.getUint8(pointer) !== bytes[1] ||
-          a0 + a1 + a2 + a3 + a4 + a5 + a6 !== 119n ||
-          wide !== 0xfedcba9876543210n) throw new Error("callback ABI");
-      ffi.setUint8(pointer, 0, bytes[1] + 1);
-      return level === 0n ? wide : functions.tint_invoke_saved(level - 1n, alias) + 1n;
-    }
-    const pointer = callbacks.registerCallback(signature, callback);
-    callbacks.unrefCallback(pointer);
-    callbacks.refCallback(pointer);
-    // C stores the pointer in a previous call. The invocation does not
-    // take a callback argument and runs from a different library owner.
-    functions.tint_store_callback(pointer);
-    if (functions.tint_invoke_saved(2n, alias) !== 0xfedcba9876543212n ||
-        bytes[1] !== 11) return 3;
-    callbacks.unregisterCallback(pointer);
-    try { callbacks.refCallback(pointer); return 4; }
-    catch (error) { if (error.code !== "ERR_INVALID_ARG_VALUE") return 4; }
-    return 42;
-  } finally {
-    separateOwner.close();
-    lib.close();
-  }
-}`;
-}
-
-test(
-  "the callback fixture agrees with the pinned Node reference",
-  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () =>
-    assert.ok(
-      withDynamicLibrary((library) => {
-        runOracle(callbacksSource(library));
-        return true;
-      }, callbackLibrary),
-      "clang is required",
-    ),
-);
-
-test("node:ffi registers runtime signatures without a fixed callback pool", () => {
-  assert.ok(
-    withDynamicLibrary(
-      (library) =>
-        verifyHostedFixture(
-          callbacksSource(library),
-          "node-ffi-registered-callbacks",
-          [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
-          [],
-          [],
-          [],
-          {
-            allowJit: true,
-            managedBytes: 67108864,
-            allocationCapacity: 1048576,
-          },
-        ),
-      callbackLibrary,
-    ),
-    "clang is required",
-  );
-});
-
-const generalCallerLibrary = `
-int32_t tint_add2(int32_t left, int32_t right) { return left + right; }
-int32_t tint_first_byte(const uint8_t *bytes) { return bytes[0]; }
-`;
-
-/** General callers reach bindings through positional entries and the typed
- * Buffer and callback entries. Each must keep Node's argument contracts. */
-function generalCallersSource(library: string): string {
-  return `
-import { dlopen } from "node:ffi";
-import { Buffer } from "node:buffer";
-function code(run) {
-  try { run(); return "none"; }
-  catch (error) { return error.code + ":" + error.message; }
-}
-export function run() {
-  const { lib, functions } = dlopen(${JSON.stringify(library)}, {
-    tint_add2: { arguments: ["i32", "i32"], return: "i32" },
-    tint_first_byte: { arguments: ["buffer"], return: "i32" },
-    tint_call_i32: { arguments: ["function", "i32"], return: "i32" },
-  });
-  const add = functions.tint_add2, first = functions.tint_first_byte;
-  const call = functions.tint_call_i32;
-  try {
-    const sum = add(40, 2);
-    if (sum !== 42 || add(-2147483648, 0) !== -2147483648) return 1;
-    if (code(() => add(1)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 1") return 2;
-    if (code(() => add(1, 2, 3)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 3") return 3;
-    const fraction = code(() => add(1.5, 2)), wide = code(() => add(1, 2147483648));
-    if (!fraction.startsWith("ERR_INVALID_ARG_VALUE:Argument 0 ") ||
-        !wide.startsWith("ERR_INVALID_ARG_VALUE:Argument 1 ")) return 4;
-    if (add.call({}, 20, 22) !== 42) return 5;
-    const bytes = Buffer.from([7, 8, 9]);
-    if (first(bytes) !== 7 || first(bytes.subarray(1)) !== 8 || first(bytes) !== 7) return 6;
-    if (first("A") !== 65 || first(new Uint8Array([5, 6]).buffer) !== 5) return 7;
-    const detached = new ArrayBuffer(4);
-    detached.transfer();
-    if (!code(() => first(detached)).startsWith("ERR_INVALID_ARG_VALUE:")) return 8;
-    let depth = 0;
-    const pointer = lib.registerCallback({ arguments: ["i32"], return: "i32" }, (value) => {
-      depth++;
-      // The nested call reenters the same binding during its own call.
-      return value > 0 ? call(pointer, value - 1) + 2 : add(value, 100);
-    });
-    if (call(pointer, 3) !== 106 || depth !== 4) return 9;
-    if (add(1, 1) !== 2 || first(bytes) !== 7) return 10;
-    const both = code(() => call(1n << 70n, 1.5)), second = code(() => call(pointer, 1.5));
-    if (!both.startsWith("ERR_INVALID_ARG_VALUE:Argument 0 ") ||
-        !second.startsWith("ERR_INVALID_ARG_VALUE:Argument 1 ")) return 11;
-    if (code(() => call(pointer)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 1") return 12;
-    lib.unregisterCallback(pointer);
-    return 42;
-  } finally {
-    lib.close();
-  }
-}`;
-}
-
-test(
-  "the general caller fixture agrees with the pinned Node reference",
-  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () =>
-    assert.ok(
-      withDynamicLibrary((library) => {
-        runOracle(generalCallersSource(library));
-        return true;
-      }, callbackLibrary + generalCallerLibrary),
-      "clang is required",
-    ),
-);
-
-test("general Node FFI callers keep argument contracts on positional entries", () => {
-  assert.ok(
-    withDynamicLibrary(
-      (library) =>
-        verifyHostedFixture(
-          generalCallersSource(library),
-          "node-ffi-general-callers",
-          [
-            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
-            ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
-          ],
-          [],
-          [],
-          [],
-          {
-            allowJit: true,
-            managedBytes: 67108864,
-            allocationCapacity: 1048576,
-          },
-        ),
-      callbackLibrary + generalCallerLibrary,
-    ),
-    "clang is required",
-  );
-});
-
-test("node:ffi lends the mapped span of a shared ArrayBuffer view", (context) => {
-  const previous = process.env.TINT_GENERAL_FALLBACK;
-  process.env.TINT_GENERAL_FALLBACK = "0";
-  context.after(() => {
-    if (previous === undefined) delete process.env.TINT_GENERAL_FALLBACK;
-    else process.env.TINT_GENERAL_FALLBACK = previous;
-  });
-
-  const memory = "packages/native-runtime/src/intrinsics/memory.ts";
-  const atomics = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
-  const hostBindings: readonly NativeHostBinding[] = [
-    { module: memory, name: "mapMemory", operation: "memory-map" },
-    { module: memory, name: "unmapMemory", operation: "memory-unmap" },
-    {
-      module: atomics,
-      name: "readSharedUnsigned",
-      operation: "shared-read-unsigned",
-    },
-    {
-      module: atomics,
-      name: "writeSharedUnsigned",
-      operation: "shared-write-unsigned",
-    },
-    {
-      module: atomics,
-      name: "readSharedWord64",
-      operation: "shared-read-word64",
-    },
-    {
-      module: atomics,
-      name: "writeSharedWord64",
-      operation: "shared-write-word64",
-    },
-    {
-      module: atomics,
-      name: "compareExchangeSharedWord64",
-      operation: "shared-compare-exchange-word64",
-    },
-  ];
-  verifyHostedFixture(
-    `import ffi from "node:ffi";
+const sharedSpanSource = `import ffi from "node:ffi";
 import { createNativeSharedBlockService, nativeSharedMemoryHost } from "shared";
 import {
   callObjectValueOrThrow, constructObjectValueOrThrow, createArrayFromList,
@@ -826,53 +628,402 @@ export function run(): number {
     if (get(original, "0") !== 42 || get(original, "2") !== 42 || get(original, "3") !== 0) return 4;
     return 42;
   } finally { call(lib, "close", []); }
-}`,
-    "node-ffi-shared-span",
+}`;
+
+const libraryFinalizationSource = `import { argv } from "node:process";
+import ffi from "node:ffi";
+import { Buffer } from "node:buffer";
+import { collectGarbage } from "memory";
+import {
+  callObjectValueOrThrow, createArrayFromList, createDataProperty,
+  createObject, drainScriptJobs, getObjectValuePropertyOrThrow,
+  installProgramArrayIntrinsics, programRealmCore, type ScriptPropertyKey,
+} from "objects";
+export function run(): number {
+  const core = programRealmCore(), realm = core.realm, hooks = core.hooks;
+  installProgramArrayIntrinsics(core);
+  function get(receiver: unknown, name: string): unknown {
+    return getObjectValuePropertyOrThrow(receiver, name, hooks, realm);
+  }
+  function call(receiver: unknown, name: string, args: readonly unknown[]): unknown {
+    return callObjectValueOrThrow(get(receiver, name), receiver, args, core.object, realm);
+  }
+  const bytes = call(Buffer, "alloc", [1]);
+  const pointer = call(ffi, "getRawPointer", [bytes]);
+  function openAndDrop(): void {
+    const signature = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
+    const types = createArrayFromList(["pointer"], 0, realm.arrayPrototype, realm, hooks);
+    createDataProperty<ScriptPropertyKey, unknown>(signature, "arguments", types, hooks);
+    const definitions = createObject<ScriptPropertyKey, unknown>(undefined);
+    createDataProperty<ScriptPropertyKey, unknown>(definitions, "tint_track_unload", signature, hooks);
+    const handle = call(ffi, "dlopen", [argv[2], definitions]);
+    call(get(handle, "functions"), "tint_track_unload", [pointer]);
+  }
+  openAndDrop();
+  if (get(bytes, "0") !== 0) return 1;
+  collectGarbage();
+  let failed = false;
+  drainScriptJobs(realm.agent, (_error: unknown): void => { failed = true; });
+  if (failed || get(bytes, "0") !== 1) return 2;
+  collectGarbage();
+  drainScriptJobs(realm.agent, (_error: unknown): void => { failed = true; });
+  return !failed && get(bytes, "0") === 1 ? 42 : 3;
+}`;
+
+const oracle =
+  process.env.NODE26 ??
+  (process.version === "v26.13.1" ? process.execPath : "");
+function runOracle(text: string, topLevel = false): void {
+  const result = spawnSync(
+    oracle,
     [
-      ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
-      ["shared", "packages/native-runtime/src/shared-blocks.ts"],
-      ["objects", "packages/js-runtime/src/objects/index.ts"],
+      "--disable-warning=ExperimentalWarning",
+      "--input-type=module",
+      "-e",
+      text +
+        '\nif(process.version!=="v26.13.1")throw new Error(process.version);' +
+        (topLevel ? "" : " process.exitCode=run();"),
     ],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 42, result.error?.message ?? result.stderr);
+}
+
+let sharedLibraryDir: string | undefined;
+let sharedLibraryPath: string | undefined;
+function combinedDynamicLibrary(): string {
+  if (sharedLibraryPath !== undefined) return sharedLibraryPath;
+  const dir = stableScratchDirectory("node-ffi-combined-library");
+  const library = buildDynamicLibrary(
+    dir,
+    wideLibrary + callbackLibrary + generalCallerLibrary,
+  );
+  assert.ok(library, "clang is required");
+  sharedLibraryDir = dir;
+  sharedLibraryPath = library;
+  return library;
+}
+
+let generalSuiteBinary: string | undefined;
+function nodeFfiGeneralSuite(): string {
+  if (generalSuiteBinary !== undefined) return generalSuiteBinary;
+  const cases = [
+    {
+      name: "scalar",
+      specifier: "./scalar.ts",
+      id: "fixture:node-ffi-scalar",
+      text: scalarSource(undefined, true),
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["node:process", nodeProcessModule],
+      ] as [string, string][],
+    },
+    {
+      name: "memory",
+      specifier: "./memory.ts",
+      id: "fixture:node-ffi-memory",
+      text: memorySource,
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["node:ffi", nodeFfiModule],
+        ["node:buffer", nodeBufferModule],
+      ] as [string, string][],
+    },
+    {
+      name: "wide-call",
+      specifier: "./wide-call.ts",
+      id: "fixture:node-ffi-wide-call",
+      text: wideSource(undefined),
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["node:process", nodeProcessModule],
+      ] as [string, string][],
+    },
+    {
+      name: "registered-callbacks",
+      specifier: "./registered-callbacks.ts",
+      id: "fixture:node-ffi-registered-callbacks",
+      text: callbacksSource(undefined),
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["node:process", nodeProcessModule],
+      ] as [string, string][],
+    },
+    {
+      name: "general-callers",
+      specifier: "./general-callers.ts",
+      id: "fixture:node-ffi-general-callers",
+      text: generalCallersSource(undefined),
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["node:buffer", nodeBufferModule],
+        ["node:process", nodeProcessModule],
+      ] as [string, string][],
+    },
+    {
+      name: "libuv-diagnostic",
+      specifier: "./libuv-diagnostic.ts",
+      id: "fixture:node-ffi-libuv-diagnostic",
+      text: libuvDiagnosticSource,
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["node:ffi", nodeFfiModule],
+      ] as [string, string][],
+    },
+  ];
+  let general: readonly string[] | undefined;
+  generalSuiteBinary = prepareHostedFixture(
+    generalImportDispatcher(cases),
+    "node-ffi-general-suite",
+    [
+      ["node:process", nodeProcessModule],
+      ...cases.map(({ specifier, id }): [string, string] => [specifier, id]),
+    ],
+    cases.map(({ id, text, deps }) => parseFixtureModule(id, text, deps)),
     [],
+    [],
+    {
+      allowJit: true,
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+      onGeneralFallback(modules) {
+        general = modules;
+      },
+    },
+  );
+  assert.ok(general !== undefined, "expected general fallback");
+  assert.ok(
+    !general.includes(nodeFfiModule) && !general.includes(nodeBufferModule),
+    "node:ffi and node:buffer must remain typed runtimes: " +
+      JSON.stringify(general),
+  );
+  return generalSuiteBinary;
+}
+
+let typedSuiteBinary: string | undefined;
+function nodeFfiTypedSuite(): string {
+  if (typedSuiteBinary !== undefined) return typedSuiteBinary;
+  const hostBindings: readonly NativeHostBinding[] = [
+    { module: memoryModule, name: "mapMemory", operation: "memory-map" },
+    { module: memoryModule, name: "unmapMemory", operation: "memory-unmap" },
+    {
+      module: atomicsModule,
+      name: "readSharedUnsigned",
+      operation: "shared-read-unsigned",
+    },
+    {
+      module: atomicsModule,
+      name: "writeSharedUnsigned",
+      operation: "shared-write-unsigned",
+    },
+    {
+      module: atomicsModule,
+      name: "readSharedWord64",
+      operation: "shared-read-word64",
+    },
+    {
+      module: atomicsModule,
+      name: "writeSharedWord64",
+      operation: "shared-write-word64",
+    },
+    {
+      module: atomicsModule,
+      name: "compareExchangeSharedWord64",
+      operation: "shared-compare-exchange-word64",
+    },
+  ];
+  const cases = [
+    {
+      name: "typed-bridge",
+      specifier: "./typed-bridge.ts",
+      id: "fixture:node-ffi-typed-bridge",
+      text: typedBridgeSource,
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["node:buffer", nodeBufferModule],
+      ] as [string, string][],
+    },
+    {
+      name: "typed-i32-callback",
+      specifier: "./typed-i32-callback.ts",
+      id: "fixture:node-ffi-typed-i32-callback",
+      text: typedI32CallbackSource(undefined),
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["node:process", nodeProcessModule],
+      ] as [string, string][],
+    },
+    {
+      name: "shared-span",
+      specifier: "./shared-span.ts",
+      id: "fixture:node-ffi-shared-span",
+      text: sharedSpanSource,
+      deps: [
+        ["node:ffi", nodeFfiModule],
+        ["shared", sharedBlocksModule],
+        ["objects", objectsModule],
+      ] as [string, string][],
+    },
+    {
+      name: "library-finalization",
+      specifier: "./library-finalization.ts",
+      id: "fixture:node-ffi-library-finalization",
+      text: libraryFinalizationSource,
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["node:ffi", nodeFfiModule],
+        ["node:buffer", nodeBufferModule],
+        ["memory", memoryModule],
+        ["objects", objectsModule],
+      ] as [string, string][],
+    },
+  ];
+  typedSuiteBinary = prepareHostedFixture(
+    typedCaseDispatcher(cases),
+    "node-ffi-typed-suite",
+    [
+      ["node:process", nodeProcessModule],
+      ...cases.map(({ specifier, id }): [string, string] => [specifier, id]),
+    ],
+    cases.map(({ id, text, deps }) => parseFixtureModule(id, text, deps)),
     [],
     [
       {
-        module: atomics,
+        module: atomicsModule,
         namespace: "node-ffi-shared-fixture",
         retainedExports: hostBindings
-          .filter((entry) => entry.module === atomics)
+          .filter((entry) => entry.module === atomicsModule)
           .map((entry) => entry.name),
       },
     ],
     {
       requireTyped: true,
       runtimeEntry: "initializeGenerationalRuntime",
+      allowJit: true,
+      stackBytes: 4194304,
       managedBytes: 67108864,
       allocationCapacity: 1048576,
-      stackBytes: 4194304,
       hostBindings,
     },
   );
+  return typedSuiteBinary;
+}
+
+after(() => {
+  cleanupNativeBinary(generalSuiteBinary);
+  cleanupNativeBinary(typedSuiteBinary);
+  if (sharedLibraryDir !== undefined)
+    rmSync(sharedLibraryDir, { recursive: true, force: true });
+});
+
+test(
+  "the typed Node FFI bridge fixture agrees with the pinned reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () =>
+    runOracle(
+      ts.transpileModule(typedBridgeSource, {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ESNext,
+        },
+      }).outputText,
+    ),
+);
+
+test("the typed Node FFI bridge preserves array aliases and callback contracts", () => {
+  runNativeSuiteCase(nodeFfiTypedSuite(), ["typed-bridge"]);
+});
+
+test(
+  "the Node FFI scalar fixture agrees with the pinned reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () => {
+    runOracle(scalarSource(combinedDynamicLibrary(), false), true);
+  },
+);
+
+test("node:ffi binds and calls a shared-library symbol natively", () => {
+  runNativeSuiteCase(nodeFfiGeneralSuite(), [
+    "scalar",
+    combinedDynamicLibrary(),
+  ]);
+});
+
+test(
+  "the Node FFI memory fixture agrees with the pinned reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () => runOracle(memorySource, true),
+);
+
+test("node:ffi lends and adopts native memory without losing byte aliases", () => {
+  runNativeSuiteCase(nodeFfiGeneralSuite(), ["memory"]);
+});
+
+test(
+  "the wide call fixture agrees with the pinned Node reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () => {
+    runOracle(wideSource(combinedDynamicLibrary()), true);
+  },
+);
+
+test("node:ffi calls a wide scalar signature with many borrowed views", () => {
+  runNativeSuiteCase(nodeFfiGeneralSuite(), [
+    "wide-call",
+    combinedDynamicLibrary(),
+  ]);
+});
+
+test("typed i32 callbacks preserve signed arguments, results, and ref changes", () => {
+  const library = combinedDynamicLibrary();
+  if (oracle !== "")
+    runOracle(
+      ts.transpileModule(typedI32CallbackSource(library), {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ESNext,
+        },
+      }).outputText,
+    );
+  runNativeSuiteCase(nodeFfiTypedSuite(), ["typed-i32-callback", library]);
+});
+
+test(
+  "the callback fixture agrees with the pinned Node reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () => {
+    runOracle(callbacksSource(combinedDynamicLibrary()), true);
+  },
+);
+
+test("node:ffi registers runtime signatures without a fixed callback pool", () => {
+  runNativeSuiteCase(nodeFfiGeneralSuite(), [
+    "registered-callbacks",
+    combinedDynamicLibrary(),
+  ]);
+});
+
+test(
+  "the general caller fixture agrees with the pinned Node reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () => {
+    runOracle(generalCallersSource(combinedDynamicLibrary()), true);
+  },
+);
+
+test("general Node FFI callers keep argument contracts on positional entries", () => {
+  runNativeSuiteCase(nodeFfiGeneralSuite(), [
+    "general-callers",
+    combinedDynamicLibrary(),
+  ]);
+});
+
+test("node:ffi lends the mapped span of a shared ArrayBuffer view", () => {
+  runNativeSuiteCase(nodeFfiTypedSuite(), ["shared-span"]);
 });
 
 test("node:ffi diagnoses unavailable libuv access", () => {
-  verifyHostedFixture(
-    `import ffi, { getCurrentEventLoop } from "node:ffi";
-export function run() {
-  if (ffi.getCurrentEventLoop !== getCurrentEventLoop) return 1;
-  try { getCurrentEventLoop(); return 2; }
-  catch (error) {
-    return error instanceof Error && error.code === "ERR_FFI_CALL_FAILED" &&
-      error.message === "getCurrentEventLoop requires a libuv embedding" ? 42 : 3;
-  }
-}`,
-    "node-ffi-libuv-diagnostic",
-    [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
-    [],
-    [],
-    [],
-    { managedBytes: 67108864, allocationCapacity: 1048576 },
-  );
+  runNativeSuiteCase(nodeFfiGeneralSuite(), ["libuv-diagnostic"]);
 });
 
 test(
@@ -897,7 +1048,7 @@ export function run() {
   return ffi.toString(0n) === null ? 42 : 3;
 }`,
       "node-ffi-region-weak-ownership",
-      [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+      [["node:ffi", nodeFfiModule]],
       [],
       [],
       [],
@@ -910,21 +1061,6 @@ export function run() {
   },
 );
 
-const abortLibrary = `
-#include <pthread.h>
-int32_t tint_invoke_int(int32_t (*callback)(void)) { return callback(); }
-static void *tint_other_thread(void *data) {
-  void (*callback)(void) = data;
-  callback();
-  return 0;
-}
-void tint_invoke_thread(void (*callback)(void)) {
-  pthread_t thread;
-  if (!pthread_create(&thread, 0, tint_other_thread, callback)) pthread_join(thread, 0);
-}
-void tint_untracked_callback(void (*callback)(void)) { callback(); }
-`;
-
 test("node:ffi aborts before returning invalid callbacks to C", () => {
   assert.ok(
     withDynamicLibrary((library) => {
@@ -936,23 +1072,23 @@ test("node:ffi aborts before returning invalid callbacks to C", () => {
       try {
         binary = verifyHostedFixture(
           `import ffi from "node:ffi";
-import { argumentByteLength } from "arguments";
+import { argv } from "node:process";
 import { tint_untracked_callback } from "${specifier}";
 export function run() {
-  const mode = argumentByteLength(1);
+  const mode = argv[1];
   const { lib, functions } = ffi.dlopen(${JSON.stringify(library)}, {
     tint_invoke_int: { arguments: ["pointer"], return: "int32" },
     tint_invoke_thread: { arguments: ["pointer"] },
   });
-  if (mode === 4 || mode === 5) {
+  if (mode === "thread" || mode === "untracked") {
     const callback = lib.registerCallback(() => { throw new Error("unexpected callback body"); });
-    if (mode === 4) functions.tint_invoke_thread(callback);
+    if (mode === "thread") functions.tint_invoke_thread(callback);
     else tint_untracked_callback(Number(callback));
   } else {
     const callback = lib.registerCallback({ return: "int32" }, () => {
-      if (mode === 1) throw new Error("callback throw");
-      if (mode === 2) return Promise.resolve(1);
-      if (mode === 3) return 1.5;
+      if (mode === "throw") throw new Error("callback throw");
+      if (mode === "promise") return Promise.resolve(1);
+      if (mode === "fraction") return 1.5;
       return 2 ** 40;
     });
     functions.tint_invoke_int(callback);
@@ -961,8 +1097,8 @@ export function run() {
 }`,
           "node-ffi-callback-abort",
           [
-            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
-            ["arguments", "packages/native-runtime/src/intrinsics/process.ts"],
+            ["node:ffi", nodeFfiModule],
+            ["node:process", nodeProcessModule],
             [specifier, id],
           ],
           [],
@@ -1005,13 +1141,16 @@ export function run() {
         else process.env.TINT_BUILD_ONLY = prior;
       }
       if (prior === "1") return true;
-      const expected = [
-        "Callbacks cannot throw an exception",
-        "Callbacks cannot return promises",
-        "Callback returned invalid value for declared FFI type",
-        "Callbacks can only be invoked on the system thread they were created on",
-        "node:ffi callback outside an FFI transition",
-        "Callback returned invalid value for declared FFI type",
+      const expected: readonly [string, string][] = [
+        ["throw", "Callbacks cannot throw an exception"],
+        ["promise", "Callbacks cannot return promises"],
+        ["fraction", "Callback returned invalid value for declared FFI type"],
+        [
+          "thread",
+          "Callbacks can only be invoked on the system thread they were created on",
+        ],
+        ["untracked", "node:ffi callback outside an FFI transition"],
+        ["overflow", "Callback returned invalid value for declared FFI type"],
       ];
       try {
         const artifact = nativeArtifact(
@@ -1020,16 +1159,16 @@ export function run() {
           binary + ".manifest.json",
         );
         const results = runNativeBatch(
-          expected.map((_, index) => ({
+          expected.map(([mode]) => ({
             artifact,
-            args: ["x".repeat(index + 1)],
+            args: [mode],
           })),
         );
         writeFileSync(
           binary + ".run.json",
           JSON.stringify(results, null, 2) + "\n",
         );
-        for (const [index, message] of expected.entries()) {
+        for (const [index, [, message]] of expected.entries()) {
           const result = results[index];
           assert.ok(
             result?.kind === "signaled" && result.signal === "SIGABRT",
@@ -1050,81 +1189,15 @@ export function run() {
   );
 });
 
-const unloadLibrary = `
-static uint8_t *unload_flag;
-void tint_track_unload(uint8_t *flag) { unload_flag = flag; }
-__attribute__((destructor)) static void tint_record_unload(void) {
-  if (unload_flag) *unload_flag += 1;
-}
-`;
-
-test("node:ffi releases an unreachable library at the realm checkpoint", (context) => {
-  const previous = process.env.TINT_GENERAL_FALLBACK;
-  process.env.TINT_GENERAL_FALLBACK = "0";
-  context.after(() => {
-    if (previous === undefined) delete process.env.TINT_GENERAL_FALLBACK;
-    else process.env.TINT_GENERAL_FALLBACK = previous;
-  });
+test("node:ffi releases an unreachable library at the realm checkpoint", () => {
   assert.ok(
-    withDynamicLibrary(
-      (library) =>
-        verifyHostedFixture(
-          `import ffi from "node:ffi";
-import { Buffer } from "node:buffer";
-import { collectGarbage } from "memory";
-import {
-  callObjectValueOrThrow, createArrayFromList, createDataProperty,
-  createObject, drainScriptJobs, getObjectValuePropertyOrThrow,
-  installProgramArrayIntrinsics, programRealmCore, type ScriptPropertyKey,
-} from "objects";
-export function run(): number {
-  const core = programRealmCore(), realm = core.realm, hooks = core.hooks;
-  installProgramArrayIntrinsics(core);
-  function get(receiver: unknown, name: string): unknown {
-    return getObjectValuePropertyOrThrow(receiver, name, hooks, realm);
-  }
-  function call(receiver: unknown, name: string, args: readonly unknown[]): unknown {
-    return callObjectValueOrThrow(get(receiver, name), receiver, args, core.object, realm);
-  }
-  const bytes = call(Buffer, "alloc", [1]);
-  const pointer = call(ffi, "getRawPointer", [bytes]);
-  function openAndDrop(): void {
-    const signature = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
-    const types = createArrayFromList(["pointer"], 0, realm.arrayPrototype, realm, hooks);
-    createDataProperty<ScriptPropertyKey, unknown>(signature, "arguments", types, hooks);
-    const definitions = createObject<ScriptPropertyKey, unknown>(undefined);
-    createDataProperty<ScriptPropertyKey, unknown>(definitions, "tint_track_unload", signature, hooks);
-    const handle = call(ffi, "dlopen", [${JSON.stringify(library)}, definitions]);
-    call(get(handle, "functions"), "tint_track_unload", [pointer]);
-  }
-  openAndDrop();
-  if (get(bytes, "0") !== 0) return 1;
-  collectGarbage();
-  let failed = false;
-  drainScriptJobs(realm.agent, (_error: unknown): void => { failed = true; });
-  if (failed || get(bytes, "0") !== 1) return 2;
-  collectGarbage();
-  drainScriptJobs(realm.agent, (_error: unknown): void => { failed = true; });
-  return !failed && get(bytes, "0") === 1 ? 42 : 3;
-}`,
-          "node-ffi-library-finalization",
-          [
-            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
-            ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
-            ["memory", "packages/native-runtime/src/intrinsics/memory.ts"],
-            ["objects", "packages/js-runtime/src/objects/index.ts"],
-          ],
-          [],
-          [],
-          [],
-          {
-            requireTyped: true,
-            managedBytes: 67108864,
-            allocationCapacity: 1048576,
-          },
-        ),
-      unloadLibrary,
-    ),
+    withDynamicLibrary((library) => {
+      runNativeSuiteCase(nodeFfiTypedSuite(), [
+        "library-finalization",
+        library,
+      ]);
+      return true;
+    }, unloadLibrary),
     "clang is required",
   );
 });

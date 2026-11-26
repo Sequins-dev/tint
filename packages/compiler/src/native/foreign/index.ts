@@ -91,6 +91,8 @@ export interface NativeForeignMemoryBinding {
 export const foreignRuntimeModules = {
   nodeFfi: "packages/native-runtime/src/node/ffi.ts",
   nodeBuffer: "packages/native-runtime/src/node/buffer.ts",
+  nodeProcess: "packages/native-runtime/src/node/process.ts",
+  processIntrinsics: "packages/native-runtime/src/intrinsics/process.ts",
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",
   /** `tint:ffi/unsafe`: views over memory C owns. */
@@ -540,6 +542,13 @@ export function expandForeignInputs(
         packageId,
         "node:buffer",
         foreignRuntimeModules.nodeBuffer,
+      );
+      grantForeignRuntime(
+        inputs,
+        mappings,
+        packageId,
+        "node:process",
+        foreignRuntimeModules.nodeProcess,
       );
     }
   }

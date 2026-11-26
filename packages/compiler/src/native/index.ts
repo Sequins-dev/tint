@@ -161,6 +161,7 @@ import {
   type LinkedExport,
   type SourceRange,
   type SpecializationCapability,
+  type TopLevelModuleEntry,
 } from "@tint/ts-native/modules";
 import {
   appendSourceModules,
@@ -339,7 +340,7 @@ export interface CompileRequest extends ModuleRequest {
   readonly entry: string;
   readonly exports: readonly string[];
   /** Optional one-shot export invocation after initialization. */
-  readonly start?: string;
+  readonly start?: string | undefined;
   /** Runtime templates and their dependencies remain outside application module state. */
   readonly runtimes: readonly RuntimeSource[];
   /** General (full JavaScript semantics) lowering for application code the
@@ -395,8 +396,10 @@ export interface GeneralProgramRequest {
   /** All original IDs when syntax was selectively replayed. */
   readonly availableIds?: readonly string[];
   readonly entry: string;
-  /** The entry export the generated host calls; it returns the exit status. */
-  readonly start: string;
+  /** Optional entry export the generated host calls; when omitted, the host
+   * evaluates the entry as a pure top-level ESM module (including top-level
+   * `await`) and exits with `process.exitCode ?? 0`. */
+  readonly start?: string | undefined;
   /** Typed modules the general modules import, reached through checked
    * entries: the host imports their exports and presents them to general
    * code as synthetic modules. */
@@ -698,10 +701,12 @@ function withForeignRuntimes(
       if (module !== undefined) ids.add(module.id);
   }
   let nodeFfi = false,
-    nodeBuffer = false;
+    nodeBuffer = false,
+    nodeProcess = false;
   if (
     ids.has(foreignRuntimeModules.nodeFfi) ||
-    ids.has(foreignRuntimeModules.nodeBuffer)
+    ids.has(foreignRuntimeModules.nodeBuffer) ||
+    ids.has(foreignRuntimeModules.nodeProcess)
   ) {
     // The standalone collector can receive the application's source table
     // too. Authority follows the entry's imports, not source availability.
@@ -717,8 +722,10 @@ function withForeignRuntimes(
     const reachable = sourceDependencyClosure([request.entry], resolve);
     nodeFfi = reachable.includes(foreignRuntimeModules.nodeFfi);
     nodeBuffer = reachable.includes(foreignRuntimeModules.nodeBuffer);
+    nodeProcess = reachable.includes(foreignRuntimeModules.nodeProcess);
   }
-  if (libraries.length === 0 && !nodeFfi && !nodeBuffer) return request;
+  if (libraries.length === 0 && !nodeFfi && !nodeBuffer && !nodeProcess)
+    return request;
   const runtimes: RuntimeSource[] = request.runtimes.slice();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
@@ -752,13 +759,14 @@ function withForeignRuntimes(
       retainedExports: retained,
     });
   }
-  if (!nodeFfi && !nodeBuffer) return { ...request, runtimes };
+  if (!nodeFfi && !nodeBuffer && !nodeProcess) return { ...request, runtimes };
   const included = withNodeRuntimes(
     request,
     ids,
     runtimes,
     nodeFfi,
     nodeBuffer,
+    nodeProcess,
   );
   return nodeFfi ? withStaticFfiRuntimes(included, signedChar) : included;
 }
@@ -897,11 +905,47 @@ function withNodeRuntimes(
   runtimes: RuntimeSource[],
   nodeFfi: boolean,
   nodeBuffer: boolean,
+  nodeProcess: boolean,
 ): CompileRequest {
   function retain(runtime: RuntimeSource): void {
     if (!runtimes.some((existing) => existing?.module === runtime.module))
       runtimes.push(runtime);
   }
+  const hostBindings = (request.hostBindings ?? []).slice();
+  if (nodeProcess) {
+    const processModule = foreignRuntimeModules.processIntrinsics;
+    retain({
+      module: processModule,
+      namespace: "native-process",
+    });
+    const processBindings: readonly NativeHostBinding[] = [
+      {
+        module: processModule,
+        name: "argumentCount",
+        operation: "argument-count",
+      },
+      {
+        module: processModule,
+        name: "argumentByteLength",
+        operation: "argument-length",
+      },
+      {
+        module: processModule,
+        name: "copyArgument",
+        operation: "argument-copy",
+      },
+    ];
+    for (const binding of processBindings) {
+      if (
+        !hostBindings.some(
+          (entry) =>
+            entry?.module === binding.module && entry.name === binding.name,
+        )
+      )
+        hostBindings.push(binding);
+    }
+  }
+  if (!nodeFfi && !nodeBuffer) return { ...request, runtimes, hostBindings };
   if (nodeFfi)
     retain({
       module: foreignRuntimeModules.nodeFfi,
@@ -935,7 +979,7 @@ function withNodeRuntimes(
         recordBindings.push({ module: objects, name, operation: "view" });
     }
   }
-  if (!nodeFfi) return { ...request, runtimes, recordBindings };
+  if (!nodeFfi) return { ...request, runtimes, recordBindings, hostBindings };
   const unaryView = "viewUnaryNumberClosure";
   retain({
     module: nativeValueViewsModule,
@@ -974,7 +1018,6 @@ function withNodeRuntimes(
     if (runtime === undefined) throw "node FFI runtime invariant";
     retain(runtime);
   }
-  const hostBindings = (request.hostBindings ?? []).slice();
   for (const binding of ffi.hostBindings) {
     if (binding === undefined) throw "node FFI host binding invariant";
     if (
@@ -1641,11 +1684,12 @@ function compileGeneralProgram<T>(
     return { ok: false, error: typedError };
   const reason = typedError.stage + ": " + typedError.message;
   const start = request.start;
-  if (start === undefined)
+  if (start === undefined && request.closedProgram !== true)
     return stageFailure(
       typedError.stage,
       typedError.message + " (general fallback requires a start export)",
     );
+  const hostStart = start ?? "$tintStart";
   const loader = request.moduleLoader;
   const sourceDependencies = loader?.sourceDependencies;
   const roots = [request.entry];
@@ -1804,7 +1848,7 @@ function compileGeneralProgram<T>(
       available,
       ...(availableIds === undefined ? {} : { availableIds }),
       entry: request.entry,
-      start,
+      ...(start === undefined ? {} : { start }),
       boundaries: partition.boundaries,
       sourceValidated: validateSource !== undefined,
       ...(error.fallback === undefined ? {} : { trigger: error.fallback }),
@@ -1846,7 +1890,8 @@ function compileGeneralProgram<T>(
         modules,
         moduleLoader: replay,
         entry: lowered.value.entry,
-        exports: [start],
+        start: hostStart,
+        exports: [hostStart],
         workerModules: lowered.value.workerModules ?? request.workerModules,
       },
       usesRealm ? realmTypeofModules : undefined,
@@ -1968,6 +2013,25 @@ function generalApplicationModules(
       const dependency = module.dependencies.get(declaration.specifier);
       if (dependency !== undefined) queue.push(dependency);
     }
+    for (const statement of module.module.statements) {
+      if (statement === undefined || statement.kind !== "export") continue;
+      const source = statement.declaration.source;
+      if (source === undefined || source.typeOnly) continue;
+      const dependency = module.dependencies.get(source.specifier);
+      if (dependency !== undefined) queue.push(dependency);
+    }
+    rewriteModule(module.module, {
+      expression: (mapped, original) => {
+        if (original.kind === "import-call") {
+          const specifier = original.specifier;
+          if (specifier.kind === "string") {
+            const dependency = module.dependencies.get(specifier.value);
+            if (dependency !== undefined) queue.push(dependency);
+          }
+        }
+        return mapped;
+      },
+    });
   }
   return { ok: true, value: result, trusted: imported };
 }
@@ -2903,19 +2967,49 @@ function checkTypedProgram(
         }
       }
     }
+    let topLevelEntry: TopLevelModuleEntry | undefined;
+    if (
+      request.closedProgram === true &&
+      start === undefined &&
+      selected.length === 0
+    ) {
+      const processExport = exports.find(
+        (item) =>
+          item !== undefined &&
+          item.module === foreignRuntimeModules.nodeProcess &&
+          item.namespace === "value" &&
+          item.name === "default",
+      );
+      let exitCodeObject: string | undefined;
+      if (processExport !== undefined) {
+        const targetName = processExport.linkedName;
+        for (const statement of module.statements) {
+          if (statement === undefined || statement.kind !== "variable")
+            continue;
+          for (const declaration of statement.declarations) {
+            if (declaration === undefined) continue;
+            for (const identifier of bindingIdentifiers(declaration))
+              if (identifier !== undefined && identifier.name === targetName)
+                exitCodeObject = targetName;
+          }
+        }
+      }
+      topLevelEntry = exitCodeObject === undefined ? {} : { exitCodeObject };
+    }
     const instance = prepareModuleInstance(
       module,
       bound.value,
       selected,
       retained,
-      invokeDirectly,
+      topLevelEntry === undefined && invokeDirectly,
+      topLevelEntry,
     );
     if (!instance.ok) {
       instanceFallback = instance.fallback;
       return { ok: false, error: instance.error };
     }
     initializerName = instance.value.initializer.name;
-    if (invokeDirectly) {
+    if (invokeDirectly || topLevelEntry !== undefined) {
       entryName = initializerName;
       return { ok: true, value: instance.value.module };
     }
@@ -3097,7 +3191,7 @@ function lowerTypedProgram(
   }
   if (initializer < 0)
     return stageFailure("lower", "module initializer is missing");
-  if (start !== undefined && invocation < 0)
+  if ((start !== undefined || entryName !== "") && invocation < 0)
     return stageFailure("lower", "module invocation is missing");
   const recordBindings: {
     function: number;

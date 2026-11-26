@@ -100,6 +100,58 @@ test("general modules close over importers and unsafe typed imports", () => {
   ]);
 });
 
+test("general modules pull literal dynamic import targets into the general partition", () => {
+  const helper = module(
+    "helper",
+    "export function answer(n: number): number { return n; }",
+  );
+  const sideEffect = module(
+    "side-effect",
+    'throw new Error("must stay lazy");',
+  );
+  const observableTyped = module(
+    "observable-typed",
+    'throw new Error("must stay lazy");\nexport function boom(): number { return 1; }',
+  );
+  const leaf = module(
+    "leaf",
+    'import { answer } from "./helper";\nimport "./side-effect";\nimport { boom } from "./observable-typed";\nexport function run() { return answer(42) + boom(); }',
+    [
+      ["./helper", "helper"],
+      ["./side-effect", "side-effect"],
+      ["./observable-typed", "observable-typed"],
+    ],
+  );
+  const main = module(
+    "main",
+    'export async function run() { return (await import("./leaf")).run(); }',
+    [["./leaf", "leaf"]],
+  );
+  const partition = closeGeneralPartition(
+    [helper, sideEffect, observableTyped, leaf, main],
+    new Set(["main"]),
+  );
+  assert.deepEqual(partition.general.map((m) => m.id).sort(), [
+    "leaf",
+    "main",
+    "observable-typed",
+    "side-effect",
+  ]);
+  assert.deepEqual(partition.boundaries, [
+    {
+      id: "helper",
+      exports: [
+        {
+          kind: "function",
+          name: "answer",
+          local: "answer",
+          parameters: [boundaryNumber],
+        },
+      ],
+    },
+  ]);
+});
+
 test("unknown parameters and results cross with their identity", () => {
   const lib = module(
     "lib",
