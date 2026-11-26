@@ -4,8 +4,15 @@ import {
   type FunctionIR,
   type Instruction,
   type ModuleIR,
+  type ScalarType,
 } from "../scalar/index.ts";
 import type { RemarkSink } from "./observer.ts";
+
+/** Closures at or above this block count whose body is moved to a `$direct`
+ * twin become one-block forwarding thunks, avoiding duplicating large bodies
+ * across all subsequent optimization, verification, and emission passes.
+ * Tiny closures keep their direct body so escaping callbacks incur no thunk. */
+const thunkBlockThreshold = 16;
 
 export interface ClosureDevirtualization {
   readonly module: ModuleIR;
@@ -134,6 +141,77 @@ export function devirtualizeClosureCalls(
     };
     return fn.debug === undefined ? twin : { ...twin, debug: fn.debug };
   }
+  /** One-block forwarding thunk replacing a large closure body once its
+   * `$direct` twin carries the full body. Preserves the closure ABI, receiver
+   * and environment while forwarding indirect calls directly to `target`. */
+  function thunk(fn: FunctionIR, target: number): FunctionIR {
+    const slots: ScalarType[] = [],
+      parameters: number[] = [],
+      instructions: Instruction[] = [],
+      args: number[] = [],
+      firstBlock = fn.blocks[fn.entry],
+      thunkSpan =
+        firstBlock === undefined
+          ? { start: 0, end: 0 }
+          : {
+              start: firstBlock.terminator.start,
+              end: firstBlock.terminator.end,
+            };
+    let nextId = 0;
+    for (const parameter of fn.parameters) {
+      if (parameter === undefined) throw "closure parameter invariant";
+      const type = fn.slots[parameter];
+      if (type === undefined) throw "closure parameter slot invariant";
+      const slot = slots.length;
+      slots.push(type);
+      parameters.push(slot);
+      const id = nextId++;
+      instructions.push({ kind: "load", id, slot, ...thunkSpan });
+      args.push(id);
+    }
+    let receiverSlot: number | undefined;
+    if (fn.receiverSlot !== undefined) {
+      const type = fn.slots[fn.receiverSlot];
+      if (type === undefined) throw "closure receiver slot invariant";
+      receiverSlot = slots.length;
+      slots.push(type);
+      const id = nextId++;
+      instructions.push({ kind: "load", id, slot: receiverSlot, ...thunkSpan });
+      args.push(id);
+    }
+    if (fn.closureEnvironment !== undefined) {
+      const id = nextId++;
+      instructions.push({ kind: "closure-environment", id, ...thunkSpan });
+      args.push(id);
+    }
+    const result = fn.returnType === "void" ? undefined : nextId++;
+    instructions.push({
+      kind: "call",
+      id: result,
+      target,
+      arguments: args,
+      ...thunkSpan,
+    });
+    const block: Block = {
+      id: 0,
+      instructions,
+      terminator: { kind: "return", value: result, ...thunkSpan },
+    };
+    return {
+      id: fn.id,
+      name: fn.name,
+      exported: fn.exported,
+      ...(receiverSlot === undefined ? {} : { receiverSlot }),
+      ...(fn.closureEnvironment === undefined
+        ? {}
+        : { closureEnvironment: fn.closureEnvironment }),
+      parameters,
+      slots,
+      returnType: fn.returnType,
+      entry: 0,
+      blocks: [block],
+    };
+  }
   // With closed records (no foreign code constructs or writes this module's
   // records), fields are written only by record-new arguments and record
   // (cell) writes and initializations (raw memory operations belong to the
@@ -151,6 +229,92 @@ export function devirtualizeClosureCalls(
       break;
     }
   }
+  function isReferenceField(record: number, field: number): boolean {
+    return recordLayouts[record]?.fields[field]?.type === "reference";
+  }
+  // Pre-scan once to avoid repeatedly scanning functions that neither write
+  // reference record fields nor make indirect calls nor produce closures.
+  const fnCount = module.functions.length,
+    hasCallIndirect = new Uint8Array(fnCount),
+    hasClosureSource = new Uint8Array(fnCount),
+    activeRecordWriters: FunctionIR[] = [],
+    staticUnknownFields = new Set<number>();
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "closure function invariant";
+    let callsIndirect = false,
+      closureSource = false,
+      writesRefField = false;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "closure block invariant";
+      const term = block.terminator;
+      if (term.kind === "record" || term.kind === "record-cell") {
+        if (isReferenceField(term.record, term.field)) {
+          if (term.operation === "read") {
+            if (closedRecords) closureSource = true;
+          } else if (closedRecords) writesRefField = true;
+        }
+      }
+      for (const op of block.instructions) {
+        if (op === undefined) throw "closure instruction invariant";
+        if (op.kind === "function-new" && eligible(op.target))
+          closureSource = true;
+        else if (
+          hasScriptEntries &&
+          closedRecords &&
+          op.kind === "record-read" &&
+          isReferenceField(op.record, op.field)
+        )
+          closureSource = true;
+        else if (
+          op.kind === "call-indirect" &&
+          op.scriptArguments === undefined
+        )
+          callsIndirect = true;
+        else if (closedRecords && op.kind === "record-new" && !writesRefField) {
+          const fields = recordLayouts[op.record]?.fields;
+          for (let field = 0; field < op.arguments.length; field++)
+            if (fields?.[field]?.type === "reference") {
+              writesRefField = true;
+              break;
+            }
+        }
+      }
+    }
+    if (callsIndirect) hasCallIndirect[fn.id] = 1;
+    if (closureSource) hasClosureSource[fn.id] = 1;
+    if (writesRefField) {
+      if (closureSource) activeRecordWriters.push(fn);
+      else {
+        // Functions with no closure sources can only write unknown values
+        // into every reference field they initialize or store.
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "closure block invariant";
+          for (const op of block.instructions) {
+            if (op === undefined) throw "closure instruction invariant";
+            if (op.kind !== "record-new") continue;
+            const fields = recordLayouts[op.record]?.fields;
+            for (let field = 0; field < op.arguments.length; field++) {
+              const meta = fields?.[field];
+              if (meta?.type !== "reference") continue;
+              if (
+                op.arguments[field] === undefined &&
+                meta.stateOffset !== undefined
+              )
+                continue;
+              staticUnknownFields.add(op.record * 65536 + field);
+            }
+          }
+          const term = block.terminator;
+          if (
+            (term.kind === "record" || term.kind === "record-cell") &&
+            term.operation !== "read" &&
+            isReferenceField(term.record, term.field)
+          )
+            staticUnknownFields.add(term.record * 65536 + term.field);
+        }
+      }
+    }
+  }
   let fieldTargets = new Map<number, KnownClosure>(),
     unknownFields = new Set<number>();
   function fieldTarget(
@@ -161,18 +325,25 @@ export function devirtualizeClosureCalls(
     const key = record * 65536 + field;
     return unknownFields.has(key) ? undefined : fieldTargets.get(key);
   }
-  /** Slot facts of `fn` under the current field facts. Propagates closures
-   * through both direct writes (`function-new`, `record`/`record-cell` reads,
-   * `record-read`) and slot-to-slot copies (`v = load sA; store sB v`) so
-   * environment-captured imports copied into call temporaries devirtualize. */
+  /** Slot facts of `fn` under the current field facts. Only `reference`
+   * slots can hold a closure (function-new produces `reference`, call-indirect
+   * requires `reference`). Propagates closures through both direct writes
+   * (`function-new`, `record`/`record-cell` reads, `record-read`) and
+   * slot-to-slot copies (`v = load sA; store sB v`) so environment-captured
+   * imports copied into call temporaries devirtualize. */
   function slotFacts(fn: FunctionIR): SlotFacts | undefined {
     const targets = new Map<number, KnownClosure>(),
       unknown = new Set<number>(),
       // Slot -> slots it is copied from (store of a load).
       copies = new Map<number, number[]>();
     for (const parameter of fn.parameters)
-      if (parameter !== undefined) unknown.add(parameter);
-    if (fn.receiverSlot !== undefined) unknown.add(fn.receiverSlot);
+      if (parameter !== undefined && fn.slots[parameter] === "reference")
+        unknown.add(parameter);
+    if (
+      fn.receiverSlot !== undefined &&
+      fn.slots[fn.receiverSlot] === "reference"
+    )
+      unknown.add(fn.receiverSlot);
     let candidates = false;
     const write = (slot: number, known: KnownClosure | undefined): boolean => {
       if (unknown.has(slot)) return false;
@@ -191,21 +362,23 @@ export function devirtualizeClosureCalls(
       }
       return false;
     };
-    // Indexed by value ID, one array per function: value IDs are unique
-    // within it. (A fresh array per block would grow to the function's
-    // largest ID in every block: dense native lists fill the gap.)
-    const local: (KnownClosure | undefined)[] = [],
-      // Slot (+ 1) a value loads, for stores that copy another slot.
-      loaded: number[] = [];
+    const local = new Map<number, KnownClosure>(),
+      // Slot (+ 1) a reference value loads, for stores that copy another slot.
+      loaded = new Map<number, number>();
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
-      if (block.exception !== undefined) unknown.add(block.exception.slot);
+      if (
+        block.exception !== undefined &&
+        fn.slots[block.exception.slot] === "reference"
+      )
+        unknown.add(block.exception.slot);
       const term = block.terminator;
       // Reads of closure fields store their closure in the transfer slot.
       if (
-        term.kind === "record" ||
-        term.kind === "record-cell" ||
-        term.kind === "cell"
+        (term.kind === "record" ||
+          term.kind === "record-cell" ||
+          term.kind === "cell") &&
+        fn.slots[term.slot] === "reference"
       )
         write(
           term.slot,
@@ -218,15 +391,17 @@ export function devirtualizeClosureCalls(
         if (visited >= budget) return undefined;
         visited++;
         if (op.kind === "function-new" && eligible(op.target))
-          local[op.id] = {
+          local.set(op.id, {
             target: op.target,
             environment: op.environment !== undefined,
-          };
-        else if (hasScriptEntries && op.kind === "record-read")
-          local[op.id] = fieldTarget(op.record, op.field);
-        else if (op.kind === "load") loaded[op.id] = op.slot + 1;
-        else if (op.kind === "store") {
-          const source = loaded[op.value] ?? 0;
+          });
+        else if (hasScriptEntries && op.kind === "record-read") {
+          const fieldKnown = fieldTarget(op.record, op.field);
+          if (fieldKnown !== undefined) local.set(op.id, fieldKnown);
+        } else if (op.kind === "load" && fn.slots[op.slot] === "reference")
+          loaded.set(op.id, op.slot + 1);
+        else if (op.kind === "store" && fn.slots[op.slot] === "reference") {
+          const source = loaded.get(op.value) ?? 0;
           // Storing a slot's own value back changes nothing.
           if (source - 1 === op.slot) continue;
           if (source !== 0) {
@@ -235,7 +410,7 @@ export function devirtualizeClosureCalls(
             const sources = copies.get(op.slot);
             if (sources === undefined) copies.set(op.slot, [source - 1]);
             else sources.push(source - 1);
-          } else write(op.slot, local[op.value]);
+          } else write(op.slot, local.get(op.value));
         } else if (op.kind === "call-indirect") candidates = true;
       }
     }
@@ -291,56 +466,62 @@ export function devirtualizeClosureCalls(
   for (let round = 0; closedRecords && round < 8; round++) {
     const nextTargets = new Map<number, KnownClosure>(),
       nextUnknown = new Set<number>();
+    for (const key of staticUnknownFields)
+      if (key !== undefined) nextUnknown.add(key);
     const writeField = (key: number, known: KnownClosure | undefined): void => {
+      if (nextUnknown.has(key)) return;
       const previous = nextTargets.get(key);
       if (known === undefined) nextUnknown.add(key);
       else if (previous === undefined) nextTargets.set(key, known);
       else if (previous.target !== known.target) nextUnknown.add(key);
     };
-    for (const fn of module.functions) {
+    for (const fn of activeRecordWriters) {
       if (fn === undefined) throw "closure function invariant";
       const own = slotFacts(fn);
       if (own === undefined) return undefined;
       const slotTarget = (slot: number): KnownClosure | undefined =>
         own.unknown.has(slot) ? undefined : own.targets.get(slot);
-      // By value ID and by slot, one array per function (see slotFacts);
-      // `stored` holds this block's stores to the slots in `storedHere`.
-      const local: (KnownClosure | undefined)[] = [],
-        stored: (KnownClosure | undefined)[] = [];
+      const local = new Map<number, KnownClosure>(),
+        stored = new Map<number, KnownClosure>(),
+        storedStamp = new Uint32Array(fn.slots.length);
+      let blockStamp = 0;
       for (const block of fn.blocks) {
         if (block === undefined) throw "closure block invariant";
-        // Slots stored in this block (their closures in `stored`).
-        const storedHere = new Set<number>();
+        blockStamp++;
         for (const op of block.instructions) {
           if (op === undefined) throw "closure instruction invariant";
           if (visited >= budget) return undefined;
           visited++;
           if (op.kind === "function-new" && eligible(op.target))
-            local[op.id] = {
+            local.set(op.id, {
               target: op.target,
               environment: op.environment !== undefined,
-            };
-          else if (hasScriptEntries && op.kind === "record-read")
-            local[op.id] = fieldTarget(op.record, op.field);
-          else if (op.kind === "store") {
-            stored[op.slot] = local[op.value];
-            storedHere.add(op.slot);
-          } else if (op.kind === "load")
-            local[op.id] = storedHere.has(op.slot)
-              ? stored[op.slot]
-              : slotTarget(op.slot);
-          else if (op.kind === "record-new") {
+            });
+          else if (hasScriptEntries && op.kind === "record-read") {
+            const fieldKnown = fieldTarget(op.record, op.field);
+            if (fieldKnown !== undefined) local.set(op.id, fieldKnown);
+          } else if (op.kind === "store" && fn.slots[op.slot] === "reference") {
+            const value = local.get(op.value);
+            if (value === undefined) stored.delete(op.slot);
+            else stored.set(op.slot, value);
+            storedStamp[op.slot] = blockStamp;
+          } else if (op.kind === "load" && fn.slots[op.slot] === "reference") {
+            const value =
+              storedStamp[op.slot] === blockStamp
+                ? stored.get(op.slot)
+                : slotTarget(op.slot);
+            if (value !== undefined) local.set(op.id, value);
+          } else if (op.kind === "record-new") {
             const fields = recordLayouts[op.record]?.fields;
             for (let field = 0; field < op.arguments.length; field++) {
+              const meta = fields?.[field];
+              if (meta?.type !== "reference") continue;
               const argument = op.arguments[field];
-              if (
-                argument === undefined &&
-                fields?.[field]?.stateOffset !== undefined
-              )
+              if (argument === undefined && meta.stateOffset !== undefined)
                 continue;
               writeField(
                 op.record * 65536 + field,
-                argument === undefined ? undefined : local[argument],
+                argument === undefined ? undefined : local.get(argument),
               );
             }
           }
@@ -348,12 +529,13 @@ export function devirtualizeClosureCalls(
         const term = block.terminator;
         if (
           (term.kind === "record" || term.kind === "record-cell") &&
-          term.operation !== "read"
+          term.operation !== "read" &&
+          isReferenceField(term.record, term.field)
         )
           writeField(
             term.record * 65536 + term.field,
-            storedHere.has(term.slot)
-              ? stored[term.slot]
+            storedStamp[term.slot] === blockStamp
+              ? stored.get(term.slot)
               : slotTarget(term.slot),
           );
       }
@@ -373,6 +555,13 @@ export function devirtualizeClosureCalls(
   const functions: FunctionIR[] = [];
   for (const fn of module.functions) {
     if (fn === undefined) throw "closure function invariant";
+    if (
+      hasCallIndirect[fn.id] !== 1 ||
+      (remarks === undefined && hasClosureSource[fn.id] !== 1)
+    ) {
+      functions.push(fn);
+      continue;
+    }
     const own = slotFacts(fn);
     if (own === undefined) return undefined;
     const slotTargets = own.targets,
@@ -393,8 +582,7 @@ export function devirtualizeClosureCalls(
     }
     let changed = false;
     const blocks: Block[] = [],
-      // By value ID, one array per function (see slotFacts).
-      known: (KnownClosure | undefined)[] = [];
+      known = new Map<number, KnownClosure>();
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
       let instructions: Instruction[] | undefined;
@@ -404,21 +592,22 @@ export function devirtualizeClosureCalls(
         if (visited >= budget) return undefined;
         visited++;
         if (op.kind === "function-new" && eligible(op.target))
-          known[op.id] = {
+          known.set(op.id, {
             target: op.target,
             environment: op.environment !== undefined,
-          };
-        else if (hasScriptEntries && op.kind === "record-read")
-          known[op.id] = fieldTarget(op.record, op.field);
-        else if (op.kind === "load") {
+          });
+        else if (hasScriptEntries && op.kind === "record-read") {
+          const fieldKnown = fieldTarget(op.record, op.field);
+          if (fieldKnown !== undefined) known.set(op.id, fieldKnown);
+        } else if (op.kind === "load" && fn.slots[op.slot] === "reference") {
           const slotKnown = slotTargets.get(op.slot);
           if (slotKnown !== undefined && !unknown.has(op.slot))
-            known[op.id] = slotKnown;
+            known.set(op.id, slotKnown);
         }
         if (instructions !== undefined) instructions.push(op);
         if (op.kind !== "call-indirect" || op.scriptArguments !== undefined)
           continue;
-        const closure = known[op.callee];
+        const closure = known.get(op.callee);
         if (closure === undefined) {
           if (remarks !== undefined)
             remarks({
@@ -570,7 +759,9 @@ export function devirtualizeClosureCalls(
   }
   if (rewritten === 0) return { module, visited, rewritten };
   // Build each twin from its closure's rewritten body, so calls inside the
-  // twin are devirtualized as well.
+  // twin are devirtualized as well. Large closure bodies become one-block
+  // forwarding thunks to their twin so later passes and codegen do not
+  // duplicate them.
   for (let index = 0; index < reserved.length; index++) {
     const target = reserved[index];
     if (target === undefined) throw "closure twin invariant";
@@ -580,6 +771,11 @@ export function devirtualizeClosureCalls(
     const built = twin(body, id);
     if (built === undefined) return undefined;
     added.push(built);
+    if (
+      body.blocks.length >= thunkBlockThreshold &&
+      body.scriptEntry === undefined
+    )
+      functions[target] = thunk(body, id);
   }
   for (const fn of added) {
     if (fn === undefined) throw "closure twin invariant";
