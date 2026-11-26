@@ -8,6 +8,7 @@ import {
   truncateArrayElements,
   writeArrayElement,
   writeGeneralSlot,
+  type ArrayElements,
 } from "./array-elements.ts";
 import {
   objectFlagDictionary,
@@ -223,11 +224,39 @@ export function scriptArrayPush(
   return elements.length;
 }
 
+/** Out-of-line steady-state flat general array append called from
+ * `scriptArrayPushFast`, keeping the numeric steady-state path small enough
+ * for IR inlining into hot loops. */
+function scriptArrayPushGeneralFast(
+  elements: ArrayElements<ScriptPropertyKey, unknown>,
+  item: unknown,
+): number {
+  const general = elements.generalCount;
+  const tags = elements.generalTags;
+  if (elements.length === general && general < tags.length) {
+    if (
+      writeGeneralSlot(
+        tags,
+        elements.generalRefs,
+        elements.numbers,
+        general,
+        item,
+      )
+    ) {
+      const next = general + 1;
+      elements.generalCount = next;
+      elements.length = next;
+      return next;
+    }
+  }
+  return -1;
+}
+
 /** Zero-capture inlineable fast path for steady-state packed Array.prototype.push.
- * Appends `item` into existing binary64 or flat general capacity when the
- * receiver is an extensible packed array inheriting from the realm's clean
- * Array.prototype, returning the new length, or -1 to fall back to
- * `scriptArrayPush`. */
+ * Appends `item` into existing binary64 capacity inline (or delegates flat
+ * general capacity to `scriptArrayPushGeneralFast`) when the receiver is an
+ * extensible packed array inheriting from the realm's clean Array.prototype,
+ * returning the new length, or -1 to fall back to `scriptArrayPush`. */
 export function scriptArrayPushFast(
   object: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
   item: unknown,
@@ -241,8 +270,7 @@ export function scriptArrayPushFast(
   ) {
     const elements = object.internalArrayElements;
     if (elements !== undefined && elements.lengthWritable) {
-      const general = elements.generalCount;
-      if (general === 0) {
+      if (elements.generalCount === 0) {
         if (typeof item === "number") {
           const count = elements.numberCount;
           const numbers = elements.numbers;
@@ -255,23 +283,7 @@ export function scriptArrayPushFast(
           }
         }
       } else {
-        const tags = elements.generalTags;
-        if (elements.length === general && general < tags.length) {
-          if (
-            writeGeneralSlot(
-              tags,
-              elements.generalRefs,
-              elements.numbers,
-              general,
-              item,
-            )
-          ) {
-            const next = general + 1;
-            elements.generalCount = next;
-            elements.length = next;
-            return next;
-          }
-        }
+        return scriptArrayPushGeneralFast(elements, item);
       }
     }
   }

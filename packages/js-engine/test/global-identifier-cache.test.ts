@@ -40,10 +40,10 @@ function lowered(source: string): { caches: number; cachedSites: number } {
   return { caches, cachedSites };
 }
 
-test("each Script var and unresolved identifier site gets a prologue cache", () => {
-  // Sites: i<3, i++, s, i (in s+=i), and print.
+test("each Script var and unresolved identifier site shares a prologue cache per global name", () => {
+  // Sites: i<3, i++, s, i (in s+=i), print, and s (in print(s)) across 3 global names.
   assert.deepEqual(lowered("var s=0;for(var i=0;i<3;i++)s+=i;print(s);"), {
-    caches: 6,
+    caches: 3,
     cachedSites: 6,
   });
 });
@@ -57,9 +57,9 @@ test("declarative and Script lexical sites get no global cache", () => {
   });
 });
 
-test("nested functions cache each statically global site", () => {
+test("nested functions share one global cache per statically global name", () => {
   assert.deepEqual(lowered("var v=1;function g(){return v+v}g();"), {
-    caches: 3,
+    caches: 2,
     cachedSites: 3,
   });
 });

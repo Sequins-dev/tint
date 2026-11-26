@@ -196,6 +196,7 @@ import { allocationHelper, type AllocationHelper } from "./allocation.ts";
 import {
   emitGeneralElementAccess,
   emitPolymorphicPropertyStore,
+  planDirectGeneralTargets,
 } from "./general-elements.ts";
 export type LeafHelperKind =
   | SharedMemoryPrimitive
@@ -5300,6 +5301,7 @@ function emitModuleForms(
       });
   }
   let scalarRegisters: Uint8Array | undefined;
+  let currentHasScriptOps = false;
   function rawLoad(rt: number, offset: number): void {
     const registers = scalarRegisters,
       register = registers === undefined ? 0 : (registers[offset / 8] ?? 0);
@@ -5440,16 +5442,23 @@ function emitModuleForms(
     if (source === target) return;
     const homes = scalarRegisters;
     if (
-      source <= 504 &&
-      target <= 504 &&
       (homes?.[source / 8] ?? 0) === 0 &&
       (homes?.[source / 8 + 1] ?? 0) === 0 &&
       (homes?.[target / 8] ?? 0) === 0 &&
       (homes?.[target / 8 + 1] ?? 0) === 0
     ) {
-      generalPair(9, source, true);
-      generalPair(9, target, false);
-      return;
+      if (source <= 504 && target <= 504) {
+        generalPair(9, source, true);
+        generalPair(9, target, false);
+        return;
+      }
+      if (currentHasScriptOps) {
+        rawLoad(9, source);
+        rawLoad(10, source + 8);
+        rawStore(9, target);
+        rawStore(10, target + 8);
+        return;
+      }
     }
     copyRawWord(source, target);
     copyRawWord(source + 8, target + 8);
@@ -6662,32 +6671,33 @@ function emitModuleForms(
           }
           return { results, signless };
         }
+        let hasScriptOps = fn.scriptEntry === true;
+        if (!hasScriptOps) {
+          for (const b of fn.blocks) {
+            if (b === undefined) continue;
+            for (const op of b.instructions) {
+              if (
+                op !== undefined &&
+                (op.kind === "element-load" ||
+                  op.kind === "element-store" ||
+                  op.kind === "general-element-load" ||
+                  op.kind === "general-element-store" ||
+                  op.kind === "general-slot-load" ||
+                  op.kind === "general-slot-store" ||
+                  op.kind === "property-load" ||
+                  op.kind === "property-store")
+              ) {
+                hasScriptOps = true;
+                break;
+              }
+            }
+            if (hasScriptOps) break;
+          }
+        }
+        currentHasScriptOps = hasScriptOps;
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
             rejected = new Uint8Array(resultBound);
-          let hasScriptOps = fn.scriptEntry === true;
-          if (!hasScriptOps) {
-            for (const b of fn.blocks) {
-              if (b === undefined) continue;
-              for (const op of b.instructions) {
-                if (
-                  op !== undefined &&
-                  (op.kind === "element-load" ||
-                    op.kind === "element-store" ||
-                    op.kind === "general-element-load" ||
-                    op.kind === "general-element-store" ||
-                    op.kind === "general-slot-load" ||
-                    op.kind === "general-slot-store" ||
-                    op.kind === "property-load" ||
-                    op.kind === "property-store")
-                ) {
-                  hasScriptOps = true;
-                  break;
-                }
-              }
-              if (hasScriptOps) break;
-            }
-          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "integer use block invariant";
             visitTerminatorOperands(block.terminator, (id) => {
@@ -7942,8 +7952,12 @@ function emitModuleForms(
           allowColdStubs =
             !debugSpans &&
             !forms.far &&
-            fn.blocks.length <= 512 &&
-            functionIrInstructions <= 4096,
+            (hasScriptOps
+              ? !forms.islands.has(fn.id) &&
+                !forms.longBranches.has(fn.id) &&
+                fn.blocks.length <= 2048 &&
+                functionIrInstructions <= 8192
+              : fn.blocks.length <= 512 && functionIrInstructions <= 4096),
           functionFixups = fixups.length;
         edgeWords.clear();
         edgeNurseryBase.clear();
@@ -15084,6 +15098,26 @@ function emitModuleForms(
               else directFloatTarget[targetValIdx] = destReg + 1;
             }
           }
+          const directGeneralTarget =
+            hasScriptOps && tracker === undefined
+              ? planDirectGeneralTargets({
+                  block: b,
+                  slots: fn.slots,
+                  slotOffset,
+                  valueUses,
+                  internValue: (id: number): number => valueIds.intern(id),
+                  foldedConstants,
+                  ...(fusion === undefined
+                    ? {}
+                    : {
+                        skippedStores: fusion.skipped,
+                        fusionAccessId: fusion.access,
+                        ...(fusion.test === undefined
+                          ? {}
+                          : { fusionTestId: fusion.test }),
+                      }),
+                })
+              : undefined;
           const loadFloatSelectArm = (
             arm: SelectArm,
             scratch: number,
@@ -16329,13 +16363,55 @@ function emitModuleForms(
                 break;
               }
               case "general-null":
-              case "general-none":
+              case "general-none": {
                 // Folded into the record-new fields that are its only uses.
                 if (foldedConstants[valueIds.intern(op.id)] === 1) break;
+                const directOffset = directGeneralTarget?.get(op.id);
+                if (directOffset !== undefined) {
+                  emittedDirectStore[valueIds.intern(op.id)] = 1;
+                  const pairSafe =
+                    directOffset <= 504 &&
+                    (scalarRegisters?.[directOffset / 8] ?? 0) === 0 &&
+                    (scalarRegisters?.[directOffset / 8 + 1] ?? 0) === 0;
+                  if (op.kind === "general-none") {
+                    if (pairSafe)
+                      emit({
+                        op: "stp",
+                        width: 64,
+                        rt: "zr",
+                        rt2: "zr",
+                        rn: "sp",
+                        offset: directOffset,
+                        mode: "offset",
+                      });
+                    else {
+                      rawStore("zr", directOffset);
+                      rawStore("zr", directOffset + 8);
+                    }
+                  } else {
+                    imm(9, 4);
+                    if (pairSafe)
+                      emit({
+                        op: "stp",
+                        width: 64,
+                        rt: 9,
+                        rt2: "zr",
+                        rn: "sp",
+                        offset: directOffset,
+                        mode: "offset",
+                      });
+                    else {
+                      rawStore(9, directOffset);
+                      rawStore("zr", directOffset + 8);
+                    }
+                  }
+                  break;
+                }
                 imm(9, op.kind === "general-null" ? 4 : 0);
                 saveRaw(9, op.id);
                 rawStore("zr", value(op.id).offset + 8);
                 break;
+              }
               case "script-argument-count":
                 rawLoad(9, scriptCountOffset);
                 emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
@@ -16694,6 +16770,19 @@ function emitModuleForms(
                       : t === "string"
                         ? 3
                         : 5;
+                const directOffset = directGeneralTarget?.get(op.id);
+                if (directOffset !== undefined) {
+                  emittedDirectStore[valueIds.intern(op.id)] = 1;
+                  if (t === "number" && storedAsInteger(op.value)) {
+                    floatLoad(0, op.value);
+                    emit({ op: "fmov-x-d", rd: 10, rn: 0 });
+                  } else {
+                    rawValue(10, op.value);
+                  }
+                  imm(9, tag);
+                  generalPair(9, directOffset, false);
+                  break;
+                }
                 if (t === "number" && storedAsInteger(op.value)) {
                   floatLoad(0, op.value);
                   emit({ op: "fmov-x-d", rd: 9, rn: 0 });
@@ -20773,8 +20862,8 @@ function emitModuleForms(
                     epochAt + 16 > 4088
                   )
                     throw "property cache layout invariant";
-                  rawLoad(10, value(op.object).offset + 8);
                   site = rawRegister(op.site, 11);
+                  rawLoad(10, value(op.object).offset + 8);
                   emit({
                     op: "ldr",
                     width: 64,
@@ -20783,11 +20872,11 @@ function emitModuleForms(
                     offset: shapeField.offset,
                   });
                 } else {
+                  site = rawRegister(op.site, 11);
                   generalPair(9, value(op.object).offset, true);
                   if (op.kind === "property-load" && op.inherited) {
                     if (epochAt + 16 > 4088)
                       throw "property cache layout invariant";
-                    site = rawRegister(op.site, 11);
                     emit({
                       op: "sub-imm",
                       width: 64,
@@ -20862,7 +20951,6 @@ function emitModuleForms(
                       setFlags: true,
                     });
                     miss();
-                    site = rawRegister(op.site, 11);
                     emit({
                       op: "ldr",
                       width: 64,
@@ -21078,11 +21166,22 @@ function emitModuleForms(
                   }
                   if (spillField !== undefined) {
                     if (spillCold) {
+                      // Use `cmp x13, #0; b.mi` (±1 MiB) instead of `tbnz`
+                      // (±32 KiB) so large script functions keep cold stubs;
+                      // this also sets Z for the inherited `csel` below.
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 13,
+                        immediate: 0,
+                        shift: 0,
+                        setFlags: true,
+                      });
                       spillBranch = instructions.length;
                       emit({
-                        op: "tbnz",
-                        rt: 13,
-                        bit: 63,
+                        op: "b.cond",
+                        condition: "mi",
                         displacement: 0,
                       });
                     } else {
@@ -21117,15 +21216,18 @@ function emitModuleForms(
                   if (op.inherited) {
                     // Slot 0 carries a direct inherited value in the cache
                     // entry (x14); positive slots are own receiver words (x9).
-                    emit({
-                      op: "sub-imm",
-                      width: 64,
-                      rd: "zr",
-                      rn: 13,
-                      immediate: 0,
-                      shift: 0,
-                      setFlags: true,
-                    });
+                    // When `spillCold` emitted `cmp x13, #0` above, `add-reg`
+                    // preserved Z so `csel eq` reuses it directly.
+                    if (!spillCold)
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 13,
+                        immediate: 0,
+                        shift: 0,
+                        setFlags: true,
+                      });
                     emit({
                       op: "csel",
                       width: 64,
@@ -21142,7 +21244,10 @@ function emitModuleForms(
                     });
                   const loadValueAt = instructions.length;
                   if (spillField !== undefined) stackWords.clear();
-                  const offset = value(op.id).offset,
+                  const directOffset = directGeneralTarget?.get(op.id);
+                  if (directOffset !== undefined)
+                    emittedDirectStore[valueIds.intern(op.id)] = 1;
+                  const offset = directOffset ?? value(op.id).offset,
                     tagHome = scalarRegisters?.[offset / 8] ?? 0,
                     payloadHome = scalarRegisters?.[offset / 8 + 1] ?? 0;
                   if (tagHome >= 32 && payloadHome >= 32)
@@ -21309,9 +21414,8 @@ function emitModuleForms(
                   if (spillCold)
                     coldStubs.push((): void => {
                       farBranch(spillBranch, {
-                        op: "tbnz",
-                        rt: 13,
-                        bit: 63,
+                        op: "b.cond",
+                        condition: "mi",
                         displacement: (instructions.length - spillBranch) * 4,
                       });
                       stackWords.clear();
@@ -21336,7 +21440,6 @@ function emitModuleForms(
                     siteShapeOffset: siteShape.offset,
                     shapeFieldOffset: shapeField.offset,
                     epochFieldOffset: epochField.offset,
-                    contextOffset,
                     useColdStubs,
                     generationalBarriers,
                     fusedMiss,
@@ -21356,27 +21459,26 @@ function emitModuleForms(
                     entryPair,
                     generalPair,
                     valueOffset: (id: number): number => value(id).offset,
-                    rawLoad,
                     rawTarget,
                     saveRaw,
                     rememberTransitionOrValue: (valueOffset: number): void => {
                       rememberObject(
-                        undefined,
-                        9,
-                        undefined,
+                        deferRememberSlow(),
+                        10,
+                        (): void => rawLoad(10, contextOffset),
                         (): readonly number[] => {
                           const transition = instructions.length;
                           emit({
                             op: "cbnz",
                             width: 64,
-                            rt: 12,
+                            rt: 11,
                             displacement: 0,
                           });
                           const skips = nonReferenceTag(valueOffset);
                           patchInstruction(transition, {
                             op: "cbnz",
                             width: 64,
-                            rt: 12,
+                            rt: 11,
                             displacement:
                               (instructions.length - transition) * 4,
                           });
@@ -22301,6 +22403,13 @@ function emitModuleForms(
                   isElement && fusion !== undefined && fusion.access === op.id
                     ? fusion.miss
                     : undefined;
+                const directOffset =
+                  op.kind === "general-element-load" ||
+                  op.kind === "general-slot-load"
+                    ? directGeneralTarget?.get(op.id)
+                    : undefined;
+                if (directOffset !== undefined)
+                  emittedDirectStore[valueIds.intern(op.id)] = 1;
                 const owner = fn.id;
                 emitGeneralElementAccess(
                   {
@@ -22308,6 +22417,9 @@ function emitModuleForms(
                     jsConvert,
                     contextOffset,
                     fusedMiss,
+                    ...(directOffset === undefined
+                      ? {}
+                      : { directTargetOffset: directOffset }),
                     instructionCount: (): number => instructions.length,
                     emit,
                     patchInstruction,
@@ -28415,12 +28527,23 @@ function emitModuleForms(
                   }
                   break;
                 }
-                copyRawWord(slotOffset(op.slot), value(op.id).offset);
                 if (
-                  value(op.id).type === "general" ||
-                  value(op.id).type === "optional-boolean"
+                  hasScriptOps &&
+                  (value(op.id).type === "general" ||
+                    value(op.id).type === "optional-boolean")
                 ) {
-                  copyRawWord(slotOffset(op.slot) + 8, value(op.id).offset + 8);
+                  copyGeneralPair(slotOffset(op.slot), value(op.id).offset);
+                } else {
+                  copyRawWord(slotOffset(op.slot), value(op.id).offset);
+                  if (
+                    value(op.id).type === "general" ||
+                    value(op.id).type === "optional-boolean"
+                  ) {
+                    copyRawWord(
+                      slotOffset(op.slot) + 8,
+                      value(op.id).offset + 8,
+                    );
+                  }
                 }
                 if (tracker !== undefined)
                   tracker.saved(op.id, instructions.length * 4);
@@ -31324,19 +31447,33 @@ function emitModuleForms(
                       importedEntry === undefined &&
                       directReturns !== undefined &&
                       directReturns[op.target] === 1);
-                  if (registerResult) saveRaw(1, resultId);
-                  else {
-                    rawLoad(9, resultOffset + 16);
-                    saveRaw(9, resultId);
-                  }
-                  if (
-                    value(resultId).type === "general" ||
-                    value(resultId).type === "optional-boolean"
-                  ) {
-                    if (registerResult) rawStore(2, value(resultId).offset + 8);
+                  const directOffset =
+                    listReadDone === undefined
+                      ? directGeneralTarget?.get(resultId)
+                      : undefined;
+                  if (directOffset !== undefined) {
+                    emittedDirectStore[valueIds.intern(resultId)] = 1;
+                    if (registerResult) generalPair(1, directOffset, false);
                     else {
-                      rawLoad(10, resultOffset + 24);
-                      rawStore(10, value(resultId).offset + 8);
+                      generalPair(9, resultOffset + 16, true);
+                      generalPair(9, directOffset, false);
+                    }
+                  } else {
+                    if (registerResult) saveRaw(1, resultId);
+                    else {
+                      rawLoad(9, resultOffset + 16);
+                      saveRaw(9, resultId);
+                    }
+                    if (
+                      value(resultId).type === "general" ||
+                      value(resultId).type === "optional-boolean"
+                    ) {
+                      if (registerResult)
+                        rawStore(2, value(resultId).offset + 8);
+                      else {
+                        rawLoad(10, resultOffset + 24);
+                        rawStore(10, value(resultId).offset + 8);
+                      }
                     }
                   }
                 }

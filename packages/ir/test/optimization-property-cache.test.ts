@@ -1361,3 +1361,553 @@ test("forwardDominatingProperties forwards redundant loads across disjoint store
     true,
   );
 });
+
+test("analyzeModulePropertySites resolves 2-level chunked $pc provenance and shape-based mangled factories", () => {
+  // Record 8 = 2-slot $pc chunk (reused for two distinct chunks with colliding leaf fields!)
+  // Record 9 = closure environment holding chunk0 at field 0 and chunk1 at field 1.
+  // Record 10 = inherited 1-entry PropertySite (shape, slot, general value, epoch, epochs, stringShape).
+  const chunkRecords: readonly RecordLayout[] = [
+    ...records,
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "reference", mutable: false },
+        { offset: 16, type: "reference", mutable: false },
+      ],
+    },
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "reference", mutable: false },
+        { offset: 16, type: "reference", mutable: false },
+      ],
+    },
+    {
+      byteLength: 64,
+      fields: [
+        { offset: 8, type: "reference", mutable: true },
+        { offset: 16, type: "number", mutable: true },
+        { offset: 24, type: "general", mutable: true },
+        { offset: 40, type: "number", mutable: true },
+        { offset: 48, type: "reference", mutable: true },
+        { offset: 56, type: "reference", mutable: true },
+      ],
+    },
+  ];
+  const inhPropLayout = {
+    ...propLayout,
+    siteRecord: 10,
+    inherited: true,
+  };
+  // Mangled factory name (not matching "createScriptPropertyCache"): detected by shape
+  // (param 0 is optional-string, constructs record 1 = PropertySite).
+  const mangledFactory: FunctionIR = {
+    id: 1,
+    name: "@44:value:23$906$direct",
+    exported: false,
+    parameters: [0, 1],
+    slots: ["optional-string", "reference"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 1, ...s },
+          { kind: "constant", id: 1, value: 0, ...s },
+          { kind: "constant", id: 2, value: 0, ...s },
+          {
+            kind: "record-new",
+            id: 3,
+            record: 1,
+            arguments: [0, 1, 2, 0, 0],
+            ...s,
+          },
+        ],
+        terminator: { kind: "return", value: 3, ...s },
+      },
+    ],
+  };
+  // Builds chunk0 = { "alpha", "beta" } and chunk1 = { "gamma", "delta" }
+  // using the SAME RecordLayout 8, then stores both chunks into env RecordLayout 9.
+  const initChunks: FunctionIR = {
+    id: 2,
+    name: "initChunkedSites",
+    exported: false,
+    parameters: [0],
+    slots: ["reference"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 15, slot: 0, ...s },
+          { kind: "string-literal", id: 0, value: "alpha", ...s },
+          { kind: "string-wrap", id: 1, value: 0, ...s },
+          { kind: "call", id: 2, target: 1, arguments: [1, 15], ...s },
+          { kind: "string-literal", id: 3, value: "beta", ...s },
+          { kind: "string-wrap", id: 4, value: 3, ...s },
+          { kind: "call", id: 5, target: 1, arguments: [4, 15], ...s },
+          { kind: "record-new", id: 6, record: 8, arguments: [2, 5], ...s },
+          { kind: "string-literal", id: 7, value: "gamma", ...s },
+          { kind: "string-wrap", id: 8, value: 7, ...s },
+          { kind: "call", id: 9, target: 1, arguments: [8, 15], ...s },
+          { kind: "string-literal", id: 10, value: "delta", ...s },
+          { kind: "string-wrap", id: 11, value: 10, ...s },
+          { kind: "call", id: 12, target: 1, arguments: [11, 15], ...s },
+          { kind: "record-new", id: 13, record: 8, arguments: [9, 12], ...s },
+          { kind: "record-new", id: 14, record: 9, arguments: [6, 13], ...s },
+        ],
+        terminator: { kind: "return", value: 14, ...s },
+      },
+    ],
+  };
+  // Consumer reads chunk0.0 ("alpha") and chunk1.0 ("gamma") via a single reused
+  // temp slot (slot 3), probes own "alpha" then inherited "alpha" (must NOT forward
+  // own -> inherited!), probes "gamma" (different key!), then probes own "alpha" via
+  // copy-aliased slot 4 (MUST forward!).
+  // slots: 0=obj(gen), 1=env(ref rec9), 2=chunk(ref rec8), 3=siteTmp(ref),
+  //        4=aliasObj(gen), 5=out1(gen), 6=out2(gen), 7=out3(gen)
+  const consumer: FunctionIR = {
+    id: 0,
+    name: "chunkedConsumer",
+    exported: true,
+    parameters: [0, 1],
+    slots: [
+      "general",
+      "reference",
+      "reference",
+      "reference",
+      "general",
+      "general",
+      "general",
+      "general",
+    ],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      // b0: aliasObj = obj; chunk = env.0 (chunk0) -> b1
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "store", slot: 4, value: 0, ...s },
+          { kind: "load", id: 1, slot: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 1,
+          record: 9,
+          field: 0,
+          slot: 2,
+          consequent: 1,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // b1: siteTmp = chunk0.0 ("alpha") -> b2
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 2, slot: 2, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 2,
+          record: 8,
+          field: 0,
+          slot: 3,
+          consequent: 2,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // b2: own load obj.alpha (id 5), inherited load obj.alpha (id 8), chunk = env.1 -> b3
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 3, slot: 0, ...s },
+          { kind: "load", id: 4, slot: 3, ...s },
+          {
+            kind: "property-load",
+            id: 5,
+            object: 3,
+            site: 4,
+            ...propLayout,
+            inherited: false,
+            ...s,
+          },
+          { kind: "store", slot: 5, value: 5, ...s },
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 3, ...s },
+          {
+            kind: "property-load",
+            id: 8,
+            object: 6,
+            site: 7,
+            ...inhPropLayout,
+            ...s,
+          },
+          { kind: "store", slot: 6, value: 8, ...s },
+          { kind: "load", id: 9, slot: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 9,
+          record: 9,
+          field: 1,
+          slot: 2,
+          consequent: 3,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // b3: siteTmp = chunk1.0 ("gamma") -> b4
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 10, slot: 2, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 10,
+          record: 8,
+          field: 0,
+          slot: 3,
+          consequent: 4,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // b4: own load obj.gamma (id 13), chunk = env.0 -> b5
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 11, slot: 0, ...s },
+          { kind: "load", id: 12, slot: 3, ...s },
+          {
+            kind: "property-load",
+            id: 13,
+            object: 11,
+            site: 12,
+            ...propLayout,
+            inherited: false,
+            ...s,
+          },
+          { kind: "load", id: 14, slot: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 14,
+          record: 9,
+          field: 0,
+          slot: 2,
+          consequent: 5,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // b5: siteTmp = chunk0.0 ("alpha") -> b6
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 15, slot: 2, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 15,
+          record: 8,
+          field: 0,
+          slot: 3,
+          consequent: 6,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // b6: redundant own load aliasObj.alpha (id 18) -> must forward!
+      {
+        id: 6,
+        instructions: [
+          { kind: "load", id: 16, slot: 4, ...s },
+          { kind: "load", id: 17, slot: 3, ...s },
+          {
+            kind: "property-load",
+            id: 18,
+            object: 16,
+            site: 17,
+            ...propLayout,
+            inherited: false,
+            ...s,
+          },
+          { kind: "store", slot: 7, value: 18, ...s },
+        ],
+        terminator: { kind: "return", value: 18, ...s },
+      },
+      { id: 7, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+
+  const module: ModuleIR = {
+    records: chunkRecords,
+    functions: [consumer, mangledFactory, initChunks],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const shared = analyzeModulePropertySites(module, 100000);
+  assert.ok(shared !== undefined);
+  // Colliding leaf keys `8:0` and `8:1` must be eliminated, while 2-level keys survive.
+  assert.equal(shared.siteFieldName.get("8:0"), undefined);
+  assert.equal(shared.siteFieldName.get("8:1"), undefined);
+  assert.equal(shared.siteFieldName.get("9:0->8:0"), "alpha");
+  assert.equal(shared.siteFieldName.get("9:0->8:1"), "beta");
+  assert.equal(shared.siteFieldName.get("9:1->8:0"), "gamma");
+  assert.equal(shared.siteFieldName.get("9:1->8:1"), "delta");
+
+  const result = forwardDominatingProperties(
+    consumer,
+    module,
+    100000,
+    undefined,
+    shared,
+  );
+  assert.ok(result !== undefined);
+  // Only id 18 (redundant own load of aliasObj.alpha in b6) forwards; id 8 (inherited)
+  // and id 13 (gamma) must both remain intact.
+  assert.equal(result.rewritten, 1);
+  const outModule: ModuleIR = {
+    records: chunkRecords,
+    functions: [result.fn, mangledFactory, initChunks],
+  };
+  assert.ok(verify(outModule).ok, JSON.stringify(verify(outModule)));
+  assert.equal(
+    result.fn.blocks[2]!.instructions.filter(
+      (op) => op.kind === "property-load",
+    ).length,
+    2,
+  );
+  assert.equal(
+    result.fn.blocks[4]!.instructions.filter(
+      (op) => op.kind === "property-load",
+    ).length,
+    1,
+  );
+  assert.equal(
+    result.fn.blocks[6]!.instructions.filter(
+      (op) => op.kind === "property-load",
+    ).length,
+    0,
+  );
+});
+
+test("forwardDominatingProperties forwards dominating global-cell probes and refreshes after cold miss", () => {
+  const gcRecords: readonly RecordLayout[] = [
+    ...records,
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "reference", mutable: false },
+        { offset: 16, type: "reference", mutable: false },
+      ],
+    },
+  ];
+  // Helper that mutates Global.lexicalEpoch (record 4 field 0) to invalidate global-cell.
+  const globalInvalidator: FunctionIR = {
+    id: 1,
+    name: "bumpLexicalEpoch",
+    exported: false,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "constant", id: 1, value: 1, ...s },
+          { kind: "store", slot: 1, value: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "write",
+          object: 0,
+          record: 4,
+          field: 0,
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "constant", id: 2, value: 0, ...s }],
+        terminator: { kind: "return", value: 2, ...s },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  // slots: 0=scope(ref), 1=gcHolder(ref rec8), 2=globalRef(ref rec4),
+  //        3=cache0(ref), 4=cache1(ref), 5=c1(opt-ref), 6=c2(opt-ref), 7=c3(opt-ref),
+  //        8=obj(general)
+  const fn: FunctionIR = {
+    id: 0,
+    name: "dominatingGlobalCell",
+    exported: true,
+    parameters: [0, 1, 2, 8],
+    slots: [
+      "reference",
+      "reference",
+      "reference",
+      "reference",
+      "reference",
+      "optional-reference",
+      "optional-reference",
+      "optional-reference",
+      "general",
+    ],
+    returnType: "optional-reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 1, ...s },
+          { kind: "load", id: 16, slot: 8, ...s },
+          {
+            kind: "property-load",
+            id: 17,
+            object: 16,
+            site: 0,
+            ...propLayout,
+            siteRecord: 1,
+            ...s,
+          },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 0,
+          record: 8,
+          field: 0,
+          slot: 3,
+          consequent: 1,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 1,
+          record: 8,
+          field: 1,
+          slot: 4,
+          consequent: 2,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          // First global-cell lookup for cache0
+          { kind: "load", id: 3, slot: 0, ...s },
+          { kind: "load", id: 4, slot: 3, ...s },
+          {
+            kind: "global-cell",
+            id: 5,
+            scope: 3,
+            cache: 4,
+            ...globalLayout,
+            ...s,
+          },
+          { kind: "store", slot: 5, value: 5, ...s },
+          // Sibling global-cell lookup for cache1 with a cold miss branch
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 4, ...s },
+          {
+            kind: "global-cell",
+            id: 8,
+            scope: 6,
+            cache: 7,
+            ...globalLayout,
+            ...s,
+          },
+          { kind: "store", slot: 6, value: 8, ...s },
+          { kind: "reference-none", id: 9, ...s },
+          { kind: "binary", id: 10, operator: "===", left: 8, right: 9, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 10,
+          consequent: 3,
+          alternate: 4,
+          ...s,
+        },
+      },
+      // Cold miss for cache1: calls epochWriterHelper (invalidating!)
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 11, slot: 2, ...s },
+          { kind: "call", id: 12, target: 1, arguments: [11], ...s },
+        ],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      // Second global-cell lookup for cache0: must forward from probeSlot while block 3 refreshes it.
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 13, slot: 0, ...s },
+          { kind: "load", id: 14, slot: 3, ...s },
+          {
+            kind: "global-cell",
+            id: 15,
+            scope: 13,
+            cache: 14,
+            ...globalLayout,
+            ...s,
+          },
+          { kind: "store", slot: 7, value: 15, ...s },
+        ],
+        terminator: { kind: "return", value: 15, ...s },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+
+  const module: ModuleIR = {
+    records: gcRecords,
+    functions: [fn, globalInvalidator],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const shared = analyzeModulePropertySites(module, 100000);
+  assert.ok(shared !== undefined);
+  const result = forwardDominatingProperties(
+    fn,
+    module,
+    100000,
+    undefined,
+    shared,
+  );
+  assert.ok(result !== undefined);
+  assert.equal(result.rewritten, 1);
+  const outModule: ModuleIR = {
+    records: gcRecords,
+    functions: [result.fn, globalInvalidator],
+  };
+  assert.ok(verify(outModule).ok, JSON.stringify(verify(outModule)));
+  // Block 4 should no longer execute global-cell; cold miss block 3 refreshes it.
+  assert.equal(
+    result.fn.blocks[4]!.instructions.some((op) => op.kind === "global-cell"),
+    false,
+  );
+  assert.equal(
+    result.fn.blocks[3]!.instructions.some((op) => op.kind === "global-cell"),
+    true,
+  );
+});

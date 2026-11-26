@@ -1290,10 +1290,15 @@ function lowerScriptEntry(
   ): readonly Expression[] {
     const key = String(span.start) + ":" + String(span.end);
     if (!globalIdentifierSites.has(key)) return args;
-    let index = globalIdentifierCaches.get(key);
+    const nameArg = args[1];
+    const cacheKey =
+      !dynamicBindings && nameArg !== undefined && nameArg.kind === "string"
+        ? "name:" + nameArg.value
+        : key;
+    let index = globalIdentifierCaches.get(cacheKey);
     if (index === undefined) {
       index = globalCacheInitializers.length;
-      globalIdentifierCaches.set(key, index);
+      globalIdentifierCaches.set(cacheKey, index);
       globalCacheInitializers.push(
         call("createGlobalIdentifierCache", [], generated),
       );
@@ -4583,7 +4588,7 @@ function lowerScriptEntry(
       isFreeIdentifierShadowed: (_name: string): boolean => false,
       emitFreeIdentifier: (
         out: Statement[],
-        _name: string,
+        name: string,
         s: Span,
         bailLabel: string,
       ): Expression | undefined => {
@@ -4648,10 +4653,11 @@ function lowerScriptEntry(
         }
         const gKey = String(s.start) + ":" + String(s.end);
         if (globalIdentifierSites.has(gKey) && !dynamicBindings) {
-          let gIndex = globalIdentifierCaches.get(gKey);
+          const cacheKey = "name:" + name;
+          let gIndex = globalIdentifierCaches.get(cacheKey);
           if (gIndex === undefined) {
             gIndex = globalCacheInitializers.length;
-            globalIdentifierCaches.set(gKey, gIndex);
+            globalIdentifierCaches.set(cacheKey, gIndex);
             globalCacheInitializers.push(
               call("createGlobalIdentifierCache", [], generated),
             );

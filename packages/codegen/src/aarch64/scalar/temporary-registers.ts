@@ -18,9 +18,8 @@ function transparent(op: Instruction): boolean {
     op.kind === "record-read" ||
     // A slot read uses x9, x10, x12 and d0/d1 only.
     op.kind === "record-slot-read" ||
-    // An own cached property load uses x9..x13 only (an inherited one
-    // also x14), none of them a temporary home.
-    (op.kind === "property-load" && !op.inherited) ||
+    // Cached property loads use x9..x15 only, none of them a temporary home.
+    op.kind === "property-load" ||
     // Element loads, stores, length reads, and cache probes use x9..x13, d0 and d1 only.
     op.kind === "element-load" ||
     op.kind === "element-store" ||

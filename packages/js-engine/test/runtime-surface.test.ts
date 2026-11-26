@@ -18,7 +18,7 @@ const corpus = [
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "5ed39d620af1b0d6a48002a1c699a1d62eab48fab09fb2411eb2f6522b9e2bf5",
+    sha256: "cf4aa4a680f17392d953b9cf1b5ada48d7772020b4d8082c2b5e1d9895de471e",
   },
   {
     source:
