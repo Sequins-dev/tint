@@ -4819,29 +4819,72 @@ export function emitModule(
           branch(emit, "ne", missed);
           emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
           emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
-          const siteShape = recordField(op.siteRecord, op.siteField);
-          emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
-          emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
-          branch(emit, "ne", missed);
-          const transition = recordField(op.siteRecord, op.siteField + 2),
-            epoch = recordField(op.siteRecord, op.siteField + 3),
-            epochRecord = recordField(op.siteRecord, op.siteField + 4),
+          const storeEntries = op.entries ?? 1;
+          const epochRecord = recordField(
+              op.siteRecord,
+              op.siteField + storeEntries * 4,
+            ),
             current = recordField(op.epochRecord, op.epochField);
-          const existing = site + ":existing";
-          emit({ op: "mov", dst: scratch, src: mem(10, transition.offset) });
-          emit({ op: "test", dst: scratch, src: scratch });
-          branch(emit, "e", existing);
-          emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
-          emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
-          emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
-          branch(emit, "ne", missed);
-          emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
-          emit({ op: "label", name: existing });
+          emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+          for (let entry = 0; entry < storeEntries; entry++) {
+            const entryShape = recordField(
+              op.siteRecord,
+              op.siteField + entry * 4,
+            );
+            emit({ op: "cmp", dst: rax, src: mem(10, entryShape.offset) });
+            if (entry === storeEntries - 1) {
+              branch(emit, "ne", missed);
+            } else {
+              branch(emit, "e", site + ":se" + String(entry));
+            }
+          }
+          const lastStore = op.siteField + (storeEntries - 1) * 4;
+          emit({
+            op: "mov",
+            dst: scratch,
+            src: mem(10, recordField(op.siteRecord, lastStore + 2).offset),
+          });
+          emit({
+            op: "mov",
+            dst: rdx,
+            src: mem(10, recordField(op.siteRecord, lastStore + 3).offset),
+          });
           emit({
             op: "mov",
             dst: rax,
-            src: mem(10, recordField(op.siteRecord, op.siteField + 1).offset),
+            src: mem(10, recordField(op.siteRecord, lastStore + 1).offset),
           });
+          if (storeEntries > 1) emit({ op: "jmp", target: label(hit) });
+          for (let entry = 0; entry < storeEntries - 1; entry++) {
+            const first = op.siteField + entry * 4;
+            emit({ op: "label", name: site + ":se" + String(entry) });
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: mem(10, recordField(op.siteRecord, first + 2).offset),
+            });
+            emit({
+              op: "mov",
+              dst: rdx,
+              src: mem(10, recordField(op.siteRecord, first + 3).offset),
+            });
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(10, recordField(op.siteRecord, first + 1).offset),
+            });
+            if (entry < storeEntries - 2)
+              emit({ op: "jmp", target: label(hit) });
+          }
+          if (storeEntries > 1) emit({ op: "label", name: hit });
+          const existing = site + ":existing";
+          emit({ op: "test", dst: scratch, src: scratch });
+          branch(emit, "e", existing);
+          emit({ op: "mov", dst: r8, src: mem(10, epochRecord.offset) });
+          emit({ op: "cmp", dst: rdx, src: mem(8, current.offset) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
+          emit({ op: "label", name: existing });
           const word = (disp: number): Memory<64> => ({
             kind: "mem",
             width: 64,
@@ -5064,6 +5107,227 @@ export function emitModule(
           emit({ op: "xor", dst: eax, src: eax });
           emit({ op: "label", name: done });
           define(op.id, "general");
+          return;
+        }
+        case "general-element-load":
+        case "general-element-store":
+        case "general-slot-load":
+        case "general-slot-store": {
+          const isElement =
+            op.kind === "general-element-load" ||
+            op.kind === "general-element-store";
+          const isLoad =
+            op.kind === "general-element-load" ||
+            op.kind === "general-slot-load";
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          let tagsOffset = 0,
+            refsOffset = 0,
+            numbersOffset = 0,
+            slotTags = 0,
+            slotRefs = 0,
+            slotNumbers = 0;
+          if (
+            op.kind === "general-element-load" ||
+            op.kind === "general-element-store"
+          ) {
+            const elements = recordField(op.record, op.field),
+              count = recordField(op.elementsRecord, op.countField);
+            tagsOffset = recordField(op.elementsRecord, op.tagsField).offset;
+            refsOffset = recordField(op.elementsRecord, op.refsField).offset;
+            numbersOffset = recordField(
+              op.elementsRecord,
+              op.numbersField,
+            ).offset;
+            emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+            address(scratch, descriptor(op.record));
+            emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+            emit({ op: "test", dst: gpr(10), src: gpr(10) });
+            branch(emit, "e", missed);
+            exactInteger(emit, frame(home(op.index)), r9, missed);
+            emit({ op: "movsd", dst: xmm(1), src: mem(10, count.offset) });
+            emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
+            emit({ op: "cmp", dst: r9, src: rax });
+            branch(emit, "ae", missed);
+          } else {
+            slotTags = op.tags;
+            slotRefs = op.refs;
+            slotNumbers = op.numbers;
+            emit({ op: "movsd", dst: xmm(0), src: frame(home(op.index)) });
+            emit({ op: "cvttsd2si", dst: r9, src: xmm(0) });
+          }
+          function loadSrc(fieldOffset: number, valId: number): Memory<64> {
+            return isElement ? mem(10, fieldOffset) : frame(home(valId));
+          }
+          if (
+            op.kind === "general-element-load" ||
+            op.kind === "general-slot-load"
+          ) {
+            const refLoad = site + ":ref",
+              numLoad = site + ":num",
+              zeroPayload = site + ":zero",
+              notRef5 = site + ":not5";
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: loadSrc(tagsOffset, slotTags),
+            });
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: mem(11, nativeArrayDataOffset),
+            });
+            const tagByte: Memory<8> = {
+              kind: "mem",
+              width: 8,
+              address: { kind: "base", base: 11, index: 9, scale: 1, disp: 0 },
+            };
+            emit({ op: "movzx", dst: eax, src: tagByte });
+            emit({ op: "cmp", dst: rax, src: imm(5) });
+            branch(emit, "ne", notRef5);
+            emit({ op: "label", name: refLoad });
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: loadSrc(refsOffset, slotRefs),
+            });
+            const refSlot: Memory<64> = {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 9,
+                scale: 8,
+                disp: nativeArrayInlineOffset,
+              },
+            };
+            emit({ op: "mov", dst: rdx, src: refSlot });
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: rdx });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: notRef5 });
+            emit({ op: "cmp", dst: rax, src: imm(3) });
+            branch(emit, "e", refLoad);
+            emit({ op: "cmp", dst: rax, src: imm(1) });
+            branch(emit, "e", numLoad);
+            emit({ op: "cmp", dst: rax, src: imm(6) });
+            branch(emit, "ne", zeroPayload);
+            emit({ op: "mov", dst: eax, src: imm(2) });
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: zeroPayload });
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(0) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: numLoad });
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: loadSrc(numbersOffset, slotNumbers),
+            });
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: mem(11, nativeArrayDataOffset),
+            });
+            const numSlot: Memory<64> = {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+            };
+            emit({ op: "mov", dst: rdx, src: numSlot });
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: rdx });
+            if (isElement) {
+              emit({ op: "jmp", target: label(done) });
+              emit({ op: "label", name: missed });
+              emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+              emit({ op: "xor", dst: eax, src: eax });
+            }
+            emit({ op: "label", name: done });
+            define(op.id, "general");
+            return;
+          }
+          const storeNum = site + ":snum",
+            storeRef = site + ":sref",
+            writePrim = site + ":sprim",
+            hit = site + ":hit";
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          emit({ op: "mov", dst: rdx, src: frame(home(op.value) + 8) });
+          emit({ op: "cmp", dst: rax, src: imm(1) });
+          branch(emit, "e", storeNum);
+          emit({ op: "mov", dst: r8, src: loadSrc(tagsOffset, slotTags) });
+          emit({ op: "mov", dst: r8, src: mem(8, nativeArrayDataOffset) });
+          emit({ op: "mov", dst: scratch, src: loadSrc(refsOffset, slotRefs) });
+          const tagByteW: Memory<8> = {
+            kind: "mem",
+            width: 8,
+            address: { kind: "base", base: 8, index: 9, scale: 1, disp: 0 },
+          };
+          const refSlotW: Memory<64> = {
+            kind: "mem",
+            width: 64,
+            address: {
+              kind: "base",
+              base: 11,
+              index: 9,
+              scale: 8,
+              disp: nativeArrayInlineOffset,
+            },
+          };
+          emit({ op: "cmp", dst: rax, src: imm(5) });
+          branch(emit, "e", storeRef);
+          emit({ op: "cmp", dst: rax, src: imm(3) });
+          branch(emit, "e", storeRef);
+          emit({ op: "cmp", dst: rax, src: imm(2) });
+          branch(emit, "ne", writePrim);
+          emit({ op: "test", dst: rdx, src: rdx });
+          branch(emit, "e", writePrim);
+          emit({ op: "mov", dst: eax, src: imm(6) });
+          emit({ op: "label", name: writePrim });
+          emit({ op: "mov", dst: tagByteW, src: byte(0) });
+          emit({ op: "mov", dst: refSlotW, src: imm(0) });
+          emit({ op: "jmp", target: label(hit) });
+          emit({ op: "label", name: storeRef });
+          emit({ op: "mov", dst: tagByteW, src: byte(0) });
+          emit({ op: "mov", dst: refSlotW, src: rdx });
+          emit({ op: "mov", dst: r9, src: scratch });
+          remember();
+          emit({ op: "jmp", target: label(hit) });
+          emit({ op: "label", name: storeNum });
+          emit({
+            op: "mov",
+            dst: r8,
+            src: loadSrc(numbersOffset, slotNumbers),
+          });
+          emit({
+            op: "cmp",
+            dst: r9,
+            src: mem(8, nativeArrayLengthOffset),
+          });
+          branch(emit, "ae", missed);
+          emit({ op: "mov", dst: r8, src: mem(8, nativeArrayDataOffset) });
+          const numSlotW: Memory<64> = {
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 8, index: 9, scale: 8, disp: 0 },
+          };
+          emit({ op: "mov", dst: numSlotW, src: rdx });
+          emit({ op: "mov", dst: r8, src: loadSrc(tagsOffset, slotTags) });
+          emit({ op: "mov", dst: r8, src: mem(8, nativeArrayDataOffset) });
+          emit({ op: "mov", dst: tagByteW, src: byte(0) });
+          emit({ op: "mov", dst: scratch, src: loadSrc(refsOffset, slotRefs) });
+          emit({ op: "mov", dst: refSlotW, src: imm(0) });
+          emit({ op: "label", name: hit });
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "boolean");
           return;
         }
         case "element-length": {

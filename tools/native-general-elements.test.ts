@@ -748,6 +748,56 @@ function cachedLoops() {
   out.push(objProtoPush.length, Object.hasOwn(objProtoPush, 2), objProtoPush[3], objProtoSeen);
   return out.join(",");
 }
+function flatGeneralArrays() {
+  const out = [];
+  // Exercise every flat general-array tag kind (undefined, null, true, false,
+  // -0, NaN, finite number, string, object) plus number->general promotion.
+  const mixed = [];
+  const objs = [];
+  for (let i = 0; i < 64; i++) objs.push({ id: i, tag: "v" + i });
+  mixed.push(objs[0], "alpha", true, false, null, undefined, -0, NaN, 3.25, objs[63]);
+  out.push(
+    mixed.length,
+    mixed[0].id,
+    mixed[1],
+    mixed[2],
+    mixed[3],
+    String(mixed[4]),
+    String(mixed[5]),
+    Object.is(mixed[6], -0),
+    Number.isNaN(mixed[7]),
+    mixed[8],
+    mixed[9].tag,
+  );
+  // Overwrite across tag transitions in place.
+  mixed[0] = 99;
+  mixed[1] = false;
+  mixed[2] = objs[12];
+  mixed[6] = "now-str";
+  mixed[8] = null;
+  out.push(mixed[0], mixed[1], mixed[2].id, mixed[6], String(mixed[8]));
+  // Number array promoting to flat general array on object write.
+  const promoted = [1, 2, 3, 4];
+  promoted[2] = objs[7];
+  promoted.push("tail", true, -0);
+  out.push(promoted.length, promoted[0], promoted[2].id, promoted[4], promoted[5], Object.is(promoted[6], -0));
+  // GC churn over a large flat general array with pop + truncate + refill.
+  const retained = [];
+  for (let i = 0; i < 120; i++) {
+    retained.push({ k: i, nested: { s: "n" + i } });
+  }
+  for (let g = 0; g < 1500; g++) {
+    const tmp = { a: g, b: g + 1, c: [g, "x" + g] };
+    if (tmp.a < 0) out.push("never");
+  }
+  let sum = 0;
+  for (let i = 0; i < retained.length; i++) sum += retained[i].k;
+  const popped = retained.pop();
+  retained.length = 50;
+  retained.push({ k: 500, nested: { s: "new" } }, "after-trunc", 7.5);
+  out.push(sum, popped.k, popped.nested.s, retained.length, retained[49].nested.s, retained[50].k, retained[51], retained[52]);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -761,6 +811,7 @@ export function sections() {
     literals(),
     popAndSpecLoops(),
     cachedLoops(),
+    flatGeneralArrays(),
   ];
 }
 `;
@@ -778,7 +829,7 @@ test("element access keeps JavaScript semantics on every receiver and key", asyn
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 11);
+  assert.equal(expected.length, 12);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

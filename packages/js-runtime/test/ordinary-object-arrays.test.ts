@@ -28,6 +28,7 @@ const arrayHooks: objects.ArrayObjectHooks<ScriptPropertyKey, unknown> = {
     typeof value === "number" ? value : undefined,
   toNumber: Number,
   fromNumber: (value: number): unknown => value,
+  fromGeneral: (value: unknown): unknown => value,
   rangeError: (): unknown => new RangeError(),
 };
 function array(
@@ -59,7 +60,7 @@ function resize(
 }
 test("array indices extend length but named properties and deletion do not", () => {
   const a = array(2);
-  assert.equal(a.internalArrayData, true);
+  assert.equal((a.internalFlags & 8) !== 0, true);
   assert.equal(objects.getOwnProperty(a, "0"), undefined);
   assert.equal(objects.createDataProperty(a, "4", 42, hooks), true);
   assert.equal(length(a), 5);
@@ -176,6 +177,7 @@ test("array list copies create fresh dense own elements from an argument suffix"
     objects.createObject<ScriptPropertyKey, unknown>(undefined),
     hooks,
   );
+  realm.cleanArrayPushEpoch = realm.propertyEpoch.value;
   const values = [1, undefined, 42];
   const result = objects.createArrayFromList(
     values,
@@ -323,14 +325,14 @@ test("storing a non-number switches number elements to values once", () => {
   put(a, "1", NaN);
   put(a, "2", 2);
   const before = a.internalArrayElements!;
-  assert.equal(before.values, undefined);
+  assert.equal(before.generalCount, 0);
   assert.equal(before.numberCount, 3);
   const object = objects.createObject<ScriptPropertyKey, unknown>(undefined);
   put(a, "1", object);
   put(a, "3", "three");
   const after = a.internalArrayElements!;
   assert.equal(after.numberCount, 0);
-  assert.notEqual(after.values, undefined);
+  assert.equal(after.generalCount, 4);
   assert.ok(Object.is(get(a, "0"), -0));
   assert.equal(get(a, "1"), object);
   assert.equal(get(a, "2"), 2);
@@ -345,17 +347,16 @@ test("number elements grow in place and an emptied array starts over as numbers"
   const a = array();
   for (let i = 0; i < 100; i++) put(a, String(i), i / 2);
   const elements = a.internalArrayElements!;
-  assert.equal(elements.values, undefined);
+  assert.equal(elements.generalCount, 0);
   assert.equal(elements.numberCount, 100);
   assert.ok(elements.numbers.length >= 100);
   assert.equal(get(a, "99"), 49.5);
   put(a, "100", "text");
   assert.equal(elements.numberCount, 0);
-  // Read through the object: the assertion above narrowed `elements.values`.
-  assert.equal(a.internalArrayElements?.values?.length, 101);
+  assert.equal(a.internalArrayElements?.generalCount, 101);
   assert.equal(get(a, "99"), 49.5);
   assert.equal(resize(a, 0), "accepted");
-  assert.equal(elements.values, undefined);
+  assert.equal(elements.generalCount, 0);
   assert.equal(elements.numberCount, 0);
   put(a, "0", 7);
   assert.equal(elements.numberCount, 1);
@@ -694,38 +695,39 @@ test("fixed-arity small array builders produce packed number and value arrays", 
     objects.createObject<ScriptPropertyKey, unknown>(undefined),
     hooks,
   );
+  realm.cleanArrayPushEpoch = realm.propertyEpoch.value;
   const a0 = objects.createArray0(realm);
   assert.equal(length(a0), 0);
   assert.equal(a0.prototype, realm.arrayPrototype);
   assert.equal(a0.properties, undefined);
-  assert.equal(a0.internalArrayElements?.values, undefined);
+  assert.equal(a0.internalArrayElements?.generalCount, 0);
 
   const a1 = objects.createArray1(-0, realm);
   assert.equal(length(a1), 1);
-  assert.equal(a1.internalArrayElements?.values, undefined);
+  assert.equal(a1.internalArrayElements?.generalCount, 0);
   assert.ok(Object.is(get(a1, "0"), -0));
 
   const a2 = objects.createArray2(1, "two", realm);
   assert.equal(length(a2), 2);
-  assert.notEqual(a2.internalArrayElements?.values, undefined);
+  assert.equal(a2.internalArrayElements?.generalCount, 2);
   assert.equal(get(a2, "0"), 1);
   assert.equal(get(a2, "1"), "two");
 
   const a3 = objects.createArray3(1, NaN, 3.5, realm);
   assert.equal(length(a3), 3);
-  assert.equal(a3.internalArrayElements?.values, undefined);
+  assert.equal(a3.internalArrayElements?.generalCount, 0);
   assert.equal(Number.isNaN(get(a3, "1")), true);
   assert.equal(get(a3, "2"), 3.5);
 
   const marker = objects.createObject<ScriptPropertyKey, unknown>(undefined);
   const a4Num = objects.createArray4(10, 20, 30, 40, realm);
   assert.equal(length(a4Num), 4);
-  assert.equal(a4Num.internalArrayElements?.values, undefined);
+  assert.equal(a4Num.internalArrayElements?.generalCount, 0);
   assert.equal(get(a4Num, "3"), 40);
 
   const a4Mix = objects.createArray4(10, marker, undefined, 40, realm);
   assert.equal(length(a4Mix), 4);
-  assert.notEqual(a4Mix.internalArrayElements?.values, undefined);
+  assert.equal(a4Mix.internalArrayElements?.generalCount, 4);
   assert.equal(get(a4Mix, "1"), marker);
   assert.equal(objects.getOwnProperty(a4Mix, "2")?.value, undefined);
 });
@@ -841,4 +843,75 @@ test("ScriptMap enforces SameValueZero, rehashes, and supports live cursors", ()
   assert.deepEqual(visited, ["a:1", "c:3"]);
   assert.equal(live.size, 0);
   assert.equal(advanceScriptMapCursor(cursor), false);
+});
+
+test("flat general arrays preserve all tag kinds, allocate numbers lazily, and clear refs on shrink", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  realm.cleanArrayPushEpoch = realm.propertyEpoch.value;
+  const objA = objects.createObject<ScriptPropertyKey, unknown>(undefined);
+  const objB = objects.createObject<ScriptPropertyKey, unknown>(undefined);
+  const a = objects.createArray2(objA, "hello", realm);
+  const elements = a.internalArrayElements;
+  assert.ok(elements !== undefined);
+  assert.equal(elements.generalCount, 2);
+  // No number written yet -> lazy numbers Float64Array stays empty.
+  assert.equal(elements.numbers.length, 0);
+  const readSlot = (index: number): unknown =>
+    objects.readGeneralSlot(
+      elements.generalTags,
+      elements.generalRefs,
+      elements.numbers,
+      index,
+    );
+  assert.equal(readSlot(0), objA);
+  assert.equal(readSlot(1), "hello");
+
+  // Push mixed tag kinds via put (grow) and scriptArrayPushFast (in-capacity).
+  const pushOne = (v: unknown): number => {
+    const fast = objects.scriptArrayPushFast(a, v, realm);
+    if (fast >= 0) return fast;
+    const idx = Number(length(a));
+    assert.equal(put(a, String(idx), v), true);
+    return Number(length(a));
+  };
+  assert.equal(pushOne(true), 3);
+  // Capacity doubled to >= 4 -> next non-number push hits scriptArrayPushFast directly.
+  assert.equal(objects.scriptArrayPushFast(a, false, realm), 4);
+  assert.equal(pushOne(null), 5);
+  assert.equal(objects.scriptArrayPushFast(a, undefined, realm), 6);
+  assert.equal(elements.numbers.length, 0);
+  assert.equal(pushOne(-0), 7);
+  assert.ok(elements.numbers.length >= 7);
+  assert.equal(objects.scriptArrayPushFast(a, NaN, realm), 8);
+  assert.equal(pushOne(objB), 9);
+
+  assert.equal(length(a), 9);
+  assert.equal(elements.generalCount, 9);
+  assert.equal(readSlot(0), objA);
+  assert.equal(readSlot(1), "hello");
+  assert.equal(readSlot(2), true);
+  assert.equal(readSlot(3), false);
+  assert.equal(readSlot(4), null);
+  assert.equal(readSlot(5), undefined);
+  assert.ok(Object.is(readSlot(6), -0));
+  assert.equal(Number.isNaN(readSlot(7)), true);
+  assert.equal(readSlot(8), objB);
+
+  // Overwrite in place across tag kinds (object -> number -> boolean -> string).
+  assert.equal(put(a, "0", 42.5), true);
+  assert.equal(get(a, "0"), 42.5);
+  assert.equal(put(a, "0", true), true);
+  assert.equal(get(a, "0"), true);
+  assert.equal(put(a, "0", "replaced"), true);
+  assert.equal(get(a, "0"), "replaced");
+
+  // Truncating clears stale generalRefs entries so references are not retained.
+  assert.equal(resize(a, 2), "accepted");
+  assert.equal(elements.generalCount, 2);
+  assert.equal(elements.generalRefs.slots[8], undefined);
+  assert.equal(get(a, "0"), "replaced");
+  assert.equal(get(a, "1"), "hello");
 });

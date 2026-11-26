@@ -157,7 +157,7 @@ test("each realm owns one non-extensible ThrowTypeError intrinsic", () => {
   assert.ok(realm.throwTypeError);
   assert.notEqual(realm.throwTypeError, other.throwTypeError);
   assert.equal(realm.throwTypeError.prototype, realm.functionPrototype);
-  assert.equal(realm.throwTypeError.extensible, false);
+  assert.equal((realm.throwTypeError.internalFlags & 1) !== 0, false);
   for (const [key, value] of [
     ["name", ""],
     ["length", 0],

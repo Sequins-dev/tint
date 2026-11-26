@@ -104,6 +104,7 @@ function missingLoad(op: Instruction | undefined): boolean {
   return (
     op?.kind === "property-load" ||
     op?.kind === "element-load" ||
+    op?.kind === "general-element-load" ||
     op?.kind === "element-length"
   );
 }
@@ -169,7 +170,9 @@ export function fusedPropertyAccesses(
       t.kind === "branch" &&
       t.consequent !== t.alternate &&
       final !== undefined &&
-      (final.kind === "property-store" || final.kind === "element-store") &&
+      (final.kind === "property-store" ||
+        final.kind === "element-store" ||
+        final.kind === "general-element-store") &&
       final.id === t.condition
     ) {
       fused.set(block.id, {
@@ -189,6 +192,7 @@ export function fusedPropertyAccesses(
       load === undefined ||
       (load.kind !== "property-load" &&
         load.kind !== "element-load" &&
+        load.kind !== "general-element-load" &&
         load.kind !== "element-length")
     )
       continue;

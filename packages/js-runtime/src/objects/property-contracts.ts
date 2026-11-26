@@ -5,6 +5,7 @@ import {
   ordinaryHasOwnProperty,
   ownKeys,
   type OrdinaryObject,
+  objectFlagArrayData,
 } from "./operations.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
@@ -145,9 +146,15 @@ function validateObject(
   }
   const rule = schema.types[schema.root];
   if (rule?.kind === "object") {
-    if (object.internalArrayData || !requiredFieldsPresent(object, rule))
+    if (
+      (object.internalFlags & objectFlagArrayData) !== 0 ||
+      !requiredFieldsPresent(object, rule)
+    )
       return false;
-  } else if (rule?.kind !== "array-elements" || !object.internalArrayData)
+  } else if (
+    rule?.kind !== "array-elements" ||
+    (object.internalFlags & objectFlagArrayData) === 0
+  )
     return false;
   pending.push({ object, schema });
   for (const key of ownKeys<ScriptPropertyKey, unknown>(

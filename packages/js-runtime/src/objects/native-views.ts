@@ -9,6 +9,7 @@ import {
   type ObjectHooks,
   type OrdinaryObject,
   type PropertyDefinitionResult,
+  objectFlagArrayData,
 } from "./operations.ts";
 import { functionMetadata } from "./intrinsics.ts";
 import type { ErrorRealm } from "./errors.ts";
@@ -196,6 +197,6 @@ export function createNativeListView(
     undefined,
     realm.executionContext,
   );
-  view.internalArrayData = true;
+  view.internalFlags |= objectFlagArrayData;
   return view;
 }

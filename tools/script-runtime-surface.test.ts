@@ -216,7 +216,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 209, types: 27, genericFunctions: 34, genericTypes: 12 },
+    { functions: 211, types: 27, genericFunctions: 34, genericTypes: 12 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -259,7 +259,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 209);
+  assert.equal(table.value.surface.entries.length, 211);
   assert.equal(table.value.surface.types.length, 27);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -382,27 +382,29 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Shapes record each key's kind in one more number-list anchor.
   // Shapes with many keys index their string keys' positions in one more
   // string-to-number map anchor (a map collection with eleven operations).
-  // Packed general element cells (ElementCell[]) and static-key object literal
-  // sites (keys) add two list anchors and one list class (eight operations).
+  // Static-key object literal sites (keys) add one list anchor; flat general
+  // packed arrays replace ElementCell[] with Uint8Array + ReferenceVector
+  // (-1 list class, -8 operations; GeneralRefStorage.slots retains one anchor
+  // in portable TS).
   // Linked 16-slot PropertySpill chunks replace the OrdinaryObject.internalValues
   // list anchor (-1 anchor).
   // Inlined constructor sites (`ConstructSite.keys` + slow-path value list)
   // add two list anchors (+2 anchors).
   assert.equal(census.value.anchors.length, 134);
-  assert.equal(census.value.collections.length, 59);
+  assert.equal(census.value.collections.length, 58);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [50, 2, 7],
+    [49, 2, 7],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    497,
+    489,
   );
 
   assert.ok(
@@ -432,7 +434,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   assert.ok(facts.ok, JSON.stringify(facts));
   // Map buckets and object contract lists reuse existing physical signatures;
   // the shape key index map adds a provider with two new ones.
-  assert.equal(facts.value.runtimes.length, 61);
+  assert.equal(facts.value.runtimes.length, 60);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -448,7 +450,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     (sum, row) => sum + row.operations.length,
     0,
   );
-  assert.equal(operationCount, 520);
+  assert.equal(operationCount, 512);
   assert.ok(
     facts.value.runtimes.every((row) =>
       row.operations.every((operation) => operation.returnType !== undefined),
@@ -634,7 +636,7 @@ test("Script surface instantiations match the real linked export namespaces and 
       // The cache list providers each contribute eight distinct targets, and
       // the shape key index map eleven.
       assert.equal(names.value.providers.length, facts.value.runtimes.length);
-      assert.equal(names.value.targets.length, 472);
+      assert.equal(names.value.targets.length, 464);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
@@ -642,7 +644,7 @@ test("Script surface instantiations match the real linked export namespaces and 
       );
       assert.ok(exported.ok, JSON.stringify(exported));
       assert.equal(exported.value.slots.length, operationCount);
-      assert.equal(exported.value.stubs.declarations.length, 517);
+      assert.equal(exported.value.stubs.declarations.length, 509);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
         names.value.targets.length,
@@ -700,13 +702,13 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 209);
+  assert.equal(finalValues.length, 211);
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    53,
+    52,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 449);
+  assert.equal(new Set(collectionOperations.flat()).size, 441);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(

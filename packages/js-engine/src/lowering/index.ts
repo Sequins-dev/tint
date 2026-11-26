@@ -129,10 +129,17 @@ export const propertyCacheNames: readonly string[] = [
   "propertySlotWord",
   "readPropertyValueSlot",
   "writePropertyValueSlot",
-  // Packed number element access (js-runtime objects/element-access.ts).
+  // Packed number and general element access (js-runtime objects/element-access.ts, array-elements.ts).
   "packedNumberElement",
   "absentElementValue",
   "storePackedNumberElement",
+  "packedGeneralElement",
+  "storePackedGeneralElement",
+  "allocGeneralRefs",
+  "copyGeneralRefs",
+  "clearGeneralRef",
+  "readGeneralSlot",
+  "writeGeneralSlot",
   "readFloat64Element",
   "writeFloat64Element",
   "isOrdinaryObject",
@@ -149,6 +156,13 @@ export interface PropertyCacheBinding {
     | "property-store"
     | "element-load"
     | "element-store"
+    | "general-element-load"
+    | "general-element-store"
+    | "general-slot-load"
+    | "general-slot-store"
+    | "reference-vector-new"
+    | "reference-vector-copy"
+    | "reference-vector-clear"
     | "array-element"
     | "array-store"
     | "test"
@@ -210,6 +224,7 @@ export function propertyCacheBindings(
       field: "internalValue0",
       count: propertySlots,
       siteField: "storeShape",
+      entries: propertyCacheEntries,
     },
     // Packed number elements: `field` names the object's elements and
     // `siteField` their count, which the binary64 storage field follows.
@@ -228,6 +243,25 @@ export function propertyCacheBindings(
       field: "internalArrayElements",
       siteField: "numberCount",
     },
+    {
+      module,
+      name: "packedGeneralElement",
+      operation: "general-element-load",
+      field: "internalArrayElements",
+      siteField: "generalCount",
+    },
+    {
+      module,
+      name: "storePackedGeneralElement",
+      operation: "general-element-store",
+      field: "internalArrayElements",
+      siteField: "generalCount",
+    },
+    { module, name: "allocGeneralRefs", operation: "reference-vector-new" },
+    { module, name: "copyGeneralRefs", operation: "reference-vector-copy" },
+    { module, name: "clearGeneralRef", operation: "reference-vector-clear" },
+    { module, name: "readGeneralSlot", operation: "general-slot-load" },
+    { module, name: "writeGeneralSlot", operation: "general-slot-store" },
     { module, name: "readFloat64Element", operation: "array-element" },
     { module, name: "writeFloat64Element", operation: "array-store" },
     { module, name: "isOrdinaryObject", operation: "test" },
@@ -3439,73 +3473,12 @@ function lowerScriptEntry(
       alternate: undefined,
     });
   }
-  /** The array index of a computed key (else -1) and, when it names a packed
-   * general element, that element's cell (else undefined): only the standard
-   * Array exotic owns packed elements, and the count check excludes holes. */
-  function packedGeneralCell(
-    base: Expression,
-    key: Expression,
-    span: Span,
-  ): {
-    readonly index: Expression;
-    readonly valid: Expression;
-    readonly cell: Expression;
-  } {
-    const index = temporary(
-      scalarBranch(
-        numberOperand(key, span),
-        scalarBinary(">>>", key, scalarNumber(0, span), span),
-        scalarNumber(-1, span),
-        span,
-      ),
-    );
-    // Guard with typeof key === "number" so TypeScript narrows `key` to number
-    // and emits a typed numeric comparison instead of dynamic `===`.
-    const valid = temporary(
-      scalarBinary(
-        "&&",
-        numberOperand(key, span),
-        scalarBinary("===", { ...key }, index, span),
-        span,
-      ),
-    );
-    const values = temporary(
-      scalarBranch(
-        valid,
-        optionalMember(
-          optionalMember(
-            runtimeCall("viewTypeofObject", [base], span),
-            "internalArrayElements",
-            span,
-          ),
-          "values",
-          span,
-        ),
-        id("undefined", span),
-        span,
-      ),
-    );
-    const cell = temporary(
-      scalarBranch(
-        scalarBinary(
-          "&&",
-          scalarBinary("!==", values, id("undefined", span), span),
-          scalarBinary("<", index, member(values, "length", span), span),
-          span,
-        ),
-        { ...at(span), kind: "index", object: values, index },
-        id("undefined", span),
-        span,
-      ),
-    );
-    return { index, valid, cell };
-  }
-  /** Overwrite the packed number element (IR element-store natively) or a
-   * packed general element's cell, else PutValue through the runtime (which
-   * also appends at the count in place when nothing can observe it). A key
-   * that is not a Number never reaches the store; ToPropertyKey of a Number,
-   * String or Symbol calls no user code, so a retained key converted by
-   * GetValue converts again unobservably. */
+  /** Overwrite the packed number element (IR element-store natively) or
+   * packed general element (IR general-element-store natively), else PutValue
+   * through the runtime (which also appends at the count in place when nothing
+   * can observe it). A key that is not a Number never reaches the store;
+   * ToPropertyKey of a Number, String or Symbol calls no user code, so a
+   * retained key converted by GetValue converts again unobservably. */
   function writeElement(
     base: Expression,
     key: Expression,
@@ -3514,22 +3487,17 @@ function lowerScriptEntry(
   ): void {
     usesElementAccess = true;
     usesIndexedWrites = true;
+    const index = temporary(elementIndex(key, span));
     const generalWrite = nestedStatements(() => {
-      const cell = packedGeneralCell(base, key, span).cell;
       statements.push({
         ...at(span),
         kind: "if",
-        test: scalarBinary("!==", cell, id("undefined", span), span),
-        consequent: {
-          ...at(span),
-          kind: "expression",
-          expression: {
-            ...at(span),
-            kind: "assignment",
-            target: member(cell, "elementValue", span),
-            value: { ...value },
-          },
-        },
+        test: runtimeCall(
+          "storePackedGeneralElement",
+          [id("$errors"), { ...base }, { ...index }, { ...value }],
+          span,
+        ),
+        consequent: block([], span),
         alternate: {
           ...at(span),
           kind: "expression",
@@ -3555,7 +3523,7 @@ function lowerScriptEntry(
       kind: "if",
       test: runtimeCall(
         "storePackedNumberElement",
-        [id("$errors"), base, elementIndex(key, span), value],
+        [id("$errors"), base, index, value],
         span,
       ),
       consequent: block([], span),
@@ -3582,52 +3550,72 @@ function lowerScriptEntry(
     const result = temporary(id("undefined", span), true, true);
     if (result.kind !== "identifier") throw "element read temporary invariant";
     const name = result.name;
-    // Else a String's code unit (an own property of the String object below
-    // its length), or a packed general element's cell. Holes and indices past
-    // the length take the ordinary path, which observes inherited properties.
+    // Try packed binary64 element (IR element-load), then packed general
+    // element (IR general-element-load), then a String's code unit, else the
+    // ordinary runtime path (which observes holes and inherited properties).
     readNumberElement(
       name,
       base,
       key,
       () => {
-        const general = packedGeneralCell(base, key, span);
-        const index = general.index,
-          valid = general.valid,
-          cell = general.cell;
-        const text = base.kind === "identifier" ? base : temporary(base, true);
-        const nonPacked = scalarBranch(
-          scalarBinary(
-            "&&",
-            categoryOperand(text, "string", span),
-            scalarBinary(
-              "&&",
-              { ...valid },
-              scalarBinary("<", index, member(text, "length", span), span),
-              span,
-            ),
-            span,
-          ),
-          {
-            ...at(span),
-            kind: "call",
-            callee: member({ ...text }, "charAt", span),
-            arguments: [{ ...index }],
-          },
-          slow(),
-          span,
-        );
+        const index = temporary(elementIndex(key, span));
         statements.push(
           assignTo(
             name,
-            scalarBranch(
-              scalarBinary("!==", cell, id("undefined", span), span),
-              member(cell, "elementValue", span),
-              nonPacked,
+            runtimeCall(
+              "packedGeneralElement",
+              [id("$errors"), { ...base }, index],
               span,
             ),
             span,
           ),
         );
+        const nonPackedFallback = nestedStatements(() => {
+          const text =
+            base.kind === "identifier" ? base : temporary(base, true);
+          const uint = temporary(
+            scalarBinary(">>>", { ...index }, scalarNumber(0, span), span),
+          );
+          const valid = scalarBinary(
+            "&&",
+            scalarBinary("===", { ...index }, uint, span),
+            scalarBinary("<", { ...uint }, member(text, "length", span), span),
+            span,
+          );
+          statements.push(
+            assignTo(
+              name,
+              scalarBranch(
+                scalarBinary(
+                  "&&",
+                  categoryOperand(text, "string", span),
+                  valid,
+                  span,
+                ),
+                {
+                  ...at(span),
+                  kind: "call",
+                  callee: member({ ...text }, "charAt", span),
+                  arguments: [{ ...uint }],
+                },
+                slow(),
+                span,
+              ),
+              span,
+            ),
+          );
+        });
+        statements.push({
+          ...at(span),
+          kind: "if",
+          test: runtimeCall(
+            "absentElementValue",
+            [id(name, span), id("$errors")],
+            span,
+          ),
+          consequent: block(nonPackedFallback, span),
+          alternate: undefined,
+        });
       },
       span,
     );
@@ -4032,12 +4020,23 @@ function lowerScriptEntry(
             scalarBinary(
               "&&",
               member(live, "writable", target),
-              negate(
-                member(
-                  member(member(gc.start, "global", target), "object", target),
-                  "internalUsedAsPrototype",
+              scalarBinary(
+                "===",
+                scalarBinary(
+                  "&",
+                  member(
+                    member(
+                      member(gc.start, "global", target),
+                      "object",
+                      target,
+                    ),
+                    "internalFlags",
+                    target,
+                  ),
+                  { ...at(target), kind: "number", value: 4, raw: "4" },
                   target,
                 ),
+                { ...at(target), kind: "number", value: 0, raw: "0" },
                 target,
               ),
               target,
@@ -5411,22 +5410,17 @@ function lowerScriptEntry(
         consequent: block(
           nestedStatements(() => {
             const fast = temporary(
-              scalarBranch(
-                numberOperand(operand(0), span),
-                runtimeCall(
-                  "scriptArrayPushFast",
-                  [
-                    runtimeCall(
-                      "viewTypeofObject",
-                      [copyIdentifier(base, span)],
-                      span,
-                    ),
-                    copyIdentifier(operand(0), span),
-                    id("$errors"),
-                  ],
-                  span,
-                ),
-                scalarNumber(-1, span),
+              runtimeCall(
+                "scriptArrayPushFast",
+                [
+                  runtimeCall(
+                    "viewTypeofObject",
+                    [copyIdentifier(base, span)],
+                    span,
+                  ),
+                  copyIdentifier(operand(0), span),
+                  id("$errors"),
+                ],
                 span,
               ),
             );
@@ -10694,6 +10688,7 @@ function lowerScriptEntry(
             inlineCandidatePlan,
             target,
             currentFunctionStart,
+            node.arguments.length,
           );
           if (candidates !== undefined && candidates.length > 0) {
             const actuals = node.arguments.map((argument) => {
@@ -10722,8 +10717,8 @@ function lowerScriptEntry(
             if (
               inlStmts !== undefined &&
               inlStmts.length > 0 &&
-              emittedNodes <= 1500 &&
-              currentInlineNodes + emittedNodes <= 4200
+              emittedNodes <= 2600 &&
+              currentInlineNodes + emittedNodes <= 14000
             ) {
               currentInlineCount++;
               currentInlineNodes += emittedNodes;

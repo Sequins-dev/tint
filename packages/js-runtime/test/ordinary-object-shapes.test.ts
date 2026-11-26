@@ -71,7 +71,7 @@ function read(target: ScriptObject, key: string): unknown {
     : cachedScriptPropertyValue(holder, site);
 }
 function shape(target: ScriptObject): unknown {
-  assert.equal(target.internalDictionary, false);
+  assert.equal((target.internalFlags & 2) !== 0, false);
   const installed = target.internalShape;
   assert.ok(installed !== undefined);
   return installed;
@@ -187,7 +187,7 @@ test("deletion, freezing and many keys move objects to dictionary mode", () => {
     other = object(undefined);
   const target = point(prototype, ["x", "y", "z"]);
   assert.ok(deleteProperty<ScriptPropertyKey, unknown>(target, "y"));
-  assert.equal(target.internalDictionary, true);
+  assert.equal((target.internalFlags & 2) !== 0, true);
   assert.equal(target.internalShape, undefined);
   assert.equal(target.internalValue0, undefined);
   assert.deepEqual(keysOf(target), ["x", "z"]);
@@ -199,12 +199,12 @@ test("deletion, freezing and many keys move objects to dictionary mode", () => {
   assert.equal(read(moved, "z"), 1);
   const frozen = point(prototype, ["x"]);
   assert.ok(preventExtensions<ScriptPropertyKey, unknown>(frozen));
-  assert.equal(frozen.internalDictionary, true);
+  assert.equal((frozen.internalFlags & 2) !== 0, true);
   assert.equal(read(frozen, "x"), 0);
   const keys: string[] = [];
   for (let index = 0; index < 129; index++) keys.push("k" + String(index));
   const large = point(prototype, keys);
-  assert.equal(large.internalDictionary, true);
+  assert.equal((large.internalFlags & 2) !== 0, true);
   assert.deepEqual(keysOf(large), keys);
   assert.equal(read(large, "k128"), 128);
 });
@@ -236,7 +236,7 @@ test("accessors and symbol keys stay in fast mode", () => {
     "accepted",
   );
   createDataProperty<ScriptPropertyKey, unknown>(target, "z", 3, hooks);
-  assert.equal(target.internalDictionary, false);
+  assert.equal((target.internalFlags & 2) !== 0, false);
   // Strings in insertion order, then symbols.
   assert.deepEqual(keysOf(target), ["x", "y", "z", symbol]);
   assert.equal(
@@ -282,9 +282,9 @@ test("prototypes get private shapes and their changes bump the epoch", () => {
   const prototype = point(object(undefined), ["m"]);
   const sibling = point(object(undefined), ["m"]);
   const before = shape(prototype);
-  assert.equal(prototype.internalUsedAsPrototype, false);
+  assert.equal((prototype.internalFlags & 4) !== 0, false);
   const child = point(prototype, ["x"]);
-  assert.equal(prototype.internalUsedAsPrototype, true);
+  assert.equal((prototype.internalFlags & 4) !== 0, true);
   assert.notEqual(shape(prototype), before);
   assert.notEqual(shape(prototype), shape(sibling));
   assert.equal(read(child, "m"), 0);
@@ -778,4 +778,44 @@ test("missing properties cache undefined and invalidate on own or prototype addi
     other,
   );
   assert.equal(ownSite.foundIndex, 1);
+});
+
+test("a store site caches up to 4 polymorphic receiver shapes across overwrites and transitions", () => {
+  const prototype = object(undefined);
+  // Four distinct shapes: 2 existing-property overwrites + 2 shape-adding transitions.
+  const s0 = point(prototype, ["x"]);
+  const s1 = point(prototype, ["a", "x"]);
+  const s2 = point(prototype, ["b"]);
+  const s3 = point(prototype, ["c", "d"]);
+  const s4 = point(prototype, ["e", "x"]);
+  const s2Before = shape(s2);
+  const s3Before = shape(s3);
+  const site = createScriptPropertyCache("x");
+
+  assert.ok(storeCachedScriptProperty(s0, "x", 10, site, 10));
+  assert.ok(storeCachedScriptProperty(s1, "x", 20, site, 10));
+  assert.ok(storeCachedScriptProperty(s2, "x", 30, site, 10));
+  assert.ok(storeCachedScriptProperty(s3, "x", 40, site, 10));
+
+  assert.equal(site.storeShape, shape(s0));
+  assert.equal(site.storeTransition, undefined);
+  assert.equal(site.storeShape1, shape(s1));
+  assert.equal(site.storeTransition1, undefined);
+  assert.equal(site.storeShape2, s2Before);
+  assert.equal(site.storeTransition2, shape(s2));
+  assert.equal(site.storeShape3, s3Before);
+  assert.equal(site.storeTransition3, shape(s3));
+
+  assert.equal(getProperty<ScriptPropertyKey, unknown>(s0, "x", s0, hooks), 10);
+  assert.equal(getProperty<ScriptPropertyKey, unknown>(s1, "x", s1, hooks), 20);
+  assert.equal(getProperty<ScriptPropertyKey, unknown>(s2, "x", s2, hooks), 30);
+  assert.equal(getProperty<ScriptPropertyKey, unknown>(s3, "x", s3, hooks), 40);
+
+  // Fifth shape succeeds via slow path without clobbering entries 0..3.
+  assert.ok(storeCachedScriptProperty(s4, "x", 50, site, 10));
+  assert.equal(getProperty<ScriptPropertyKey, unknown>(s4, "x", s4, hooks), 50);
+  assert.equal(site.storeShape, shape(s0));
+  assert.equal(site.storeShape1, shape(s1));
+  assert.equal(site.storeShape2, s2Before);
+  assert.equal(site.storeShape3, s3Before);
 });

@@ -75,7 +75,7 @@ test("import-free lowering retains the caller-policy output contract", () => {
       false,
       "8115fb8613e4eeeb",
     ],
-    ["new (f())(1); x = y ?? z;", false, "e062aa1bb120219e"],
+    ["new (f())(1); x = y ?? z;", false, "12693c0c848502bd"],
     ['eval("1");', false, "a46f4ef7f50e0404"],
     ["{ using r = null; }", false, "c0c451945c695b05"],
     [
@@ -180,7 +180,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
     module = lowering.scriptRuntimeImports(span, false, false, false, "module");
   assert.equal(count(script), 121);
   assert.equal(count(module), 125);
-  assert.equal(lowering.scriptRuntimeSurface().length, 236);
+  assert.equal(lowering.scriptRuntimeSurface().length, 238);
   assert.ok(
     lowering
       .scriptRuntimeSurface()

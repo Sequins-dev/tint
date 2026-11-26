@@ -452,6 +452,7 @@ export function createErrorRealm(
     numberPayload: (value): number | undefined =>
       typeof value === "number" ? value : undefined,
     fromNumber: (value): unknown => value,
+    fromGeneral: (value): unknown => value,
     toNumber: (value): number => {
       const current = activeArrayRealm();
       const result = numberValue(value, hooks, current);

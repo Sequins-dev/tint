@@ -33,6 +33,7 @@ export function forwardLocalLoads(
 ): ForwardedLoads | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
+  const isScript = hasScriptOperations(fn);
   let visited = 0,
     maximum = -1,
     count = 0,
@@ -52,10 +53,15 @@ export function forwardLocalLoads(
         op.kind === "load" ||
         op.kind === "record-read" ||
         op.kind === "reference-value" ||
-        op.kind === "general-value"
+        op.kind === "general-value" ||
+        (isScript && op.kind === "general-is")
       )
         candidates++;
-      if (op.kind === "reference-wrap" || op.kind === "general-wrap")
+      if (
+        op.kind === "reference-wrap" ||
+        op.kind === "general-wrap" ||
+        (isScript && (op.kind === "general-none" || op.kind === "general-null"))
+      )
         hasWrap = true;
     }
   }
@@ -100,13 +106,48 @@ export function forwardLocalLoads(
       return "string";
     if (op.kind === "optional-value" || op.kind === "optional-value-or")
       return "number";
+    if (isScript) {
+      if (op.kind === "unary")
+        return op.operator === "!" ||
+          op.operator === "truthy" ||
+          op.operator === "is-integer"
+          ? "boolean"
+          : "number";
+      if (op.kind === "binary")
+        return op.operator === "===" ||
+          op.operator === "!==" ||
+          op.operator === "<" ||
+          op.operator === "<=" ||
+          op.operator === ">" ||
+          op.operator === ">="
+          ? "boolean"
+          : "number";
+      if (
+        op.kind === "general-is" ||
+        op.kind === "general-equal" ||
+        op.kind === "general-record-is" ||
+        op.kind === "property-store" ||
+        op.kind === "element-store" ||
+        op.kind === "general-element-store" ||
+        op.kind === "general-slot-store" ||
+        op.kind === "optional-present" ||
+        op.kind === "boolean-present" ||
+        op.kind === "string-present"
+      )
+        return "boolean";
+    }
     return types.get(instructionResult(op) ?? -1);
   }
+  const foldGeneralIs = hasWrap && isScript;
   const valueTypes = new Map<number, ScalarType>(),
     wrappedReference = new Map<number, number>(),
     wrappedGeneral = new Map<
       number,
       { readonly value: number; readonly type: ScalarType }
+    >(),
+    knownGeneralTag = new Map<
+      number,
+      "undefined" | "null" | "number" | "boolean" | "string" | "object"
     >();
   // When a block has a unique predecessor whose terminator writes a record
   // field of a slot-loaded object, forward matching unchecked record-reads in
@@ -346,6 +387,7 @@ export function forwardLocalLoads(
       valueTypes.clear();
       wrappedReference.clear();
       wrappedGeneral.clear();
+      knownGeneralTag.clear();
     }
     let wf:
       | {
@@ -454,6 +496,30 @@ export function forwardLocalLoads(
         }
       }
       if (
+        foldGeneralIs &&
+        rewritten.kind === "general-is" &&
+        knownGeneralTag.has(rewritten.value)
+      ) {
+        const actual = knownGeneralTag.get(rewritten.value);
+        const matches =
+          rewritten.type === "nullish"
+            ? actual === "undefined" || actual === "null"
+            : actual === rewritten.type;
+        instructions.push({
+          kind: "constant",
+          id: rewritten.id,
+          value: matches,
+          start: rewritten.start,
+          end: rewritten.end,
+          ...(rewritten.inline === undefined
+            ? {}
+            : { inline: rewritten.inline }),
+        });
+        forwarded++;
+        changed = true;
+        continue;
+      }
+      if (
         wrappedNumbers !== undefined &&
         rewritten.kind === "general-is" &&
         rewritten.type === "number" &&
@@ -483,18 +549,28 @@ export function forwardLocalLoads(
         }
         if (rewritten.kind === "reference-wrap")
           wrappedReference.set(rewritten.id, rewritten.value);
-        else if (rewritten.kind === "general-wrap") {
+        else if (rewritten.kind === "general-none") {
+          if (foldGeneralIs) knownGeneralTag.set(rewritten.id, "undefined");
+        } else if (rewritten.kind === "general-null") {
+          if (foldGeneralIs) knownGeneralTag.set(rewritten.id, "null");
+        } else if (rewritten.kind === "general-wrap") {
           const t = valueTypes.get(rewritten.value);
           if (
             t === "reference" ||
             t === "number" ||
             t === "boolean" ||
             t === "string"
-          )
+          ) {
             wrappedGeneral.set(rewritten.id, {
               value: rewritten.value,
               type: t,
             });
+            if (foldGeneralIs)
+              knownGeneralTag.set(
+                rewritten.id,
+                t === "reference" ? "object" : t,
+              );
+          }
         }
       }
       if (numberValues !== undefined) {

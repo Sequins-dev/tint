@@ -1,6 +1,7 @@
 import type { ObjectHooks, ScriptPropertyCache } from "./operations.ts";
 import type { ErrorRealm } from "./errors.ts";
 import { readCachedObjectValueProperty, viewObjectValue } from "./values.ts";
+import { readGeneralSlot, writeGeneralSlot } from "./array-elements.ts";
 
 /** Inline element access for generated code. Native code binds these
  * functions to IR element-load, element-store and the absent test; their
@@ -59,6 +60,62 @@ export function storePackedNumberElement(
     return false;
   elements.numbers[index] = value;
   return true;
+}
+
+/** The packed general element `index` of an object value, or a miss: `realm`
+ * (natively IR general-element-load returning the absent value). */
+export function packedGeneralElement(
+  realm: ErrorRealm,
+  value: unknown,
+  index: number,
+): unknown {
+  const elements = viewObjectValue(
+    value,
+    realm.objectPrototype,
+  )?.internalArrayElements;
+  if (
+    elements === undefined ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= elements.generalCount
+  )
+    return realm;
+  return readGeneralSlot(
+    elements.generalTags,
+    elements.generalRefs,
+    elements.numbers,
+    index,
+  );
+}
+
+/** Overwrite the packed general element `index` of an object value; false,
+ * with nothing written, when not a packed general element or when `value` is a
+ * Number and `numbers` has not yet been allocated for `index` (natively IR
+ * general-element-store). */
+export function storePackedGeneralElement(
+  realm: ErrorRealm,
+  target: unknown,
+  index: number,
+  value: unknown,
+): boolean {
+  const elements = viewObjectValue(
+    target,
+    realm.objectPrototype,
+  )?.internalArrayElements;
+  if (
+    elements === undefined ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= elements.generalCount
+  )
+    return false;
+  return writeGeneralSlot(
+    elements.generalTags,
+    elements.generalRefs,
+    elements.numbers,
+    index,
+    value,
+  );
 }
 
 /** The mirrored `length` of an array with packed elements, or a miss:

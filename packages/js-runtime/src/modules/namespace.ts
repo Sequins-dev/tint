@@ -9,6 +9,7 @@ import {
   type ObjectInternalMethods,
   type PropertyDefinitionResult,
   type OrdinaryObject,
+  objectFlagExtensible,
 } from "../objects/operations.ts";
 import { createRuntimeError } from "../objects/errors.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "../objects/symbols.ts";
@@ -217,7 +218,7 @@ export function getModuleNamespace(
   if (properties === undefined) throw "NAMESPACE_PROPERTIES_INVARIANT";
   properties.set(tag, tagDescriptor);
   namespace.internalPropertyEpoch++;
-  namespace.extensible = false;
+  namespace.internalFlags &= ~objectFlagExtensible;
   if (deferred) module.deferredNamespace = namespace;
   else module.namespace = namespace;
   return namespace;

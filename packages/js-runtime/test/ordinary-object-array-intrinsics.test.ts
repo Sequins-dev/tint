@@ -30,7 +30,7 @@ test("Array intrinsic constructs sparse lengths and dense element lists with rea
     string,
     unknown
   >;
-  assert.equal(sparse.internalArrayData, true);
+  assert.equal((sparse.internalFlags & 8) !== 0, true);
   assert.equal(sparse.prototype, realm.arrayPrototype);
   assert.equal(objects.getOwnProperty(sparse, "length")?.value, 3);
   assert.equal(objects.getOwnProperty(sparse, "0"), undefined);

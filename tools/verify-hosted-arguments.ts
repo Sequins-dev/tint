@@ -38,7 +38,7 @@ export function run():number{
  const realm=createErrorRealm(objectPrototype,unknownHooks);
  const thrower=realm.throwTypeError;
  const throwCall=thrower.internalCall;
- if(throwCall===undefined||thrower.extensible||thrower.prototype!==realm.functionPrototype)return 16;
+ if(throwCall===undefined||(thrower.internalFlags&1)!==0||thrower.prototype!==realm.functionPrototype)return 16;
  let threw=false;
  try{throwCall(undefined,[]);}catch(error){
   const object=viewObjectValue(error,objectPrototype);

@@ -2844,6 +2844,8 @@ export function cacheLoopProperties(
         return activationFieldType(op.field);
       case "property-load":
       case "element-load":
+      case "general-element-load":
+      case "general-slot-load":
       case "record-slot-read":
       case "general-none":
       case "general-null":
@@ -2855,6 +2857,8 @@ export function cacheLoopProperties(
         return "general";
       case "property-store":
       case "element-store":
+      case "general-element-store":
+      case "general-slot-store":
       case "general-equal":
       case "general-is":
       case "general-record-is":
@@ -3630,4 +3634,861 @@ export function cacheLoopProperties(
     message: String(rewritten) + " loop global/property accesses cached",
   });
   return { fn: resultFn, visited, rewritten };
+}
+
+interface PropDef {
+  readonly id: number;
+  readonly blockId: number;
+  readonly opIndex: number;
+  readonly op: PropertyLoadOp;
+  readonly objSlot: number;
+  readonly propKey: string;
+  readonly key: string;
+  readonly selfMissBlock: number | undefined;
+}
+
+/**
+ * Eliminates redundant same-receiver `property-load` probes across dominating
+ * paths (including across sibling cold miss blocks by refreshing on those cold
+ * blocks).
+ *
+ * Every dominating `property-load` stores its raw result (`V` on hit, `absent`
+ * on miss) into a dedicated `probeSlot`. Because `probeSlot` is initialized at
+ * the dominating producer, every dominated redundant `property-load` for the
+ * same `(objSlot, propKey)` can load `probeSlot` directly: on the fast path it
+ * sees `V` without re-probing the IC; on a miss of the producer (e.g. a getter
+ * or proxy) it sees `absent` and takes its own slow path. Any cold miss block
+ * of an unrelated access between producer and use refreshes `probeSlot` via
+ * `property-load`, preserving exact mutation semantics even if that unrelated
+ * slow path invoked a mutating getter.
+ */
+export function forwardDominatingProperties(
+  fn: FunctionIR,
+  module: ModuleIR,
+  budget: number,
+  remarks?: RemarkSink,
+  shared?: ModulePropertySites,
+): LoopPropertyCaching | undefined {
+  if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
+  if (fn.import === true || fn.blocks.length === 0 || !hasScriptOperations(fn))
+    return { fn, visited: 0, rewritten: 0 };
+
+  let visited = 0,
+    propLoadCount = 0,
+    nextValue = 0;
+  const watchedRecords = new Set<number>();
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "property cse block invariant";
+    for (const op of block.instructions) {
+      if (op === undefined) throw "property cse instruction invariant";
+      if (++visited > budget) return undefined;
+      const resId = instructionResult(op);
+      if (resId !== undefined && resId >= nextValue) nextValue = resId + 1;
+      if (op.kind === "property-load") {
+        propLoadCount++;
+        watchedRecords.add(op.record);
+        watchedRecords.add(op.siteRecord);
+        watchedRecords.add(op.epochRecord);
+        if (op.spillRecord !== undefined) watchedRecords.add(op.spillRecord);
+      }
+    }
+  }
+  if (propLoadCount < 2) return { fn, visited, rewritten: 0 };
+
+  const sites =
+    shared ?? analyzeModulePropertySites(module, Math.max(1, budget - visited));
+  if (sites === undefined) return undefined;
+  if (shared === undefined) visited += sites.visited;
+  const siteFieldName = sites.siteFieldName;
+
+  // Whole-module call-effect memoization (0 = computing, 1 = clean, 2 = invalidates).
+  const callState = new Map<number, number>();
+  let effectBudgetExhausted = false;
+  function calleeInvalidates(targetId: number): boolean {
+    const cached = callState.get(targetId);
+    if (cached === 1) return false;
+    if (cached === 2) return true;
+    if (cached === 0) return false;
+    const target = module.functions[targetId];
+    if (target === undefined || target.import === true) {
+      callState.set(targetId, 2);
+      return true;
+    }
+    callState.set(targetId, 0);
+    const directCallees: number[] = [];
+    for (const block of target.blocks) {
+      if (block === undefined) continue;
+      if (++visited > budget) {
+        effectBudgetExhausted = true;
+        callState.set(targetId, 2);
+        return true;
+      }
+      const term = block.terminator;
+      if (
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation !== "read" &&
+        watchedRecords.has(term.record)
+      ) {
+        callState.set(targetId, 2);
+        return true;
+      }
+      for (const op of block.instructions) {
+        if (op === undefined) continue;
+        if (
+          op.kind === "call-indirect" ||
+          op.kind === "host-call" ||
+          op.kind === "property-store" ||
+          (op.kind === "c-call" && op.call.mayCallback === true)
+        ) {
+          callState.set(targetId, 2);
+          return true;
+        }
+        if (op.kind === "call") directCallees.push(op.target);
+      }
+    }
+    for (const sub of directCallees) {
+      if (sub === undefined) continue;
+      if (calleeInvalidates(sub)) {
+        callState.set(targetId, 2);
+        return true;
+      }
+    }
+    callState.set(targetId, 1);
+    return false;
+  }
+
+  function mayHardInvalidate(op: Instruction): boolean {
+    if (
+      op.kind === "call-indirect" ||
+      op.kind === "host-call" ||
+      (op.kind === "c-call" && op.call.mayCallback === true)
+    )
+      return true;
+    if (op.kind === "call") return calleeInvalidates(op.target);
+    return false;
+  }
+
+  // Resolve single-definition site slots so hoisted/copied `$pc` reads keep
+  // their static property name.
+  const slotSiteKey = new Map<number, string>();
+  const slotSiteAmbiguous = new Set<number>();
+  for (const p of fn.parameters) if (p !== undefined) slotSiteAmbiguous.add(p);
+  if (fn.receiverSlot !== undefined) slotSiteAmbiguous.add(fn.receiverSlot);
+  for (const block of fn.blocks) {
+    if (block === undefined) continue;
+    if (block.exception !== undefined)
+      slotSiteAmbiguous.add(block.exception.slot);
+    const term = block.terminator;
+    if (
+      (term.kind === "record" ||
+        term.kind === "record-cell" ||
+        term.kind === "cell") &&
+      term.operation === "read"
+    ) {
+      const termName =
+        term.kind === "record"
+          ? siteFieldName.get(String(term.record) + ":" + String(term.field))
+          : undefined;
+      if (termName !== undefined && !slotSiteAmbiguous.has(term.slot)) {
+        const prev = slotSiteKey.get(term.slot);
+        if (prev === undefined) slotSiteKey.set(term.slot, termName);
+        else if (prev !== termName) {
+          slotSiteKey.delete(term.slot);
+          slotSiteAmbiguous.add(term.slot);
+        }
+      } else {
+        slotSiteKey.delete(term.slot);
+        slotSiteAmbiguous.add(term.slot);
+      }
+    }
+    const localSite = new Map<number, string>();
+    for (const op of block.instructions) {
+      if (op === undefined) continue;
+      if (op.kind === "record-read") {
+        const name = siteFieldName.get(
+          String(op.record) + ":" + String(op.field),
+        );
+        if (name !== undefined) localSite.set(op.id, name);
+      } else if (op.kind === "store") {
+        const name = localSite.get(op.value);
+        if (name !== undefined && !slotSiteAmbiguous.has(op.slot)) {
+          const prev = slotSiteKey.get(op.slot);
+          if (prev === undefined) slotSiteKey.set(op.slot, name);
+          else if (prev !== name) {
+            slotSiteKey.delete(op.slot);
+            slotSiteAmbiguous.add(op.slot);
+          }
+        } else {
+          slotSiteKey.delete(op.slot);
+          slotSiteAmbiguous.add(op.slot);
+        }
+      }
+    }
+  }
+  for (const s of slotSiteAmbiguous) slotSiteKey.delete(s);
+
+  // Reachable blocks in reverse postorder, predecessors, exception targets,
+  // and immediate dominators (Cooper-Harvey-Kennedy).
+  const blockCount = fn.blocks.length;
+  const visitedBlock = new Uint8Array(blockCount);
+  const postorder: number[] = [];
+  const stackBlock: number[] = [fn.entry];
+  const stackNext: number[] = [0];
+  visitedBlock[fn.entry] = 1;
+  while (stackBlock.length > 0) {
+    const topIdx = stackBlock.length - 1;
+    const bid = stackBlock[topIdx];
+    const nextIdx = stackNext[topIdx];
+    if (bid === undefined || nextIdx === undefined)
+      throw "property cse stack invariant";
+    const blk = fn.blocks[bid];
+    if (blk === undefined) throw "property cse block invariant";
+    const succs = blockSuccessors(blk);
+    if (nextIdx < succs.length) {
+      stackNext[topIdx] = nextIdx + 1;
+      const s = succs[nextIdx];
+      if (s !== undefined && visitedBlock[s] === 0) {
+        visitedBlock[s] = 1;
+        stackBlock.push(s);
+        stackNext.push(0);
+      }
+    } else {
+      stackBlock.pop();
+      stackNext.pop();
+      postorder.push(bid);
+    }
+  }
+  const rpo: number[] = [];
+  const rpoIndex = new Int32Array(blockCount);
+  for (let i = 0; i < blockCount; i++) rpoIndex[i] = -1;
+  for (let i = postorder.length - 1; i >= 0; i--) {
+    const bid = postorder[i];
+    if (bid === undefined) continue;
+    rpoIndex[bid] = rpo.length;
+    rpo.push(bid);
+  }
+  const preds: number[][] = [];
+  for (let i = 0; i < blockCount; i++) preds.push([]);
+  const exceptionTargets = new Set<number>();
+  for (const bid of rpo) {
+    const blk = fn.blocks[bid];
+    if (blk === undefined) continue;
+    if (blk.exception !== undefined) exceptionTargets.add(blk.exception.target);
+    for (const s of blockSuccessors(blk)) {
+      if (s !== undefined && (rpoIndex[s] ?? -1) >= 0) {
+        const list = preds[s];
+        if (list !== undefined && list.indexOf(bid) < 0) list.push(bid);
+      }
+    }
+  }
+  const idom = new Int32Array(blockCount);
+  for (let i = 0; i < blockCount; i++) idom[i] = -1;
+  idom[fn.entry] = fn.entry;
+  function intersectDom(a: number, b: number): number {
+    let f1 = a,
+      f2 = b;
+    while (f1 !== f2) {
+      while ((rpoIndex[f1] ?? -1) > (rpoIndex[f2] ?? -1)) f1 = idom[f1] ?? -1;
+      while ((rpoIndex[f2] ?? -1) > (rpoIndex[f1] ?? -1)) f2 = idom[f2] ?? -1;
+    }
+    return f1;
+  }
+  let domChanged = true;
+  while (domChanged) {
+    domChanged = false;
+    for (let i = 1; i < rpo.length; i++) {
+      const bid = rpo[i];
+      if (bid === undefined) continue;
+      const ps = preds[bid];
+      if (ps === undefined) continue;
+      let newIdom = -1;
+      for (const p of ps) {
+        if (p !== undefined && (idom[p] ?? -1) >= 0) {
+          newIdom = newIdom < 0 ? p : intersectDom(p, newIdom);
+        }
+      }
+      if (newIdom >= 0 && idom[bid] !== newIdom) {
+        idom[bid] = newIdom;
+        domChanged = true;
+      }
+    }
+  }
+  function dominates(a: number, b: number): boolean {
+    if (a === b) return true;
+    let cur = b;
+    while (cur !== fn.entry && cur >= 0) {
+      const next = idom[cur] ?? -1;
+      if (next === a) return true;
+      if (next === cur) break;
+      cur = next;
+    }
+    return a === fn.entry;
+  }
+
+  // Identify dedicated cold miss edges from property/element IC probes.
+  const missEdges = new Set<string>();
+  const loadSelfMiss = new Map<number, number>();
+  for (const bid of rpo) {
+    const blk = fn.blocks[bid];
+    if (blk === undefined) continue;
+    const term = blk.terminator;
+    if (term.kind !== "branch") continue;
+    let lastLoadId = -1;
+    let lastLoadIsProp = false;
+    let lastStoreId = -1;
+    const loadAliases = new Set<number>();
+    const loadAliasSlots = new Set<number>();
+    const storeAliases = new Set<number>();
+    const storeAliasSlots = new Set<number>();
+    const absentVals = new Set<number>();
+    const notAbsentVals = new Set<number>();
+    const notStoreVals = new Set<number>();
+    for (const op of blk.instructions) {
+      if (op === undefined) continue;
+      if (
+        op.kind === "property-load" ||
+        op.kind === "element-load" ||
+        op.kind === "general-element-load" ||
+        op.kind === "element-length"
+      ) {
+        lastLoadId = op.id;
+        lastLoadIsProp = op.kind === "property-load";
+        loadAliases.clear();
+        loadAliasSlots.clear();
+        absentVals.clear();
+        notAbsentVals.clear();
+        loadAliases.add(op.id);
+      } else if (
+        op.kind === "property-store" ||
+        op.kind === "element-store" ||
+        op.kind === "general-element-store"
+      ) {
+        lastStoreId = op.id;
+        storeAliases.clear();
+        storeAliasSlots.clear();
+        notStoreVals.clear();
+        storeAliases.add(op.id);
+      } else if (op.kind === "store") {
+        if (loadAliases.has(op.value)) loadAliasSlots.add(op.slot);
+        else loadAliasSlots.delete(op.slot);
+        if (storeAliases.has(op.value)) storeAliasSlots.add(op.slot);
+        else storeAliasSlots.delete(op.slot);
+      } else if (op.kind === "load") {
+        if (loadAliasSlots.has(op.slot)) loadAliases.add(op.id);
+        if (storeAliasSlots.has(op.slot)) storeAliases.add(op.id);
+      } else if (
+        op.kind === "general-is" &&
+        op.type === "absent" &&
+        loadAliases.has(op.value)
+      ) {
+        absentVals.add(op.id);
+      } else if (op.kind === "unary" && op.operator === "!") {
+        if (absentVals.has(op.operand)) notAbsentVals.add(op.id);
+        if (storeAliases.has(op.operand)) notStoreVals.add(op.id);
+      }
+    }
+    let missTarget: number | undefined;
+    let isPropLoadMiss = false;
+    if (lastLoadId >= 0 && absentVals.has(term.condition)) {
+      missTarget = term.consequent;
+      isPropLoadMiss = lastLoadIsProp;
+    } else if (lastLoadId >= 0 && notAbsentVals.has(term.condition)) {
+      missTarget = term.alternate;
+      isPropLoadMiss = lastLoadIsProp;
+    } else if (lastStoreId >= 0 && storeAliases.has(term.condition)) {
+      missTarget = term.alternate;
+    } else if (lastStoreId >= 0 && notStoreVals.has(term.condition)) {
+      missTarget = term.consequent;
+    }
+    if (missTarget !== undefined) {
+      missEdges.add(String(bid) + "->" + String(missTarget));
+      if (isPropLoadMiss) loadSelfMiss.set(lastLoadId, missTarget);
+    }
+  }
+
+  // A block is a cold miss block iff all of its incoming edges are miss edges
+  // or originate from already-classified cold miss blocks, and its terminator
+  // is a plain control transfer (not a record write or return/throw).
+  const coldMissBlocks = new Set<number>();
+  let coldChanged = true;
+  while (coldChanged) {
+    coldChanged = false;
+    for (const bid of rpo) {
+      if (bid === fn.entry || coldMissBlocks.has(bid)) continue;
+      if (exceptionTargets.has(bid)) continue;
+      const blk = fn.blocks[bid];
+      if (blk === undefined) continue;
+      const tk = blk.terminator.kind;
+      if (tk !== "jump" && tk !== "branch") continue;
+      const ps = preds[bid];
+      if (ps === undefined || ps.length === 0) continue;
+      let allCold = true;
+      for (const p of ps) {
+        if (
+          p === undefined ||
+          (!missEdges.has(String(p) + "->" + String(bid)) &&
+            !coldMissBlocks.has(p))
+        ) {
+          allCold = false;
+          break;
+        }
+      }
+      if (allCold) {
+        coldMissBlocks.add(bid);
+        coldChanged = true;
+      }
+    }
+  }
+
+  // Pre-scan per-block `property-load` descriptors, `property-store` keys,
+  // and written slots.
+  const defs: PropDef[] = [];
+  const opToDef = new Map<number, number>();
+  const storeOpKey = new Map<number, string>();
+  const blockWrittenSlots = new Map<number, Set<number>>();
+  for (const bid of rpo) {
+    const blk = fn.blocks[bid];
+    if (blk === undefined) continue;
+    const valSlot = new Map<number, number>();
+    const valSite = new Map<number, string>();
+    const written = new Set<number>();
+    for (let idx = 0; idx < blk.instructions.length; idx++) {
+      const op = blk.instructions[idx];
+      if (op === undefined) continue;
+      if (op.kind === "load") {
+        if (fn.slots[op.slot] === "general") valSlot.set(op.id, op.slot);
+        const sk = slotSiteKey.get(op.slot);
+        if (sk !== undefined) valSite.set(op.id, sk);
+      } else if (op.kind === "record-read") {
+        const sk = siteFieldName.get(
+          String(op.record) + ":" + String(op.field),
+        );
+        if (sk !== undefined) valSite.set(op.id, sk);
+      } else if (op.kind === "store") {
+        written.add(op.slot);
+      } else if (op.kind === "property-load") {
+        const objSlot = valSlot.get(op.object);
+        const propKey = valSite.get(op.site);
+        if (
+          objSlot !== undefined &&
+          propKey !== undefined &&
+          isSafeDisambiguatedKey(propKey)
+        ) {
+          const defId = defs.length;
+          const selfMiss = loadSelfMiss.get(op.id);
+          defs.push({
+            id: defId,
+            blockId: bid,
+            opIndex: idx,
+            op,
+            objSlot,
+            propKey,
+            key: String(objSlot) + ":" + propKey,
+            selfMissBlock:
+              selfMiss !== undefined && coldMissBlocks.has(selfMiss)
+                ? selfMiss
+                : undefined,
+          });
+          opToDef.set(op.id, defId);
+        }
+      } else if (op.kind === "property-store") {
+        const propKey = valSite.get(op.site);
+        if (propKey !== undefined) storeOpKey.set(op.id, propKey);
+      }
+    }
+    const term = blk.terminator;
+    if (
+      (term.kind === "record" ||
+        term.kind === "record-cell" ||
+        term.kind === "cell") &&
+      term.operation === "read"
+    )
+      written.add(term.slot);
+    blockWrittenSlots.set(bid, written);
+  }
+  if (defs.length < 2) return { fn, visited, rewritten: 0 };
+
+  // Forward meet-over-paths dataflow over `rpo`.
+  const inState = new Map<number, Map<string, number>>();
+  const outState = new Map<number, Map<string, number>>();
+  function cloneState(src: Map<string, number>): Map<string, number> {
+    const copy = new Map<string, number>();
+    for (const [k, v] of src) copy.set(k, v);
+    return copy;
+  }
+  function mapsEqual(
+    a: Map<string, number> | undefined,
+    b: Map<string, number>,
+  ): boolean {
+    if (a === undefined || a.size !== b.size) return false;
+    for (const [k, v] of a) if (b.get(k) !== v) return false;
+    return true;
+  }
+  function stepBlock(
+    bid: number,
+    entry: Map<string, number>,
+  ): Map<string, number> | undefined {
+    const state = cloneState(entry);
+    const blk = fn.blocks[bid];
+    if (blk === undefined) return state;
+    for (const op of blk.instructions) {
+      if (op === undefined) continue;
+      if (++visited > budget) return undefined;
+      if (op.kind === "property-load") {
+        const defId = opToDef.get(op.id);
+        if (defId !== undefined) {
+          const def = defs[defId];
+          if (def !== undefined && !state.has(def.key))
+            state.set(def.key, defId);
+        }
+      } else if (op.kind === "store") {
+        for (const [k, d] of state) {
+          const def = defs[d];
+          if (def === undefined || def.objSlot === op.slot) state.delete(k);
+        }
+      } else if (op.kind === "property-store") {
+        const sk = storeOpKey.get(op.id);
+        for (const [k, d] of state) {
+          const def = defs[d];
+          if (def === undefined || storeConflictsWithLoad(sk, def.propKey))
+            state.delete(k);
+        }
+      } else if (mayHardInvalidate(op)) {
+        if (effectBudgetExhausted) return undefined;
+        state.clear();
+      }
+    }
+    const term = blk.terminator;
+    if (term.kind === "record" || term.kind === "record-cell") {
+      if (term.operation !== "read" && watchedRecords.has(term.record))
+        state.clear();
+      else if (term.operation === "read") {
+        for (const [k, d] of state) {
+          const def = defs[d];
+          if (def === undefined || def.objSlot === term.slot) state.delete(k);
+        }
+      }
+    } else if (term.kind === "cell" && term.operation === "read") {
+      for (const [k, d] of state) {
+        const def = defs[d];
+        if (def === undefined || def.objSlot === term.slot) state.delete(k);
+      }
+    }
+    return state;
+  }
+
+  let changed = true;
+  let iterations = 0;
+  const maxIterations = Math.max(8, rpo.length * 4);
+  while (changed && iterations < maxIterations) {
+    changed = false;
+    iterations++;
+    for (const bid of rpo) {
+      let merged: Map<string, number>;
+      if (bid === fn.entry || exceptionTargets.has(bid)) {
+        merged = new Map<string, number>();
+      } else {
+        const ps = preds[bid];
+        const normalPreds: number[] = [];
+        const coldPreds: number[] = [];
+        if (ps !== undefined) {
+          for (const p of ps) {
+            if (p === undefined || !outState.has(p)) continue;
+            if (coldMissBlocks.has(p)) coldPreds.push(p);
+            else normalPreds.push(p);
+          }
+        }
+        merged = new Map<string, number>();
+        if (normalPreds.length === 0) {
+          const firstCold = coldPreds[0];
+          const firstOut =
+            firstCold === undefined ? undefined : outState.get(firstCold);
+          if (firstOut !== undefined) {
+            for (const [k, d] of firstOut) {
+              let allMatch = true;
+              for (let j = 1; j < coldPreds.length; j++) {
+                const cp = coldPreds[j];
+                const cpOut = cp === undefined ? undefined : outState.get(cp);
+                if (cpOut === undefined || cpOut.get(k) !== d) {
+                  allMatch = false;
+                  break;
+                }
+              }
+              if (allMatch) merged.set(k, d);
+            }
+          }
+        } else {
+          const firstNorm = normalPreds[0];
+          const firstOut =
+            firstNorm === undefined ? undefined : outState.get(firstNorm);
+          if (firstOut !== undefined) {
+            for (const [k, d] of firstOut) {
+              let allNormal = true;
+              for (let j = 1; j < normalPreds.length; j++) {
+                const np = normalPreds[j];
+                const npOut = np === undefined ? undefined : outState.get(np);
+                if (npOut === undefined || npOut.get(k) !== d) {
+                  allNormal = false;
+                  break;
+                }
+              }
+              if (!allNormal) continue;
+              const def = defs[d];
+              if (def === undefined) continue;
+              let coldSafe = true;
+              for (const cp of coldPreds) {
+                const cpOut = outState.get(cp);
+                if (cpOut !== undefined && cpOut.get(k) === d) continue;
+                const cpWritten = blockWrittenSlots.get(cp);
+                if (
+                  def.blockId === cp ||
+                  !dominates(def.blockId, cp) ||
+                  cpWritten?.has(def.objSlot) === true
+                ) {
+                  coldSafe = false;
+                  break;
+                }
+              }
+              if (coldSafe) merged.set(k, d);
+            }
+          }
+        }
+      }
+      inState.set(bid, merged);
+      const nextOut = stepBlock(bid, merged);
+      if (nextOut === undefined) return undefined;
+      if (!mapsEqual(outState.get(bid), nextOut)) {
+        outState.set(bid, nextOut);
+        changed = true;
+      }
+    }
+  }
+  if (changed) return { fn, visited, rewritten: 0 };
+
+  // Collect dominated redundant `property-load` uses.
+  const useToDef = new Map<number, number>();
+  const activeDefs = new Set<number>();
+  for (const bid of rpo) {
+    const entry = inState.get(bid);
+    const blk = fn.blocks[bid];
+    if (entry === undefined || blk === undefined) continue;
+    const state = cloneState(entry);
+    for (let idx = 0; idx < blk.instructions.length; idx++) {
+      const op = blk.instructions[idx];
+      if (op === undefined) continue;
+      if (op.kind === "property-load") {
+        const defId = opToDef.get(op.id);
+        if (defId !== undefined) {
+          const def = defs[defId];
+          if (def === undefined) continue;
+          const existing = state.get(def.key);
+          if (existing !== undefined) {
+            const prod = defs[existing];
+            if (
+              prod !== undefined &&
+              dominates(prod.blockId, bid) &&
+              (prod.blockId !== bid || prod.opIndex < idx)
+            ) {
+              useToDef.set(op.id, existing);
+              activeDefs.add(existing);
+            }
+          } else {
+            state.set(def.key, defId);
+          }
+        }
+      } else if (op.kind === "store") {
+        for (const [k, d] of state) {
+          const def = defs[d];
+          if (def === undefined || def.objSlot === op.slot) state.delete(k);
+        }
+      } else if (op.kind === "property-store") {
+        const sk = storeOpKey.get(op.id);
+        for (const [k, d] of state) {
+          const def = defs[d];
+          if (def === undefined || storeConflictsWithLoad(sk, def.propKey))
+            state.delete(k);
+        }
+      } else if (mayHardInvalidate(op)) {
+        state.clear();
+      }
+    }
+  }
+  if (useToDef.size === 0) return { fn, visited, rewritten: 0 };
+
+  // Collect cold miss blocks that must refresh an active producer's probe slot.
+  const refreshInColdBlock = new Map<number, Set<number>>();
+  const needsSiteSlot = new Set<number>();
+  for (const bid of rpo) {
+    if (bid === fn.entry || exceptionTargets.has(bid)) continue;
+    const entry = inState.get(bid);
+    const ps = preds[bid];
+    if (entry === undefined || entry.size === 0 || ps === undefined) continue;
+    for (const cp of ps) {
+      if (cp === undefined || !coldMissBlocks.has(cp)) continue;
+      const cpOut = outState.get(cp);
+      if (cpOut === undefined) continue;
+      for (const [k, defId] of entry) {
+        if (!activeDefs.has(defId)) continue;
+        if (cpOut.get(k) === defId) continue;
+        const def = defs[defId];
+        if (def === undefined || cp === def.selfMissBlock) continue;
+        let list = refreshInColdBlock.get(cp);
+        if (list === undefined) {
+          list = new Set<number>();
+          refreshInColdBlock.set(cp, list);
+        }
+        list.add(defId);
+        needsSiteSlot.add(defId);
+      }
+    }
+  }
+
+  // Allocate probe slots (and site slots only when cold refreshes exist).
+  const slots = fn.slots.slice();
+  const probeSlots = new Map<number, number>();
+  const siteSlots = new Map<number, number>();
+  const defsByBlock = new Map<number, PropDef[]>();
+  for (const defId of activeDefs) {
+    const def = defs[defId];
+    if (def === undefined) continue;
+    const probe = slots.length;
+    slots.push("general");
+    probeSlots.set(defId, probe);
+    if (needsSiteSlot.has(defId)) {
+      const site = slots.length;
+      slots.push("reference");
+      siteSlots.set(defId, site);
+    }
+    let list = defsByBlock.get(def.blockId);
+    if (list === undefined) {
+      list = [];
+      defsByBlock.set(def.blockId, list);
+    }
+    list.push(def);
+  }
+
+  const newBlocks: Block[] = [];
+  let rewritten = 0;
+  for (const blk of fn.blocks) {
+    if (blk === undefined) throw "property cse block invariant";
+    const blockDefs = defsByBlock.get(blk.id);
+    const refreshes = refreshInColdBlock.get(blk.id);
+    let blockChanged = blockDefs !== undefined || refreshes !== undefined;
+    const instructions: Instruction[] = [];
+    for (let idx = 0; idx < blk.instructions.length; idx++) {
+      const op = blk.instructions[idx];
+      if (op === undefined) continue;
+      if (op.kind === "property-load") {
+        const prodId = useToDef.get(op.id);
+        const probe = prodId === undefined ? undefined : probeSlots.get(prodId);
+        if (probe !== undefined) {
+          instructions.push({
+            kind: "load",
+            id: op.id,
+            slot: probe,
+            start: op.start,
+            end: op.end,
+            ...(op.inline === undefined ? {} : { inline: op.inline }),
+          });
+          rewritten++;
+          blockChanged = true;
+          continue;
+        }
+      }
+      instructions.push(op);
+      if (blockDefs !== undefined) {
+        for (const def of blockDefs) {
+          if (def.opIndex !== idx) continue;
+          const probe = probeSlots.get(def.id);
+          if (probe === undefined) continue;
+          instructions.push({
+            kind: "store",
+            slot: probe,
+            value: def.op.id,
+            start: def.op.start,
+            end: def.op.end,
+          });
+          const siteSlot = siteSlots.get(def.id);
+          if (siteSlot !== undefined) {
+            instructions.push({
+              kind: "store",
+              slot: siteSlot,
+              value: def.op.site,
+              start: def.op.start,
+              end: def.op.end,
+            });
+          }
+        }
+      }
+    }
+    if (refreshes !== undefined) {
+      for (const defId of refreshes) {
+        const def = defs[defId];
+        const probe = probeSlots.get(defId);
+        const siteSlot = siteSlots.get(defId);
+        if (def === undefined || probe === undefined || siteSlot === undefined)
+          continue;
+        const objVal = nextValue++;
+        const siteVal = nextValue++;
+        const propVal = nextValue++;
+        instructions.push({
+          kind: "load",
+          id: objVal,
+          slot: def.objSlot,
+          start: blk.terminator.start,
+          end: blk.terminator.end,
+        });
+        instructions.push({
+          kind: "load",
+          id: siteVal,
+          slot: siteSlot,
+          start: blk.terminator.start,
+          end: blk.terminator.end,
+        });
+        const tpl = def.op;
+        instructions.push({
+          kind: "property-load",
+          id: propVal,
+          object: objVal,
+          site: siteVal,
+          record: tpl.record,
+          field: tpl.field,
+          count: tpl.count,
+          siteRecord: tpl.siteRecord,
+          siteField: tpl.siteField,
+          inherited: tpl.inherited,
+          entries: tpl.entries,
+          epochRecord: tpl.epochRecord,
+          epochField: tpl.epochField,
+          ...(tpl.spillRecord === undefined
+            ? {}
+            : { spillRecord: tpl.spillRecord }),
+          ...(tpl.spillField === undefined
+            ? {}
+            : { spillField: tpl.spillField }),
+          start: blk.terminator.start,
+          end: blk.terminator.end,
+        });
+        instructions.push({
+          kind: "store",
+          slot: probe,
+          value: propVal,
+          start: blk.terminator.start,
+          end: blk.terminator.end,
+        });
+      }
+    }
+    newBlocks.push(blockChanged ? { ...blk, instructions } : blk);
+  }
+  if (rewritten === 0) return { fn, visited, rewritten: 0 };
+  const first = fn.blocks[fn.entry];
+  remarks?.({
+    pass: "forward-dominating-properties",
+    outcome: "applied",
+    function: fn.name,
+    start: first?.terminator.start ?? 0,
+    end: first?.terminator.end ?? 0,
+    message: String(rewritten) + " redundant property loads forwarded",
+  });
+  return { fn: { ...fn, slots, blocks: newBlocks }, visited, rewritten };
 }

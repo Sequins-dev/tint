@@ -2960,3 +2960,224 @@ test("element access requires an elements reference with a number count and Floa
   });
   assert.ok(cacheReads.ok, JSON.stringify(cacheReads));
 });
+
+test("general-element, general-slot, and polymorphic property-store instructions verify layouts and operands", () => {
+  const generalRecords: readonly RecordLayout[] = [
+    // 0: Object with internalArrayElements at field 0
+    {
+      byteLength: 16,
+      fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+    },
+    // 1: ArrayElements with generalCount, generalTags, generalRefs, numbers
+    {
+      byteLength: 40,
+      fields: [
+        { offset: 8, type: "number", mutable: true },
+        { offset: 16, type: "Uint8Array", mutable: true },
+        { offset: 24, type: "reference", mutable: true },
+        { offset: 32, type: "Float64Array", mutable: true },
+      ],
+    },
+  ];
+  const validGeneral = verify({
+    records: generalRecords,
+    functions: [
+      {
+        id: 0,
+        name: "generalElements",
+        exported: true,
+        parameters: [0, 1, 2, 3, 4, 5],
+        slots: [
+          "general",
+          "number",
+          "general",
+          "Uint8Array",
+          "reference",
+          "Float64Array",
+        ],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "load", id: 2, slot: 2, ...span },
+              { kind: "load", id: 3, slot: 3, ...span },
+              { kind: "load", id: 4, slot: 4, ...span },
+              { kind: "load", id: 5, slot: 5, ...span },
+              {
+                kind: "general-element-load",
+                id: 6,
+                object: 0,
+                index: 1,
+                record: 0,
+                field: 0,
+                elementsRecord: 1,
+                countField: 0,
+                tagsField: 1,
+                refsField: 2,
+                numbersField: 3,
+                ...span,
+              },
+              {
+                kind: "general-element-store",
+                id: 7,
+                object: 0,
+                index: 1,
+                value: 6,
+                record: 0,
+                field: 0,
+                elementsRecord: 1,
+                countField: 0,
+                tagsField: 1,
+                refsField: 2,
+                numbersField: 3,
+                ...span,
+              },
+              {
+                kind: "general-slot-load",
+                id: 8,
+                tags: 3,
+                refs: 4,
+                numbers: 5,
+                index: 1,
+                ...span,
+              },
+              {
+                kind: "general-slot-store",
+                id: 9,
+                tags: 3,
+                refs: 4,
+                numbers: 5,
+                index: 1,
+                value: 8,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 9, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(validGeneral.ok, JSON.stringify(validGeneral));
+
+  // Invalid tags operand type on general-slot-load must fail verification.
+  const badSlotLoad = verify({
+    functions: [
+      {
+        id: 0,
+        name: "badSlotLoad",
+        exported: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["number", "reference", "optional-reference", "number"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "load", id: 2, slot: 2, ...span },
+              { kind: "load", id: 3, slot: 3, ...span },
+              {
+                kind: "general-slot-load",
+                id: 4,
+                tags: 0,
+                refs: 1,
+                numbers: 2,
+                index: 3,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(badSlotLoad.ok, false);
+
+  // Polymorphic property-store with entries: 4 requires 4x(shape, slot, transition, epoch) + shared epoch.
+  function storeSiteRecord(entryCount: number): RecordLayout {
+    const fields: RecordField[] = [];
+    let offset = 8;
+    for (let i = 0; i < entryCount; i++) {
+      fields.push({ offset, type: "reference", mutable: true });
+      offset += 8;
+      fields.push({ offset, type: "number", mutable: true });
+      offset += 8;
+      fields.push({ offset, type: "optional-reference", mutable: true });
+      offset += 8;
+      fields.push({ offset, type: "number", mutable: true });
+      offset += 8;
+    }
+    fields.push({ offset, type: "reference", mutable: true });
+    offset += 8;
+    return { byteLength: offset, fields };
+  }
+  function polyStoreModule(entries: number, recordEntries: number) {
+    return verify({
+      records: [
+        {
+          byteLength: 40,
+          fields: [
+            { offset: 8, type: "optional-reference", mutable: true },
+            { offset: 16, type: "number", mutable: true },
+            { offset: 24, type: "general", mutable: true },
+          ],
+        },
+        storeSiteRecord(recordEntries),
+        {
+          byteLength: 16,
+          fields: [{ offset: 8, type: "number", mutable: true }],
+        },
+      ],
+      functions: [
+        {
+          id: 0,
+          name: "polyStore",
+          exported: true,
+          parameters: [0, 1, 2],
+          slots: ["general", "reference", "general"],
+          returnType: "boolean",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "load", id: 1, slot: 1, ...span },
+                { kind: "load", id: 2, slot: 2, ...span },
+                {
+                  kind: "property-store",
+                  id: 3,
+                  object: 0,
+                  site: 1,
+                  value: 2,
+                  record: 0,
+                  field: 2,
+                  count: 1,
+                  siteRecord: 1,
+                  siteField: 0,
+                  entries,
+                  epochRecord: 2,
+                  epochField: 0,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 3, ...span },
+            },
+          ],
+        },
+      ],
+    });
+  }
+  const okPoly = polyStoreModule(4, 4);
+  assert.ok(okPoly.ok, JSON.stringify(okPoly));
+  assert.equal(polyStoreModule(4, 1).ok, false);
+  assert.equal(polyStoreModule(0, 1).ok, false);
+});

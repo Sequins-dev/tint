@@ -693,6 +693,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "createConstructedObject7",
     "createConstructedObject8",
     "warmOrdinaryDataProperty",
+    "packedGeneralElement",
+    "storePackedGeneralElement",
   ];
   const old = {
     ...snapshot,
@@ -745,8 +747,9 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   // Atomics inline fast paths add scriptAtomicsAddFast, scriptAtomicsLoadFast,
   // scriptAtomicsStoreFast and scriptAtomicsInt32View; M2 adds
   // markForwardingConstructor, createConstructSite, warmConstructSite,
-  // createConstructedObject1..8, warmOrdinaryDataProperty and numberPower.
-  assert.equal(current.values.length, 209);
+  // createConstructedObject1..8, warmOrdinaryDataProperty and numberPower;
+  // M3 adds packedGeneralElement and storePackedGeneralElement.
+  assert.equal(current.values.length, 211);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

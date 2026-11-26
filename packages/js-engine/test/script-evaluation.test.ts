@@ -436,7 +436,7 @@ test("cross-realm indirect eval carries the effective record through a real buil
       () => {
         jobs.push(b.realm.agent.activeContext?.scriptOrModule);
       },
-      created.internalExecutionContext,
+      created.internalRareSlots?.internalExecutionContext,
     );
   };
   const fn = runtime.createCallableObject<ScriptPropertyKey, unknown>(

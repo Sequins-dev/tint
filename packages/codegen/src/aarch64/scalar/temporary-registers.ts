@@ -24,6 +24,8 @@ function transparent(op: Instruction): boolean {
     // Element loads, stores, length reads, and cache probes use x9..x13, d0 and d1 only.
     op.kind === "element-load" ||
     op.kind === "element-store" ||
+    op.kind === "general-element-load" ||
+    op.kind === "general-slot-load" ||
     op.kind === "element-length" ||
     op.kind === "element-storage" ||
     op.kind === "element-count" ||

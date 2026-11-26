@@ -32,7 +32,7 @@ export function callObject<Key, Value>(
       currentArguments = step.arguments;
       continue;
     }
-    const context = target.internalExecutionContext;
+    const context = target.internalRareSlots?.internalExecutionContext;
     const callReceiver = currentReceiver;
     const callArguments = currentArguments;
     const value =
@@ -57,7 +57,7 @@ export function constructObject<Key, Value>(
     newTarget.object.internalConstruct === undefined
   )
     return { error: "type", value: undefinedValue };
-  const context = object.internalExecutionContext;
+  const context = object.internalRareSlots?.internalExecutionContext;
   const value =
     context === undefined
       ? implementation(arguments_, newTarget.value)

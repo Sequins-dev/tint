@@ -24,6 +24,8 @@ export function hasScriptOperations(fn: FunctionIR): boolean {
         op.kind === "property-store" ||
         op.kind === "element-load" ||
         op.kind === "element-store" ||
+        op.kind === "general-element-load" ||
+        op.kind === "general-element-store" ||
         op.kind === "element-length" ||
         op.kind === "script-argument" ||
         op.kind === "script-argument-count"

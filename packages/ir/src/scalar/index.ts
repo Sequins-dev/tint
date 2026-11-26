@@ -912,7 +912,8 @@ export function verify(
                   field.offset === siteShape.offset + byteOffset
                 );
               };
-              const entries = op.kind === "property-load" ? op.entries : 1;
+              const entries =
+                op.kind === "property-load" ? op.entries : (op.entries ?? 1);
               if (!natural(entries) || entries < 1 || entries > 4)
                 fail("TYPE", "property load requires one to four entries");
               const epoch =
@@ -948,6 +949,29 @@ export function verify(
                     "TYPE",
                     "inherited property load requires epoch and string shape fields",
                   );
+              } else if (op.kind === "property-store") {
+                // Store entries are (shape: ref 8B, slot: num 8B,
+                // transition: opt-ref 8B, epoch: num 8B) = 32B stride,
+                // followed by (epoch: PropertyEpoch ref).
+                for (let entry = 0; entry < entries; entry++)
+                  if (
+                    !siteAt(entry * 4, entry * 32, "reference") ||
+                    !siteAt(entry * 4 + 1, entry * 32 + 8, "number") ||
+                    !siteAt(
+                      entry * 4 + 2,
+                      entry * 32 + 16,
+                      "optional-reference",
+                    ) ||
+                    !siteAt(entry * 4 + 3, entry * 32 + 24, "number")
+                  )
+                    fail("TYPE", "property store requires a transition entry");
+                if (
+                  !natural(op.epochRecord) ||
+                  !natural(op.epochField) ||
+                  !siteAt(entries * 4, entries * 32, "reference") ||
+                  !plainRecordField(epoch, "number")
+                )
+                  fail("TYPE", "property store requires a transition entry");
               } else {
                 for (let entry = 1; entry < entries; entry++)
                   if (
@@ -959,11 +983,6 @@ export function verify(
                       "property load entries require shape and value",
                     );
               }
-              if (
-                op.kind === "property-store" &&
-                (!siteAt(2, 16, "optional-reference") || !epochFields(3, 24))
-              )
-                fail("TYPE", "property store requires a transition entry");
               if (
                 op.kind === "property-load" &&
                 (op.spillRecord !== undefined || op.spillField !== undefined)
@@ -1205,6 +1224,59 @@ export function verify(
                   "element length requires an elements reference with a number length",
                 );
               define(op.id, "general");
+              break;
+            }
+            case "general-element-load":
+            case "general-element-store": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              equal(use(op.index), "number");
+              if (op.kind === "general-element-store")
+                equal(use(op.value), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.countField) ||
+                !natural(op.tagsField) ||
+                !natural(op.refsField) ||
+                !natural(op.numbersField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.countField], "number") ||
+                !plainRecordField(
+                  elementFields?.[op.tagsField],
+                  "Uint8Array",
+                ) ||
+                !plainRecordField(elementFields?.[op.refsField], "reference") ||
+                !plainRecordField(
+                  elementFields?.[op.numbersField],
+                  "Float64Array",
+                )
+              )
+                fail(
+                  "TYPE",
+                  "general element access requires an elements reference with count, Uint8Array tags, reference vector, and Float64Array numbers",
+                );
+              define(
+                op.id,
+                op.kind === "general-element-load" ? "general" : "boolean",
+              );
+              break;
+            }
+            case "general-slot-load":
+            case "general-slot-store": {
+              equal(use(op.tags), "Uint8Array");
+              equal(use(op.refs), "reference");
+              equal(use(op.numbers), "Float64Array");
+              equal(use(op.index), "number");
+              if (op.kind === "general-slot-store")
+                equal(use(op.value), "general");
+              define(
+                op.id,
+                op.kind === "general-slot-load" ? "general" : "boolean",
+              );
               break;
             }
             case "record-has": {

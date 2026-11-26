@@ -46,7 +46,9 @@ test("Script resolving functions delegate settlement and have builtin descriptor
     hooks,
   );
   for (const fn of [pair.resolve, pair.reject]) {
-    assert.ok(fn.internalExecutionContext === realm.executionContext);
+    assert.ok(
+      fn.internalRareSlots?.internalExecutionContext === realm.executionContext,
+    );
     assert.equal(object.getOwnProperty(fn, "name")?.value, "");
     assert.equal(object.getOwnProperty(fn, "length")?.value, 1);
   }

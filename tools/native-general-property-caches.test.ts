@@ -678,6 +678,78 @@ function milestone2ArraysMathLoops() {
   out.push(loopDisjoint(h2, 6, -1), setterSide);
   return out.join("|");
 }
+function milestone3PolymorphicStoreAndForwarding() {
+  const out = [];
+  // 1. 4-entry polymorphic property-store (overwrites + transitions + 5th shape
+  //    + non-writable / setter / frozen invalidation).
+  function writeHit(target, val) {
+    target.hit = val;
+    return target.hit;
+  }
+  const s0 = { hit: 0 };
+  const s1 = { a: 1, hit: 0 };
+  const s2 = { b: 2 };
+  const s3 = { c: 3, d: 4 };
+  const s4 = { e: 5, hit: 0 };
+  let total = 0;
+  for (let i = 1; i <= 4; i++) {
+    total += writeHit(s0, i);
+    total += writeHit(s1, i * 10);
+    total += writeHit(i === 1 ? s2 : { b: i }, i * 100);
+    total += writeHit(i === 1 ? s3 : { c: i, d: i + 1 }, i * 1000);
+  }
+  total += writeHit(s4, 7);
+  out.push(total, s0.hit, s1.hit, s2.hit, s3.hit, s4.hit);
+  const frozen = Object.freeze({ hit: 99 });
+  let frozeErr = "none";
+  try { writeHit(frozen, 1); } catch (e) { frozeErr = e.constructor.name; }
+  let setLog = 0;
+  const withSetter = { a: 1 };
+  Object.defineProperty(withSetter, "hit", {
+    set(v) { setLog += v; },
+    get() { return setLog; },
+    configurable: true,
+  });
+  out.push(frozeErr, frozen.hit, writeHit(withSetter, 42), setLog);
+
+  // 2. Same-receiver dominating property-load CSE across disjoint store and
+  //    sibling cold-miss getter mutation.
+  function readWithSibling(obj) {
+    const first = obj.x;
+    obj.other = first + 1;
+    const mid = obj.y;
+    const second = obj.x;
+    return first * 100 + mid * 10 + second;
+  }
+  const plain = { x: 2, y: 3, other: 0 };
+  const mutating = { x: 2, other: 0 };
+  Object.defineProperty(mutating, "y", {
+    get() { this.x = 9; return 4; },
+    configurable: true,
+  });
+  out.push(readWithSibling(plain), plain.other, readWithSibling(mutating), mutating.x);
+
+  // 3. Type-narrowed == / != edge cases.
+  const eqPairs = [
+    [null, undefined],
+    [0, -0],
+    [0, false],
+    [1, true],
+    ["", false],
+    ["42", 42],
+    [NaN, NaN],
+    [{ valueOf() { return 7; } }, 7],
+    [null, 0],
+    [undefined, false],
+  ];
+  const eqOut = [];
+  for (let i = 0; i < eqPairs.length; i++) {
+    const a = eqPairs[i][0], b = eqPairs[i][1];
+    eqOut.push((a == b ? "1" : "0") + (a != b ? "1" : "0"));
+  }
+  out.push(eqOut.join(""));
+  return out.join("|");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -697,6 +769,7 @@ export function sections() {
     inheritedNonMethodAndEviction(),
     milestone2ConstructAndMethods(),
     milestone2ArraysMathLoops(),
+    milestone3PolymorphicStoreAndForwarding(),
   ];
 }
 `;
@@ -714,7 +787,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 17);
+  assert.equal(expected.length, 18);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

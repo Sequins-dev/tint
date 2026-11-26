@@ -193,6 +193,10 @@ import {
 } from "./executable-memory.ts";
 import { rememberedBarrier } from "./barrier.ts";
 import { allocationHelper, type AllocationHelper } from "./allocation.ts";
+import {
+  emitGeneralElementAccess,
+  emitPolymorphicPropertyStore,
+} from "./general-elements.ts";
 export type LeafHelperKind =
   | SharedMemoryPrimitive
   | AllocationHelper
@@ -6670,6 +6674,10 @@ function emitModuleForms(
                   op !== undefined &&
                   (op.kind === "element-load" ||
                     op.kind === "element-store" ||
+                    op.kind === "general-element-load" ||
+                    op.kind === "general-element-store" ||
+                    op.kind === "general-slot-load" ||
+                    op.kind === "general-slot-store" ||
                     op.kind === "property-load" ||
                     op.kind === "property-store")
                 ) {
@@ -6727,6 +6735,10 @@ function emitModuleForms(
                 // counts directly when kept in int64 registers.
                 op.kind === "element-load" ||
                 op.kind === "element-store" ||
+                op.kind === "general-element-load" ||
+                op.kind === "general-element-store" ||
+                op.kind === "general-slot-load" ||
+                op.kind === "general-slot-store" ||
                 // Inline code units index with an int64 (the helper path
                 // converts with floatLoad).
                 op.kind === "string-code-unit" ||
@@ -8581,10 +8593,14 @@ function emitModuleForms(
                 break;
               case "property-store":
               case "element-store":
+              case "general-element-store":
+              case "general-slot-store":
                 id = op.id;
                 type = "boolean";
                 break;
               case "element-load":
+              case "general-element-load":
+              case "general-slot-load":
               case "element-length":
                 id = op.id;
                 type = "general";
@@ -21309,123 +21325,77 @@ function emitModuleForms(
                     });
                   break;
                 }
-                entryPair(siteShape.offset);
-                compare(9, 12);
                 const epochField =
                   module.records?.[op.epochRecord]?.fields[op.epochField];
                 if (epochField === undefined)
                   throw "property cache layout invariant";
-                // A transition (x14) also needs the epoch it was found under
-                // (x9) to be current.
-                emit({
-                  op: "ldp",
-                  width: 64,
-                  rt: 14,
-                  rt2: 9,
-                  rn: site,
-                  offset: siteShape.offset + 16,
-                  mode: "offset",
-                });
-                const existing = instructions.length;
-                emit({ op: "cbz", width: 64, rt: 14, displacement: 0 });
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 15,
-                  rn: site,
-                  offset: siteShape.offset + 32,
-                });
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 15,
-                  rn: 15,
-                  offset: epochField.offset,
-                });
-                compare(15, 9);
-                emit({
-                  op: "str",
-                  width: 64,
-                  rt: 14,
-                  rn: 10,
-                  offset: shapeField.offset,
-                });
-                patchInstruction(existing, {
-                  op: "cbz",
-                  width: 64,
-                  rt: 14,
-                  displacement: (instructions.length - existing) * 4,
-                });
-                emit({
-                  op: "add-reg",
-                  width: 64,
-                  rd: 13,
-                  rn: 10,
-                  rm: 13,
-                  shift: "lsl",
-                  amount: 3,
-                  setFlags: false,
-                });
-                generalPair(14, value(op.value).offset, true);
-                emit({
-                  op: "stp",
-                  width: 64,
-                  rt: 14,
-                  rt2: 15,
-                  rn: 13,
-                  offset: 0,
-                  mode: "offset",
-                });
-                if (generationalBarriers) {
-                  // An old object may now refer to a young value or shape:
-                  // remember it unless no transition was stored (the site
-                  // register is intact) and the value is no reference.
-                  emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: 10 });
-                  rawLoad(10, contextOffset);
-                  const transitionOffset = siteShape.offset + 16,
-                    valueOffset = value(op.value).offset;
-                  rememberObject(
-                    undefined,
-                    9,
-                    undefined,
-                    (): readonly number[] => {
-                      emit({
-                        op: "ldr",
-                        width: 64,
-                        rt: 13,
-                        rn: site,
-                        offset: transitionOffset,
-                      });
-                      const transition = instructions.length;
-                      emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
-                      const skips = nonReferenceTag(valueOffset);
-                      patchInstruction(transition, {
-                        op: "cbnz",
-                        width: 64,
-                        rt: 13,
-                        displacement: (instructions.length - transition) * 4,
-                      });
-                      return skips;
+                const owner = fn.id;
+                emitPolymorphicPropertyStore(
+                  {
+                    site,
+                    siteShapeOffset: siteShape.offset,
+                    shapeFieldOffset: shapeField.offset,
+                    epochFieldOffset: epochField.offset,
+                    contextOffset,
+                    useColdStubs,
+                    generationalBarriers,
+                    fusedMiss,
+                    misses,
+                    instructionCount: (): number => instructions.length,
+                    emit,
+                    patchInstruction,
+                    farBranch,
+                    branchNe: (targetBlock: number): void =>
+                      branch(
+                        { op: "b.cond", condition: "ne" },
+                        owner,
+                        targetBlock,
+                      ),
+                    imm,
+                    compare,
+                    entryPair,
+                    generalPair,
+                    valueOffset: (id: number): number => value(id).offset,
+                    rawLoad,
+                    rawTarget,
+                    saveRaw,
+                    rememberTransitionOrValue: (valueOffset: number): void => {
+                      rememberObject(
+                        undefined,
+                        9,
+                        undefined,
+                        (): readonly number[] => {
+                          const transition = instructions.length;
+                          emit({
+                            op: "cbnz",
+                            width: 64,
+                            rt: 12,
+                            displacement: 0,
+                          });
+                          const skips = nonReferenceTag(valueOffset);
+                          patchInstruction(transition, {
+                            op: "cbnz",
+                            width: 64,
+                            rt: 12,
+                            displacement:
+                              (instructions.length - transition) * 4,
+                          });
+                          return skips;
+                        },
+                      );
                     },
-                  );
-                }
-                if (fusedMiss !== undefined) break;
-                const target = rawTarget(op.id, 12);
-                imm(target, 1);
-                const stored = instructions.length;
-                emit({ op: "b", displacement: 0 });
-                for (const site of misses)
-                  patchInstruction(site, {
-                    op: "b.cond",
-                    condition: "ne",
-                    displacement: (instructions.length - site) * 4,
-                  });
-                imm(target, 0);
-                patchInstruction(stored, {
-                  op: "b",
-                  displacement: (instructions.length - stored) * 4,
-                });
-                saveRaw(target, op.id);
+                    clearStackWords: (): void => {
+                      stackWords.clear();
+                    },
+                    deleteForwardable: (block: number): void => {
+                      forwardable.delete(block);
+                    },
+                    pushColdStub: (stub: () => void): void => {
+                      coldStubs.push(stub);
+                    },
+                  },
+                  op,
+                );
                 break;
               }
               case "script-entry": {
@@ -22318,6 +22288,53 @@ function emitModuleForms(
                   op: "b",
                   displacement: (instructions.length - hit) * 4,
                 });
+                break;
+              }
+              case "general-element-load":
+              case "general-element-store":
+              case "general-slot-load":
+              case "general-slot-store": {
+                const isElement =
+                  op.kind === "general-element-load" ||
+                  op.kind === "general-element-store";
+                const fusedMiss =
+                  isElement && fusion !== undefined && fusion.access === op.id
+                    ? fusion.miss
+                    : undefined;
+                const owner = fn.id;
+                emitGeneralElementAccess(
+                  {
+                    records: module.records,
+                    jsConvert,
+                    contextOffset,
+                    fusedMiss,
+                    instructionCount: (): number => instructions.length,
+                    emit,
+                    patchInstruction,
+                    branchCond: (
+                      condition: "ne" | "lt" | "cs",
+                      targetBlock: number,
+                    ): void =>
+                      branch({ op: "b.cond", condition }, owner, targetBlock),
+                    branchCbz: (rt: number, targetBlock: number): void =>
+                      branch({ op: "cbz", width: 64, rt }, owner, targetBlock),
+                    imm,
+                    generalPair,
+                    descriptorPointer,
+                    valueOffset: (id: number): number => value(id).offset,
+                    exactInteger,
+                    intRegister,
+                    floatOperand,
+                    rawValue,
+                    rawLoad,
+                    rawTarget,
+                    saveRaw,
+                    rememberDeferred: (): void => {
+                      rememberObject(deferRememberSlow());
+                    },
+                  },
+                  op,
+                );
                 break;
               }
               case "element-length": {

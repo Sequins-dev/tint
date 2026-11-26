@@ -17,6 +17,7 @@ import {
   type OrdinaryObject,
   type ProgramRealmCore,
   type ScriptPropertyKey,
+  objectFlagArrayData,
 } from "@tint/js-runtime/objects";
 
 export type FfiObject = OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -72,7 +73,10 @@ export function ffiObject(
   label: string,
 ): FfiObject {
   const object = viewObjectValue(value, core.object);
-  if (object === undefined || object.internalArrayData)
+  if (
+    object === undefined ||
+    (object.internalFlags & objectFlagArrayData) !== 0
+  )
     return ffiError(
       core,
       "type",
@@ -139,7 +143,7 @@ export function parseFfiSignature(
       hooks,
     );
     const list = viewObjectValue(value, core.object);
-    if (list === undefined || !list.internalArrayData)
+    if (list === undefined || (list.internalFlags & objectFlagArrayData) === 0)
       return ffiError(
         core,
         "type",

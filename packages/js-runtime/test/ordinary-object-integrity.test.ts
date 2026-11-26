@@ -119,7 +119,7 @@ test("freezing is shallow and preserves accessor setters", () => {
     testIntegrityLevel(object, true, (key): number => -1),
     true,
   );
-  assert.equal(parent.extensible, true);
+  assert.equal((parent.internalFlags & 1) !== 0, true);
   assert.equal(
     setProperty(object, "new", 1, { value: object, object }, hooks),
     false,
