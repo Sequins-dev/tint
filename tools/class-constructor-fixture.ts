@@ -119,7 +119,7 @@ export function classConstructorFixture(write: boolean): {
                   kind: "record-new",
                   id: 2,
                   record: storage.constructorState,
-                  arguments: [1, undefined, undefined],
+                  arguments: [1, undefined, undefined, undefined],
                   ...s,
                 },
                 { kind: "constant", id: 3, value: write ? 1 : 42, ...s },

@@ -1,7 +1,11 @@
 import type { CheckedClosures, ClosureBody } from "@tint/typescript/checker";
 import type { ClassElement, Span, Statement } from "@tint/typescript/syntax";
-import type { FunctionIR, RecordLayout } from "@tint/ir/scalar";
-import type { FunctionSignature, OwnedClassDefinition } from "../../scalar.ts";
+import type { FunctionIR, RecordLayout, ScalarType } from "@tint/ir/scalar";
+import type {
+  ConstructorContext,
+  FunctionSignature,
+  OwnedClassDefinition,
+} from "../../scalar.ts";
 import type {
   ClassFieldStorage,
   ClassMethodStorage,
@@ -14,6 +18,8 @@ import {
 } from "./class-definition.ts";
 import {
   buildClassConstruction,
+  buildClassInit,
+  buildClassOwnFields,
   buildClassStaticInitialization,
   type ClassFieldInitialization,
 } from "./class-construction.ts";
@@ -21,16 +27,22 @@ import {
 type ClassStatement = Statement & { readonly kind: "class" };
 
 /** A class statement evaluated by a lowered function, with the generated
- * entries that define, construct and statically initialize it
- * (docs/design-typed-classes.md, C1). */
+ * entries that define, construct, initialize and statically initialize it
+ * (docs/design-typed-classes.md, C1/C2). */
 export interface ClassEntries {
   readonly storage: ClassRecordStorage;
+  readonly base: ClassEntries | undefined;
   readonly statement: ClassStatement;
   /** Checked function evaluating the class statement. */
   readonly owner: number;
   readonly definition: number;
   readonly construction: number;
+  readonly initialization: number;
+  readonly ownFields: number | undefined;
   readonly callTarget: number;
+  /** Source function ID of the constructor body (when declared), and its hidden context. */
+  readonly bodySourceId: number | undefined;
+  readonly constructorContext: ConstructorContext | undefined;
   /** Lowered member closure targets, by definition environment field. */
   readonly members: readonly number[];
   /** Static field initialization, when the class has static fields. */
@@ -57,11 +69,17 @@ export function reserveClassEntries(
   fail: (message: string) => never,
 ): readonly ClassEntries[] {
   const reserved: ClassEntries[] = [];
-  function memberTarget(element: ClassElement): number {
+  const byInstance = new Map<number, ClassEntries>();
+  function memberFunctionId(element: ClassElement): number {
     const member = checked.bindings.functions.find(
       (fn) => fn !== undefined && fn.node === element,
     );
-    const target = member === undefined ? undefined : targetIds[member.id];
+    if (member === undefined)
+      fail("class members are lowered with the function evaluating the class");
+    return member.id;
+  }
+  function memberTarget(element: ClassElement): number {
+    const target = targetIds[memberFunctionId(element)];
     if (target === undefined)
       fail("class members are lowered with the function evaluating the class");
     return target;
@@ -88,6 +106,11 @@ export function reserveClassEntries(
     const statement = found,
       owner = foundOwner;
     if (statement === undefined || owner === undefined) continue;
+    const baseInstance = storage.contract.base;
+    const baseEntry =
+      baseInstance === undefined ? undefined : byInstance.get(baseInstance);
+    if (baseInstance !== undefined && baseEntry === undefined)
+      fail("base class entry must be reserved before derived class");
     const members = storage.members;
     const targets: number[] = [];
     for (const method of members.methods) {
@@ -105,25 +128,97 @@ export function reserveClassEntries(
         targets[initializer.environmentField] = memberTarget(field.element);
     }
     const body = members.body;
-    let parameters: FunctionSignature["parameters"] = [];
+    let userParameters: readonly ScalarType[] = [];
+    let bodySourceId: number | undefined;
+    let bodyTarget: number | undefined;
     if (body !== undefined) {
-      const target = memberTarget(body.element);
-      targets[body.environmentField] = target;
-      const signature = signatures[target];
+      bodySourceId = memberFunctionId(body.element);
+      bodyTarget = targetIds[bodySourceId];
+      if (bodyTarget === undefined)
+        fail("class constructor body must be lowered with class");
+      targets[body.environmentField] = bodyTarget;
+      const signature = signatures[bodyTarget];
       if (signature === undefined || signature.returnType !== "void")
         fail("constructor bodies return no value");
-      parameters = signature.parameters;
+      userParameters = signature.parameters.slice();
+    } else if (baseEntry !== undefined) {
+      const baseConstruct = signatures[baseEntry.construction];
+      if (baseConstruct === undefined)
+        throw "base class construction signature invariant";
+      userParameters = baseConstruct.parameters.slice();
     }
     if (targets.length !== members.definitionEnvironment.fields.length)
       throw "class member closure invariant";
-    // A derived definition receives the base prototype (ClassDefinitionPlan).
+    // A derived definition receives (basePrototype, baseInit).
     const definition = signatures.length;
     signatures.push({
-      parameters: storage.prototypeLink === undefined ? [] : ["reference"],
+      parameters:
+        storage.prototypeLink === undefined ? [] : ["reference", "reference"],
       returnType: "reference",
     });
     const construction = signatures.length;
-    signatures.push({ parameters, returnType: "reference" });
+    signatures.push({ parameters: userParameters, returnType: "reference" });
+    const initialization = signatures.length;
+    const initParameters: ScalarType[] = ["reference", "reference"];
+    for (const param of userParameters) {
+      if (param === undefined) throw "class init parameter invariant";
+      initParameters.push(param);
+    }
+    signatures.push({
+      parameters: initParameters,
+      returnType: "void",
+    });
+    const hasOwnFields = members.fields.some(
+      (field) =>
+        field !== undefined &&
+        (field.initializer !== undefined || field.undefinedDefault),
+    );
+    let ownFields: number | undefined;
+    if (baseEntry !== undefined && body !== undefined && hasOwnFields) {
+      ownFields = signatures.length;
+      signatures.push({ parameters: ["reference"], returnType: "void" });
+    }
+    let constructorContext: ConstructorContext | undefined;
+    if (bodyTarget !== undefined) {
+      const hidden: ScalarType[] = ["reference"]; // newTarget
+      const newTargetParam = userParameters.length;
+      let baseInitInfo:
+        { readonly parameter: number; readonly target: number } | undefined;
+      let ownFieldsInfo:
+        { readonly parameter: number; readonly target: number } | undefined;
+      if (baseEntry !== undefined) {
+        baseInitInfo = {
+          parameter: userParameters.length + hidden.length,
+          target: baseEntry.initialization,
+        };
+        hidden.push("reference");
+        if (ownFields !== undefined) {
+          ownFieldsInfo = {
+            parameter: userParameters.length + hidden.length,
+            target: ownFields,
+          };
+          hidden.push("reference");
+        }
+      }
+      const bodyParameters: ScalarType[] = [];
+      for (const param of userParameters) {
+        if (param === undefined) throw "class body parameter invariant";
+        bodyParameters.push(param);
+      }
+      for (const param of hidden) {
+        if (param === undefined) throw "class hidden parameter invariant";
+        bodyParameters.push(param);
+      }
+      signatures[bodyTarget] = {
+        parameters: bodyParameters,
+        returnType: "void",
+      };
+      constructorContext = {
+        newTarget: newTargetParam,
+        ...(baseInitInfo === undefined ? {} : { baseInit: baseInitInfo }),
+        ...(ownFieldsInfo === undefined ? {} : { ownFields: ownFieldsInfo }),
+      };
+    }
     const callTarget = signatures.length;
     signatures.push({ parameters: [], returnType: "void" });
     let staticsEntry: ClassEntries["statics"];
@@ -147,18 +242,37 @@ export function reserveClassEntries(
       };
     }
     const statics = staticsEntry;
-    reserved.push({
+    const entryItem: ClassEntries = {
       storage,
+      base: baseEntry,
       statement,
       owner,
       definition,
       construction,
+      initialization,
+      ownFields,
       callTarget,
+      bodySourceId,
+      constructorContext,
       members: targets,
       statics,
-    });
+    };
+    reserved.push(entryItem);
+    byInstance.set(storage.contract.instance, entryItem);
   }
   return reserved;
+}
+
+/** The hidden constructor context for a checked constructor body function. */
+export function classConstructorContext(
+  classes: readonly ClassEntries[],
+  sourceId: number,
+): ConstructorContext | undefined {
+  for (const item of classes) {
+    if (item === undefined) throw "class entry invariant";
+    if (item.bodySourceId === sourceId) return item.constructorContext;
+  }
+  return undefined;
 }
 
 /** The construction entry `new C(...)` calls for a constructor type. */
@@ -201,6 +315,37 @@ export function ownedClassDefinitions(
     if (item.owner !== owner) continue;
     const outer = local(item.statement);
     if (outer === undefined) fail("class statements require a binding local");
+    const base = item.base;
+    const heritageExpression = item.statement.definition.heritage;
+    const heritage: OwnedClassDefinition["heritage"] =
+      base === undefined || heritageExpression === undefined
+        ? undefined
+        : {
+            expression: heritageExpression,
+            prototype: {
+              type: "reference",
+              functionEnvironment: true,
+              choices: [
+                {
+                  record: base.storage.constructorState,
+                  field: base.storage.statePrototypeField,
+                  type: "reference",
+                },
+              ],
+            },
+            init: {
+              type: "reference",
+              functionEnvironment: true,
+              choices: [
+                {
+                  record: base.storage.constructorState,
+                  field: base.storage.initializationField,
+                  type: "reference",
+                  initialized: true,
+                },
+              ],
+            },
+          };
     owned.push({
       declaration: item.statement,
       local: outer,
@@ -208,6 +353,7 @@ export function ownedClassDefinitions(
       definition: item.definition,
       environment: item.storage.definitionEnvironment,
       members: item.members,
+      ...(heritage === undefined ? {} : { heritage }),
       statics: item.statics,
     });
   }
@@ -241,10 +387,31 @@ function fieldInitializations(
   return initializations;
 }
 
-/** Build the reserved definition, construction, [[Call]] and static
- * initialization entries. */
+/** All concrete instance records of `item` and its subclasses. */
+function classFamilyRecords(
+  item: ClassEntries,
+  all: readonly ClassEntries[],
+): readonly number[] {
+  const records: number[] = [item.storage.instance];
+  for (const candidate of all) {
+    if (candidate === undefined || candidate === item) continue;
+    let cursor = candidate.base;
+    while (cursor !== undefined) {
+      if (cursor === item) {
+        records.push(candidate.storage.instance);
+        break;
+      }
+      cursor = cursor.base;
+    }
+  }
+  return records;
+}
+
+/** Build the reserved definition, construction, initialization, own-fields,
+ * [[Call]] and static initialization entries. */
 export function buildClassEntries(
   item: ClassEntries,
+  all: readonly ClassEntries[],
   records: readonly RecordLayout[],
   signatures: readonly FunctionSignature[],
   typeError: number | undefined,
@@ -288,6 +455,14 @@ export function buildClassEntries(
   const construction = signatures[item.construction];
   if (construction === undefined)
     throw "class construction signature invariant";
+  const fields = fieldInitializations(members.fields, (field) => {
+    const target = item.members[field];
+    if (target === undefined) throw "class field initializer invariant";
+    return target;
+  });
+  const familyRecords = classFamilyRecords(item, all);
+  const base = item.base;
+  const baseInitField = members.baseInitField;
   const generated: FunctionIR[] = [
     buildClassDefinition(
       {
@@ -304,6 +479,7 @@ export function buildClassEntries(
           record: storage.constructorState,
           prototypeField: storage.statePrototypeField,
           constructionField: storage.constructionField,
+          initializationField: storage.initializationField,
           methods: copies(members.staticMethods),
         },
         callTarget: item.callTarget,
@@ -311,8 +487,11 @@ export function buildClassEntries(
           target: item.construction,
           record: storage.constructionEnvironment,
           receiverField: 0,
+          constructorField: members.constructorField,
+          baseInitField: members.baseInitField,
           entries: constructionEntries,
         },
+        initialization: { target: item.initialization },
         ...span,
       },
       records,
@@ -325,14 +504,32 @@ export function buildClassEntries(
         parameters: construction.parameters,
         environment: storage.constructionEnvironment,
         prototypeField: 0,
+        constructorField: members.constructorField,
         instance: storage.instance,
         instancePrototypeField: storage.prototypeField,
-        fields: fieldInitializations(members.fields, (field) => {
-          const target = item.members[field];
-          if (target === undefined) throw "class field initializer invariant";
-          return target;
-        }),
+        init: { target: item.initialization },
+        fields,
         body: bodyEntry,
+        ...span,
+      },
+      records,
+      signatures,
+    ),
+    buildClassInit(
+      {
+        id: item.initialization,
+        name: name + "$init",
+        parameters: construction.parameters,
+        environment: storage.constructionEnvironment,
+        instance: storage.instance,
+        familyRecords,
+        fields,
+        body: bodyEntry,
+        baseInit:
+          base === undefined || baseInitField === undefined
+            ? undefined
+            : { field: baseInitField, target: base.initialization },
+        ownFieldsTarget: item.ownFields,
         ...span,
       },
       records,
@@ -347,6 +544,23 @@ export function buildClassEntries(
       ...span,
     }),
   ];
+  const ownFields = item.ownFields;
+  if (ownFields !== undefined)
+    generated.push(
+      buildClassOwnFields(
+        {
+          id: ownFields,
+          name: name + "$fields",
+          environment: storage.constructionEnvironment,
+          instance: storage.instance,
+          familyRecords,
+          fields,
+          ...span,
+        },
+        records,
+        signatures,
+      ),
+    );
   const statics = item.statics;
   if (statics !== undefined)
     generated.push(

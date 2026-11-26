@@ -781,6 +781,16 @@ export interface RecordContracts extends RecordOperations {
     type: ScalarType,
     write: boolean,
   ) => void;
+  /** Plan `super.name` from a derived class method/constructor: walks each
+   * concrete subclass layout in `receiverType`'s family up to `basePrototypeType`
+   * (skipping own slots along the way) and reads `name` on that prototype chain. */
+  readonly superAccess: (
+    node: Expression,
+    receiverType: number,
+    basePrototypeType: number,
+    name: string,
+    type: ScalarType,
+  ) => void;
 }
 /** Optional frontend identity partitions otherwise equal physical layouts. An
  * absent key retains ordinary storage interning; keys belong to this checked graph. */
@@ -1112,10 +1122,21 @@ export function createRecordContracts(
     field: number,
     type: ScalarType,
   ): RecordAccess {
-    const link = prototypes[record],
+    const fieldInfo = records[record]?.fields[field],
+      link = prototypes[record],
       through = link?.inherited[field];
-    const choice: RecordAccessChoice = { record, field, type: "reference" };
-    if (link === undefined || through === undefined || through < 0)
+    const choice: RecordAccessChoice = {
+      record,
+      field,
+      type: fieldInfo?.type ?? "reference",
+    };
+    // Own non-optional prototype methods are always present (no presence byte).
+    if (
+      fieldInfo?.presenceOffset === undefined ||
+      link === undefined ||
+      through === undefined ||
+      through < 0
+    )
       return { type, choices: [choice] };
     return {
       type,
@@ -1652,6 +1673,8 @@ export function createRecordContracts(
         baseType === undefined ? undefined : plannedClasses.get(baseType);
     if (baseType !== undefined && baseClass === undefined)
       fail("base class storage must be planned before derived classes");
+    if (baseClass !== undefined && baseClass.planned.accessors.length > 0)
+      fail("inherited class accessors are not lowered yet");
     const planned = planClassRecords(
         contract,
         checked.types,
@@ -1787,6 +1810,7 @@ export function createRecordContracts(
     classes.push({
       constructorState,
       constructionField: planned.constructionField,
+      initializationField: planned.initializationField,
       prototypeConstructorField,
       statePrototypeField,
       contract,
@@ -1919,6 +1943,40 @@ export function createRecordContracts(
       spreads.clear();
     },
     testClassInstance: (node, storage) => {
+      const targetInstance = storage.contract.instance;
+      const derives = (candidate: ClassRecordStorage): boolean => {
+        let current: number | undefined = candidate.contract.instance;
+        while (current !== undefined) {
+          if (current === targetInstance) return true;
+          current = plannedClasses.get(current)?.base;
+        }
+        return false;
+      };
+      const family: {
+        readonly instance: number;
+        readonly prototypeField: number;
+        readonly prototypeChain: readonly {
+          readonly record: number;
+          readonly linkField: number;
+        }[];
+      }[] = [];
+      for (const candidate of classes) {
+        if (candidate === undefined || !derives(candidate)) continue;
+        const chain: { readonly record: number; readonly linkField: number }[] =
+          [];
+        let proto = candidate.prototype;
+        while (proto !== storage.prototype) {
+          const link = prototypes[proto];
+          if (link === undefined) break;
+          chain.push({ record: proto, linkField: link.field });
+          proto = link.record;
+        }
+        family.push({
+          instance: candidate.instance,
+          prototypeField: candidate.prototypeField,
+          prototypeChain: chain,
+        });
+      }
       classInstanceTests.set(node, {
         prototype: {
           type: "reference",
@@ -1933,6 +1991,7 @@ export function createRecordContracts(
         },
         instance: storage.instance,
         prototypeField: storage.prototypeField,
+        family,
       });
     },
     constructClass: (node, target) => {
@@ -2252,6 +2311,75 @@ export function createRecordContracts(
         choices: exactLayoutsFirst(receiverType, choices),
         functionEnvironment,
       });
+    },
+    superAccess: (node, receiverType, basePrototypeType, name, type) => {
+      const targetProtoShapes = classLayouts(basePrototypeType);
+      const targetProto = targetProtoShapes?.[0];
+      if (targetProto === undefined)
+        fail("super property access requires a known base prototype layout");
+      const targetField = names[targetProto]?.indexOf(name) ?? -1;
+      if (targetField < 0)
+        fail(
+          "super property access requires a known base prototype member: " +
+            name,
+        );
+      const targetAccess = prototypeAccess(targetProto, targetField, type);
+      const choices: RecordAccessChoice[] = [];
+      for (const instanceRecord of shapesForType(receiverType)) {
+        if (instanceRecord === undefined)
+          throw "super receiver shape invariant";
+        // Walk prototype links from instanceRecord -> ... -> targetProto.
+        const hops: { readonly record: number; readonly field: number }[] = [];
+        let cursor = instanceRecord;
+        let reached = false;
+        for (let depth = 0; depth < 64; depth++) {
+          const link = prototypes[cursor];
+          if (link === undefined) break;
+          hops.push({ record: cursor, field: link.field });
+          if (link.record === targetProto) {
+            reached = true;
+            break;
+          }
+          cursor = link.record;
+        }
+        if (!reached)
+          fail("super property access could not reach base prototype layout");
+        let chain: RecordAccess = targetAccess;
+        for (let i = hops.length - 1; i >= 1; i--) {
+          const hop = hops[i];
+          if (hop === undefined) throw "super hop invariant";
+          chain = {
+            type,
+            choices: [
+              {
+                record: hop.record,
+                field: 0,
+                type: "reference",
+                prototype: {
+                  field: hop.field,
+                  skipOwn: true,
+                  access: chain,
+                },
+              },
+            ],
+          };
+        }
+        const first = hops[0];
+        if (first === undefined) throw "super first hop invariant";
+        choices.push({
+          record: first.record,
+          field: 0,
+          type: "reference",
+          prototype: {
+            field: first.field,
+            skipOwn: true,
+            access: chain,
+          },
+        });
+      }
+      if (choices.length === 0)
+        fail("super property access requires known receiver layouts");
+      accesses.set(node, { type, choices });
     },
   };
 }

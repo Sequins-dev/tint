@@ -421,7 +421,7 @@ test("inferred generic calls report a specialization capability with a source ow
 test("class heritage fallback is owned by the whole class", () => {
   const { lowering, requests } = recordingLowering();
   const text =
-    "class Base {}\nclass Derived extends Base {}\nexport function run(): number { return 42; }";
+    "class Base {}\nfunction pick(): unknown { return Base; }\nclass Derived extends pick() {}\nexport function run(): number { return 42; }";
   compileArm64Program({
     ...generatorProgram({ ...lowering, validateSource: () => [] }),
     modules: [source("main", text)],
@@ -431,14 +431,14 @@ test("class heritage fallback is owned by the whole class", () => {
   const owner = requests[0]?.trigger?.owner;
   assert.equal(
     text.slice(owner?.start, owner?.end),
-    "class Derived extends Base {}",
+    "class Derived extends pick() {}",
   );
 });
 
-test("module classes compile on the typed path", () => {
+test("module classes and derived classes compile on the typed path", () => {
   const { lowering, requests } = recordingLowering();
   const text =
-    "class Clazz { value: number = 42; }\nexport function run(): number { return new Clazz().value; }";
+    "class Clazz { value: number = 42; }\nclass Derived extends Clazz { extra: number = 1; }\nexport function run(): number { return new Derived().value; }";
   const compiled = compileArm64Program({
     ...generatorProgram({ ...lowering, validateSource: () => [] }),
     modules: [source("main", text)],

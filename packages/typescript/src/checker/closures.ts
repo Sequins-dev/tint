@@ -209,6 +209,8 @@ export type ClosureIntrinsic =
   | "flow-property-read"
   | "flow-property-read-boxed"
   | "uninitialized-field-read"
+  | "super-call"
+  | "super-member"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -1307,9 +1309,78 @@ function checkClosureModuleLayout(
   const classContracts = createKeyIndex<ClassDefinition, ClassContract>(
     syntaxHash,
   );
+  const classByInstance = new Map<number, ClassContract>(),
+    classByConstructor = new Map<number, ClassContract>(),
+    classChildren = new Map<number, ClassContract[]>(),
+    memberClass = new Map<
+      number,
+      {
+        readonly contract: ClassContract;
+        readonly kind: "constructor" | "method" | "field" | "accessor";
+        readonly static: boolean;
+      }
+    >();
   for (const contract of contracts.classes) {
     if (contract === undefined) throw "class contract invariant";
     classContracts.set(contract.definition, contract);
+    classByInstance.set(contract.instance, contract);
+    classByConstructor.set(contract.constructor, contract);
+    const baseInstance = contract.base;
+    if (baseInstance !== undefined) {
+      let children = classChildren.get(baseInstance);
+      if (children === undefined) {
+        children = [];
+        classChildren.set(baseInstance, children);
+      }
+      children.push(contract);
+    }
+  }
+  function classDerivesFrom(derived: number, base: number): boolean {
+    let cursor: number | undefined = derived;
+    while (cursor !== undefined) {
+      if (cursor === base) return true;
+      cursor = classByInstance.get(cursor)?.base;
+    }
+    return false;
+  }
+  function classOverriddenBySubclass(
+    contract: ClassContract,
+    name: string,
+  ): boolean {
+    const queue: ClassContract[] = (
+      classChildren.get(contract.instance) ?? []
+    ).slice();
+    for (let i = 0; i < queue.length; i++) {
+      const child = queue[i];
+      if (child === undefined) continue;
+      for (const member of child.members) {
+        if (member === undefined) throw "class member invariant";
+        const element = member.node;
+        if (
+          element.kind === "method" &&
+          !element.static &&
+          literalPropertyName(element.key) === name
+        )
+          return true;
+      }
+      for (const grand of classChildren.get(child.instance) ?? [])
+        if (grand !== undefined) queue.push(grand);
+    }
+    return false;
+  }
+  function familyConstructors(contract: ClassContract): number[] {
+    const result: number[] = [contract.constructor];
+    const queue: ClassContract[] = (
+      classChildren.get(contract.instance) ?? []
+    ).slice();
+    for (let i = 0; i < queue.length; i++) {
+      const child = queue[i];
+      if (child === undefined) continue;
+      result.push(child.constructor);
+      for (const grand of classChildren.get(child.instance) ?? [])
+        if (grand !== undefined) queue.push(grand);
+    }
+    return result;
   }
   const types: Type[] = [];
   const unionIndex = createUnionIndex(types);
@@ -1625,6 +1696,30 @@ function checkClosureModuleLayout(
   for (const f of graph.functions) {
     if (f === undefined) throw "missing function";
     functions.set(f.node, f.id);
+  }
+  for (const contract of contracts.classes) {
+    if (contract === undefined) throw "class contract invariant";
+    for (const member of contract.members) {
+      if (member === undefined) throw "class member contract invariant";
+      const element = member.node;
+      if (element.kind === "static-block") continue;
+      const fnId = functions.get(element);
+      if (fnId === undefined) continue;
+      const name = literalPropertyName(element.key);
+      const kind: "constructor" | "method" | "field" | "accessor" =
+        element.kind === "field"
+          ? "field"
+          : element.kind === "get" || element.kind === "set"
+            ? "accessor"
+            : !element.static && name === "constructor"
+              ? "constructor"
+              : "method";
+      memberClass.set(fnId, {
+        contract,
+        kind,
+        static: element.static,
+      });
+    }
   }
   for (const r of graph.references) {
     if (r === undefined) throw "missing reference";
@@ -3040,6 +3135,8 @@ function checkClosureModuleLayout(
             return true;
         }
       }
+      if (classByInstance.has(id) && classByInstance.has(base))
+        return classDerivesFrom(id, base);
       // Structural compatibility does not establish prototype derivation.
       if (!truth && kind === "object") return false;
       return system.assignable(id, base);
@@ -3301,6 +3398,8 @@ function checkClosureModuleLayout(
         const predicate = method.instancePredicate;
         if (predicate !== undefined) return predicate;
       }
+      const classContract = classByConstructor.get(ctor);
+      if (classContract !== undefined) return classContract.instance;
       const construct = type.construct;
       const call = type.call;
       if (construct !== undefined || call !== undefined) {
@@ -4467,12 +4566,8 @@ function checkClosureModuleLayout(
       );
     if (contract === undefined)
       fail(node, "UNSUPPORTED", "class contract is unavailable");
-    if (contract.base !== undefined)
-      unsupported(
-        node,
-        "class-heritage",
-        "typed derived classes require prefix layouts and super construction",
-      );
+    const heritage = node.definition.heritage;
+    if (heritage !== undefined) expression(heritage, owner);
     const required = new Set<ClassElement>(),
       receiverOwners = new Set<number>(),
       methods = new Map<string, ClassElement>(),
@@ -4492,13 +4587,14 @@ function checkClosureModuleLayout(
       )
         required.add(element);
       // Own instance methods called on `this` during construction are
-      // analyzed in place, unless some code may replace them.
+      // analyzed in place, unless some code may replace or override them.
       const method =
         element.kind === "method" &&
         !element.static &&
         !constructor &&
         name !== undefined &&
-        !prototypesWritten;
+        !prototypesWritten &&
+        !classOverriddenBySubclass(contract, name);
       if (method && name !== undefined) methods.set(name, element);
       if (
         (element.kind === "get" || element.kind === "set") &&
@@ -4603,6 +4699,7 @@ function checkClosureModuleLayout(
       constructors,
       methods,
       accessors,
+      contract.base !== undefined,
     );
     const initializationError = initialization.error;
     if (initializationError !== undefined)
@@ -4943,14 +5040,38 @@ function checkClosureModuleLayout(
    * has no per-member run-time check, so a value TypeScript accepts but some
    * member's contract rejects falls back to the general path. */
   function checkFieldWrite(
-    target: Span,
+    target: Expression,
     receiver: number,
     name: string,
     value: number,
     message: string,
+    owner?: number,
   ): void {
     const checked = system.writeProperty(receiver, name, value);
     if (checked.ok) return;
+    if (checked.error === "IMMUTABLE" && owner !== undefined) {
+      const enclosing = memberClass.get(owner);
+      const unwrapped = ungroup(target);
+      if (
+        enclosing !== undefined &&
+        enclosing.kind === "constructor" &&
+        receiver === enclosing.contract.instance &&
+        unwrapped.kind === "member" &&
+        ungroup(unwrapped.object).kind === "this" &&
+        enclosing.contract.members.some((member) => {
+          if (member === undefined) return false;
+          const element = member.node;
+          return (
+            element.kind === "field" &&
+            !element.static &&
+            literalPropertyName(element.key) === name
+          );
+        })
+      ) {
+        const read = system.property(receiver, name);
+        if (read.ok && system.assignable(value, read.value)) return;
+      }
+    }
     if (
       checked.error === "TYPE_MISMATCH" &&
       types[receiver]?.kind === "union"
@@ -5545,12 +5666,34 @@ function checkClosureModuleLayout(
             "UNSUPPORTED",
             "typed private brand checks require private layouts",
           );
-        case "new-target":
+        case "new-target": {
+          const receiverOwner =
+            owner === undefined ? undefined : graph.functions[owner]?.receiver;
+          const enclosing =
+            receiverOwner === undefined
+              ? undefined
+              : memberClass.get(receiverOwner);
+          if (enclosing !== undefined) {
+            if (enclosing.kind === "constructor") {
+              if (owner !== receiverOwner)
+                return unsupported(
+                  node,
+                  "lexical-receiver",
+                  "typed new.target inside nested arrow functions requires general construction",
+                );
+              result = unionSubset(
+                familyConstructors(enclosing.contract),
+                node,
+              );
+            } else result = undefinedType;
+            break;
+          }
           return unsupported(
             node,
             "lexical-receiver",
             "typed new.target requires constructor context support",
           );
+        }
         case "super":
           return unsupported(
             node,
@@ -6238,6 +6381,66 @@ function checkClosureModuleLayout(
         }
         case "member": {
           const receiver = ungroup(node.object);
+          if (receiver.kind === "super") {
+            const receiverOwner =
+              owner === undefined
+                ? undefined
+                : graph.functions[owner]?.receiver;
+            const enclosing =
+              receiverOwner === undefined
+                ? undefined
+                : memberClass.get(receiverOwner);
+            const baseId = enclosing?.contract.base;
+            if (
+              enclosing === undefined ||
+              baseId === undefined ||
+              enclosing.static ||
+              node.optional === true
+            )
+              return unsupported(
+                node,
+                "class-heritage",
+                "typed super property access requires a derived instance member",
+              );
+            const baseContract = classByInstance.get(baseId);
+            if (baseContract === undefined)
+              throw "base class contract invariant";
+            let foundType: number | undefined;
+            let cursor: ClassContract | undefined = baseContract;
+            while (cursor !== undefined) {
+              const protoType = types[cursor.prototype];
+              if (protoType?.kind === "object") {
+                const prop = protoType.properties.find(
+                  (entry) =>
+                    entry !== undefined &&
+                    entry.name === node.property &&
+                    entry.name !== "constructor" &&
+                    !entry.name.startsWith("@@"),
+                );
+                if (prop !== undefined) {
+                  foundType = prop.type;
+                  break;
+                }
+              }
+              const nextBase: number | undefined = cursor.base;
+              cursor =
+                nextBase === undefined
+                  ? undefined
+                  : classByInstance.get(nextBase);
+            }
+            if (foundType === undefined)
+              return unsupported(
+                node,
+                "class-heritage",
+                "typed super property reads require a base prototype method: " +
+                  node.property,
+              );
+            expressions.set(receiver, baseContract.prototype);
+            chainReceivers.set(node, enclosing.contract.instance);
+            intrinsics.set(node, "super-member");
+            result = foundType;
+            break;
+          }
           if (
             receiver.kind === "identifier" &&
             !references.has(receiver) &&
@@ -6376,6 +6579,21 @@ function checkClosureModuleLayout(
             result = fact;
           } else {
             result = fact ?? literal ?? p.value;
+            if (types[obj]?.kind === "union") {
+              const fnType = types[result];
+              if (
+                fnType?.kind === "function" &&
+                fnType.method === true &&
+                fnType.receiver !== undefined &&
+                !system.assignable(obj, fnType.receiver)
+              ) {
+                result = appendType(
+                  { ...fnType, receiver: obj },
+                  node,
+                  "invalid union method receiver signature",
+                );
+              }
+            }
             if (types[obj]?.kind === "object" && contracts.classes.length > 0)
               propertyReads.push({
                 node,
@@ -6822,6 +7040,44 @@ function checkClosureModuleLayout(
             break;
           }
           const target = ungroup(node.callee);
+          if (target.kind === "super") {
+            const enclosing =
+              owner === undefined ? undefined : memberClass.get(owner);
+            const baseId = enclosing?.contract.base;
+            if (
+              enclosing === undefined ||
+              enclosing.kind !== "constructor" ||
+              baseId === undefined ||
+              node.optional === true
+            )
+              return unsupported(
+                node,
+                "class-heritage",
+                "typed super calls must occur directly inside a derived constructor",
+              );
+            const baseContract = classByInstance.get(baseId);
+            const baseConstructor =
+              baseContract === undefined
+                ? undefined
+                : types[baseContract.constructor];
+            const constructId =
+              baseConstructor?.kind === "object"
+                ? baseConstructor.construct
+                : undefined;
+            const signature =
+              constructId === undefined ? undefined : types[constructId];
+            if (constructId === undefined || signature?.kind !== "function")
+              throw "base construct signature invariant";
+            const args = callArguments(node, owner, signature);
+            const checkedCall = system.call(constructId, args, undefinedType);
+            if (!checkedCall.ok)
+              fail(node, checkedCall.error, "invalid super call");
+            expressions.set(target, constructId);
+            intrinsics.set(node, "super-call");
+            invalidateCalls();
+            result = enclosing.contract.instance;
+            break;
+          }
           if (
             target.kind === "member" &&
             !target.optional &&
@@ -7156,7 +7412,10 @@ function checkClosureModuleLayout(
             result = bigint;
             break;
           }
-          if (target.kind === "member") {
+          if (
+            target.kind === "member" &&
+            ungroup(target.object).kind !== "super"
+          ) {
             const receiver = ungroup(target.object);
             if (
               receiver.kind === "identifier" &&
@@ -8279,8 +8538,24 @@ function checkClosureModuleLayout(
                   : undefined,
               );
             }
+            let memberCallee = member.value;
+            if (types[obj]?.kind === "union") {
+              const fnType = types[memberCallee];
+              if (
+                fnType?.kind === "function" &&
+                fnType.method === true &&
+                fnType.receiver !== undefined &&
+                !system.assignable(obj, fnType.receiver)
+              ) {
+                memberCallee = appendType(
+                  { ...fnType, receiver: obj },
+                  target,
+                  "invalid union method receiver signature",
+                );
+              }
+            }
             const memberType =
-              propertyFact(target.object, target.property) ?? member.value;
+              propertyFact(target.object, target.property) ?? memberCallee;
             if (types[memberType]?.kind === "realm-callable") {
               expression(node.callee, owner);
               result = generalCall(node, owner);
@@ -8288,25 +8563,25 @@ function checkClosureModuleLayout(
             }
             if (skipped !== undefined) {
               chainReceivers.set(target, obj);
-              chainValues.set(target, member.value);
+              chainValues.set(target, memberCallee);
               expressions.set(
                 target,
-                unionSubset([member.value, undefinedType], target),
+                unionSubset([memberCallee, undefinedType], target),
               );
-              chainReceivers.set(node, member.value);
-            } else expressions.set(target, member.value);
+              chainReceivers.set(node, memberCallee);
+            } else expressions.set(target, memberCallee);
             let wrapper = node.callee;
             while (wrapper.kind === "group" || wrapper.kind === "satisfies") {
               if (wrapper.kind === "satisfies")
-                requireType(member.value, typeOf(wrapper.type), wrapper);
-              expressions.set(wrapper, member.value);
+                requireType(memberCallee, typeOf(wrapper.type), wrapper);
+              expressions.set(wrapper, memberCallee);
               wrapper = wrapper.expression;
             }
-            const signature = types[member.value];
+            const signature = types[memberCallee];
             if (signature?.kind !== "function")
               fail(target, "TYPE_MISMATCH", "property must have function type");
             const args = callArguments(node, owner, signature);
-            const checked = system.call(member.value, args, obj);
+            const checked = system.call(memberCallee, args, obj);
             if (!checked.ok) fail(node, checked.error, "invalid call");
             invalidateCalls();
             result = checked.value;
@@ -8663,6 +8938,7 @@ function checkClosureModuleLayout(
               propertyName,
               number,
               "invalid property update",
+              owner,
             );
             invalidateCalls();
             result = number;
@@ -8996,6 +9272,7 @@ function checkClosureModuleLayout(
                 property,
                 result,
                 "invalid property assignment",
+                owner,
               );
               intrinsics.set(
                 node,
@@ -10285,6 +10562,18 @@ function checkClosureModuleLayout(
                     ),
                   );
           if (inferred === undefined) {
+            if (
+              owner !== undefined &&
+              memberClass.get(owner)?.kind === "constructor" &&
+              node.expression !== undefined &&
+              actual !== undefinedType &&
+              actual !== voidType
+            )
+              unsupported(
+                node,
+                "class-heritage",
+                "constructors returning a value require general construction",
+              );
             if (
               owner !== undefined &&
               result === voidType &&

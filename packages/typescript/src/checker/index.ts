@@ -252,6 +252,8 @@ export interface ExpressionInfo {
     | "string-char-at"
     | "string-at"
     | "string-code-unit"
+    | "super-call"
+    | "super-member"
     | undefined;
   readonly type: ReturnType;
   readonly local: number | undefined;
