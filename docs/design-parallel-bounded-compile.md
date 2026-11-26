@@ -66,28 +66,46 @@ native backend candidate needs packed bodies as the stage's primary
 representation, with the coordinator releasing the decoded module before
 worker scratch grows. Workers would use shared prepared facts, fuse
 function frame planning and emission, and return ordered fragments for
-canonical placement. The worker host needs a way to borrow that storage
-while preserving the generational coordinator's tracked-write contract.
-The experiments here retain the existing optimizer and emitter.
+canonical placement. The Worker runtime now supports typed shared
+buffers and separate generational heaps. The prototype keeps detached
+execution behind the fragment plan's optional executor.
 
-A bound from the measured actor costs caps a native backend split at
-about 14.7% of the frozen build at any worker count, below the acceptance
-bar. On arm64 the generational emitter gate requires closed-world host
-operations, and the native Worker runtime's thread and shared-memory
-operations are not closed-world. Workers therefore use the copying heap,
-and a compiler image that starts Workers would also lose its closed-world
-interprocedural analyses. The worker machinery on this branch does not
-land. The report lists what a future attempt needs first.
+The November 22 experiments estimated a 14.7% upper bound for their
+backend split. Their arm64 Workers used the copying heap. With the same
+typed executable and heap, the main thread and a Worker retired
+essentially the same number of instructions in each measured kernel.
+Dense register-home and record-guard liveness rows landed separately in
+PR #13.
 [Worker split bound](results/parallel-bounded-compile-worker-bound-v1.md) ·
+[macOS kernel parity](results/parallel-bounded-compile-native-kernel-parity-darwin-v2.md) ·
 [Deferred safepoint liveness and kernel probe](results/parallel-bounded-compile-deferred-liveness-whole-build-v1.md)
+
+The November 27 recheck uses main at `d119763b9`. Workers now use the
+generational collector and their host operations preserve closed-world
+analysis. Inline detached actor execution took 40.53 s against 38.79 s
+for the serial function loop. The longest emitter function alone took
+18.99 s, leaving a modeled whole-build saving of about 10.6% at four
+lanes and above. PR #4 remains draft pending the native acceptance
+rotation for a qualifying design.
+[Recheck on current main](results/parallel-bounded-compile-recheck-v2.md)
+
+A native emitter outline reduced the largest job from 17.62 s to 2.04 s
+and emission from 41.65 s to 30.73 s when the outlined sources became
+the input. The block-outline compiler reproduced the original signed
+image when given the original sources. These changes to input shape
+also reduce the serial work available to parallelize. The final local
+constant-folding sweep still has roughly the same time share as
+emission and can send just the rewritten functions back across the
+pass barrier.
+[Emitter outlining screen](results/parallel-bounded-compile-emitter-outline-v1.md)
 
 ## Compiler actor candidates
 
 Native Worker microbenchmarks isolated two substrate costs. One mapped
 byte snapshot replaced per-byte text transport for cloned ArrayBuffers.
 Bounding scans to occupied waiter rows removed the full registry scan
-from the ordinary wait/notify path. The runtime changes and tests are
-in a separate draft PR. The small-packet mailbox and shared metadata
+from the ordinary wait/notify path. PR #11 shipped those changes and
+their tests. The small-packet mailbox and shared metadata
 cache had mixed results across hosts.
 [Native Worker runtime PR](https://github.com/Sequins-dev/tint/pull/11)
 
