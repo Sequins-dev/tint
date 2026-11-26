@@ -198,6 +198,7 @@ export function createScriptRuntimeRequest(
       "scriptArrayPush",
       "scriptArrayPushFast",
       "scriptArrayPop",
+      "numberPower",
       "createObjectLiteralSite",
       "createLiteralObject",
       "createLiteralObject1",
@@ -213,6 +214,18 @@ export function createScriptRuntimeRequest(
       "scriptAtomicsLoadFast",
       "scriptAtomicsStoreFast",
       "scriptAtomicsInt32View",
+      "markForwardingConstructor",
+      "createConstructSite",
+      "warmConstructSite",
+      "createConstructedObject1",
+      "createConstructedObject2",
+      "createConstructedObject3",
+      "createConstructedObject4",
+      "createConstructedObject5",
+      "createConstructedObject6",
+      "createConstructedObject7",
+      "createConstructedObject8",
+      "warmOrdinaryDataProperty",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

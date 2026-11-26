@@ -129,6 +129,13 @@ export function devirtualizeClosureCalls(
   // environment (or the cell boxes it holds) devirtualize too. An absent
   // record-new argument leaves a cell field uninitialized, not written.
   const recordLayouts = module.records ?? [];
+  let hasScriptEntries = false;
+  for (const fn of module.functions) {
+    if (fn !== undefined && fn.scriptEntry === true) {
+      hasScriptEntries = true;
+      break;
+    }
+  }
   let fieldTargets = new Map<number, KnownClosure>(),
     unknownFields = new Set<number>();
   function fieldTarget(
@@ -139,19 +146,43 @@ export function devirtualizeClosureCalls(
     const key = record * 65536 + field;
     return unknownFields.has(key) ? undefined : fieldTargets.get(key);
   }
-  /** Slot facts of `fn` under the current field facts. */
+  /** Slot facts of `fn` under the current field facts. Propagates closures
+   * through both direct writes (`function-new`, `record`/`record-cell` reads,
+   * `record-read`) and slot-to-slot copies (`v = load sA; store sB v`) so
+   * environment-captured imports copied into call temporaries devirtualize. */
   function slotFacts(fn: FunctionIR): SlotFacts | undefined {
     const targets = new Map<number, KnownClosure>(),
-      unknown = new Set<number>();
+      unknown = new Set<number>(),
+      copies = new Map<number, Set<number>>();
     for (const parameter of fn.parameters)
       if (parameter !== undefined) unknown.add(parameter);
     if (fn.receiverSlot !== undefined) unknown.add(fn.receiverSlot);
     let candidates = false;
-    const write = (slot: number, known: KnownClosure | undefined): void => {
+    const write = (slot: number, known: KnownClosure | undefined): boolean => {
+      if (unknown.has(slot)) return false;
       const previous = targets.get(slot);
-      if (known === undefined) unknown.add(slot);
-      else if (previous === undefined) targets.set(slot, known);
-      else if (previous.target !== known.target) unknown.add(slot);
+      if (known === undefined) {
+        unknown.add(slot);
+        return true;
+      }
+      if (previous === undefined) {
+        targets.set(slot, known);
+        return true;
+      }
+      if (previous.target !== known.target) {
+        unknown.add(slot);
+        return true;
+      }
+      return false;
+    };
+    const addCopy = (dst: number, src: number): void => {
+      if (dst === src || unknown.has(dst)) return;
+      let set = copies.get(dst);
+      if (set === undefined) {
+        set = new Set<number>();
+        copies.set(dst, set);
+      }
+      set.add(src);
     };
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
@@ -169,18 +200,54 @@ export function devirtualizeClosureCalls(
             ? fieldTarget(term.record, term.field)
             : undefined,
         );
-      const local: (KnownClosure | undefined)[] = [];
+      const localKnown: (KnownClosure | undefined)[] = [],
+        localFromSlot: (number | undefined)[] = [],
+        storedKnown: (KnownClosure | undefined)[] = [],
+        storedFromSlot: (number | undefined)[] = [],
+        storedHere = new Set<number>();
       for (const op of block.instructions) {
         if (op === undefined) throw "closure instruction invariant";
         if (visited >= budget) return undefined;
         visited++;
         if (op.kind === "function-new" && eligible(op.target))
-          local[op.id] = {
+          localKnown[op.id] = {
             target: op.target,
             environment: op.environment !== undefined,
           };
-        else if (op.kind === "store") write(op.slot, local[op.value]);
-        else if (op.kind === "call-indirect") candidates = true;
+        else if (hasScriptEntries && op.kind === "record-read")
+          localKnown[op.id] = fieldTarget(op.record, op.field);
+        else if (hasScriptEntries && op.kind === "load") {
+          if (storedHere.has(op.slot)) {
+            localKnown[op.id] = storedKnown[op.slot];
+            localFromSlot[op.id] = storedFromSlot[op.slot];
+          } else localFromSlot[op.id] = op.slot;
+        } else if (op.kind === "store") {
+          const known = localKnown[op.value],
+            from = hasScriptEntries ? localFromSlot[op.value] : undefined;
+          storedHere.add(op.slot);
+          storedKnown[op.slot] = known;
+          storedFromSlot[op.slot] = from;
+          if (known !== undefined) write(op.slot, known);
+          else if (from !== undefined) addCopy(op.slot, from);
+          else write(op.slot, undefined);
+        } else if (op.kind === "call-indirect") candidates = true;
+      }
+    }
+    // Propagate known/unknown facts across slot-to-slot copies to a fixpoint.
+    for (let changed = copies.size > 0; changed;) {
+      changed = false;
+      for (const [dst, srcs] of copies) {
+        if (unknown.has(dst)) continue;
+        for (const src of srcs) {
+          if (visited >= budget) return undefined;
+          visited++;
+          if (unknown.has(src)) {
+            if (write(dst, undefined)) changed = true;
+            break;
+          }
+          const known = targets.get(src);
+          if (known !== undefined && write(dst, known)) changed = true;
+        }
       }
     }
     return { targets, unknown, candidates };
@@ -227,6 +294,8 @@ export function devirtualizeClosureCalls(
               target: op.target,
               environment: op.environment !== undefined,
             };
+          else if (hasScriptEntries && op.kind === "record-read")
+            local[op.id] = fieldTarget(op.record, op.field);
           else if (op.kind === "store") {
             stored[op.slot] = local[op.value];
             storedHere.add(op.slot);
@@ -312,6 +381,8 @@ export function devirtualizeClosureCalls(
             target: op.target,
             environment: op.environment !== undefined,
           };
+        else if (hasScriptEntries && op.kind === "record-read")
+          known[op.id] = fieldTarget(op.record, op.field);
         else if (op.kind === "load") {
           const slotKnown = slotTargets.get(op.slot);
           if (slotKnown !== undefined && !unknown.has(op.slot))
@@ -339,13 +410,18 @@ export function devirtualizeClosureCalls(
           continue;
         }
         const target = module.functions[closure.target];
+        const witness = module.functions[op.target];
         // A void witness can discard a value, but a direct call still has
         // to model the target's actual result in IR.
         if (op.discardResult === true && target?.returnType !== "void")
           continue;
         if (
           target === undefined ||
+          witness === undefined ||
           target.parameters.length !== op.arguments.length ||
+          (op.id === undefined) !== (target.returnType === "void") ||
+          (op.discardResult !== true &&
+            target.returnType !== witness.returnType) ||
           (target.closureEnvironment === undefined) === closure.environment
         ) {
           if (remarks !== undefined)
@@ -365,10 +441,24 @@ export function devirtualizeClosureCalls(
                       String(target.parameters.length) +
                       " parameters, the call passes " +
                       String(op.arguments.length)
-                    : target.name + " environment shape differs"),
+                    : target.name + " signature or environment shape differs"),
             });
           continue;
         }
+        let paramMismatch = false;
+        for (let k = 0; k < target.parameters.length; k++) {
+          const targetSlot = target.parameters[k],
+            witnessSlot = witness.parameters[k];
+          if (
+            targetSlot === undefined ||
+            witnessSlot === undefined ||
+            target.slots[targetSlot] !== witness.slots[witnessSlot]
+          ) {
+            paramMismatch = true;
+            break;
+          }
+        }
+        if (paramMismatch) continue;
         const callee = direct(closure.target);
         if (callee === undefined) continue;
         if (instructions === undefined)

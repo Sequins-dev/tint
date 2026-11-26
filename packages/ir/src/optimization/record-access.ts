@@ -1,7 +1,9 @@
 import { representationFor, type TypeKnowledge } from "../semantic/index.ts";
 import {
   analyzeRecordAccesses,
+  provenRecordReads,
   stableDescriptors,
+  verifierRecordWork,
   instructionResult,
   type ModuleIR,
   type FunctionIR,
@@ -46,11 +48,21 @@ export function lowerProvenRecordReads(
       functions.push(fn);
       continue;
     }
-    const proof = analyzeRecordAccesses(fn, budget - visited, stable);
-    if (proof === undefined) return undefined;
+    const remaining = budget - visited;
+    const boundedForScript = fn.scriptEntry === true;
+    const readBudget =
+      boundedForScript && remaining > verifierRecordWork
+        ? verifierRecordWork
+        : remaining;
+    const proof = analyzeRecordAccesses(fn, readBudget, stable);
+    if (proof === undefined) {
+      if (!boundedForScript || remaining < verifierRecordWork) return undefined;
+      functions.push(fn);
+      continue;
+    }
     visited += proof.work;
     const blocks: Block[] = [];
-    let changed = false,
+    let fnRewritten = 0,
       next = maximum + 1;
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
@@ -139,8 +151,7 @@ export function lowerProvenRecordReads(
           end: term.end,
         },
       });
-      rewritten++;
-      changed = true;
+      fnRewritten++;
       if (remarks !== undefined)
         remarks({
           pass: "lower-proven-record-reads",
@@ -156,7 +167,23 @@ export function lowerProvenRecordReads(
             " proven: unchecked field load",
         });
     }
-    functions.push(changed ? { ...fn, blocks } : fn);
+    if (fnRewritten > 0) {
+      const nextFn: FunctionIR = { ...fn, blocks };
+      // Ensure every emitted record-read stays provable within the verifier's
+      // work limit (lowering itself adds record-read checkpoints to check).
+      if (
+        boundedForScript &&
+        proof.work > Math.floor(verifierRecordWork / 2) &&
+        provenRecordReads(nextFn, verifierRecordWork, stable) === undefined
+      ) {
+        functions.push(fn);
+      } else {
+        functions.push(nextFn);
+        rewritten += fnRewritten;
+      }
+    } else {
+      functions.push(fn);
+    }
   }
   return {
     module: rewritten === 0 ? module : { ...module, functions },

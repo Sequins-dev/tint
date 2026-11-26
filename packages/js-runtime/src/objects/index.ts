@@ -1,4 +1,16 @@
-export { viewWeakRegistryOwner } from "./values.ts";
+export {
+  viewWeakRegistryOwner,
+  warmConstructSite,
+  createConstructedObject1,
+  createConstructedObject2,
+  createConstructedObject3,
+  createConstructedObject4,
+  createConstructedObject5,
+  createConstructedObject6,
+  createConstructedObject7,
+  createConstructedObject8,
+  warmOrdinaryDataProperty,
+} from "./values.ts";
 export {
   packedNumberElement,
   absentElementValue,
@@ -25,6 +37,7 @@ export {
 export { scriptArrayPush } from "./array-append.ts";
 export { scriptArrayPushFast } from "./array-append.ts";
 export { scriptArrayPop } from "./array-append.ts";
+export { numberPower } from "./number-power.ts";
 export {
   scriptAtomicsAddFast,
   scriptAtomicsInt32View,
@@ -179,12 +192,14 @@ export {
   createDataProperty,
   createAccessorProperty,
   createObjectLiteralSite,
+  createConstructSite,
   createLiteralObject,
   createLiteralObject1,
   createLiteralObject2,
   createLiteralObject3,
   createLiteralObject4,
   type ObjectLiteralSite,
+  type ConstructSite,
   getOwnProperty,
   defineOwnProperty,
   deleteProperty,
@@ -344,6 +359,7 @@ export {
 export {
   createSourceFunction,
   createNativeSourceFunction,
+  markForwardingConstructor,
   sourceArgumentCount,
   sourceArgument,
   createRegisterSourceFunction,

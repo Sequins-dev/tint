@@ -216,7 +216,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 196, types: 27, genericFunctions: 34, genericTypes: 12 },
+    { functions: 209, types: 27, genericFunctions: 34, genericTypes: 12 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -259,7 +259,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 196);
+  assert.equal(table.value.surface.entries.length, 209);
   assert.equal(table.value.surface.types.length, 27);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -386,7 +386,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   // sites (keys) add two list anchors and one list class (eight operations).
   // Linked 16-slot PropertySpill chunks replace the OrdinaryObject.internalValues
   // list anchor (-1 anchor).
-  assert.equal(census.value.anchors.length, 132);
+  // Inlined constructor sites (`ConstructSite.keys` + slow-path value list)
+  // add two list anchors (+2 anchors).
+  assert.equal(census.value.anchors.length, 134);
   assert.equal(census.value.collections.length, 59);
   assert.deepEqual(
     ["list", "set", "map"].map(
@@ -698,7 +700,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 196);
+  assert.equal(finalValues.length, 209);
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,

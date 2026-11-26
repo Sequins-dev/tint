@@ -24,6 +24,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
+import { runInNewContext } from "node:vm";
 import { withNativeFixtureMemory } from "./gate/native-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { executionPlan } from "./test262-execution.ts";
@@ -536,6 +537,66 @@ if (actual !== expected) throw new Error(actual + " !== " + expected);
   );
 }
 
+const milestone2Program = String.raw`
+function M2Pt(x, y) { this.x = x; this.y = y; }
+var M2Mk = function () { return function () { this.initialize.apply(this, arguments); }; };
+var M2Vec = M2Mk();
+M2Vec.prototype = {
+  initialize: function (x, y) { this.x = x; this.y = y; },
+  boom: function (flag) { this.x = 111; if (flag) throw new Error("mid-tx"); this.y = 222; return this.x + this.y; },
+};
+var M2_GLOBAL = 100;
+function m2Loop(holder, n, at) {
+  var sum = 0;
+  for (var i = 0; i < n; i++) {
+    var inner = holder.v;
+    sum += holder.a + inner.b + M2_GLOBAL;
+    holder.c = i;
+    if (i === at) { holder.a = 7; holder.v = { b: 50 }; globalThis.M2_GLOBAL = 200; }
+  }
+  return sum + holder.c;
+}
+function runMilestone2ScriptTests() {
+  var out = [];
+  // Sloppy ConstructSite non-writable prototype invalidation (no throw in sloppy mode).
+  var p1 = new M2Pt(3, 4);
+  Object.defineProperty(M2Pt.prototype, "x", { value: 77, writable: false, configurable: true });
+  var pRo = new M2Pt(1, 2);
+  delete M2Pt.prototype.x;
+  out.push(p1.x + p1.y, pRo.x, pRo.y);
+  // Sloppy forwarding Class.create() + transactional method mid-throw preserving partial write & Error.stack.
+  var vt = new M2Vec(1, 2);
+  try { vt.boom(true); out.push("no-throw"); } catch (e) {
+    out.push(e.message, vt.x, vt.y, typeof e.stack === "string" && e.stack.length > 0);
+  }
+  out.push(vt.boom(false), vt.y);
+  // Sloppy script-goal global var mutated through globalThis inside a cached property loop.
+  var h1 = { a: 3, v: { b: 10 }, c: 0 };
+  out.push(m2Loop(h1, 10, 4));
+  M2_GLOBAL = 100;
+  var side = 0, h2 = { a: 2, v: { b: 5 } };
+  Object.defineProperty(h2, "c", {
+    set: function (val) { side += val; if (val === 2) { h2.a = 9; h2.v = { b: 40 }; globalThis.M2_GLOBAL = 300; } },
+    get: function () { return side; },
+    configurable: true,
+  });
+  out.push(m2Loop(h2, 6, -1), side);
+  return out.join("|");
+}
+`;
+
+function milestone2Section(): string {
+  const expected = runInNewContext(
+    milestone2Program + "\nrunMilestone2ScriptTests();\n",
+  ) as string;
+  return (
+    milestone2Program +
+    `var actual = runMilestone2ScriptTests(), expected = ${JSON.stringify(expected)};
+if (actual !== expected) throw new Error(actual + " !== " + expected);
+`
+  );
+}
+
 // Native entries are the subject of the call cases on targets that implement
 // the entry ABI (aarch64); x86-64 runs the same cases on register/list entries.
 if (nativeFixtureTarget().arch === "aarch64")
@@ -545,6 +606,7 @@ const callSources = [
   ...tailCallSections,
   await forwardingSection(),
   await directMethodSection(),
+  milestone2Section(),
 ];
 const cases: readonly {
   readonly source: string;

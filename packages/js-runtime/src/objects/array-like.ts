@@ -67,7 +67,7 @@ function createGeneralArray1(
   v0: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const values: ElementCell<unknown>[] = [{ value: v0 }];
+  const values: ElementCell<unknown>[] = [{ elementValue: v0 }];
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
@@ -111,7 +111,10 @@ function createGeneralArray2(
   v1: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const values: ElementCell<unknown>[] = [{ value: v0 }, { value: v1 }];
+  const values: ElementCell<unknown>[] = [
+    { elementValue: v0 },
+    { elementValue: v1 },
+  ];
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
@@ -157,9 +160,9 @@ function createGeneralArray3(
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const values: ElementCell<unknown>[] = [
-    { value: v0 },
-    { value: v1 },
-    { value: v2 },
+    { elementValue: v0 },
+    { elementValue: v1 },
+    { elementValue: v2 },
   ];
   return {
     internalShape: realm.arrayChildShape,
@@ -207,10 +210,10 @@ function createGeneralArray4(
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const values: ElementCell<unknown>[] = [
-    { value: v0 },
-    { value: v1 },
-    { value: v2 },
-    { value: v3 },
+    { elementValue: v0 },
+    { elementValue: v1 },
+    { elementValue: v2 },
+    { elementValue: v3 },
   ];
   return {
     internalShape: realm.arrayChildShape,

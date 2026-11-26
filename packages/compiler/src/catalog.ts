@@ -1223,6 +1223,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/lowering/inline-methods.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/lowering/module-shape.ts",
       packageId: "js-engine",
     },

@@ -3,8 +3,11 @@ import {
   blockSuccessors,
   instructionResult,
   naturalLoops,
+  provenRecordReads,
+  stableDescriptors,
   substituteInstructionValues,
   substituteTerminatorValues,
+  verifierRecordWork,
   visitInstructionOperands,
   visitTerminatorOperands,
   type Block,
@@ -25,10 +28,175 @@ export interface LoopPropertyCaching {
   readonly rewritten: number;
 }
 
+export interface ModulePropertySites {
+  readonly mutatedRecordFields: ReadonlySet<string>;
+  readonly siteFieldName: ReadonlyMap<string, string>;
+  readonly visited: number;
+}
+
 /** Cap cached globals/properties per loop to keep register pressure bounded. */
 const maxCachedGlobalsPerLoop = 4;
-const maxCachedPropertiesPerLoop = 6;
+const maxCachedPropertiesPerLoop = 8;
 const maxInvariantChainDepth = 8;
+
+/** Scan the module once to collect mutated record fields and map immutable
+ * `$pc` record fields initialized from `createScriptPropertyCache` calls to
+ * their static property names for `property-store` disambiguation. */
+export function analyzeModulePropertySites(
+  module: ModuleIR,
+  budget: number,
+): ModulePropertySites | undefined {
+  let hasScript = false;
+  for (const fn of module.functions) {
+    if (fn !== undefined && fn.import !== true && hasScriptOperations(fn)) {
+      hasScript = true;
+      break;
+    }
+  }
+  const mutatedRecordFields = new Set<string>();
+  const siteFieldName = new Map<string, string>();
+  if (!hasScript) return { mutatedRecordFields, siteFieldName, visited: 0 };
+  const siteFieldAmbiguous = new Set<string>();
+  let visited = 0;
+  for (const other of module.functions) {
+    if (other === undefined || other.import === true) continue;
+    const slotStrLit = new Map<number, string>();
+    const slotStrAmbiguous = new Set<number>();
+    const slotSiteName = new Map<number, string>();
+    const slotSiteAmbiguous = new Set<number>();
+    for (const block of other.blocks) {
+      if (block === undefined) continue;
+      if (++visited > budget) return undefined;
+      const strLits = new Map<number, string>();
+      const valSiteName = new Map<number, string>();
+      for (const op of block.instructions) {
+        if (op === undefined) continue;
+        if (op.kind === "string-literal") {
+          strLits.set(op.id, op.value);
+        } else if (op.kind === "load") {
+          if (!slotStrAmbiguous.has(op.slot)) {
+            const s = slotStrLit.get(op.slot);
+            if (s !== undefined) strLits.set(op.id, s);
+          }
+          if (!slotSiteAmbiguous.has(op.slot)) {
+            const sn = slotSiteName.get(op.slot);
+            if (sn !== undefined) valSiteName.set(op.id, sn);
+          }
+        } else if (op.kind === "call") {
+          const callee = module.functions[op.target];
+          const callId = op.id;
+          if (
+            callee !== undefined &&
+            callee.name.includes("createScriptPropertyCache") &&
+            callId !== undefined
+          ) {
+            const arg0 = op.arguments[0];
+            const lit = arg0 === undefined ? undefined : strLits.get(arg0);
+            if (lit !== undefined) valSiteName.set(callId, lit);
+          }
+        } else if (op.kind === "store") {
+          const s = strLits.get(op.value);
+          if (s !== undefined) {
+            if (!slotStrAmbiguous.has(op.slot)) {
+              const prev = slotStrLit.get(op.slot);
+              if (prev === undefined) slotStrLit.set(op.slot, s);
+              else if (prev !== s) {
+                slotStrLit.delete(op.slot);
+                slotStrAmbiguous.add(op.slot);
+              }
+            }
+          } else {
+            slotStrLit.delete(op.slot);
+            slotStrAmbiguous.add(op.slot);
+          }
+          const sn = valSiteName.get(op.value);
+          if (sn !== undefined) {
+            if (!slotSiteAmbiguous.has(op.slot)) {
+              const prev = slotSiteName.get(op.slot);
+              if (prev === undefined) slotSiteName.set(op.slot, sn);
+              else if (prev !== sn) {
+                slotSiteName.delete(op.slot);
+                slotSiteAmbiguous.add(op.slot);
+              }
+            }
+          } else {
+            slotSiteName.delete(op.slot);
+            slotSiteAmbiguous.add(op.slot);
+          }
+        } else if (op.kind === "record-new") {
+          for (let f = 0; f < op.arguments.length; f++) {
+            const argId = op.arguments[f];
+            const name =
+              argId === undefined ? undefined : valSiteName.get(argId);
+            const fk = String(op.record) + ":" + String(f);
+            if (siteFieldAmbiguous.has(fk)) continue;
+            if (name !== undefined) {
+              const prev = siteFieldName.get(fk);
+              if (prev === undefined) siteFieldName.set(fk, name);
+              else if (prev !== name) {
+                siteFieldName.delete(fk);
+                siteFieldAmbiguous.add(fk);
+              }
+            } else if (siteFieldName.has(fk)) {
+              siteFieldName.delete(fk);
+              siteFieldAmbiguous.add(fk);
+            }
+          }
+        }
+      }
+      const term = block.terminator;
+      if (
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation !== "read"
+      ) {
+        mutatedRecordFields.add(String(term.record) + ":" + String(term.field));
+      } else if (
+        (term.kind === "record" ||
+          term.kind === "record-cell" ||
+          term.kind === "cell") &&
+        term.operation === "read"
+      ) {
+        slotStrLit.delete(term.slot);
+        slotStrAmbiguous.add(term.slot);
+        slotSiteName.delete(term.slot);
+        slotSiteAmbiguous.add(term.slot);
+      }
+    }
+  }
+  for (const fk of mutatedRecordFields) siteFieldName.delete(fk);
+  return { mutatedRecordFields, siteFieldName, visited };
+}
+
+/** Property keys that cannot alias another distinct named property via an
+ * inline `property-store` (which only writes/adds a single writable own data
+ * property on a non-dictionary, non-prototype ordinary object). Excludes
+ * `"length"`, `"__proto__"`, and canonical array-index strings. */
+function isSafeDisambiguatedKey(key: string): boolean {
+  if (key.length === 0 || key === "length" || key === "__proto__") return false;
+  let allDigits = true;
+  for (let i = 0; i < key.length; i++) {
+    const code = key.charCodeAt(i);
+    if (code < 48 || code > 57) {
+      allDigits = false;
+      break;
+    }
+  }
+  return !allDigits;
+}
+
+function storeConflictsWithLoad(
+  storeKey: string | undefined,
+  loadKey: string | undefined,
+): boolean {
+  if (
+    storeKey === undefined ||
+    loadKey === undefined ||
+    !isSafeDisambiguatedKey(storeKey) ||
+    !isSafeDisambiguatedKey(loadKey)
+  )
+    return true;
+  return storeKey === loadKey;
+}
 
 /** A pure, non-trapping expression traceable to loop-invariant slots. */
 type InvariantExpr =
@@ -132,16 +300,28 @@ interface CachedGlobal {
   valSlot?: number;
 }
 
+interface LoopStoreOp {
+  readonly op: Instruction;
+  readonly blockId: number;
+  readonly key: string | undefined;
+}
+
 interface CachedProperty {
   readonly key: string;
   readonly template: PropertyLoadOp;
   /** Either a direct loop-invariant general slot, a cold-written general slot
-   * refreshed on every in-loop store, or a cached global's valSlot. */
+   * refreshed on every in-loop store, a cached global's valSlot, or a parent
+   * cached property's propSlot. */
   readonly objectSlot: number;
   readonly fromGlobal: CachedGlobal | undefined;
+  readonly fromProp: CachedProperty | undefined;
   /** When `objectSlot` is written only on cold branches in the loop, the store
    * instructions after which `propSlot` must be refreshed. */
   readonly objectWriteOps: readonly Instruction[] | undefined;
+  /** Conflicting `property-store` instructions inside the loop after which
+   * `propSlot` must be refreshed. */
+  readonly storeRefreshOps: readonly Instruction[];
+  readonly propKey: string | undefined;
   readonly site: InvariantExpr;
   readonly propSlot: number;
 }
@@ -151,6 +331,11 @@ interface LoopInfo {
   readonly invalidatingOps: ReadonlySet<Instruction>;
   readonly invalidatingTerminators: ReadonlySet<number>;
   readonly invalidatingBlocks: ReadonlySet<number>;
+  /** Direct `property-store` instructions in the loop (disambiguated by static
+   * property name; never invalidate `global-cell` because `global-cell` only
+   * caches on `internalDictionary` global objects where `property-store`
+   * always misses). */
+  readonly storeOps: readonly LoopStoreOp[];
   readonly writtenSlots: ReadonlySet<number>;
   /** For slots written by exactly one `store` instruction in the loop (and no
    * terminator writes), maps `slot -> stored SSA value id`. */
@@ -175,7 +360,10 @@ interface PropCountEntry {
   template: PropertyLoadOp;
   objectSlot: number;
   fromGlobal: CachedGlobal | undefined;
+  fromProp: CachedProperty | undefined;
   objectWriteOps: readonly Instruction[] | undefined;
+  storeRefreshOps: readonly Instruction[];
+  propKey: string | undefined;
   site: InvariantExpr;
 }
 
@@ -215,6 +403,7 @@ export function cacheLoopProperties(
   module: ModuleIR,
   budget: number,
   remarks?: RemarkSink,
+  shared?: ModulePropertySites,
 ): LoopPropertyCaching | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
   if (fn.import === true || fn.blocks.length === 0 || !hasScriptOperations(fn))
@@ -471,23 +660,16 @@ export function cacheLoopProperties(
       watchedRecords.add(term.record);
   }
 
-  // Collect record fields that are ever mutated anywhere in the module's
-  // defined IR functions (imported host/C stubs never mutate managed site
-  // tables) so read-only site tables ($pc/$gc) are proved immutable.
-  const mutatedRecordFields = new Set<string>();
-  for (const other of module.functions) {
-    if (other === undefined || other.import === true) continue;
-    for (const block of other.blocks) {
-      if (block === undefined) continue;
-      if (++visited > budget) return undefined;
-      const term = block.terminator;
-      if (
-        (term.kind === "record" || term.kind === "record-cell") &&
-        term.operation !== "read"
-      ) {
-        mutatedRecordFields.add(String(term.record) + ":" + String(term.field));
-      }
-    }
+  const sites =
+    shared ?? analyzeModulePropertySites(module, Math.max(1, budget - visited));
+  if (sites === undefined) return undefined;
+  if (shared === undefined) visited += sites.visited;
+  const mutatedRecordFields = sites.mutatedRecordFields;
+  const siteFieldName = sites.siteFieldName;
+
+  function siteExprPropName(expr: InvariantExpr): string | undefined {
+    if (expr.kind !== "record-read") return undefined;
+    return siteFieldName.get(String(expr.record) + ":" + String(expr.field));
   }
 
   // Whole-module call-effect memoization: a direct callee is property-safe iff
@@ -561,11 +743,10 @@ export function cacheLoopProperties(
     return false;
   }
 
-  function mayInvalidateProperties(op: Instruction): boolean {
+  function mayHardInvalidateProperties(op: Instruction): boolean {
     if (
       op.kind === "call-indirect" ||
       op.kind === "host-call" ||
-      op.kind === "property-store" ||
       (op.kind === "c-call" && op.call.mayCallback === true)
     )
       return true;
@@ -653,6 +834,11 @@ export function cacheLoopProperties(
     const invalidatingOps = new Set<Instruction>();
     const invalidatingTerminators = new Set<number>();
     const invalidatingBlocks = new Set<number>();
+    const rawStoreOps: {
+      readonly op: Instruction;
+      readonly blockId: number;
+      readonly site: number;
+    }[] = [];
     const writtenSlots = new Set<number>();
     for (const w of loop.writes) writtenSlots.add(w);
     const singleStoreValue = new Map<number, number>();
@@ -737,7 +923,9 @@ export function cacheLoopProperties(
         if (op === undefined) throw "property cache instruction invariant";
         visited++;
         if (op.kind === "store") markWrite(op.slot, op.value);
-        if (mayInvalidateProperties(op)) {
+        if (op.kind === "property-store") {
+          rawStoreOps.push({ op, blockId: id, site: op.site });
+        } else if (mayHardInvalidateProperties(op)) {
           invalidatingOps.add(op);
           invalidatingBlocks.add(id);
         }
@@ -775,15 +963,23 @@ export function cacheLoopProperties(
       loopRejectReason.set(loop, "no-clean-iter:" + reasons.join(","));
       return undefined;
     }
+    const storeOps: LoopStoreOp[] = [];
     const info: LoopInfo = {
       preheader: entry,
       invalidatingOps,
       invalidatingTerminators,
       invalidatingBlocks,
+      storeOps,
       writtenSlots,
       singleStoreValue,
       singleRecordRead,
     };
+    for (const raw of rawStoreOps) {
+      const siteExpr = traceInvariant(raw.site, info, true);
+      const key =
+        siteExpr === undefined ? undefined : siteExprPropName(siteExpr);
+      storeOps.push({ op: raw.op, blockId: raw.blockId, key });
+    }
     loopInfo.set(loop, info);
     return info;
   }
@@ -1563,6 +1759,16 @@ export function cacheLoopProperties(
         let fromGlobal: CachedGlobal | undefined = undefined;
         let objectWriteOps: readonly Instruction[] | undefined = undefined;
         let objSlot = objDef.slot;
+        const loadKey = siteExprPropName(site);
+        const combinedBlockers = new Set<number>();
+        for (const b of info.invalidatingBlocks) combinedBlockers.add(b);
+        const storeRefreshOps: Instruction[] = [];
+        for (const s of info.storeOps) {
+          if (storeConflictsWithLoad(s.key, loadKey)) {
+            combinedBlockers.add(s.blockId);
+            storeRefreshOps.push(s.op);
+          }
+        }
         if (info.writtenSlots.has(objDef.slot)) {
           const cg = reachingCachedGlobal(block, op, objDef.slot, loop, info);
           const cgValSlot = cg !== undefined ? cg.valSlot : undefined;
@@ -1574,8 +1780,6 @@ export function cacheLoopProperties(
             // loop (e.g. `if (values.length === 64) values = []`), cache the
             // property and refresh immediately after each store to `objDef.slot`.
             const writeOps: Instruction[] = [];
-            const combinedBlockers = new Set<number>();
-            for (const b of info.invalidatingBlocks) combinedBlockers.add(b);
             let termWritesSlot = false;
             for (const bId of loop.body) {
               const b = fn.blocks[bId];
@@ -1602,11 +1806,7 @@ export function cacheLoopProperties(
                 }
               }
             }
-            if (
-              termWritesSlot ||
-              writeOps.length === 0 ||
-              !hasCleanIteration(loop, combinedBlockers)
-            ) {
+            if (termWritesSlot || writeOps.length === 0) {
               remarks?.({
                 pass: "cache-loop-properties",
                 outcome: "missed",
@@ -1622,6 +1822,18 @@ export function cacheLoopProperties(
             }
             objectWriteOps = writeOps;
           }
+        }
+        if (!hasCleanIteration(loop, combinedBlockers)) {
+          remarks?.({
+            pass: "cache-loop-properties",
+            outcome: "missed",
+            function: fn.name,
+            start: op.start,
+            end: op.end,
+            message:
+              "property-load blocked by conflicting store or object write",
+          });
+          continue;
         }
         if (
           fromGlobal === undefined &&
@@ -1650,7 +1862,10 @@ export function cacheLoopProperties(
             template: op,
             objectSlot: objSlot,
             fromGlobal,
+            fromProp: undefined,
             objectWriteOps,
+            storeRefreshOps,
+            propKey: loadKey,
             site,
           });
         else entry.count += weight;
@@ -1681,12 +1896,290 @@ export function cacheLoopProperties(
         template: item.template,
         objectSlot: item.objectSlot,
         fromGlobal: item.fromGlobal,
+        fromProp: item.fromProp,
         objectWriteOps: item.objectWriteOps,
+        storeRefreshOps: item.storeRefreshOps,
+        propKey: item.propKey,
         site: item.site,
         propSlot,
       });
     }
     if (chosen.size > 0) selectedProps.set(loop, chosen);
+  }
+
+  // Phase 2b: 1-hop chained property-loads whose object comes from an already
+  // selected CachedProperty (e.g. `this.v.elms`, `this.v.size`, `this.options.x`).
+  // On miss of the outer CachedProperty, `outer.propSlot` holds `absent` whose
+  // tag fails the inner `property-load` guard cleanly without dereferencing.
+  for (const [loop, chosen] of selectedProps) {
+    if (chosen.size >= maxCachedPropertiesPerLoop) continue;
+    const info = loopInfo.get(loop);
+    if (info === undefined) continue;
+    const propIdToCp = new Map<number, CachedProperty>();
+    for (const id of loop.body) {
+      const b = fn.blocks[id];
+      if (b === undefined) continue;
+      for (const op of b.instructions) {
+        if (op === undefined || op.kind !== "property-load") continue;
+        const target = propOpTarget.get(op);
+        if (target !== undefined && target.loop === loop) {
+          const cp = chosen.get(target.key);
+          if (cp !== undefined && cp.fromProp === undefined)
+            propIdToCp.set(op.id, cp);
+        }
+      }
+    }
+    if (propIdToCp.size === 0) continue;
+
+    function predWritesSlotFromProp(
+      pred: Block,
+      slot: number,
+      depth: number = 0,
+    ): CachedProperty | undefined {
+      if (depth > 3) return undefined;
+      if (info === undefined || info.invalidatingBlocks.has(pred.id))
+        return undefined;
+      const pTerm = pred.terminator;
+      if (
+        pTerm.kind !== "jump" &&
+        pTerm.kind !== "branch" &&
+        pTerm.kind !== "record"
+      )
+        return undefined;
+      let curSlot = slot;
+      for (let i = pred.instructions.length - 1; i >= 0; i--) {
+        const prev = pred.instructions[i];
+        if (
+          prev === undefined ||
+          prev.kind !== "store" ||
+          prev.slot !== curSlot
+        )
+          continue;
+        const direct = propIdToCp.get(prev.value);
+        if (direct !== undefined) return direct;
+        const valDef = definitions.get(prev.value);
+        if (valDef !== undefined && valDef.kind === "load") {
+          curSlot = valDef.slot;
+          continue;
+        }
+        return undefined;
+      }
+      const preds = predecessors.get(pred.id);
+      if (preds !== undefined && preds.length === 1) {
+        const prevId = preds[0];
+        if (prevId !== undefined && loop.body.has(prevId)) {
+          const prevBlock = fn.blocks[prevId];
+          if (prevBlock !== undefined)
+            return predWritesSlotFromProp(prevBlock, curSlot, depth + 1);
+        }
+      }
+      return undefined;
+    }
+
+    function reachingCachedProp(
+      block: Block,
+      op: Instruction,
+      slot: number,
+    ): CachedProperty | undefined {
+      if (info === undefined) return undefined;
+      let curSlot = slot;
+      let curBlock = block;
+      let startIdx = -1;
+      for (let i = 0; i < curBlock.instructions.length; i++) {
+        if (curBlock.instructions[i] === op) {
+          startIdx = i - 1;
+          break;
+        }
+      }
+      for (let step = 0; step < 6; step++) {
+        let foundInBlock = false;
+        for (let i = startIdx; i >= 0; i--) {
+          const prev = curBlock.instructions[i];
+          if (
+            prev === undefined ||
+            prev.kind !== "store" ||
+            prev.slot !== curSlot
+          )
+            continue;
+          const direct = propIdToCp.get(prev.value);
+          if (direct !== undefined) return direct;
+          const valDef = definitions.get(prev.value);
+          if (valDef !== undefined && valDef.kind === "load") {
+            curSlot = valDef.slot;
+            startIdx = i - 1;
+            foundInBlock = true;
+            break;
+          }
+          return undefined;
+        }
+        if (foundInBlock) continue;
+        const preds = predecessors.get(curBlock.id);
+        if (preds === undefined || preds.length === 0) return undefined;
+        if (preds.length === 1) {
+          const predId = preds[0];
+          if (predId === undefined || !loop.body.has(predId)) return undefined;
+          const pred = fn.blocks[predId];
+          if (pred === undefined) return undefined;
+          const pTerm = pred.terminator;
+          if (
+            pTerm.kind === "record" &&
+            pTerm.operation === "read" &&
+            pTerm.slot === curSlot
+          )
+            return undefined;
+          if (
+            pTerm.kind !== "jump" &&
+            pTerm.kind !== "branch" &&
+            pTerm.kind !== "record"
+          )
+            return undefined;
+          curBlock = pred;
+          startIdx = curBlock.instructions.length - 1;
+          continue;
+        }
+        function isColdPropBranch(blockId: number, depth: number = 0): boolean {
+          if (info !== undefined && info.invalidatingBlocks.has(blockId))
+            return true;
+          if (depth >= 3) return false;
+          const p = predecessors.get(blockId);
+          if (p === undefined || p.length !== 1) return false;
+          const only = p[0];
+          return (
+            only !== undefined &&
+            loop.body.has(only) &&
+            isColdPropBranch(only, depth + 1)
+          );
+        }
+        let matchedCp: CachedProperty | undefined = undefined;
+        for (const predId of preds) {
+          if (predId === undefined || !loop.body.has(predId)) return undefined;
+          if (isColdPropBranch(predId)) continue;
+          const pred = fn.blocks[predId];
+          if (pred === undefined) return undefined;
+          const predCp = predWritesSlotFromProp(pred, curSlot);
+          if (predCp === undefined) return undefined;
+          if (matchedCp === undefined) matchedCp = predCp;
+          else if (matchedCp !== predCp) return undefined;
+        }
+        return matchedCp;
+      }
+      return undefined;
+    }
+
+    const chainedCounts = new Map<string, PropCountEntry>();
+    const chainedTargets: {
+      readonly op: PropertyLoadOp;
+      readonly key: string;
+    }[] = [];
+    for (const id of loop.body) {
+      const b = fn.blocks[id];
+      if (b === undefined) continue;
+      for (const op of b.instructions) {
+        if (op === undefined || op.kind !== "property-load") continue;
+        if (propOpTarget.has(op)) continue;
+        const objDef = definitions.get(op.object);
+        if (
+          objDef === undefined ||
+          objDef.kind !== "load" ||
+          fn.slots[objDef.slot] !== "general"
+        )
+          continue;
+        const outerCp = reachingCachedProp(b, op, objDef.slot);
+        if (outerCp === undefined) continue;
+        const site = traceInvariant(op.site, info, true);
+        if (site === undefined || !exprInitAtExit(info.preheader.id, site))
+          continue;
+        const innerKey = siteExprPropName(site);
+        const cpBlockers = new Set<number>();
+        for (const blk of info.invalidatingBlocks) cpBlockers.add(blk);
+        const storeRefreshSet = new Set<Instruction>();
+        const storeRefreshOps: Instruction[] = [];
+        for (const s of info.storeOps) {
+          if (
+            storeConflictsWithLoad(s.key, outerCp.propKey) ||
+            storeConflictsWithLoad(s.key, innerKey)
+          ) {
+            cpBlockers.add(s.blockId);
+            if (!storeRefreshSet.has(s.op)) {
+              storeRefreshSet.add(s.op);
+              storeRefreshOps.push(s.op);
+            }
+          }
+        }
+        if (outerCp.objectWriteOps !== undefined) {
+          for (const wOp of outerCp.objectWriteOps) {
+            const wId = instructionResult(wOp);
+            const wBlk = wId !== undefined ? blockOfDef.get(wId) : undefined;
+            if (wBlk !== undefined) cpBlockers.add(wBlk);
+            else {
+              for (const bId of loop.body) {
+                const blk = fn.blocks[bId];
+                if (blk !== undefined && blk.instructions.includes(wOp)) {
+                  cpBlockers.add(bId);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (!hasCleanIteration(loop, cpBlockers)) continue;
+        const key =
+          "p" +
+          String(outerCp.propSlot) +
+          "|" +
+          exprKey(site) +
+          "|" +
+          String(op.record) +
+          "|" +
+          String(op.siteRecord) +
+          "|" +
+          String(op.inherited ? 1 : 0);
+        const existing = chainedCounts.get(key);
+        if (existing === undefined)
+          chainedCounts.set(key, {
+            count: 1,
+            template: op,
+            objectSlot: outerCp.propSlot,
+            fromGlobal: undefined,
+            fromProp: outerCp,
+            objectWriteOps: outerCp.objectWriteOps,
+            storeRefreshOps,
+            propKey: innerKey,
+            site,
+          });
+        else existing.count++;
+        chainedTargets.push({ op, key });
+      }
+    }
+    if (chainedCounts.size > 0) {
+      const entries: { readonly key: string; readonly item: PropCountEntry }[] =
+        [];
+      for (const [k, v] of chainedCounts) entries.push({ key: k, item: v });
+      entries.sort((a, b) => b.item.count - a.item.count);
+      const remaining = maxCachedPropertiesPerLoop - chosen.size;
+      const limit = Math.min(entries.length, remaining);
+      for (let i = 0; i < limit; i++) {
+        const pair = entries[i];
+        if (pair === undefined) continue;
+        const propSlot = slots.length;
+        slots.push("general");
+        chosen.set(pair.key, {
+          key: pair.key,
+          template: pair.item.template,
+          objectSlot: pair.item.objectSlot,
+          fromGlobal: undefined,
+          fromProp: pair.item.fromProp,
+          objectWriteOps: pair.item.objectWriteOps,
+          storeRefreshOps: pair.item.storeRefreshOps,
+          propKey: pair.item.propKey,
+          site: pair.item.site,
+          propSlot,
+        });
+      }
+      for (const t of chainedTargets) {
+        if (chosen.has(t.key)) propOpTarget.set(t.op, { loop, key: t.key });
+      }
+    }
   }
 
   if (selectedGlobals.size === 0 && selectedProps.size === 0)
@@ -1815,6 +2308,17 @@ export function cacheLoopProperties(
   // of blocks jumping to `continuation`.
   const added: Block[] = [];
 
+  function recordReadDirectlyProven(
+    expr: InvariantExpr & { readonly kind: "record-read" },
+  ): boolean {
+    return (
+      expr.proven &&
+      expr.object.kind === "closure-env" &&
+      !fn.exported &&
+      fn.closureEnvironment === expr.record
+    );
+  }
+
   function exprNeedsBranch(expr: InvariantExpr): boolean {
     switch (expr.kind) {
       case "slot":
@@ -1824,7 +2328,7 @@ export function cacheLoopProperties(
       case "function-env":
         return exprNeedsBranch(expr.callee);
       case "record-read":
-        return !expr.proven || exprNeedsBranch(expr.object);
+        return !recordReadDirectlyProven(expr) || exprNeedsBranch(expr.object);
     }
   }
 
@@ -1931,7 +2435,7 @@ export function cacheLoopProperties(
         }
         case "record-read": {
           const object = emitChainExpr(expr.object);
-          if (expr.proven) {
+          if (recordReadDirectlyProven(expr)) {
             const id = nextValue++;
             curOps.push({
               kind: "record-read",
@@ -2119,66 +2623,71 @@ export function cacheLoopProperties(
       }
     }
 
-    for (const cp of props) {
-      if (cp === undefined) continue;
-      const site = emitChainExpr(cp.site);
-      const obj = nextValue++;
-      curOps.push({
-        kind: "load",
-        id: obj,
-        slot: cp.objectSlot,
-        start: 0,
-        end: 0,
-      });
-      const prop = nextValue++;
-      const t = cp.template;
-      const spillRecord = t.spillRecord;
-      const spillField = t.spillField;
-      const loadOp: Instruction =
-        spillRecord !== undefined && spillField !== undefined
-          ? {
-              kind: "property-load",
-              id: prop,
-              object: obj,
-              site,
-              record: t.record,
-              field: t.field,
-              count: t.count,
-              siteRecord: t.siteRecord,
-              siteField: t.siteField,
-              inherited: t.inherited,
-              entries: t.entries,
-              epochRecord: t.epochRecord,
-              epochField: t.epochField,
-              spillRecord,
-              spillField,
-              start: 0,
-              end: 0,
-            }
-          : {
-              kind: "property-load",
-              id: prop,
-              object: obj,
-              site,
-              record: t.record,
-              field: t.field,
-              count: t.count,
-              siteRecord: t.siteRecord,
-              siteField: t.siteField,
-              inherited: t.inherited,
-              entries: t.entries,
-              epochRecord: t.epochRecord,
-              epochField: t.epochField,
-              start: 0,
-              end: 0,
-            };
-      curOps.push(loadOp, {
-        kind: "store",
-        slot: cp.propSlot,
-        value: prop,
-        start: 0,
-        end: 0,
-      });
+    // Refresh root cached properties before 1-hop chained properties so
+    // `outer.propSlot` is populated before any chained `inner` probes it.
+    for (let pass = 0; pass < 2; pass++) {
+      for (const cp of props) {
+        if (cp === undefined) continue;
+        if ((cp.fromProp !== undefined) !== (pass === 1)) continue;
+        const site = emitChainExpr(cp.site);
+        const obj = nextValue++;
+        curOps.push({
+          kind: "load",
+          id: obj,
+          slot: cp.objectSlot,
+          start: 0,
+          end: 0,
+        });
+        const prop = nextValue++;
+        const t = cp.template;
+        const spillRecord = t.spillRecord;
+        const spillField = t.spillField;
+        const loadOp: Instruction =
+          spillRecord !== undefined && spillField !== undefined
+            ? {
+                kind: "property-load",
+                id: prop,
+                object: obj,
+                site,
+                record: t.record,
+                field: t.field,
+                count: t.count,
+                siteRecord: t.siteRecord,
+                siteField: t.siteField,
+                inherited: t.inherited,
+                entries: t.entries,
+                epochRecord: t.epochRecord,
+                epochField: t.epochField,
+                spillRecord,
+                spillField,
+                start: 0,
+                end: 0,
+              }
+            : {
+                kind: "property-load",
+                id: prop,
+                object: obj,
+                site,
+                record: t.record,
+                field: t.field,
+                count: t.count,
+                siteRecord: t.siteRecord,
+                siteField: t.siteField,
+                inherited: t.inherited,
+                entries: t.entries,
+                epochRecord: t.epochRecord,
+                epochField: t.epochField,
+                start: 0,
+                end: 0,
+              };
+        curOps.push(loadOp, {
+          kind: "store",
+          slot: cp.propSlot,
+          value: prop,
+          start: 0,
+          end: 0,
+        });
+      }
     }
 
     flush({ kind: "jump", target: continuation, start: 0, end: 0 });
@@ -2258,9 +2767,12 @@ export function cacheLoopProperties(
       addTermRefresh(termRefreshes, blockId, gList, pList);
     for (const cp of pList) {
       const writeOps = cp.objectWriteOps;
-      if (writeOps === undefined) continue;
-      for (const writeOp of writeOps)
-        addRefresh(opRefreshes, writeOp, [], [cp]);
+      if (writeOps !== undefined) {
+        for (const writeOp of writeOps)
+          addRefresh(opRefreshes, writeOp, [], [cp]);
+      }
+      for (const storeOp of cp.storeRefreshOps)
+        addRefresh(opRefreshes, storeOp, [], [cp]);
     }
   }
 
@@ -2495,43 +3007,46 @@ export function cacheLoopProperties(
         { kind: "store", slot: cg.cellSlot, value: cell, start: 0, end: 0 },
       );
     }
-    for (const cp of props) {
-      if (cp === undefined) continue;
-      const obj = nextValue++;
-      into.push({
-        kind: "load",
-        id: obj,
-        slot: cp.objectSlot,
-        start: 0,
-        end: 0,
-      });
-      const site = emitExprStraight(cp.site, into);
-      const prop = nextValue++;
-      const t = cp.template;
-      into.push(
-        {
-          kind: "property-load",
-          id: prop,
-          object: obj,
-          site,
-          record: t.record,
-          field: t.field,
-          count: t.count,
-          siteRecord: t.siteRecord,
-          siteField: t.siteField,
-          inherited: t.inherited,
-          entries: t.entries,
-          epochRecord: t.epochRecord,
-          epochField: t.epochField,
-          ...(t.spillRecord === undefined
-            ? {}
-            : { spillRecord: t.spillRecord }),
-          ...(t.spillField === undefined ? {} : { spillField: t.spillField }),
+    for (let pass = 0; pass < 2; pass++) {
+      for (const cp of props) {
+        if (cp === undefined) continue;
+        if ((cp.fromProp !== undefined) !== (pass === 1)) continue;
+        const obj = nextValue++;
+        into.push({
+          kind: "load",
+          id: obj,
+          slot: cp.objectSlot,
           start: 0,
           end: 0,
-        },
-        { kind: "store", slot: cp.propSlot, value: prop, start: 0, end: 0 },
-      );
+        });
+        const site = emitExprStraight(cp.site, into);
+        const prop = nextValue++;
+        const t = cp.template;
+        into.push(
+          {
+            kind: "property-load",
+            id: prop,
+            object: obj,
+            site,
+            record: t.record,
+            field: t.field,
+            count: t.count,
+            siteRecord: t.siteRecord,
+            siteField: t.siteField,
+            inherited: t.inherited,
+            entries: t.entries,
+            epochRecord: t.epochRecord,
+            epochField: t.epochField,
+            ...(t.spillRecord === undefined
+              ? {}
+              : { spillRecord: t.spillRecord }),
+            ...(t.spillField === undefined ? {} : { spillField: t.spillField }),
+            start: 0,
+            end: 0,
+          },
+          { kind: "store", slot: cp.propSlot, value: prop, start: 0, end: 0 },
+        );
+      }
     }
   }
 
@@ -2882,6 +3397,223 @@ export function cacheLoopProperties(
     entry = mapTarget(fn.entry);
   }
 
+  let resultFn: FunctionIR = { ...fn, entry, slots, blocks };
+  let hasRecordRead = false;
+  for (const block of resultFn.blocks) {
+    if (block === undefined) continue;
+    for (const op of block.instructions) {
+      if (op !== undefined && op.kind === "record-read") {
+        hasRecordRead = true;
+        break;
+      }
+    }
+    if (hasRecordRead) break;
+  }
+  if (hasRecordRead) {
+    const stable = stableDescriptors(module);
+    const proofs = provenRecordReads(resultFn, verifierRecordWork, stable);
+    if (proofs === undefined) return { fn, visited, rewritten: 0 };
+    let needsRepair = false;
+    for (const block of resultFn.blocks) {
+      if (block === undefined) continue;
+      for (const op of block.instructions) {
+        if (
+          op !== undefined &&
+          op.kind === "record-read" &&
+          proofs[op.id] !== 1
+        ) {
+          needsRepair = true;
+          break;
+        }
+      }
+      if (needsRepair) break;
+    }
+    if (needsRepair) {
+      // Refresh diamonds inserted inside loops can sever unique-predecessor
+      // proof chains for pre-existing `record-read` instructions. Restore only
+      // the affected reads to checked `record` terminators (codegen's forward
+      // dataflow still eliminates their guards across joins).
+      const repaired: Block[] = resultFn.blocks.slice();
+      const extra: Block[] = [];
+      let nextRepairedBlock = repaired.length;
+      for (let bi = 0; bi < resultFn.blocks.length; bi++) {
+        const block = resultFn.blocks[bi];
+        if (block === undefined) continue;
+        const badIndices: number[] = [];
+        for (let ii = 0; ii < block.instructions.length; ii++) {
+          const op = block.instructions[ii];
+          if (
+            op !== undefined &&
+            op.kind === "record-read" &&
+            proofs[op.id] !== 1
+          )
+            badIndices.push(ii);
+        }
+        if (badIndices.length === 0) continue;
+        let segId = block.id;
+        let remaining = block.instructions.slice();
+        let carriedTerm = block.terminator;
+        const exc = block.exception;
+        let cutOffset = 0;
+        for (let k = 0; k < badIndices.length; k++) {
+          const origIdx = badIndices[k];
+          if (origIdx === undefined) continue;
+          const localCut = origIdx - cutOffset;
+          const badOp = remaining[localCut];
+          if (badOp === undefined || badOp.kind !== "record-read") continue;
+          const rec = module.records?.[badOp.record];
+          const field = rec?.fields[badOp.field];
+          if (field === undefined) return { fn, visited, rewritten: 0 };
+          const prefix = remaining.slice(0, localCut);
+          let suffix = remaining.slice(localCut + 1);
+          cutOffset = origIdx + 1;
+
+          const definedTypes = new Map<number, ScalarType>();
+          for (const pOp of prefix) {
+            if (pOp === undefined) continue;
+            const id = instructionResult(pOp);
+            if (id !== undefined) {
+              const t = opResultType(pOp, definedTypes);
+              if (t !== undefined) definedTypes.set(id, t);
+            }
+          }
+          const usedAfter = new Set<number>();
+          for (const sOp of suffix) {
+            if (sOp !== undefined)
+              visitInstructionOperands(sOp, (id) => {
+                if (definedTypes.has(id)) usedAfter.add(id);
+              });
+          }
+          visitTerminatorOperands(carriedTerm, (id) => {
+            if (definedTypes.has(id)) usedAfter.add(id);
+          });
+          const reloadMap = new Map<number, number>();
+          const reloadOps: Instruction[] = [];
+          for (const id of usedAfter) {
+            const type = definedTypes.get(id);
+            if (type === undefined) return { fn, visited, rewritten: 0 };
+            const spillSlot = slots.length;
+            slots.push(type);
+            prefix.push({
+              kind: "store",
+              slot: spillSlot,
+              value: id,
+              start: 0,
+              end: 0,
+            });
+            const reloaded = nextValue++;
+            reloadOps.push({
+              kind: "load",
+              id: reloaded,
+              slot: spillSlot,
+              start: 0,
+              end: 0,
+            });
+            reloadMap.set(id, reloaded);
+          }
+          const resSlot = slots.length;
+          slots.push(field.type);
+          const loadRes: Instruction = {
+            kind: "load",
+            id: badOp.id,
+            slot: resSlot,
+            start: badOp.start,
+            end: badOp.end,
+          };
+          if (reloadMap.size > 0) {
+            let maxOld = 0;
+            for (const [id, _v] of reloadMap) if (id > maxOld) maxOld = id;
+            const subs = new Uint32Array(maxOld + 1);
+            for (const [oldId, newId] of reloadMap) subs[oldId] = newId + 1;
+            const nextSuffix: Instruction[] = [loadRes];
+            for (const rOp of reloadOps) nextSuffix.push(rOp);
+            for (const sOp of suffix) {
+              if (sOp === undefined) continue;
+              nextSuffix.push(substituteInstructionValues(sOp, subs));
+            }
+            suffix = nextSuffix;
+            carriedTerm = substituteTerminatorValues(carriedTerm, subs);
+            for (let m = k + 1; m < badIndices.length; m++) {
+              const nextBad = badIndices[m];
+              if (nextBad !== undefined)
+                badIndices[m] = nextBad + reloadOps.length + 1;
+            }
+          } else {
+            const nextSuffix: Instruction[] = [loadRes];
+            for (const sOp of suffix) {
+              if (sOp !== undefined) nextSuffix.push(sOp);
+            }
+            suffix = nextSuffix;
+            for (let m = k + 1; m < badIndices.length; m++) {
+              const nextBad = badIndices[m];
+              if (nextBad !== undefined) badIndices[m] = nextBad + 1;
+            }
+          }
+          const trapId = nextRepairedBlock++;
+          const nextSegId = nextRepairedBlock++;
+          const segTerm: Block["terminator"] = {
+            kind: "record",
+            operation: "read",
+            object: badOp.object,
+            record: badOp.record,
+            field: badOp.field,
+            slot: resSlot,
+            consequent: nextSegId,
+            alternate: trapId,
+            start: badOp.start,
+            end: badOp.end,
+          };
+          const segBlock: Block =
+            exc !== undefined
+              ? {
+                  id: segId,
+                  instructions: prefix,
+                  terminator: segTerm,
+                  exception: exc,
+                }
+              : { id: segId, instructions: prefix, terminator: segTerm };
+          if (segId < repaired.length) repaired[segId] = segBlock;
+          else extra.push(segBlock);
+          extra.push({
+            id: trapId,
+            instructions: [],
+            terminator: { kind: "trap", start: badOp.start, end: badOp.end },
+          });
+          segId = nextSegId;
+          remaining = suffix;
+        }
+        extra.push(
+          exc !== undefined
+            ? {
+                id: segId,
+                instructions: remaining,
+                terminator: carriedTerm,
+                exception: exc,
+              }
+            : { id: segId, instructions: remaining, terminator: carriedTerm },
+        );
+      }
+      extra.sort((a, b) => a.id - b.id);
+      for (const b of extra) {
+        if (b !== undefined) repaired.push(b);
+      }
+      resultFn = { ...resultFn, slots, blocks: repaired };
+      const recheck = provenRecordReads(resultFn, verifierRecordWork, stable);
+      if (recheck === undefined) return { fn, visited, rewritten: 0 };
+      for (const block of resultFn.blocks) {
+        if (block === undefined) continue;
+        for (const op of block.instructions) {
+          if (
+            op !== undefined &&
+            op.kind === "record-read" &&
+            recheck[op.id] !== 1
+          )
+            return { fn, visited, rewritten: 0 };
+        }
+      }
+    }
+  }
+
   const first = fn.blocks[fn.entry];
   remarks?.({
     pass: "cache-loop-properties",
@@ -2891,5 +3623,5 @@ export function cacheLoopProperties(
     end: first?.terminator.end ?? 0,
     message: String(rewritten) + " loop global/property accesses cached",
   });
-  return { fn: { ...fn, entry, slots, blocks }, visited, rewritten };
+  return { fn: resultFn, visited, rewritten };
 }
