@@ -1,5 +1,9 @@
 import { analyzeLiveSlots } from "./liveness.ts";
-import { instructionResult } from "./operands.ts";
+import {
+  instructionResult,
+  visitInstructionOperands,
+  visitTerminatorOperands,
+} from "./operands.ts";
 import {
   substituteInstructionValues,
   substituteTerminatorValues,
@@ -277,6 +281,21 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
     }
   }
   epochs.fill(0);
+  // Track per-block parameter definitions and uses by block epoch so unused
+  // pass-through parameters do not materialize millions of dead `load`
+  // instructions between `foldSSAConstants` and `removeDeadScalars`.
+  const ownParamEpoch = new Uint32Array(fn.valueCount),
+    usedParamEpoch = new Uint32Array(fn.valueCount);
+  const debug = fn.source.debug,
+    promotion = fn.debug;
+  const debugRetained =
+    debug !== undefined && promotion !== undefined
+      ? new Uint8Array(fn.valueCount)
+      : undefined;
+  if (debugRetained !== undefined && promotion !== undefined)
+    for (const binding of promotion.values)
+      if (binding !== undefined && binding.value < debugRetained.length)
+        debugRetained[binding.value] = 1;
   const blocks: Block[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "SSA block invariant";
@@ -296,26 +315,15 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
         throw "SSA edge target mismatch";
     const instructions: Instruction[] = [],
       span = block.terminator,
-      entrySpan = block.instructions[0] ?? span;
+      entrySpan = block.instructions[0] ?? span,
+      blockEpoch = block.id + 1;
     // Lowered parameter slots are fresh: only parameter loads and edge stores
     // touch them, so a parameter still holds its entry value at every edge.
-    const ownParameters = new Set<number>();
     for (const param of block.parameters) {
       if (param === undefined) throw "SSA parameter invariant";
-      ownParameters.add(param.id);
-      instructions.push({
-        kind: "load",
-        id: param.id,
-        slot: locations[param.id] ?? 0,
-        start: entrySpan.start,
-        end: entrySpan.end,
-        ...(entrySpan.inline === undefined ? {} : { inline: entrySpan.inline }),
-      });
+      ownParamEpoch[param.id] = blockEpoch;
     }
-    for (const op of block.instructions) {
-      if (op === undefined) throw "SSA instruction invariant";
-      instructions.push(op);
-    }
+    const edgeStores: Instruction[] = [];
     for (const edge of block.edges) {
       if (edge === undefined) throw "SSA edge invariant";
       const target = fn.blocks[edge.target];
@@ -331,16 +339,17 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
           throw "SSA argument invariant";
         if (blocked[param.slot] !== 1) {
           // The proof above established identical values on every outgoing edge.
-          if (epochs[param.slot] === block.id + 1) continue;
-          epochs[param.slot] = block.id + 1;
+          if (epochs[param.slot] === blockEpoch) continue;
+          epochs[param.slot] = blockEpoch;
         }
         // A value passed through unchanged to its own location is already there.
         if (
-          ownParameters.has(value) &&
+          ownParamEpoch[value] === blockEpoch &&
           locations[value] === locations[param.id]
         )
           continue;
-        instructions.push({
+        usedParamEpoch[value] = blockEpoch;
+        edgeStores.push({
           kind: "store",
           slot: locations[param.id] ?? 0,
           value,
@@ -350,12 +359,46 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
         });
       }
     }
+    if (block.parameters.length > 0) {
+      const markUsed = (id: number): void => {
+        if (ownParamEpoch[id] === blockEpoch) usedParamEpoch[id] = blockEpoch;
+      };
+      for (const op of block.instructions) {
+        if (op === undefined) throw "SSA instruction invariant";
+        visitInstructionOperands(op, markUsed);
+      }
+      visitTerminatorOperands(terminator, markUsed);
+      for (const param of block.parameters) {
+        if (param === undefined) throw "SSA parameter invariant";
+        if (
+          usedParamEpoch[param.id] !== blockEpoch &&
+          (debugRetained === undefined || debugRetained[param.id] !== 1)
+        )
+          continue;
+        instructions.push({
+          kind: "load",
+          id: param.id,
+          slot: locations[param.id] ?? 0,
+          start: entrySpan.start,
+          end: entrySpan.end,
+          ...(entrySpan.inline === undefined
+            ? {}
+            : { inline: entrySpan.inline }),
+        });
+      }
+    }
+    for (const op of block.instructions) {
+      if (op === undefined) throw "SSA instruction invariant";
+      instructions.push(op);
+    }
+    for (const store of edgeStores) {
+      if (store === undefined) throw "SSA edge store invariant";
+      instructions.push(store);
+    }
     const original = fn.source.blocks[block.id];
     if (original === undefined) throw "SSA source block invariant";
     blocks.push({ ...original, instructions, terminator: block.terminator });
   }
-  const debug = fn.source.debug,
-    promotion = fn.debug;
   if (debug === undefined || promotion === undefined)
     return { ...fn.source, slots, blocks };
   // A named variable's parameter storage holds it across the edges.

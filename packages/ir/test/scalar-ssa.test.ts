@@ -294,3 +294,51 @@ test("values passed through unchanged to their own parameter storage are not re-
   // Only the updated accumulator is stored on the loop edges.
   assert.equal(stores.length, 1);
 });
+test("pass-through parameters with no local uses do not emit dead loads", () => {
+  const fn: FunctionIR = {
+    id: 0,
+    name: "passthrough",
+    exported: true,
+    parameters: [0],
+    slots: ["boolean", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 42, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+          { kind: "load", id: 1, slot: 0, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 1,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [],
+        terminator: { kind: "jump", target: 2, ...s },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 2, slot: 1, ...s }],
+        terminator: { kind: "return", value: 2, ...s },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const ssa = promoteSlots(fn, 10000)!;
+  assert.equal(ssa.blocks[1]!.parameters.length, 1);
+  const lowered = lowerSSA(ssa);
+  assert.deepEqual(verify({ functions: [lowered] }), { ok: true });
+  assert.equal(
+    lowered.blocks[1]!.instructions.length,
+    0,
+    "pass-through block must not materialize an unused parameter load",
+  );
+});

@@ -2,10 +2,167 @@ import {
   analyzeLiveSlots,
   blockSuccessors,
   isNativeTypedArray,
+  type Block,
   type FunctionIR,
   type Instruction,
   type ScalarType,
 } from "@tint/ir/scalar";
+import type { FusedPropertyAccess } from "../../scalar/property-fusion.ts";
+function isColdBlock(block: Block): boolean {
+  const kind = block.terminator.kind;
+  return (
+    block.instructions.length <= 4 &&
+    (kind === "trap" || kind === "throw" || kind === "throw-literal")
+  );
+}
+function blockHasScriptArgument(block: Block | undefined): boolean {
+  if (block === undefined) return false;
+  for (const op of block.instructions)
+    if (op !== undefined && op.kind === "script-argument") return true;
+  return false;
+}
+function prefersAlternateFallthrough(block: Block): boolean {
+  const term = block.terminator;
+  if (term.kind !== "branch") return false;
+  const condition = term.condition;
+  for (
+    let i = block.instructions.length - 1;
+    i >= 0 && i >= block.instructions.length - 6;
+    i--
+  ) {
+    const op = block.instructions[i];
+    if (op === undefined) continue;
+    if (op.kind === "binary" && op.id === condition)
+      return op.operator === "===" || op.operator === "==";
+  }
+  return false;
+}
+/** Orders blocks in greedy hot-trace fallthrough order, placing entry first,
+ * keeping sequential loop and dispatch bodies contiguous, and sinking
+ * trap/throw blocks (and cold script IC miss / list-bridge paths) to the end
+ * of the function. */
+export function orderBlocks(
+  fn: FunctionIR,
+  fusedAccesses?: ReadonlyMap<number, FusedPropertyAccess>,
+): readonly Block[] {
+  if (fn.blocks.length <= 2) return fn.blocks;
+  const byId = new Map<number, Block>();
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "block entry invariant";
+    byId.set(block.id, block);
+  }
+  const ordered: Block[] = [],
+    placed = new Set<number>(),
+    hotWork: Block[] = [],
+    coldWork: Block[] = [];
+  const enqueue = (target: number, cold: boolean = false): void => {
+    if (placed.has(target)) return;
+    const block = byId.get(target);
+    if (block === undefined) return;
+    if (cold || isColdBlock(block)) coldWork.push(block);
+    else hotWork.push(block);
+  };
+  const entry = byId.get(fn.entry) ?? fn.blocks[0];
+  if (entry !== undefined) hotWork.push(entry);
+  while (hotWork.length > 0 || coldWork.length > 0) {
+    let current = hotWork.pop() ?? coldWork.pop();
+    while (current !== undefined && !placed.has(current.id)) {
+      placed.add(current.id);
+      ordered.push(current);
+      const t = current.terminator;
+      let nextId: number | undefined;
+      if (t.kind === "jump") {
+        nextId = t.target;
+      } else if (
+        t.kind === "record" ||
+        t.kind === "record-cell" ||
+        t.kind === "cell"
+      ) {
+        nextId = t.consequent;
+        enqueue(t.alternate);
+      } else if (t.kind === "branch") {
+        const fusion = fusedAccesses?.get(current.id);
+        const cons = byId.get(t.consequent),
+          alt = byId.get(t.alternate),
+          consCold = cons !== undefined && isColdBlock(cons),
+          altCold = alt !== undefined && isColdBlock(alt),
+          consRet = cons !== undefined && cons.terminator.kind === "return",
+          altRet = alt !== undefined && alt.terminator.kind === "return";
+        if (
+          fusion !== undefined &&
+          fusion.test === t.condition &&
+          (fusion.hit === t.consequent || fusion.hit === t.alternate)
+        ) {
+          // Fused script property/element hit stays on the hot fallthrough;
+          // the IC miss block sinks to coldWork.
+          nextId = fusion.hit;
+          enqueue(fusion.miss, true);
+        } else if (
+          fn.scriptEntry === true &&
+          blockHasScriptArgument(cons) &&
+          !blockHasScriptArgument(alt)
+        ) {
+          // Native script actuals path stays on fallthrough; list-bridge
+          // argument reads and cold fallbacks sink to coldWork.
+          nextId = t.consequent;
+          enqueue(t.alternate, true);
+        } else if (
+          fn.scriptEntry === true &&
+          blockHasScriptArgument(alt) &&
+          !blockHasScriptArgument(cons)
+        ) {
+          nextId = t.alternate;
+          enqueue(t.consequent, true);
+        } else if (altCold && !consCold) {
+          nextId = t.consequent;
+          enqueue(t.alternate);
+        } else if (consCold && !altCold) {
+          nextId = t.alternate;
+          enqueue(t.consequent);
+        } else if (consRet && !altRet) {
+          nextId = t.alternate;
+          enqueue(t.consequent);
+        } else if (altRet && !consRet) {
+          nextId = t.consequent;
+          enqueue(t.alternate);
+        } else if (prefersAlternateFallthrough(current)) {
+          nextId = t.alternate;
+          enqueue(t.consequent);
+        } else {
+          nextId = t.consequent;
+          enqueue(t.alternate);
+        }
+      }
+      if (current.exception !== undefined) enqueue(current.exception.target);
+      const nextBlock = nextId === undefined ? undefined : byId.get(nextId);
+      current =
+        nextBlock !== undefined && !placed.has(nextBlock.id)
+          ? nextBlock
+          : undefined;
+    }
+  }
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "block entry invariant";
+    if (!placed.has(block.id)) {
+      placed.add(block.id);
+      ordered.push(block);
+    }
+  }
+  return ordered;
+}
+/** Block IDs in `orderBlocks` order for emitters indexed by block ID. */
+export function orderBlockIds(
+  fn: FunctionIR,
+  fusedAccesses?: ReadonlyMap<number, FusedPropertyAccess>,
+): number[] {
+  const ordered = orderBlocks(fn, fusedAccesses),
+    ids: number[] = [];
+  for (const block of ordered) {
+    if (block === undefined) throw "block entry invariant";
+    ids.push(block.id);
+  }
+  return ids;
+}
 /** Blocks whose register contents at entry the emitter can derive from the
  * edges it has already emitted when it reaches them: every control-flow
  * predecessor precedes the block in layout. Excluded are the function entry

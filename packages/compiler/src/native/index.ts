@@ -610,7 +610,7 @@ interface TypedProgram {
   initializer: number;
   invocation: number;
   /** Linker ranges, for locating spans in their source modules. */
-  readonly ranges: readonly SourceRange[];
+  ranges: readonly SourceRange[];
   readonly serviceImports: ManagedFunctionEntryBinding[];
   readonly identityPlans: readonly IdentityPlan[];
   readonly surfaceRecordWitnesses: readonly number[];
@@ -618,7 +618,7 @@ interface TypedProgram {
   readonly surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[];
   /** Present when observers, debug information or symbols need them. */
   readonly sourceNames: FunctionSourceNames | undefined;
-  readonly referenceLists: ReferenceListPlan | undefined;
+  referenceLists: ReferenceListPlan | undefined;
 }
 interface CompilationFailure {
   readonly ok: false;
@@ -4245,6 +4245,8 @@ export function compileX64HostedProgram(
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const lists = program.referenceLists;
+  program.referenceLists = undefined;
+  if (!needSourceNames) program.ranges = [];
   if (lists !== undefined)
     lowerProgramReferenceLists(
       program,
@@ -4634,6 +4636,7 @@ function compileTypedProgram(
   }
   if (observeBegin !== undefined) observeBegin(program.ir.module);
   const referenceLists = program.referenceLists;
+  program.referenceLists = undefined;
   if (passesRemaining() && referenceLists !== undefined)
     lowerProgramReferenceLists(
       program,
