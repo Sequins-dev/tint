@@ -2,15 +2,19 @@ import { viewObjectValue } from "./values.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
   getProperty,
+  objectFlagsPackedArray,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
 import { createArrayWithElements } from "./arrays.ts";
 import {
+  allocGeneralRefs,
   createArrayElementsFromList,
   firstCapacity,
+  noGeneralRefs,
+  noGeneralTags,
   noNumbers,
-  type ElementCell,
+  writeGeneralSlot,
 } from "./array-elements.ts";
 import { numberValue } from "./coercion.ts";
 import {
@@ -28,24 +32,22 @@ export function createArray0(
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
-    extensible: true,
+    internalFlags: objectFlagsPackedArray,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: true,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: true,
     internalArrayElements: {
       keys: realm.arrayHooks,
       undefinedValue: undefined,
       numberCount: 0,
       numbers: noNumbers,
-      values: undefined,
+      generalCount: 0,
+      generalTags: noGeneralTags,
+      generalRefs: noGeneralRefs,
       length: 0,
       lengthWritable: true,
     },
@@ -67,28 +69,32 @@ function createGeneralArray1(
   v0: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const values: ElementCell<unknown>[] = [{ elementValue: v0 }];
+  const generalTags = new Uint8Array(firstCapacity);
+  const generalRefs = allocGeneralRefs(firstCapacity);
+  let numbers = noNumbers;
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0);
+  }
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
-    extensible: true,
+    internalFlags: objectFlagsPackedArray,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: true,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: true,
     internalArrayElements: {
       keys: realm.arrayHooks,
       undefinedValue: undefined,
       numberCount: 0,
-      numbers: noNumbers,
-      values,
+      numbers,
+      generalCount: 1,
+      generalTags,
+      generalRefs,
       length: 1,
       lengthWritable: true,
     },
@@ -111,31 +117,36 @@ function createGeneralArray2(
   v1: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const values: ElementCell<unknown>[] = [
-    { elementValue: v0 },
-    { elementValue: v1 },
-  ];
+  const generalTags = new Uint8Array(firstCapacity);
+  const generalRefs = allocGeneralRefs(firstCapacity);
+  let numbers = noNumbers;
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0);
+  }
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 1, v1)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 1, v1);
+  }
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
-    extensible: true,
+    internalFlags: objectFlagsPackedArray,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: true,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: true,
     internalArrayElements: {
       keys: realm.arrayHooks,
       undefinedValue: undefined,
       numberCount: 0,
-      numbers: noNumbers,
-      values,
+      numbers,
+      generalCount: 2,
+      generalTags,
+      generalRefs,
       length: 2,
       lengthWritable: true,
     },
@@ -159,32 +170,40 @@ function createGeneralArray3(
   v2: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const values: ElementCell<unknown>[] = [
-    { elementValue: v0 },
-    { elementValue: v1 },
-    { elementValue: v2 },
-  ];
+  const generalTags = new Uint8Array(firstCapacity);
+  const generalRefs = allocGeneralRefs(firstCapacity);
+  let numbers = noNumbers;
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0);
+  }
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 1, v1)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 1, v1);
+  }
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 2, v2)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 2, v2);
+  }
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
-    extensible: true,
+    internalFlags: objectFlagsPackedArray,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: true,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: true,
     internalArrayElements: {
       keys: realm.arrayHooks,
       undefinedValue: undefined,
       numberCount: 0,
-      numbers: noNumbers,
-      values,
+      numbers,
+      generalCount: 3,
+      generalTags,
+      generalRefs,
       length: 3,
       lengthWritable: true,
     },
@@ -209,33 +228,44 @@ function createGeneralArray4(
   v3: unknown,
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const values: ElementCell<unknown>[] = [
-    { elementValue: v0 },
-    { elementValue: v1 },
-    { elementValue: v2 },
-    { elementValue: v3 },
-  ];
+  const generalTags = new Uint8Array(firstCapacity);
+  const generalRefs = allocGeneralRefs(firstCapacity);
+  let numbers = noNumbers;
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 0, v0);
+  }
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 1, v1)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 1, v1);
+  }
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 2, v2)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 2, v2);
+  }
+  if (!writeGeneralSlot(generalTags, generalRefs, numbers, 3, v3)) {
+    numbers = new Float64Array(firstCapacity);
+    writeGeneralSlot(generalTags, generalRefs, numbers, 3, v3);
+  }
   return {
     internalShape: realm.arrayChildShape,
     prototype: realm.arrayPrototype,
-    extensible: true,
+    internalFlags: objectFlagsPackedArray,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: true,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: true,
     internalArrayElements: {
       keys: realm.arrayHooks,
       undefinedValue: undefined,
       numberCount: 0,
-      numbers: noNumbers,
-      values,
+      numbers,
+      generalCount: 4,
+      generalTags,
+      generalRefs,
       length: 4,
       lengthWritable: true,
     },
@@ -263,24 +293,22 @@ export function createArray1(
     return {
       internalShape: realm.arrayChildShape,
       prototype: realm.arrayPrototype,
-      extensible: true,
+      internalFlags: objectFlagsPackedArray,
       properties: undefined,
       internalPropertyEpoch: 0,
       internalChildShape: undefined,
-      internalDictionary: true,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: true,
       internalArrayElements: {
         keys: realm.arrayHooks,
         undefinedValue: undefined,
         numberCount: 1,
         numbers,
-        values: undefined,
+        generalCount: 0,
+        generalTags: noGeneralTags,
+        generalRefs: noGeneralRefs,
         length: 1,
         lengthWritable: true,
       },
@@ -312,24 +340,22 @@ export function createArray2(
     return {
       internalShape: realm.arrayChildShape,
       prototype: realm.arrayPrototype,
-      extensible: true,
+      internalFlags: objectFlagsPackedArray,
       properties: undefined,
       internalPropertyEpoch: 0,
       internalChildShape: undefined,
-      internalDictionary: true,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: true,
       internalArrayElements: {
         keys: realm.arrayHooks,
         undefinedValue: undefined,
         numberCount: 2,
         numbers,
-        values: undefined,
+        generalCount: 0,
+        generalTags: noGeneralTags,
+        generalRefs: noGeneralRefs,
         length: 2,
         lengthWritable: true,
       },
@@ -367,24 +393,22 @@ export function createArray3(
     return {
       internalShape: realm.arrayChildShape,
       prototype: realm.arrayPrototype,
-      extensible: true,
+      internalFlags: objectFlagsPackedArray,
       properties: undefined,
       internalPropertyEpoch: 0,
       internalChildShape: undefined,
-      internalDictionary: true,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: true,
       internalArrayElements: {
         keys: realm.arrayHooks,
         undefinedValue: undefined,
         numberCount: 3,
         numbers,
-        values: undefined,
+        generalCount: 0,
+        generalTags: noGeneralTags,
+        generalRefs: noGeneralRefs,
         length: 3,
         lengthWritable: true,
       },
@@ -425,24 +449,22 @@ export function createArray4(
     return {
       internalShape: realm.arrayChildShape,
       prototype: realm.arrayPrototype,
-      extensible: true,
+      internalFlags: objectFlagsPackedArray,
       properties: undefined,
       internalPropertyEpoch: 0,
       internalChildShape: undefined,
-      internalDictionary: true,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: true,
       internalArrayElements: {
         keys: realm.arrayHooks,
         undefinedValue: undefined,
         numberCount: 4,
         numbers,
-        values: undefined,
+        generalCount: 0,
+        generalTags: noGeneralTags,
+        generalRefs: noGeneralRefs,
         length: 4,
         lengthWritable: true,
       },

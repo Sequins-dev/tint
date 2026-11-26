@@ -28,6 +28,7 @@ import { viewBigIntValue, bigIntToString } from "./bigints.ts";
 import {
   arrayElementCount,
   readArrayElement,
+  readGeneralSlot,
   writeArrayElement,
 } from "./array-elements.ts";
 
@@ -60,18 +61,21 @@ export function readObjectValuePropertyKey(
   let converted: ScriptPropertyKey;
   if (typeof key === "string") converted = key;
   else if (typeof key === "number") {
-    // Packed array elements (both binary64 numbers and general ElementCells)
+    // Packed array elements (both binary64 numbers and flat general storage)
     // are own writable data properties with no prototype lookup or coercion.
     let object = viewObjectValue(base, realm.objectPrototype);
     if (object !== undefined) {
       const elements = object.internalArrayElements;
       if (elements !== undefined && key >= 0 && (key | 0) === key) {
-        const values = elements.values;
-        if (values !== undefined) {
-          if (key < values.length) {
-            const cell = values[key];
-            if (cell !== undefined) return cell.elementValue;
-          }
+        const general = elements.generalCount;
+        if (general > 0) {
+          if (key < general)
+            return readGeneralSlot(
+              elements.generalTags,
+              elements.generalRefs,
+              elements.numbers,
+              key,
+            );
         } else if (key < elements.numberCount) {
           return elements.numbers[key];
         }

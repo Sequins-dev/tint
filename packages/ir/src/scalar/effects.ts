@@ -46,6 +46,8 @@ export function instructionEffects(op: Instruction): number {
     case "script-entry":
     case "global-cell":
     case "element-load":
+    case "general-element-load":
+    case "general-slot-load":
     case "element-length":
     case "element-storage":
     case "element-count":
@@ -73,6 +75,9 @@ export function instructionEffects(op: Instruction): number {
     case "string-write-utf8":
     case "string-flatten-into":
       return effectReadHeap | effectWriteHeap;
+    case "general-element-store":
+    case "general-slot-store":
+      return effectReadHeap | effectWriteHeap | effectEscape;
     case "array-write":
     case "array-store":
     case "array-fill":

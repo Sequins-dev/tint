@@ -11,7 +11,7 @@ test("immutable prototypes reject changes without preventing own-property extens
     false,
   );
   assert.equal(root.prototype, undefined);
-  assert.equal(root.extensible, true);
+  assert.equal((root.internalFlags & 1) !== 0, true);
   const child = objects.createObject(root);
   assert.equal(objects.setPrototype(child, undefined), true);
 });

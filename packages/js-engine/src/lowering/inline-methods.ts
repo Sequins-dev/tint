@@ -13,7 +13,7 @@ const maxInlineParameters = 7;
 const maxInlineStatements = 12;
 const maxInlineNodes = 128;
 const maxCandidatesPerSite = 4;
-const maxInlineDepth = 3;
+const maxInlineDepth = 4;
 
 export interface InlineCandidate {
   readonly spanStart: number;
@@ -48,6 +48,7 @@ export interface InlineCandidatePlan {
   readonly bySpan: ReadonlyMap<number, InlineCandidate>;
   readonly byIdentifier: ReadonlyMap<string, readonly InlineCandidate[]>;
   readonly byProperty: ReadonlyMap<string, readonly InlineCandidate[]>;
+  readonly byPropertyArity: ReadonlyMap<string, readonly InlineCandidate[]>;
   readonly byQualifiedProperty: ReadonlyMap<string, readonly InlineCandidate[]>;
   readonly byLocalProperty: ReadonlyMap<string, readonly InlineCandidate[]>;
   readonly ctorBySpan: ReadonlyMap<number, ConstructorCandidate>;
@@ -1114,6 +1115,7 @@ export function selectMethodCandidates(
   plan: InlineCandidatePlan,
   target: Expression,
   enclosingFunctionStart: number,
+  argCount: number = -1,
 ): readonly InlineCandidate[] | undefined {
   const raw = unwrapGroup(target);
   if (raw.kind === "member" && !raw.optional && !raw.private) {
@@ -1126,6 +1128,12 @@ export function selectMethodCandidates(
     }
     const globalList = plan.byProperty.get(raw.property);
     if (globalList !== undefined && globalList.length > 0) return globalList;
+    if (argCount >= 0) {
+      const arityList = plan.byPropertyArity.get(
+        raw.property + "#" + String(argCount),
+      );
+      if (arityList !== undefined && arityList.length > 0) return arityList;
+    }
     if (enclosingFunctionStart >= 0) {
       const localList = plan.byLocalProperty.get(
         String(enclosingFunctionStart) + ":" + raw.property,
@@ -1747,6 +1755,7 @@ export function collectInlineCandidates(
     string,
     readonly InlineCandidate[]
   >();
+  const activeByPropertyArity = new Map<string, readonly InlineCandidate[]>();
   const activeByLocalProperty = new Map<string, readonly InlineCandidate[]>();
   const activeCtorBySpan = new Map<number, ConstructorCandidate>();
   const activeCtorByIdentifier = new Map<
@@ -1764,10 +1773,36 @@ export function collectInlineCandidates(
     called: Set<string>,
     dest: Map<string, readonly InlineCandidate[]>,
     maxPerSite: number = maxCandidatesPerSite,
+    arityDest?: Map<string, readonly InlineCandidate[]>,
   ): void {
     for (const [name, list] of source) {
       if (!called.has(name)) continue;
-      if (list.length === 0 || list.length > maxPerSite) continue;
+      if (list.length === 0) continue;
+      if (list.length > maxPerSite) {
+        if (arityDest === undefined) continue;
+        const groups = new Map<number, InlineCandidate[]>();
+        for (const cand of list) {
+          const arity = cand.parameters.length;
+          let group = groups.get(arity);
+          if (group === undefined) {
+            group = [];
+            groups.set(arity, group);
+          }
+          group.push(cand);
+        }
+        for (const [arity, group] of groups) {
+          if (group.length === 0 || group.length > maxPerSite) continue;
+          for (const cand of group) {
+            if (cand.slotIndex < 0) {
+              cand.slotIndex = slotCount;
+              slotCount++;
+              activeBySpan.set(cand.spanStart, cand);
+            }
+          }
+          arityDest.set(name + "#" + String(arity), group);
+        }
+        continue;
+      }
       for (const cand of list) {
         if (cand.slotIndex < 0) {
           cand.slotIndex = slotCount;
@@ -1809,7 +1844,13 @@ export function collectInlineCandidates(
   }
 
   activateList(byIdentifier, calledIdentifiers, activeByIdentifier);
-  activateList(byProperty, calledProperties, activeByProperty);
+  activateList(
+    byProperty,
+    calledProperties,
+    activeByProperty,
+    maxCandidatesPerSite,
+    activeByPropertyArity,
+  );
   activateList(
     byQualifiedProperty,
     calledQualifiedProperties,
@@ -1836,6 +1877,7 @@ export function collectInlineCandidates(
     bySpan: activeBySpan,
     byIdentifier: activeByIdentifier,
     byProperty: activeByProperty,
+    byPropertyArity: activeByPropertyArity,
     byQualifiedProperty: activeByQualifiedProperty,
     byLocalProperty: activeByLocalProperty,
     ctorBySpan: activeCtorBySpan,
@@ -2705,10 +2747,6 @@ function emitSingleCandidate(
     const numKey = asNumber(key, span);
     const valName = ctx.freshName("$iel");
     const idxName = ctx.freshName("$iix");
-    const voName = ctx.freshName("$ivo");
-    const arrName = ctx.freshName("$iar");
-    const valsName = ctx.freshName("$ivs");
-    const cellName = ctx.freshName("$icl");
     out.push(
       letVar(
         valName,
@@ -2727,119 +2765,48 @@ function emitSingleCandidate(
       ),
     );
     out.push(
-      constVar(voName, callHelper("viewTypeofObject", [obj], span), span),
+      assignStmt(
+        valName,
+        callHelper(
+          "packedNumberElement",
+          [ident("$errors", span), obj, ident(idxName, span)],
+          span,
+        ),
+        span,
+      ),
     );
     out.push(
       ifStmt(
-        bin("!==", ident(voName, span), ident("undefined", span), span),
+        callHelper(
+          "absentElementValue",
+          [ident(valName, span), ident("$errors", span)],
+          span,
+        ),
         blockOf(
           [
-            constVar(
-              arrName,
-              propAccess(ident(voName, span), "internalArrayElements", span),
+            assignStmt(
+              valName,
+              callHelper(
+                "packedGeneralElement",
+                [ident("$errors", span), obj, ident(idxName, span)],
+                span,
+              ),
               span,
             ),
             ifStmt(
-              bin("!==", ident(arrName, span), ident("undefined", span), span),
-              blockOf(
-                [
-                  constVar(
-                    valsName,
-                    propAccess(ident(arrName, span), "values", span),
-                    span,
-                  ),
-                  ifStmt(
-                    bin(
-                      "!==",
-                      ident(valsName, span),
-                      ident("undefined", span),
-                      span,
-                    ),
-                    blockOf(
-                      [
-                        ifStmt(
-                          bin(
-                            "<",
-                            ident(idxName, span),
-                            propAccess(ident(valsName, span), "length", span),
-                            span,
-                          ),
-                          blockOf(
-                            [
-                              constVar(
-                                cellName,
-                                {
-                                  ...atSpan(span),
-                                  kind: "index",
-                                  object: ident(valsName, span),
-                                  index: ident(idxName, span),
-                                },
-                                span,
-                              ),
-                              ifStmt(
-                                bin(
-                                  "!==",
-                                  ident(cellName, span),
-                                  ident("undefined", span),
-                                  span,
-                                ),
-                                assignStmt(
-                                  valName,
-                                  propAccess(
-                                    ident(cellName, span),
-                                    "elementValue",
-                                    span,
-                                  ),
-                                  span,
-                                ),
-                                breakTo(bailLabel, span),
-                                span,
-                              ),
-                            ],
-                            span,
-                          ),
-                          breakTo(bailLabel, span),
-                          span,
-                        ),
-                      ],
-                      span,
-                    ),
-                    blockOf(
-                      [
-                        assignStmt(
-                          valName,
-                          callHelper(
-                            "packedNumberElement",
-                            [ident("$errors", span), obj, numKey],
-                            span,
-                          ),
-                          span,
-                        ),
-                        ifStmt(
-                          callHelper(
-                            "absentElementValue",
-                            [ident(valName, span), ident("$errors", span)],
-                            span,
-                          ),
-                          breakTo(bailLabel, span),
-                          undefined,
-                          span,
-                        ),
-                      ],
-                      span,
-                    ),
-                    span,
-                  ),
-                ],
+              callHelper(
+                "absentElementValue",
+                [ident(valName, span), ident("$errors", span)],
                 span,
               ),
               breakTo(bailLabel, span),
+              undefined,
               span,
             ),
           ],
           span,
         ),
-        breakTo(bailLabel, span),
+        undefined,
         span,
       ),
     );
@@ -3055,11 +3022,6 @@ function emitSingleCandidate(
           out.push(
             letVar(eqName, bool(false, expr), expr, namedType("boolean", expr)),
           );
-          const witness = propAccess(
-            ident("$errors", expr),
-            "objectPrototype",
-            expr,
-          );
           const sameNum = bin(
             "&&",
             typeofIs(lt, "number", expr),
@@ -3072,18 +3034,85 @@ function emitSingleCandidate(
             typeofIs(rt, "boolean", expr),
             expr,
           );
-          const sameObj = bin(
-            "&&",
-            callHelper("isOrdinaryObject", [lt, witness], expr),
-            callHelper("isOrdinaryObject", [rt, witness], expr),
+          const loName = ctx.freshName("$ilo");
+          const roName = ctx.freshName("$iro");
+          const objBranch = blockOf(
+            [
+              constVar(
+                loName,
+                callHelper("viewTypeofObject", [lt], expr),
+                expr,
+              ),
+              constVar(
+                roName,
+                callHelper("viewTypeofObject", [rt], expr),
+                expr,
+              ),
+              ifStmt(
+                bin(
+                  "&&",
+                  bin(
+                    "!==",
+                    ident(loName, expr),
+                    ident("undefined", expr),
+                    expr,
+                  ),
+                  bin(
+                    "!==",
+                    ident(roName, expr),
+                    ident("undefined", expr),
+                    expr,
+                  ),
+                  expr,
+                ),
+                assignStmt(
+                  eqName,
+                  bin("===", ident(loName, expr), ident(roName, expr), expr),
+                  expr,
+                ),
+                breakTo(bailLabel, expr),
+                expr,
+              ),
+            ],
             expr,
           );
           out.push({
             ...atSpan(expr),
             kind: "if",
-            test: bin("||", sameNum, bin("||", sameBool, sameObj, expr), expr),
-            consequent: assignStmt(eqName, bin("===", lt, rt, expr), expr),
-            alternate: breakTo(bailLabel, expr),
+            test: sameNum,
+            consequent: assignStmt(
+              eqName,
+              bin("===", asNumber(lt, expr), asNumber(rt, expr), expr),
+              expr,
+            ),
+            alternate: {
+              ...atSpan(expr),
+              kind: "if",
+              test: sameBool,
+              consequent: assignStmt(
+                eqName,
+                bin(
+                  "===",
+                  {
+                    ...atSpan(expr),
+                    kind: "satisfies",
+                    assertion: "as",
+                    expression: lt,
+                    type: namedType("boolean", expr),
+                  },
+                  {
+                    ...atSpan(expr),
+                    kind: "satisfies",
+                    assertion: "as",
+                    expression: rt,
+                    type: namedType("boolean", expr),
+                  },
+                  expr,
+                ),
+                expr,
+              ),
+              alternate: objBranch,
+            },
           });
           return expr.operator === "=="
             ? ident(eqName, expr)
@@ -3565,13 +3594,34 @@ function emitSingleCandidate(
             );
             const lenName = ctx.freshName("$iph");
             out.push(
-              constVar(
+              letVar(
                 lenName,
                 callHelper(
-                  "scriptArrayPush",
-                  [objTemp, arg0, ident("$errors", expr)],
+                  "scriptArrayPushFast",
+                  [
+                    callHelper("viewTypeofObject", [objTemp], expr),
+                    arg0,
+                    ident("$errors", expr),
+                  ],
                   expr,
                 ),
+                expr,
+                namedType("number", expr),
+              ),
+            );
+            out.push(
+              ifStmt(
+                bin("<", ident(lenName, expr), num(0, expr), expr),
+                assignStmt(
+                  lenName,
+                  callHelper(
+                    "scriptArrayPush",
+                    [objTemp, arg0, ident("$errors", expr)],
+                    expr,
+                  ),
+                  expr,
+                ),
+                undefined,
                 expr,
               ),
             );
@@ -3662,7 +3712,12 @@ function emitSingleCandidate(
 
           // Recursive nested candidate method call (up to maxInlineDepth;
           // limit polymorphic nested expansion at deeper levels).
-          const subCandidates = selectMethodCandidates(plan, callee, -1);
+          const subCandidates = selectMethodCandidates(
+            plan,
+            callee,
+            -1,
+            evalArgs.length,
+          );
           if (
             subCandidates !== undefined &&
             depth < maxInlineDepth &&

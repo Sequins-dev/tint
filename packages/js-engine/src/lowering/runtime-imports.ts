@@ -320,6 +320,8 @@ export function scriptRuntimeImports(
               "packedNumberElement",
               "absentElementValue",
               "storePackedNumberElement",
+              "packedGeneralElement",
+              "storePackedGeneralElement",
               "packedArrayLength",
               "readCachedLengthValue",
               "readFloat64Element",

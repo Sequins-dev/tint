@@ -24,6 +24,7 @@ import {
   type OrdinaryObject,
   type ScriptPromiseCapability,
   type ScriptPropertyKey,
+  objectFlagArrayData,
 } from "@tint/js-runtime/objects";
 import type { EventLoopHandle } from "../event-loop.ts";
 import type { ReactorEventLoop } from "../event-loop-reactor.ts";
@@ -265,7 +266,10 @@ export function createNodeWorkerThreads(
   function transferList(value: unknown): readonly unknown[] {
     if (value === undefined) return emptyTransfer;
     const array = viewObjectValue(value, realm.objectPrototype);
-    if (array === undefined || !array.internalArrayData)
+    if (
+      array === undefined ||
+      (array.internalFlags & objectFlagArrayData) === 0
+    )
       return typeError("transferList must be an array");
     return arrayLikeValues(array, realm, hooks);
   }

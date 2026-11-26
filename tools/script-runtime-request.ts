@@ -226,6 +226,8 @@ export function createScriptRuntimeRequest(
       "createConstructedObject7",
       "createConstructedObject8",
       "warmOrdinaryDataProperty",
+      "packedGeneralElement",
+      "storePackedGeneralElement",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

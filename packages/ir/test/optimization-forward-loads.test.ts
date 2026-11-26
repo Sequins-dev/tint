@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FunctionIR, Instruction } from "@tint/ir/scalar";
+import {
+  instructionResult,
+  type FunctionIR,
+  type Instruction,
+} from "@tint/ir/scalar";
 import { forwardLocalLoads } from "../src/optimization/forward-loads.ts";
 const s = { start: 0, end: 0 };
 function fixture(
@@ -162,4 +166,76 @@ test("record write forwards the written slot value to a subsequent record read a
   assert.ok(
     !result.fn.blocks[2]?.instructions.some((op) => op.kind === "record-read"),
   );
+});
+
+test("folds general-is checks against known general-none, general-null, and general-wrap tags", () => {
+  const fn: FunctionIR = {
+    id: 0,
+    name: "foldGeneralIs",
+    exported: true,
+    scriptEntry: true,
+    parameters: [0, 1],
+    slots: ["number", "reference", "general", "general", "general", "general"],
+    returnType: "boolean",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "general-none", id: 2, ...s },
+          { kind: "general-null", id: 3, ...s },
+          { kind: "general-wrap", id: 4, value: 0, ...s },
+          { kind: "general-wrap", id: 5, value: 1, ...s },
+          { kind: "store", slot: 2, value: 2, ...s },
+          { kind: "store", slot: 3, value: 3, ...s },
+          { kind: "store", slot: 4, value: 4, ...s },
+          { kind: "store", slot: 5, value: 5, ...s },
+          { kind: "general-is", id: 6, value: 2, type: "undefined", ...s },
+          { kind: "general-is", id: 7, value: 2, type: "nullish", ...s },
+          { kind: "general-is", id: 8, value: 2, type: "null", ...s },
+          { kind: "general-is", id: 9, value: 3, type: "null", ...s },
+          { kind: "general-is", id: 10, value: 3, type: "nullish", ...s },
+          { kind: "general-is", id: 11, value: 3, type: "undefined", ...s },
+          { kind: "general-is", id: 12, value: 4, type: "number", ...s },
+          { kind: "general-is", id: 13, value: 4, type: "boolean", ...s },
+          { kind: "general-is", id: 14, value: 5, type: "object", ...s },
+          { kind: "general-is", id: 15, value: 5, type: "string", ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        // Known general tags are block-local and must not leak into block 1.
+        id: 1,
+        instructions: [
+          { kind: "load", id: 16, slot: 4, ...s },
+          { kind: "general-is", id: 17, value: 16, type: "number", ...s },
+        ],
+        terminator: { kind: "return", value: 17, ...s },
+      },
+    ],
+  };
+  const result = forwardLocalLoads(fn, 1000);
+  assert.ok(result);
+  assert.equal(result.forwarded, 10);
+  const block0 = result.fn.blocks[0]!.instructions;
+  const byId = (id: number) =>
+    block0.find((op) => instructionResult(op) === id);
+  const expected: readonly [number, boolean][] = [
+    [6, true],
+    [7, true],
+    [8, false],
+    [9, true],
+    [10, true],
+    [11, false],
+    [12, true],
+    [13, false],
+    [14, true],
+    [15, false],
+  ];
+  for (const [id, value] of expected) {
+    assert.deepEqual(byId(id), { kind: "constant", id, value, ...s });
+  }
+  assert.equal(result.fn.blocks[1]!.instructions[1]?.kind, "general-is");
 });

@@ -20,6 +20,7 @@ import {
   type OrdinaryObject,
   type ObjectHooks,
   type ObjectInternalMethods,
+  objectFlagExtensible,
 } from "./operations.ts";
 
 /** Storage and key policy for ECMA-262 10.4.5 integer-indexed exotic methods.
@@ -177,7 +178,7 @@ export function createIntegerIndexedMethods<Key, Value, State>(
     },
     preventExtensions: (object) => {
       if (!elements.canPreventExtensions(stateOf(object))) return false;
-      object.extensible = false;
+      object.internalFlags &= ~objectFlagExtensible;
       return true;
     },
   };

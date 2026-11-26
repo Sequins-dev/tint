@@ -54,6 +54,13 @@ import {
   bindArrayStore,
   bindElementLoad,
   bindElementStore,
+  bindGeneralElementLoad,
+  bindGeneralElementStore,
+  bindGeneralSlotLoad,
+  bindGeneralSlotStore,
+  bindReferenceVectorNew,
+  bindReferenceVectorCopy,
+  bindReferenceVectorClear,
   bindElementLength,
   bindRecordOperation,
   bindScriptEntry,
@@ -5027,7 +5034,6 @@ function lowerEntries(
           !Number.isSafeInteger(entries) ||
           entries < 1 ||
           entries > 4 ||
-          (store && entries !== 1) ||
           epochRecord === undefined ||
           epochField === undefined ||
           fn.closureEnvironment !== undefined ||
@@ -5054,6 +5060,7 @@ function lowerEntries(
               second,
               target,
               layout,
+              entries,
               epochRecord,
               epochField,
               span,
@@ -5195,6 +5202,220 @@ function lowerEntries(
           store && fourth !== undefined
             ? bindElementStore(fn, second, third, fourth, layout, span)
             : bindElementLoad(fn, second, third, layout, span);
+        continue;
+      }
+      if (
+        binding.operation === "general-element-load" ||
+        binding.operation === "general-element-store"
+      ) {
+        const store = binding.operation === "general-element-store";
+        let witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const elementsName = binding.field,
+          countName = binding.siteField;
+        let witness =
+          witnessType === undefined ? undefined : checked.types[witnessType];
+        if (
+          witness?.kind === "object" &&
+          elementsName !== undefined &&
+          !witness.properties.some(
+            (item) => item !== undefined && item.name === elementsName,
+          )
+        ) {
+          const proto = witness.properties.find(
+            (item) => item !== undefined && item.name === "objectPrototype",
+          );
+          if (proto !== undefined) {
+            witnessType = proto.type;
+            witness = checked.types[witnessType];
+          }
+        }
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const field =
+          record === undefined || elementsName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, elementsName);
+        const property =
+          witness?.kind === "object" && elementsName !== undefined
+            ? witness.properties.find(
+                (item) => item !== undefined && item.name === elementsName,
+              )
+            : undefined;
+        let elementsType: number | undefined = undefined;
+        const declared =
+          property === undefined ? undefined : checked.types[property.type];
+        if (declared?.kind === "union") {
+          for (const member of declared.members) {
+            if (member === undefined) throw "general element binding invariant";
+            if (checked.types[member]?.kind === "undefined") continue;
+            elementsType = elementsType === undefined ? member : -1;
+          }
+        } else if (property !== undefined) elementsType = property.type;
+        const elementsRecord =
+          elementsType === undefined || elementsType < 0
+            ? undefined
+            : recordContracts.forType(elementsType);
+        const countField =
+          elementsRecord === undefined || countName === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, countName);
+        const tagsField =
+          elementsRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, "generalTags");
+        const refsField =
+          elementsRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, "generalRefs");
+        const numbersField =
+          elementsRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(elementsRecord, "numbers");
+        const third = fn.parameters[2],
+          fourth = fn.parameters[3];
+        if (
+          first === undefined ||
+          second === undefined ||
+          third === undefined ||
+          (store && fourth === undefined) ||
+          fn.parameters.length !== (store ? 4 : 3) ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.slots[third] !== "number" ||
+          (store && fourth !== undefined && fn.slots[fourth] !== "general") ||
+          fn.returnType !== (store ? "boolean" : "general") ||
+          record === undefined ||
+          field === undefined ||
+          elementsRecord === undefined ||
+          countField === undefined ||
+          tagsField === undefined ||
+          refsField === undefined ||
+          numbersField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "general element bindings take a record witness with an elements field, an unknown value and a number index",
+          );
+        const layout = {
+          record,
+          field,
+          elementsRecord,
+          countField,
+          tagsField,
+          refsField,
+          numbersField,
+        };
+        functions[fn.id] =
+          store && fourth !== undefined
+            ? bindGeneralElementStore(fn, second, third, fourth, layout, span)
+            : bindGeneralElementLoad(fn, second, third, layout, span);
+        continue;
+      }
+      if (
+        binding.operation === "general-slot-load" ||
+        binding.operation === "general-slot-store"
+      ) {
+        const store = binding.operation === "general-slot-store";
+        const third = fn.parameters[2],
+          fourth = fn.parameters[3],
+          fifth = fn.parameters[4];
+        if (
+          first === undefined ||
+          second === undefined ||
+          third === undefined ||
+          fourth === undefined ||
+          (store && fifth === undefined) ||
+          fn.parameters.length !== (store ? 5 : 4) ||
+          fn.slots[first] !== "Uint8Array" ||
+          fn.slots[second] !== "reference" ||
+          fn.slots[third] !== "Float64Array" ||
+          fn.slots[fourth] !== "number" ||
+          (store && fifth !== undefined && fn.slots[fifth] !== "general") ||
+          fn.returnType !== (store ? "boolean" : "general") ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "general slot bindings take Uint8Array tags, reference storage, Float64Array numbers, and a number index",
+          );
+        functions[fn.id] =
+          store && fifth !== undefined
+            ? bindGeneralSlotStore(
+                fn,
+                first,
+                second,
+                third,
+                fourth,
+                fifth,
+                span,
+              )
+            : bindGeneralSlotLoad(fn, first, second, third, fourth, span);
+        continue;
+      }
+      if (binding.operation === "reference-vector-new") {
+        if (
+          first === undefined ||
+          fn.parameters.length !== 1 ||
+          fn.slots[first] !== "number" ||
+          fn.returnType !== "reference" ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "reference-vector-new binding takes a number capacity and returns a reference",
+          );
+        functions[fn.id] = bindReferenceVectorNew(fn, first, span);
+        continue;
+      }
+      if (binding.operation === "reference-vector-copy") {
+        const third = fn.parameters[2];
+        if (
+          first === undefined ||
+          second === undefined ||
+          third === undefined ||
+          fn.parameters.length !== 3 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "reference" ||
+          fn.slots[third] !== "number" ||
+          fn.returnType !== "void" ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "reference-vector-copy binding takes source reference, target reference, and number count",
+          );
+        functions[fn.id] = bindReferenceVectorCopy(
+          fn,
+          first,
+          second,
+          third,
+          span,
+        );
+        continue;
+      }
+      if (binding.operation === "reference-vector-clear") {
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "number" ||
+          fn.returnType !== "void" ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "reference-vector-clear binding takes a reference vector and a number index",
+          );
+        functions[fn.id] = bindReferenceVectorClear(fn, first, second, span);
         continue;
       }
       if (binding.operation === "element-length") {

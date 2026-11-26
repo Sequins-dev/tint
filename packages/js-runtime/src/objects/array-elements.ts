@@ -23,9 +23,98 @@ export interface ArrayObjectHooks<Key, Value> {
   /** Implements ToNumber, including user coercion and abrupt completion. */
   readonly toNumber: (value: Value) => number;
   readonly fromNumber: (value: number) => Value;
+  readonly fromGeneral: (value: unknown) => Value;
   readonly rangeError: () => Value;
   /** Cached shared exotic methods for arrays sharing these hooks. */
   internalMethods?: ObjectInternalMethods<Key, Value> | undefined;
+}
+
+/** Flat reference storage backing general packed array elements. Portably a
+ * record wrapping a JS array; natively bound to a GC-traced ReferenceVector
+ * (marker 6) storing managed string/reference pointers directly at
+ * `nativeArrayInlineOffset + index * 8`. */
+export interface GeneralRefStorage {
+  readonly slots: unknown[];
+}
+
+export function allocGeneralRefs(capacity: number): GeneralRefStorage {
+  const slots: unknown[] = [];
+  for (let index = 0; index < capacity; index++) slots.push(undefined);
+  return { slots };
+}
+
+export function copyGeneralRefs(
+  source: GeneralRefStorage,
+  target: GeneralRefStorage,
+  count: number,
+): void {
+  for (let index = 0; index < count; index++)
+    target.slots[index] = source.slots[index];
+}
+
+export function clearGeneralRef(refs: GeneralRefStorage, index: number): void {
+  refs.slots[index] = undefined;
+}
+
+/** Proven-in-bounds read from flat general element storage. Natively bound to
+ * IR general-slot-load. Tag byte encoding: 0=undefined, 1=number, 2=false,
+ * 3=string, 4=null, 5=reference, 6=true. */
+export function readGeneralSlot(
+  tags: Uint8Array,
+  refs: GeneralRefStorage,
+  numbers: Float64Array,
+  index: number,
+): unknown {
+  const tag = tags[index];
+  if (tag === 5 || tag === 3) return refs.slots[index];
+  if (tag === 1) return numbers[index];
+  if (tag === 6) return true;
+  if (tag === 2) return false;
+  if (tag === 4) return null;
+  return undefined;
+}
+
+/** Proven-in-bounds write into flat general element storage. Natively bound to
+ * IR general-slot-store. Returns false, with nothing written, only when `value`
+ * is a Number and `index >= numbers.length` so the caller can lazily allocate
+ * `numbers` and retry. */
+export function writeGeneralSlot(
+  tags: Uint8Array,
+  refs: GeneralRefStorage,
+  numbers: Float64Array,
+  index: number,
+  value: unknown,
+): boolean {
+  if (typeof value === "number") {
+    if (index >= numbers.length) return false;
+    numbers[index] = value;
+    tags[index] = 1;
+    refs.slots[index] = undefined;
+    return true;
+  }
+  if (typeof value === "string") {
+    refs.slots[index] = value;
+    tags[index] = 3;
+    return true;
+  }
+  if (typeof value === "boolean") {
+    tags[index] = value ? 6 : 2;
+    refs.slots[index] = undefined;
+    return true;
+  }
+  if (value === undefined) {
+    tags[index] = 0;
+    refs.slots[index] = undefined;
+    return true;
+  }
+  if (value === null) {
+    tags[index] = 4;
+    refs.slots[index] = undefined;
+    return true;
+  }
+  refs.slots[index] = value;
+  tags[index] = 5;
+  return true;
 }
 
 /** Packed own elements of an array exotic object. While present, indices
@@ -34,26 +123,27 @@ export interface ArrayObjectHooks<Key, Value> {
  * no "length" key (stored inline here), and the object has no property contract
  * (attaching one unpacks them).
  *
- * Elements start as binary64 numbers and move to general storage at the first
- * element that is not a Number. Generated code reads and overwrites the number
- * elements in place (IR element-load and element-store), which is why the
- * count of number elements doubles as their kind: it is zero once `values`
- * holds the elements. General elements each have their own cell, which an
- * overwrite updates in place (also from generated code); cells are never
- * shared between arrays. */
-export interface ElementCell<Value> {
-  elementValue: Value;
-}
+ * Elements start as binary64 numbers (`numberCount > 0, generalCount === 0`)
+ * and move to flat general storage (`numberCount === 0, generalCount > 0`) at
+ * the first element that is not a Number. Generated code reads and overwrites
+ * both representations in place (IR element-load/store and
+ * general-element-load/store). Pure object/string/boolean/null/undefined
+ * general arrays keep `numbers === noNumbers` (zero float64 storage). */
 export interface ArrayElements<Key, Value> {
   readonly keys: ArrayObjectHooks<Key, Value>;
   readonly undefinedValue: Value;
-  /** While `values` is undefined, the element count: elements are
-   * `numbers[0..numberCount-1]`. Zero once `values` holds the elements. */
+  /** While in number mode, the element count (`numbers[0..numberCount-1]`).
+   * Zero when empty or in general mode. */
   numberCount: number;
-  /** Number storage; its length is the capacity (at least numberCount). */
+  /** Number storage: capacity >= numberCount in number mode; in general mode,
+   * either `noNumbers` (0 length) or capacity >= `generalTags.length`. */
   numbers: Float64Array;
-  /** General storage, once any element was not a Number. */
-  values: ElementCell<Value>[] | undefined;
+  /** While in general mode, the element count. Zero when empty or in number mode. */
+  generalCount: number;
+  /** Tag byte per general element (capacity >= generalCount in general mode). */
+  generalTags: Uint8Array;
+  /** Managed reference vector (capacity === generalTags.length in general mode). */
+  generalRefs: GeneralRefStorage;
   /** The value of the array's own non-configurable, non-enumerable "length"
    * property (at least the count). */
   length: number;
@@ -63,13 +153,13 @@ export interface ArrayElements<Key, Value> {
 
 const dataFields =
   valueField | writableField | enumerableField | configurableField;
-// Number storage of every array with no room for numbers: elements that are
-// not numbers, or none yet. It has no cells to write, so arrays share it and
-// creating an array allocates no storage.
+// Shared zero-length storages so empty and single-mode arrays allocate nothing extra.
 export const noNumbers = new Float64Array(0);
-// Initial and minimum grown capacity of number storage.
+export const noGeneralTags = new Uint8Array(0);
+export const noGeneralRefs = allocGeneralRefs(0);
+// Initial and minimum grown capacity of packed element storage.
 export const firstCapacity = 4;
-// Largest Float64Array extent below the native allocator's aligned uint32 bound.
+// Largest Float64Array / ReferenceVector extent below the native allocator's aligned uint32 bound.
 const maximumCapacity = 536870906;
 
 export function createArrayElements<Key, Value>(
@@ -82,7 +172,9 @@ export function createArrayElements<Key, Value>(
     undefinedValue,
     numberCount: 0,
     numbers: noNumbers,
-    values: undefined,
+    generalCount: 0,
+    generalTags: noGeneralTags,
+    generalRefs: noGeneralRefs,
     length: length === 0 ? 0 : length,
     lengthWritable: true,
   };
@@ -121,37 +213,54 @@ export function createArrayElementsFromList(
         undefinedValue,
         numberCount: length,
         numbers,
-        values: undefined,
+        generalCount: 0,
+        generalTags: noGeneralTags,
+        generalRefs: noGeneralRefs,
         length,
         lengthWritable: true,
       };
-    const values: ElementCell<unknown>[] = [];
-    for (let i = 0; i < index; i++) {
-      const number = numbers[i];
-      if (number === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-      values.push({ elementValue: number });
+    const generalTags = new Uint8Array(capacity);
+    for (let i = 0; i < index; i++) generalTags[i] = 1;
+    const generalRefs = allocGeneralRefs(capacity);
+    for (let i = index; i < length; i++) {
+      if (
+        !writeGeneralSlot(generalTags, generalRefs, numbers, i, args[start + i])
+      )
+        throw "ARRAY_ELEMENTS_INVARIANT";
     }
-    for (let i = index; i < length; i++)
-      values.push({ elementValue: args[start + i] });
     return {
       keys,
       undefinedValue,
       numberCount: 0,
-      numbers: noNumbers,
-      values,
+      numbers,
+      generalCount: length,
+      generalTags,
+      generalRefs,
       length,
       lengthWritable: true,
     };
   }
-  const values: ElementCell<unknown>[] = [];
-  for (let i = 0; i < length; i++)
-    values.push({ elementValue: args[start + i] });
+  if (length > maximumCapacity) throw "ARRAY_ELEMENTS_CAPACITY";
+  const capacity = length < firstCapacity ? firstCapacity : length;
+  const generalTags = new Uint8Array(capacity);
+  const generalRefs = allocGeneralRefs(capacity);
+  let numbers = noNumbers;
+  for (let i = 0; i < length; i++) {
+    const item = args[start + i];
+    if (!writeGeneralSlot(generalTags, generalRefs, numbers, i, item)) {
+      numbers = new Float64Array(capacity);
+      if (!writeGeneralSlot(generalTags, generalRefs, numbers, i, item))
+        throw "ARRAY_ELEMENTS_INVARIANT";
+    }
+  }
   return {
     keys,
     undefinedValue,
     numberCount: 0,
-    numbers: noNumbers,
-    values,
+    numbers,
+    generalCount: length,
+    generalTags,
+    generalRefs,
     length,
     lengthWritable: true,
   };
@@ -176,8 +285,8 @@ export function arrayLengthDescriptor<Key, Value>(
 export function arrayElementCount<Key, Value>(
   elements: ArrayElements<Key, Value>,
 ): number {
-  const values = elements.values;
-  return values === undefined ? elements.numberCount : values.length;
+  const general = elements.generalCount;
+  return general === 0 ? elements.numberCount : general;
 }
 
 /** The caller has checked `index < count`. */
@@ -185,16 +294,22 @@ export function readArrayElement<Key, Value>(
   elements: ArrayElements<Key, Value>,
   index: number,
 ): Value {
-  const values = elements.values;
-  if (values === undefined) {
+  const general = elements.generalCount;
+  if (general === 0) {
     if (index >= elements.numberCount) throw "ARRAY_ELEMENTS_INVARIANT";
     const value = elements.numbers[index];
     if (value === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
     return elements.keys.fromNumber(value);
   }
-  const cell = values[index];
-  if (cell === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-  return cell.elementValue;
+  if (index >= general) throw "ARRAY_ELEMENTS_INVARIANT";
+  return elements.keys.fromGeneral(
+    readGeneralSlot(
+      elements.generalTags,
+      elements.generalRefs,
+      elements.numbers,
+      index,
+    ),
+  );
 }
 
 /** Number storage with room for `required` elements. */
@@ -215,13 +330,53 @@ function reserveNumbers<Key, Value>(
   return numbers;
 }
 
+/** General storage with room for `required` elements. */
+export function reserveGeneral<Key, Value>(
+  elements: ArrayElements<Key, Value>,
+  required: number,
+): void {
+  const oldTags = elements.generalTags;
+  if (required <= oldTags.length) return;
+  if (required > maximumCapacity) throw "ARRAY_ELEMENTS_CAPACITY";
+  let capacity =
+    oldTags.length < firstCapacity ? firstCapacity : oldTags.length;
+  while (capacity < required)
+    capacity = capacity > maximumCapacity / 2 ? maximumCapacity : capacity * 2;
+  const tags = new Uint8Array(capacity);
+  tags.set(oldTags);
+  const refs = allocGeneralRefs(capacity);
+  const count = elements.generalCount;
+  if (count > 0) copyGeneralRefs(elements.generalRefs, refs, count);
+  elements.generalTags = tags;
+  elements.generalRefs = refs;
+  const oldNumbers = elements.numbers;
+  if (oldNumbers.length > 0 && oldNumbers.length < capacity) {
+    const numbers = new Float64Array(capacity);
+    numbers.set(oldNumbers);
+    elements.numbers = numbers;
+  }
+}
+
+/** Lazily allocate or grow `elements.numbers` to match `generalTags.length`. */
+export function ensureGeneralNumbers<Key, Value>(
+  elements: ArrayElements<Key, Value>,
+): Float64Array {
+  const capacity = elements.generalTags.length;
+  const old = elements.numbers;
+  if (old.length >= capacity) return old;
+  const numbers = new Float64Array(capacity);
+  if (old.length > 0) numbers.set(old);
+  elements.numbers = numbers;
+  return numbers;
+}
+
 /** Overwrite a present element or append at `count`. */
 export function writeArrayElement<Key, Value>(
   elements: ArrayElements<Key, Value>,
   index: number,
   value: Value,
 ): void {
-  if (elements.values === undefined) {
+  if (elements.generalCount === 0) {
     const count = elements.numberCount;
     if (index > count) throw "ARRAY_ELEMENTS_INVARIANT";
     const payload = elements.keys.numberPayload(value);
@@ -230,24 +385,56 @@ export function writeArrayElement<Key, Value>(
       if (index === count) elements.numberCount = count + 1;
       return;
     }
-    // The first non-number element moves every number to general storage once.
-    const numbers = elements.numbers;
-    const converted: ElementCell<Value>[] = [];
-    for (let i = 0; i < count; i++) {
-      const number = numbers[i];
-      if (number === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-      converted.push({ elementValue: elements.keys.fromNumber(number) });
+    // The first non-number element switches to flat general storage once.
+    const required = index + 1;
+    if (required > maximumCapacity) throw "ARRAY_ELEMENTS_CAPACITY";
+    let capacity = elements.numbers.length;
+    if (capacity < firstCapacity) capacity = firstCapacity;
+    while (capacity < required)
+      capacity =
+        capacity > maximumCapacity / 2 ? maximumCapacity : capacity * 2;
+    if (count > 0) {
+      if (elements.numbers.length < capacity) {
+        const numbers = new Float64Array(capacity);
+        numbers.set(elements.numbers);
+        elements.numbers = numbers;
+      }
+    } else {
+      elements.numbers = noNumbers;
     }
-    elements.values = converted;
+    const tags = new Uint8Array(capacity);
+    for (let i = 0; i < count; i++) tags[i] = 1;
+    const refs = allocGeneralRefs(capacity);
     elements.numberCount = 0;
-    elements.numbers = noNumbers;
+    elements.generalCount = count;
+    elements.generalTags = tags;
+    elements.generalRefs = refs;
   }
-  const values = elements.values;
-  if (values === undefined || index > values.length)
-    throw "ARRAY_ELEMENTS_INVARIANT";
-  const cell = values[index];
-  if (cell !== undefined) cell.elementValue = value;
-  else values.push({ elementValue: value });
+  const count = elements.generalCount;
+  if (index > count) throw "ARRAY_ELEMENTS_INVARIANT";
+  reserveGeneral<Key, Value>(elements, index + 1);
+  if (
+    !writeGeneralSlot(
+      elements.generalTags,
+      elements.generalRefs,
+      elements.numbers,
+      index,
+      value,
+    )
+  ) {
+    ensureGeneralNumbers<Key, Value>(elements);
+    if (
+      !writeGeneralSlot(
+        elements.generalTags,
+        elements.generalRefs,
+        elements.numbers,
+        index,
+        value,
+      )
+    )
+      throw "ARRAY_ELEMENTS_INVARIANT";
+  }
+  if (index === count) elements.generalCount = count + 1;
 }
 
 /** Remove elements at and above `count`; every packed element is configurable. */
@@ -255,14 +442,24 @@ export function truncateArrayElements<Key, Value>(
   elements: ArrayElements<Key, Value>,
   count: number,
 ): void {
-  if (count >= arrayElementCount<Key, Value>(elements)) return;
-  const values = elements.values;
-  if (values === undefined) elements.numberCount = count;
-  else if (count === 0) {
+  const general = elements.generalCount;
+  if (general === 0) {
+    if (count < elements.numberCount) elements.numberCount = count;
+    return;
+  }
+  if (count >= general) return;
+  if (count === 0) {
     // An emptied array starts over with number storage.
-    elements.values = undefined;
+    elements.generalCount = 0;
+    elements.generalTags = noGeneralTags;
+    elements.generalRefs = noGeneralRefs;
+    elements.numbers = noNumbers;
     elements.numberCount = 0;
-  } else values.length = count;
+  } else {
+    const refs = elements.generalRefs;
+    for (let i = count; i < general; i++) clearGeneralRef(refs, i);
+    elements.generalCount = count;
+  }
 }
 
 /** The ordinary descriptor of a present packed element. */

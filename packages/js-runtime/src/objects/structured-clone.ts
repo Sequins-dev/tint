@@ -2,12 +2,16 @@ import { copyLatin1, latin1Text } from "@tint/foundation/text/latin1";
 import { setScriptMap, syncScriptMapNumbers } from "./collection-data.ts";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
 import {
+  allocGeneralRefs,
   arrayElementCount,
+  ensureGeneralNumbers,
   firstCapacity,
+  noGeneralRefs,
+  noGeneralTags,
   noNumbers,
   readArrayElement,
+  writeGeneralSlot,
   type ArrayElements,
-  type ElementCell,
 } from "./array-elements.ts";
 import { createArrayObject } from "./arrays.ts";
 import {
@@ -37,6 +41,11 @@ import {
   type ObjectLiteralSite,
   type OrdinaryObject,
   type OrdinaryPropertyShape,
+  objectFlagArrayData,
+  objectFlagDictionary,
+  objectFlagExtensible,
+  objectFlagUsedAsPrototype,
+  objectFlagsPackedArray,
 } from "./operations.ts";
 import { createRegExpLiteral } from "./regexp-runtime.ts";
 import { createSetData } from "./set-data.ts";
@@ -96,18 +105,14 @@ function createMarkedPackedArrayObject(
   return {
     internalShape: shape,
     prototype,
-    extensible: true,
+    internalFlags: objectFlagsPackedArray,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: true,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: true,
     internalArrayElements: elements,
     internalMethods: methods,
     internalRareSlots: undefined,
@@ -132,18 +137,14 @@ function createMarkedOrdinaryObject(
   return {
     internalShape: shape,
     prototype,
-    extensible: true,
+    internalFlags: objectFlagExtensible,
     properties: undefined,
     internalPropertyEpoch: epoch,
     internalChildShape: undefined,
-    internalDictionary: false,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: false,
     internalArrayElements: undefined,
     internalMethods: undefined,
     internalRareSlots: undefined,
@@ -725,7 +726,7 @@ function serializeWorkerGraph(
     const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
     const arrayShape = object.internalShape;
     const hasExpando =
-      object.internalDictionary ||
+      (object.internalFlags & objectFlagDictionary) !== 0 ||
       object.internalMethods !== undefined ||
       object.properties !== undefined ||
       (arrayShape !== undefined && arrayShape.keys.length > 0);
@@ -735,7 +736,7 @@ function serializeWorkerGraph(
           scriptPropertyKeyOrder,
         )
       : undefined;
-    if (elements.values === undefined) {
+    if (elements.generalCount === 0) {
       const numbers = elements.numbers;
       // Encoding numbers runs no script, so the run is one snapshot.
       tag(tagNumberArray);
@@ -781,7 +782,7 @@ function serializeWorkerGraph(
   function encodeOrdinaryObject(object: ScriptObject): void {
     const shape = object.internalShape;
     if (
-      !object.internalDictionary &&
+      (object.internalFlags & objectFlagDictionary) === 0 &&
       object.internalMethods === undefined &&
       object.properties === undefined &&
       shape !== undefined
@@ -848,7 +849,7 @@ function serializeWorkerGraph(
           if (slotCount >= 2) {
             if (
               object.internalShape === shape &&
-              !object.internalDictionary &&
+              (object.internalFlags & objectFlagDictionary) === 0 &&
               object.properties === undefined
             )
               encode(object.internalValue1);
@@ -857,7 +858,7 @@ function serializeWorkerGraph(
           if (slotCount >= 3) {
             if (
               object.internalShape === shape &&
-              !object.internalDictionary &&
+              (object.internalFlags & objectFlagDictionary) === 0 &&
               object.properties === undefined
             )
               encode(object.internalValue2);
@@ -866,7 +867,7 @@ function serializeWorkerGraph(
           if (slotCount === 4) {
             if (
               object.internalShape === shape &&
-              !object.internalDictionary &&
+              (object.internalFlags & objectFlagDictionary) === 0 &&
               object.properties === undefined
             )
               encode(object.internalValue3);
@@ -877,7 +878,7 @@ function serializeWorkerGraph(
         for (let index = 0; index < slotCount; index++) {
           if (
             object.internalShape === shape &&
-            !object.internalDictionary &&
+            (object.internalFlags & objectFlagDictionary) === 0 &&
             object.properties === undefined
           ) {
             let raw: unknown;
@@ -917,7 +918,7 @@ function serializeWorkerGraph(
       for (let index = 0; index < slotCount; index++) {
         if (
           object.internalShape === shape &&
-          !object.internalDictionary &&
+          (object.internalFlags & objectFlagDictionary) === 0 &&
           object.properties === undefined
         ) {
           const slot = slots[index];
@@ -1058,8 +1059,8 @@ function serializeWorkerGraph(
       const exoticFast = object.internalExoticSlots;
       if (
         exoticFast === undefined &&
-        !object.internalDictionary &&
-        !object.internalUsedAsPrototype &&
+        (object.internalFlags & objectFlagDictionary) === 0 &&
+        (object.internalFlags & objectFlagUsedAsPrototype) === 0 &&
         epoch >= 0
       ) {
         const slot = markedObjects.length;
@@ -1075,7 +1076,8 @@ function serializeWorkerGraph(
           (rare !== undefined && rare.internalArgumentsData)
         )
           return throwWorkerCloneError(realm, "The object could not be cloned");
-        if (object.internalArrayData) return encodeArray(object);
+        if ((object.internalFlags & objectFlagArrayData) !== 0)
+          return encodeArray(object);
         return encodeOrdinaryObject(object);
       }
     }
@@ -1236,7 +1238,8 @@ function serializeWorkerGraph(
       )
         return throwWorkerCloneError(realm, "The object could not be cloned");
     }
-    if (object.internalArrayData) return encodeArray(object);
+    if ((object.internalFlags & objectFlagArrayData) !== 0)
+      return encodeArray(object);
     encodeOrdinaryObject(object);
   }
   if (useFastMark) {
@@ -1374,12 +1377,12 @@ function deserializeWorkerGraph(
     clearRecentStrings(recentStrings);
   const hooks = realm.objectHooks;
   const objectPrototype = realm.objectPrototype;
-  if (!objectPrototype.internalUsedAsPrototype)
+  if ((objectPrototype.internalFlags & objectFlagUsedAsPrototype) === 0)
     createObject<ScriptPropertyKey, unknown>(objectPrototype);
   const arrayPrototype = realm.arrayPrototype;
   const arrayHooks = realm.arrayHooks;
   if (
-    !arrayPrototype.internalUsedAsPrototype ||
+    (arrayPrototype.internalFlags & objectFlagUsedAsPrototype) === 0 ||
     arrayHooks.internalMethods === undefined
   )
     createArrayObject<ScriptPropertyKey, unknown>(
@@ -1598,7 +1601,7 @@ function deserializeWorkerGraph(
     const reached = object.internalShape;
     if (
       !omitted &&
-      !object.internalDictionary &&
+      (object.internalFlags & objectFlagDictionary) === 0 &&
       reached !== undefined &&
       reached.shared &&
       reached.keys.length === count
@@ -1687,7 +1690,9 @@ function deserializeWorkerGraph(
         undefinedValue: hooks.undefinedValue,
         numberCount: 0,
         numbers: noNumbers,
-        values: undefined,
+        generalCount: 0,
+        generalTags: noGeneralTags,
+        generalRefs: noGeneralRefs,
         length,
         lengthWritable: true,
       };
@@ -1713,10 +1718,11 @@ function deserializeWorkerGraph(
         elements.numbers = numbers;
         elements.numberCount = count;
       } else if (count > 0) {
-        // Elements append directly to packed cell storage until the first
+        // Elements append directly to packed general storage until the first
         // hole; later ones are ordinary index properties.
-        const cells: ElementCell<unknown>[] = [];
-        elements.values = cells;
+        const capacity = count < firstCapacity ? firstCapacity : count;
+        elements.generalTags = new Uint8Array(capacity);
+        elements.generalRefs = allocGeneralRefs(capacity);
         let packed = true;
         for (let index = 0; index < count; index++) {
           if (position < end && bytes[position] === tagHole) {
@@ -1728,10 +1734,28 @@ function deserializeWorkerGraph(
           if (
             packed &&
             object.internalArrayElements === elements &&
-            cells.length === index
-          )
-            cells.push({ elementValue: value });
-          else define(object, arrayHooks.indexKey(index), value);
+            elements.generalCount === index
+          ) {
+            if (
+              !writeGeneralSlot(
+                elements.generalTags,
+                elements.generalRefs,
+                elements.numbers,
+                index,
+                value,
+              )
+            ) {
+              ensureGeneralNumbers<ScriptPropertyKey, unknown>(elements);
+              writeGeneralSlot(
+                elements.generalTags,
+                elements.generalRefs,
+                elements.numbers,
+                index,
+                value,
+              );
+            }
+            elements.generalCount = index + 1;
+          } else define(object, arrayHooks.indexKey(index), value);
         }
       }
       if (position < end && bytes[position] === endDenseArray) {

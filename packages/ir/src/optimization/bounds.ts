@@ -880,7 +880,11 @@ export function selectArrayAccesses(
         op.kind === "array-valid" ||
         op.kind === "string-code-unit" ||
         op.kind === "reference-vector-read" ||
-        op.kind === "reference-vector-write"
+        op.kind === "reference-vector-write" ||
+        op.kind === "general-element-load" ||
+        op.kind === "general-element-store" ||
+        op.kind === "general-slot-load" ||
+        op.kind === "general-slot-store"
       )
         mark(op.index);
       else if (op.kind === "element-load" || op.kind === "element-store") {

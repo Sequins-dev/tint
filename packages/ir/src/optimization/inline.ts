@@ -169,6 +169,10 @@ function supported(
     // Element loads, stores, and length reads are inline, nonallocating and nonthrowing.
     case "element-load":
     case "element-store":
+    case "general-element-load":
+    case "general-element-store":
+    case "general-slot-load":
+    case "general-slot-store":
     case "element-length":
     case "element-storage":
     case "element-count":
@@ -268,6 +272,10 @@ function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
     last.kind === "property-store" ||
     last.kind === "element-load" ||
     last.kind === "element-store" ||
+    last.kind === "general-element-load" ||
+    last.kind === "general-element-store" ||
+    last.kind === "general-slot-load" ||
+    last.kind === "general-slot-store" ||
     last.kind === "array-element" ||
     last.kind === "array-store" ||
     last.kind === "element-length" ||
@@ -706,8 +714,8 @@ export function inlineSmallFunctions(
           allowAllocator =
             isAllocatorCallee &&
             fn.scriptEntry === true &&
-            fn.blocks.length <= 1000 &&
-            allocatorInlines < 8,
+            fn.blocks.length <= 8000 &&
+            allocatorInlines < 48,
           isIntrinsic =
             (callee !== undefined && intrinsic[callee.id] === 1) ||
             allowAllocator;
@@ -1335,6 +1343,56 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   object: value(instruction.object),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "general-element-load":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "general-element-store":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  index: value(instruction.index),
+                  value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "general-slot-load":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  tags: value(instruction.tags),
+                  refs: value(instruction.refs),
+                  numbers: value(instruction.numbers),
+                  index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "general-slot-store":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  tags: value(instruction.tags),
+                  refs: value(instruction.refs),
+                  numbers: value(instruction.numbers),
+                  index: value(instruction.index),
+                  value: value(instruction.value),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

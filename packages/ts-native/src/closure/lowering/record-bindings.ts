@@ -44,6 +44,28 @@ export type RecordOperation =
   /** `(witness: T, target: unknown, index: number, value: unknown):
    * boolean`: overwrite a packed binary64 element (IR element-store). */
   | "element-store"
+  /** `(witness: T, value: unknown, index: number): unknown`: the packed
+   * general element of an object value, or a miss (IR general-element-load). */
+  | "general-element-load"
+  /** `(witness: T, target: unknown, index: number, value: unknown):
+   * boolean`: overwrite a packed general element (IR general-element-store). */
+  | "general-element-store"
+  /** `(tags: Uint8Array, refs: R, numbers: Float64Array, index: number):
+   * unknown`: proven-in-bounds general element read (IR general-slot-load). */
+  | "general-slot-load"
+  /** `(tags: Uint8Array, refs: R, numbers: Float64Array, index: number,
+   * value: unknown): boolean`: proven-in-bounds general element write (IR
+   * general-slot-store). */
+  | "general-slot-store"
+  /** `(capacity: number): R`: allocate a ReferenceVector (IR
+   * reference-vector-new). */
+  | "reference-vector-new"
+  /** `(source: R, target: R, count: number): void`: copy ReferenceVector slots
+   * (IR reference-vector-copy, rebase: false). */
+  | "reference-vector-copy"
+  /** `(vector: R, index: number): void`: clear a ReferenceVector slot to none
+   * (IR reference-none + reference-vector-write). */
+  | "reference-vector-clear"
   /** `(array: Float64Array, index: number): number`: proven-in-bounds
    * Float64Array element read (IR array-element). */
   | "array-element"
@@ -357,6 +379,247 @@ export function bindElementStore(
     span,
   );
 }
+/** The record fields general-element-load and general-element-store read. */
+export interface GeneralElementLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly elementsRecord: number;
+  readonly countField: number;
+  readonly tagsField: number;
+  readonly refsField: number;
+  readonly numbersField: number;
+}
+export function bindGeneralElementLoad(
+  fn: FunctionIR,
+  value: number,
+  index: number,
+  layout: GeneralElementLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value, index],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "general-element-load",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      countField: layout.countField,
+      tagsField: layout.tagsField,
+      refsField: layout.refsField,
+      numbersField: layout.numbersField,
+    }),
+    span,
+  );
+}
+export function bindGeneralElementStore(
+  fn: FunctionIR,
+  target: number,
+  index: number,
+  value: number,
+  layout: GeneralElementLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [target, index, value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "general-element-store",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      index: loaded[1] ?? -1,
+      value: loaded[2] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      elementsRecord: layout.elementsRecord,
+      countField: layout.countField,
+      tagsField: layout.tagsField,
+      refsField: layout.refsField,
+      numbersField: layout.numbersField,
+    }),
+    span,
+  );
+}
+export function bindGeneralSlotLoad(
+  fn: FunctionIR,
+  tags: number,
+  refs: number,
+  numbers: number,
+  index: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [tags, refs, numbers, index],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "general-slot-load",
+      id: loaded.length,
+      tags: loaded[0] ?? -1,
+      refs: loaded[1] ?? -1,
+      numbers: loaded[2] ?? -1,
+      index: loaded[3] ?? -1,
+    }),
+    span,
+  );
+}
+export function bindGeneralSlotStore(
+  fn: FunctionIR,
+  tags: number,
+  refs: number,
+  numbers: number,
+  index: number,
+  value: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [tags, refs, numbers, index, value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "general-slot-store",
+      id: loaded.length,
+      tags: loaded[0] ?? -1,
+      refs: loaded[1] ?? -1,
+      numbers: loaded[2] ?? -1,
+      index: loaded[3] ?? -1,
+      value: loaded[4] ?? -1,
+    }),
+    span,
+  );
+}
+export function bindReferenceVectorNew(
+  fn: FunctionIR,
+  capacity: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [capacity],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "reference-vector-new",
+      id: loaded.length,
+      length: loaded[0] ?? -1,
+    }),
+    span,
+  );
+}
+export function bindReferenceVectorCopy(
+  fn: FunctionIR,
+  source: number,
+  target: number,
+  count: number,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 0,
+            slot: source,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 1,
+            slot: target,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 2,
+            slot: count,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "reference-vector-copy",
+            source: 0,
+            target: 1,
+            count: 2,
+            rebase: false,
+          },
+        ],
+        terminator: { ...span, kind: "return", value: undefined },
+      },
+    ],
+  };
+}
+export function bindReferenceVectorClear(
+  fn: FunctionIR,
+  vector: number,
+  index: number,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 0,
+            slot: vector,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "load",
+            id: 1,
+            slot: index,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "reference-none",
+            id: 2,
+          },
+          {
+            start: span.start,
+            end: span.end,
+            kind: "reference-vector-write",
+            vector: 0,
+            index: 1,
+            value: 2,
+          },
+        ],
+        terminator: { ...span, kind: "return", value: undefined },
+      },
+    ],
+  };
+}
 /** The body of an array-element binding: one unchecked IR array-element over
  * its typed-array and index parameters. */
 export function bindArrayElement(
@@ -494,6 +757,7 @@ export function bindPropertyStore(
   value: number,
   site: number,
   layout: PropertyCacheLayout,
+  entries: number,
   epochRecord: number,
   epochField: number,
   span: Span,
@@ -514,6 +778,7 @@ export function bindPropertyStore(
       count: layout.count,
       siteRecord: layout.siteRecord,
       siteField: layout.siteField,
+      entries,
       epochRecord,
       epochField,
     }),

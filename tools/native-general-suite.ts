@@ -715,6 +715,56 @@ function cachedLoops() {
   out.push(objProtoPush.length, Object.hasOwn(objProtoPush, 2), objProtoPush[3], objProtoSeen);
   return out.join(",");
 }
+function flatGeneralArrays() {
+  const out = [];
+  // Exercise every flat general-array tag kind (undefined, null, true, false,
+  // -0, NaN, finite number, string, object) plus number->general promotion.
+  const mixed = [];
+  const objs = [];
+  for (let i = 0; i < 64; i++) objs.push({ id: i, tag: "v" + i });
+  mixed.push(objs[0], "alpha", true, false, null, undefined, -0, NaN, 3.25, objs[63]);
+  out.push(
+    mixed.length,
+    mixed[0].id,
+    mixed[1],
+    mixed[2],
+    mixed[3],
+    String(mixed[4]),
+    String(mixed[5]),
+    Object.is(mixed[6], -0),
+    Number.isNaN(mixed[7]),
+    mixed[8],
+    mixed[9].tag,
+  );
+  // Overwrite across tag transitions in place.
+  mixed[0] = 99;
+  mixed[1] = false;
+  mixed[2] = objs[12];
+  mixed[6] = "now-str";
+  mixed[8] = null;
+  out.push(mixed[0], mixed[1], mixed[2].id, mixed[6], String(mixed[8]));
+  // Number array promoting to flat general array on object write.
+  const promoted = [1, 2, 3, 4];
+  promoted[2] = objs[7];
+  promoted.push("tail", true, -0);
+  out.push(promoted.length, promoted[0], promoted[2].id, promoted[4], promoted[5], Object.is(promoted[6], -0));
+  // GC churn over a large flat general array with pop + truncate + refill.
+  const retained = [];
+  for (let i = 0; i < 120; i++) {
+    retained.push({ k: i, nested: { s: "n" + i } });
+  }
+  for (let g = 0; g < 1500; g++) {
+    const tmp = { a: g, b: g + 1, c: [g, "x" + g] };
+    if (tmp.a < 0) out.push("never");
+  }
+  let sum = 0;
+  for (let i = 0; i < retained.length; i++) sum += retained[i].k;
+  const popped = retained.pop();
+  retained.length = 50;
+  retained.push({ k: 500, nested: { s: "new" } }, "after-trunc", 7.5);
+  out.push(sum, popped.k, popped.nested.s, retained.length, retained[49].nested.s, retained[50].k, retained[51], retained[52]);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -728,6 +778,7 @@ export function sections() {
     literals(),
     popAndSpecLoops(),
     cachedLoops(),
+    flatGeneralArrays(),
   ];
 }
 `;
@@ -1719,6 +1770,78 @@ function milestone2ArraysMathLoops() {
   out.push(loopDisjoint(h2, 6, -1), setterSide);
   return out.join("|");
 }
+function milestone3PolymorphicStoreAndForwarding() {
+  const out = [];
+  // 1. 4-entry polymorphic property-store (overwrites + transitions + 5th shape
+  //    + non-writable / setter / frozen invalidation).
+  function writeHit(target, val) {
+    target.hit = val;
+    return target.hit;
+  }
+  const s0 = { hit: 0 };
+  const s1 = { a: 1, hit: 0 };
+  const s2 = { b: 2 };
+  const s3 = { c: 3, d: 4 };
+  const s4 = { e: 5, hit: 0 };
+  let total = 0;
+  for (let i = 1; i <= 4; i++) {
+    total += writeHit(s0, i);
+    total += writeHit(s1, i * 10);
+    total += writeHit(i === 1 ? s2 : { b: i }, i * 100);
+    total += writeHit(i === 1 ? s3 : { c: i, d: i + 1 }, i * 1000);
+  }
+  total += writeHit(s4, 7);
+  out.push(total, s0.hit, s1.hit, s2.hit, s3.hit, s4.hit);
+  const frozen = Object.freeze({ hit: 99 });
+  let frozeErr = "none";
+  try { writeHit(frozen, 1); } catch (e) { frozeErr = e.constructor.name; }
+  let setLog = 0;
+  const withSetter = { a: 1 };
+  Object.defineProperty(withSetter, "hit", {
+    set(v) { setLog += v; },
+    get() { return setLog; },
+    configurable: true,
+  });
+  out.push(frozeErr, frozen.hit, writeHit(withSetter, 42), setLog);
+
+  // 2. Same-receiver dominating property-load CSE across disjoint store and
+  //    sibling cold-miss getter mutation.
+  function readWithSibling(obj) {
+    const first = obj.x;
+    obj.other = first + 1;
+    const mid = obj.y;
+    const second = obj.x;
+    return first * 100 + mid * 10 + second;
+  }
+  const plain = { x: 2, y: 3, other: 0 };
+  const mutating = { x: 2, other: 0 };
+  Object.defineProperty(mutating, "y", {
+    get() { this.x = 9; return 4; },
+    configurable: true,
+  });
+  out.push(readWithSibling(plain), plain.other, readWithSibling(mutating), mutating.x);
+
+  // 3. Type-narrowed == / != edge cases.
+  const eqPairs = [
+    [null, undefined],
+    [0, -0],
+    [0, false],
+    [1, true],
+    ["", false],
+    ["42", 42],
+    [NaN, NaN],
+    [{ valueOf() { return 7; } }, 7],
+    [null, 0],
+    [undefined, false],
+  ];
+  const eqOut = [];
+  for (let i = 0; i < eqPairs.length; i++) {
+    const a = eqPairs[i][0], b = eqPairs[i][1];
+    eqOut.push((a == b ? "1" : "0") + (a != b ? "1" : "0"));
+  }
+  out.push(eqOut.join(""));
+  return out.join("|");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -1738,6 +1861,7 @@ export function sections() {
     inheritedNonMethodAndEviction(),
     milestone2ConstructAndMethods(),
     milestone2ArraysMathLoops(),
+    milestone3PolymorphicStoreAndForwarding(),
   ];
 }
 `;
@@ -1833,10 +1957,10 @@ async function allNodeExpectations() {
     computeNodeSections(numbersSource, "tint-general-numbers-"),
     computeNodeSections(propertyCachesSource, "tint-property-caches-"),
   ]);
-  assert.equal(elements.length, 11);
+  assert.equal(elements.length, 12);
   assert.equal(intrinsics.length, 5);
   assert.equal(numbers.length, 12);
-  assert.equal(propertyCaches.length, 17);
+  assert.equal(propertyCaches.length, 18);
   cachedExpected = { elements, intrinsics, numbers, propertyCaches };
   return cachedExpected;
 }

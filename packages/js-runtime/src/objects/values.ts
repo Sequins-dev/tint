@@ -32,6 +32,10 @@ import {
   type ObjectHooks,
   type ObjectScriptCall,
   type OrdinaryObject,
+  objectFlagArrayData,
+  objectFlagDictionary,
+  objectFlagExtensible,
+  objectFlagUsedAsPrototype,
 } from "./operations.ts";
 import { callObject, constructObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
@@ -144,23 +148,19 @@ export function createSourceInstance(
 ): unknown {
   const proto =
     viewObjectValue(prototype, realm.objectPrototype) ?? realm.objectPrototype;
-  if (!proto.internalUsedAsPrototype)
+  if ((proto.internalFlags & objectFlagUsedAsPrototype) === 0)
     markPrototype<ScriptPropertyKey, unknown>(proto);
   const instance: OrdinaryObject<ScriptPropertyKey, unknown> = {
     internalShape: proto.internalChildShape,
     prototype: proto,
-    extensible: true,
+    internalFlags: objectFlagExtensible,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
-    internalDictionary: false,
-    internalUsedAsPrototype: false,
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
     internalConstruct: undefined,
-    internalExecutionContext: undefined,
-    internalArrayData: false,
     internalArrayElements: undefined,
     internalMethods: undefined,
     internalRareSlots: undefined,
@@ -188,7 +188,7 @@ function readOrdinaryDataAndMark(
   while (cursor !== undefined) {
     if (cursor.internalMethods !== undefined)
       return { ok: false, value: undefined };
-    if (!cursor.internalUsedAsPrototype)
+    if ((cursor.internalFlags & objectFlagUsedAsPrototype) === 0)
       markPrototype<ScriptPropertyKey, unknown>(cursor);
     const desc = ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(
       cursor,
@@ -245,7 +245,7 @@ export function warmConstructSite(
   let cursor: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = proto;
   while (cursor !== undefined) {
     if (cursor.internalMethods !== undefined) return false;
-    if (!cursor.internalUsedAsPrototype)
+    if ((cursor.internalFlags & objectFlagUsedAsPrototype) === 0)
       markPrototype<ScriptPropertyKey, unknown>(cursor);
     for (let index = 0; index < keys.length; index++) {
       const key = keys[index];
@@ -274,7 +274,7 @@ export function warmConstructSite(
   }
   const reached = probe.internalShape;
   if (
-    probe.internalDictionary ||
+    (probe.internalFlags & objectFlagDictionary) !== 0 ||
     reached === undefined ||
     !reached.shared ||
     reached.keys.length !== keys.length
@@ -309,18 +309,14 @@ export function createConstructedObject1(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 1,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -354,18 +350,14 @@ export function createConstructedObject2(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 2,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -400,18 +392,14 @@ export function createConstructedObject3(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 3,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -447,18 +435,14 @@ export function createConstructedObject4(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 4,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -495,18 +479,14 @@ export function createConstructedObject5(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 5,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -544,18 +524,14 @@ export function createConstructedObject6(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 6,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -594,18 +570,14 @@ export function createConstructedObject7(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 7,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -645,18 +617,14 @@ export function createConstructedObject8(
     return {
       internalShape: shape,
       prototype: proto,
-      extensible: true,
+      internalFlags: objectFlagExtensible,
       properties: undefined,
       internalPropertyEpoch: 8,
       internalChildShape: undefined,
-      internalDictionary: false,
-      internalUsedAsPrototype: false,
       internalValues: undefined,
       internalCall: undefined,
       internalRegisterCall: undefined,
       internalConstruct: undefined,
-      internalExecutionContext: undefined,
-      internalArrayData: false,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
@@ -976,18 +944,33 @@ export function cachedPropertyStore(
   site: ScriptPropertyCache,
 ): boolean {
   const object = viewTypeofObject(target);
-  if (object === undefined || object.internalShape !== site.storeShape)
-    return false;
-  const transition = site.storeTransition;
+  if (object === undefined) return false;
+  const shape = object.internalShape;
+  let slot = 0;
+  let transition = site.storeTransition;
+  let epoch = 0;
+  if (shape === site.storeShape) {
+    slot = site.storeSlot;
+    transition = site.storeTransition;
+    epoch = site.storeEpoch;
+  } else if (shape === site.storeShape1) {
+    slot = site.storeSlot1;
+    transition = site.storeTransition1;
+    epoch = site.storeEpoch1;
+  } else if (shape === site.storeShape2) {
+    slot = site.storeSlot2;
+    transition = site.storeTransition2;
+    epoch = site.storeEpoch2;
+  } else if (shape === site.storeShape3) {
+    slot = site.storeSlot3;
+    transition = site.storeTransition3;
+    epoch = site.storeEpoch3;
+  } else return false;
   if (transition !== undefined) {
-    if (site.epoch.value !== site.storeEpoch) return false;
+    if (site.epoch.value !== epoch) return false;
     object.internalShape = transition;
   }
-  writePropertyValueSlot(
-    object,
-    (site.storeSlot / Number.MIN_VALUE - 2) / 2,
-    value,
-  );
+  writePropertyValueSlot(object, (slot / Number.MIN_VALUE - 2) / 2, value);
   return true;
 }
 
@@ -1006,7 +989,8 @@ export function isArrayValue(value: unknown, realm: ErrorRealm): boolean {
   while (object !== undefined) {
     const exotic = object.internalExoticSlots;
     const proxy = exotic === undefined ? undefined : exotic.internalProxyData;
-    if (proxy === undefined) return object.internalArrayData;
+    if (proxy === undefined)
+      return (object.internalFlags & objectFlagArrayData) !== 0;
     if (proxy.target === undefined) throw createRuntimeError(realm, "type");
     object = proxy.target;
   }
@@ -1135,7 +1119,7 @@ export function callRegisterObjectValue(
   if (
     entry !== undefined &&
     invoke !== undefined &&
-    (object.internalExecutionContext === undefined ||
+    (object.internalRareSlots?.internalExecutionContext === undefined ||
       (active !== undefined &&
         active.realm === entry.context.realm &&
         active.scriptOrModule === entry.context.scriptOrModule))

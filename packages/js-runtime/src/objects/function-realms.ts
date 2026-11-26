@@ -29,7 +29,7 @@ export function getFunctionRealm(
       target = proxyTarget;
       continue;
     }
-    const context = target.internalExecutionContext;
+    const context = target.internalRareSlots?.internalExecutionContext;
     const getRealm = context === undefined ? undefined : context.getRealm;
     if (getRealm !== undefined) return getRealm();
     const active = callerRealm.agent.activeContext;

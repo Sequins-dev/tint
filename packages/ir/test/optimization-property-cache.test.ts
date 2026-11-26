@@ -9,6 +9,7 @@ import {
 import {
   analyzeModulePropertySites,
   cacheLoopProperties,
+  forwardDominatingProperties,
 } from "../src/optimization/property-cache.ts";
 
 const s = { start: 0, end: 0 };
@@ -1043,5 +1044,320 @@ test("disambiguates disjoint property-store keys, chains 1-hop cached properties
     result.fn.blocks[6]!.terminator.kind === "jump" &&
       result.fn.blocks[6]!.terminator.target,
     7,
+  );
+});
+
+test("forwardDominatingProperties forwards redundant loads across disjoint stores and refreshes on sibling cold misses", () => {
+  const extRecords: readonly RecordLayout[] = [
+    ...records,
+    {
+      byteLength: 32,
+      fields: [
+        { offset: 8, type: "reference", mutable: false },
+        { offset: 16, type: "reference", mutable: false },
+        { offset: 24, type: "reference", mutable: false },
+      ],
+    },
+    {
+      byteLength: 48,
+      fields: [
+        { offset: 8, type: "reference", mutable: true },
+        { offset: 16, type: "number", mutable: true },
+        { offset: 24, type: "optional-reference", mutable: true },
+        { offset: 32, type: "number", mutable: true },
+        { offset: 40, type: "reference", mutable: true },
+      ],
+    },
+  ];
+  const storePropLayout = { ...propLayout, siteRecord: 9 };
+  const createSiteHelper: FunctionIR = {
+    id: 3,
+    name: "createScriptPropertyCache",
+    exported: false,
+    parameters: [0],
+    slots: ["string"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [{ id: 0, instructions: [], terminator: { kind: "trap", ...s } }],
+  };
+  const initSites: FunctionIR = {
+    id: 4,
+    name: "initSites",
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "string-literal", id: 0, value: "a", ...s },
+          { kind: "call", id: 1, target: 3, arguments: [0], ...s },
+          { kind: "string-literal", id: 2, value: "b", ...s },
+          { kind: "call", id: 3, target: 3, arguments: [2], ...s },
+          { kind: "string-literal", id: 4, value: "c", ...s },
+          { kind: "call", id: 5, target: 3, arguments: [4], ...s },
+          {
+            kind: "record-new",
+            id: 6,
+            record: 8,
+            arguments: [1, 3, 5],
+            ...s,
+          },
+        ],
+        terminator: { kind: "return", value: 6, ...s },
+      },
+    ],
+  };
+  // Control flow:
+  //   block 0: read siteA (slot 2), siteB (slot 3), siteC (slot 4) via record reads -> block 3
+  //   block 3: dominating property-load obj.a (with cold miss block 4 -> block 5)
+  //   block 5: disjoint property-store obj.c = val, then sibling property-load obj.b
+  //            (with cold miss block 6 calling effectful getter -> block 7)
+  //   block 7: dominated redundant property-load obj.a (must forward from probeSlot,
+  //            while block 6 refreshes probeSlot!), then conflicting property-store obj.a
+  //            followed by another property-load obj.a (must NOT forward).
+  // slots: 0=obj(gen), 1=sites(ref rec8), 2=siteA(ref), 3=siteB(ref), 4=siteC(ref),
+  //        5=val(gen), 6=a1(gen), 7=b1(gen), 8=a2(gen), 9=a3(gen), 10=epoch(ref rec2)
+  const fn: FunctionIR = {
+    id: 0,
+    name: "dominatingForward",
+    exported: true,
+    parameters: [0, 1, 5, 10],
+    slots: [
+      "general",
+      "reference",
+      "reference",
+      "reference",
+      "reference",
+      "general",
+      "general",
+      "general",
+      "general",
+      "general",
+      "reference",
+    ],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 0,
+          record: 8,
+          field: 0,
+          slot: 2,
+          consequent: 1,
+          alternate: 8,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 1,
+          record: 8,
+          field: 1,
+          slot: 3,
+          consequent: 2,
+          alternate: 8,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 2, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 2,
+          record: 8,
+          field: 2,
+          slot: 4,
+          consequent: 3,
+          alternate: 8,
+          ...s,
+        },
+      },
+      // Dominating load of obj.a
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 3, slot: 0, ...s },
+          { kind: "load", id: 4, slot: 2, ...s },
+          {
+            kind: "property-load",
+            id: 5,
+            object: 3,
+            site: 4,
+            ...propLayout,
+            ...s,
+          },
+          { kind: "store", slot: 6, value: 5, ...s },
+          { kind: "general-is", id: 6, value: 5, type: "absent", ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 6,
+          consequent: 4,
+          alternate: 5,
+          ...s,
+        },
+      },
+      // Cold miss for dominating obj.a
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 7, slot: 10, ...s },
+          { kind: "call", id: 8, target: 1, arguments: [7], ...s },
+          { kind: "load", id: 9, slot: 5, ...s },
+          { kind: "store", slot: 6, value: 9, ...s },
+        ],
+        terminator: { kind: "jump", target: 5, ...s },
+      },
+      // Disjoint property-store on "c" + sibling property-load on "b"
+      {
+        id: 5,
+        instructions: [
+          { kind: "load", id: 10, slot: 0, ...s },
+          { kind: "load", id: 11, slot: 4, ...s },
+          { kind: "load", id: 12, slot: 5, ...s },
+          {
+            kind: "property-store",
+            id: 13,
+            object: 10,
+            site: 11,
+            value: 12,
+            ...storePropLayout,
+            ...s,
+          },
+          { kind: "load", id: 14, slot: 0, ...s },
+          { kind: "load", id: 15, slot: 3, ...s },
+          {
+            kind: "property-load",
+            id: 16,
+            object: 14,
+            site: 15,
+            ...propLayout,
+            ...s,
+          },
+          { kind: "store", slot: 7, value: 16, ...s },
+          { kind: "general-is", id: 17, value: 16, type: "absent", ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 17,
+          consequent: 6,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // Cold miss for sibling obj.b (calls effectful getter!)
+      {
+        id: 6,
+        instructions: [
+          { kind: "load", id: 18, slot: 10, ...s },
+          { kind: "call", id: 19, target: 1, arguments: [18], ...s },
+          { kind: "load", id: 20, slot: 5, ...s },
+          { kind: "store", slot: 7, value: 20, ...s },
+        ],
+        terminator: { kind: "jump", target: 7, ...s },
+      },
+      // Redundant load of obj.a (should forward), then conflicting store to "a",
+      // then post-store load of obj.a (must NOT forward).
+      {
+        id: 7,
+        instructions: [
+          { kind: "load", id: 21, slot: 0, ...s },
+          { kind: "load", id: 22, slot: 2, ...s },
+          {
+            kind: "property-load",
+            id: 23,
+            object: 21,
+            site: 22,
+            ...propLayout,
+            ...s,
+          },
+          { kind: "store", slot: 8, value: 23, ...s },
+          { kind: "load", id: 24, slot: 0, ...s },
+          { kind: "load", id: 25, slot: 2, ...s },
+          { kind: "load", id: 26, slot: 5, ...s },
+          {
+            kind: "property-store",
+            id: 27,
+            object: 24,
+            site: 25,
+            value: 26,
+            ...storePropLayout,
+            ...s,
+          },
+          { kind: "load", id: 28, slot: 0, ...s },
+          { kind: "load", id: 29, slot: 2, ...s },
+          {
+            kind: "property-load",
+            id: 30,
+            object: 28,
+            site: 29,
+            ...propLayout,
+            ...s,
+          },
+          { kind: "store", slot: 9, value: 30, ...s },
+        ],
+        terminator: { kind: "return", value: 30, ...s },
+      },
+      { id: 8, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+
+  const module: ModuleIR = {
+    records: extRecords,
+    functions: [
+      fn,
+      epochWriterHelper,
+      pureCollectionHelper,
+      createSiteHelper,
+      initSites,
+    ],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const shared = analyzeModulePropertySites(module, 100000);
+  assert.ok(shared !== undefined);
+  const result = forwardDominatingProperties(
+    fn,
+    module,
+    100000,
+    undefined,
+    shared,
+  );
+  assert.ok(result !== undefined);
+  assert.equal(result.rewritten, 1);
+  const outModule: ModuleIR = {
+    records: extRecords,
+    functions: [
+      result.fn,
+      epochWriterHelper,
+      pureCollectionHelper,
+      createSiteHelper,
+      initSites,
+    ],
+  };
+  assert.ok(verify(outModule).ok, JSON.stringify(verify(outModule)));
+  // Block 7 keeps ONLY the post-conflicting-store property-load (id 30), not id 23.
+  const block7Loads = result.fn.blocks[7]!.instructions.filter(
+    (op) => op.kind === "property-load",
+  );
+  assert.equal(block7Loads.length, 1);
+  assert.equal(block7Loads[0]!.id, 30);
+  // Cold sibling miss block 6 refreshes probeSlot via a pure property-load.
+  assert.equal(
+    result.fn.blocks[6]!.instructions.some((op) => op.kind === "property-load"),
+    true,
   );
 });

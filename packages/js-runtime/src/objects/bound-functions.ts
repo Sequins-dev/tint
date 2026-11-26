@@ -35,7 +35,7 @@ export function createBoundFunction<Key, Value>(
       ? createCallableObject<Key, Value>(
           getPrototype<Key, Value>(target),
           invoke,
-          target.internalExecutionContext,
+          target.internalRareSlots?.internalExecutionContext,
         )
       : createConstructorObject<Key, Value>(
           getPrototype<Key, Value>(target),
@@ -45,7 +45,7 @@ export function createBoundFunction<Key, Value>(
               argumentsFor(args),
               sameValue(newTarget, box(bound)) ? box(target) : newTarget,
             ),
-          target.internalExecutionContext,
+          target.internalRareSlots?.internalExecutionContext,
         );
   const rare = ensureRareSlots<Key, Value>(bound);
   rare.internalBoundTarget = target;

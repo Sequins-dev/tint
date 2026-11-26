@@ -2141,15 +2141,15 @@ test("script object allocators inline only into scriptEntry callers and respect 
   assert.ok(typedRes);
   assert.equal(typedRes.inlined, 0);
 
-  // Script caller (`scriptEntry: true`) with 10 calls: inlines up to cap of 8.
+  // Script caller (`scriptEntry: true`) with 50 calls: inlines up to cap of 48.
   const scriptMod: ModuleIR = {
     records,
-    functions: [makeCaller(true, 10), allocator],
+    functions: [makeCaller(true, 50), allocator],
   };
   assert.deepEqual(verify(scriptMod), { ok: true });
   const scriptRes = inlineSmallFunctions(scriptMod, 100000);
   assert.ok(scriptRes);
-  assert.equal(scriptRes.inlined, 8);
+  assert.equal(scriptRes.inlined, 48);
   assert.deepEqual(verify(scriptRes.module), { ok: true });
   const remainingCalls = scriptRes.module.functions[0]!.blocks.flatMap((b) =>
     b.instructions.filter((op) => op.kind === "call"),

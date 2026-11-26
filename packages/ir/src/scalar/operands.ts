@@ -110,6 +110,28 @@ export function visitInstructionOperands(
     case "element-count":
       visit(op.object);
       return;
+    case "general-element-load":
+      visit(op.object);
+      visit(op.index);
+      return;
+    case "general-element-store":
+      visit(op.object);
+      visit(op.index);
+      visit(op.value);
+      return;
+    case "general-slot-load":
+      visit(op.tags);
+      visit(op.refs);
+      visit(op.numbers);
+      visit(op.index);
+      return;
+    case "general-slot-store":
+      visit(op.tags);
+      visit(op.refs);
+      visit(op.numbers);
+      visit(op.index);
+      visit(op.value);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;

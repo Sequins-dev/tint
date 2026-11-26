@@ -188,6 +188,8 @@ function pruneTracedModule(
         } else if (
           op.kind === "element-load" ||
           op.kind === "element-store" ||
+          op.kind === "general-element-load" ||
+          op.kind === "general-element-store" ||
           op.kind === "element-length" ||
           op.kind === "element-storage" ||
           op.kind === "element-count"

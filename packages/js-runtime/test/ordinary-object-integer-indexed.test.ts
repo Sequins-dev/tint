@@ -155,7 +155,7 @@ test("ordinary keys survive resize and extensibility follows storage contract", 
   assert.ok(o.deleteProperty(s.object, "label"));
   s.resizable();
   assert.equal(o.preventExtensions(s.object), false);
-  assert.equal(s.object.extensible, true);
+  assert.equal((s.object.internalFlags & 1) !== 0, true);
   const fixed = setup();
   assert.ok(o.preventExtensions(fixed.object));
   assert.equal(o.createDataProperty(fixed.object, "extra", 1, hooks), false);

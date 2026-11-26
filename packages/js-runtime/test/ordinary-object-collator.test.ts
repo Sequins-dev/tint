@@ -112,7 +112,7 @@ test("Collator constructor, prototype, accessor and bound function descriptors",
   assert.equal(f.get(ctor, "name"), "Collator");
   assert.equal(o.getOwnProperty(ctor, "prototype")?.writable, false);
   assert.equal(instance.prototype, prototype);
-  assert.equal(instance.extensible, true);
+  assert.equal((instance.internalFlags & 1) !== 0, true);
   assert.equal(
     f.get(prototype, o.wellKnownSymbol(f.realm.symbolRegistry, "toStringTag")),
     "Intl.Collator",

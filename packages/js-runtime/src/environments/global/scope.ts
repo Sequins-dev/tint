@@ -14,6 +14,8 @@ import {
   findOrdinaryProperty,
   writePropertyCell,
   propertyEpoch,
+  objectFlagDictionary,
+  objectFlagUsedAsPrototype,
   throwIfRuntimeError,
   type ErrorRealm,
   type ScriptPropertyKey,
@@ -139,7 +141,7 @@ function recordGlobalCell<Key, Value>(
   const object = global.object;
   const rare = object.internalRareSlots;
   if (
-    !object.internalDictionary ||
+    (object.internalFlags & objectFlagDictionary) === 0 ||
     object.internalMethods !== undefined ||
     (rare !== undefined &&
       (rare.internalDataAliases !== undefined ||
@@ -263,7 +265,11 @@ export function putBindingReference<Key, Value>(
       const cell = cachedGlobalCell<Key, Value>(scope.global, cache);
       if (cell !== undefined && cell.writable) {
         writePropertyCell<Value>(cell, value);
-        if (scope.global.object.internalUsedAsPrototype) propertyEpoch.value++;
+        if (
+          (scope.global.object.internalFlags & objectFlagUsedAsPrototype) !==
+          0
+        )
+          propertyEpoch.value++;
         return "none";
       }
     }

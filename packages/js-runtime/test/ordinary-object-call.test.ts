@@ -135,6 +135,6 @@ test("bound functions retain their target context independently of prototype mut
     objects.callObject(bound, undefined, [], undefined).value,
     "target",
   );
-  assert.equal(bound.internalExecutionContext, context);
+  assert.equal(bound.internalRareSlots?.internalExecutionContext, context);
   assert.equal(active, "host");
 });

@@ -1,4 +1,11 @@
 export {
+  objectFlagExtensible,
+  objectFlagDictionary,
+  objectFlagUsedAsPrototype,
+  objectFlagArrayData,
+  objectFlagsPackedArray,
+} from "./operations.ts";
+export {
   viewWeakRegistryOwner,
   warmConstructSite,
   createConstructedObject1,
@@ -15,11 +22,20 @@ export {
   packedNumberElement,
   absentElementValue,
   storePackedNumberElement,
+  packedGeneralElement,
+  storePackedGeneralElement,
   packedArrayLength,
   readCachedLengthValue,
   readFloat64Element,
   writeFloat64Element,
 } from "./element-access.ts";
+export {
+  allocGeneralRefs,
+  copyGeneralRefs,
+  clearGeneralRef,
+  readGeneralSlot,
+  writeGeneralSlot,
+} from "./array-elements.ts";
 export {
   createIntrinsicFunctions,
   type IntrinsicFunctions,

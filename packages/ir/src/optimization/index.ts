@@ -33,8 +33,12 @@ export { cacheElementStorage } from "./element-cache.ts";
 import {
   analyzeModulePropertySites,
   cacheLoopProperties,
+  forwardDominatingProperties,
 } from "./property-cache.ts";
-export { cacheLoopProperties } from "./property-cache.ts";
+export {
+  cacheLoopProperties,
+  forwardDominatingProperties,
+} from "./property-cache.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
@@ -2192,6 +2196,39 @@ export function optimizeModuleVersion(
     );
   used += cachedProperties.visited;
   if (completed("cache-loop-properties", cachedProperties, false))
+    return stop();
+  // Eliminate redundant same-receiver property-load probes across dominating
+  // paths before branch threading and cleanup fold the remaining absent tests.
+  const forwardedProperties = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = forwardDominatingProperties(
+        fn,
+        version.module,
+        budget,
+        remarks,
+        propertySites,
+      );
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (forwardedProperties.exhausted)
+    return exhausted(
+      "forward-dominating-properties",
+      maxInstructions - used - accessVisited,
+    );
+  used += forwardedProperties.visited;
+  if (completed("forward-dominating-properties", forwardedProperties, false))
     return stop();
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.

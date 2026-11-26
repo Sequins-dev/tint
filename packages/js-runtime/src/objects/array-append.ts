@@ -1,18 +1,29 @@
 import {
+  allocGeneralRefs,
   arrayElementCount,
+  ensureGeneralNumbers,
+  noNumbers,
+  readGeneralSlot,
+  reserveGeneral,
   truncateArrayElements,
   writeArrayElement,
+  writeGeneralSlot,
 } from "./array-elements.ts";
-import { propertyEpoch, type OrdinaryObject } from "./operations.ts";
+import {
+  objectFlagDictionary,
+  objectFlagExtensible,
+  propertyEpoch,
+  type OrdinaryObject,
+} from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { ErrorRealm } from "./errors.ts";
 import { viewTypeofObject } from "./values.ts";
 
 // Indices above this are not array indices or would push length past 2^32 - 1.
 const lastAppendIndex = 4294967294;
-// Largest Float64Array extent below the native allocator's aligned uint32 bound.
+// Largest Float64Array / ReferenceVector extent below the native allocator's aligned uint32 bound.
 const maxNumberCapacity = 536870906;
-// First grown capacity when pushing into an empty number array (`[]`).
+// First grown capacity when pushing into an empty array (`[]`).
 const firstPushCapacity = 8;
 
 function hasCleanArrayPushPrototypes(realm: ErrorRealm): boolean {
@@ -22,7 +33,7 @@ function hasCleanArrayPushPrototypes(realm: ErrorRealm): boolean {
   const inherited = arrayPrototype.internalArrayElements;
   if (
     inherited === undefined ||
-    inherited.values !== undefined ||
+    inherited.generalCount !== 0 ||
     inherited.numberCount !== 0
   )
     return false;
@@ -30,7 +41,7 @@ function hasCleanArrayPushPrototypes(realm: ErrorRealm): boolean {
   if (
     objectPrototype === undefined ||
     objectPrototype !== realm.objectPrototype ||
-    objectPrototype.internalDictionary
+    (objectPrototype.internalFlags & objectFlagDictionary) !== 0
   )
     return false;
   realm.cleanArrayPushEpoch = epoch;
@@ -53,7 +64,11 @@ export function appendPackedElement(
   allowPreallocated: boolean = false,
 ): boolean {
   const elements = object.internalArrayElements;
-  if (elements === undefined || !object.extensible) return false;
+  if (
+    elements === undefined ||
+    (object.internalFlags & objectFlagExtensible) === 0
+  )
+    return false;
   const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
   const growing = elements.length === count;
   if (growing) {
@@ -81,8 +96,8 @@ export function popPackedElement(
   const elements = object.internalArrayElements;
   if (elements === undefined || !elements.lengthWritable)
     return realm.arrayPopMiss;
-  const values = elements.values;
-  if (values === undefined) {
+  const general = elements.generalCount;
+  if (general === 0) {
     const count = elements.numberCount;
     if (elements.length !== count) return realm.arrayPopMiss;
     if (count === 0) return undefined;
@@ -93,13 +108,14 @@ export function popPackedElement(
     elements.length = last;
     return result;
   }
-  const count = values.length;
-  if (elements.length !== count) return realm.arrayPopMiss;
-  if (count === 0) return undefined;
-  const last = count - 1;
-  const cell = values[last];
-  if (cell === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-  const result = cell.elementValue;
+  if (elements.length !== general) return realm.arrayPopMiss;
+  const last = general - 1;
+  const result = readGeneralSlot(
+    elements.generalTags,
+    elements.generalRefs,
+    elements.numbers,
+    last,
+  );
   truncateArrayElements<ScriptPropertyKey, unknown>(elements, last);
   elements.length = last;
   return result;
@@ -116,7 +132,11 @@ export function scriptArrayPush(
   const object = viewTypeofObject(value);
   if (object === undefined) return -1;
   const elements = object.internalArrayElements;
-  if (elements === undefined || !object.extensible || !elements.lengthWritable)
+  if (
+    elements === undefined ||
+    (object.internalFlags & objectFlagExtensible) === 0 ||
+    !elements.lengthWritable
+  )
     return -1;
   const arrayPrototype = object.prototype;
   if (arrayPrototype === undefined || arrayPrototype !== realm.arrayPrototype)
@@ -128,8 +148,8 @@ export function scriptArrayPush(
     return -1;
   // Fast steady-state path: append a Number directly into existing or freshly
   // grown capacity without helper or hook closure dispatch.
-  const values = elements.values;
-  if (values === undefined && typeof item === "number") {
+  const general = elements.generalCount;
+  if (general === 0 && typeof item === "number") {
     const count = elements.numberCount;
     if (elements.length === count) {
       let numbers = elements.numbers;
@@ -157,18 +177,45 @@ export function scriptArrayPush(
         return next;
       }
     }
-  } else if (values !== undefined) {
-    // Fast steady-state path: append any value directly to a packed general array.
-    const count = values.length;
-    if (elements.length === count && count <= lastAppendIndex) {
-      values.push({ elementValue: item });
-      const next = count + 1;
+  } else if (general > 0) {
+    // Fast steady-state path: append any value directly into flat general storage.
+    if (elements.length === general && general < maxNumberCapacity) {
+      if (general >= elements.generalTags.length)
+        reserveGeneral<ScriptPropertyKey, unknown>(elements, general + 1);
+      if (
+        !writeGeneralSlot(
+          elements.generalTags,
+          elements.generalRefs,
+          elements.numbers,
+          general,
+          item,
+        )
+      ) {
+        ensureGeneralNumbers<ScriptPropertyKey, unknown>(elements);
+        if (
+          !writeGeneralSlot(
+            elements.generalTags,
+            elements.generalRefs,
+            elements.numbers,
+            general,
+            item,
+          )
+        )
+          throw "ARRAY_ELEMENTS_INVARIANT";
+      }
+      const next = general + 1;
+      elements.generalCount = next;
       elements.length = next;
       return next;
     }
   } else if (elements.numberCount === 0 && elements.length === 0) {
     // Empty freshly-created array receiving its first non-number element.
-    elements.values = [{ elementValue: item }];
+    const generalTags = new Uint8Array(firstPushCapacity);
+    const generalRefs = allocGeneralRefs(firstPushCapacity);
+    writeGeneralSlot(generalTags, generalRefs, noNumbers, 0, item);
+    elements.generalTags = generalTags;
+    elements.generalRefs = generalRefs;
+    elements.generalCount = 1;
     elements.length = 1;
     return 1;
   }
@@ -176,35 +223,55 @@ export function scriptArrayPush(
   return elements.length;
 }
 
-/** Zero-capture inlineable fast path for steady-state numeric Array.prototype.push.
- * Appends `item` into existing Float64Array capacity when the receiver is an
- * extensible packed array inheriting from the realm's clean Array.prototype,
- * returning the new length, or -1 to fall back to `scriptArrayPush`. */
+/** Zero-capture inlineable fast path for steady-state packed Array.prototype.push.
+ * Appends `item` into existing binary64 or flat general capacity when the
+ * receiver is an extensible packed array inheriting from the realm's clean
+ * Array.prototype, returning the new length, or -1 to fall back to
+ * `scriptArrayPush`. */
 export function scriptArrayPushFast(
   object: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
-  item: number,
+  item: unknown,
   realm: ErrorRealm,
 ): number {
   if (
     object !== undefined &&
-    object.extensible &&
+    (object.internalFlags & objectFlagExtensible) !== 0 &&
     object.prototype === realm.arrayPrototype &&
     realm.propertyEpoch.value === realm.cleanArrayPushEpoch
   ) {
     const elements = object.internalArrayElements;
-    if (
-      elements !== undefined &&
-      elements.values === undefined &&
-      elements.lengthWritable
-    ) {
-      const count = elements.numberCount;
-      const numbers = elements.numbers;
-      if (elements.length === count && count < numbers.length) {
-        numbers[count] = item;
-        const next = count + 1;
-        elements.numberCount = next;
-        elements.length = next;
-        return next;
+    if (elements !== undefined && elements.lengthWritable) {
+      const general = elements.generalCount;
+      if (general === 0) {
+        if (typeof item === "number") {
+          const count = elements.numberCount;
+          const numbers = elements.numbers;
+          if (elements.length === count && count < numbers.length) {
+            numbers[count] = item;
+            const next = count + 1;
+            elements.numberCount = next;
+            elements.length = next;
+            return next;
+          }
+        }
+      } else {
+        const tags = elements.generalTags;
+        if (elements.length === general && general < tags.length) {
+          if (
+            writeGeneralSlot(
+              tags,
+              elements.generalRefs,
+              elements.numbers,
+              general,
+              item,
+            )
+          ) {
+            const next = general + 1;
+            elements.generalCount = next;
+            elements.length = next;
+            return next;
+          }
+        }
       }
     }
   }

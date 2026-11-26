@@ -36,6 +36,7 @@ export interface PassStatistics {
     | "hoist-number-list-loops"
     | "cache-element-storage"
     | "cache-loop-properties"
+    | "forward-dominating-properties"
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"

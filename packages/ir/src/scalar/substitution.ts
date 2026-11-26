@@ -197,6 +197,47 @@ export function substituteInstructionValues(
       const object = substitutedValue(values, op.object);
       return object === op.object ? op : { ...op, object };
     }
+    case "general-element-load": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index);
+      return object === op.object && index === op.index
+        ? op
+        : { ...op, object, index };
+    }
+    case "general-element-store": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index),
+        value = substitutedValue(values, op.value);
+      return object === op.object && index === op.index && value === op.value
+        ? op
+        : { ...op, object, index, value };
+    }
+    case "general-slot-load": {
+      const tags = substitutedValue(values, op.tags),
+        refs = substitutedValue(values, op.refs),
+        numbers = substitutedValue(values, op.numbers),
+        index = substitutedValue(values, op.index);
+      return tags === op.tags &&
+        refs === op.refs &&
+        numbers === op.numbers &&
+        index === op.index
+        ? op
+        : { ...op, tags, refs, numbers, index };
+    }
+    case "general-slot-store": {
+      const tags = substitutedValue(values, op.tags),
+        refs = substitutedValue(values, op.refs),
+        numbers = substitutedValue(values, op.numbers),
+        index = substitutedValue(values, op.index),
+        value = substitutedValue(values, op.value);
+      return tags === op.tags &&
+        refs === op.refs &&
+        numbers === op.numbers &&
+        index === op.index &&
+        value === op.value
+        ? op
+        : { ...op, tags, refs, numbers, index, value };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };

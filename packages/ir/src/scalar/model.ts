@@ -216,6 +216,7 @@ export type Instruction = Span &
         readonly count: number;
         readonly siteRecord: number;
         readonly siteField: number;
+        readonly entries?: number;
         readonly epochRecord: number;
         readonly epochField: number;
       }
@@ -344,6 +345,65 @@ export type Instruction = Span &
         readonly field: number;
         readonly elementsRecord: number;
         readonly lengthField: number;
+      }
+    | {
+        /** The packed general element `index` of an array exotic object
+         * (`object` is a `record` whose `field` holds an `elementsRecord`
+         * with `index` an exact integer below `countField`), decoded from
+         * `tagsField` (Uint8Array), `refsField` (ReferenceVector), and
+         * `numbersField` (Float64Array), or the absent value on any miss. */
+        readonly kind: "general-element-load";
+        readonly id: number;
+        readonly object: number;
+        readonly index: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly tagsField: number;
+        readonly refsField: number;
+        readonly numbersField: number;
+      }
+    | {
+        /** Overwrite the packed general element `index` (located as for
+         * general-element-load) with general value `value`; the boolean
+         * result is false, with nothing written, when general-element-load
+         * would miss or when `value` is a Number and `index >= numbers.length`. */
+        readonly kind: "general-element-store";
+        readonly id: number;
+        readonly object: number;
+        readonly index: number;
+        readonly value: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly tagsField: number;
+        readonly refsField: number;
+        readonly numbersField: number;
+      }
+    | {
+        /** Proven-in-bounds read from flat general element storage
+         * (`tags`: Uint8Array, `refs`: ReferenceVector, `numbers`: Float64Array)
+         * at integer `index`. */
+        readonly kind: "general-slot-load";
+        readonly id: number;
+        readonly tags: number;
+        readonly refs: number;
+        readonly numbers: number;
+        readonly index: number;
+      }
+    | {
+        /** Proven-in-bounds write into flat general element storage. Returns
+         * false, with nothing written, only when `value` is a Number and
+         * `index >= numbers.length` so the caller can allocate `numbers` lazily. */
+        readonly kind: "general-slot-store";
+        readonly id: number;
+        readonly tags: number;
+        readonly refs: number;
+        readonly numbers: number;
+        readonly index: number;
+        readonly value: number;
       }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {

@@ -535,8 +535,9 @@ export function encodeInstruction(
       }
       return true;
     }
-    case "property-store":
-      writePrefix(writer, 116, op, 0);
+    case "property-store": {
+      const storeEntries = op.entries ?? 1;
+      writePrefix(writer, 116, op, bit(storeEntries > 1, 2));
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
       writeSigned(writer, op.value);
@@ -548,7 +549,9 @@ export function encodeInstruction(
       writeSigned(writer, op.siteField);
       writeSigned(writer, op.epochRecord);
       writeSigned(writer, op.epochField);
+      if (storeEntries > 1) writeSigned(writer, storeEntries);
       return true;
+    }
     case "script-entry":
       writePrefix(writer, 118, op, bit(op.construct, 2));
       writeSigned(writer, op.id);
@@ -633,6 +636,36 @@ export function encodeInstruction(
       writeSigned(writer, op.elementsRecord);
       writeSigned(writer, op.countField);
       writeSigned(writer, op.storageField);
+      return true;
+    case "general-element-load":
+    case "general-element-store":
+      writePrefix(
+        writer,
+        op.kind === "general-element-load" ? 125 : 126,
+        op,
+        0,
+      );
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.index);
+      if (op.kind === "general-element-store") writeSigned(writer, op.value);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.countField);
+      writeSigned(writer, op.tagsField);
+      writeSigned(writer, op.refsField);
+      writeSigned(writer, op.numbersField);
+      return true;
+    case "general-slot-load":
+    case "general-slot-store":
+      writePrefix(writer, op.kind === "general-slot-load" ? 127 : 128, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.tags);
+      writeSigned(writer, op.refs);
+      writeSigned(writer, op.numbers);
+      writeSigned(writer, op.index);
+      if (op.kind === "general-slot-store") writeSigned(writer, op.value);
       return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
@@ -2425,7 +2458,8 @@ export function decodeInstruction(
         siteRecord = readSigned(reader),
         siteField = readSigned(reader),
         epochRecord = readSigned(reader),
-        epochField = readSigned(reader);
+        epochField = readSigned(reader),
+        entries = (flags & 2) !== 0 ? readSigned(reader) : undefined;
       return {
         kind: "property-store",
         id,
@@ -2437,6 +2471,7 @@ export function decodeInstruction(
         count,
         siteRecord,
         siteField,
+        ...(entries === undefined ? {} : { entries }),
         epochRecord,
         epochField,
         start,
@@ -2967,6 +3002,102 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 125: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        index = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        tagsField = readSigned(reader),
+        refsField = readSigned(reader),
+        numbersField = readSigned(reader);
+      return {
+        kind: "general-element-load",
+        id,
+        object,
+        index,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        tagsField,
+        refsField,
+        numbersField,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 126: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        index = readSigned(reader),
+        value = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        tagsField = readSigned(reader),
+        refsField = readSigned(reader),
+        numbersField = readSigned(reader);
+      return {
+        kind: "general-element-store",
+        id,
+        object,
+        index,
+        value,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        tagsField,
+        refsField,
+        numbersField,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 127: {
+      const id = readSigned(reader),
+        tags = readSigned(reader),
+        refs = readSigned(reader),
+        numbers = readSigned(reader),
+        index = readSigned(reader);
+      return {
+        kind: "general-slot-load",
+        id,
+        tags,
+        refs,
+        numbers,
+        index,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 128: {
+      const id = readSigned(reader),
+        tags = readSigned(reader),
+        refs = readSigned(reader),
+        numbers = readSigned(reader),
+        index = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "general-slot-store",
+        id,
+        tags,
+        refs,
+        numbers,
+        index,
+        value,
         start,
         end,
         ...(inline === undefined ? {} : { inline }),
