@@ -878,7 +878,12 @@ export function cacheLoopProperties(
         loopRejectReason.set(loop, "missing-block");
         return undefined;
       }
-      // Reject irreducible loops.
+      // Reject irreducible loops (including cycles covering fn.entry).
+      if (id === fn.entry) {
+        loopInfo.set(loop, undefined);
+        loopRejectReason.set(loop, "irreducible");
+        return undefined;
+      }
       if (id !== loop.header) {
         for (const from of predecessors.get(id) ?? []) {
           if (!loop.body.has(from)) {

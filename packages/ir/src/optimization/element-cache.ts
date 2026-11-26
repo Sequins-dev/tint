@@ -234,7 +234,11 @@ export function cacheElementStorage(
         loopInfo.set(loop, undefined);
         return undefined;
       }
-      // Reject irreducible loops (entries into non-header blocks).
+      // Reject irreducible loops (entries into non-header blocks or fn.entry).
+      if (id === fn.entry) {
+        loopInfo.set(loop, undefined);
+        return undefined;
+      }
       if (id !== loop.header) {
         for (const from of predecessors.get(id) ?? []) {
           if (!loop.body.has(from)) {
