@@ -42,8 +42,8 @@ test("typed-array kinds keep the original markers and share width classes", () =
       entry.name,
     );
   }
-  assert.equal(nativeTypedArrayKinds.length, 11);
-  assert.equal(nativeTypedArrayKind("Float16Array"), undefined);
+  assert.equal(nativeTypedArrayKinds.length, 12);
+  assert.equal(nativeTypedArrayKind("Float16Array")?.elementBytes, 2);
 });
 
 test("the typed-array predicate excludes every other built-in and records", () => {

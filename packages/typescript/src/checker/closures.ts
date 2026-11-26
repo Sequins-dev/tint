@@ -268,6 +268,8 @@ const atomicsOperations: readonly string[] = [
   "xor",
   "exchange",
   "compareExchange",
+  "wait",
+  "notify",
 ];
 export interface ClosureBody {
   readonly node: Span;
@@ -492,10 +494,13 @@ function checkClosureModuleLayout(
     "Uint8ClampedArray",
     "Uint16Array",
     "Int16Array",
+    "Float16Array",
     "Uint32Array",
     "Int32Array",
     "Float32Array",
     "Float64Array",
+    "BigInt64Array",
+    "BigUint64Array",
     "ArrayBuffer",
     "SharedArrayBuffer",
     "TypeError",
@@ -2189,9 +2194,11 @@ function checkClosureModuleLayout(
   }
   function arrayElementType(type: number): number {
     const array = types[type];
-    return array?.kind === "object" &&
-      (array.realmTypedArray === "BigInt64Array" ||
-        array.realmTypedArray === "BigUint64Array")
+    return array?.kind === "BigInt64Array" ||
+      array?.kind === "BigUint64Array" ||
+      (array?.kind === "object" &&
+        (array.realmTypedArray === "BigInt64Array" ||
+          array.realmTypedArray === "BigUint64Array"))
       ? bigint
       : number;
   }
@@ -6964,6 +6971,8 @@ function checkClosureModuleLayout(
               "ARITY",
               "typed-array construction accepts an optional numeric length, numeric array or supported typed-array source",
             );
+          const isBigIntArray =
+            target.name === "BigInt64Array" || target.name === "BigUint64Array";
           const source = node.arguments[0];
           const input =
             source === undefined
@@ -6972,7 +6981,9 @@ function checkClosureModuleLayout(
                   source,
                   owner,
                   ungroup(source).kind === "array"
-                    ? typeOf(optionalNumericListAnnotation)
+                    ? isBigIntArray
+                      ? arrayOf(bigint, node)
+                      : typeOf(optionalNumericListAnnotation)
                     : undefined,
                 );
           if (
@@ -7003,10 +7014,26 @@ function checkClosureModuleLayout(
               "typed-array byte offsets and lengths require a buffer",
             );
           if (source !== undefined && input !== undefined) {
-            if (isList(input))
-              requireType(listReadType(input, source), optionalNumber, source);
-            else if (!isArray(input))
-              requireType(input, optionalNumber, source);
+            if (isList(input)) {
+              if (isBigIntArray)
+                requireType(listElement(input, source), bigint, source);
+              else
+                requireType(
+                  listReadType(input, source),
+                  optionalNumber,
+                  source,
+                );
+            } else if (isArray(input)) {
+              const expectedElement = isBigIntArray ? bigint : number;
+              if (arrayElementType(input) !== expectedElement)
+                fail(
+                  source,
+                  "TYPE_MISMATCH",
+                  "cannot construct " +
+                    target.name +
+                    " from a typed array with a different content type",
+                );
+            } else requireType(input, optionalNumber, source);
           }
           result = primitive(target.name);
           intrinsics.set(node, "array-new");
@@ -7425,47 +7452,119 @@ function checkClosureModuleLayout(
             ) {
               // Atomics on a native integer array are inline (the pinned
               // library types them on integer typed arrays only).
-              const arity =
-                target.property === "load"
-                  ? 2
-                  : target.property === "compareExchange"
-                    ? 4
-                    : 3;
-              if (node.arguments.length !== arity)
-                fail(
-                  node,
-                  "ARITY",
-                  "Atomics." +
-                    target.property +
-                    " takes " +
-                    String(arity) +
-                    " arguments",
-                );
+              const prop = target.property;
+              const isWait = prop === "wait";
+              const isNotify = prop === "notify";
+              if (isWait) {
+                if (node.arguments.length < 3 || node.arguments.length > 4)
+                  fail(node, "ARITY", "Atomics.wait takes 3 or 4 arguments");
+              } else if (isNotify) {
+                if (node.arguments.length < 2 || node.arguments.length > 3)
+                  fail(node, "ARITY", "Atomics.notify takes 2 or 3 arguments");
+              } else {
+                const arity =
+                  prop === "load" ? 2 : prop === "compareExchange" ? 4 : 3;
+                if (node.arguments.length !== arity)
+                  fail(
+                    node,
+                    "ARITY",
+                    "Atomics." +
+                      prop +
+                      " takes " +
+                      String(arity) +
+                      " arguments",
+                  );
+              }
               const source = node.arguments[0];
               if (source === undefined) throw "missing call argument";
               const array = types[expression(source, owner)]?.kind;
-              if (array === "Float64Array")
+              const isWaitable =
+                array === "Int32Array" || array === "BigInt64Array";
+              const isBigIntAtomic =
+                array === "BigInt64Array" || array === "BigUint64Array";
+              const isNumericAtomic =
+                array === "Uint8Array" ||
+                array === "Int8Array" ||
+                array === "Uint16Array" ||
+                array === "Int16Array" ||
+                array === "Uint32Array" ||
+                array === "Int32Array";
+              if (isWait || isNotify) {
+                if (!isWaitable) {
+                  if (isNativeTypedArrayKind(array))
+                    fail(
+                      source,
+                      "TYPE_MISMATCH",
+                      "Atomics." +
+                        prop +
+                        " requires an Int32Array or BigInt64Array",
+                    );
+                  unsupported(
+                    node,
+                    "realm-library-member",
+                    "Atomics on a realm typed array requires realm projection",
+                  );
+                }
+                const indexArg = node.arguments[1];
+                if (indexArg === undefined) throw "missing call argument";
+                requireType(expression(indexArg, owner), number, indexArg);
+                if (isWait) {
+                  const valueArg = node.arguments[2];
+                  if (valueArg === undefined) throw "missing call argument";
+                  requireType(
+                    expression(valueArg, owner),
+                    isBigIntAtomic ? bigint : number,
+                    valueArg,
+                  );
+                  const timeoutArg = node.arguments[3];
+                  if (timeoutArg !== undefined)
+                    requireType(
+                      expression(timeoutArg, owner),
+                      optionalNumber,
+                      timeoutArg,
+                    );
+                  intrinsics.set(node, "atomics");
+                  result = string;
+                  break;
+                }
+                const countArg = node.arguments[2];
+                if (countArg !== undefined)
+                  requireType(
+                    expression(countArg, owner),
+                    optionalNumber,
+                    countArg,
+                  );
+                intrinsics.set(node, "atomics");
+                result = number;
+                break;
+              }
+              if (
+                array === "Float16Array" ||
+                array === "Float32Array" ||
+                array === "Float64Array" ||
+                array === "Uint8ClampedArray"
+              )
                 fail(
                   source,
                   "TYPE_MISMATCH",
                   "Atomics operations require an integer typed array",
                 );
-              if (
-                array !== "Uint8Array" &&
-                array !== "Uint16Array" &&
-                array !== "Uint32Array"
-              )
+              if (!isNumericAtomic && !isBigIntAtomic)
                 unsupported(
                   node,
                   "realm-library-member",
                   "Atomics on a realm typed array requires realm projection",
                 );
-              for (const argument of node.arguments.slice(1)) {
+              const indexArg = node.arguments[1];
+              if (indexArg === undefined) throw "missing call argument";
+              requireType(expression(indexArg, owner), number, indexArg);
+              const operandType = isBigIntAtomic ? bigint : number;
+              for (const argument of node.arguments.slice(2)) {
                 if (argument === undefined) throw "missing call argument";
-                requireType(expression(argument, owner), number, argument);
+                requireType(expression(argument, owner), operandType, argument);
               }
               intrinsics.set(node, "atomics");
-              result = number;
+              result = operandType;
               break;
             }
             if (
@@ -8474,7 +8573,14 @@ function checkClosureModuleLayout(
               const source = node.arguments[0],
                 offset = node.arguments[1];
               if (source === undefined) throw "set source invariant";
-              requireArray(expression(source, owner), source);
+              const sourceType = expression(source, owner);
+              requireArray(sourceType, source);
+              if (arrayElementType(sourceType) !== arrayElementType(obj))
+                fail(
+                  source,
+                  "TYPE_MISMATCH",
+                  "set source must have the same content type as the target typed array",
+                );
               if (offset !== undefined)
                 requireType(expression(offset, owner), optionalNumber, offset);
               intrinsics.set(node, "array-set");
@@ -10298,7 +10404,11 @@ function checkClosureModuleLayout(
             "typed array binding requires a native list, numeric typed array, string, or realm iterable",
             true,
           );
-        const readType = list ? listReadType(type, pattern) : optionalNumber;
+        const readType = list
+          ? listReadType(type, pattern)
+          : arrayElementType(type) === number
+            ? optionalNumber
+            : unionSubset([bigint, undefinedType], pattern);
         const origin =
           source === root && input !== undefined ? ungroup(input) : undefined;
         const fixedElements =
@@ -10886,7 +10996,7 @@ function checkClosureModuleLayout(
                 ? listIterationElement(iterable, node.iterable)
                 : system.assignable(iterable, string)
                   ? string
-                  : number;
+                  : arrayElementType(iterable);
           if (
             loopBinding.kind === "object-binding" ||
             loopBinding.kind === "array-binding"

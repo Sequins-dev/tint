@@ -141,10 +141,14 @@ export function visitRuntimeFunctions(
     add(bigints.fromNumber, "bigint", -1, "fromNumber");
     add(bigints.fromBoolean, "bigint", -1, "fromBoolean");
     add(bigints.asWidth, "bigint", -1, "asWidth");
+    add(bigints.toWord64, "bigint", -1, "toWord64");
+    add(bigints.fromWord64, "bigint", -1, "fromWord64");
   }
   add(options.numberToString, "number-text", -1, "toString");
   add(options.numberFromString, "number-text", -1, "fromString");
   add(options.sharedBlock, "shared-buffer", -1, "create");
+  add(options.atomicsWait, "shared-buffer", -1, "atomicsWait");
+  add(options.atomicsNotify, "shared-buffer", -1, "atomicsNotify");
 }
 
 /** Keep first-use order stable when representations share one helper. */

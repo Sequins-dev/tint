@@ -493,19 +493,43 @@ function nativeView(
   const offset = bytes.byteOffset + byteOffset;
   if (nativeKind === "Uint8Array")
     return new Uint8Array(bytes.buffer, offset, length);
+  if (nativeKind === "Int8Array")
+    return new Int8Array(bytes.buffer, offset, length);
+  if (nativeKind === "Uint8ClampedArray")
+    return new Uint8ClampedArray(bytes.buffer, offset, length);
   if (nativeKind === "Uint16Array")
     return new Uint16Array(bytes.buffer, offset, length);
+  if (nativeKind === "Int16Array")
+    return new Int16Array(bytes.buffer, offset, length);
+  if (nativeKind === "Float16Array")
+    return new Float16Array(bytes.buffer, offset, length);
   if (nativeKind === "Uint32Array")
     return new Uint32Array(bytes.buffer, offset, length);
+  if (nativeKind === "Int32Array")
+    return new Int32Array(bytes.buffer, offset, length);
+  if (nativeKind === "Float32Array")
+    return new Float32Array(bytes.buffer, offset, length);
   if (nativeKind === "Float64Array")
     return new Float64Array(bytes.buffer, offset, length);
+  if (nativeKind === "BigInt64Array")
+    return new BigInt64Array(bytes.buffer, offset, length);
+  if (nativeKind === "BigUint64Array")
+    return new BigUint64Array(bytes.buffer, offset, length);
   return undefined;
 }
 function emptyNativeArray(nativeKind: string): unknown {
   if (nativeKind === "Uint8Array") return new Uint8Array(0);
+  if (nativeKind === "Int8Array") return new Int8Array(0);
+  if (nativeKind === "Uint8ClampedArray") return new Uint8ClampedArray(0);
   if (nativeKind === "Uint16Array") return new Uint16Array(0);
+  if (nativeKind === "Int16Array") return new Int16Array(0);
+  if (nativeKind === "Float16Array") return new Float16Array(0);
   if (nativeKind === "Uint32Array") return new Uint32Array(0);
+  if (nativeKind === "Int32Array") return new Int32Array(0);
+  if (nativeKind === "Float32Array") return new Float32Array(0);
   if (nativeKind === "Float64Array") return new Float64Array(0);
+  if (nativeKind === "BigInt64Array") return new BigInt64Array(0);
+  if (nativeKind === "BigUint64Array") return new BigUint64Array(0);
   return undefined;
 }
 export function invokeArrayMethod(

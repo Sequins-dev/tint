@@ -252,6 +252,10 @@ export interface ModuleEntryOptions {
    * byte array views a block of the isolate's shared block service
    * (native-runtime shared-buffers isNativeSharedArrayBuffer). */
   readonly sharedBlockCheck?: number;
+  /** Typed Atomics.wait helper (native-runtime shared-buffers nativeAtomicsWait). */
+  readonly atomicsWait?: number;
+  /** Typed Atomics.notify helper (native-runtime shared-buffers nativeAtomicsNotify). */
+  readonly atomicsNotify?: number;
   readonly lists?: readonly ListRuntimeBinding[];
   readonly sets?: readonly SetRuntimeBinding[];
   readonly maps?: readonly MapRuntimeBinding[];
@@ -362,7 +366,9 @@ export function lowerModuleEntries(
   const numberToString = options?.numberToString,
     numberFromString = options?.numberFromString,
     sharedBlock = options?.sharedBlock,
-    sharedBlockCheck = options?.sharedBlockCheck;
+    sharedBlockCheck = options?.sharedBlockCheck,
+    atomicsWait = options?.atomicsWait,
+    atomicsNotify = options?.atomicsNotify;
   return lowerEntries(checked, expanded, undefined, undefined, {
     target,
     maxBytes,
@@ -391,6 +397,8 @@ export function lowerModuleEntries(
     ...(numberFromString === undefined ? {} : { numberFromString }),
     ...(sharedBlock === undefined ? {} : { sharedBlock }),
     ...(sharedBlockCheck === undefined ? {} : { sharedBlockCheck }),
+    ...(atomicsWait === undefined ? {} : { atomicsWait }),
+    ...(atomicsNotify === undefined ? {} : { atomicsNotify }),
   });
 }
 interface Initializer {
@@ -409,6 +417,8 @@ function lowerEntries(
     numberToString?: number;
     sharedBlock?: number;
     sharedBlockCheck?: number;
+    atomicsWait?: number;
+    atomicsNotify?: number;
     lists: readonly ListRuntimeBinding[] | undefined;
     sets: readonly SetRuntimeBinding[] | undefined;
     maps: readonly MapRuntimeBinding[] | undefined;
@@ -1037,7 +1047,7 @@ function lowerEntries(
       function helper(
         source: number,
         parameters: readonly SourceScalarType[],
-        result: SourceScalarType,
+        result: SourceScalarType | "void",
       ): number {
         const target = targetIds[source],
           signature = target === undefined ? undefined : signatures[target],
@@ -1101,6 +1111,16 @@ function lowerEntries(
         asWidth: helper(
           sources.asWidth,
           ["number", "reference", "boolean"],
+          "reference",
+        ),
+        toWord64: helper(
+          sources.toWord64,
+          ["reference", "Uint32Array", "number"],
+          "void",
+        ),
+        fromWord64: helper(
+          sources.fromWord64,
+          ["Uint32Array", "boolean"],
           "reference",
         ),
       };
@@ -1287,6 +1307,46 @@ function lowerEntries(
         helper.captures.length !== 0
       )
         return undefined;
+      return target;
+    }
+    function atomicsWaitHelper(): number {
+      const source = recordTarget?.atomicsWait;
+      const target = source === undefined ? undefined : targetIds[source];
+      const signature = target === undefined ? undefined : signatures[target];
+      const helper =
+        source === undefined ? undefined : checked.bindings.functions[source];
+      if (
+        target === undefined ||
+        signature?.returnType !== "string" ||
+        signature.parameters.length !== 6 ||
+        signature.parameters.some((p) => p !== "number") ||
+        helper === undefined ||
+        helper.parent !== undefined ||
+        helper.captures.length !== 0
+      )
+        fail(
+          "Atomics.wait requires the shared buffer runtime (native-shared-buffer)",
+        );
+      return target;
+    }
+    function atomicsNotifyHelper(): number {
+      const source = recordTarget?.atomicsNotify;
+      const target = source === undefined ? undefined : targetIds[source];
+      const signature = target === undefined ? undefined : signatures[target];
+      const helper =
+        source === undefined ? undefined : checked.bindings.functions[source];
+      if (
+        target === undefined ||
+        signature?.returnType !== "number" ||
+        signature.parameters.length !== 4 ||
+        signature.parameters.some((p) => p !== "number") ||
+        helper === undefined ||
+        helper.parent !== undefined ||
+        helper.captures.length !== 0
+      )
+        fail(
+          "Atomics.notify requires the shared buffer runtime (native-shared-buffer)",
+        );
       return target;
     }
     function runtimeHelpers(
@@ -3470,19 +3530,68 @@ function lowerEntries(
               else if (intrinsic === "atomics") {
                 // The array's checked kind: a narrowed unknown keeps its
                 // general carrier, which the lowering converts.
+                let memberTarget = node.callee;
+                while (
+                  memberTarget.kind === "group" ||
+                  memberTarget.kind === "satisfies"
+                )
+                  memberTarget = memberTarget.expression;
+                const prop =
+                  memberTarget.kind === "member" ? memberTarget.property : "";
                 const array = node.arguments[0];
                 const kind =
                   array === undefined
                     ? undefined
                     : checked.types[checked.expressions.get(array) ?? -1]?.kind;
-                builtin =
-                  kind === "Uint8Array"
-                    ? "atomics-uint8"
-                    : kind === "Uint16Array"
-                      ? "atomics-uint16"
-                      : kind === "Uint32Array"
-                        ? "atomics-uint32"
-                        : fail("Atomics require a native integer array");
+                if (prop === "wait") {
+                  if (kind !== "Int32Array" && kind !== "BigInt64Array")
+                    fail("Atomics.wait requires Int32Array or BigInt64Array");
+                  if (kind === "BigInt64Array" && bigints === undefined)
+                    fail(
+                      "BigInt64Array Atomics.wait requires the bigint runtime",
+                    );
+                  builtin =
+                    kind === "Int32Array"
+                      ? "atomics-wait-int32"
+                      : "atomics-wait-bigint64";
+                  callee = atomicsWaitHelper();
+                } else if (prop === "notify") {
+                  if (kind !== "Int32Array" && kind !== "BigInt64Array")
+                    fail("Atomics.notify requires Int32Array or BigInt64Array");
+                  builtin =
+                    kind === "Int32Array"
+                      ? "atomics-notify-int32"
+                      : "atomics-notify-bigint64";
+                  callee = atomicsNotifyHelper();
+                } else {
+                  if (
+                    (kind === "BigInt64Array" || kind === "BigUint64Array") &&
+                    bigints === undefined
+                  )
+                    fail(
+                      "BigInt typed-array Atomics require the bigint runtime",
+                    );
+                  builtin =
+                    kind === "Uint8Array"
+                      ? "atomics-uint8"
+                      : kind === "Int8Array"
+                        ? "atomics-int8"
+                        : kind === "Uint16Array"
+                          ? "atomics-uint16"
+                          : kind === "Int16Array"
+                            ? "atomics-int16"
+                            : kind === "Uint32Array"
+                              ? "atomics-uint32"
+                              : kind === "Int32Array"
+                                ? "atomics-int32"
+                                : kind === "BigInt64Array"
+                                  ? "atomics-bigint64"
+                                  : kind === "BigUint64Array"
+                                    ? "atomics-biguint64"
+                                    : fail(
+                                        "Atomics require a native integer array",
+                                      );
+                }
               } else if (
                 intrinsic === "string-from-code-units" ||
                 intrinsic === "string-from-code-points"
@@ -3538,7 +3647,21 @@ function lowerEntries(
                   target = target.expression;
                 if (target.kind !== "member")
                   fail("invalid typed-array receiver");
-                if (intrinsic === "array-join") callee = numberFormatter();
+                if (intrinsic === "array-join") {
+                  const objKind =
+                    checked.types[checked.expressions.get(target.object) ?? -1]
+                      ?.kind;
+                  if (
+                    objKind === "BigInt64Array" ||
+                    objKind === "BigUint64Array"
+                  ) {
+                    if (bigints === undefined)
+                      fail(
+                        "BigInt typed-array join requires the bigint runtime",
+                      );
+                    callee = bigints.toString;
+                  } else callee = numberFormatter();
+                }
                 expr(target.object);
               } else if (intrinsic === "function-call") {
                 let target = node.callee;

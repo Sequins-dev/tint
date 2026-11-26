@@ -83,8 +83,13 @@ export function instructionEffects(op: Instruction): number {
     case "array-fill":
       return effectWriteHeap;
     // An atomic access synchronizes with other agents, so even a load must
-    // not be merged with or moved across another heap access.
+    // not be merged with or moved across another heap access. Word64 array
+    // accesses also read or write their Uint32Array scratch buffer.
     case "array-atomic":
+    case "array-word64-read":
+    case "array-word64-write":
+    case "array-word64-fill":
+    case "array-atomic-word64":
       return effectReadHeap | effectWriteHeap;
     // A leaf C call cannot allocate, throw, invoke managed code or retain a
     // managed pointer past its return; it may read and write any memory its

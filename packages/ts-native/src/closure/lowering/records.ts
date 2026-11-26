@@ -393,6 +393,12 @@ function encodeScalarType(type: ScalarType | undefined): number {
       return 19;
     case "Float32Array":
       return 20;
+    case "Float16Array":
+      return 21;
+    case "BigInt64Array":
+      return 22;
+    case "BigUint64Array":
+      return 23;
   }
 }
 function decodeScalarType(encoded: number): ScalarType | undefined {
@@ -435,6 +441,12 @@ function decodeScalarType(encoded: number): ScalarType | undefined {
       return "Int32Array";
     case 20:
       return "Float32Array";
+    case 21:
+      return "Float16Array";
+    case 22:
+      return "BigInt64Array";
+    case 23:
+      return "BigUint64Array";
     default:
       return undefined;
   }
@@ -480,7 +492,12 @@ export function usesBigInt(checked: CheckedClosures): boolean {
 }
 function mentionsBigInt(checked: CheckedClosures, id: number): boolean {
   const t = checked.types[id];
-  if (t?.kind === "bigint") return true;
+  if (
+    t?.kind === "bigint" ||
+    t?.kind === "BigInt64Array" ||
+    t?.kind === "BigUint64Array"
+  )
+    return true;
   return (
     t?.kind === "union" && t.members.some((m) => mentionsBigInt(checked, m))
   );

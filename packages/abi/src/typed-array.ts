@@ -15,6 +15,7 @@ export type NativeTypedArrayKindName =
   | "Uint8ClampedArray"
   | "Uint16Array"
   | "Int16Array"
+  | "Float16Array"
   | "Uint32Array"
   | "Int32Array"
   | "Float32Array"
@@ -55,6 +56,7 @@ export const nativeTypedArrayKinds: readonly NativeTypedArrayKind[] = [
   kind("Uint8ClampedArray", 2, 2, "clamped"),
   kind("Uint16Array", 3, 0, "unsigned"),
   kind("Int16Array", 3, 1, "signed"),
+  kind("Float16Array", 3, 2, "float"),
   kind("Uint32Array", 4, 0, "unsigned"),
   kind("Int32Array", 4, 1, "signed"),
   kind("Float32Array", 4, 2, "float"),

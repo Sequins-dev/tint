@@ -38,6 +38,7 @@ import {
   isNativeTypedArray,
   nativeTypedArray,
   nativeTypedArrays,
+  typedArrayBigIntElements,
   typedArrayLayout,
   type ModuleIR,
   type FunctionIR,
@@ -272,6 +273,10 @@ export interface BigIntRuntime {
   readonly fromBoolean: number;
   /** (bits, bigint, signed) => bigint: BigInt.asIntN / BigInt.asUintN. */
   readonly asWidth: number;
+  /** (bigint, scratch: Uint32Array, offset: number) => void. */
+  readonly toWord64: number;
+  /** (scratch: Uint32Array, signed: boolean) => bigint. */
+  readonly fromWord64: number;
 }
 export interface MapRuntimeBinding {
   readonly key: CollectionElement;
@@ -599,6 +604,15 @@ export function lowerFunction(
     owned?.constructorContext?.baseInit !== undefined;
   const superCalled = isDerivedConstructor ? slots.length : undefined;
   if (superCalled !== undefined) slots.push("boolean");
+  let word64ScratchSlot: number | undefined;
+  function word64Scratch(): number {
+    const existing = word64ScratchSlot;
+    if (existing !== undefined) return existing;
+    const slot = slots.length;
+    slots.push("Uint32Array");
+    word64ScratchSlot = slot;
+    return slot;
+  }
   const callReceivers = createKeyIndex<Expression, number>(syntaxHash);
   let exception: { readonly target: number; readonly slot: number } | undefined;
   let finalizer: FinallyScope | undefined;
@@ -733,6 +747,7 @@ export function lowerFunction(
       case "optional-present":
       case "array-copy":
       case "array-valid":
+      case "array-word64-read":
         type = "boolean";
         break;
       case "optional-value":
@@ -1753,18 +1768,7 @@ export function lowerFunction(
     current = body;
     let item: number;
     if (sourceList) item = listValue(sourceList, "read", [source, index], node);
-    else {
-      const read = nextValue++;
-      emit({
-        kind: "array-read",
-        id: read,
-        array: load(source, node),
-        index: load(index, node),
-        start: node.start,
-        end: node.end,
-      });
-      item = save(read, "optional-number", node);
-    }
+    else item = readArrayElement(source, index, node);
     visit(item, sourceList === undefined);
     store(
       index,
@@ -3208,13 +3212,159 @@ export function lowerFunction(
     });
     return save(id, "string", node);
   }
+  /** Write a BigInt value into `scratch[offset..offset+1]` as little-endian
+   * 64-bit two's complement halves. */
+  function emitBigIntToWord64(
+    valueSlot: number,
+    scratch: number,
+    offset: number,
+    node: Span,
+  ): void {
+    const coerced =
+      slots[valueSlot] === "reference"
+        ? valueSlot
+        : save(
+            coerce(load(valueSlot, node), "reference", node),
+            "reference",
+            node,
+          );
+    emit({
+      kind: "call",
+      id: undefined,
+      target: bigIntRuntime().toWord64,
+      arguments: [
+        load(coerced, node),
+        load(scratch, node),
+        load(numberSlot(offset, node), node),
+      ],
+      start: node.start,
+      end: node.end,
+    });
+  }
+  /** Construct a BigIntValue from little-endian 64-bit halves in `scratch[0..1]`. */
+  function emitBigIntFromWord64(
+    scratch: number,
+    signed: boolean,
+    node: Span,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "call",
+      id,
+      target: bigIntRuntime().fromWord64,
+      arguments: [load(scratch, node), load(booleanSlot(signed, node), node)],
+      start: node.start,
+      end: node.end,
+    });
+    const result = save(id, "reference", node);
+    bigIntSlots[result] = 1;
+    return result;
+  }
+  /** Bounds-checked typed-array element read returning optional-number (numeric
+   * kinds) or optional-reference holding a BigIntValue (BigInt64/BigUint64). */
+  function readArrayElement(array: number, index: number, node: Span): number {
+    const arrayType = slots[array];
+    if (typedArrayBigIntElements(arrayType)) {
+      const scratch = word64Scratch(),
+        valid = nextValue++;
+      emit({
+        kind: "array-word64-read",
+        id: valid,
+        array: load(array, node),
+        index: load(index, node),
+        scratch: load(scratch, node),
+        start: node.start,
+        end: node.end,
+      });
+      const hit = block(),
+        miss = block(),
+        done = block(),
+        result = temporary("optional-reference");
+      bigIntSlots[result] = 1;
+      choose(valid, hit, miss, node);
+      current = hit;
+      const val = emitBigIntFromWord64(
+          scratch,
+          arrayType === "BigInt64Array",
+          node,
+        ),
+        wrapped = nextValue++;
+      emit({
+        kind: "reference-wrap",
+        id: wrapped,
+        value: load(val, node),
+        start: node.start,
+        end: node.end,
+      });
+      store(result, wrapped, node);
+      jump(done.id, node);
+      current = miss;
+      const none = nextValue++;
+      emit({
+        kind: "reference-none",
+        id: none,
+        start: node.start,
+        end: node.end,
+      });
+      store(result, none, node);
+      jump(done.id, node);
+      current = done;
+      return result;
+    }
+    const id = nextValue++;
+    emit({
+      kind: "array-read",
+      id,
+      array: load(array, node),
+      index: load(index, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "optional-number", node);
+  }
+  /** Bounds-checked typed-array element write for numeric or BigInt kinds. */
+  function writeArrayElement(
+    array: number,
+    index: number,
+    valueSlot: number,
+    node: Span,
+  ): void {
+    if (typedArrayBigIntElements(slots[array])) {
+      const scratch = word64Scratch();
+      emitBigIntToWord64(valueSlot, scratch, 0, node);
+      emit({
+        kind: "array-word64-write",
+        array: load(array, node),
+        index: load(index, node),
+        scratch: load(scratch, node),
+        start: node.start,
+        end: node.end,
+      });
+      return;
+    }
+    emit({
+      kind: "array-write",
+      array: load(array, node),
+      index: load(index, node),
+      value: numericInput(valueSlot, node),
+      start: node.start,
+      end: node.end,
+    });
+  }
   /** `Atomics.<property>(array, index, ...operands)` on a native integer
    * array, its arguments already evaluated: ValidateAtomicAccess (ToIndex,
-   * then the length check) and the sequentially consistent access. The
-   * operands are numbers, so their ToIntegerOrInfinity runs no code. */
+   * then the length check) and the sequentially consistent access. */
   function atomicsCall(
     property: string,
-    kind: "Uint8Array" | "Uint16Array" | "Uint32Array",
+    kind:
+      | "Uint8Array"
+      | "Int8Array"
+      | "Uint16Array"
+      | "Int16Array"
+      | "Uint32Array"
+      | "Int32Array"
+      | "BigInt64Array"
+      | "BigUint64Array",
     args: readonly number[],
     node: Span,
   ): number {
@@ -3253,6 +3403,29 @@ export function lowerFunction(
     rejectDetached(array, node);
     throwNativeError("RangeError", "Invalid atomic access index", node);
     current = valid;
+    if (kind === "BigInt64Array" || kind === "BigUint64Array") {
+      const scratch = word64Scratch();
+      const firstOperand = args[2];
+      const secondOperand = args[3];
+      if (firstOperand !== undefined)
+        emitBigIntToWord64(firstOperand, scratch, 0, node);
+      if (secondOperand !== undefined)
+        emitBigIntToWord64(secondOperand, scratch, 2, node);
+      emit({
+        kind: "array-atomic-word64",
+        operation,
+        array: load(array, node),
+        index: load(index, node),
+        scratch: load(scratch, node),
+        start: node.start,
+        end: node.end,
+      });
+      if (operation === "store") {
+        if (firstOperand === undefined) throw "atomics operand invariant";
+        return firstOperand;
+      }
+      return emitBigIntFromWord64(scratch, kind === "BigInt64Array", node);
+    }
     const values = args
       .slice(2)
       .map((operand) => save(numericInput(operand, node), "number", node));
@@ -3278,6 +3451,285 @@ export function lowerFunction(
       numberSlot(0, node),
       node,
     );
+  }
+  /** Extract the raw external address of `array`'s backing buffer (`>= 0` for
+   * a borrowed/shared buffer, `-1` for an ordinary owned buffer). */
+  function arrayBufferExternalAddress(array: number, node: Span): number {
+    const bufferId = nextValue++;
+    emit({
+      kind: "array-buffer",
+      id: bufferId,
+      array: load(array, node),
+      start: node.start,
+      end: node.end,
+    });
+    const buffer = save(bufferId, "reference", node),
+      addressId = nextValue++;
+    emit({
+      kind: "c-memory",
+      access: {
+        operation: "address",
+        type: { kind: "void" },
+        offset: 0,
+        minimum: 0,
+      },
+      id: addressId,
+      arguments: [load(buffer, node)],
+      start: node.start,
+      end: node.end,
+    });
+    return save(addressId, "number", node);
+  }
+  /** Absolute byte offset of element `index` inside `array`'s backing buffer. */
+  function arrayElementByteOffset(
+    array: number,
+    index: number,
+    width: number,
+    node: Span,
+  ): number {
+    const offsetId = nextValue++;
+    emit({
+      kind: "array-byte-offset",
+      id: offsetId,
+      array: load(array, node),
+      start: node.start,
+      end: node.end,
+    });
+    const baseOffset = save(offsetId, "number", node);
+    return binarySlot(
+      "+",
+      baseOffset,
+      binarySlot("*", index, numberSlot(width, node), node),
+      node,
+    );
+  }
+  /** `Atomics.wait(array, index, value, timeout?)` on native Int32Array or
+   * BigInt64Array. Validates detached/shared before index bounds per spec. */
+  function atomicsWaitCall(
+    kind: "Int32Array" | "BigInt64Array",
+    callee: number,
+    args: readonly number[],
+    node: Span,
+  ): number {
+    const source = args[0],
+      indexArg = args[1],
+      valueArg = args[2],
+      timeoutArg = args[3];
+    if (
+      source === undefined ||
+      indexArg === undefined ||
+      valueArg === undefined
+    )
+      throw "atomics wait argument invariant";
+    const array =
+      slots[source] === "general"
+        ? nativeArrayArgument(source, kind, node)
+        : source;
+    rejectDetached(array, node);
+    const bufferAddress = arrayBufferExternalAddress(array, node);
+    requireCondition(
+      binarySlot(">=", bufferAddress, numberSlot(0, node), node),
+      "TypeError",
+      "Atomics.wait cannot be called in this context",
+      node,
+    );
+    const index = integerIndex(
+      save(numericInput(indexArg, node), "number", node),
+      node,
+    );
+    const inBounds = save(
+      load(binarySlot(">=", index, numberSlot(0, node), node), node),
+      "boolean",
+      node,
+    );
+    conditionalStore(
+      inBounds,
+      inBounds,
+      () => binarySlot("<", index, arrayLength(array, node), node),
+      node,
+    );
+    requireCondition(
+      inBounds,
+      "RangeError",
+      "Invalid atomic access index",
+      node,
+    );
+    const width = kind === "Int32Array" ? 4 : 8;
+    const byteOffset = arrayElementByteOffset(array, index, width, node);
+    let expectedLo: number;
+    let expectedHi: number;
+    if (kind === "Int32Array") {
+      expectedLo = binarySlot(
+        ">>>",
+        save(numericInput(valueArg, node), "number", node),
+        numberSlot(0, node),
+        node,
+      );
+      expectedHi = numberSlot(0, node);
+    } else {
+      const scratch = word64Scratch();
+      emitBigIntToWord64(valueArg, scratch, 0, node);
+      const readLo = nextValue++,
+        loVal = nextValue++,
+        readHi = nextValue++,
+        hiVal = nextValue++;
+      emit({
+        kind: "array-read",
+        id: readLo,
+        array: load(scratch, node),
+        index: load(numberSlot(0, node), node),
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "optional-value",
+        id: loVal,
+        value: readLo,
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "array-read",
+        id: readHi,
+        array: load(scratch, node),
+        index: load(numberSlot(1, node), node),
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "optional-value",
+        id: hiVal,
+        value: readHi,
+        start: node.start,
+        end: node.end,
+      });
+      expectedLo = save(loVal, "number", node);
+      expectedHi = save(hiVal, "number", node);
+    }
+    const timeout =
+      timeoutArg === undefined
+        ? numberSlot(Infinity, node)
+        : save(numericInput(timeoutArg, node), "number", node);
+    const resultId = nextValue++;
+    emit({
+      kind: "call",
+      id: resultId,
+      target: callee,
+      arguments: [
+        load(bufferAddress, node),
+        load(byteOffset, node),
+        load(numberSlot(width, node), node),
+        load(expectedLo, node),
+        load(expectedHi, node),
+        load(timeout, node),
+      ],
+      start: node.start,
+      end: node.end,
+    });
+    const result = save(resultId, "string", node);
+    // An empty string signals a worker termination stop request observed while
+    // parked: entering a natural loop in this worker function triggers codegen's
+    // workerStopPoll() and throws the uncatchable worker-stop payload at once.
+    const lenId = nextValue++;
+    emit({
+      kind: "string-length",
+      id: lenId,
+      string: load(result, node),
+      start: node.start,
+      end: node.end,
+    });
+    const interrupted = block(),
+      done = block();
+    choose(
+      load(
+        binarySlot(
+          "===",
+          save(lenId, "number", node),
+          numberSlot(0, node),
+          node,
+        ),
+        node,
+      ),
+      interrupted,
+      done,
+      node,
+    );
+    current = interrupted;
+    jump(interrupted.id, node);
+    current = done;
+    return result;
+  }
+  /** `Atomics.notify(array, index, count?)` on native Int32Array or
+   * BigInt64Array. Ordinary ArrayBuffers validate index and return 0. */
+  function atomicsNotifyCall(
+    kind: "Int32Array" | "BigInt64Array",
+    callee: number,
+    args: readonly number[],
+    node: Span,
+  ): number {
+    const source = args[0],
+      indexArg = args[1],
+      countArg = args[2];
+    if (source === undefined || indexArg === undefined)
+      throw "atomics notify argument invariant";
+    const array =
+      slots[source] === "general"
+        ? nativeArrayArgument(source, kind, node)
+        : source;
+    rejectDetached(array, node);
+    const index = integerIndex(
+      save(numericInput(indexArg, node), "number", node),
+      node,
+    );
+    const inBounds = save(
+      load(binarySlot(">=", index, numberSlot(0, node), node), node),
+      "boolean",
+      node,
+    );
+    conditionalStore(
+      inBounds,
+      inBounds,
+      () => binarySlot("<", index, arrayLength(array, node), node),
+      node,
+    );
+    requireCondition(
+      inBounds,
+      "RangeError",
+      "Invalid atomic access index",
+      node,
+    );
+    let count: number;
+    if (countArg === undefined) count = numberSlot(Infinity, node);
+    else if (slots[countArg] === "optional-number") {
+      const present = nextValue++;
+      emitPresence(present, load(countArg, node), false, node);
+      const countSlot = numberSlot(Infinity, node);
+      conditionalStore(
+        save(present, "boolean", node),
+        countSlot,
+        () => save(numericInput(countArg, node), "number", node),
+        node,
+      );
+      count = countSlot;
+    } else count = save(numericInput(countArg, node), "number", node);
+    const bufferAddress = arrayBufferExternalAddress(array, node);
+    const width = kind === "Int32Array" ? 4 : 8;
+    const byteOffset = arrayElementByteOffset(array, index, width, node);
+    const resultId = nextValue++;
+    emit({
+      kind: "call",
+      id: resultId,
+      target: callee,
+      arguments: [
+        load(bufferAddress, node),
+        load(byteOffset, node),
+        load(numberSlot(width, node), node),
+        load(count, node),
+      ],
+      start: node.start,
+      end: node.end,
+    });
+    return save(resultId, "number", node);
   }
   /** TypeError when native typed array `array` is a detached view (its
    * data before its owner's, a negative byte offset). A detached view is
@@ -3313,14 +3765,7 @@ export function lowerFunction(
   /** ValidateTypedArray for a native typed-array receiver slot: TypeError
    * when it is a detached view (other receivers are unchanged). */
   function rejectDetachedReceiver(receiver: number, node: Span): void {
-    const type = slots[receiver];
-    if (
-      type === "Uint8Array" ||
-      type === "Uint16Array" ||
-      type === "Uint32Array" ||
-      type === "Float64Array"
-    )
-      rejectDetached(receiver, node);
+    if (isNativeTypedArray(slots[receiver])) rejectDetached(receiver, node);
   }
   function arrayLength(array: number, node: Span): number {
     const id = nextValue++;
@@ -5043,31 +5488,56 @@ export function lowerFunction(
     current = head;
     choose(load(binarySlot("<", index, count, node), node), body, done, node);
     current = body;
-    const read = nextValue++,
-      element = nextValue++;
-    emit({
-      kind: "array-read",
-      id: read,
-      array: load(source, node),
-      index: load(binarySlot("+", sourceOffset, index, node), node),
-      start: node.start,
-      end: node.end,
-    });
-    emit({
-      kind: "optional-value",
-      id: element,
-      value: read,
-      start: node.start,
-      end: node.end,
-    });
-    emit({
-      kind: "array-write",
-      array: load(destination, node),
-      index: load(binarySlot("+", offset, index, node), node),
-      value: element,
-      start: node.start,
-      end: node.end,
-    });
+    if (
+      typedArrayBigIntElements(slots[source]) &&
+      typedArrayBigIntElements(slots[destination])
+    ) {
+      const scratch = word64Scratch(),
+        valid = nextValue++;
+      emit({
+        kind: "array-word64-read",
+        id: valid,
+        array: load(source, node),
+        index: load(binarySlot("+", sourceOffset, index, node), node),
+        scratch: load(scratch, node),
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "array-word64-write",
+        array: load(destination, node),
+        index: load(binarySlot("+", offset, index, node), node),
+        scratch: load(scratch, node),
+        start: node.start,
+        end: node.end,
+      });
+    } else {
+      const read = nextValue++,
+        element = nextValue++;
+      emit({
+        kind: "array-read",
+        id: read,
+        array: load(source, node),
+        index: load(binarySlot("+", sourceOffset, index, node), node),
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "optional-value",
+        id: element,
+        value: read,
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "array-write",
+        array: load(destination, node),
+        index: load(binarySlot("+", offset, index, node), node),
+        value: element,
+        start: node.start,
+        end: node.end,
+      });
+    }
     store(
       index,
       load(binarySlot("+", index, numberSlot(1, node), node), node),
@@ -7918,15 +8388,15 @@ export function lowerFunction(
           throw "array constructor contract invariant";
         const arg = node.arguments[0],
           input = arg === undefined ? numberSlot(0, node) : value(arg);
-        const numericList =
-          arg !== undefined && info(arg).listElement === "number"
+        const sourceList =
+          arg !== undefined && info(arg).listElement !== undefined
             ? arg
             : undefined;
         const inputType = slots[input],
           copy = isNativeTypedArray(inputType),
           length =
-            numericList !== undefined
-              ? listValue(listRuntime(numericList), "length", [input], node)
+            sourceList !== undefined
+              ? listValue(listRuntime(sourceList), "length", [input], node)
               : copy
                 ? arrayLength(input, node)
                 : integerIndex(
@@ -7943,20 +8413,48 @@ export function lowerFunction(
           end: node.end,
         });
         const result = save(id, type, node);
-        if (numericList !== undefined) {
+        if (sourceList !== undefined) {
           const index = numberSlot(0, node);
           arrayValues(
-            numericList,
+            sourceList,
             node,
             (item, _typed): void => {
-              emit({
-                kind: "array-write",
-                array: load(result, node),
-                index: load(index, node),
-                value: numericInput(item, node),
-                start: node.start,
-                end: node.end,
-              });
+              if (typedArrayBigIntElements(type)) {
+                let unwrapped = item;
+                if (slots[item] === "optional-reference") {
+                  const noneId = nextValue++;
+                  emit({
+                    kind: "reference-none",
+                    id: noneId,
+                    start: node.start,
+                    end: node.end,
+                  });
+                  requireCondition(
+                    binarySlot(
+                      "!==",
+                      item,
+                      save(noneId, "optional-reference", node),
+                      node,
+                    ),
+                    "TypeError",
+                    "Cannot convert undefined to a BigInt",
+                    node,
+                  );
+                  const valId = nextValue++;
+                  emitUnwrap(valId, load(item, node), "reference", node);
+                  unwrapped = save(valId, "reference", node);
+                }
+                writeArrayElement(result, index, unwrapped, node);
+              } else {
+                emit({
+                  kind: "array-write",
+                  array: load(result, node),
+                  index: load(index, node),
+                  value: numericInput(item, node),
+                  start: node.start,
+                  end: node.end,
+                });
+              }
               store(
                 index,
                 load(binarySlot("+", index, numberSlot(1, node), node), node),
@@ -8770,16 +9268,7 @@ export function lowerFunction(
             [array, index],
             node,
           );
-        const id = nextValue++;
-        emit({
-          kind: "array-read",
-          id,
-          array: load(array, node.object),
-          index: load(index, node.index),
-          start: node.start,
-          end: node.end,
-        });
-        return save(id, "optional-number", node);
+        return readArrayElement(array, index, node);
       }
       case "member": {
         const builtin = info(node).builtin;
@@ -9528,14 +10017,7 @@ export function lowerFunction(
             );
             return result;
           }
-          emit({
-            kind: "array-write",
-            array: load(array, target),
-            index: load(index, target),
-            value: load(result, node.value),
-            start: node.start,
-            end: node.end,
-          });
+          writeArrayElement(array, index, result, node);
           return result;
         }
         const local = info(node).local;
@@ -10049,18 +10531,9 @@ export function lowerFunction(
             }
             current = invoke;
             let item: number;
-            if (input === undefined) {
-              const id = nextValue++;
-              emit({
-                kind: "array-read",
-                id,
-                array: load(receiver, node),
-                index: load(index, node),
-                start: node.start,
-                end: node.end,
-              });
-              item = save(id, "optional-number", node);
-            } else item = listValue(input, "read", [receiver, index], node);
+            if (input === undefined)
+              item = readArrayElement(receiver, index, node);
+            else item = listValue(input, "read", [receiver, index], node);
             const args = [item, index, receiver];
             const values = signature.parameters.map((parameter, i): number => {
               const slot = args[i];
@@ -10471,33 +10944,42 @@ export function lowerFunction(
               jump(element.id, node);
               current = element;
               let item: number;
-              if (runtime === undefined) {
-                const id = nextValue++;
+              if (runtime === undefined)
+                item = readArrayElement(receiver, index, node);
+              else item = listValue(runtime, "read", [receiver, index], node);
+              const present = nextValue++,
+                itemSlotType = slots[item],
+                isOptionalRef = itemSlotType === "optional-reference",
+                isString = itemSlotType === "optional-string";
+              if (isOptionalRef)
                 emit({
-                  kind: "array-read",
-                  id,
-                  array: load(receiver, node),
-                  index: load(index, node),
+                  kind: "unary",
+                  operator: "truthy",
+                  id: present,
+                  operand: load(item, node),
                   start: node.start,
                   end: node.end,
                 });
-                item = save(id, "optional-number", node);
-              } else item = listValue(runtime, "read", [receiver, index], node);
-              const present = nextValue++,
-                string = slots[item] === "optional-string";
-              emitPresence(present, load(item, node), string, node);
+              else emitPresence(present, load(item, node), isString, node);
               const include = block(),
                 advance = block();
               choose(present, include, advance, node);
               current = include;
               const extracted = nextValue++;
-              const elementType = string
-                ? "string"
-                : slots[item] === "optional-boolean"
-                  ? "boolean"
-                  : "number";
+              const elementType = isOptionalRef
+                ? "reference"
+                : isString
+                  ? "string"
+                  : itemSlotType === "optional-boolean"
+                    ? "boolean"
+                    : "number";
               emitUnwrap(extracted, load(item, node), elementType, node);
-              visit(stringOperand(save(extracted, elementType, node), node));
+              const unwrappedSlot = save(extracted, elementType, node);
+              if (isOptionalRef)
+                visit(
+                  bigIntCall(bigIntRuntime().toString, [unwrappedSlot], node),
+                );
+              else visit(stringOperand(unwrappedSlot, node));
               jump(advance.id, node);
               current = advance;
               store(
@@ -11053,44 +11535,65 @@ export function lowerFunction(
             );
             current = body;
             if (runtime === undefined) {
-              function read(index: number): number {
-                const id = nextValue++,
-                  element = nextValue++;
+              if (typedArrayBigIntElements(slots[receiver])) {
+                const leftOpt = readArrayElement(receiver, lower, node),
+                  rightOpt = readArrayElement(receiver, upper, node),
+                  leftVal = nextValue++,
+                  rightVal = nextValue++;
+                emitUnwrap(leftVal, load(leftOpt, node), "reference", node);
+                emitUnwrap(rightVal, load(rightOpt, node), "reference", node);
+                writeArrayElement(
+                  receiver,
+                  lower,
+                  save(rightVal, "reference", node),
+                  node,
+                );
+                writeArrayElement(
+                  receiver,
+                  upper,
+                  save(leftVal, "reference", node),
+                  node,
+                );
+              } else {
+                function read(index: number): number {
+                  const id = nextValue++,
+                    element = nextValue++;
+                  emit({
+                    kind: "array-read",
+                    id,
+                    array: load(receiver, node),
+                    index: load(index, node),
+                    start: node.start,
+                    end: node.end,
+                  });
+                  emit({
+                    kind: "optional-value",
+                    id: element,
+                    value: id,
+                    start: node.start,
+                    end: node.end,
+                  });
+                  return save(element, "number", node);
+                }
+                const left = read(lower),
+                  right = read(upper);
                 emit({
-                  kind: "array-read",
-                  id,
+                  kind: "array-write",
                   array: load(receiver, node),
-                  index: load(index, node),
+                  index: load(lower, node),
+                  value: load(right, node),
                   start: node.start,
                   end: node.end,
                 });
                 emit({
-                  kind: "optional-value",
-                  id: element,
-                  value: id,
+                  kind: "array-write",
+                  array: load(receiver, node),
+                  index: load(upper, node),
+                  value: load(left, node),
                   start: node.start,
                   end: node.end,
                 });
-                return save(element, "number", node);
               }
-              const left = read(lower),
-                right = read(upper);
-              emit({
-                kind: "array-write",
-                array: load(receiver, node),
-                index: load(lower, node),
-                value: load(right, node),
-                start: node.start,
-                end: node.end,
-              });
-              emit({
-                kind: "array-write",
-                array: load(receiver, node),
-                index: load(upper, node),
-                value: load(left, node),
-                start: node.start,
-                end: node.end,
-              });
             } else {
               const leftPresent = listValue(
                   runtime,
@@ -11160,14 +11663,26 @@ export function lowerFunction(
                 ? arrayLength(receiver, node)
                 : listValue(runtime, "length", [receiver], node);
             adjustNegativeIndex(index, length, node);
-            const result = temporary(scalarType(node)),
+            const resultType = scalarType(node),
+              result = temporary(resultType),
               absent = nextValue++;
-            emit({
-              kind: "undefined",
-              id: absent,
-              start: node.start,
-              end: node.end,
-            });
+            if (resultType === "optional-reference") {
+              emit({
+                kind: "reference-none",
+                id: absent,
+                start: node.start,
+                end: node.end,
+              });
+              if (typedArrayBigIntElements(slots[receiver]))
+                bigIntSlots[result] = 1;
+            } else {
+              emit({
+                kind: "undefined",
+                id: absent,
+                start: node.start,
+                end: node.end,
+              });
+            }
             store(result, absent, node);
             const upper = block(),
               read = block(),
@@ -11187,16 +11702,8 @@ export function lowerFunction(
             );
             current = read;
             if (runtime === undefined) {
-              const id = nextValue++;
-              emit({
-                kind: "array-read",
-                id,
-                array: load(receiver, node),
-                index: load(index, node),
-                start: node.start,
-                end: node.end,
-              });
-              store(result, id, node);
+              const readSlot = readArrayElement(receiver, index, node);
+              store(result, load(readSlot, node), node);
             } else
               store(
                 result,
@@ -12163,21 +12670,62 @@ export function lowerFunction(
           if (builtin === "array-fill" && array !== undefined)
             rejectDetachedReceiver(array, node);
           if (
-            builtin === "atomics-uint8" ||
-            builtin === "atomics-uint16" ||
-            builtin === "atomics-uint32"
+            builtin === "atomics-wait-int32" ||
+            builtin === "atomics-wait-bigint64"
           ) {
-            if (target.kind !== "member") throw "atomics callee invariant";
-            return atomicsCall(
-              target.property,
-              builtin === "atomics-uint8"
-                ? "Uint8Array"
-                : builtin === "atomics-uint16"
-                  ? "Uint16Array"
-                  : "Uint32Array",
+            const waitCallee = info(node).callee;
+            if (waitCallee === undefined) throw "atomics wait callee invariant";
+            return atomicsWaitCall(
+              builtin === "atomics-wait-int32" ? "Int32Array" : "BigInt64Array",
+              waitCallee,
               args,
               node,
             );
+          }
+          if (
+            builtin === "atomics-notify-int32" ||
+            builtin === "atomics-notify-bigint64"
+          ) {
+            const notifyCallee = info(node).callee;
+            if (notifyCallee === undefined)
+              throw "atomics notify callee invariant";
+            return atomicsNotifyCall(
+              builtin === "atomics-notify-int32"
+                ? "Int32Array"
+                : "BigInt64Array",
+              notifyCallee,
+              args,
+              node,
+            );
+          }
+          if (
+            builtin === "atomics-uint8" ||
+            builtin === "atomics-int8" ||
+            builtin === "atomics-uint16" ||
+            builtin === "atomics-int16" ||
+            builtin === "atomics-uint32" ||
+            builtin === "atomics-int32" ||
+            builtin === "atomics-bigint64" ||
+            builtin === "atomics-biguint64"
+          ) {
+            if (target.kind !== "member") throw "atomics callee invariant";
+            const atomicKind =
+              builtin === "atomics-uint8"
+                ? "Uint8Array"
+                : builtin === "atomics-int8"
+                  ? "Int8Array"
+                  : builtin === "atomics-uint16"
+                    ? "Uint16Array"
+                    : builtin === "atomics-int16"
+                      ? "Int16Array"
+                      : builtin === "atomics-uint32"
+                        ? "Uint32Array"
+                        : builtin === "atomics-int32"
+                          ? "Int32Array"
+                          : builtin === "atomics-bigint64"
+                            ? "BigInt64Array"
+                            : "BigUint64Array";
+            return atomicsCall(target.property, atomicKind, args, node);
           }
           if (
             builtin === "is-finite" ||
@@ -12455,15 +13003,29 @@ export function lowerFunction(
             // One bulk store of the value, converted once to the element
             // encoding (the conversion is pure, so this equals per-element
             // writes).
-            emit({
-              kind: "array-fill",
-              array: load(array, node),
-              value: load(first, node),
-              from: load(index, node),
-              to: load(limit, node),
-              start: node.start,
-              end: node.end,
-            });
+            if (typedArrayBigIntElements(slots[array])) {
+              const scratch = word64Scratch();
+              emitBigIntToWord64(first, scratch, 0, node);
+              emit({
+                kind: "array-word64-fill",
+                array: load(array, node),
+                scratch: load(scratch, node),
+                from: load(index, node),
+                to: load(limit, node),
+                start: node.start,
+                end: node.end,
+              });
+            } else {
+              emit({
+                kind: "array-fill",
+                array: load(array, node),
+                value: load(first, node),
+                from: load(index, node),
+                to: load(limit, node),
+                start: node.start,
+                end: node.end,
+              });
+            }
             return array;
           }
           const head = block(),
@@ -12920,16 +13482,8 @@ export function lowerFunction(
             node,
           );
         else {
-          const id = nextValue++;
-          emit({
-            kind: "array-read",
-            id,
-            array: load(source, node),
-            index: load(position, node),
-            start: node.start,
-            end: node.end,
-          });
-          store(read, id, node);
+          const readSlot = readArrayElement(source, position, node);
+          store(read, load(readSlot, node), node);
         }
         jump(after.id, node);
         current = after;
@@ -13784,17 +14338,7 @@ export function lowerFunction(
         let read: number;
         if (list)
           read = load(listValue(list, "read", [array, index], node), node);
-        else {
-          read = nextValue++;
-          emit({
-            kind: "array-read",
-            id: read,
-            array: load(array, node),
-            index: load(index, node),
-            start: node.start,
-            end: node.end,
-          });
-        }
+        else read = load(readArrayElement(array, index, node), node);
         if (info(node.iterable).holeCheck === true) {
           // The element type excludes undefined: a hole is not a value of
           // it, so iteration throws rather than binding undefined.
@@ -14121,6 +14665,36 @@ export function lowerFunction(
   hoistFunctions(undefined);
   statement(fn.node.body, undefined);
   if (current !== undefined) requireSuperCalled(fn.node);
+  if (word64ScratchSlot !== undefined) {
+    const entryBlock = blocks[0];
+    if (entryBlock === undefined) throw "entry block invariant";
+    const scratchLengthId = nextValue++,
+      scratchArrayId = nextValue++;
+    entryBlock.instructions.unshift(
+      {
+        kind: "constant",
+        id: scratchLengthId,
+        value: 4,
+        start: fn.node.start,
+        end: fn.node.end,
+      },
+      {
+        kind: "array-new",
+        id: scratchArrayId,
+        type: "Uint32Array",
+        length: scratchLengthId,
+        start: fn.node.start,
+        end: fn.node.end,
+      },
+      {
+        kind: "store",
+        slot: word64ScratchSlot,
+        value: scratchArrayId,
+        start: fn.node.start,
+        end: fn.node.end,
+      },
+    );
+  }
   const reachable = new Uint8Array(blocks.length),
     pending = [0];
   while (pending.length > 0) {

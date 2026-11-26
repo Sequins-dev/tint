@@ -568,10 +568,13 @@ const typedArrays = new Set([
   "Uint8ClampedArray",
   "Int16Array",
   "Uint16Array",
+  "Float16Array",
   "Int32Array",
   "Uint32Array",
   "Float32Array",
   "Float64Array",
+  "BigInt64Array",
+  "BigUint64Array",
 ]);
 
 /** Whether evaluating a module body (excluding its imports) is unobservable:

@@ -40,5 +40,8 @@ test("function and signature wire constants match independent literal goldens", 
     nativeSignatureInt16ArrayCode: 17,
     nativeSignatureInt32ArrayCode: 18,
     nativeSignatureFloat32ArrayCode: 19,
+    nativeSignatureFloat16ArrayCode: 20,
+    nativeSignatureBigInt64ArrayCode: 21,
+    nativeSignatureBigUint64ArrayCode: 22,
   });
 });

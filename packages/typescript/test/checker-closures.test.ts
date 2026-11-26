@@ -3868,16 +3868,46 @@ test("dynamic-key erasure requests native views for witnessed layouts", () => {
   ]);
 });
 test("typed Atomics run inline on native integer arrays only", () => {
-  for (const type of ["Uint8Array", "Uint16Array", "Uint32Array"])
+  for (const type of [
+    "Int8Array",
+    "Uint8Array",
+    "Int16Array",
+    "Uint16Array",
+    "Int32Array",
+    "Uint32Array",
+  ])
     assert.ok(
       check(
         `function f(a:${type}):number{Atomics.store(a,0,1);return Atomics.add(a,0,1)+Atomics.sub(a,0,1)+Atomics.and(a,0,1)+Atomics.or(a,0,1)+Atomics.xor(a,0,1)+Atomics.exchange(a,0,1)+Atomics.compareExchange(a,0,1,2)+Atomics.load(a,0);}`,
       ).ok,
       type,
     );
+  for (const type of ["BigInt64Array", "BigUint64Array"])
+    assert.ok(
+      check(
+        `function f(a:${type}):bigint{Atomics.store(a,0,1n);return Atomics.add(a,0,1n)+Atomics.sub(a,0,1n)+Atomics.and(a,0,1n)+Atomics.or(a,0,1n)+Atomics.xor(a,0,1n)+Atomics.exchange(a,0,1n)+Atomics.compareExchange(a,0,1n,2n)+Atomics.load(a,0);}`,
+      ).ok,
+      type,
+    );
+  assert.ok(
+    check(
+      `function f(a:Int32Array,b:BigInt64Array):string{const n=Atomics.notify(a,0,1)+Atomics.notify(b,0);return Atomics.wait(a,0,0,10)+Atomics.wait(b,0,0n)+String(n);}`,
+    ).ok,
+    "Atomics.wait and Atomics.notify on Int32Array and BigInt64Array",
+  );
   for (const text of [
     // The pinned library types Atomics on integer typed arrays only.
+    "function f(a:Float16Array):number{return Atomics.add(a,0,1);}",
+    "function f(a:Float32Array):number{return Atomics.add(a,0,1);}",
     "function f(a:Float64Array):number{return Atomics.add(a,0,1);}",
+    "function f(a:Uint8ClampedArray):number{return Atomics.add(a,0,1);}",
+    "function f(a:Uint32Array):string{return Atomics.wait(a,0,0);}",
+    "function f(a:BigUint64Array):string{return Atomics.wait(a,0,0n);}",
+    "function f(a:Uint32Array):number{return Atomics.notify(a,0);}",
+    "function f(a:BigUint64Array):number{return Atomics.notify(a,0);}",
+    "function f(a:BigInt64Array):bigint{return Atomics.add(a,0,1);}",
+    "function f(a:Int32Array):string{return Atomics.wait(a,0,0n);}",
+    "function f(a:BigInt64Array):string{return Atomics.wait(a,0,0);}",
     "function f(a:Uint32Array):number{return Atomics.add(a,0);}",
     "function f(a:Uint32Array):number{return Atomics.load(a,0,1);}",
     "function f(a:Uint32Array):number{return Atomics.compareExchange(a,0,1);}",
@@ -3891,6 +3921,31 @@ test("typed Atomics run inline on native integer arrays only", () => {
     "function f(a:Uint32Array):number{const Atomics={add:(x:Uint32Array,i:number,v:number):number=>v};return Atomics.add(a,0,1);}",
   );
   assert.ok(shadowed.ok);
+});
+test("Float16Array, BigInt64Array and BigUint64Array enforce element content types", () => {
+  assert.ok(
+    check(`
+      function ok(): string {
+        const f16 = new Float16Array([1.5, -0]);
+        const bi = new BigInt64Array([1n, -2n]);
+        const bu = new BigUint64Array(bi);
+        f16[0] = 2.25;
+        bi[0] = bu[0] ?? 0n;
+        bu.set(bi);
+        return f16.join(",") + bi.join(",") + bu.join(",");
+      }
+    `).ok,
+  );
+  for (const text of [
+    "function f():void{const a=new BigInt64Array(2);a[0]=1;}",
+    "function f():void{const a=new BigUint64Array([1,2]);}",
+    "function f(a:Uint32Array):void{new BigInt64Array(a);}",
+    "function f(a:BigInt64Array):void{new Float16Array(a);}",
+    "function f(a:BigInt64Array,b:Uint32Array):void{a.set(b);}",
+    "function f(a:Float16Array):void{a[0]=1n;}",
+    "function f(a:BigInt64Array):void{a.fill(1);}",
+  ])
+    assert.equal(check(text).ok, false, text);
 });
 test("instanceof and checked downcast narrow unknown to SharedArrayBuffer", () => {
   const narrowed = check(`

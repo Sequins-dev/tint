@@ -595,6 +595,10 @@ function functionFlows(
           case "array-view":
           case "array-buffer-byte-length":
           case "array-atomic":
+          case "array-word64-read":
+          case "array-word64-write":
+          case "array-word64-fill":
+          case "array-atomic-word64":
           case "reference-vector-new":
           case "reference-vector-length":
           case "reference-vector-is":

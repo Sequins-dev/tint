@@ -410,6 +410,28 @@ export function substituteInstructionValues(
       }
       return changed ? { ...op, array, index, operands } : op;
     }
+    case "array-word64-read":
+    case "array-word64-write":
+    case "array-atomic-word64": {
+      const array = substitutedValue(values, op.array),
+        index = substitutedValue(values, op.index),
+        scratch = substitutedValue(values, op.scratch);
+      return array === op.array && index === op.index && scratch === op.scratch
+        ? op
+        : { ...op, array, index, scratch };
+    }
+    case "array-word64-fill": {
+      const array = substitutedValue(values, op.array),
+        scratch = substitutedValue(values, op.scratch),
+        from = substitutedValue(values, op.from),
+        to = substitutedValue(values, op.to);
+      return array === op.array &&
+        scratch === op.scratch &&
+        from === op.from &&
+        to === op.to
+        ? op
+        : { ...op, array, scratch, from, to };
+    }
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":
@@ -644,6 +666,9 @@ export function renumberInstructionResult(
     case "array-write":
     case "array-store":
     case "array-fill":
+    case "array-word64-write":
+    case "array-word64-fill":
+    case "array-atomic-word64":
     case "weak-slot-set-value":
     case "weak-slot-clear":
     case "reference-vector-write":

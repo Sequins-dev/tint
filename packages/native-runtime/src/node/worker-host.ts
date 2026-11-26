@@ -120,8 +120,12 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     engine = descriptor;
     reactor.watchReadable(active.input, (): void => {}).unref();
   }
-  // Typed SharedArrayBuffers use the same blocks (shared-buffers.ts).
-  installIsolateSharedBlocks(service);
+  // Typed SharedArrayBuffers and typed Atomics.wait/notify use the same blocks
+  // and wait registry (shared-buffers.ts).
+  installIsolateSharedBlocks(
+    service,
+    control === undefined ? 0 : control.recordBase,
+  );
   const blocks = service;
   const sequence: NativeSharedBlockRegistry = {
     base: engine.sequence,

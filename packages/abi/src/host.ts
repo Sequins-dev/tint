@@ -29,6 +29,15 @@ export const nativeIdentityHoldTableOffset = 16;
  * release in it; 0 for none. */
 export const nativeIdentityReleasableBaseOffset = 24;
 export const nativeIdentityReleasableLengthOffset = 32;
+/** Identity page words 5-7: the isolate's shared wait registry
+ * (base, byteLength, engineId), published by worker startup or lazily by
+ * typed Atomics.wait/notify; 0 until initialized. */
+export const nativeIdentityWaitRegistryBaseOffset = 40;
+export const nativeIdentityWaitRegistryLengthOffset = 48;
+export const nativeIdentityWaitRegistryEngineOffset = 56;
+/** Identity page word 8: raw address of the current Worker's lifecycle record
+ * (holding stop state and active wait ticket), or 0 in the main isolate. */
+export const nativeIdentityWorkerRecordOffset = 64;
 /** Hosted context words holding the managed mapping's base and byte length. */
 export const nativeContextManagedBaseOffset = 8;
 export const nativeContextManagedLengthOffset = 32;
@@ -67,6 +76,9 @@ export const nativeThreadExitReadOffset = 16;
  * It points at the worker's stop state, or is zero in the main isolate. */
 export const nativeWorkerStopPointerOffset = -8;
 export const nativeWorkerStopStateOffset = 72;
+/** Active wait-registry ticket published in the worker lifecycle record while
+ * a worker thread is parked in Atomics.wait so requestStop can expire it. */
+export const nativeWorkerWaitTicketOffset = 104;
 /** Optional size ceilings in a worker startup record. Zero uses the image
  * default. The image retains its reserved virtual address layout. */
 export const nativeWorkerStackBytesOffset = 136;

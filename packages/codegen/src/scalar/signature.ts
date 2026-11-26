@@ -18,7 +18,10 @@ import {
   nativeSignatureUint8ClampedArrayCode,
   nativeSignatureInt16ArrayCode,
   nativeSignatureInt32ArrayCode,
+  nativeSignatureFloat16ArrayCode,
   nativeSignatureFloat32ArrayCode,
+  nativeSignatureBigInt64ArrayCode,
+  nativeSignatureBigUint64ArrayCode,
 } from "@tint/abi/function";
 import type { ScalarType } from "@tint/ir/scalar";
 
@@ -62,7 +65,13 @@ export function nativeSignatureTypeCode(type: ScalarType | "void"): number {
       return nativeSignatureInt16ArrayCode;
     case "Int32Array":
       return nativeSignatureInt32ArrayCode;
+    case "Float16Array":
+      return nativeSignatureFloat16ArrayCode;
     case "Float32Array":
       return nativeSignatureFloat32ArrayCode;
+    case "BigInt64Array":
+      return nativeSignatureBigInt64ArrayCode;
+    case "BigUint64Array":
+      return nativeSignatureBigUint64ArrayCode;
   }
 }
