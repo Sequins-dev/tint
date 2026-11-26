@@ -58,6 +58,7 @@ export function realmConstructorInstance(name: string): string | undefined {
     case "RangeError":
     case "ArrayBuffer":
     case "SharedArrayBuffer":
+    case "DataView":
       return name;
     default:
       return isNativeTypedArrayKind(name) || realmOnlyTypedArrays.includes(name)
@@ -264,6 +265,7 @@ export function resolveInterfaceTypes(
     { kind: "BigInt64Array" },
     { kind: "BigUint64Array" },
     { kind: "SharedArrayBuffer" },
+    { kind: "DataView" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {
@@ -813,6 +815,35 @@ export function resolveInterfaceTypes(
         names.set(name, id);
         return id;
       }
+    }
+    if (name === "ArrayBufferLike" && !declarations.has(name)) {
+      if (args.length !== 0)
+        fail(node, "INVALID_TYPE", "ArrayBufferLike takes no type arguments");
+      const ab = names.get("ArrayBuffer"),
+        sab = names.get("SharedArrayBuffer");
+      if (ab === undefined || sab === undefined)
+        throw "buffer primitive invariant";
+      return add({ kind: "union", members: [ab, sab] }, node);
+    }
+    if (name === "DataView" && !declarations.has(name)) {
+      if (args.length > 1)
+        fail(
+          node,
+          "INVALID_TYPE",
+          "DataView accepts at most one type argument",
+        );
+      const dv = names.get("DataView");
+      if (dv === undefined) throw "DataView primitive invariant";
+      return dv;
+    }
+    if (
+      isNativeTypedArrayKind(name) &&
+      !declarations.has(name) &&
+      args.length === 1
+    ) {
+      const ta = names.get(name);
+      if (ta === undefined) throw "typed-array primitive invariant";
+      return ta;
     }
     if (
       (name === "Array" || name === "ReadonlyArray") &&

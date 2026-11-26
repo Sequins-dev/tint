@@ -21,7 +21,6 @@ function constant(): Integer {
   if (result === undefined) throw "TRIG_CONSTANT_INVARIANT";
   return result;
 }
-const twoOverPi = constant();
 function shifted(value: Integer, count: number): Integer {
   const capacity = value.digits.length + Math.ceil(Math.max(0, count) / 26) + 1;
   const result = shift(value, integer(count), capacity);
@@ -66,7 +65,7 @@ function reduce(value: number): ReducedAngle {
   const mantissa =
     (word.hi % 1048576) * 4294967296 + word.lo + 4503599627370496;
   const denominatorBits = twoOverPiBits - (exponent - 1075);
-  const product = multiply(integer(mantissa), twoOverPi);
+  const product = multiply(integer(mantissa), constant());
   const whole = shifted(product, -denominatorBits);
   let remainder = subtract(product, shifted(whole, denominatorBits));
   let quadrant = (whole.digits[0] ?? 0) % 4;

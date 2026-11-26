@@ -36,6 +36,34 @@ export const nativeWeakModule =
 export const nativeArrayDetachModule =
   "packages/native-runtime/src/intrinsics/native-array-detach.ts";
 
+/** On-demand pure-TS stdlib runtimes: loaded only when a typed program calls
+ * their intrinsics so the compiler self-build never pays for unused tables. */
+export const optionalBuiltinRuntimes: readonly RuntimeSource[] = [
+  { module: "packages/foundation/src/numeric/math.ts", namespace: "math" },
+  {
+    module: "packages/foundation/src/binary/data-view.ts",
+    namespace: "data-view",
+  },
+  {
+    module: "packages/foundation/src/text/string-builtins.ts",
+    namespace: "string-builtins",
+  },
+  {
+    module: "packages/foundation/src/unicode/casing/compact.ts",
+    namespace: "unicode-casing",
+  },
+  {
+    module: "packages/foundation/src/unicode/normalization/index.ts",
+    namespace: "unicode-normalization",
+  },
+];
+
+export function isOptionalBuiltinRuntimeModule(id: string): boolean {
+  for (const runtime of optionalBuiltinRuntimes)
+    if (runtime !== undefined && runtime.module === id) return true;
+  return false;
+}
+
 /** This provider uses module instance state and is demanded by the AOT checker. */
 export function dynamicObjectRuntimeSource(
   patterns: boolean = false,

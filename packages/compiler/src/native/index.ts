@@ -34,6 +34,7 @@ import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
   dynamicObjectRuntimeSource,
+  optionalBuiltinRuntimes,
   nativeArrayDetachModule,
   nativeValueViewsModule,
   nativeWeakModule,
@@ -580,6 +581,7 @@ interface CompilationError {
   readonly needsDynamicRealm?: boolean;
   readonly needsBindingRealm?: boolean;
   readonly nativeProjections?: readonly string[];
+  readonly needsBuiltins?: readonly string[] | undefined;
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -1404,22 +1406,204 @@ function expandDynamicObjectRealm(
   };
 }
 
+function missingBuiltinRuntimes(
+  checked: CheckedClosures,
+  helpers: ReadonlyMap<string, string>,
+): readonly string[] {
+  let needMath = false;
+  let needDataView = false;
+  let needStringBuiltins = false;
+  let needCasing = false;
+  let needNormalization = false;
+  checked.intrinsics.forEach((intrinsic, _expression) => {
+    switch (intrinsic) {
+      case "math-pow":
+      case "math-exp":
+      case "math-expm1":
+      case "math-log":
+      case "math-log2":
+      case "math-log10":
+      case "math-log1p":
+      case "math-cbrt":
+      case "math-fround":
+      case "math-f16round":
+      case "math-sin":
+      case "math-cos":
+      case "math-tan":
+      case "math-asin":
+      case "math-acos":
+      case "math-atan":
+      case "math-atan2":
+      case "math-sinh":
+      case "math-cosh":
+      case "math-tanh":
+      case "math-asinh":
+      case "math-acosh":
+      case "math-atanh":
+      case "math-hypot":
+        needMath = true;
+        break;
+      case "data-view-new":
+      case "data-view-buffer":
+      case "data-view-byte-offset":
+      case "data-view-byte-length":
+      case "data-view-instanceof":
+      case "data-view-get-int8":
+      case "data-view-get-uint8":
+      case "data-view-get-int16":
+      case "data-view-get-uint16":
+      case "data-view-get-int32":
+      case "data-view-get-uint32":
+      case "data-view-get-float16":
+      case "data-view-get-float32":
+      case "data-view-get-float64":
+      case "data-view-get-bigint64":
+      case "data-view-get-biguint64":
+      case "data-view-set-int8":
+      case "data-view-set-uint8":
+      case "data-view-set-int16":
+      case "data-view-set-uint16":
+      case "data-view-set-int32":
+      case "data-view-set-uint32":
+      case "data-view-set-float16":
+      case "data-view-set-float32":
+      case "data-view-set-float64":
+      case "data-view-set-bigint64":
+      case "data-view-set-biguint64":
+        needDataView = true;
+        break;
+      case "string-replace":
+      case "string-replace-all":
+        needStringBuiltins = true;
+        break;
+      case "string-to-lower":
+      case "string-to-upper":
+        needCasing = true;
+        break;
+      case "string-normalize":
+        needNormalization = true;
+        break;
+    }
+  });
+  const missing: string[] = [];
+  if (needMath && !helpers.has("math:mathPow")) missing.push("math");
+  if (needDataView && !helpers.has("data-view:dataViewCreate"))
+    missing.push("data-view");
+  if (needStringBuiltins && !helpers.has("string-builtins:stringReplace"))
+    missing.push("string-builtins");
+  if (needCasing && !helpers.has("unicode-casing:unicodeLowercase"))
+    missing.push("unicode-casing");
+  if (
+    needNormalization &&
+    !helpers.has("unicode-normalization:normalizeString")
+  )
+    missing.push("unicode-normalization");
+  return missing;
+}
+
+function expandOptionalRuntimes(
+  request: CompileRequest,
+  current: CompileRequest,
+  explicit: RuntimeSource | undefined,
+  error: CompilationFailure["error"],
+  realmTypeofModules?: ReadonlySet<string>,
+):
+  | {
+      readonly ok: true;
+      readonly request: CompileRequest;
+      readonly realmModules: ReadonlySet<string> | undefined;
+    }
+  | { readonly ok: false; readonly failure: CompilationFailure } {
+  let nextRequest = current;
+  let sourceRequest = request;
+  const needed = error.needsBuiltins ?? [];
+  if (needed.length !== 0) {
+    const runtimes = nextRequest.runtimes.slice();
+    for (const namespace of needed) {
+      if (namespace === undefined) throw "optional builtin namespace invariant";
+      const runtime = optionalBuiltinRuntimes.find(
+        (candidate) => candidate?.namespace === namespace,
+      );
+      if (runtime === undefined)
+        return { ok: false, failure: { ok: false, error } };
+      const loader = nextRequest.moduleLoader;
+      if (loader === undefined) {
+        if (
+          !nextRequest.modules.some((source) => source?.id === runtime.module)
+        )
+          return { ok: false, failure: { ok: false, error } };
+      } else if (!loader.ids.includes(runtime.module)) {
+        const loadWithRoot = loader.loadWithRoot;
+        const expanded =
+          loadWithRoot === undefined ? undefined : loadWithRoot(runtime.module);
+        if (expanded === undefined)
+          return { ok: false, failure: { ok: false, error } };
+        if (!expanded.ok)
+          return {
+            ok: false,
+            failure: stageFailure(
+              expanded.error.stage,
+              expanded.error.message,
+              expanded.error.module,
+            ),
+          };
+        nextRequest = {
+          ...nextRequest,
+          modules: expanded.value,
+          moduleLoader: undefined,
+        };
+        sourceRequest = {
+          ...sourceRequest,
+          modules: expanded.value,
+          moduleLoader: undefined,
+        };
+      }
+      if (!runtimes.some((existing) => existing?.namespace === namespace))
+        runtimes.push(runtime);
+    }
+    nextRequest = { ...nextRequest, runtimes };
+  }
+  if (error.needsDynamicRealm === true)
+    return expandDynamicObjectRealm(
+      sourceRequest,
+      nextRequest,
+      explicit,
+      error,
+      realmTypeofModules,
+    );
+  return { ok: true, request: nextRequest, realmModules: realmTypeofModules };
+}
+
 function compileTypedWithProgramRealm(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
 ): Compilation {
   const { explicit, without } = withoutDynamicObjectRuntime(request);
-  const initial = compileTypedProgram(without, realmTypeofModules);
-  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
-  const expanded = expandDynamicObjectRealm(
-    request,
-    without,
-    explicit,
-    initial.error,
-    realmTypeofModules,
-  );
-  if (!expanded.ok) return expanded.failure;
-  return compileTypedProgram(expanded.request, expanded.realmModules);
+  let active = without;
+  let modules = realmTypeofModules;
+  let result = compileTypedProgram(active, modules);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (result.ok) return result;
+    const error = result.error;
+    const builtins = error.needsBuiltins;
+    if (
+      error.needsDynamicRealm !== true &&
+      (builtins === undefined || builtins.length === 0)
+    )
+      return result;
+    const expanded = expandOptionalRuntimes(
+      request,
+      active,
+      explicit,
+      error,
+      modules,
+    );
+    if (!expanded.ok) return expanded.failure;
+    active = expanded.request;
+    modules = expanded.realmModules;
+    result = compileTypedProgram(active, modules);
+  }
+  return result;
 }
 
 function lowerTypedWithProgramRealm(
@@ -1428,25 +1612,31 @@ function lowerTypedWithProgramRealm(
   invokeDirectly: boolean = false,
 ): TypedLowering {
   const { explicit, without } = withoutDynamicObjectRuntime(request);
-  const initial = lowerTypedProgram(
-    without,
-    realmTypeofModules,
-    invokeDirectly,
-  );
-  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
-  const expanded = expandDynamicObjectRealm(
-    request,
-    without,
-    explicit,
-    initial.error,
-    realmTypeofModules,
-  );
-  if (!expanded.ok) return expanded.failure;
-  return lowerTypedProgram(
-    expanded.request,
-    expanded.realmModules,
-    invokeDirectly,
-  );
+  let active = without;
+  let modules = realmTypeofModules;
+  let result = lowerTypedProgram(active, modules, invokeDirectly);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (result.ok) return result;
+    const error = result.error;
+    const builtins = error.needsBuiltins;
+    if (
+      error.needsDynamicRealm !== true &&
+      (builtins === undefined || builtins.length === 0)
+    )
+      return result;
+    const expanded = expandOptionalRuntimes(
+      request,
+      active,
+      explicit,
+      error,
+      modules,
+    );
+    if (!expanded.ok) return expanded.failure;
+    active = expanded.request;
+    modules = expanded.realmModules;
+    result = lowerTypedProgram(active, modules, invokeDirectly);
+  }
+  return result;
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
   const validateSource = original.generalLowering?.validateSource;
@@ -2703,22 +2893,28 @@ function checkApplication(
     mixed || dynamic,
     canCaptureErrorRealm,
   );
-  if (
+  const missingBuiltins = missingBuiltinRuntimes(checked.value, helpers);
+  const needsDynamic =
     !hasDynamicRuntime &&
-    (dynamic || realmInstanceof || nativeProjections.length !== 0)
-  )
+    (dynamic || realmInstanceof || nativeProjections.length !== 0);
+  if (needsDynamic || missingBuiltins.length !== 0)
     return {
       ok: false,
       error: {
         stage: "lower",
-        message: realmInstanceof
-          ? "UNSUPPORTED: instanceof requires the program realm runtime"
-          : "UNSUPPORTED: dynamic-key objects require the program realm runtime",
-        needsDynamicRealm: true,
-        ...(nativeProjections.length > 0 ? { nativeProjections } : {}),
-        ...(checked.value.needsBindingRealm === true
+        message: needsDynamic
+          ? realmInstanceof
+            ? "UNSUPPORTED: instanceof requires the program realm runtime"
+            : "UNSUPPORTED: dynamic-key objects require the program realm runtime"
+          : "UNSUPPORTED: typed builtins require optional runtime modules",
+        ...(needsDynamic ? { needsDynamicRealm: true } : {}),
+        ...(needsDynamic && nativeProjections.length > 0
+          ? { nativeProjections }
+          : {}),
+        ...(needsDynamic && checked.value.needsBindingRealm === true
           ? { needsBindingRealm: true }
           : {}),
+        needsBuiltins: missingBuiltins.length > 0 ? missingBuiltins : undefined,
       },
     };
   const instanceSource = hasDynamicRuntime

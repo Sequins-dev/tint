@@ -475,6 +475,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/binary/data-view.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/binary/sha256-compression.ts",
       packageId: "foundation",
     },
@@ -667,6 +671,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/numeric/math.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/numeric/number-string-cache.ts",
       packageId: "foundation",
     },
@@ -771,6 +779,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/text/string-builtins.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/text/text-encoding/index.ts",
       packageId: "foundation",
     },
@@ -792,6 +804,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/foundation/src/text/utf8.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/unicode/casing/compact.ts",
       packageId: "foundation",
     },
     {
@@ -3583,6 +3599,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -3728,6 +3749,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -3760,6 +3786,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "codegen",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "codegen",
@@ -3953,6 +3984,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -4098,6 +4134,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -4130,6 +4171,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "compiler",
@@ -4588,6 +4634,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -4733,6 +4784,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -4765,6 +4821,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "image",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "image",
@@ -4868,6 +4929,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ir",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -5013,6 +5079,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ir",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -5045,6 +5116,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "ir",
@@ -5183,6 +5259,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -5328,6 +5409,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -5360,6 +5446,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "js-engine",
@@ -5593,6 +5684,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -5738,6 +5834,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -5770,6 +5871,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-runtime",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "js-runtime",
@@ -5873,6 +5979,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -6018,6 +6129,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -6050,6 +6166,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "native-runtime",
@@ -6213,6 +6334,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -6358,6 +6484,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -6390,6 +6521,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "platform",
@@ -6553,6 +6689,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -6698,6 +6839,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -6730,6 +6876,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ts-native",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "ts-native",
@@ -6868,6 +7019,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "typescript",
+      specifier: "@tint/foundation/binary/data-view",
+      target: "packages/foundation/src/binary/data-view.ts",
+    },
+    {
+      packageId: "typescript",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
     },
@@ -7013,6 +7169,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "typescript",
+      specifier: "@tint/foundation/numeric/math",
+      target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "typescript",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -7045,6 +7206,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/text/string-builder",
       target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/text/string-builtins",
+      target: "packages/foundation/src/text/string-builtins.ts",
     },
     {
       packageId: "typescript",

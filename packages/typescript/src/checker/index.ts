@@ -120,6 +120,8 @@ export interface ExpressionInfo {
   /** `typeof` of a general value: the BigIntValue record layout, whose
    * descriptor marks a BigInt (general values carry BigInts as objects). */
   readonly bigIntRecord?: number | undefined;
+  /** `x instanceof DataView`: the NativeDataViewBox record layout. */
+  readonly dataViewRecord?: number | undefined;
   readonly realmTypeof?: number | undefined;
   readonly generalCall?: { readonly target: number | undefined } | undefined;
   /** Optional fixed-arity native entry for a guarded Node FFI callable. */
@@ -205,6 +207,17 @@ export interface ExpressionInfo {
     | "atomics-notify-bigint64"
     | "math-min"
     | "math-max"
+    | "math-hypot"
+    | "helper-call"
+    | "string-helper"
+    | "string-normalize"
+    | "data-view-new"
+    | "data-view-buffer"
+    | "data-view-byte-offset"
+    | "data-view-byte-length"
+    | "data-view-get"
+    | "data-view-set"
+    | "data-view-instanceof"
     | "array-set"
     | "array-subarray"
     | "array-slice"
@@ -223,6 +236,7 @@ export interface ExpressionInfo {
     | "array-buffer"
     | "array-byte-offset"
     | "array-byte-length"
+    | "array-bytes-per-element"
     | "array-new"
     | "array-view-new"
     | "array-buffer-new"

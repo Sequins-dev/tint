@@ -2054,6 +2054,61 @@ export function lowerFunction(
   }
   function stringOperand(slot: number, node: Expression): number {
     if (slots[slot] === "string") return slot;
+    if (
+      slots[slot] === "optional-string" ||
+      slots[slot] === "optional-number" ||
+      slots[slot] === "optional-boolean"
+    ) {
+      const optKind = slots[slot];
+      const valueKind: ScalarType =
+        optKind === "optional-string"
+          ? "string"
+          : optKind === "optional-number"
+            ? "number"
+            : "boolean";
+      const present = nextValue++;
+      emitPresence(
+        present,
+        load(slot, node),
+        optKind === "optional-string",
+        node,
+      );
+      const result = stringSlot("undefined", node),
+        yes = block(),
+        done = block();
+      choose(present, yes, done, node);
+      current = yes;
+      const unwrappedId = nextValue++;
+      if (optKind === "optional-string")
+        emit({
+          kind: "string-value",
+          id: unwrappedId,
+          value: load(slot, node),
+          start: node.start,
+          end: node.end,
+        });
+      else if (optKind === "optional-number")
+        emit({
+          kind: "optional-value",
+          id: unwrappedId,
+          value: load(slot, node),
+          start: node.start,
+          end: node.end,
+        });
+      else
+        emit({
+          kind: "boolean-value",
+          id: unwrappedId,
+          value: load(slot, node),
+          start: node.start,
+          end: node.end,
+        });
+      const unwrapped = save(unwrappedId, valueKind, node);
+      store(result, load(stringOperand(unwrapped, node), node), node);
+      jump(done.id, node);
+      current = done;
+      return result;
+    }
     if (speculativeSlots[slot] === 1) {
       const helper = dynamicObjects?.speculativeString;
       if (helper === undefined)
@@ -5353,10 +5408,10 @@ export function lowerFunction(
    * for a fixed-length buffer): the offset must be a multiple of the element
    * width; without a length the view runs to the buffer's end, which must
    * fall on an element boundary; with one, the view must fit. */
-  function arrayViewNew(node: Expression & { readonly kind: "new" }): number {
-    const rawType = nativeTypedArray(scalarType(node));
-    if (rawType === undefined) throw "array view contract invariant";
-    const type: NativeTypedArray = rawType;
+  function arrayViewBytes(
+    node: Expression & { readonly kind: "new" },
+    type: NativeTypedArray,
+  ): number {
     const width: number = typedArrayLayout(type).elementBytes;
     const source = node.arguments[0],
       offsetArgument = node.arguments[1],
@@ -5458,6 +5513,19 @@ export function lowerFunction(
       end: node.end,
     });
     return save(id, type, node);
+  }
+  function arrayViewNew(node: Expression & { readonly kind: "new" }): number {
+    const rawType = nativeTypedArray(scalarType(node));
+    if (rawType === undefined) throw "array view contract invariant";
+    return arrayViewBytes(node, rawType);
+  }
+  function dataViewNew(node: Expression & { readonly kind: "new" }): number {
+    const bytes = arrayViewBytes(node, "Uint8Array");
+    const target = info(node).callee;
+    if (target === undefined) throw "DataView constructor helper invariant";
+    const created = runtimeCall(target, [bytes], node);
+    if (created === undefined) throw "DataView constructor result invariant";
+    return created;
   }
   /** Continue when boolean slot `condition` holds, else throw `error`. */
   /** Records and typed arrays: present references (never undefined). */
@@ -8490,7 +8558,10 @@ export function lowerFunction(
     if (metadata.dynamicObject !== undefined)
       return dynamicExpression(node, metadata);
     const constant = metadata.constant;
-    if (constant !== undefined) {
+    if (
+      constant !== undefined &&
+      metadata.builtin !== "array-bytes-per-element"
+    ) {
       const id = nextValue++;
       if (typeof constant === "string")
         emit({
@@ -8728,6 +8799,7 @@ export function lowerFunction(
         if (info(node).builtin === "shared-array-buffer-new")
           return sharedArrayBufferNew(node);
         if (info(node).builtin === "array-view-new") return arrayViewNew(node);
+        if (info(node).builtin === "data-view-new") return dataViewNew(node);
         const type = scalarType(node);
         if (info(node).builtin !== "array-new" || !isNativeTypedArray(type))
           throw "array constructor contract invariant";
@@ -9681,6 +9753,48 @@ export function lowerFunction(
           return result;
         }
         const metadata = info(node).builtin;
+        if (metadata === "array-bytes-per-element") {
+          value(node.object);
+          const bytes = info(node).constant;
+          return numberSlot(typeof bytes === "number" ? bytes : 0, node);
+        }
+        if (
+          metadata === "data-view-buffer" ||
+          metadata === "data-view-byte-offset" ||
+          metadata === "data-view-byte-length"
+        ) {
+          const helper = info(node).callee;
+          if (helper === undefined) throw "DataView accessor helper invariant";
+          const view = value(node.object);
+          const bytes = runtimeCall(helper, [view], node);
+          if (bytes === undefined) throw "DataView bytes invariant";
+          const id = nextValue++;
+          emit({
+            kind:
+              metadata === "data-view-buffer"
+                ? "array-buffer"
+                : metadata === "data-view-byte-offset"
+                  ? "array-byte-offset"
+                  : "array-byte-length",
+            id,
+            array: load(bytes, node.object),
+            start: node.start,
+            end: node.end,
+          });
+          const result = save(
+            id,
+            metadata === "data-view-buffer" ? "reference" : "number",
+            node,
+          );
+          if (metadata === "data-view-byte-offset")
+            conditionalStore(
+              binarySlot("<", result, numberSlot(0, node), node),
+              result,
+              () => numberSlot(0, node),
+              node,
+            );
+          return result;
+        }
         if (metadata === "array-buffer-byte-length") {
           const rawBuffer = value(node.object),
             buffer =
@@ -9753,6 +9867,32 @@ export function lowerFunction(
           return callRealmInstanceOf(instance, left, right, node);
         }
         const builtin = metadata.builtin;
+        if (builtin === "data-view-instanceof") {
+          const left = value(node.left);
+          const record = metadata.dataViewRecord;
+          if (record === undefined) return booleanSlot(false, node);
+          const leftType = slots[left];
+          if (
+            leftType !== "general" &&
+            leftType !== "reference" &&
+            leftType !== "optional-reference"
+          )
+            return booleanSlot(false, node);
+          const boxed =
+            leftType === "general"
+              ? load(left, node)
+              : coerce(load(left, node), "general", node);
+          const id = nextValue++;
+          emit({
+            kind: "general-record-is",
+            id,
+            value: boxed,
+            record,
+            start: node.start,
+            end: node.end,
+          });
+          return save(id, "boolean", node);
+        }
         if (builtin === "literal-property-has") {
           value(node.left);
           const object = value(node.right);
@@ -13107,6 +13247,133 @@ export function lowerFunction(
               save(numericInput(index, node), "number", node),
               node,
             );
+          }
+          if (builtin === "helper-call") {
+            const helper = info(node).callee;
+            if (helper === undefined) throw "builtin helper callee invariant";
+            const callArgs = node.arguments.map(value);
+            const result = runtimeCall(helper, callArgs, node);
+            if (result === undefined) throw "builtin helper result invariant";
+            return result;
+          }
+          if (builtin === "math-hypot") {
+            const callArgs = node.arguments.map(value);
+            if (callArgs.length === 0) return numberSlot(0, node);
+            if (callArgs.length === 1) {
+              const firstArg = callArgs[0];
+              if (firstArg === undefined) throw "math hypot argument invariant";
+              const result = save(load(firstArg, node), "number", node),
+                zero = numberSlot(0, node);
+              conditionalStore(
+                binarySlot("<", firstArg, zero, node),
+                result,
+                () => unarySlot("-", firstArg, "number", node),
+                node,
+              );
+              conditionalStore(
+                binarySlot("===", firstArg, zero, node),
+                result,
+                () => zero,
+                node,
+              );
+              return result;
+            }
+            const helper = info(node).callee;
+            if (helper === undefined) throw "math hypot helper invariant";
+            if (callArgs.length === 2) {
+              const result = runtimeCall(helper, callArgs, node);
+              if (result === undefined) throw "math hypot result invariant";
+              return result;
+            }
+            const count = numberSlot(callArgs.length, node),
+              arrId = nextValue++;
+            emit({
+              kind: "array-new",
+              id: arrId,
+              type: "Float64Array",
+              length: load(count, node),
+              start: node.start,
+              end: node.end,
+            });
+            const arr = save(arrId, "Float64Array", node);
+            for (let i = 0; i < callArgs.length; i++) {
+              const arg = callArgs[i];
+              if (arg === undefined) throw "math hypot element invariant";
+              emit({
+                kind: "array-write",
+                array: load(arr, node),
+                index: load(numberSlot(i, node), node),
+                value: load(arg, node),
+                start: node.start,
+                end: node.end,
+              });
+            }
+            const result = runtimeCall(helper, [arr], node);
+            if (result === undefined) throw "math hypot result invariant";
+            return result;
+          }
+          if (builtin === "string-helper") {
+            const helper = info(node).callee;
+            if (helper === undefined) throw "string helper callee invariant";
+            const receiver = value(target.object);
+            const callArgs = node.arguments.map(value);
+            const result = runtimeCall(helper, [receiver, ...callArgs], node);
+            if (result === undefined) throw "string helper result invariant";
+            return result;
+          }
+          if (builtin === "string-normalize") {
+            const helper = info(node).callee;
+            if (helper === undefined) throw "string normalize callee invariant";
+            const receiver = value(target.object);
+            let form: number;
+            if (node.arguments.length === 0) {
+              const none = nextValue++;
+              emit({
+                kind: "string-none",
+                id: none,
+                start: node.start,
+                end: node.end,
+              });
+              form = save(none, "optional-string", node);
+            } else {
+              const arg = node.arguments[0];
+              if (arg === undefined)
+                throw "string normalize argument invariant";
+              form = value(arg);
+            }
+            const result = runtimeCall(helper, [receiver, form], node);
+            if (result === undefined) throw "string normalize result invariant";
+            return result;
+          }
+          if (builtin === "data-view-get" || builtin === "data-view-set") {
+            const helper = info(node).callee;
+            const sig = helper === undefined ? undefined : signatures[helper];
+            if (helper === undefined || sig === undefined)
+              throw "DataView method callee invariant";
+            const receiver = value(target.object);
+            const callArgs: number[] = [receiver];
+            for (const arg of node.arguments) {
+              if (arg === undefined) throw "DataView argument invariant";
+              callArgs.push(value(arg));
+            }
+            while (callArgs.length < sig.parameters.length) {
+              const expected = sig.parameters[callArgs.length];
+              if (expected === "optional-boolean") {
+                const none = nextValue++;
+                emit({
+                  kind: "boolean-none",
+                  id: none,
+                  start: node.start,
+                  end: node.end,
+                });
+                callArgs.push(save(none, "optional-boolean", node));
+              } else if (expected === "boolean") {
+                callArgs.push(booleanSlot(false, node));
+              } else {
+                throw "DataView optional parameter invariant";
+              }
+            }
+            return runtimeCall(helper, callArgs, node);
           }
           const filling = builtin === "array-fill" || builtin === "list-fill";
           const array = filling ? value(target.object) : undefined;

@@ -187,7 +187,7 @@ test("a generator fallback carries its original function owner and capability", 
 test("validated sources preserve capability and owner through typed rejection", () => {
   const cases = [
     [
-      'export function run(): number { return "text".toLowerCase().length; }',
+      'export function run(): number { return "text".localeCompare("a"); }',
       "check",
       "realm-library-member",
       "function",
