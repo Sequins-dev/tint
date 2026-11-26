@@ -1,5 +1,12 @@
 import type { CheckedClosures, ClosureBody } from "@tint/typescript/checker";
-import type { ClassElement, Span, Statement } from "@tint/typescript/syntax";
+import type {
+  ClassDefinition,
+  ClassElement,
+  Expression,
+  Span,
+  Statement,
+  VariableBinding,
+} from "@tint/typescript/syntax";
 import type { FunctionIR, RecordLayout, ScalarType } from "@tint/ir/scalar";
 import type {
   ConstructorContext,
@@ -10,6 +17,7 @@ import type {
   ClassFieldStorage,
   ClassMethodStorage,
   ClassRecordStorage,
+  ClassStaticStepStorage,
 } from "./class-records.ts";
 import {
   buildClassCallTarget,
@@ -24,16 +32,18 @@ import {
   type ClassFieldInitialization,
 } from "./class-construction.ts";
 
-type ClassStatement = Statement & { readonly kind: "class" };
+export type ClassNode =
+  | (Statement & { readonly kind: "class" })
+  | (Expression & { readonly kind: "class-expression" });
 
-/** A class statement evaluated by a lowered function, with the generated
- * entries that define, construct, initialize and statically initialize it
- * (docs/design-typed-classes.md, C1/C2). */
+/** A class statement or class expression evaluated by a lowered function, with
+ * the generated entries that define, construct, initialize and statically
+ * initialize it (docs/design-typed-classes.md, C1/C2/C3). */
 export interface ClassEntries {
   readonly storage: ClassRecordStorage;
   readonly base: ClassEntries | undefined;
-  readonly statement: ClassStatement;
-  /** Checked function evaluating the class statement. */
+  readonly node: ClassNode;
+  /** Checked function evaluating the class statement or expression. */
   readonly owner: number;
   readonly definition: number;
   readonly construction: number;
@@ -84,28 +94,182 @@ export function reserveClassEntries(
       fail("class members are lowered with the function evaluating the class");
     return target;
   }
+  const owners = new Map<ClassDefinition, { node: ClassNode; owner: number }>();
+  function scanBinding(binding: VariableBinding, owner: number): void {
+    if (binding.initializer !== undefined)
+      scanExpression(binding.initializer, owner);
+    if (binding.kind === "object-binding") {
+      for (const prop of binding.properties) {
+        if (prop === undefined) throw "binding property invariant";
+        if (prop.keyExpression !== undefined)
+          scanExpression(prop.keyExpression, owner);
+        scanBinding(prop.binding, owner);
+      }
+      if (binding.rest !== undefined) scanBinding(binding.rest, owner);
+    } else if (binding.kind === "array-binding") {
+      for (const el of binding.elements)
+        if (el !== undefined) scanBinding(el, owner);
+      if (binding.rest !== undefined) scanBinding(binding.rest, owner);
+    }
+  }
+  function scanExpression(node: Expression | undefined, owner: number): void {
+    if (node === undefined) return;
+    switch (node.kind) {
+      case "class-expression":
+        owners.set(node.definition, { node, owner });
+        scanExpression(node.definition.heritage, owner);
+        return;
+      case "group":
+      case "satisfies":
+        scanExpression(node.expression, owner);
+        return;
+      case "unary":
+        scanExpression(node.operand, owner);
+        return;
+      case "binary":
+        scanExpression(node.left, owner);
+        scanExpression(node.right, owner);
+        return;
+      case "conditional":
+        scanExpression(node.test, owner);
+        scanExpression(node.consequent, owner);
+        scanExpression(node.alternate, owner);
+        return;
+      case "assignment":
+      case "compound":
+        scanExpression(node.target, owner);
+        scanExpression(node.value, owner);
+        return;
+      case "update":
+        scanExpression(node.target, owner);
+        return;
+      case "call":
+      case "new":
+        scanExpression(node.callee, owner);
+        for (const arg of node.arguments) scanExpression(arg, owner);
+        return;
+      case "member":
+        scanExpression(node.object, owner);
+        return;
+      case "index":
+        scanExpression(node.object, owner);
+        scanExpression(node.index, owner);
+        return;
+      case "private-in":
+        scanExpression(node.object, owner);
+        return;
+      case "array":
+        for (const el of node.elements) scanExpression(el, owner);
+        return;
+      case "object":
+        for (const prop of node.properties) {
+          if (prop === undefined) throw "object property invariant";
+          if (prop.kind !== "spread") scanExpression(prop.keyExpression, owner);
+          scanExpression(prop.value, owner);
+        }
+        return;
+      case "spread":
+        scanExpression(node.value, owner);
+        return;
+      case "template-expression":
+        for (const sub of node.substitutions) scanExpression(sub, owner);
+        return;
+      case "tagged-template":
+        scanExpression(node.tag, owner);
+        scanExpression(node.template, owner);
+        return;
+      default:
+        return;
+    }
+  }
+  function scanStatement(node: Statement | undefined, owner: number): void {
+    if (node === undefined) return;
+    switch (node.kind) {
+      case "class":
+        owners.set(node.definition, { node, owner });
+        scanExpression(node.definition.heritage, owner);
+        return;
+      case "block":
+        for (const child of node.statements) scanStatement(child, owner);
+        return;
+      case "expression":
+        scanExpression(node.expression, owner);
+        return;
+      case "variable":
+        for (const d of node.declarations)
+          if (d !== undefined) scanBinding(d, owner);
+        return;
+      case "return":
+        scanExpression(node.expression, owner);
+        return;
+      case "throw":
+        scanExpression(node.expression, owner);
+        return;
+      case "if":
+        scanExpression(node.test, owner);
+        scanStatement(node.consequent, owner);
+        scanStatement(node.alternate, owner);
+        return;
+      case "while":
+      case "do-while":
+        scanExpression(node.test, owner);
+        scanStatement(node.body, owner);
+        return;
+      case "for":
+        scanStatement(node.initializer, owner);
+        scanExpression(node.test, owner);
+        scanExpression(node.update, owner);
+        scanStatement(node.body, owner);
+        return;
+      case "for-of":
+      case "for-in":
+        scanBinding(node.binding, owner);
+        scanExpression(node.iterable, owner);
+        scanStatement(node.body, owner);
+        return;
+      case "for-of-assignment":
+      case "for-in-assignment":
+        scanExpression(node.target, owner);
+        scanExpression(node.iterable, owner);
+        scanStatement(node.body, owner);
+        return;
+      case "switch":
+        scanExpression(node.expression, owner);
+        for (const c of node.clauses) {
+          if (c === undefined) throw "switch clause invariant";
+          scanExpression(c.test, owner);
+          for (const s of c.statements) scanStatement(s, owner);
+        }
+        return;
+      case "try":
+        scanStatement(node.body, owner);
+        if (node.handler !== undefined) scanStatement(node.handler.body, owner);
+        scanStatement(node.finalizer, owner);
+        return;
+      case "label":
+        scanStatement(node.body, owner);
+        return;
+      default:
+        return;
+    }
+  }
+  for (const entry of entries) {
+    if (entry === undefined) throw "class owner entry invariant";
+    const closureBody = bodies[entry];
+    if (closureBody === undefined) continue;
+    for (const p of closureBody.parameters)
+      if (p !== undefined && p.initializer !== undefined)
+        scanExpression(p.initializer, entry);
+    const entryBody = closureBody.body;
+    if (entryBody.kind === "block") scanStatement(entryBody, entry);
+    else scanExpression(entryBody, entry);
+  }
   for (const storage of classes) {
     if (storage === undefined) throw "class storage invariant";
-    let found: ClassStatement | undefined;
-    let foundOwner: number | undefined;
-    for (const entry of entries) {
-      if (entry === undefined) throw "class owner entry invariant";
-      const body = bodies[entry]?.body;
-      if (body?.kind !== "block") continue;
-      for (const candidate of body.statements) {
-        if (
-          candidate !== undefined &&
-          candidate.kind === "class" &&
-          candidate.definition === storage.contract.definition
-        ) {
-          found = candidate;
-          foundOwner = entry;
-        }
-      }
-    }
-    const statement = found,
-      owner = foundOwner;
-    if (statement === undefined || owner === undefined) continue;
+    const located = owners.get(storage.contract.definition);
+    if (located === undefined) continue;
+    const node = located.node,
+      owner = located.owner;
     const baseInstance = storage.contract.base;
     const baseEntry =
       baseInstance === undefined ? undefined : byInstance.get(baseInstance);
@@ -168,11 +332,13 @@ export function reserveClassEntries(
       parameters: initParameters,
       returnType: "void",
     });
-    const hasOwnFields = members.fields.some(
-      (field) =>
-        field !== undefined &&
-        (field.initializer !== undefined || field.undefinedDefault),
-    );
+    const hasOwnFields =
+      storage.privateBrandField !== undefined ||
+      members.fields.some(
+        (field) =>
+          field !== undefined &&
+          (field.initializer !== undefined || field.undefinedDefault),
+      );
     let ownFields: number | undefined;
     if (baseEntry !== undefined && body !== undefined && hasOwnFields) {
       ownFields = signatures.length;
@@ -225,12 +391,16 @@ export function reserveClassEntries(
     const staticsEnvironment = storage.staticsEnvironment;
     if (staticsEnvironment !== undefined) {
       const initializers: number[] = [];
-      for (const field of members.staticFields) {
-        if (field === undefined) throw "class static field invariant";
-        const initializer = field.initializer;
+      for (const step of members.staticSteps) {
+        if (step === undefined) throw "class static step invariant";
+        if (step.kind === "static-block") {
+          initializers[step.environmentField - 1] = memberTarget(step.element);
+          continue;
+        }
+        const initializer = step.initializer;
         if (initializer !== undefined)
           initializers[initializer.environmentField - 1] = memberTarget(
-            field.element,
+            step.element,
           );
       }
       const target = signatures.length;
@@ -245,7 +415,7 @@ export function reserveClassEntries(
     const entryItem: ClassEntries = {
       storage,
       base: baseEntry,
-      statement,
+      node,
       owner,
       definition,
       construction,
@@ -302,7 +472,7 @@ export function classStorage(
   return undefined;
 }
 
-/** Owned plans of the class statements one function evaluates. */
+/** Owned plans of the class statements and expressions one function evaluates. */
 export function ownedClassDefinitions(
   classes: readonly ClassEntries[],
   owner: number,
@@ -313,10 +483,11 @@ export function ownedClassDefinitions(
   for (const item of classes) {
     if (item === undefined) throw "class entry invariant";
     if (item.owner !== owner) continue;
-    const outer = local(item.statement);
-    if (outer === undefined) fail("class statements require a binding local");
+    const outer = item.node.kind === "class" ? local(item.node) : undefined;
+    if (item.node.kind === "class" && outer === undefined)
+      fail("class statements require a binding local");
     const base = item.base;
-    const heritageExpression = item.statement.definition.heritage;
+    const heritageExpression = item.node.definition.heritage;
     const heritage: OwnedClassDefinition["heritage"] =
       base === undefined || heritageExpression === undefined
         ? undefined
@@ -347,9 +518,9 @@ export function ownedClassDefinitions(
             },
           };
     owned.push({
-      declaration: item.statement,
-      local: outer,
-      innerLocal: local(item.statement.definition),
+      declaration: item.node,
+      ...(outer === undefined ? {} : { local: outer }),
+      innerLocal: local(item.node.definition),
       definition: item.definition,
       environment: item.storage.definitionEnvironment,
       members: item.members,
@@ -387,6 +558,42 @@ function fieldInitializations(
   return initializations;
 }
 
+function staticInitializations(
+  steps: readonly ClassStaticStepStorage[],
+  target: (initializer: number) => number,
+): ClassFieldInitialization[] {
+  const initializations: ClassFieldInitialization[] = [];
+  for (const step of steps) {
+    if (step === undefined) throw "class static step invariant";
+    const span = { start: step.element.start, end: step.element.end };
+    if (step.kind === "static-block") {
+      initializations.push({
+        kind: "static-block",
+        entry: {
+          field: step.constructionField,
+          target: target(step.environmentField),
+        },
+        ...span,
+      });
+      continue;
+    }
+    const initializer = step.initializer;
+    if (initializer !== undefined)
+      initializations.push({
+        kind: "call",
+        field: step.field,
+        entry: {
+          field: initializer.constructionField,
+          target: target(initializer.environmentField),
+        },
+        ...span,
+      });
+    else if (step.undefinedDefault)
+      initializations.push({ kind: "undefined", field: step.field, ...span });
+  }
+  return initializations;
+}
+
 /** All concrete instance records of `item` and its subclasses. */
 function classFamilyRecords(
   item: ClassEntries,
@@ -418,9 +625,12 @@ export function buildClassEntries(
 ): readonly FunctionIR[] {
   const storage = item.storage,
     members = storage.members,
-    statement = item.statement,
-    span = { start: statement.start, end: statement.end };
-  const name = statement.name;
+    classNode = item.node,
+    span = { start: classNode.start, end: classNode.end };
+  const name =
+    classNode.kind === "class"
+      ? classNode.name
+      : (classNode.definition.name ?? "class_" + String(classNode.start));
   function copies(
     methods: readonly ClassMethodStorage[],
   ): ClassDefinitionEntry[] {
@@ -460,6 +670,12 @@ export function buildClassEntries(
     if (target === undefined) throw "class field initializer invariant";
     return target;
   });
+  if (storage.privateBrandField !== undefined)
+    fields.unshift({
+      kind: "brand",
+      field: storage.privateBrandField,
+      ...span,
+    });
   const familyRecords = classFamilyRecords(item, all);
   const base = item.base;
   const baseInitField = members.baseInitField;
@@ -571,7 +787,7 @@ export function buildClassEntries(
           environment: statics.environment,
           constructorField: 0,
           state: storage.constructorState,
-          fields: fieldInitializations(members.staticFields, (field) => {
+          fields: staticInitializations(members.staticSteps, (field) => {
             const target = statics.members[field - 1];
             if (target === undefined)
               throw "class static initializer invariant";

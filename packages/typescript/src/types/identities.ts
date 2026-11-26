@@ -55,6 +55,12 @@ function fingerprint(type: Type): number {
           (index.readonly ? 2 : 0) + (index.origin === "record" ? 1 : 0),
         );
       if (type.interfaceDeclaration === true) hash = mix(hash, 1);
+      const brands = type.privateBrands;
+      if (brands !== undefined)
+        for (const brand of brands) {
+          if (brand === undefined) throw "type identity brand invariant";
+          hash = mix(hash, brand + 1);
+        }
       for (const property of type.properties) {
         if (property === undefined) throw "type identity property invariant";
         hash = mix(
@@ -135,6 +141,7 @@ function same(left: Type, right: Type): boolean {
         left.stringIndex?.origin !== right.stringIndex?.origin ||
         left.call !== right.call ||
         left.construct !== right.construct ||
+        !sameTuple(left.privateBrands, right.privateBrands) ||
         left.properties.length !== right.properties.length
       )
         return false;

@@ -454,9 +454,44 @@ export interface FiniteRecordAccess {
   readonly key: string;
   readonly access: RecordAccess;
 }
+export interface PrivateAccessPlan {
+  readonly kind:
+    | "instance-field"
+    | "instance-method"
+    | "instance-accessor"
+    | "static-field"
+    | "static-method"
+    | "static-accessor";
+  readonly name: string;
+  readonly type: ScalarType;
+  readonly ownerLocal?: number | undefined;
+  readonly fieldAccess?: RecordAccess | undefined;
+  readonly brandCheck?: RecordAccess | undefined;
+  readonly methodAccess?: RecordAccess | undefined;
+  readonly staticFieldAccess?: RecordAccess | undefined;
+  readonly accessor?:
+    | {
+        readonly get?: RecordAccess | undefined;
+        readonly getTarget?: number | undefined;
+        readonly set?: RecordAccess | undefined;
+        readonly setTarget?: number | undefined;
+      }
+    | undefined;
+}
+export interface PrivateBrandCheckPlan {
+  readonly static: boolean;
+  readonly name: string;
+  readonly ownerLocal?: number | undefined;
+  readonly check?: RecordAccess | undefined;
+}
 export interface RecordOperations {
   readonly constructors?: ReadonlyKeyIndex<Expression, ConstructorCall>;
   readonly classInstanceTests?: ReadonlyKeyIndex<Expression, ClassInstanceTest>;
+  readonly privateAccesses?: ReadonlyKeyIndex<Expression, PrivateAccessPlan>;
+  readonly privateBrandChecks?: ReadonlyKeyIndex<
+    Expression,
+    PrivateBrandCheckPlan
+  >;
   readonly spreads?: ReadonlyMap<
     Expression,
     readonly {
@@ -516,7 +551,7 @@ export interface ConstructorContext {
 export interface OwnedClassDefinition {
   readonly declaration: Span;
   /** The outer (statement) binding, and the class-scope binding when used. */
-  readonly local: number;
+  readonly local?: number | undefined;
   readonly innerLocal?: number | undefined;
   readonly definition: number;
   readonly environment: number;
@@ -3879,6 +3914,316 @@ export function lowerFunction(
     });
     return id;
   }
+  function emitPrivateRecordAccess(
+    objectSlot: number,
+    transferSlot: number,
+    operation: "read" | "write",
+    access: RecordAccess,
+    node: Span,
+    onFail: () => void,
+  ): void {
+    if (slots[objectSlot] === "reference") {
+      recordAccess(objectSlot, transferSlot, operation, access, node, onFail);
+      return;
+    }
+    const gen = save(
+      coerce(load(objectSlot, node), "general", node),
+      "general",
+      node,
+    );
+    const done = block();
+    for (const choice of access.choices) {
+      if (choice === undefined) throw "private record choice invariant";
+      const next = block(),
+        matched = block();
+      const isRecord = nextValue++;
+      emit({
+        kind: "general-record-is",
+        id: isRecord,
+        value: load(gen, node),
+        record: choice.record,
+        start: node.start,
+        end: node.end,
+      });
+      choose(isRecord, matched, next, node);
+      current = matched;
+      const refSlot = save(
+        coerce(load(gen, node), "reference", node),
+        "reference",
+        node,
+      );
+      recordAccess(
+        refSlot,
+        transferSlot,
+        operation,
+        { type: access.type, choices: [choice] },
+        node,
+        () => {
+          jump(next.id, node);
+        },
+      );
+      if (current !== undefined) jump(done.id, node);
+      current = next;
+    }
+    onFail();
+    if (current !== undefined) jump(done.id, node);
+    current = done;
+  }
+  function requireStaticPrivateOwner(
+    objectSlot: number,
+    ownerLocal: number,
+    name: string,
+    operation: "read" | "write",
+    node: Span,
+  ): number {
+    const owner = save(readLocal(ownerLocal, node), "reference", node);
+    const same = binarySlot("===", objectSlot, owner, node);
+    requireCondition(
+      same,
+      "TypeError",
+      "Cannot " +
+        operation +
+        " private member " +
+        name +
+        " from an object whose class did not declare it",
+      node,
+    );
+    return owner;
+  }
+  function emitPrivateAccess(
+    objectSlot: number,
+    plan: PrivateAccessPlan,
+    operation: "read" | "write",
+    transferSlot: number,
+    node: Span,
+  ): void {
+    const failMessage =
+      "Cannot " +
+      operation +
+      " private member " +
+      plan.name +
+      " from an object whose class did not declare it";
+    const onFail = (): void => {
+      throwNativeError("TypeError", failMessage, node);
+    };
+    if (plan.kind === "instance-field") {
+      const access = plan.fieldAccess;
+      if (access === undefined) throw "private instance field invariant";
+      emitPrivateRecordAccess(
+        objectSlot,
+        transferSlot,
+        operation,
+        access,
+        node,
+        onFail,
+      );
+      return;
+    }
+    const ownerLocal = plan.ownerLocal;
+    if (ownerLocal === undefined) throw "private owner local invariant";
+    if (plan.kind === "static-field") {
+      const owner = requireStaticPrivateOwner(
+        objectSlot,
+        ownerLocal,
+        plan.name,
+        operation,
+        node,
+      );
+      const access = plan.staticFieldAccess;
+      if (access === undefined) throw "private static field invariant";
+      recordAccess(owner, transferSlot, operation, access, node, onFail);
+      return;
+    }
+    if (plan.kind === "instance-method") {
+      if (operation !== "read") throw "private method write invariant";
+      const brand = plan.brandCheck,
+        methodAccess = plan.methodAccess;
+      if (brand === undefined || methodAccess === undefined)
+        throw "private instance method invariant";
+      const dummy = temporary("boolean");
+      emitPrivateRecordAccess(objectSlot, dummy, "read", brand, node, onFail);
+      const owner = save(readLocal(ownerLocal, node), "reference", node);
+      recordAccess(owner, transferSlot, "read", methodAccess, node);
+      return;
+    }
+    if (plan.kind === "static-method") {
+      if (operation !== "read") throw "private static method write invariant";
+      const owner = requireStaticPrivateOwner(
+        objectSlot,
+        ownerLocal,
+        plan.name,
+        "read",
+        node,
+      );
+      const methodAccess = plan.methodAccess;
+      if (methodAccess === undefined) throw "private static method invariant";
+      recordAccess(owner, transferSlot, "read", methodAccess, node);
+      return;
+    }
+    let owner: number;
+    if (plan.kind === "instance-accessor") {
+      const brand = plan.brandCheck;
+      if (brand === undefined)
+        throw "private instance accessor brand invariant";
+      const dummy = temporary("boolean");
+      emitPrivateRecordAccess(objectSlot, dummy, "read", brand, node, onFail);
+      owner = save(readLocal(ownerLocal, node), "reference", node);
+    } else {
+      owner = requireStaticPrivateOwner(
+        objectSlot,
+        ownerLocal,
+        plan.name,
+        operation,
+        node,
+      );
+    }
+    const accessor = plan.accessor;
+    const read = operation === "read";
+    const closureAccess = read ? accessor?.get : accessor?.set;
+    const target = read ? accessor?.getTarget : accessor?.setTarget;
+    if (closureAccess === undefined || target === undefined)
+      throw "private accessor closure invariant";
+    const closure = temporary(closureAccess.type);
+    recordAccess(owner, closure, "read", closureAccess, node);
+    const signature = signatures[target];
+    if (signature === undefined) throw "private accessor signature invariant";
+    let callee = load(closure, node);
+    if (valueTypes[callee] === "optional-reference") {
+      const unwrapped = nextValue++;
+      emitUnwrap(unwrapped, callee, "reference", node);
+      callee = unwrapped;
+    }
+    const args: number[] = [];
+    if (!read) {
+      const parameter = signature.parameters[0];
+      if (parameter === undefined) throw "private setter parameter invariant";
+      args.push(coerce(load(transferSlot, node), parameter, node));
+    }
+    const call = callValue(callee, args),
+      id = read ? nextValue++ : undefined;
+    if (read && signature.returnType === "void")
+      throw "private getter result invariant";
+    emit({
+      kind: "call-indirect",
+      id,
+      target,
+      callee: call.callee,
+      arguments: call.arguments,
+      receiver: coerce(load(objectSlot, node), "general", node),
+      start: node.start,
+      end: node.end,
+    });
+    if (id !== undefined)
+      store(transferSlot, coerce(id, plan.type, node), node);
+  }
+  function emitPrivateBrandCheck(
+    node: Expression & { readonly kind: "private-in" },
+    plan: PrivateBrandCheckPlan,
+  ): number {
+    const objectSlot = value(node.object);
+    if (slots[objectSlot] !== "reference") {
+      const receiver = save(
+        coerce(load(objectSlot, node), "general", node),
+        "general",
+        node,
+      );
+      const valid = nextValue++;
+      emit({
+        kind: "general-is",
+        id: valid,
+        value: load(receiver, node),
+        type: "object",
+        start: node.start,
+        end: node.end,
+      });
+      requireCondition(
+        save(valid, "boolean", node),
+        "TypeError",
+        "Cannot use 'in' operator to search for '" +
+          plan.name +
+          "' in non-object",
+        node,
+      );
+    }
+    const result = temporary("boolean");
+    if (plan.static) {
+      const ownerLocal = plan.ownerLocal;
+      if (ownerLocal === undefined) throw "static private-in owner invariant";
+      const owner = save(readLocal(ownerLocal, node), "reference", node);
+      const same = binarySlot("===", objectSlot, owner, node);
+      const check = plan.check;
+      if (check === undefined) return same;
+      const matched = block(),
+        rejected = block(),
+        done = block();
+      choose(load(same, node), matched, rejected, node);
+      current = matched;
+      const dummy = temporary(check.type);
+      const found = block();
+      recordAccess(owner, dummy, "read", check, node, () => {
+        jump(rejected.id, node);
+      });
+      if (current !== undefined) jump(found.id, node);
+      current = found;
+      const yes = nextValue++;
+      emit({
+        kind: "constant",
+        id: yes,
+        value: true,
+        start: node.start,
+        end: node.end,
+      });
+      store(result, yes, node);
+      jump(done.id, node);
+      current = rejected;
+      const no = nextValue++;
+      emit({
+        kind: "constant",
+        id: no,
+        value: false,
+        start: node.start,
+        end: node.end,
+      });
+      store(result, no, node);
+      jump(done.id, node);
+      current = done;
+      return result;
+    }
+    const check = plan.check;
+    if (check === undefined) throw "instance private-in check invariant";
+    const dummy = temporary(check.type),
+      matched = block(),
+      rejected = block(),
+      done = block();
+    emitPrivateRecordAccess(objectSlot, dummy, "read", check, node, () => {
+      jump(rejected.id, node);
+    });
+    if (current !== undefined) jump(matched.id, node);
+    current = matched;
+    const yes = nextValue++;
+    emit({
+      kind: "constant",
+      id: yes,
+      value: true,
+      start: node.start,
+      end: node.end,
+    });
+    store(result, yes, node);
+    jump(done.id, node);
+    current = rejected;
+    const no = nextValue++;
+    emit({
+      kind: "constant",
+      id: no,
+      value: false,
+      start: node.start,
+      end: node.end,
+    });
+    store(result, no, node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
   function classInstanceOf(
     node: Expression & { readonly kind: "binary" },
     test: ClassInstanceTest,
@@ -6276,7 +6621,7 @@ export function lowerFunction(
       finish({ kind: "trap", start: node.start, end: node.end });
     else {
       otherwise();
-      jump(merge.id, node);
+      if (current !== undefined) jump(merge.id, node);
     }
     current = merge;
   }
@@ -8799,6 +9144,13 @@ export function lowerFunction(
         });
         return save(id, scalarType(node), node);
       }
+      case "class-expression":
+        return emitClassDefinition(node);
+      case "private-in": {
+        const plan = records?.privateBrandChecks?.get(node);
+        if (plan === undefined) throw "private brand check plan invariant";
+        return emitPrivateBrandCheck(node, plan);
+      }
       case "new-target": {
         const ctx = owned?.constructorContext;
         if (ctx !== undefined) {
@@ -9271,6 +9623,14 @@ export function lowerFunction(
         return readArrayElement(array, index, node);
       }
       case "member": {
+        const priv = records?.privateAccesses?.get(node);
+        if (priv !== undefined) {
+          const object = value(node.object),
+            result = temporary(priv.type);
+          callReceivers.set(node, object);
+          emitPrivateAccess(object, priv, "read", result, node);
+          return result;
+        }
         const builtin = info(node).builtin;
         if (builtin === "super-member") {
           requireSuperCalled(node);
@@ -9809,6 +10169,81 @@ export function lowerFunction(
           viewStore(place, updateMember, updated, node);
           return node.kind === "update" && !node.prefix ? old : updated;
         }
+        const privateUpdate =
+          target.kind === "member"
+            ? records?.privateAccesses?.get(target)
+            : undefined;
+        if (target.kind === "member" && privateUpdate !== undefined) {
+          const object = value(target.object);
+          const old = temporary(privateUpdate.type);
+          emitPrivateAccess(object, privateUpdate, "read", old, target);
+          if (node.kind === "compound" && node.operator === "??")
+            return nullishValue(old, target, node, () => {
+              const next = value(node.value),
+                transfer = save(
+                  load(next, node.value),
+                  privateUpdate.type,
+                  node,
+                );
+              emitPrivateAccess(
+                object,
+                privateUpdate,
+                "write",
+                transfer,
+                target,
+              );
+              return next;
+            });
+          if (
+            node.kind === "compound" &&
+            (node.operator === "&&" || node.operator === "||")
+          )
+            return logicalAssignment(old, node, (next) => {
+              const transfer = save(next, privateUpdate.type, node);
+              emitPrivateAccess(
+                object,
+                privateUpdate,
+                "write",
+                transfer,
+                target,
+              );
+            });
+          if (
+            privateUpdate.type === "string" &&
+            node.kind === "compound" &&
+            node.operator === "+"
+          ) {
+            const right = value(node.value);
+            const id = nextValue++;
+            emit({
+              kind: "string-concat",
+              id,
+              left: load(old, node),
+              right: load(right, node),
+              start: node.start,
+              end: node.end,
+            });
+            const updated = save(id, "string", node);
+            emitPrivateAccess(object, privateUpdate, "write", updated, target);
+            return updated;
+          }
+          if (privateUpdate.type !== "number")
+            throw "numeric private property update contract invariant";
+          const right =
+            node.kind === "compound" ? value(node.value) : numberSlot(1, node);
+          const updated = binarySlot(
+            node.kind === "compound"
+              ? node.operator
+              : node.operator === "++"
+                ? "+"
+                : "-",
+            old,
+            right,
+            node,
+          );
+          emitPrivateAccess(object, privateUpdate, "write", updated, target);
+          return node.kind === "update" && !node.prefix ? old : updated;
+        }
         const access =
           records === undefined ? undefined : records.accesses.get(target);
         if (
@@ -9985,6 +10420,17 @@ export function lowerFunction(
             result = value(node.value);
           requireViewIndex(place, node);
           viewStore(place, assignedMember, result, node);
+          return result;
+        }
+        const privateAssign =
+          target.kind === "member"
+            ? records?.privateAccesses?.get(target)
+            : undefined;
+        if (target.kind === "member" && privateAssign !== undefined) {
+          const object = value(target.object);
+          const result = value(node.value);
+          const transfer = save(load(result, node), privateAssign.type, node);
+          emitPrivateAccess(object, privateAssign, "write", transfer, target);
           return result;
         }
         const access =
@@ -13601,6 +14047,111 @@ export function lowerFunction(
     }
     return payload;
   }
+  function emitClassDefinition(
+    node:
+      | (Statement & { readonly kind: "class" })
+      | (Expression & { readonly kind: "class-expression" }),
+  ): number {
+    const plan = owned?.classes?.find(
+      (item) => item !== undefined && item.declaration === node,
+    );
+    if (plan === undefined) throw "class definition contract invariant";
+    // ClassDefinitionEvaluation: member closures exist before the
+    // prototype and constructor; the class scope binding is initialized
+    // before static fields, and the statement binding after them.
+    allocateCells(node.definition);
+    const heritageArgs: number[] = [];
+    const heritage = plan.heritage;
+    if (heritage !== undefined) {
+      const baseConstructor = value(heritage.expression);
+      const basePrototype = temporary("reference"),
+        baseInit = temporary("reference");
+      recordAccess(
+        baseConstructor,
+        basePrototype,
+        "read",
+        heritage.prototype,
+        node,
+      );
+      recordAccess(baseConstructor, baseInit, "read", heritage.init, node);
+      heritageArgs.push(load(basePrototype, node), load(baseInit, node));
+    }
+    const environment = nextValue++;
+    emit({
+      kind: "record-new",
+      id: environment,
+      record: plan.environment,
+      arguments: plan.members.map((target) =>
+        load(functionValue(target, node), node),
+      ),
+      start: node.start,
+      end: node.end,
+    });
+    const definition = nextValue++;
+    emit({
+      kind: "function-new",
+      id: definition,
+      target: plan.definition,
+      environment,
+      start: node.start,
+      end: node.end,
+    });
+    const constructor = nextValue++;
+    emit({
+      kind: "call-indirect",
+      id: constructor,
+      target: plan.definition,
+      callee: definition,
+      arguments: heritageArgs,
+      start: node.start,
+      end: node.end,
+    });
+    const ctorValue = save(constructor, "reference", node),
+      inner = plan.innerLocal;
+    if (inner !== undefined)
+      writeLocal(
+        inner,
+        coerce(load(ctorValue, node), slots[inner], node),
+        node.definition,
+      );
+    const statics = plan.statics;
+    if (statics !== undefined) {
+      const initializers = statics.members.map((target) =>
+        functionValue(target, node),
+      );
+      const staticsEnvironment = nextValue++;
+      emit({
+        kind: "record-new",
+        id: staticsEnvironment,
+        record: statics.environment,
+        arguments: [
+          load(ctorValue, node),
+          ...initializers.map((slot) => load(slot, node)),
+        ],
+        start: node.start,
+        end: node.end,
+      });
+      const initialize = nextValue++;
+      emit({
+        kind: "function-new",
+        id: initialize,
+        target: statics.target,
+        environment: staticsEnvironment,
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "call-indirect",
+        id: undefined,
+        target: statics.target,
+        callee: initialize,
+        arguments: [],
+        start: node.start,
+        end: node.end,
+      });
+    }
+    return ctorValue;
+  }
   function statement(
     input: Statement,
     loop: LoopTarget | undefined,
@@ -13703,102 +14254,10 @@ export function lowerFunction(
         const plan = owned?.classes?.find(
           (item) => item !== undefined && item.declaration === node,
         );
-        if (plan === undefined) throw "class definition contract invariant";
-        // ClassDefinitionEvaluation: member closures exist before the
-        // prototype and constructor; the class scope binding is initialized
-        // before static fields, and the statement binding after them.
-        allocateCells(node.definition);
-        const heritageArgs: number[] = [];
-        const heritage = plan.heritage;
-        if (heritage !== undefined) {
-          const baseConstructor = value(heritage.expression);
-          const basePrototype = temporary("reference"),
-            baseInit = temporary("reference");
-          recordAccess(
-            baseConstructor,
-            basePrototype,
-            "read",
-            heritage.prototype,
-            node,
-          );
-          recordAccess(baseConstructor, baseInit, "read", heritage.init, node);
-          heritageArgs.push(load(basePrototype, node), load(baseInit, node));
-        }
-        const environment = nextValue++;
-        emit({
-          kind: "record-new",
-          id: environment,
-          record: plan.environment,
-          arguments: plan.members.map((target) =>
-            load(functionValue(target, node), node),
-          ),
-          start: node.start,
-          end: node.end,
-        });
-        const definition = nextValue++;
-        emit({
-          kind: "function-new",
-          id: definition,
-          target: plan.definition,
-          environment,
-          start: node.start,
-          end: node.end,
-        });
-        const constructor = nextValue++;
-        emit({
-          kind: "call-indirect",
-          id: constructor,
-          target: plan.definition,
-          callee: definition,
-          arguments: heritageArgs,
-          start: node.start,
-          end: node.end,
-        });
-        const ctorValue = save(constructor, "reference", node),
-          inner = plan.innerLocal,
-          outer = plan.local;
-        if (inner !== undefined)
-          writeLocal(
-            inner,
-            coerce(load(ctorValue, node), slots[inner], node),
-            node.definition,
-          );
-        const statics = plan.statics;
-        if (statics !== undefined) {
-          const initializers = statics.members.map((target) =>
-            functionValue(target, node),
-          );
-          const staticsEnvironment = nextValue++;
-          emit({
-            kind: "record-new",
-            id: staticsEnvironment,
-            record: statics.environment,
-            arguments: [
-              load(ctorValue, node),
-              ...initializers.map((slot) => load(slot, node)),
-            ],
-            start: node.start,
-            end: node.end,
-          });
-          const initialize = nextValue++;
-          emit({
-            kind: "function-new",
-            id: initialize,
-            target: statics.target,
-            environment: staticsEnvironment,
-            start: node.start,
-            end: node.end,
-          });
-          emit({
-            kind: "call-indirect",
-            id: undefined,
-            target: statics.target,
-            callee: initialize,
-            arguments: [],
-            start: node.start,
-            end: node.end,
-          });
-        }
+        const outer = plan?.local;
+        if (plan === undefined || outer === undefined)
+          throw "class definition contract invariant";
+        const ctorValue = emitClassDefinition(node);
         writeLocal(
           outer,
           coerce(load(ctorValue, node), slots[outer], node),

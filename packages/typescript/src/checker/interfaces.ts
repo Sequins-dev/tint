@@ -13,6 +13,7 @@ import {
 import type {
   Module,
   Statement,
+  Expression,
   Span,
   TypeNode,
   TypeParameter,
@@ -21,6 +22,7 @@ import type {
   ClassDefinition,
   ClassElement,
   Parameter,
+  VariableBinding,
 } from "../syntax/index.ts";
 import {
   realmLibrary,
@@ -93,6 +95,20 @@ export interface InterfaceTypes {
   readonly annotations: ReadonlyKeyIndex<TypeNode, number>;
   readonly classes: readonly ClassContract[];
 }
+export interface ClassPrivateMember {
+  /** Source private name including '#', e.g. "#count". */
+  readonly name: string;
+  readonly kind: "field" | "method" | "accessor";
+  readonly static: boolean;
+  /** Value type for fields and accessors, or method signature for methods. */
+  readonly type: number;
+  readonly readonly: boolean;
+  /** Accessors: getter and/or setter function types (undefined if absent). */
+  readonly getter?: number | undefined;
+  readonly setter?: number | undefined;
+  /** Declaring element (getter if present, else setter for accessors). */
+  readonly node: ClassElement;
+}
 export interface ClassContract {
   readonly definition: ClassDefinition;
   readonly arguments: readonly number[];
@@ -100,6 +116,9 @@ export interface ClassContract {
   readonly constructor: number;
   readonly prototype: number;
   readonly members: readonly ClassMemberContract[];
+  /** Private members declared directly on this class (never part of the public
+   * structural instance/prototype/constructor properties). */
+  readonly privateMembers?: readonly ClassPrivateMember[];
   /** The base class's instance type (C2: single inheritance from a typed
    * class). The instance type lists the base's properties first, so a
    * derived layout is a prefix extension; prototype and constructor types
@@ -110,6 +129,22 @@ export interface ClassContract {
  * getter or setter closure. Source names cannot spell it as an identifier. */
 export function classAccessorSlot(kind: "get" | "set", name: string): string {
   return "@@" + kind + ":" + name;
+}
+/** Hidden record slot for a class's private field or method (scoped by declaring class). */
+export function classPrivateSlot(classId: number, name: string): string {
+  return "@@priv:" + String(classId) + ":" + name;
+}
+/** Hidden record slot for a class's private getter or setter closure. */
+export function classPrivateAccessorSlot(
+  classId: number,
+  kind: "get" | "set",
+  name: string,
+): string {
+  return "@@priv:" + String(classId) + ":" + kind + ":" + name;
+}
+/** Hidden instance brand cell proving a class's private methods/accessors were installed. */
+export function classPrivateBrandSlot(classId: number): string {
+  return "@@priv-brand:" + String(classId);
 }
 export interface ClassMemberContract {
   readonly node: ClassElement;
@@ -349,6 +384,279 @@ export function resolveInterfaceTypes(
       if (statement !== undefined && statement.kind === "class")
         declarationStatements.push(statement);
   }
+  const classExpressions: (Expression & {
+    readonly kind: "class-expression";
+  })[] = [];
+  const classExpressionAliases = createStringIndex<ClassDefinition>();
+  const seenClassExpressions = createKeyIndex<ClassDefinition, boolean>(
+    syntaxHash,
+  );
+  function collectClassExpressionsInBinding(binding: VariableBinding): void {
+    if (binding.initializer !== undefined)
+      collectClassExpressionsInExpression(binding.initializer);
+    if (binding.kind === "object-binding") {
+      for (const prop of binding.properties) {
+        if (prop === undefined) throw "binding property invariant";
+        if (prop.keyExpression !== undefined)
+          collectClassExpressionsInExpression(prop.keyExpression);
+        collectClassExpressionsInBinding(prop.binding);
+      }
+      if (binding.rest !== undefined)
+        collectClassExpressionsInBinding(binding.rest);
+    } else if (binding.kind === "array-binding") {
+      for (const el of binding.elements)
+        if (el !== undefined) collectClassExpressionsInBinding(el);
+      if (binding.rest !== undefined)
+        collectClassExpressionsInBinding(binding.rest);
+    }
+  }
+  function collectClassExpressionsInExpression(
+    node: Expression | undefined,
+  ): void {
+    if (node === undefined) return;
+    switch (node.kind) {
+      case "class-expression": {
+        if (!seenClassExpressions.has(node.definition)) {
+          seenClassExpressions.set(node.definition, true);
+          classExpressions.push(node);
+        }
+        collectClassExpressionsInExpression(node.definition.heritage);
+        for (const el of node.definition.elements) {
+          if (el === undefined) throw "class element invariant";
+          if (el.kind === "static-block")
+            collectClassExpressionsInStatement(el.body);
+          else if (el.kind === "field") {
+            if (el.computed) collectClassExpressionsInExpression(el.key);
+            collectClassExpressionsInExpression(el.initializer);
+          } else {
+            if (el.computed) collectClassExpressionsInExpression(el.key);
+            if (typeParameterCount(el.typeParameters) === 0) {
+              for (const p of el.parameters)
+                if (p !== undefined)
+                  collectClassExpressionsInExpression(p.initializer);
+              collectClassExpressionsInStatement(el.body);
+            }
+          }
+        }
+        return;
+      }
+      case "group":
+      case "satisfies":
+        collectClassExpressionsInExpression(node.expression);
+        return;
+      case "unary":
+        collectClassExpressionsInExpression(node.operand);
+        return;
+      case "binary":
+        collectClassExpressionsInExpression(node.left);
+        collectClassExpressionsInExpression(node.right);
+        return;
+      case "conditional":
+        collectClassExpressionsInExpression(node.test);
+        collectClassExpressionsInExpression(node.consequent);
+        collectClassExpressionsInExpression(node.alternate);
+        return;
+      case "assignment":
+      case "compound":
+        collectClassExpressionsInExpression(node.target);
+        collectClassExpressionsInExpression(node.value);
+        return;
+      case "update":
+        collectClassExpressionsInExpression(node.target);
+        return;
+      case "call":
+      case "new":
+        collectClassExpressionsInExpression(node.callee);
+        for (const arg of node.arguments)
+          collectClassExpressionsInExpression(arg);
+        return;
+      case "member":
+        collectClassExpressionsInExpression(node.object);
+        return;
+      case "index":
+        collectClassExpressionsInExpression(node.object);
+        collectClassExpressionsInExpression(node.index);
+        return;
+      case "private-in":
+        collectClassExpressionsInExpression(node.object);
+        return;
+      case "array":
+        for (const el of node.elements) collectClassExpressionsInExpression(el);
+        return;
+      case "object":
+        for (const prop of node.properties) {
+          if (prop === undefined) throw "object property invariant";
+          if (prop.kind !== "spread")
+            collectClassExpressionsInExpression(prop.keyExpression);
+          collectClassExpressionsInExpression(prop.value);
+        }
+        return;
+      case "spread":
+        collectClassExpressionsInExpression(node.value);
+        return;
+      case "template-expression":
+        for (const sub of node.substitutions)
+          collectClassExpressionsInExpression(sub);
+        return;
+      case "tagged-template":
+        collectClassExpressionsInExpression(node.tag);
+        collectClassExpressionsInExpression(node.template);
+        return;
+      case "arrow": {
+        if (typeParameterCount(node.typeParameters) !== 0) return;
+        for (const p of node.parameters)
+          if (p !== undefined)
+            collectClassExpressionsInExpression(p.initializer);
+        const body = node.body;
+        if (body.kind === "block") collectClassExpressionsInStatement(body);
+        else collectClassExpressionsInExpression(body);
+        return;
+      }
+      case "function-expression":
+        if (typeParameterCount(node.typeParameters) !== 0) return;
+        for (const p of node.parameters)
+          if (p !== undefined)
+            collectClassExpressionsInExpression(p.initializer);
+        collectClassExpressionsInStatement(node.body);
+        return;
+      default:
+        return;
+    }
+  }
+  function collectClassExpressionsInStatement(
+    node: Statement | undefined,
+  ): void {
+    if (node === undefined) return;
+    switch (node.kind) {
+      case "block":
+        for (const s of node.statements) collectClassExpressionsInStatement(s);
+        return;
+      case "expression":
+        collectClassExpressionsInExpression(node.expression);
+        return;
+      case "variable":
+        for (const d of node.declarations) {
+          if (d === undefined) throw "variable declaration invariant";
+          if (
+            node.mode === "const" &&
+            d.kind !== "object-binding" &&
+            d.kind !== "array-binding" &&
+            d.initializer !== undefined
+          ) {
+            let init = d.initializer;
+            while (init.kind === "group") init = init.expression;
+            if (
+              init.kind === "class-expression" &&
+              !classExpressionAliases.has(d.name)
+            )
+              classExpressionAliases.set(d.name, init.definition);
+          }
+          collectClassExpressionsInBinding(d);
+        }
+        return;
+      case "return":
+        collectClassExpressionsInExpression(node.expression);
+        return;
+      case "throw":
+        collectClassExpressionsInExpression(node.expression);
+        return;
+      case "if":
+        collectClassExpressionsInExpression(node.test);
+        collectClassExpressionsInStatement(node.consequent);
+        collectClassExpressionsInStatement(node.alternate);
+        return;
+      case "while":
+      case "do-while":
+        collectClassExpressionsInExpression(node.test);
+        collectClassExpressionsInStatement(node.body);
+        return;
+      case "for":
+        collectClassExpressionsInStatement(node.initializer);
+        collectClassExpressionsInExpression(node.test);
+        collectClassExpressionsInExpression(node.update);
+        collectClassExpressionsInStatement(node.body);
+        return;
+      case "for-of":
+      case "for-in":
+        collectClassExpressionsInBinding(node.binding);
+        collectClassExpressionsInExpression(node.iterable);
+        collectClassExpressionsInStatement(node.body);
+        return;
+      case "for-of-assignment":
+      case "for-in-assignment":
+        collectClassExpressionsInExpression(node.target);
+        collectClassExpressionsInExpression(node.iterable);
+        collectClassExpressionsInStatement(node.body);
+        return;
+      case "switch":
+        collectClassExpressionsInExpression(node.expression);
+        for (const c of node.clauses) {
+          if (c === undefined) throw "switch clause invariant";
+          collectClassExpressionsInExpression(c.test);
+          for (const s of c.statements) collectClassExpressionsInStatement(s);
+        }
+        return;
+      case "try":
+        collectClassExpressionsInStatement(node.body);
+        if (node.handler !== undefined)
+          collectClassExpressionsInStatement(node.handler.body);
+        collectClassExpressionsInStatement(node.finalizer);
+        return;
+      case "label":
+        collectClassExpressionsInStatement(node.body);
+        return;
+      case "function":
+        if (typeParameterCount(node.typeParameters) !== 0) return;
+        for (const p of node.parameters)
+          if (p !== undefined)
+            collectClassExpressionsInExpression(p.initializer);
+        collectClassExpressionsInStatement(node.body);
+        return;
+      case "class":
+        if (typeParameterCount(node.definition.typeParameters) !== 0) return;
+        collectClassExpressionsInExpression(node.definition.heritage);
+        for (const el of node.definition.elements) {
+          if (el === undefined) throw "class element invariant";
+          if (el.kind === "static-block")
+            collectClassExpressionsInStatement(el.body);
+          else if (el.kind === "field") {
+            if (el.computed) collectClassExpressionsInExpression(el.key);
+            collectClassExpressionsInExpression(el.initializer);
+          } else {
+            if (el.computed) collectClassExpressionsInExpression(el.key);
+            if (typeParameterCount(el.typeParameters) === 0) {
+              for (const p of el.parameters)
+                if (p !== undefined)
+                  collectClassExpressionsInExpression(p.initializer);
+              collectClassExpressionsInStatement(el.body);
+            }
+          }
+        }
+        return;
+      default:
+        return;
+    }
+  }
+  for (const node of module.statements)
+    collectClassExpressionsInStatement(node);
+  const expressionContracts = createKeyIndex<ClassDefinition, ClassContract>(
+    syntaxHash,
+  );
+  const resolvingExpressions = createKeyIndex<ClassDefinition, number>(
+    syntaxHash,
+  );
+  // Inner name stack and span-scoped inner names for named class expressions:
+  // visible only inside the class expression's own body (never leaks outside).
+  const innerClassNames: {
+    readonly name: string;
+    readonly instance: number;
+  }[] = [];
+  const scopedClassNames: {
+    readonly name: string;
+    readonly instance: number;
+    readonly start: number;
+    readonly end: number;
+  }[] = [];
   const instances = createStringIndex<number>();
   let parameters = createStringIndex<number>();
   /** Whether a body class's statement or inner name is already declared. */
@@ -439,6 +747,31 @@ export function resolveInterfaceTypes(
     node: Span,
     args: readonly number[] = [],
   ): number {
+    if (args.length === 0) {
+      for (let i = innerClassNames.length - 1; i >= 0; i--) {
+        const entry = innerClassNames[i];
+        if (entry !== undefined && entry.name === name) return entry.instance;
+      }
+      let best:
+        | {
+            readonly instance: number;
+            readonly width: number;
+          }
+        | undefined;
+      for (const entry of scopedClassNames) {
+        if (
+          entry !== undefined &&
+          entry.name === name &&
+          node.start >= entry.start &&
+          node.end <= entry.end
+        ) {
+          const width = entry.end - entry.start;
+          if (best === undefined || width < best.width)
+            best = { instance: entry.instance, width };
+        }
+      }
+      if (best !== undefined) return best.instance;
+    }
     const parameter = parameters.get(name);
     if (parameter !== undefined) {
       if (parameter === -2)
@@ -701,7 +1034,8 @@ export function resolveInterfaceTypes(
       statics: Property[] = [
         { name: "prototype", type: prototype, readonly: true },
       ],
-      members: ClassMemberContract[] = [];
+      members: ClassMemberContract[] = [],
+      privateMembers: ClassPrivateMember[] = [];
     // Accessor names with a getter and with a setter (prefixed "static "
     // for the constructor side).
     const getters = new Set<string>(),
@@ -745,18 +1079,166 @@ export function resolveInterfaceTypes(
     }
     for (const member of definition.elements) {
       if (member === undefined) throw "class member invariant";
-      if (member.kind === "static-block")
-        unsupportedClass(
-          member,
-          "class-static-block",
-          "typed class static blocks require initialization lowering",
-        );
-      if (member.private)
-        unsupportedClass(
-          member,
-          "class-private-layout",
-          "typed private class elements require private layouts",
-        );
+      if (member.kind === "static-block") {
+        members.push({
+          node: member,
+          type: signature([], 5, constructor, member),
+          receiver: constructor,
+        });
+        continue;
+      }
+      if (member.private) {
+        const key = member.key;
+        if (member.computed || key.kind !== "string")
+          unsupportedClass(
+            member,
+            "class-computed-member",
+            "private class member requires a private identifier",
+          );
+        const name = key.value,
+          isStatic = member.static;
+        const receiver = isStatic ? constructor : instance;
+        const outer = parameters;
+        if (isStatic) {
+          parameters = createStringIndex<number>();
+          for (const parameter of definition.typeParameters) {
+            if (parameter === undefined) throw "class parameter invariant";
+            parameters.set(parameter.name, -1);
+          }
+        }
+        try {
+          if (
+            member.kind !== "field" &&
+            typeParameterCount(member.typeParameters)
+          )
+            unsupportedClass(
+              member,
+              "class-generic-method",
+              "generic class methods require specialization",
+            );
+          if (member.kind === "field") {
+            if (member.accessor)
+              unsupportedClass(
+                member,
+                "class-auto-accessor",
+                "typed auto-accessors require private storage and accessor lowering",
+              );
+            const annotation = member.type;
+            if (annotation === undefined)
+              unsupportedClass(
+                member,
+                "class-field-inference",
+                "class field requires annotation until initializer inference is available",
+              );
+            let fieldType = resolve(annotation);
+            if (member.optional === true && canonical(fieldType) !== 2)
+              fieldType = add(
+                { kind: "union", members: [fieldType, 2] },
+                member,
+              );
+            privateMembers.push({
+              name,
+              kind: "field",
+              static: isStatic,
+              type: fieldType,
+              readonly: member.readonly === true,
+              node: member,
+            });
+            members.push({ node: member, type: fieldType, receiver });
+          } else if (member.kind === "method") {
+            const result = member.returnType;
+            if (result === undefined)
+              unsupportedClass(
+                member,
+                "class-method-inference",
+                "class method return requires annotation until body inference is available",
+              );
+            const fnType = methodSignature(
+              signature(member.parameters, resolve(result), receiver, member),
+              member,
+            );
+            privateMembers.push({
+              name,
+              kind: "method",
+              static: isStatic,
+              type: fnType,
+              readonly: true,
+              node: member,
+            });
+            members.push({ node: member, type: fnType, receiver });
+          } else {
+            const getter = member.kind === "get";
+            const annotation = getter
+              ? member.returnType
+              : member.parameters[0]?.type;
+            if (annotation === undefined)
+              unsupportedClass(
+                member,
+                "class-accessor-contract",
+                "class accessors require a value type annotation",
+              );
+            const value = resolve(annotation);
+            const fnType = getter
+              ? signature([], value, receiver, member)
+              : signature(member.parameters, 5, receiver, member);
+            let existingIndex = -1;
+            for (let i = 0; i < privateMembers.length; i++) {
+              const entry = privateMembers[i];
+              if (
+                entry !== undefined &&
+                entry.name === name &&
+                entry.static === isStatic
+              )
+                existingIndex = i;
+            }
+            if (existingIndex >= 0) {
+              const existing = privateMembers[existingIndex];
+              if (
+                existing === undefined ||
+                existing.kind !== "accessor" ||
+                (getter
+                  ? existing.getter !== undefined
+                  : existing.setter !== undefined)
+              )
+                fail(
+                  member,
+                  "INVALID_TYPE",
+                  "duplicate private member: " + name,
+                );
+              if (canonical(existing.type) !== canonical(value))
+                unsupportedClass(
+                  member,
+                  "class-accessor-contract",
+                  "class getters and setters of different types are not typed yet",
+                );
+              privateMembers[existingIndex] = {
+                name,
+                kind: "accessor",
+                static: isStatic,
+                type: existing.type,
+                readonly: false,
+                getter: getter ? fnType : existing.getter,
+                setter: getter ? existing.setter : fnType,
+                node: getter ? member : existing.node,
+              };
+            } else {
+              privateMembers.push({
+                name,
+                kind: "accessor",
+                static: isStatic,
+                type: value,
+                readonly: getter,
+                ...(getter ? { getter: fnType } : { setter: fnType }),
+                node: member,
+              });
+            }
+            members.push({ node: member, type: fnType, receiver });
+          }
+        } finally {
+          parameters = outer;
+        }
+        continue;
+      }
       const key = member.key;
       if (member.computed || (key.kind !== "string" && key.kind !== "number"))
         unsupportedClass(
@@ -928,7 +1410,36 @@ export function resolveInterfaceTypes(
         base === undefined
           ? signature([], instance, undefined, definition)
           : inheritedConstruct(base, instance, definition);
-    types[constructor] = { kind: "object", properties: statics, construct };
+    const hasStaticPrivate = privateMembers.some(
+      (entry) => entry !== undefined && entry.static,
+    );
+    const hasInstancePrivate = privateMembers.some(
+      (entry) => entry !== undefined && !entry.static,
+    );
+    const instancePrivateBrands: number[] = [];
+    if (base !== undefined) {
+      const baseInst = types[canonical(base.instance)];
+      if (baseInst?.kind === "object" && baseInst.privateBrands !== undefined)
+        for (const brand of baseInst.privateBrands)
+          if (brand !== undefined) instancePrivateBrands.push(brand);
+    }
+    if (hasInstancePrivate) instancePrivateBrands.push(instance);
+    const constructorPrivateBrands: number[] = [];
+    if (base !== undefined) {
+      const baseCtor = types[canonical(base.constructor)];
+      if (baseCtor?.kind === "object" && baseCtor.privateBrands !== undefined)
+        for (const brand of baseCtor.privateBrands)
+          if (brand !== undefined) constructorPrivateBrands.push(brand);
+    }
+    if (hasStaticPrivate) constructorPrivateBrands.push(constructor);
+    types[constructor] = {
+      kind: "object",
+      properties: statics,
+      construct,
+      ...(constructorPrivateBrands.length === 0
+        ? {}
+        : { privateBrands: constructorPrivateBrands }),
+    };
     types[prototype] = { kind: "object", properties: prototypeFields };
     classes.push({
       definition,
@@ -937,9 +1448,19 @@ export function resolveInterfaceTypes(
       constructor,
       prototype,
       members,
+      ...(privateMembers.length === 0 ? {} : { privateMembers }),
       base: base === undefined ? undefined : base.instance,
     });
-    const id = add({ kind: "object", properties: fields }, definition);
+    const id = add(
+      {
+        kind: "object",
+        properties: fields,
+        ...(instancePrivateBrands.length === 0
+          ? {}
+          : { privateBrands: instancePrivateBrands }),
+      },
+      definition,
+    );
     if (base !== undefined) {
       // Overrides must relate to the members they replace (TypeScript's
       // TS2415/TS2416). Methods relate bivariantly, as method syntax does,
@@ -1005,6 +1526,58 @@ export function resolveInterfaceTypes(
       copy = { kind: "function", parameters, rest: true, result, method: true };
     return add(copy, node);
   }
+  function resolveClassExpression(definition: ClassDefinition): ClassContract {
+    const existing = expressionContracts.get(definition);
+    if (existing !== undefined) return existing;
+    if (typeParameterCount(definition.typeParameters) !== 0)
+      fail(
+        definition,
+        "UNSUPPORTED",
+        "generic class expressions require specialization",
+        {
+          capability: "generic-contract",
+          ownerKind: "class",
+          owner: { start: definition.start, end: definition.end },
+        },
+      );
+    const active = resolvingExpressions.get(definition);
+    if (active !== undefined)
+      fail(
+        definition,
+        "UNSUPPORTED",
+        "a class cannot extend itself or a class that extends it",
+        {
+          capability: "class-heritage",
+          ownerKind: "class",
+          owner: { start: definition.start, end: definition.end },
+        },
+      );
+    const reserved = add({ kind: "object", properties: [] }, definition);
+    resolvingExpressions.set(definition, reserved);
+    pending.add(reserved);
+    const innerName = definition.name;
+    if (innerName !== undefined)
+      innerClassNames.push({ name: innerName, instance: reserved });
+    let id: number;
+    try {
+      id = classType(definition, reserved, []);
+    } finally {
+      if (innerName !== undefined) innerClassNames.pop();
+      pending.delete(reserved);
+    }
+    redirects[reserved] = id;
+    if (innerName !== undefined)
+      scopedClassNames.push({
+        name: innerName,
+        instance: id,
+        start: definition.start,
+        end: definition.end,
+      });
+    const contract = classes.find((c) => c?.definition === definition);
+    if (contract === undefined) throw "class expression contract invariant";
+    expressionContracts.set(definition, contract);
+    return contract;
+  }
   /** The base class a class definition extends: a non-generic typed class
    * named by its heritage clause. */
   function baseClass(definition: ClassDefinition): ClassContract {
@@ -1015,6 +1588,19 @@ export function resolveInterfaceTypes(
       target !== undefined && target.kind === "identifier"
         ? lookupDeclaration(target.name)
         : undefined;
+    const alias =
+      declaration === undefined &&
+      target !== undefined &&
+      target.kind === "identifier"
+        ? classExpressionAliases.get(target.name)
+        : undefined;
+    if (
+      alias !== undefined &&
+      alias.typeParameters.length === 0 &&
+      definition.typeParameters.length === 0 &&
+      (definition.heritageTypeArguments?.length ?? 0) === 0
+    )
+      return resolveClassExpression(alias);
     if (
       target === undefined ||
       target.kind !== "identifier" ||
@@ -1786,7 +2372,7 @@ export function resolveInterfaceTypes(
     // Only type aliases and interfaces are keyed: class contracts hold
     // their definition nodes, so modules with classes resolve afresh.
     const typeStatements: Statement[] = [];
-    let classes = false;
+    let classes = classExpressions.length > 0;
     for (const node of declarationStatements) {
       if (node === undefined) throw "missing module statement";
       if (node.kind === "class") classes = true;
@@ -1827,6 +2413,10 @@ export function resolveInterfaceTypes(
         if (node === undefined) throw "type declaration invariant";
         if (declarationParameters(node).length === 0) named(name, node);
       });
+      for (const expr of classExpressions) {
+        if (expr === undefined) throw "class expression invariant";
+        resolveClassExpression(expr.definition);
+      }
       // Constraint and index contract checks carry use-site spans and must run for each module.
       if (
         memo !== undefined &&
@@ -1921,6 +2511,9 @@ export function resolveInterfaceTypes(
                         type: canonical(t.stringIndex.type),
                       },
                     }),
+                ...(t.privateBrands === undefined
+                  ? {}
+                  : { privateBrands: t.privateBrands.map(canonical) }),
                 properties: t.properties.map((p) => ({
                   ...p,
                   type: canonical(p.type),
@@ -2095,20 +2688,52 @@ export function resolveInterfaceTypes(
       types,
       system: system.value,
       annotations,
-      classes: classes.map((contract) => ({
-        ...contract,
-        instance: canonical(contract.instance),
-        constructor: canonical(contract.constructor),
-        prototype: canonical(contract.prototype),
-        arguments: contract.arguments.map(canonical),
-        base:
-          contract.base === undefined ? undefined : canonical(contract.base),
-        members: contract.members.map((member) => ({
-          ...member,
-          type: canonical(member.type),
-          receiver: canonical(member.receiver),
-        })),
-      })),
+      classes: classes.map((contract): ClassContract => {
+        const canonicalPrivates =
+          contract.privateMembers === undefined
+            ? undefined
+            : contract.privateMembers.map((pm): ClassPrivateMember => {
+                const entry: {
+                  readonly name: string;
+                  readonly static: boolean;
+                  readonly kind: "field" | "method" | "accessor";
+                  readonly readonly: boolean;
+                  readonly type: number;
+                  readonly node: ClassElement;
+                  getter?: number;
+                  setter?: number;
+                } = {
+                  name: pm.name,
+                  static: pm.static,
+                  kind: pm.kind,
+                  readonly: pm.readonly,
+                  type: canonical(pm.type),
+                  node: pm.node,
+                };
+                const pmGetter = pm.getter,
+                  pmSetter = pm.setter;
+                if (pmGetter !== undefined) entry.getter = canonical(pmGetter);
+                if (pmSetter !== undefined) entry.setter = canonical(pmSetter);
+                return entry;
+              });
+        return {
+          ...contract,
+          instance: canonical(contract.instance),
+          constructor: canonical(contract.constructor),
+          prototype: canonical(contract.prototype),
+          arguments: contract.arguments.map(canonical),
+          base:
+            contract.base === undefined ? undefined : canonical(contract.base),
+          members: contract.members.map((member) => ({
+            ...member,
+            type: canonical(member.type),
+            receiver: canonical(member.receiver),
+          })),
+          ...(canonicalPrivates === undefined
+            ? {}
+            : { privateMembers: canonicalPrivates }),
+        };
+      }),
     },
   };
 }

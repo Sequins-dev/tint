@@ -142,6 +142,8 @@ export type Type =
       readonly realmConstructor?: boolean;
       readonly realmLibrary?: string;
       readonly realmTypedArray?: string;
+      /** Nominal class private brands carried by this instance or constructor type. */
+      readonly privateBrands?: readonly number[];
     }
   | {
       readonly kind: "function";
@@ -607,6 +609,20 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
   ): boolean | undefined {
     if (source.kind !== "object" || target.kind !== "object") return undefined;
     if ((source.realmRecord === true) !== (target.realmRecord === true))
+      return false;
+    const sourceBrands = source.privateBrands,
+      targetBrands = target.privateBrands;
+    if (targetBrands !== undefined) {
+      if (sourceBrands === undefined) return false;
+      for (const brand of targetBrands)
+        if (brand !== undefined && !sourceBrands.includes(brand)) return false;
+    }
+    if (
+      exact &&
+      sourceBrands !== undefined &&
+      (targetBrands === undefined ||
+        sourceBrands.length !== targetBrands.length)
+    )
       return false;
     const offered = source.iteratorElement,
       required = target.iteratorElement;
@@ -1712,31 +1728,22 @@ function copyType(
           return { ok: false, error: "INVALID_TYPE" };
       }
       refs = objectRefs;
-      copy = {
+      const objectCopy: {
+        kind: "object";
+        properties: Property[];
+        stringIndex?: StringIndex;
+        realmRecord?: boolean;
+        iteratorElement?: number | undefined;
+        interfaceDeclaration?: boolean;
+        call?: number;
+        construct?: number;
+        realmConstructor?: boolean;
+        realmLibrary?: string;
+        realmTypedArray?: string;
+        privateBrands?: readonly number[];
+      } = {
         kind: t.kind,
-        ...(t.realmRecord === true ? { realmRecord: true } : {}),
         iteratorElement: t.iteratorElement,
-        ...(t.interfaceDeclaration === true
-          ? { interfaceDeclaration: true }
-          : {}),
-        ...(index === undefined
-          ? {}
-          : {
-              stringIndex: {
-                type: index.type,
-                readonly: index.readonly,
-                origin: index.origin,
-              },
-            }),
-        ...(t.call === undefined ? {} : { call: t.call }),
-        ...(t.construct === undefined ? {} : { construct: t.construct }),
-        ...(t.realmConstructor === true ? { realmConstructor: true } : {}),
-        ...(t.realmLibrary === undefined
-          ? {}
-          : { realmLibrary: t.realmLibrary }),
-        ...(t.realmTypedArray === undefined
-          ? {}
-          : { realmTypedArray: t.realmTypedArray }),
         properties: t.properties.map((p) => ({
           name: p.name,
           ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
@@ -1745,6 +1752,25 @@ function copyType(
           ...(p.optional ? { optional: true } : {}),
         })),
       };
+      if (t.realmRecord === true) objectCopy.realmRecord = true;
+      if (t.interfaceDeclaration === true)
+        objectCopy.interfaceDeclaration = true;
+      if (index !== undefined)
+        objectCopy.stringIndex = {
+          type: index.type,
+          readonly: index.readonly,
+          origin: index.origin,
+        };
+      if (t.call !== undefined) objectCopy.call = t.call;
+      if (t.construct !== undefined) objectCopy.construct = t.construct;
+      if (t.realmConstructor === true) objectCopy.realmConstructor = true;
+      if (t.realmLibrary !== undefined)
+        objectCopy.realmLibrary = t.realmLibrary;
+      if (t.realmTypedArray !== undefined)
+        objectCopy.realmTypedArray = t.realmTypedArray;
+      if (t.privateBrands !== undefined)
+        objectCopy.privateBrands = t.privateBrands.slice();
+      copy = objectCopy;
       break;
     }
     case "function": {

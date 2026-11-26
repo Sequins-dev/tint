@@ -174,7 +174,11 @@ export function buildClassDefinition(
       if (field === undefined) throw "class definition field invariant";
       const slot = values[index];
       if (slot !== undefined) return b.load(slot);
-      if (field.stateOffset === undefined && field.presenceOffset === undefined)
+      if (
+        field.stateOffset === undefined &&
+        field.presenceOffset === undefined &&
+        field.deferred !== true
+      )
         throw "class definition missing initial field";
       return undefined;
     });
