@@ -7,6 +7,7 @@ import type {
   FunctionDebug,
   FunctionIR,
   GeneralTest,
+  NativeErrorKind,
   NativeTypedArray,
   InlineSite,
   Instruction,
@@ -240,10 +241,11 @@ function generalValueType(
   }
   return arrayType(code);
 }
-function errorName(code: number): "Error" | "TypeError" | "RangeError" {
+function errorName(code: number): NativeErrorKind {
   if (code === 0) return "TypeError";
   if (code === 1) return "RangeError";
   if (code === 2) return "Error";
+  if (code === 3) return "ReferenceError";
   throw "packed IR error name";
 }
 function cellOperation(code: number): "initialize" | "read" | "write" {
@@ -925,7 +927,13 @@ export function encodeInstruction(
       writePrefix(writer, op.kind === "error-new" ? 42 : 43, op, 0);
       writeByte(
         writer,
-        op.error === "TypeError" ? 0 : op.error === "RangeError" ? 1 : 2,
+        op.error === "TypeError"
+          ? 0
+          : op.error === "RangeError"
+            ? 1
+            : op.error === "ReferenceError"
+              ? 3
+              : 2,
       );
       writeSigned(writer, op.id);
       writeSigned(writer, op.kind === "error-new" ? op.message : op.value);

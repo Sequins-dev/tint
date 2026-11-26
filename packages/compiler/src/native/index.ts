@@ -1287,7 +1287,9 @@ function expandDynamicObjectRealm(
     "viewSymbolValue",
     "viewBigIntValue",
   ];
-  const runtimes = without.runtimes.slice();
+  const runtimes = without.runtimes.filter(
+    (source) => source?.namespace !== "dynamic-object",
+  );
   runtimes.push(runtime);
   const hostBindings = (request.hostBindings ?? []).slice();
   addNativeArrayDetach(runtimes, hostBindings);
@@ -2237,6 +2239,7 @@ const baseTypedGlobals: readonly string[] = [
   "Number",
   "BigInt",
   "Math",
+  "JSON",
   "Atomics",
   "Map",
   "Set",
@@ -2879,6 +2882,23 @@ function checkApplication(
     if (!nativeProjections.includes("projectNativeRecord"))
       nativeProjections.push("projectNativeRecord");
   });
+  checked.value.intrinsics.forEach((intrinsic, _node) => {
+    if (
+      intrinsic === "bigint-from-string" &&
+      !nativeProjections.includes("bigIntFromStringOrThrow")
+    )
+      nativeProjections.push("bigIntFromStringOrThrow");
+    else if (
+      intrinsic === "json-parse" &&
+      !nativeProjections.includes("jsonParse")
+    )
+      nativeProjections.push("jsonParse");
+    else if (
+      intrinsic === "json-stringify" &&
+      !nativeProjections.includes("jsonStringify")
+    )
+      nativeProjections.push("jsonStringify");
+  });
   // Retained runtime functions can dispatch through attached error views
   // without capturing the program instance's realm closures.
   function canCaptureErrorRealm(site: Span): boolean {
@@ -2894,9 +2914,13 @@ function checkApplication(
     canCaptureErrorRealm,
   );
   const missingBuiltins = missingBuiltinRuntimes(checked.value, helpers);
+  const missingProjection = nativeProjections.some(
+    (name) => name !== undefined && !helpers.has("dynamic-object:" + name),
+  );
   const needsDynamic =
-    !hasDynamicRuntime &&
-    (dynamic || realmInstanceof || nativeProjections.length !== 0);
+    (!hasDynamicRuntime &&
+      (dynamic || realmInstanceof || nativeProjections.length !== 0)) ||
+    (hasDynamicRuntime && missingProjection);
   if (needsDynamic || missingBuiltins.length !== 0)
     return {
       ok: false,

@@ -1,5 +1,6 @@
 import {
   beginObjectPropertyContract,
+  bigIntFromString,
   binaryObjectValueOperationOrThrow,
   unaryObjectValueOperationOrThrow,
   updateObjectValue,
@@ -44,6 +45,7 @@ import {
   typedArrayWindow,
   viewObjectValue,
   viewSymbolValue,
+  type BigIntValue,
   type ContractField,
   type ObjectShapeContract,
   type OrdinaryObject,
@@ -634,6 +636,16 @@ export function bindingRest(
   copyObjectProperties(result, source, excluded, core.hooks, core.realm);
   return result;
 }
+export function bigIntFromStringOrThrow(input: string): BigIntValue {
+  const parsed = bigIntFromString(input);
+  if (parsed === undefined) {
+    const core = programRealmCore();
+    installProgramConstructorGroup(core, "installErrorIntrinsics");
+    throw createRuntimeError(core.realm, "syntax");
+  }
+  return parsed;
+}
+export { jsonParse, jsonStringify } from "./json.ts";
 export {
   projectUnaryNumber,
   projectNativeCallback,

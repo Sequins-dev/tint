@@ -51,6 +51,12 @@ export interface DynamicObjectRuntime {
   readonly projectSharedArrayBuffer?: number | undefined;
   /** String() of a value typed as unknown (see stringConstructor). */
   readonly stringConstructor?: number | undefined;
+  /** BigInt(string) throwing the program realm's SyntaxError on invalid text. */
+  readonly bigIntFromString?: number | undefined;
+  /** JSON.parse(text, reviver?) returning a realm-origin dynamic value. */
+  readonly jsonParse?: number | undefined;
+  /** JSON.stringify(value, replacer?, space?) returning string | undefined. */
+  readonly jsonStringify?: number | undefined;
   readonly bindingObject?: number;
   readonly bindingIterator?: number;
   readonly bindingNext?: number;
@@ -376,6 +382,16 @@ export function usesDynamicObjectRuntime(
   if (speculativeFlow === true && hasFlowReads(checked)) return true;
   if (hasUninitializedReads(checked)) return true;
   if (checked.needsBindingRealm === true) return true;
+  let realmBuiltin = false;
+  checked.intrinsics.forEach((intrinsic, _node) => {
+    if (
+      intrinsic === "bigint-from-string" ||
+      intrinsic === "json-parse" ||
+      intrinsic === "json-stringify"
+    )
+      realmBuiltin = true;
+  });
+  if (realmBuiltin) return true;
   // In mixed programs the program realm is already linked, so String() of an
   // unknown value aliases stringConstructor for realm objects and Symbols.
   // Pure typed programs convert primitives, native errors and BigInt natively
@@ -621,7 +637,10 @@ export function insertDynamicObjectRuntime(
   const patterns: Span[] = [];
   const compoundUses: Span[] = [],
     updates: Span[] = [],
-    stringUses: Span[] = [];
+    stringUses: Span[] = [],
+    bigIntStringUses: Span[] = [],
+    jsonParseUses: Span[] = [],
+    jsonStringifyUses: Span[] = [];
   const callableViews: Span[] = [];
   const callbackViews: Span[] = [];
   const listViews: Span[] = [];
@@ -663,7 +682,13 @@ export function insertDynamicObjectRuntime(
     if (intrinsic === "dynamic-object-compound") compoundUses.push(node);
     if (intrinsic === "dynamic-object-update") updates.push(node);
     if (intrinsic === "dynamic-object-string") stringUses.push(node);
+    if (intrinsic === "bigint-from-string") bigIntStringUses.push(node);
+    if (intrinsic === "json-parse") jsonParseUses.push(node);
+    if (intrinsic === "json-stringify") jsonStringifyUses.push(node);
     if (
+      intrinsic === "bigint-from-string" ||
+      intrinsic === "json-parse" ||
+      intrinsic === "json-stringify" ||
       intrinsic.startsWith("dynamic-object-") ||
       (realmInstanceof &&
         (intrinsic.startsWith("realm-library-") ||
@@ -789,6 +814,9 @@ export function insertDynamicObjectRuntime(
     }
     if (contains(updates)) alias("update");
     if (contains(stringUses)) alias("stringConstructor");
+    if (contains(bigIntStringUses)) alias("bigIntFromStringOrThrow");
+    if (contains(jsonParseUses)) alias("jsonParse");
+    if (contains(jsonStringifyUses)) alias("jsonStringify");
     if (contains(callableViews)) alias("projectUnaryNumber");
     if (contains(callbackViews)) alias("projectNativeCallback");
     if (contains(listViews)) alias("projectNumberList");
