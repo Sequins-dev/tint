@@ -2267,6 +2267,7 @@ function hoistPushLoops(
   let current = fn,
     rewritten = 0;
   const touched = new Set<number>();
+  let cachedPredecessors: number[][] | undefined;
 
   for (const loop of loops) {
     if (loop === undefined) continue;
@@ -2274,15 +2275,18 @@ function hoistPushLoops(
     for (const id of loop.body) if (touched.has(id)) overlap = true;
     if (overlap) continue;
 
-    const predecessors: number[][] = [];
-    for (let i = 0; i < current.blocks.length; i++) predecessors.push([]);
-    for (const block of current.blocks) {
-      if (block === undefined) return undefined;
-      for (const succ of blockSuccessors(block))
-        predecessors[succ]?.push(block.id);
-      if (block.exception !== undefined)
-        predecessors[block.exception.target]?.push(block.id);
+    if (cachedPredecessors === undefined) {
+      const built: number[][] = [];
+      for (let i = 0; i < current.blocks.length; i++) built.push([]);
+      for (const block of current.blocks) {
+        if (block === undefined) return undefined;
+        for (const succ of blockSuccessors(block)) built[succ]?.push(block.id);
+        if (block.exception !== undefined)
+          built[block.exception.target]?.push(block.id);
+      }
+      cachedPredecessors = built;
     }
+    const predecessors = cachedPredecessors;
 
     const outside = (predecessors[loop.header] ?? []).filter(
       (id) => !loop.body.has(id),
@@ -3643,6 +3647,7 @@ function hoistPushLoops(
         : { ...current, slots: candSlots, blocks: candBlocks, debug };
     if (!recordReadsKept(current, candidate)) continue;
     current = candidate;
+    cachedPredecessors = undefined;
     nextValue = candNextValue;
     rewritten++;
     for (const id of loop.body) touched.add(id);

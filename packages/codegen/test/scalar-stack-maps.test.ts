@@ -16,6 +16,10 @@ import {
   encodeWideStackMapTable,
 } from "../src/scalar/stack-maps.ts";
 import {
+  emitFrameStackMaps,
+  frameStackMaps,
+} from "../src/x86_64/scalar/stack-maps.ts";
+import {
   nativeStackMapMagic,
   nativeStackMapCompactVersion,
   nativeStackMapWideVersion,
@@ -569,4 +573,160 @@ test("wide tables reject unrepresentable return offsets", () => {
     ),
     undefined,
   );
+});
+
+test("x86-64 emitFrameStackMaps matches bitset, fallback heapsort, non-contiguous and handler paths", () => {
+  // 24 reference slots + 4 general slots + 1 exception slot (slot 28).
+  const refCount = 24;
+  const genCount = 4;
+  const totalSlots = refCount + genCount + 1;
+  const slotTypes: ("reference" | "general")[] = [
+    ...Array<"reference">(refCount).fill("reference"),
+    ...Array<"general">(genCount).fill("general"),
+    "general",
+  ];
+  // Assign scrambled 8-byte-aligned negative frame offsets so sorting is nontrivial.
+  const frameBytes = 512;
+  const slots = Array.from(
+    { length: totalSlots },
+    (_, i) => -8 * (((i * 7 + 3) % totalSlots) + 1),
+  );
+  // Block 0: call at 0 (all 28 slots live via block 1 & handler block 2),
+  // then loads half the slots, call at 15, jump to block 1.
+  // Block 1: call at 0, loads remaining slots, return.
+  // Block 2 (handler for both block 0 and block 1): reads slot 0 & slot 24, return.
+  type Op =
+    ModuleIR["functions"][number]["blocks"][number]["instructions"][number];
+  const b0Ops: Op[] = [call(100)];
+  for (let i = 0; i < 12; i++)
+    b0Ops.push({ kind: "load", id: 200 + i, slot: i, ...s });
+  b0Ops.push(call(101));
+  const b1Ops: Op[] = [call(102)];
+  for (let i = 12; i < refCount + genCount; i++)
+    b1Ops.push({ kind: "load", id: 300 + i, slot: i, ...s });
+  const b2Ops: Op[] = [
+    { kind: "load", id: 400, slot: 0, ...s },
+    { kind: "load", id: 401, slot: refCount, ...s },
+  ];
+  const fn: ModuleIR["functions"][number] = {
+    id: 0,
+    name: "big",
+    exported: true,
+    parameters: Array.from({ length: refCount + genCount }, (_, i) => i),
+    slots: slotTypes,
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: b0Ops,
+        terminator: { kind: "jump", target: 1, ...s },
+        exception: { target: 2, slot: totalSlots - 1 },
+      },
+      {
+        id: 1,
+        instructions: b1Ops,
+        terminator: { kind: "return", value: 300 + 12, ...s },
+        exception: { target: 2, slot: totalSlots - 1 },
+      },
+      {
+        id: 2,
+        instructions: b2Ops,
+        terminator: { kind: "return", value: 400, ...s },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ records: [record], functions: [fn, allocate] }), {
+    ok: true,
+  });
+  const homes = new Map<number, number>();
+  const types = new Map<number, "reference" | "general">();
+  const contiguousSites = [
+    { block: 0, index: 0, label: "s0" },
+    { block: 0, index: 13, label: "s1" },
+    { block: 1, index: 0, label: "s2" },
+  ];
+  const nonContiguousSites = [
+    contiguousSites[0]!,
+    contiguousSites[2]!,
+    contiguousSites[1]!,
+  ];
+  const contiguousMaps = frameStackMaps(
+    fn,
+    "fn0",
+    frameBytes,
+    slots,
+    homes,
+    types,
+    contiguousSites,
+  );
+  const nonContiguousMaps = frameStackMaps(
+    fn,
+    "fn0",
+    frameBytes,
+    slots,
+    homes,
+    types,
+    nonContiguousSites,
+  );
+  assert.deepEqual(nonContiguousMaps[0]!.map, contiguousMaps[0]!.map);
+  assert.deepEqual(nonContiguousMaps[1]!.map, contiguousMaps[2]!.map);
+  assert.deepEqual(nonContiguousMaps[2]!.map, contiguousMaps[1]!.map);
+  // Site s0 has all 24 references + 4 generals sorted ascending.
+  const expectedRefs = slots
+    .slice(0, refCount)
+    .map((o) => frameBytes + o)
+    .sort((a, b) => a - b);
+  const expectedGens = slots
+    .slice(refCount, refCount + genCount)
+    .map((o) => frameBytes + o)
+    .sort((a, b) => a - b);
+  assert.deepEqual(contiguousMaps[0]!.map, [
+    frameBytes,
+    refCount,
+    ...expectedRefs,
+    genCount,
+    ...expectedGens,
+    0,
+  ]);
+  // Site s2 has slots 12..23 + slot 0 (from shared exception handler) as refs.
+  const expectedS2Refs = [0, ...Array.from({ length: 12 }, (_, i) => 12 + i)]
+    .map((slot) => frameBytes + slots[slot]!)
+    .sort((a, b) => a - b);
+  assert.deepEqual(contiguousMaps[2]!.map, [
+    frameBytes,
+    expectedS2Refs.length,
+    ...expectedS2Refs,
+    genCount,
+    ...expectedGens,
+    0,
+  ]);
+  // Trigger the heapsort fallback path (>16 refs + unaligned transition root).
+  const fallbackSites = [
+    { block: 0, index: 0, label: "fb", transitionRoots: [-4] },
+  ];
+  const streamed: number[][] = [];
+  emitFrameStackMaps(
+    fn,
+    frameBytes,
+    slots,
+    homes,
+    types,
+    fallbackSites,
+    undefined,
+    (_label, map) => {
+      streamed.push(map.slice());
+    },
+  );
+  const expectedFbRefs = [...expectedRefs, frameBytes - 4].sort(
+    (a, b) => a - b,
+  );
+  assert.deepEqual(streamed[0], [
+    frameBytes,
+    expectedFbRefs.length,
+    ...expectedFbRefs,
+    genCount,
+    ...expectedGens,
+    0,
+  ]);
 });

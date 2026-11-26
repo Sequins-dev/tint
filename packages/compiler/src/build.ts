@@ -405,13 +405,17 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   return linkMacOSProgram(compiled.value, request);
 }
 function buildX64HostedProgram(request: BuildRequest): BuildResult {
-  const compiled = compileX64Program(request);
+  const compiled = compileX64Program(
+    request,
+    (request.nativeServices?.length ?? 0) === 0,
+  );
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkX64Program(compiled.value, request);
 }
 function withoutX64Patcher(module: X64Module): X64Module {
   return {
     code: module.code,
+    ...(module.codePlan === undefined ? {} : { codePlan: module.codePlan }),
     data: module.data,
     functions: module.functions,
     imports: module.imports,
@@ -447,6 +451,7 @@ function withoutX64Patcher(module: X64Module): X64Module {
  * program. Native services are linked by linkX64Program. */
 export function compileX64Program(
   request: BuildRequest,
+  streamCodePlan: boolean = false,
 ): CompiledX64ProgramResult {
   const target = buildTarget(request);
   if (target.arch !== "x86_64")
@@ -681,6 +686,7 @@ export function compileX64Program(
       threaded: request.threaded === true,
       nodeWorkerLibrary: request.nodeWorkerLibrary === true,
       allocationProbes: request.signposts === true,
+      streamCodePlan,
       report: request.report,
       ...(request.onGeneralFallback === undefined
         ? {}

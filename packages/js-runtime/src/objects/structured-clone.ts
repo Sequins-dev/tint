@@ -1730,7 +1730,7 @@ function deserializeWorkerGraph(
             object.internalArrayElements === elements &&
             cells.length === index
           )
-            cells.push({ value });
+            cells.push({ elementValue: value });
           else define(object, arrayHooks.indexKey(index), value);
         }
       }

@@ -99,7 +99,7 @@ export function popPackedElement(
   const last = count - 1;
   const cell = values[last];
   if (cell === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-  const result = cell.value;
+  const result = cell.elementValue;
   truncateArrayElements<ScriptPropertyKey, unknown>(elements, last);
   elements.length = last;
   return result;
@@ -128,7 +128,8 @@ export function scriptArrayPush(
     return -1;
   // Fast steady-state path: append a Number directly into existing or freshly
   // grown capacity without helper or hook closure dispatch.
-  if (elements.values === undefined && typeof item === "number") {
+  const values = elements.values;
+  if (values === undefined && typeof item === "number") {
     const count = elements.numberCount;
     if (elements.length === count) {
       let numbers = elements.numbers;
@@ -156,6 +157,20 @@ export function scriptArrayPush(
         return next;
       }
     }
+  } else if (values !== undefined) {
+    // Fast steady-state path: append any value directly to a packed general array.
+    const count = values.length;
+    if (elements.length === count && count <= lastAppendIndex) {
+      values.push({ elementValue: item });
+      const next = count + 1;
+      elements.length = next;
+      return next;
+    }
+  } else if (elements.numberCount === 0 && elements.length === 0) {
+    // Empty freshly-created array receiving its first non-number element.
+    elements.values = [{ elementValue: item }];
+    elements.length = 1;
+    return 1;
   }
   if (!appendPackedElement(object, item, realm)) return -1;
   return elements.length;

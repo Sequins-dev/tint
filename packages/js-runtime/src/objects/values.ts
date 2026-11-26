@@ -10,6 +10,12 @@ import { scriptPropertyKeyOrder } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import {
+  createObject,
+  createDataProperty,
+  ordinaryGetOwnProperty,
+  findOrdinaryProperty,
+  isOrdinaryPrototypeChain,
+  propertyEpoch,
   ensureExoticSlots,
   getProperty,
   setProperty,
@@ -20,6 +26,7 @@ import {
   lookupCachedStringPrimitiveProperty,
   cachedScriptPropertyValue,
   storeCachedScriptProperty,
+  type ConstructSite,
   type PropertySpill,
   type ScriptPropertyCache,
   type ObjectHooks,
@@ -168,6 +175,532 @@ export function createSourceInstance(
     internalValue7: undefined,
   };
   return instance;
+}
+
+/** Side-effect-free ordinary own/inherited data property lookup on an object
+ * with an entirely ordinary prototype chain. Marks every visited object as
+ * used-as-prototype so any future mutation advances `propertyEpoch`. */
+function readOrdinaryDataAndMark(
+  start: OrdinaryObject<ScriptPropertyKey, unknown>,
+  key: ScriptPropertyKey,
+): { readonly ok: boolean; readonly value: unknown } {
+  let cursor: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = start;
+  while (cursor !== undefined) {
+    if (cursor.internalMethods !== undefined)
+      return { ok: false, value: undefined };
+    if (!cursor.internalUsedAsPrototype)
+      markPrototype<ScriptPropertyKey, unknown>(cursor);
+    const desc = ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(
+      cursor,
+      key,
+    );
+    if (desc !== undefined) {
+      if (desc.accessor) return { ok: false, value: undefined };
+      return { ok: true, value: desc.value };
+    }
+    cursor = cursor.prototype;
+  }
+  return { ok: false, value: undefined };
+}
+
+/** Verify and cache a constructor call site (direct or Prototype.js
+ * `this.initialize.apply(this, arguments)` forwarding). Marks the constructor,
+ * prototype chain, and (for forwarding) `initialize` / `Function.prototype`
+ * chain with `markPrototype` so any mutation to `target.prototype`,
+ * `proto.initialize`, `init.apply`, `Function.prototype.apply`, or any key in
+ * `site.keys` on `proto`'s chain advances `propertyEpoch` and invalidates the
+ * site. Returns true iff the site is warmed and safe for direct final-shape
+ * allocation. Never invokes user code or mutates observable JS state. */
+export function warmConstructSite(
+  targetValue: unknown,
+  expectedInit: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  isForwarding: boolean,
+  realm: ErrorRealm,
+  site: ConstructSite,
+): boolean {
+  if (expectedInit === undefined) return false;
+  const target = viewObjectValue(targetValue, realm.objectPrototype);
+  if (target === undefined || target.internalMethods !== undefined)
+    return false;
+  if (isForwarding) {
+    const reg = target.internalRegisterCall;
+    if (reg === undefined || reg.forwardingTag !== 1) return false;
+  } else if (target !== expectedInit) {
+    return false;
+  }
+  const protoRead = readOrdinaryDataAndMark(target, "prototype");
+  if (!protoRead.ok) return false;
+  const proto = viewObjectValue(protoRead.value, realm.objectPrototype);
+  if (proto === undefined) return false;
+  if (isForwarding) {
+    const initRead = readOrdinaryDataAndMark(proto, "initialize");
+    if (!initRead.ok || initRead.value !== expectedInit) return false;
+    const fnApply = realm.functionApply;
+    if (fnApply === undefined) return false;
+    const applyRead = readOrdinaryDataAndMark(expectedInit, "apply");
+    if (!applyRead.ok || applyRead.value !== fnApply) return false;
+  }
+  const keys = site.constructKeys;
+  if (keys.length === 0 || keys.length > 8) return false;
+  let cursor: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = proto;
+  while (cursor !== undefined) {
+    if (cursor.internalMethods !== undefined) return false;
+    if (!cursor.internalUsedAsPrototype)
+      markPrototype<ScriptPropertyKey, unknown>(cursor);
+    for (let index = 0; index < keys.length; index++) {
+      const key = keys[index];
+      if (key === undefined) throw "CONSTRUCT_SITE_INVARIANT";
+      const desc = ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(
+        cursor,
+        key,
+      );
+      if (desc !== undefined && (desc.accessor || !desc.writable)) return false;
+    }
+    cursor = cursor.prototype;
+  }
+  const probe = createObject<ScriptPropertyKey, unknown>(proto);
+  for (let index = 0; index < keys.length; index++) {
+    const key = keys[index];
+    if (key === undefined) throw "CONSTRUCT_SITE_INVARIANT";
+    if (
+      !createDataProperty<ScriptPropertyKey, unknown>(
+        probe,
+        key,
+        undefined,
+        realm.objectHooks,
+      )
+    )
+      return false;
+  }
+  const reached = probe.internalShape;
+  if (
+    probe.internalDictionary ||
+    reached === undefined ||
+    !reached.shared ||
+    reached.keys.length !== keys.length
+  )
+    return false;
+  site.constructCtor = target;
+  site.constructProto = proto;
+  site.constructRoot = proto.internalChildShape;
+  site.constructShape = reached;
+  site.constructEpoch = propertyEpoch.value;
+  return true;
+}
+
+/** Direct fixed-arity final-shape constructor allocators (1..8 own fields).
+ * Callers guard with `warmConstructSite` (or its inline epoch/ctor fast check)
+ * before evaluating constructor field values; these helpers check the cached
+ * shape/epoch one final time and allocate directly in the final shape. */
+export function createConstructedObject1(
+  site: ConstructSite,
+  v0: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 1,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: undefined,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject2(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 2,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: undefined,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject3(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 3,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: undefined,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject4(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 4,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: v3,
+      internalValue4: undefined,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject5(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  v4: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 5,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: v3,
+      internalValue4: v4,
+      internalValue5: undefined,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject6(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  v4: unknown,
+  v5: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 6,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: v3,
+      internalValue4: v4,
+      internalValue5: v5,
+      internalValue6: undefined,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject7(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  v4: unknown,
+  v5: unknown,
+  v6: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 7,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: v3,
+      internalValue4: v4,
+      internalValue5: v5,
+      internalValue6: v6,
+      internalValue7: undefined,
+    };
+  return undefined;
+}
+export function createConstructedObject8(
+  site: ConstructSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  v4: unknown,
+  v5: unknown,
+  v6: unknown,
+  v7: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  const proto = site.constructProto;
+  const shape = site.constructShape;
+  const root = site.constructRoot;
+  if (
+    proto !== undefined &&
+    shape !== undefined &&
+    root !== undefined &&
+    proto.internalChildShape === root &&
+    site.constructEpoch === site.constructEpochRef.value
+  )
+    return {
+      internalShape: shape,
+      prototype: proto,
+      extensible: true,
+      properties: undefined,
+      internalPropertyEpoch: 8,
+      internalChildShape: undefined,
+      internalDictionary: false,
+      internalUsedAsPrototype: false,
+      internalValues: undefined,
+      internalCall: undefined,
+      internalRegisterCall: undefined,
+      internalConstruct: undefined,
+      internalExecutionContext: undefined,
+      internalArrayData: false,
+      internalArrayElements: undefined,
+      internalMethods: undefined,
+      internalRareSlots: undefined,
+      internalExoticSlots: undefined,
+      internalValue0: v0,
+      internalValue1: v1,
+      internalValue2: v2,
+      internalValue3: v3,
+      internalValue4: v4,
+      internalValue5: v5,
+      internalValue6: v6,
+      internalValue7: v7,
+    };
+  return undefined;
+}
+
+/** Side-effect-free cache warmer for an ordinary data property lookup on an
+ * object with an ordinary prototype chain. Returns `cache` (absentPropertyValue)
+ * without invoking any getter or exotic trap when the lookup cannot be cached
+ * purely as an ordinary data read. */
+export function warmOrdinaryDataProperty(
+  value: unknown,
+  key: string,
+  realm: ErrorRealm,
+  cache: ScriptPropertyCache,
+): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (
+    object === undefined ||
+    !isOrdinaryPrototypeChain<ScriptPropertyKey, unknown>(object)
+  )
+    return cache;
+  const descriptor = findOrdinaryProperty<ScriptPropertyKey, unknown>(
+    object,
+    key,
+  );
+  if (descriptor === undefined || descriptor.accessor) return cache;
+  return readCachedObjectValueProperty(
+    value,
+    key,
+    realm.objectHooks,
+    realm,
+    cache,
+  );
 }
 
 /** Native-only checked view, explicitly bound by the embedding build request.

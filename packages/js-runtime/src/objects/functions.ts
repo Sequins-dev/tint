@@ -291,10 +291,22 @@ export function createNativeSourceFunction(
     traceName: name,
     callerPolicy,
     constructible,
+    forwardingTag: 0,
     invoke: undefined,
     invokeWide: undefined,
     scriptInvoke,
   };
+  return fn;
+}
+
+/** Tag a constructible native source function whose body is a pure forwarding
+ * initializer call (tag 1: `function() { this.initialize.apply(this, arguments); }`). */
+export function markForwardingConstructor(
+  fn: OrdinaryObject<ScriptPropertyKey, unknown>,
+  tag: number,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const entry = fn.internalRegisterCall;
+  if (entry !== undefined) entry.forwardingTag = tag;
   return fn;
 }
 
@@ -343,6 +355,7 @@ export function createRegisterSourceFunction(
     traceName: name,
     callerPolicy,
     constructible,
+    forwardingTag: 0,
     invokeWide: undefined,
     scriptInvoke: undefined,
     invoke: (callee, receiver, newTarget, count, first, second): unknown => {
@@ -444,6 +457,7 @@ export function createWideRegisterSourceFunction(
     traceName: name,
     callerPolicy,
     constructible,
+    forwardingTag: 0,
     invoke: (callee, receiver, newTarget, count, first, second): unknown =>
       invoke(
         callee,

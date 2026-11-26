@@ -4308,6 +4308,7 @@ export function compileX64HostedProgram(
     readonly nodeWorkerLibrary?: boolean;
     readonly signposts?: readonly X64SignpostSite[];
     readonly allocationProbes?: boolean;
+    readonly streamCodePlan?: boolean;
     readonly report?: (stage: string) => void;
     readonly onGeneralFallback?: (
       modules: readonly string[],
@@ -4511,6 +4512,7 @@ export function compileX64HostedProgram(
     program.workerFunctions,
     options.trustedExecutableCode === true,
     releaseFunction,
+    options.streamCodePlan === true && !managed,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;

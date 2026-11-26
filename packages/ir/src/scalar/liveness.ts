@@ -190,16 +190,27 @@ function analyzeSlots(
   const edgeCount = predecessorCounts[blockCount] ?? 0,
     predecessors = new Uint32Array(edgeCount),
     exceptional = new Uint8Array(edgeCount),
+    // Exception transfer slot + 1 on pure-exception edges (zero otherwise).
+    exceptionTransferSlot = new Uint32Array(
+      preciseExceptionTransfers ? edgeCount : 0,
+    ),
     // Consequent edges of blocks with a consequent-only write.
     writing = new Uint8Array(edgeReads ? edgeCount : 0),
     filled = new Uint32Array(blockCount);
   work += edgeCount;
   if (work > maxWork) return undefined;
-  function link(source: number, target: number, thrown: boolean): void {
+  function link(
+    source: number,
+    target: number,
+    thrown: boolean,
+    transferSlot: number,
+  ): void {
     const at = (predecessorCounts[target] ?? 0) + (filled[target] ?? 0);
     filled[target] = (filled[target] ?? 0) + 1;
     predecessors[at] = source;
     exceptional[at] = thrown ? 1 : 0;
+    if (preciseExceptionTransfers && transferSlot !== 0)
+      exceptionTransferSlot[at] = transferSlot;
     if (
       edgeReads &&
       !thrown &&
@@ -215,10 +226,17 @@ function analyzeSlots(
       two = (second[id] ?? 0) - 1,
       handler = block.exception,
       thrownTo = handler === undefined ? -1 : handler.target;
-    if (one >= 0) link(id, one, thrownTo === one);
-    if (two >= 0) link(id, two, thrownTo === two);
+    if (one >= 0) link(id, one, thrownTo === one, 0);
+    if (two >= 0) link(id, two, thrownTo === two, 0);
     if (thrownTo >= 0 && thrownTo !== one && thrownTo !== two)
-      link(id, thrownTo, true);
+      link(
+        id,
+        thrownTo,
+        true,
+        preciseExceptionTransfers && handler !== undefined
+          ? handler.slot + 1
+          : 0,
+      );
   }
   // Events grouped by tracked index (counting sort).
   function group(
@@ -297,25 +315,20 @@ function analyzeSlots(
     for (let at = defStart; at < defEnd; at++)
       defined[defs.blocks[at] ?? 0] = stamp;
     let tail = 0;
-    for (
-      let at = uses.starts[index] ?? 0;
-      at < (uses.starts[index + 1] ?? 0);
-      at++
-    ) {
+    const useEnd = uses.starts[index + 1] ?? 0;
+    for (let at = uses.starts[index] ?? 0; at < useEnd; at++) {
       const block = uses.blocks[at] ?? 0;
       live[block] = stamp;
       queue[tail++] = block;
     }
     // The entry query stops as soon as the slot reaches the entry block.
     const entryOnly = mode === "entry";
+    const transferStamp = slot + 1;
     for (let head = 0; head < tail; head++) {
       if (entryOnly && live[fn.entry] === stamp) break;
       const block = queue[head] ?? 0;
-      for (
-        let at = predecessorCounts[block] ?? 0;
-        at < (predecessorCounts[block + 1] ?? 0);
-        at++
-      ) {
+      const predEnd = predecessorCounts[block + 1] ?? 0;
+      for (let at = predecessorCounts[block] ?? 0; at < predEnd; at++) {
         if (++work > maxWork) return undefined;
         const source = predecessors[at] ?? 0;
         if (live[source] === stamp) continue;
@@ -324,10 +337,7 @@ function analyzeSlots(
         // along a normal edge to the same block, so keep that edge.
         if (
           preciseExceptionTransfers &&
-          exceptional[at] === 1 &&
-          fn.blocks[source]?.exception?.slot === slot &&
-          first[source] !== block + 1 &&
-          second[source] !== block + 1
+          exceptionTransferSlot[at] === transferStamp
         )
           continue;
         if (writing[at] === 1 && consequentWrites[source] === stamp) continue;
@@ -492,9 +502,18 @@ export function analyzeLiveSlotRowsPrecisely(
   fn: FunctionIR,
   maxWork: number,
   trackedSlots?: readonly number[],
+  preciseExceptionTransfers: boolean = false,
 ): SlotLiveRows | undefined {
   return rowResult(
-    analyzeSlots(fn, maxWork, trackedSlots, "live", true, false, true),
+    analyzeSlots(
+      fn,
+      maxWork,
+      trackedSlots,
+      "live",
+      true,
+      preciseExceptionTransfers,
+      true,
+    ),
     fn,
     trackedSlots,
   );

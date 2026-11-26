@@ -25,6 +25,7 @@ export interface IntrinsicFunctions {
   mathMin: IntrinsicFunction;
   mathMax: IntrinsicFunction;
   mathImul: IntrinsicFunction;
+  mathPow: IntrinsicFunction;
   /** %Number% called as a function. */
   number: IntrinsicFunction;
   stringCharCodeAt: IntrinsicFunction;
@@ -34,6 +35,7 @@ export interface IntrinsicFunctions {
   mapSet: IntrinsicFunction;
   setHas: IntrinsicFunction;
   setAdd: IntrinsicFunction;
+  array: IntrinsicFunction;
   arrayPush: IntrinsicFunction;
   arrayPop: IntrinsicFunction;
   atomicsAdd: IntrinsicFunction;
@@ -54,6 +56,7 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     mathMin: undefined,
     mathMax: undefined,
     mathImul: undefined,
+    mathPow: undefined,
     number: undefined,
     stringCharCodeAt: undefined,
     stringCharAt: undefined,
@@ -62,6 +65,7 @@ export function createIntrinsicFunctions(): IntrinsicFunctions {
     mapSet: undefined,
     setHas: undefined,
     setAdd: undefined,
+    array: undefined,
     arrayPush: undefined,
     arrayPop: undefined,
     atomicsAdd: undefined,

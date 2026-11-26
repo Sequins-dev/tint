@@ -236,6 +236,52 @@ function hoistRound(
         );
       continue;
     }
+    // `naturalLoops` groups DFS back-edge cycles without checking dominance.
+    // A hoisted slot stored in `preheader` is initialized at every block in
+    // `loop.body` only when `preheader` strictly dominates the whole body, and
+    // hoisting an invariant load into `preheader` requires every body block to
+    // be reachable from `loop.header` inside `loop.body`.
+    let irreducible = loop.body.has(fn.entry);
+    if (!irreducible) {
+      for (const id of loop.body) {
+        if (id === loop.header) continue;
+        for (const from of predecessors.get(id) ?? []) {
+          if (from !== undefined && !loop.body.has(from)) {
+            irreducible = true;
+            break;
+          }
+        }
+        if (irreducible) break;
+      }
+    }
+    if (!irreducible) {
+      const seen = new Set<number>();
+      seen.add(loop.header);
+      const queue: number[] = [loop.header];
+      for (let cursor = 0; cursor < queue.length; cursor++) {
+        const id = queue[cursor];
+        if (id === undefined) continue;
+        const block = byId.get(id);
+        if (block === undefined) continue;
+        for (const next of blockSuccessors(block)) {
+          if (next !== undefined && loop.body.has(next) && !seen.has(next)) {
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+      }
+      if (seen.size !== loop.body.size) irreducible = true;
+    }
+    if (irreducible) {
+      if (remarks !== undefined)
+        missedLoop(
+          remarks,
+          fn,
+          byId.get(loop.header),
+          "loop is irreducible (non-header entry or unreachable body block)",
+        );
+      continue;
+    }
     // This round reads the original function for every loop. Recompute the
     // proof summary only after committing a round that rewrites it.
     const proofs = recordProof ?? recordProofs(fn, readHoists);

@@ -1582,6 +1582,143 @@ function inheritedNonMethodAndEviction() {
   out.push(hotSum);
   return out.join(",");
 }
+function milestone2ConstructAndMethods() {
+  function Pt2(x, y) { this.x = x; this.y = y; }
+  function Wide8(a, b, c, d, e, f, g, h) {
+    this.a = a; this.b = b; this.c = c; this.d = d;
+    this.e = e; this.f = f; this.g = g; this.h = h;
+  }
+  function CondCtor(x, flag) { this.x = x; this.y = 0; if (flag) this.y = x * 2; }
+  const ClassCreate = {
+    create: function () { return function () { this.initialize.apply(this, arguments); }; },
+  };
+  const Vec3 = ClassCreate.create();
+  Vec3.prototype = {
+    initialize: function (x, y, z) { this.x = x; this.y = y; this.z = z; },
+    add: function (o) { this.x = this.x + o.x; this.y = this.y + o.y; this.z = this.z + o.z; return this; },
+    copyFrom: function (o) { this.x = o.x; this.y = o.y; this.z = o.z; return this.x + this.y + this.z; },
+    readWriteRead: function (d) { this.x = this.x + d; if (d < 0) this.x = 0; return this.x + this.y; },
+    maybeThrow: function (flag) { this.x = 111; if (flag) throw new Error("mid-tx"); this.y = 222; return this.x + this.y; },
+    logic: function (a, b) { return (this.x && a) || (this.y && b); },
+  };
+  function CoalesceBox(a, b) { this.a = a; this.b = b; }
+  function runCoalesce(throwAtB) {
+    const r = new CoalesceBox(1, 2);
+    r.a = 10; r.a = 20;
+    r.b = throwAtB ? (function () { throw new Error("rhs-boom"); })() : r.a + 5;
+    return r;
+  }
+  const out = [];
+  const p1 = new Pt2(3, 4), w8 = new Wide8(1, 2, 3, 4, 5, 6, 7, 8);
+  const cc0 = new CondCtor(5, false), cc1 = new CondCtor(5, true);
+  out.push(p1.x + p1.y, w8.a + w8.h, cc0.y, cc1.y);
+  const origProto = Pt2.prototype;
+  Pt2.prototype = { tag: "newproto" };
+  const p2 = new Pt2(9, 10);
+  out.push(p2.tag, p2.x, p2.y);
+  Pt2.prototype = origProto;
+  Object.defineProperty(Pt2.prototype, "x", { value: 77, writable: false, configurable: true });
+  let roThrew = false;
+  try { new Pt2(1, 2); } catch (e) { roThrew = e instanceof TypeError; }
+  out.push(roThrew);
+  delete Pt2.prototype.x;
+  const setterHits = [];
+  Object.defineProperty(Pt2.prototype, "y", {
+    set: function (v) { setterHits.push(v); },
+    get: function () { return 88; },
+    configurable: true,
+  });
+  const pSet = new Pt2(5, 6);
+  out.push(pSet.x, pSet.y, setterHits.join(","));
+  delete Pt2.prototype.y;
+  Pt2.prototype = 42;
+  const pPrim = new Pt2(11, 12);
+  out.push(Object.getPrototypeOf(pPrim) === Object.prototype, pPrim.x, pPrim.y);
+  Pt2.prototype = origProto;
+  const ProxyCtor = new Proxy(Pt2, {
+    construct: function (t, args) { return { x: args[0] * 10, y: args[1] * 10 }; },
+  });
+  const pPrx = new ProxyCtor(2, 3);
+  function SubProto() {}
+  const pRefl = Reflect.construct(Pt2, [4, 5], SubProto);
+  out.push(pPrx.x, pPrx.y, pRefl instanceof SubProto, pRefl.x, pRefl.y);
+  const v1 = new Vec3(1, 2, 3), v2 = new Vec3(4, 5, 6);
+  const origInit = Vec3.prototype.initialize;
+  Vec3.prototype.initialize = function (x, y, z) { this.x = x + 100; this.y = y; this.z = z; };
+  const vPatched = new Vec3(1, 2, 3);
+  Vec3.prototype.initialize = origInit;
+  const savedApply = Function.prototype.apply;
+  let applyCalls = 0;
+  Function.prototype.apply = function (t, a) { applyCalls++; return savedApply.call(this, t, a); };
+  const vApply = new Vec3(7, 8, 9);
+  Function.prototype.apply = savedApply;
+  out.push(v1.x, vPatched.x, vApply.x, applyCalls, v1.copyFrom(v1), v1.add(v2).x, v1.readWriteRead(10), v1.readWriteRead(-5));
+  out.push(v1.logic("A", "B"), new Vec3(0, 1, 0).logic("A", "B"), new Vec3(0, 0, 0).logic("A", "B"));
+  const vThrow = new Vec3(1, 2, 3);
+  try { vThrow.maybeThrow(true); out.push("no-throw"); } catch (e) {
+    out.push(e.message, vThrow.x, vThrow.y, typeof e.stack === "string" && e.stack.length > 0);
+  }
+  out.push(vThrow.maybeThrow(false), vThrow.x, vThrow.y);
+  const set = new Set(); set.add(10); set.add(20);
+  const u = new Vec3(1, 1, 1); u.add(new Vec3(2, 3, 4));
+  const cb = runCoalesce(false);
+  let rhsErr = "none";
+  try { runCoalesce(true); } catch (e) { rhsErr = e.message; }
+  out.push(set.size, set.has(20), u.x, u.y, u.z, cb.a, cb.b, rhsErr);
+  return out.join("|");
+}
+function milestone2ArraysMathLoops() {
+  const out = [];
+  const ga = []; ga.push({ k: 1 }); ga.push("two"); ga.push(3);
+  out.push(ga.length, ga[0].k, ga[1], ga.pop(), ga.length);
+  try { Object.freeze([]).push(1); out.push("no"); } catch (e) { out.push(e instanceof TypeError); }
+  const roLen = []; Object.defineProperty(roLen, "length", { writable: false });
+  try { roLen.push(1); out.push("no"); } catch (e) { out.push(e instanceof TypeError); }
+  let arrSetterVal = "";
+  Object.defineProperty(Array.prototype, 0, {
+    set: function (v) { arrSetterVal = arrSetterVal + v; },
+    get: function () { return "proto0"; },
+    configurable: true,
+  });
+  const aWithProto = []; aWithProto.push("hello");
+  delete Array.prototype[0];
+  const localArrayTest = (function () {
+    const Array = function (n) { this.custom = n * 3; };
+    return new Array(5).custom;
+  })();
+  out.push(arrSetterVal, aWithProto.length, localArrayTest);
+  out.push(
+    Math.pow(2, 10), String(Math.pow(NaN, 0)), String(Math.pow(-1, Infinity)),
+    String(Math.pow(0, -1)), String(Object.is(Math.pow(-0, 3), -0)),
+    Math.pow({ valueOf: function () { return 3; } }, { valueOf: function () { return 4; } }),
+  );
+  const origPow = Math.pow;
+  Math.pow = function (a, b) { return a + b + 1000; };
+  out.push(Math.pow(2, 3));
+  Math.pow = origPow;
+  const nv = null;
+  out.push(nv === null, nv == null, nv == undefined, nv === undefined, typeof nv, nv + 1, String(nv));
+  function loopDisjoint(holder, n, triggerIdx) {
+    let sum = 0;
+    for (let i = 0; i < n; i++) {
+      const inner = holder.v;
+      sum += holder.a + inner.b;
+      holder.c = i;
+      if (i === triggerIdx) { holder.a = 7; holder.v = { b: 50 }; }
+    }
+    return sum + holder.c;
+  }
+  out.push(loopDisjoint({ a: 3, v: { b: 10 }, c: 0 }, 10, 4));
+  let setterSide = 0;
+  const h2 = { a: 2, v: { b: 5 } };
+  Object.defineProperty(h2, "c", {
+    set: function (val) { setterSide += val; if (val === 2) { h2.a = 9; h2.v = { b: 40 }; } },
+    get: function () { return setterSide; },
+    configurable: true,
+  });
+  out.push(loopDisjoint(h2, 6, -1), setterSide);
+  return out.join("|");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -1599,6 +1736,8 @@ export function sections() {
     literals(),
     deepSpilledAndBuiltins(),
     inheritedNonMethodAndEviction(),
+    milestone2ConstructAndMethods(),
+    milestone2ArraysMathLoops(),
   ];
 }
 `;
@@ -1697,7 +1836,7 @@ async function allNodeExpectations() {
   assert.equal(elements.length, 11);
   assert.equal(intrinsics.length, 5);
   assert.equal(numbers.length, 12);
-  assert.equal(propertyCaches.length, 15);
+  assert.equal(propertyCaches.length, 17);
   cachedExpected = { elements, intrinsics, numbers, propertyCaches };
   return cachedExpected;
 }
