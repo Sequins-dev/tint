@@ -631,3 +631,85 @@ test("scans the function-wide record proof inputs once for multiple loops", () =
 
   assert.equal(proofReads(true), proofReads(false));
 });
+
+test("skips irreducible loops so hoisted slots are never read uninitialized", () => {
+  // Entry branches to preheader (b1 -> b2) or directly into non-header loop
+  // block b3, forming an irreducible cycle b2 <-> b3. Hoisting b3's invariant
+  // comparison into b1 would leave its carried slot uninitialized on b0 -> b3.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "irreducible_licm",
+    exported: true,
+    parameters: [0, 1],
+    returnType: "number",
+    slots: ["boolean", "number", "number"],
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...span },
+          { kind: "store", slot: 2, value: 0, ...span },
+          { kind: "load", id: 1, slot: 0, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 1,
+          consequent: 1,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [],
+        terminator: { kind: "jump", target: 2, ...span },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 2, slot: 2, ...span },
+          { kind: "constant", id: 3, value: 10, ...span },
+          { kind: "binary", id: 4, operator: "<", left: 2, right: 3, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 4,
+          consequent: 3,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 5, slot: 1, ...span },
+          { kind: "constant", id: 6, value: 0, ...span },
+          { kind: "binary", id: 7, operator: ">", left: 5, right: 6, ...span },
+          { kind: "load", id: 8, slot: 2, ...span },
+          { kind: "constant", id: 9, value: 1, ...span },
+          { kind: "binary", id: 10, operator: "+", left: 8, right: 9, ...span },
+          { kind: "store", slot: 2, value: 10, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 7,
+          consequent: 2,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 4,
+        instructions: [{ kind: "load", id: 11, slot: 2, ...span }],
+        terminator: { kind: "return", value: 11, ...span },
+      },
+    ],
+  };
+  const module: ModuleIR = { functions: [fn] };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = hoistLoopInvariants(fn, module, 100000);
+  assert.ok(result !== undefined);
+  assert.equal(result.hoisted, 0);
+  assert.deepEqual(verify({ functions: [result.fn] }), { ok: true });
+});

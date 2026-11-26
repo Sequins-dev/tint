@@ -2154,7 +2154,9 @@ function lowerEntries(
         const dynamicIntrinsic = checked.intrinsics.get(node);
         const speculative = flowStorage?.values.has(node) === true;
         const type: SourceScalarType | "void" =
-          speculative || dynamicIntrinsic === "flow-property-read-boxed"
+          speculative ||
+          dynamicIntrinsic === "flow-property-read-boxed" ||
+          (node.kind === "null" && body?.scriptEntry === true)
             ? "general"
             : checkedType !== undefined &&
                 (checked.types[checkedType]?.kind === "void" ||

@@ -1,5 +1,7 @@
 import {
   instructionResult,
+  provenRecordReads,
+  verifierRecordWork,
   type Block,
   type FunctionIR,
   type Instruction,
@@ -55,6 +57,7 @@ export function threadBranches(
   fn: FunctionIR,
   budget: number,
   remarks?: RemarkSink,
+  stableLayouts: boolean = false,
 ): BranchThreading | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
   let visited = 0,
@@ -310,6 +313,39 @@ export function threadBranches(
   if (rewritten === 0) return { fn, visited, rewritten };
   const compacted = compactReachableBlocks(fn, blocks, budget - visited);
   if (compacted === undefined) return undefined;
+  if (fn.scriptEntry === true) {
+    let hasRecordRead = false;
+    for (const block of compacted.fn.blocks) {
+      if (block === undefined) continue;
+      for (const op of block.instructions) {
+        if (op !== undefined && op.kind === "record-read") {
+          hasRecordRead = true;
+          break;
+        }
+      }
+      if (hasRecordRead) break;
+    }
+    if (hasRecordRead) {
+      const proofs = provenRecordReads(
+        compacted.fn,
+        verifierRecordWork,
+        stableLayouts,
+      );
+      if (proofs === undefined)
+        return { fn, visited: visited + compacted.visited, rewritten: 0 };
+      for (const block of compacted.fn.blocks) {
+        if (block === undefined) continue;
+        for (const op of block.instructions) {
+          if (
+            op !== undefined &&
+            op.kind === "record-read" &&
+            proofs[op.id] !== 1
+          )
+            return { fn, visited: visited + compacted.visited, rewritten: 0 };
+        }
+      }
+    }
+  }
   return {
     fn: compacted.fn,
     visited: visited + compacted.visited,

@@ -6,7 +6,10 @@ import {
   type ModuleIR,
   type RecordLayout,
 } from "@tint/ir/scalar";
-import { cacheLoopProperties } from "../src/optimization/property-cache.ts";
+import {
+  analyzeModulePropertySites,
+  cacheLoopProperties,
+} from "../src/optimization/property-cache.ts";
 
 const s = { start: 0, end: 0 };
 
@@ -710,4 +713,335 @@ test("rejects loops with unconditional invalidating calls and skips non-script f
   const typedOut = runPass(typedFn, []);
   assert.equal(typedOut.visited, 0);
   assert.equal(typedOut.rewritten, 0);
+});
+
+test("disambiguates disjoint property-store keys, chains 1-hop cached properties, and refreshes same-key stores", () => {
+  // Additional record 8: SiteTable holding 3 immutable PropertySite refs
+  // (field 0 = "v", field 1 = "size", field 2 = "c").
+  // Record 9: StorePropertySite (shape, slot, transition, epoch, epochs).
+  const extRecords: readonly RecordLayout[] = [
+    ...records,
+    {
+      byteLength: 32,
+      fields: [
+        { offset: 8, type: "reference", mutable: false },
+        { offset: 16, type: "reference", mutable: false },
+        { offset: 24, type: "reference", mutable: false },
+      ],
+    },
+    {
+      byteLength: 48,
+      fields: [
+        { offset: 8, type: "reference", mutable: true },
+        { offset: 16, type: "number", mutable: true },
+        { offset: 24, type: "optional-reference", mutable: true },
+        { offset: 32, type: "number", mutable: true },
+        { offset: 40, type: "reference", mutable: true },
+      ],
+    },
+  ];
+  const storePropLayout = {
+    ...propLayout,
+    siteRecord: 9,
+  };
+  // Synthetic createScriptPropertyCache helper (returns a PropertySite ref).
+  const createSiteHelper: FunctionIR = {
+    id: 3,
+    name: "createScriptPropertyCache",
+    exported: false,
+    parameters: [0],
+    slots: ["string"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "trap", ...s },
+      },
+    ],
+  };
+  // Initializer allocating SiteTable (record 8) from static string-literal keys.
+  const initSites: FunctionIR = {
+    id: 4,
+    name: "initSites",
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "string-literal", id: 0, value: "v", ...s },
+          { kind: "call", id: 1, target: 3, arguments: [0], ...s },
+          { kind: "string-literal", id: 2, value: "size", ...s },
+          { kind: "call", id: 3, target: 3, arguments: [2], ...s },
+          { kind: "string-literal", id: 4, value: "c", ...s },
+          { kind: "call", id: 5, target: 3, arguments: [4], ...s },
+          {
+            kind: "record-new",
+            id: 6,
+            record: 8,
+            arguments: [1, 3, 5],
+            ...s,
+          },
+        ],
+        terminator: { kind: "return", value: 6, ...s },
+      },
+    ],
+  };
+  // Loop reads `obj.v`, chains `v.size`, and performs an unconditional disjoint
+  // `property-store` on key `"c"` plus a cold conflicting `property-store` on
+  // key `"v"` (which must refresh outer `v` before inner `size`).
+  // slots: 0=obj(gen), 1=sites(ref rec8), 2=n(num), 3=i(num), 4=siteV(ref),
+  //        5=vVal(gen), 6=siteSize(ref), 7=siteC(ref), 8=out(gen)
+  const fn: FunctionIR = {
+    id: 0,
+    name: "disjointStoreAndChain",
+    exported: true,
+    parameters: [0, 1, 2],
+    slots: [
+      "general",
+      "reference",
+      "number",
+      "number",
+      "reference",
+      "general",
+      "reference",
+      "reference",
+      "general",
+    ],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "store", slot: 3, value: 0, ...s },
+          { kind: "general-none", id: 1, ...s },
+          { kind: "store", slot: 8, value: 1, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 2, slot: 3, ...s },
+          { kind: "load", id: 3, slot: 2, ...s },
+          { kind: "binary", id: 4, operator: "<", left: 2, right: 3, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 4,
+          consequent: 2,
+          alternate: 8,
+          ...s,
+        },
+      },
+      // Read siteV (record 8, field 0 -> "v")
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 5, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 5,
+          record: 8,
+          field: 0,
+          slot: 4,
+          consequent: 3,
+          alternate: 9,
+          ...s,
+        },
+      },
+      // Load obj.v -> slot 5, then read siteSize (record 8, field 1 -> "size")
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 4, ...s },
+          {
+            kind: "property-load",
+            id: 8,
+            object: 6,
+            site: 7,
+            ...propLayout,
+            ...s,
+          },
+          { kind: "store", slot: 5, value: 8, ...s },
+          { kind: "load", id: 9, slot: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 9,
+          record: 8,
+          field: 1,
+          slot: 6,
+          consequent: 4,
+          alternate: 9,
+          ...s,
+        },
+      },
+      // Load v.size -> slot 8, then read siteC (record 8, field 2 -> "c")
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 10, slot: 5, ...s },
+          { kind: "load", id: 11, slot: 6, ...s },
+          {
+            kind: "property-load",
+            id: 12,
+            object: 10,
+            site: 11,
+            ...propLayout,
+            ...s,
+          },
+          { kind: "store", slot: 8, value: 12, ...s },
+          { kind: "load", id: 13, slot: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 13,
+          record: 8,
+          field: 2,
+          slot: 7,
+          consequent: 5,
+          alternate: 9,
+          ...s,
+        },
+      },
+      // Unconditional disjoint property-store on key "c", then cold branch to store "v".
+      {
+        id: 5,
+        instructions: [
+          { kind: "load", id: 14, slot: 0, ...s },
+          { kind: "load", id: 15, slot: 7, ...s },
+          { kind: "load", id: 16, slot: 8, ...s },
+          {
+            kind: "property-store",
+            id: 17,
+            object: 14,
+            site: 15,
+            value: 16,
+            ...storePropLayout,
+            ...s,
+          },
+          { kind: "load", id: 18, slot: 3, ...s },
+          { kind: "constant", id: 19, value: 99, ...s },
+          {
+            kind: "binary",
+            id: 20,
+            operator: "===",
+            left: 18,
+            right: 19,
+            ...s,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 20,
+          consequent: 6,
+          alternate: 7,
+          ...s,
+        },
+      },
+      // Cold conflicting property-store on key "v".
+      {
+        id: 6,
+        instructions: [
+          { kind: "load", id: 21, slot: 0, ...s },
+          { kind: "load", id: 22, slot: 4, ...s },
+          { kind: "load", id: 23, slot: 8, ...s },
+          {
+            kind: "property-store",
+            id: 24,
+            object: 21,
+            site: 22,
+            value: 23,
+            ...storePropLayout,
+            ...s,
+          },
+        ],
+        terminator: { kind: "jump", target: 7, ...s },
+      },
+      {
+        id: 7,
+        instructions: [
+          { kind: "load", id: 25, slot: 3, ...s },
+          { kind: "constant", id: 26, value: 1, ...s },
+          { kind: "binary", id: 27, operator: "+", left: 25, right: 26, ...s },
+          { kind: "store", slot: 3, value: 27, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 8,
+        instructions: [{ kind: "load", id: 28, slot: 8, ...s }],
+        terminator: { kind: "return", value: 28, ...s },
+      },
+      {
+        id: 9,
+        instructions: [],
+        terminator: { kind: "trap", ...s },
+      },
+    ],
+  };
+
+  const module: ModuleIR = {
+    records: extRecords,
+    functions: [
+      fn,
+      epochWriterHelper,
+      pureCollectionHelper,
+      createSiteHelper,
+      initSites,
+    ],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const shared = analyzeModulePropertySites(module, 100000);
+  assert.ok(shared !== undefined);
+  assert.equal(shared.siteFieldName.get("8:0"), "v");
+  assert.equal(shared.siteFieldName.get("8:1"), "size");
+  assert.equal(shared.siteFieldName.get("8:2"), "c");
+
+  const result = cacheLoopProperties(fn, module, 100000, undefined, shared);
+  assert.ok(result !== undefined);
+  assert.equal(result.rewritten, 2);
+  const outModule: ModuleIR = {
+    records: extRecords,
+    functions: [
+      result.fn,
+      epochWriterHelper,
+      pureCollectionHelper,
+      createSiteHelper,
+      initSites,
+    ],
+  };
+  assert.ok(verify(outModule).ok, JSON.stringify(verify(outModule)));
+  // Both hot loads (obj.v in block 3 and v.size in block 4) are hoisted.
+  assert.equal(
+    result.fn.blocks[3]!.instructions.some((op) => op.kind === "property-load"),
+    false,
+  );
+  assert.equal(
+    result.fn.blocks[4]!.instructions.some((op) => op.kind === "property-load"),
+    false,
+  );
+  // Disjoint store on "c" in block 5 triggers NO refresh (stays straight-line).
+  assert.equal(
+    result.fn.blocks[5]!.instructions.some((op) => op.kind === "property-load"),
+    false,
+  );
+  // Cold store on "v" in block 6 refreshes BOTH "v" and chained "size" (via
+  // refresh chain blocks jumped to from block 6).
+  assert.notEqual(
+    result.fn.blocks[6]!.terminator.kind === "jump" &&
+      result.fn.blocks[6]!.terminator.target,
+    7,
+  );
 });

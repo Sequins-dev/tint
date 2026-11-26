@@ -410,6 +410,9 @@ export interface ObjectRegisterEntry<Value> {
   /** Whether its [[Construct]] is the ordinary one of a base source
    * function (OrdinaryCreateFromConstructor, then the body). */
   readonly constructible: boolean;
+  /** Non-zero when the body is a pure forwarding constructor such as
+   * `function() { this.initialize.apply(this, arguments); }` (tag 1). */
+  forwardingTag: number;
   readonly invoke: ObjectRegisterCall<Value> | undefined;
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
   readonly scriptInvoke: ObjectScriptCall<Value> | undefined;
@@ -1378,9 +1381,74 @@ export function createLiteralObject(
   }
   return object;
 }
+/** A site record for an inlined constructor allocating an ordinary object
+ * directly in its final shape after verifying the prototype chain has no
+ * exotic objects, accessors, or non-writable data properties for `keys`. */
+export interface ConstructSite {
+  readonly constructKeys: readonly ScriptPropertyKey[];
+  readonly constructEpochRef: PropertyEpoch;
+  constructCtor: ScriptObject | undefined;
+  constructProto: ScriptObject | undefined;
+  constructRoot: ScriptShape | undefined;
+  constructShape: ScriptShape | undefined;
+  constructEpoch: number;
+}
+export function createConstructSite(
+  keys: readonly ScriptPropertyKey[],
+): ConstructSite {
+  return {
+    constructKeys: keys,
+    constructEpochRef: propertyEpoch,
+    constructCtor: undefined,
+    constructProto: undefined,
+    constructRoot: undefined,
+    constructShape: undefined,
+    constructEpoch: -1,
+  };
+}
+function createLiteralObject1Slow(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  return createLiteralObject(prototype, site, [v0], hooks);
+}
+function createLiteralObject2Slow(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  v1: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  return createLiteralObject(prototype, site, [v0, v1], hooks);
+}
+function createLiteralObject3Slow(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  return createLiteralObject(prototype, site, [v0, v1, v2], hooks);
+}
+function createLiteralObject4Slow(
+  prototype: ScriptObject,
+  site: ObjectLiteralSite,
+  v0: unknown,
+  v1: unknown,
+  v2: unknown,
+  v3: unknown,
+  hooks: ObjectHooks<unknown>,
+): ScriptObject {
+  return createLiteralObject(prototype, site, [v0, v1, v2, v3], hooks);
+}
 /** Direct fixed-arity static-key object literal constructors (1..4 keys):
  * bypass temporary value lists, `createObject`, and `setFastValue` once the
- * site has recorded its shared shape from `prototype`'s root child shape. */
+ * site has recorded its shared shape from `prototype`'s root child shape.
+ * Cold miss paths live in separate helpers so IR inlining expands the fast
+ * path directly at literal sites. */
 export function createLiteralObject1(
   prototype: ScriptObject,
   site: ObjectLiteralSite,
@@ -1422,7 +1490,7 @@ export function createLiteralObject1(
       internalValue6: undefined,
       internalValue7: undefined,
     };
-  return createLiteralObject(prototype, site, [v0], hooks);
+  return createLiteralObject1Slow(prototype, site, v0, hooks);
 }
 export function createLiteralObject2(
   prototype: ScriptObject,
@@ -1466,7 +1534,7 @@ export function createLiteralObject2(
       internalValue6: undefined,
       internalValue7: undefined,
     };
-  return createLiteralObject(prototype, site, [v0, v1], hooks);
+  return createLiteralObject2Slow(prototype, site, v0, v1, hooks);
 }
 export function createLiteralObject3(
   prototype: ScriptObject,
@@ -1511,7 +1579,7 @@ export function createLiteralObject3(
       internalValue6: undefined,
       internalValue7: undefined,
     };
-  return createLiteralObject(prototype, site, [v0, v1, v2], hooks);
+  return createLiteralObject3Slow(prototype, site, v0, v1, v2, hooks);
 }
 export function createLiteralObject4(
   prototype: ScriptObject,
@@ -1557,7 +1625,7 @@ export function createLiteralObject4(
       internalValue6: undefined,
       internalValue7: undefined,
     };
-  return createLiteralObject(prototype, site, [v0, v1, v2, v3], hooks);
+  return createLiteralObject4Slow(prototype, site, v0, v1, v2, v3, hooks);
 }
 /** Define one literal accessor half; the other half survives repeated definitions. */
 export function createAccessorProperty<Key, Value>(

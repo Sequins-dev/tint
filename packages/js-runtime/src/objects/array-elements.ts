@@ -42,7 +42,7 @@ export interface ArrayObjectHooks<Key, Value> {
  * overwrite updates in place (also from generated code); cells are never
  * shared between arrays. */
 export interface ElementCell<Value> {
-  value: Value;
+  elementValue: Value;
 }
 export interface ArrayElements<Key, Value> {
   readonly keys: ArrayObjectHooks<Key, Value>;
@@ -129,10 +129,10 @@ export function createArrayElementsFromList(
     for (let i = 0; i < index; i++) {
       const number = numbers[i];
       if (number === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-      values.push({ value: number });
+      values.push({ elementValue: number });
     }
     for (let i = index; i < length; i++)
-      values.push({ value: args[start + i] });
+      values.push({ elementValue: args[start + i] });
     return {
       keys,
       undefinedValue,
@@ -144,7 +144,8 @@ export function createArrayElementsFromList(
     };
   }
   const values: ElementCell<unknown>[] = [];
-  for (let i = 0; i < length; i++) values.push({ value: args[start + i] });
+  for (let i = 0; i < length; i++)
+    values.push({ elementValue: args[start + i] });
   return {
     keys,
     undefinedValue,
@@ -193,7 +194,7 @@ export function readArrayElement<Key, Value>(
   }
   const cell = values[index];
   if (cell === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-  return cell.value;
+  return cell.elementValue;
 }
 
 /** Number storage with room for `required` elements. */
@@ -235,7 +236,7 @@ export function writeArrayElement<Key, Value>(
     for (let i = 0; i < count; i++) {
       const number = numbers[i];
       if (number === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
-      converted.push({ value: elements.keys.fromNumber(number) });
+      converted.push({ elementValue: elements.keys.fromNumber(number) });
     }
     elements.values = converted;
     elements.numberCount = 0;
@@ -245,8 +246,8 @@ export function writeArrayElement<Key, Value>(
   if (values === undefined || index > values.length)
     throw "ARRAY_ELEMENTS_INVARIANT";
   const cell = values[index];
-  if (cell !== undefined) cell.value = value;
-  else values.push({ value });
+  if (cell !== undefined) cell.elementValue = value;
+  else values.push({ elementValue: value });
 }
 
 /** Remove elements at and above `count`; every packed element is configurable. */

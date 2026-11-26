@@ -93,6 +93,7 @@ export function builtinRegisterFunction(
     invoke,
     invokeWide: undefined,
     scriptInvoke: undefined,
+    forwardingTag: 0,
   };
   return fn;
 }

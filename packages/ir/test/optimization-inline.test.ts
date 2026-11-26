@@ -2053,6 +2053,110 @@ test("bound Latin-1 scans and copies inline with their operands remapped", () =>
   );
 });
 
+test("script object allocators inline only into scriptEntry callers and respect the per-caller cap", () => {
+  // Record 0: wide OrdinaryObject-like layout (>= 20 fields).
+  const wideFields = Array.from({ length: 20 }, (_, i) => ({
+    offset: 8 + i * 16,
+    type: "general" as const,
+    mutable: true,
+  }));
+  const records = [{ byteLength: 8 + 20 * 16, fields: wideFields }];
+
+  // Callee 1: allocator helper taking a general value and allocating record 0.
+  const allocator: FunctionIR = {
+    id: 1,
+    name: "createLiteralObject1",
+    exported: false,
+    parameters: [0],
+    slots: ["general"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "general-null", id: 1, ...span },
+          {
+            kind: "record-new",
+            id: 2,
+            record: 0,
+            arguments: [0, ...Array.from({ length: 19 }, () => 1)],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+    ],
+  };
+
+  function makeCaller(scriptEntry: boolean, callCount: number): FunctionIR {
+    const instructions: Instruction[] = [
+      { kind: "load", id: 0, slot: 0, ...span },
+    ];
+    let lastId = 0;
+    for (let i = 0; i < callCount; i++) {
+      lastId = i + 1;
+      instructions.push({
+        kind: "call",
+        id: lastId,
+        target: 1,
+        arguments: [0],
+        ...span,
+      });
+    }
+    const wrappedId = lastId + 1;
+    instructions.push({
+      kind: "general-wrap",
+      id: wrappedId,
+      value: lastId,
+      ...span,
+    });
+    return {
+      id: 0,
+      name: scriptEntry ? "scriptCaller" : "typedCaller",
+      exported: !scriptEntry,
+      ...(scriptEntry ? { scriptEntry: true as const } : {}),
+      parameters: [0, 1, 2, 3],
+      slots: ["general", "general", "general", "optional-reference"],
+      returnType: "general",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions,
+          terminator: { kind: "return", value: wrappedId, ...span },
+        },
+      ],
+    };
+  }
+
+  // Typed caller (`scriptEntry: false`): allocator MUST NOT inline.
+  const typedMod: ModuleIR = {
+    records,
+    functions: [makeCaller(false, 2), allocator],
+  };
+  assert.deepEqual(verify(typedMod), { ok: true });
+  const typedRes = inlineSmallFunctions(typedMod, 100000);
+  assert.ok(typedRes);
+  assert.equal(typedRes.inlined, 0);
+
+  // Script caller (`scriptEntry: true`) with 10 calls: inlines up to cap of 8.
+  const scriptMod: ModuleIR = {
+    records,
+    functions: [makeCaller(true, 10), allocator],
+  };
+  assert.deepEqual(verify(scriptMod), { ok: true });
+  const scriptRes = inlineSmallFunctions(scriptMod, 100000);
+  assert.ok(scriptRes);
+  assert.equal(scriptRes.inlined, 8);
+  assert.deepEqual(verify(scriptRes.module), { ok: true });
+  const remainingCalls = scriptRes.module.functions[0]!.blocks.flatMap((b) =>
+    b.instructions.filter((op) => op.kind === "call"),
+  );
+  assert.equal(remainingCalls.length, 2);
+});
+
 test("multi-block callees with traced reference slots stay under referenceAllowance", () => {
   const module: ModuleIR = {
     records: [

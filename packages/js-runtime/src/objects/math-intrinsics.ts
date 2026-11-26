@@ -134,6 +134,7 @@ export function installMathIntrinsics(
   );
   intrinsics.mathMax = extremum("max", true);
   intrinsics.mathMin = extremum("min", false);
+  intrinsics.mathPow = binary("pow", numberPower);
   intrinsics.mathAbs = unary("abs", (value: number): number => Math.abs(value));
   intrinsics.mathRound = unary("round", (value: number): number =>
     Math.round(value),
@@ -245,7 +246,6 @@ export function installMathIntrinsics(
     true,
     hooks,
   );
-  binary("pow", numberPower);
   builtinProperty(
     math,
     "random",
