@@ -21,6 +21,8 @@ export interface ClassRecordStorage {
   readonly prototypeLink: number | undefined;
   readonly constructorState: number;
   readonly constructionField: number;
+  /** The constructor state's initialization closure field (operates on an existing instance). */
+  readonly initializationField: number;
   /** The prototype's `constructor` field and the constructor state's `prototype` field. */
   readonly prototypeConstructorField: number;
   readonly statePrototypeField: number;
@@ -57,6 +59,10 @@ export interface ClassMemberEnvironment {
     | undefined;
   readonly definitionEnvironment: RecordLayout;
   readonly constructionEnvironment: RecordLayout;
+  /** Construction environment field holding the class constructor (for new.target). */
+  readonly constructorField: number;
+  /** Derived classes: construction environment field holding the base $init closure. */
+  readonly baseInitField: number | undefined;
   /** Present when the class has static fields. */
   readonly staticsEnvironment: RecordLayout | undefined;
 }
@@ -112,6 +118,7 @@ export interface PlannedClassRecords {
   readonly constructorState: RecordLayout;
   readonly constructorNames: readonly string[];
   readonly constructionField: number;
+  readonly initializationField: number;
 }
 
 /** The positional name of a root base's hidden prototype pointer in a
@@ -319,9 +326,17 @@ export function planClassRecords(
       initialized: member?.node.kind === "field",
     });
   }
-  // The construction closure is installed after cyclic class state is allocated.
-  // It has no source property name and is distinct from the class [[Call]] entry.
+  // The construction and initialization closures are installed after cyclic
+  // class state is allocated. They have no source property names and are
+  // distinct from the class [[Call]] entry.
   const constructionField = constructorFields.length;
+  constructorFields.push({
+    type: "reference",
+    mutable: false,
+    optional: false,
+    initialized: true,
+  });
+  const initializationField = constructorFields.length;
   constructorFields.push({
     type: "reference",
     mutable: false,
@@ -334,7 +349,7 @@ export function planClassRecords(
     base === undefined ? instanceFields.length : base.prototypeField;
   if (base === undefined)
     instanceFields.push({ type: "reference", mutable: false, optional: false });
-  // Member closures (docs/design-typed-classes.md, C1): what this phase
+  // Member closures (docs/design-typed-classes.md, C1/C2): what this phase
   // does not lower fails explicitly.
   const accessors: ClassAccessorStorage[] = [];
   const methods: ClassMethodStorage[] = [],
@@ -348,8 +363,10 @@ export function planClassRecords(
         constructionField: number;
       }
     | undefined;
+  const constructorField = 1,
+    baseInitField = base === undefined ? undefined : 2;
   let environmentFields = 0,
-    constructionFields = 1,
+    constructionFields = base === undefined ? 2 : 3,
     staticsFields = 1;
   function nameOf(element: ClassElement): string {
     if (element.kind === "static-block" || element.computed)
@@ -510,6 +527,8 @@ export function planClassRecords(
       body,
       definitionEnvironment: closureEnvironment(environmentFields),
       constructionEnvironment: closureEnvironment(constructionFields),
+      constructorField,
+      baseInitField,
       staticsEnvironment:
         staticFields.length === 0
           ? undefined
@@ -531,6 +550,7 @@ export function planClassRecords(
     constructorState: planRecordLayout(constructorFields, planner, fail),
     constructorNames,
     constructionField,
+    initializationField,
     instanceNames,
     prototypeNames,
     inherited,

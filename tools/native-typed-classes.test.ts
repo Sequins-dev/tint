@@ -932,3 +932,372 @@ test("object-literal methods read this through an interface on the typed path", 
     { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
   );
 });
+
+const inheritanceSemantics = `let log = "";
+function note(text: string): number {
+  log += text + ";";
+  return log.length;
+}
+function targetName(t: unknown): string {
+  if (t === undefined) return "undefined";
+  if (t === Base) return "Base";
+  if (t === Child) return "Child";
+  if (t === GrandChild) return "GrandChild";
+  if (t === AutoChild) return "AutoChild";
+  return "other";
+}
+class Base {
+  bField: number = note("B.field:" + targetName(new.target));
+  x: number;
+  constructor(x: number) {
+    note("B.ctor:" + String(x) + ":" + targetName(new.target));
+    this.x = x;
+  }
+  baseOnly(): string {
+    return "baseOnly:" + String(this.x);
+  }
+  describe(): string {
+    return "B(" + String(this.x) + ")";
+  }
+  add(delta: number): number {
+    return this.x + delta;
+  }
+}
+class Child extends Base {
+  cField: number = note("C.field:" + targetName(new.target));
+  y: number;
+  constructor(x: number, y: number) {
+    note("C.pre:" + targetName(new.target));
+    super(x);
+    note("C.post:" + String(this.x) + ":" + String(this.cField > 0));
+    this.y = y;
+    note("C.superInCtor:" + super.describe());
+  }
+  override describe(): string {
+    return "C(" + super.describe() + "," + String(this.y) + ")";
+  }
+  override add(delta: number): number {
+    return super.add(delta) + this.y;
+  }
+}
+class GrandChild extends Child {
+  gField: number = note("G.field:" + targetName(new.target));
+  z: number;
+  constructor(x: number, y: number, z: number) {
+    note("G.pre:" + targetName(new.target));
+    super(x, y);
+    this.z = z;
+  }
+  override describe(): string {
+    return "G(" + super.describe() + "," + String(this.z) + ")";
+  }
+  methodNewTarget(): string {
+    return targetName(new.target);
+  }
+}
+class AutoChild extends Base {
+  tag: string = "auto:" + String(note("A.field:" + targetName(new.target)));
+  override describe(): string {
+    return "A(" + super.describe() + "," + this.tag + ")";
+  }
+}
+class Circle {
+  readonly kind: "circle" = "circle";
+  r: number;
+  constructor(r: number) {
+    this.r = r;
+  }
+  measure(): number {
+    return this.r * this.r;
+  }
+}
+class Square {
+  readonly kind: "square" = "square";
+  s: number;
+  constructor(s: number) {
+    this.s = s;
+  }
+  measure(): number {
+    return this.s * 4;
+  }
+}
+function checkFamily(v: unknown): string {
+  return (
+    String(v instanceof Base) +
+    "/" +
+    String(v instanceof Child) +
+    "/" +
+    String(v instanceof GrandChild) +
+    "/" +
+    String(v instanceof AutoChild) +
+    "/" +
+    String(v instanceof Circle)
+  );
+}
+function narrowBase(b: Base): string {
+  if (b instanceof GrandChild) return "GC:" + String(b.z);
+  if (b instanceof Child) return "C:" + String(b.y);
+  return "B:" + String(b.x);
+}
+function narrowUnion(u: Circle | Square): number {
+  const byDisc = u.kind === "circle" ? u.r : u.s;
+  const byInst = u instanceof Circle ? u.r * 10 : u.s * 100;
+  return u.measure() + byDisc + byInst;
+}
+export function trace(): string {
+  const b = new Base(1);
+  const c = new Child(2, 3);
+  const g = new GrandChild(4, 5, 6);
+  const a = new AutoChild(7);
+  note("desc:" + b.describe() + "|" + c.describe() + "|" + g.describe() + "|" + a.describe());
+  note("inh:" + g.baseOnly() + "|" + a.baseOnly() + "|" + g.methodNewTarget());
+  note("inst:" + checkFamily(b) + "," + checkFamily(c) + "," + checkFamily(g) + "," + checkFamily(a) + "," + checkFamily(42));
+  const items: Base[] = [b, c, g, a];
+  let sum = 0;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item === undefined) throw "item";
+    note("poly:" + item.describe() + ":" + narrowBase(item));
+    sum += item.add(10);
+  }
+  note("sum:" + String(sum));
+  // Argument side-effect mutating receiver's own method AFTER method read:
+  // JS reads callee first, then evaluates arguments, then invokes original callee.
+  const argOrder = new Child(10, 20);
+  const r1 = argOrder.add(
+    ((): number => {
+      argOrder.add = (d: number): number => d * 1000;
+      return 5;
+    })(),
+  );
+  const r2 = argOrder.add(5);
+  note("argOrder:" + String(r1) + "," + String(r2));
+  // Own override and prototype mutation across hierarchy.
+  g.describe = (): string => "ownG";
+  note("own:" + g.describe() + "|" + c.describe());
+  Base.prototype.baseOnly = function (this: Base): string {
+    return "mutBase:" + String(this.x);
+  };
+  note("protoMut:" + b.baseOnly() + "|" + c.baseOnly() + "|" + g.baseOnly());
+  // Union of distinct classes.
+  note("union:" + String(narrowUnion(new Circle(3))) + "," + String(narrowUnion(new Square(5))));
+  return log;
+}
+`;
+
+const inheritanceErrorsAndGC = `let log = "";
+function note(text: string): number {
+  log += text + ";";
+  return log.length;
+}
+class Root {
+  v: number;
+  constructor(v: number, explode: boolean) {
+    note("Root:" + String(v));
+    if (explode) throw new Error("root-boom");
+    this.v = v;
+  }
+  id(): number {
+    return this.v;
+  }
+}
+class BadThisBeforeSuper extends Root {
+  extra: number = note("badThis.field");
+  constructor() {
+    note("before:" + String(this.v));
+    super(1, false);
+  }
+}
+class BadSuperArgUsesThis extends Root {
+  constructor() {
+    super(this.v, false);
+  }
+}
+class BadDoubleSuper extends Root {
+  f: number = note("double.field");
+  constructor() {
+    super(1, false);
+    super(2, false);
+  }
+}
+class BadEarlyReturn extends Root {
+  constructor(skip: boolean) {
+    if (skip) return;
+    super(3, false);
+  }
+}
+class BadFallthrough extends Root {
+  constructor(call: boolean) {
+    if (call) super(4, false);
+  }
+}
+class FinallySuper extends Root {
+  f: number = note("finally.field");
+  constructor() {
+    try {
+      return;
+    } finally {
+      super(5, false);
+    }
+  }
+}
+class FieldThrows extends Root {
+  bad: number = ((): number => {
+    note("fieldThrows");
+    throw new Error("field-boom");
+  })();
+  constructor(rootExplode: boolean) {
+    super(6, rootExplode);
+    note("never");
+  }
+}
+class GcBase {
+  a: number;
+  constructor(a: number) {
+    this.a = a;
+  }
+  score(): number {
+    return this.a;
+  }
+}
+class GcMid extends GcBase {
+  b: number;
+  constructor(a: number, b: number) {
+    super(a);
+    this.b = b;
+  }
+  override score(): number {
+    return super.score() + this.b;
+  }
+}
+class GcLeaf extends GcMid {
+  c: number;
+  constructor(a: number, b: number, c: number) {
+    super(a, b);
+    this.c = c;
+  }
+  override score(): number {
+    return super.score() + this.c;
+  }
+}
+function catchKind(fn: () => void): string {
+  try {
+    fn();
+    return "ok";
+  } catch (e) {
+    if (e instanceof Error) return e.name + ":" + e.message;
+    return "non-error";
+  }
+}
+export function trace(): string {
+  note("t1:" + (catchKind(() => { new BadThisBeforeSuper(); }).startsWith("ReferenceError") ? "RefErr" : "other"));
+  note("t2:" + (catchKind(() => { new BadSuperArgUsesThis(); }).startsWith("ReferenceError") ? "RefErr" : "other"));
+  note("t3:" + (catchKind(() => { new BadDoubleSuper(); }).startsWith("ReferenceError") ? "RefErr" : "other"));
+  note("t4:" + (catchKind(() => { new BadEarlyReturn(true); }).startsWith("ReferenceError") ? "RefErr" : "other"));
+  note("t5:" + catchKind(() => { new BadEarlyReturn(false); }));
+  note("t6:" + (catchKind(() => { new BadFallthrough(false); }).startsWith("ReferenceError") ? "RefErr" : "other"));
+  note("t7:" + catchKind(() => { new BadFallthrough(true); }));
+  const fs = new FinallySuper();
+  note("t8:" + String(fs.id()) + ":" + String(fs.f > 0));
+  note("t9:" + catchKind(() => { new FieldThrows(true); }));
+  note("t10:" + catchKind(() => { new FieldThrows(false); }));
+  // GC stress across 3-level hierarchy under small generational heap.
+  const kept: GcBase[] = [];
+  for (let i = 0; i < 4000; i++) {
+    const inst: GcBase =
+      i % 3 === 0
+        ? new GcBase(i)
+        : i % 3 === 1
+          ? new GcMid(i, 10)
+          : new GcLeaf(i, 10, 100);
+    if (i % 100 === 0) kept.push(inst);
+  }
+  let total = 0;
+  let leaves = 0;
+  for (let i = 0; i < kept.length; i++) {
+    const k = kept[i];
+    if (k === undefined) throw "kept";
+    total += k.score();
+    if (k instanceof GcLeaf) leaves++;
+  }
+  note("gc:" + String(total) + ":" + String(leaves));
+  return log;
+}
+`;
+
+const inheritanceUnsupportedFallback = `class Base {
+  x: number;
+  constructor(x: number) {
+    this.x = x;
+  }
+}
+class ReturningObject extends Base {
+  constructor(x: number) {
+    super(x);
+    return new Base(x * 10);
+  }
+}
+export function trace(): string {
+  const r = new ReturningObject(7);
+  return String(r.x) + ":" + String(r instanceof Base) + ":" + String(r instanceof ReturningObject);
+}
+`;
+
+test("derived class inheritance follows JavaScript semantics on the typed path", async () => {
+  const expected = await expectedTrace(inheritanceSemantics);
+  verifyHostedFixture(
+    withComparison(inheritanceSemantics, expected),
+    "typed-classes-inheritance",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("derived class super errors, exceptions and GC survival work on the typed path", async () => {
+  const expected = await expectedTrace(inheritanceErrorsAndGC);
+  verifyHostedFixture(
+    withComparison(inheritanceErrorsAndGC, expected),
+    "typed-classes-inheritance-errors-gc",
+    [],
+    [],
+    [],
+    [],
+    {
+      requireTyped: true,
+      runtimeEntry: "initializeGenerationalRuntime",
+      managedBytes: 4194304,
+      allocationCapacity: 262144,
+      rootCapacity: 65536,
+    },
+  );
+});
+
+test("unsupported derived constructor return takes the general path", async () => {
+  const expected = await expectedTrace(inheritanceUnsupportedFallback);
+  assert.equal(expected, "70:true:false");
+  let partition: readonly string[] | undefined;
+  delete process.env.TINT_GENERAL_FALLBACK;
+  try {
+    verifyHostedFixture(
+      withComparison(inheritanceUnsupportedFallback, expected),
+      "typed-classes-inheritance-fallback",
+      [],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+        onGeneralFallback(modules) {
+          partition = modules;
+        },
+      },
+    );
+  } finally {
+    process.env.TINT_GENERAL_FALLBACK = "0";
+  }
+  assert.deepEqual(partition, ["fixture"]);
+});

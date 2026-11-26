@@ -41,6 +41,7 @@ export function checkClassInitialization(
   constructors: ReadonlySet<Expression>,
   methods: ReadonlyMap<string, ClassElement> = new Map<string, ClassElement>(),
   accessors: ReadonlySet<string> = new Set<string>(),
+  derived: boolean = false,
 ): ClassInitialization {
   let ready = new Set<string>(),
     required = new Set<string>(),
@@ -255,6 +256,21 @@ export function checkClassInitialization(
         case "call":
         case "new": {
           const callee = ungroup(node.callee);
+          if (
+            derived &&
+            !staticMode &&
+            node.kind === "call" &&
+            callee.kind === "super"
+          ) {
+            const before = copy(ready);
+            for (const argument of node.arguments) {
+              if (argument === undefined) throw "argument invariant";
+              expression(argument);
+            }
+            if (conditional(node)) ready = before;
+            else runFieldInitializers(false);
+            return;
+          }
           const method =
             node.kind === "call" && !staticMode && callee.kind === "member"
               ? ownMethod(callee)
@@ -490,14 +506,33 @@ export function checkClassInitialization(
         }
         case "try": {
           const before = copy(ready);
-          statement(node.body);
-          ready = copy(before);
-          const handler = node.handler;
-          if (handler !== undefined) statement(handler.body);
-          ready = copy(before);
           const finalizer = node.finalizer;
+          const deferred: Set<string>[] | undefined =
+            finalizer !== undefined && exits === undefined ? [] : undefined;
+          const savedExits = exits;
+          if (deferred !== undefined) exits = deferred;
+          try {
+            statement(node.body);
+            ready = copy(before);
+            const handler = node.handler;
+            if (handler !== undefined) statement(handler.body);
+          } finally {
+            exits = savedExits;
+          }
+          ready = copy(before);
           if (finalizer !== undefined) {
             const normal = statement(finalizer);
+            if (normal && deferred !== undefined && deferred.length > 0) {
+              const afterFinalizer = ready;
+              for (const branch of deferred) {
+                if (branch === undefined) continue;
+                const combined = copy(branch);
+                for (const name of afterFinalizer) combined.add(name);
+                ready = combined;
+                requireComplete(node);
+              }
+              ready = afterFinalizer;
+            }
             if (!normal) return false;
           }
           return true;
@@ -511,6 +546,22 @@ export function checkClassInitialization(
       }
     } finally {
       depth--;
+    }
+  }
+  function runFieldInitializers(mode: boolean): void {
+    for (const member of definition.elements) {
+      if (member === undefined) throw "class member invariant";
+      if (member.kind !== "field" || member.static !== mode) continue;
+      const initializer = member.initializer;
+      if (initializer !== undefined) {
+        expression(initializer);
+        const name = literalPropertyName(member.key);
+        if (name === undefined) throw "field name invariant";
+        ready.add(name);
+      } else {
+        const name = literalPropertyName(member.key);
+        if (name !== undefined) ready.delete(name);
+      }
     }
   }
   try {
@@ -536,41 +587,33 @@ export function checkClassInitialization(
           required.add(name);
         }
       }
-      for (const member of definition.elements) {
-        if (member === undefined) throw "class member invariant";
-        if (member.kind !== "field" || member.static !== mode) continue;
-        const initializer = member.initializer;
-        if (initializer !== undefined) {
-          expression(initializer);
-          const name = literalPropertyName(member.key);
-          if (name === undefined) throw "field name invariant";
-          ready.add(name);
-        } else {
-          const name = literalPropertyName(member.key);
-          if (name !== undefined) ready.delete(name);
-        }
-      }
-      let normal = true;
-      if (!mode) {
+      let constructorMember: ClassElement | undefined;
+      if (!mode)
         for (const member of definition.elements) {
           if (member === undefined) throw "class member invariant";
           if (
-            member.kind !== "method" ||
-            member.static ||
-            literalPropertyName(member.key) !== "constructor"
+            member.kind === "method" &&
+            !member.static &&
+            literalPropertyName(member.key) === "constructor"
           )
-            continue;
-          for (const parameter of member.parameters) {
-            if (parameter === undefined) throw "parameter invariant";
-            const initializer = parameter.initializer;
-            if (initializer !== undefined) {
-              const before = copy(ready);
-              expression(initializer);
-              ready = before;
-            }
-          }
-          normal = statement(member.body);
+            constructorMember = member;
         }
+      // In a derived class with an explicit constructor, own field
+      // initializers run when super(...) returns rather than before the body.
+      if (mode || !derived || constructorMember === undefined)
+        runFieldInitializers(mode);
+      let normal = true;
+      if (!mode && constructorMember?.kind === "method") {
+        for (const parameter of constructorMember.parameters) {
+          if (parameter === undefined) throw "parameter invariant";
+          const initializer = parameter.initializer;
+          if (initializer !== undefined) {
+            const before = copy(ready);
+            expression(initializer);
+            ready = before;
+          }
+        }
+        normal = statement(constructorMember.body);
       }
       if (normal) requireComplete(definition);
     }
@@ -684,6 +727,7 @@ export function constructorReadBeforeAssignment(
       case "null":
       case "identifier":
       case "this":
+      case "super":
       case "new-target":
       case "elision":
       case "arrow":

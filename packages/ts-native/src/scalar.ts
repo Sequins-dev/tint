@@ -373,6 +373,8 @@ export interface RecordAccessChoice {
   readonly prototype?: {
     readonly field: number;
     readonly access: RecordAccess;
+    /** Skip the own-field check and always follow the prototype pointer (used by `super`). */
+    readonly skipOwn?: boolean;
   };
   /** An accessor property (typed classes): the layout has no field for it.
    * Its getter or setter closure is read through the prototype pointer
@@ -403,11 +405,19 @@ export interface RecordConstruction extends RecordConstructionShape {
     readonly tag: string | number | boolean | undefined;
   })[];
 }
-/** Where a method read through a prototype contract leaves its result when
- * the method is inherited, and a flag set when it was (see `methodCallee`). */
+/** Per-choice prototype slots and matched choice index (-1 for own override)
+ * for method calls read through a prototype contract (see `methodCallee`).
+ * When a call has no arguments to evaluate between the read and invocation,
+ * `directCall` invokes the proven leaf closure directly inside the block
+ * dominated by the receiver's concrete layout check. */
 interface InheritedRead {
-  readonly slot: number;
-  readonly inherited: number;
+  readonly slots: readonly number[];
+  readonly arm: number;
+  readonly armIndex?: number;
+  readonly directCall?:
+    ((leafSlot: number, receiver: number) => void) | undefined;
+  readonly receiver?: number | undefined;
+  readonly done?: number | undefined;
 }
 /** `x instanceof C` for a typed class C (docs/design-typed-classes.md):
  * OrdinaryHasInstance compares C.prototype with the operand's prototype
@@ -420,6 +430,15 @@ export interface ClassInstanceTest {
   /** C's instance layout and its hidden prototype pointer field. */
   readonly instance: number;
   readonly prototypeField: number;
+  /** C and all derived classes in its family, with prototype link chains up to C.prototype. */
+  readonly family?: readonly {
+    readonly instance: number;
+    readonly prototypeField: number;
+    readonly prototypeChain: readonly {
+      readonly record: number;
+      readonly linkField: number;
+    }[];
+  }[];
 }
 export interface ConstructorCall {
   /** Signature witness for the separate construction closure. */
@@ -471,6 +490,21 @@ export interface OwnedConstructor {
   readonly record: number;
   readonly locals: readonly number[];
 }
+/** Hidden parameter indices for a typed class constructor body (C2). */
+export interface ConstructorContext {
+  /** Parameter index receiving `new.target` (the most-derived constructor). */
+  readonly newTarget: number;
+  /** Derived constructors: parameter index and target signature of base `$init`. */
+  readonly baseInit?: {
+    readonly parameter: number;
+    readonly target: number;
+  };
+  /** Derived constructors with own fields: parameter index and target signature of `$fields`. */
+  readonly ownFields?: {
+    readonly parameter: number;
+    readonly target: number;
+  };
+}
 /** A class statement evaluated by this function (docs/design-typed-classes.md).
  * Its member closures are created in source order, stored in the definition
  * environment, and the generated definition entry returns the constructor. */
@@ -483,6 +517,14 @@ export interface OwnedClassDefinition {
   readonly environment: number;
   /** Member closure targets by definition environment field. */
   readonly members: readonly number[];
+  /** Derived classes: heritage expression and accesses for base prototype and `$init`. */
+  readonly heritage?:
+    | {
+        readonly expression: Expression;
+        readonly prototype: RecordAccess;
+        readonly init: RecordAccess;
+      }
+    | undefined;
   /** Static field initialization: an entry closed over an environment of
    * the constructor (field 0) and initializer closures (fields from 1). */
   readonly statics?:
@@ -500,6 +542,7 @@ export interface OwnedEnvironmentPlan {
   readonly cells: readonly OwnedCell[];
   readonly constructors: ReadonlyMap<number, OwnedConstructor>;
   readonly classes?: readonly OwnedClassDefinition[];
+  readonly constructorContext?: ConstructorContext | undefined;
 }
 /** Emit one function against explicit call signatures. Verify the composed module before use. */
 export interface RealmErrorRuntime {
@@ -552,6 +595,10 @@ export function lowerFunction(
       ? slots.length
       : undefined;
   if (receiverReference !== undefined) slots.push("optional-reference");
+  const isDerivedConstructor =
+    owned?.constructorContext?.baseInit !== undefined;
+  const superCalled = isDerivedConstructor ? slots.length : undefined;
+  if (superCalled !== undefined) slots.push("boolean");
   const callReceivers = createKeyIndex<Expression, number>(syntaxHash);
   let exception: { readonly target: number; readonly slot: number } | undefined;
   let finalizer: FinallyScope | undefined;
@@ -2947,6 +2994,7 @@ export function lowerFunction(
       case "boolean":
       case "null":
       case "this":
+      case "new-target":
         return true;
       case "group":
       case "satisfies":
@@ -3396,56 +3444,104 @@ export function lowerFunction(
     recordAccess(constructor, prototype, "read", test.prototype, node);
     const result = temporary("boolean"),
       linked = temporary("reference"),
-      compare = block(),
+      matched = block(),
       rejected = block(),
       done = block();
-    let object: number;
-    if (slots[operand] === "reference") object = load(operand, node);
-    else {
-      // Primitives and other objects fail the layout test.
-      const general = save(
-        coerce(load(operand, node), "general", node),
-        "general",
-        node,
-      );
-      const matches = nextValue++;
-      emit({
-        kind: "general-record-is",
-        id: matches,
-        value: load(general, node),
-        record: test.instance,
+    const emptyChain: readonly {
+      readonly record: number;
+      readonly linkField: number;
+    }[] = [];
+    const members: readonly {
+      readonly instance: number;
+      readonly prototypeField: number;
+      readonly prototypeChain: readonly {
+        readonly record: number;
+        readonly linkField: number;
+      }[];
+    }[] = test.family ?? [
+      {
+        instance: test.instance,
+        prototypeField: test.prototypeField,
+        prototypeChain: emptyChain,
+      },
+    ];
+    const general =
+      slots[operand] === "reference"
+        ? undefined
+        : save(coerce(load(operand, node), "general", node), "general", node);
+    for (const member of members) {
+      if (member === undefined) throw "class instanceof family invariant";
+      const nextMember = block();
+      let object: number;
+      if (general === undefined) object = load(operand, node);
+      else {
+        const isRecord = nextValue++;
+        emit({
+          kind: "general-record-is",
+          id: isRecord,
+          value: load(general, node),
+          record: member.instance,
+          start: node.start,
+          end: node.end,
+        });
+        const instanceBlock = block();
+        choose(isRecord, instanceBlock, nextMember, node);
+        current = instanceBlock;
+        object = coerce(load(general, node), "reference", node);
+      }
+      const checkProto = block();
+      finish({
+        kind: "record",
+        object,
+        record: member.instance,
+        field: member.prototypeField,
+        operation: "read",
+        slot: linked,
+        consequent: checkProto.id,
+        alternate: nextMember.id,
         start: node.start,
         end: node.end,
       });
-      const instance = block();
-      choose(matches, instance, rejected, node);
-      current = instance;
-      object = coerce(load(general, node), "reference", node);
+      current = checkProto;
+      for (let step = 0; step <= member.prototypeChain.length; step++) {
+        const same = nextValue++;
+        emit({
+          kind: "binary",
+          operator: "===",
+          id: same,
+          left: load(linked, node),
+          right: load(prototype, node),
+          start: node.start,
+          end: node.end,
+        });
+        const link = member.prototypeChain[step];
+        if (link === undefined) {
+          choose(same, matched, rejected, node);
+          break;
+        }
+        const walk = block();
+        choose(same, matched, walk, node);
+        current = walk;
+        const nextProto = block();
+        finish({
+          kind: "record",
+          object: load(linked, node),
+          record: link.record,
+          field: link.linkField,
+          operation: "read",
+          slot: linked,
+          consequent: nextProto.id,
+          alternate: rejected.id,
+          start: node.start,
+          end: node.end,
+        });
+        current = nextProto;
+      }
+      current = nextMember;
     }
-    finish({
-      kind: "record",
-      object,
-      record: test.instance,
-      field: test.prototypeField,
-      operation: "read",
-      slot: linked,
-      consequent: compare.id,
-      alternate: rejected.id,
-      start: node.start,
-      end: node.end,
-    });
-    current = compare;
-    const same = nextValue++;
-    emit({
-      kind: "binary",
-      operator: "===",
-      id: same,
-      left: load(linked, node),
-      right: load(prototype, node),
-      start: node.start,
-      end: node.end,
-    });
-    store(result, same, node);
+    jump(rejected.id, node);
+    current = matched;
+    store(result, load(booleanSlot(true, node), node), node);
     jump(done.id, node);
     current = rejected;
     store(result, load(booleanSlot(false, node), node), node);
@@ -3743,7 +3839,11 @@ export function lowerFunction(
   function errorName(operand: number, node: IRSpan): number {
     const result = temporary("string");
     const done = block();
-    const kinds: ("TypeError" | "RangeError")[] = ["TypeError", "RangeError"];
+    const kinds: ("TypeError" | "RangeError" | "ReferenceError")[] = [
+      "TypeError",
+      "RangeError",
+      "ReferenceError",
+    ];
     for (const kind of kinds) {
       if (kind === undefined) throw "error kind invariant";
       const matches = nativeErrorTest(
@@ -4634,7 +4734,7 @@ export function lowerFunction(
   }
   function requireCondition(
     condition: number,
-    error: "TypeError" | "RangeError",
+    error: "TypeError" | "RangeError" | "ReferenceError",
     text: string,
     node: IRSpan,
   ): void {
@@ -4646,7 +4746,7 @@ export function lowerFunction(
     current = yes;
   }
   function throwNativeError(
-    error: "TypeError" | "RangeError",
+    error: "TypeError" | "RangeError" | "ReferenceError",
     text: string,
     node: IRSpan,
   ): void {
@@ -5320,15 +5420,55 @@ export function lowerFunction(
     });
     if (id !== undefined) store(transfer, coerce(id, type, node), node);
   }
-  /** The callee of `object.method(...)` when the method is read through a
-   * prototype contract (class instances): the ordinary read into `transfer`,
-   * plus the inherited read (see InheritedRead). */
+  function requireSuperCalled(node: IRSpan): void {
+    if (superCalled === undefined) return;
+    requireCondition(
+      superCalled,
+      "ReferenceError",
+      "Must call super constructor in derived class before accessing 'this' or returning from derived constructor",
+      node,
+    );
+  }
+  function rawInstanceReference(node: Span): number {
+    if (receiverReference !== undefined) {
+      const id = nextValue++;
+      emit({
+        kind: "reference-value",
+        id,
+        value: load(receiverReference, node),
+        start: node.start,
+        end: node.end,
+      });
+      return save(id, "reference", node);
+    }
+    if (receiverSlot === undefined) throw "receiver entry storage invariant";
+    return save(
+      coerce(load(receiverSlot, node), "reference", node),
+      "reference",
+      node,
+    );
+  }
+  /** The callee of `object.method(...)` or `super.method(...)` when the method
+   * is read through a prototype contract (class instances): the ordinary read
+   * into `transfer`, plus per-choice inherited slots (see InheritedRead). */
   function methodCallee(
     input: Expression,
-  ): { readonly transfer: number; readonly read: InheritedRead } | undefined {
+    direct?: {
+      readonly onLeaf: (leafSlot: number, receiver: number) => void;
+      readonly done: number;
+    },
+  ):
+    | {
+        readonly transfer: number;
+        readonly receiver: number;
+        readonly read: InheritedRead;
+      }
+    | undefined {
     const member = ungroup(input);
     if (member.kind !== "member" || member.optional === true) return undefined;
-    if (info(member).builtin !== undefined) return undefined;
+    const memberBuiltin = info(member).builtin;
+    if (memberBuiltin !== undefined && memberBuiltin !== "super-member")
+      return undefined;
     const access = records?.accesses.get(member);
     if (
       access === undefined ||
@@ -5337,16 +5477,39 @@ export function lowerFunction(
       )
     )
       return undefined;
-    const object = value(member.object),
-      transfer = temporary(access.type),
-      read: InheritedRead = {
-        slot: temporary(access.type),
-        inherited: temporary("boolean"),
-      };
-    store(read.inherited, load(booleanSlot(false, member), member), member);
+    let object: number;
+    if (memberBuiltin === "super-member") {
+      requireSuperCalled(member);
+      object = rawInstanceReference(member);
+    } else {
+      object = value(member.object);
+    }
+    const transfer = temporary(access.type),
+      armSlots: number[] = [];
+    if (direct === undefined) {
+      for (let i = 0; i < access.choices.length; i++) {
+        const armSlot = temporary("optional-reference");
+        const none = nextValue++;
+        emit({
+          kind: "reference-none",
+          id: none,
+          start: member.start,
+          end: member.end,
+        });
+        store(armSlot, none, member);
+        armSlots.push(armSlot);
+      }
+    }
+    const read: InheritedRead = {
+      slots: armSlots,
+      arm: direct === undefined ? numberSlot(-1, member) : -1,
+      directCall: direct?.onLeaf,
+      receiver: object,
+      done: direct?.done,
+    };
     callReceivers.set(member, object);
     recordAccess(object, transfer, "read", access, member, undefined, read);
-    return { transfer, read };
+    return { transfer, receiver: object, read };
   }
   function recordAccess(
     object: number,
@@ -5377,7 +5540,12 @@ export function lowerFunction(
       string,
       { readonly slot: number; readonly success: number }
     >();
-    for (const choice of access.choices) {
+    for (
+      let choiceIndex = 0;
+      choiceIndex < access.choices.length;
+      choiceIndex++
+    ) {
+      const choice = access.choices[choiceIndex];
       if (choice === undefined) throw "record choice invariant";
       const next = block(),
         converted = operation === "read" && choice.type !== access.type,
@@ -5420,14 +5588,25 @@ export function lowerFunction(
         continue;
       }
       const prototype = choice.prototype;
+      const armIndex =
+        inheritance === undefined ? -1 : (inheritance.armIndex ?? choiceIndex);
       if (operation === "read" && prototype !== undefined) {
         if (prototype.access.type !== access.type)
           throw "prototype result representation invariant";
         const receiverSlot = save(receiver, "reference", node),
           prototypeSlot = temporary("reference"),
-          dispatch = block(),
-          own = block(),
-          inherited = block();
+          dispatch = block();
+        const childInheritance: InheritedRead | undefined =
+          inheritance === undefined
+            ? undefined
+            : {
+                slots: inheritance.slots,
+                arm: inheritance.arm,
+                armIndex,
+                directCall: inheritance.directCall,
+                receiver: inheritance.receiver,
+                done: inheritance.done,
+              };
         // Guard the concrete shape before interpreting its presence byte or
         // prototype pointer. A different shape advances the outer dispatch.
         finish({
@@ -5443,6 +5622,22 @@ export function lowerFunction(
           end: node.end,
         });
         current = dispatch;
+        if (prototype.skipOwn === true) {
+          recordAccess(
+            prototypeSlot,
+            transfer,
+            "read",
+            prototype.access,
+            node,
+            undefined,
+            childInheritance,
+          );
+          if (current !== undefined) jump(merge.id, node);
+          current = next;
+          continue;
+        }
+        const own = block(),
+          inherited = block();
         const present = nextValue++;
         emit({
           kind: "record-has",
@@ -5455,37 +5650,53 @@ export function lowerFunction(
         });
         choose(present, own, inherited, node);
         current = inherited;
-        if (inheritance === undefined)
-          recordAccess(prototypeSlot, transfer, "read", prototype.access, node);
-        else {
-          recordAccess(
-            prototypeSlot,
-            inheritance.slot,
-            "read",
-            prototype.access,
-            node,
-          );
-          store(transfer, load(inheritance.slot, node), node);
-          store(
-            inheritance.inherited,
-            load(booleanSlot(true, node), node),
-            node,
-          );
-        }
-        jump(merge.id, node);
+        recordAccess(
+          prototypeSlot,
+          transfer,
+          "read",
+          prototype.access,
+          node,
+          undefined,
+          childInheritance,
+        );
+        if (current !== undefined) jump(merge.id, node);
         current = own;
-        // The inherited slot holds a prototype read on every path, so the
-        // optimizer can prove its closure target.
-        if (inheritance !== undefined)
-          recordAccess(
-            prototypeSlot,
-            inheritance.slot,
-            "read",
-            prototype.access,
-            node,
-          );
         receiver = load(receiverSlot, node);
       }
+      // At a prototype leaf inside `methodCallee`, read into a dedicated
+      // reference temp: either invoke immediately (0-arg calls, preserving the
+      // receiver's layout dominance) or wrap into the arm's optional-reference
+      // slot so `devirtualizeClosureCalls` proves each arm's closure target.
+      const directCall = inheritance?.directCall;
+      const directReceiver = inheritance?.receiver;
+      const directDone = inheritance?.done;
+      const directLeaf =
+        operation === "read" &&
+        directCall !== undefined &&
+        directReceiver !== undefined &&
+        directDone !== undefined &&
+        prototype === undefined &&
+        choice.type === "reference" &&
+        access.type === "reference" &&
+        !converted;
+      const armSlot =
+        operation === "read" &&
+        inheritance !== undefined &&
+        !directLeaf &&
+        prototype === undefined &&
+        choice.type === "reference" &&
+        access.type === "reference" &&
+        !converted
+          ? inheritance.slots[armIndex]
+          : undefined;
+      const leafSlot =
+        directLeaf || armSlot !== undefined
+          ? temporary("reference")
+          : undefined;
+      const leafSuccess = leafSlot !== undefined ? block() : undefined;
+      const targetSuccessId =
+        leafSuccess !== undefined ? leafSuccess.id : successId;
+      const targetSlot = leafSlot !== undefined ? leafSlot : physicalSlot;
       // Terminators carry every field from construction: IR copies keep
       // the shape, and added fields would live out of object on hosts.
       const record = choice.record,
@@ -5500,8 +5711,8 @@ export function lowerFunction(
           record,
           field,
           operation,
-          slot: physicalSlot,
-          consequent: successId,
+          slot: targetSlot,
+          consequent: targetSuccessId,
           alternate,
           start: node.start,
           end: node.end,
@@ -5513,12 +5724,42 @@ export function lowerFunction(
           record,
           field,
           operation,
-          slot: physicalSlot,
-          consequent: successId,
+          slot: targetSlot,
+          consequent: targetSuccessId,
           alternate,
           start: node.start,
           end: node.end,
         });
+      if (
+        leafSuccess !== undefined &&
+        leafSlot !== undefined &&
+        inheritance !== undefined
+      ) {
+        current = leafSuccess;
+        if (
+          directLeaf &&
+          directCall !== undefined &&
+          directReceiver !== undefined &&
+          directDone !== undefined
+        ) {
+          directCall(leafSlot, directReceiver);
+          if (current !== undefined) jump(directDone, node);
+        } else if (armSlot !== undefined) {
+          const loaded = load(leafSlot, node),
+            wrapped = nextValue++;
+          emit({
+            kind: "reference-wrap",
+            id: wrapped,
+            value: loaded,
+            start: node.start,
+            end: node.end,
+          });
+          store(armSlot, wrapped, node);
+          store(transfer, loaded, node);
+          store(inheritance.arm, load(numberSlot(armIndex, node), node), node);
+          jump(merge.id, node);
+        }
+      }
       if (converted && shared === undefined) {
         current = success;
         let value = load(slot, node);
@@ -8060,7 +8301,25 @@ export function lowerFunction(
         });
         return save(id, scalarType(node), node);
       }
+      case "new-target": {
+        const ctx = owned?.constructorContext;
+        if (ctx !== undefined) {
+          const slot = parameters[ctx.newTarget];
+          if (slot === undefined) throw "new.target parameter invariant";
+          const targetType = scalarType(node);
+          return save(
+            coerce(load(slot, node), targetType, node),
+            targetType,
+            node,
+          );
+        }
+        const id = nextValue++;
+        emit({ kind: "undefined", id, start: node.start, end: node.end });
+        const targetType = scalarType(node);
+        return save(coerce(id, targetType, node), targetType, node);
+      }
       case "this": {
+        requireSuperCalled(node);
         const local = info(node).local;
         if (local !== undefined)
           return save(
@@ -8524,6 +8783,16 @@ export function lowerFunction(
       }
       case "member": {
         const builtin = info(node).builtin;
+        if (builtin === "super-member") {
+          requireSuperCalled(node);
+          const access = records?.accesses.get(node);
+          if (access === undefined) throw "super member access invariant";
+          const object = rawInstanceReference(node),
+            result = temporary(access.type);
+          callReceivers.set(node, object);
+          recordAccess(object, result, "read", access, node);
+          return result;
+        }
         if (builtin === "speculative-property-read")
           return speculativePropertyRead(node);
         if (
@@ -9361,6 +9630,108 @@ export function lowerFunction(
         const created = info(node).cView;
         if (created !== undefined) return viewNew(node, created);
         const builtin = info(node).builtin;
+        if (builtin === "super-call") {
+          const ctx = owned?.constructorContext,
+            baseInit = ctx?.baseInit;
+          if (
+            ctx === undefined ||
+            baseInit === undefined ||
+            superCalled === undefined
+          )
+            throw "super call context invariant";
+          const baseSig = signatures[baseInit.target];
+          if (baseSig === undefined) throw "base init signature invariant";
+          const rest = info(node).rest;
+          let userArgs: number[];
+          if (rest === undefined) userArgs = node.arguments.map(value);
+          else {
+            userArgs = node.arguments.slice(0, rest.start).map(value);
+            supplyOmittedArguments(
+              userArgs,
+              baseSig.parameters.slice(2),
+              rest.start,
+              node,
+            );
+            userArgs.push(packCallArguments(node.arguments, rest, node));
+          }
+          const instanceRef = rawInstanceReference(node),
+            newTargetSlot = parameters[ctx.newTarget],
+            baseInitSlot = parameters[baseInit.parameter];
+          if (newTargetSlot === undefined || baseInitSlot === undefined)
+            throw "super call parameter invariant";
+          const initSlots: number[] = [instanceRef, newTargetSlot];
+          for (const arg of userArgs) initSlots.push(arg);
+          supplyOmittedArguments(
+            initSlots,
+            baseSig.parameters,
+            baseSig.parameters.length,
+            node,
+          );
+          const preparedInit = initSlots.map((slot, index) => {
+            const param = baseSig.parameters[index];
+            if (param === undefined) throw "base init parameter invariant";
+            return slots[slot] === param
+              ? slot
+              : save(coerce(load(slot, node), param, node), param, node);
+          });
+          const initCall = callValue(
+            load(baseInitSlot, node),
+            preparedInit.map((slot) => load(slot, node)),
+          );
+          emit({
+            kind: "call-indirect",
+            id: undefined,
+            target: baseInit.target,
+            callee: initCall.callee,
+            arguments: initCall.arguments,
+            start: node.start,
+            end: node.end,
+          });
+          const already = block(),
+            fresh = block();
+          choose(load(superCalled, node), already, fresh, node);
+          current = already;
+          throwNativeError(
+            "ReferenceError",
+            "Super constructor may only be called once",
+            node,
+          );
+          current = fresh;
+          store(superCalled, load(booleanSlot(true, node), node), node);
+          const ctorReceiverLocal = fn.receiverLocal;
+          if (ctorReceiverLocal !== undefined && receiverSlot !== undefined) {
+            store(
+              ctorReceiverLocal,
+              coerce(load(receiverSlot, node), slots[ctorReceiverLocal], node),
+              node,
+            );
+            cellAccess(ctorReceiverLocal, "initialize", node);
+          }
+          const ownFields = ctx.ownFields;
+          if (ownFields !== undefined) {
+            const ownFieldsSlot = parameters[ownFields.parameter];
+            if (ownFieldsSlot === undefined)
+              throw "super own fields parameter invariant";
+            const fieldsCall = callValue(load(ownFieldsSlot, node), [
+              load(instanceRef, node),
+            ]);
+            emit({
+              kind: "call-indirect",
+              id: undefined,
+              target: ownFields.target,
+              callee: fieldsCall.callee,
+              arguments: fieldsCall.arguments,
+              start: node.start,
+              end: node.end,
+            });
+          }
+          const targetType = scalarType(node);
+          return save(
+            coerce(load(instanceRef, node), targetType, node),
+            targetType,
+            node,
+          );
+        }
         if (builtin === "string-convert") {
           const argument = node.arguments[0];
           const input = argument === undefined ? undefined : value(argument);
@@ -12125,6 +12496,81 @@ export function lowerFunction(
             throw "explicit call target invariant";
           calleeNode = receiverTarget.object;
         }
+        const target = info(node).callee;
+        const pureConstantArgs = node.arguments.every(
+          (arg) =>
+            arg !== undefined &&
+            (arg.kind === "number" ||
+              arg.kind === "boolean" ||
+              arg.kind === "string" ||
+              arg.kind === "null"),
+        );
+        const directMethodCall =
+          info(node).indirect &&
+          !explicitReceiver &&
+          node.scriptCall !== true &&
+          info(node).voidCallResults === undefined &&
+          pureConstantArgs &&
+          info(node).rest === undefined &&
+          target !== undefined;
+        if (directMethodCall && target !== undefined) {
+          const directDone = block();
+          const targetSignature = signatures[target];
+          const directResultType =
+            targetSignature?.returnType === "void" || info(node).type === "void"
+              ? undefined
+              : scalarType(node);
+          const directResult =
+            directResultType === undefined
+              ? undefined
+              : temporary(directResultType);
+          const directMethod = methodCallee(calleeNode, {
+            onLeaf: (leafSlot, receiverSlotId) => {
+              const returned = invoke(
+                target,
+                callArguments(node.arguments, target, node),
+                leafSlot,
+                receiverSlotId,
+                node,
+              );
+              if (
+                directResult !== undefined &&
+                directResultType !== undefined &&
+                returned !== undefined
+              )
+                store(
+                  directResult,
+                  coerce(load(returned, node), directResultType, node),
+                  node,
+                );
+            },
+            done: directDone.id,
+          });
+          if (directMethod !== undefined) {
+            if (current !== undefined) {
+              const returned = invoke(
+                target,
+                callArguments(node.arguments, target, node),
+                directMethod.transfer,
+                directMethod.receiver,
+                node,
+              );
+              if (
+                directResult !== undefined &&
+                directResultType !== undefined &&
+                returned !== undefined
+              )
+                store(
+                  directResult,
+                  coerce(load(returned, node), directResultType, node),
+                  node,
+                );
+              if (current !== undefined) jump(directDone.id, node);
+            }
+            current = directDone;
+            return directResult;
+          }
+        }
         const method =
           info(node).indirect &&
           !explicitReceiver &&
@@ -12135,14 +12581,21 @@ export function lowerFunction(
         // A call through a method-syntax signature passes its object as the
         // receiver (evaluated once, before the callee read).
         let memberReceiver: number | undefined;
+        let memberReceiverOverride = false;
         if (
           method === undefined &&
           !explicitReceiver &&
           info(node).methodReceiver === true &&
           receiverTarget.kind === "member"
         ) {
-          memberReceiver = value(receiverTarget.object);
-          expressionOverrides.set(receiverTarget.object, memberReceiver);
+          if (info(receiverTarget).builtin === "super-member") {
+            requireSuperCalled(receiverTarget);
+            memberReceiver = rawInstanceReference(receiverTarget);
+          } else {
+            memberReceiver = value(receiverTarget.object);
+            expressionOverrides.set(receiverTarget.object, memberReceiver);
+            memberReceiverOverride = true;
+          }
         }
         const calleeSlot =
           method !== undefined
@@ -12150,7 +12603,7 @@ export function lowerFunction(
             : info(node).indirect
               ? value(calleeNode)
               : undefined;
-        if (memberReceiver !== undefined && receiverTarget.kind === "member")
+        if (memberReceiverOverride && receiverTarget.kind === "member")
           expressionOverrides.delete(receiverTarget.object);
         const receiverArgument = explicitReceiver
           ? node.arguments[0]
@@ -12163,7 +12616,6 @@ export function lowerFunction(
         const args = explicitReceiver
           ? node.arguments.slice(1)
           : node.arguments;
-        const target = info(node).callee;
         if (target === undefined) throw "call invariant";
         if (node.scriptCall === true) {
           if (calleeSlot === undefined) throw "script call entry invariant";
@@ -12181,12 +12633,10 @@ export function lowerFunction(
         const prepared = callArguments(args, target, node);
         if (method === undefined)
           return invoke(target, prepared, calleeSlot, receiver, node);
-        // An inherited method is called through the slot only prototype
-        // reads write, whose closure target the optimizer can prove (and
-        // then call directly); an own override takes the ordinary call.
-        const inherited = block(),
-          own = block(),
-          done = block();
+        // Each inherited prototype arm calls through its dedicated
+        // optional-reference slot, whose single closure target the optimizer
+        // proves and devirtualizes; own overrides take the ordinary call.
+        const done = block();
         const resultType =
           signatures[target]?.returnType === "void" ||
           info(node).type === "void"
@@ -12194,8 +12644,7 @@ export function lowerFunction(
             : scalarType(node);
         const result =
           resultType === undefined ? undefined : temporary(resultType);
-        const call = (entry: Builder, callee: number): void => {
-          current = entry;
+        const callInCurrent = (callee: number): void => {
           const returned = invoke(
             target,
             prepared.slice(),
@@ -12211,9 +12660,42 @@ export function lowerFunction(
             store(result, coerce(load(returned, node), resultType, node), node);
           if (current !== undefined) jump(done.id, node);
         };
-        choose(load(method.read.inherited, node), inherited, own, node);
-        call(inherited, method.read.slot);
-        call(own, method.transfer);
+        for (
+          let armIndex = 0;
+          armIndex < method.read.slots.length;
+          armIndex++
+        ) {
+          const armSlot = method.read.slots[armIndex];
+          if (armSlot === undefined) throw "method arm slot invariant";
+          const armBlock = block(),
+            nextCheck = block();
+          choose(
+            load(
+              binarySlot(
+                "===",
+                method.read.arm,
+                numberSlot(armIndex, node),
+                node,
+              ),
+              node,
+            ),
+            armBlock,
+            nextCheck,
+            node,
+          );
+          current = armBlock;
+          const unwrapped = nextValue++;
+          emit({
+            kind: "reference-value",
+            id: unwrapped,
+            value: load(armSlot, node),
+            start: node.start,
+            end: node.end,
+          });
+          callInCurrent(save(unwrapped, "reference", node));
+          current = nextCheck;
+        }
+        callInCurrent(method.transfer);
         current = done;
         return result;
       }
@@ -12672,6 +13154,22 @@ export function lowerFunction(
         // prototype and constructor; the class scope binding is initialized
         // before static fields, and the statement binding after them.
         allocateCells(node.definition);
+        const heritageArgs: number[] = [];
+        const heritage = plan.heritage;
+        if (heritage !== undefined) {
+          const baseConstructor = value(heritage.expression);
+          const basePrototype = temporary("reference"),
+            baseInit = temporary("reference");
+          recordAccess(
+            baseConstructor,
+            basePrototype,
+            "read",
+            heritage.prototype,
+            node,
+          );
+          recordAccess(baseConstructor, baseInit, "read", heritage.init, node);
+          heritageArgs.push(load(basePrototype, node), load(baseInit, node));
+        }
         const environment = nextValue++;
         emit({
           kind: "record-new",
@@ -12698,17 +13196,17 @@ export function lowerFunction(
           id: constructor,
           target: plan.definition,
           callee: definition,
-          arguments: [],
+          arguments: heritageArgs,
           start: node.start,
           end: node.end,
         });
-        const value = save(constructor, "reference", node),
+        const ctorValue = save(constructor, "reference", node),
           inner = plan.innerLocal,
           outer = plan.local;
         if (inner !== undefined)
           writeLocal(
             inner,
-            coerce(load(value, node), slots[inner], node),
+            coerce(load(ctorValue, node), slots[inner], node),
             node.definition,
           );
         const statics = plan.statics;
@@ -12722,7 +13220,7 @@ export function lowerFunction(
             id: staticsEnvironment,
             record: statics.environment,
             arguments: [
-              load(value, node),
+              load(ctorValue, node),
               ...initializers.map((slot) => load(slot, node)),
             ],
             start: node.start,
@@ -12747,7 +13245,11 @@ export function lowerFunction(
             end: node.end,
           });
         }
-        writeLocal(outer, coerce(load(value, node), slots[outer], node), node);
+        writeLocal(
+          outer,
+          coerce(load(ctorValue, node), slots[outer], node),
+          node,
+        );
         break;
       }
       case "debugger":
@@ -12916,13 +13418,15 @@ export function lowerFunction(
                   node,
                 );
         runFinalizers(undefined);
-        if (current !== undefined)
+        if (current !== undefined) {
+          requireSuperCalled(node);
           finish({
             kind: "return",
             value: saved === undefined ? undefined : load(saved, node),
             start: node.start,
             end: node.end,
           });
+        }
         break;
       }
       case "if": {
@@ -13410,13 +13914,24 @@ export function lowerFunction(
         throw "unsupported checked statement invariant";
     }
   }
-  const parameters = fn.node.parameters.map((p, index): number => {
+  const parameters: number[] = fn.node.parameters.map((p, index): number => {
     const local = fn.declarations.get(p);
     if (local === undefined) throw "parameter invariant";
     const incoming = fn.parameters[index];
     if (incoming === undefined) throw "parameter encoding invariant";
     return p.initializer === undefined ? local.id : temporary(incoming);
   });
+  for (
+    let index = fn.node.parameters.length;
+    index < fn.parameters.length;
+    index++
+  ) {
+    const hidden = fn.parameters[index];
+    if (hidden === undefined) throw "hidden parameter encoding invariant";
+    parameters.push(temporary(hidden));
+  }
+  if (superCalled !== undefined)
+    store(superCalled, load(booleanSlot(false, fn.node), fn.node), fn.node);
   allocateCells(undefined);
   const ownedRecord = owned?.record;
   if (ownedRecord !== undefined) {
@@ -13498,7 +14013,7 @@ export function lowerFunction(
     current = converted;
   }
   const receiverLocal = fn.receiverLocal;
-  if (receiverLocal !== undefined) {
+  if (receiverLocal !== undefined && !isDerivedConstructor) {
     if (receiverSlot === undefined) throw "receiver local entry invariant";
     store(
       receiverLocal,
@@ -13605,6 +14120,7 @@ export function lowerFunction(
   }
   hoistFunctions(undefined);
   statement(fn.node.body, undefined);
+  if (current !== undefined) requireSuperCalled(fn.node);
   const reachable = new Uint8Array(blocks.length),
     pending = [0];
   while (pending.length > 0) {

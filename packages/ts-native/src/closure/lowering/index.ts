@@ -18,9 +18,13 @@ export {
 } from "./class-definition.ts";
 export {
   buildClassConstruction,
+  buildClassInit,
+  buildClassOwnFields,
   buildClassStaticInitialization,
   type ClassStaticInitializationPlan,
   type ClassConstructionPlan,
+  type ClassInitPlan,
+  type ClassOwnFieldsPlan,
   type ClassConstructionEntry,
   type ClassFieldInitialization,
 } from "./class-construction.ts";
@@ -28,6 +32,7 @@ export type { RecordOperation } from "./record-bindings.ts";
 import {
   buildClassEntries,
   classConstructionTarget,
+  classConstructorContext,
   classStorage,
   ownedClassDefinitions,
   reserveClassEntries,
@@ -723,9 +728,18 @@ function lowerEntries(
     ): string {
       return result + "(" + parameters.join(",") + ")";
     }
+    const classEntries = reserveClassEntries(
+      checked,
+      recordContracts?.classes ?? [],
+      entries,
+      bodyByFunction,
+      targetIds,
+      signatures,
+      fail,
+    );
     const signatureIds = new Map<string, number>();
     const scriptSignatures = new Set<number>();
-    for (let index = 0; index < signatures.length; index++) {
+    for (let index = 0; index < entries.length; index++) {
       const signature = signatures[index];
       if (signature === undefined || imported.has(entries[index] ?? -1))
         continue;
@@ -737,15 +751,6 @@ function lowerEntries(
         signatureKey(signature.parameters, signature.returnType);
       if (!signatureIds.has(key)) signatureIds.set(key, index);
     }
-    const classEntries = reserveClassEntries(
-      checked,
-      recordContracts?.classes ?? [],
-      entries,
-      bodyByFunction,
-      targetIds,
-      signatures,
-      fail,
-    );
 
     const semanticWitnesses =
       recordOptions?.signatureTypes === true
@@ -2360,6 +2365,8 @@ function lowerEntries(
               if (bigints === undefined)
                 fail("BigInt literals require the bigint runtime");
               break;
+            case "new-target":
+              break;
             case "this": {
               const owner = fn?.receiver;
               const binding =
@@ -2484,6 +2491,26 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (checked.intrinsics.get(node) === "super-member") {
+                builtin = "super-member";
+                const baseProtoType = checked.expressions.get(node.object);
+                const receiverType = checked.chainReceivers.get(node);
+                if (
+                  recordContracts === undefined ||
+                  baseProtoType === undefined ||
+                  receiverType === undefined ||
+                  type === "void"
+                )
+                  fail("unsupported super property access");
+                recordContracts.superAccess(
+                  node,
+                  receiverType,
+                  baseProtoType,
+                  node.property,
+                  chain === undefined ? type : scalar(chain),
+                );
+                break;
+              }
               if (flowStorage?.values.has(node.object) === true) {
                 builtin = "speculative-property-read";
                 expr(node.object);
@@ -3053,6 +3080,11 @@ function lowerEntries(
                 break;
               }
               const intrinsic = checked.intrinsics.get(node);
+              if (intrinsic === "super-call") {
+                builtin = "super-call";
+                exprArguments(node.arguments);
+                break;
+              }
               if (intrinsic === "general-call") {
                 if (knownNativeClosure(node.callee)) {
                   fallback = {
@@ -4170,6 +4202,8 @@ function lowerEntries(
               fail(
                 "class statements are lowered where their contract resolves",
               );
+            const heritage = node.definition.heritage;
+            if (heritage !== undefined) expr(heritage);
             break;
           case "break":
           case "continue":
@@ -4260,6 +4294,33 @@ function lowerEntries(
         fn.receiver === sourceId
           ? checked.receiverTypes.get(sourceId)
           : undefined;
+      const constructorContext = classConstructorContext(
+        classEntries,
+        sourceId,
+      );
+      const adaptedParameters: SourceScalarType[] = parameters.map((p) => {
+        const local = declarations.get(p);
+        if (local === undefined) throw "parameter invariant";
+        return p.initializer === undefined
+          ? local.type
+          : defaultInput(local.type);
+      });
+      if (constructorContext !== undefined) {
+        const targetId = targetIds[sourceId];
+        const targetSignature =
+          targetId === undefined ? undefined : signatures[targetId];
+        if (targetSignature === undefined)
+          throw "constructor body signature invariant";
+        for (
+          let index = adaptedParameters.length;
+          index < targetSignature.parameters.length;
+          index++
+        ) {
+          const hidden = targetSignature.parameters[index];
+          if (hidden === undefined) throw "constructor hidden param invariant";
+          adaptedParameters.push(hidden);
+        }
+      }
       const adapted: CheckedFunction = {
         ...(receiverLocal === undefined ? {} : { receiverLocal }),
         receiver: receiverType !== undefined,
@@ -4281,13 +4342,7 @@ function lowerEntries(
           start: body.node.start,
           end: body.node.end,
         },
-        parameters: parameters.map((p) => {
-          const local = declarations.get(p);
-          if (local === undefined) throw "parameter invariant";
-          return p.initializer === undefined
-            ? local.type
-            : defaultInput(local.type);
-        }),
+        parameters: adaptedParameters,
         returnType,
         locals,
         expressions,
@@ -4385,6 +4440,7 @@ function lowerEntries(
             (node) => localByNode.get(node)?.id,
             fail,
           ),
+          ...(constructorContext === undefined ? {} : { constructorContext }),
         };
       }
       const lowered = lowerFunction(
@@ -4457,7 +4513,7 @@ function lowerEntries(
               original,
               captureSlots,
               environment,
-              body.parameters.length,
+              adapted.parameters.length,
               functions.length,
               signatures,
               initialization,
@@ -4470,6 +4526,7 @@ function lowerEntries(
       if (recordContracts === undefined) throw "class records invariant";
       for (const generated of buildClassEntries(
         item,
+        classEntries,
         recordContracts.records,
         signatures,
         realmErrors?.typeError,

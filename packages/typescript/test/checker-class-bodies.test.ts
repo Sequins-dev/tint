@@ -361,3 +361,32 @@ test("class values reaching general code take the general path", () => {
     assert.notEqual(result.error.preventsFallback, true, source);
   }
 });
+test("derived class inheritance checks super, new.target, instanceof narrowing and fallbacks", () => {
+  for (const source of [
+    "class B{x:number;constructor(x:number){this.x=x;}m():number{return this.x;}}class D extends B{y:number;constructor(x:number,y:number){super(x);this.y=y;}override m():number{return super.m()+this.y;}}function run():number{const b:B=new D(2,3);return b instanceof D?b.y+b.m():b.m();}",
+    "class B{x:number;constructor(x:number){this.x=x;}}class D extends B{y:number=10;}function run():number{const d=new D(5);return d.x+d.y;}",
+    "class B{tag:boolean;constructor(){this.tag=new.target===B;}}class D extends B{inField:boolean=new.target===undefined;constructor(){super();}}function run():boolean{return new D().inField&&!new D().tag;}",
+    "class A{k:number=1;m():number{return this.k;}}class B extends A{extra:number=2;}class C extends A{other:string='c';}function run(x:B|C):number{if(x instanceof B)return x.extra;return x.other.length;}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // Derived constructor must still initialize own required fields after super().
+  const missingOwn = check(
+    "class B{x:number=1;}class D extends B{y:number;constructor(){super();}}",
+  );
+  assert.ok(!missingOwn.ok);
+  assert.equal(missingOwn.error.code, "UNINITIALIZED");
+  // Unsupported heritage / constructor return forms fall back explicitly.
+  for (const source of [
+    "class B{x:number=1;}class D extends B{constructor(){super();return new D();}}",
+    "class B<T>{x:T;constructor(x:T){this.x=x;}}class D extends B<number>{constructor(){super(1);}}",
+    "class B{x:number=1;}function base():unknown{return B;}class D extends base(){}",
+    "class B{constructor(){const f=():unknown=>new.target;f();}}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.notEqual(result.error.preventsFallback, true, source);
+  }
+});

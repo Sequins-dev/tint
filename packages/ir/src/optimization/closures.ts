@@ -331,19 +331,20 @@ export function devirtualizeClosureCalls(
    * (`function-new`, `record`/`record-cell` reads, `record-read`) and
    * slot-to-slot copies (`v = load sA; store sB v`) so environment-captured
    * imports copied into call temporaries devirtualize. */
+  function isClosureSlot(type: ScalarType | undefined): boolean {
+    return type === "reference" || type === "optional-reference";
+  }
   function slotFacts(fn: FunctionIR): SlotFacts | undefined {
     const targets = new Map<number, KnownClosure>(),
       unknown = new Set<number>(),
       // Slot -> slots it is copied from (store of a load).
       copies = new Map<number, number[]>();
     for (const parameter of fn.parameters)
-      if (parameter !== undefined && fn.slots[parameter] === "reference")
+      if (parameter !== undefined && isClosureSlot(fn.slots[parameter]))
         unknown.add(parameter);
-    if (
-      fn.receiverSlot !== undefined &&
-      fn.slots[fn.receiverSlot] === "reference"
-    )
-      unknown.add(fn.receiverSlot);
+    const receiverSlot = fn.receiverSlot;
+    if (receiverSlot !== undefined && isClosureSlot(fn.slots[receiverSlot]))
+      unknown.add(receiverSlot);
     let candidates = false;
     const write = (slot: number, known: KnownClosure | undefined): boolean => {
       if (unknown.has(slot)) return false;
@@ -363,26 +364,29 @@ export function devirtualizeClosureCalls(
       return false;
     };
     const local = new Map<number, KnownClosure>(),
-      // Slot (+ 1) a reference value loads, for stores that copy another slot.
-      loaded = new Map<number, number>();
+      // Slot (+ 1) a reference/optional-reference value loads, for stores that copy another slot.
+      loaded = new Map<number, number>(),
+      // Absent optional-reference values (reference-none): storing absent into an
+      // optional-reference slot never produces a closure at reference-value (it traps).
+      absentValues = new Set<number>();
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
-      if (
-        block.exception !== undefined &&
-        fn.slots[block.exception.slot] === "reference"
-      )
-        unknown.add(block.exception.slot);
+      const exception = block.exception;
+      if (exception !== undefined && isClosureSlot(fn.slots[exception.slot]))
+        unknown.add(exception.slot);
       const term = block.terminator;
       // Reads of closure fields store their closure in the transfer slot.
       if (
         (term.kind === "record" ||
           term.kind === "record-cell" ||
           term.kind === "cell") &&
-        fn.slots[term.slot] === "reference"
+        isClosureSlot(fn.slots[term.slot])
       )
         write(
           term.slot,
-          term.kind !== "cell" && term.operation === "read"
+          term.kind !== "cell" &&
+            term.operation === "read" &&
+            fn.slots[term.slot] === "reference"
             ? fieldTarget(term.record, term.field)
             : undefined,
         );
@@ -395,12 +399,26 @@ export function devirtualizeClosureCalls(
             target: op.target,
             environment: op.environment !== undefined,
           });
-        else if (hasScriptEntries && op.kind === "record-read") {
+        else if (op.kind === "reference-none") absentValues.add(op.id);
+        else if (
+          op.kind === "reference-wrap" ||
+          op.kind === "reference-value"
+        ) {
+          const directKnown = local.get(op.value);
+          if (directKnown !== undefined) local.set(op.id, directKnown);
+          const source = loaded.get(op.value);
+          if (source !== undefined) loaded.set(op.id, source);
+        } else if (hasScriptEntries && op.kind === "record-read") {
           const fieldKnown = fieldTarget(op.record, op.field);
           if (fieldKnown !== undefined) local.set(op.id, fieldKnown);
-        } else if (op.kind === "load" && fn.slots[op.slot] === "reference")
+        } else if (op.kind === "load" && isClosureSlot(fn.slots[op.slot]))
           loaded.set(op.id, op.slot + 1);
-        else if (op.kind === "store" && fn.slots[op.slot] === "reference") {
+        else if (op.kind === "store" && isClosureSlot(fn.slots[op.slot])) {
+          if (
+            fn.slots[op.slot] === "optional-reference" &&
+            absentValues.has(op.value)
+          )
+            continue;
           const source = loaded.get(op.value) ?? 0;
           // Storing a slot's own value back changes nothing.
           if (source - 1 === op.slot) continue;
@@ -599,7 +617,13 @@ export function devirtualizeClosureCalls(
         else if (hasScriptEntries && op.kind === "record-read") {
           const fieldKnown = fieldTarget(op.record, op.field);
           if (fieldKnown !== undefined) known.set(op.id, fieldKnown);
-        } else if (op.kind === "load" && fn.slots[op.slot] === "reference") {
+        } else if (
+          op.kind === "reference-wrap" ||
+          op.kind === "reference-value"
+        ) {
+          const wrapped = known.get(op.value);
+          if (wrapped !== undefined) known.set(op.id, wrapped);
+        } else if (op.kind === "load" && isClosureSlot(fn.slots[op.slot])) {
           const slotKnown = slotTargets.get(op.slot);
           if (slotKnown !== undefined && !unknown.has(op.slot))
             known.set(op.id, slotKnown);

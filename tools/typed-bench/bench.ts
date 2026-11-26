@@ -30,9 +30,8 @@ import { nativeArtifact } from "../native-target-runner.ts";
 /** Suites, each one image. Kernels run in table order. The first five
  * typed kernels keep PR #15's scales so their results compare with the
  * Worker baseline; the others are calibrated to about 20 ms of steady Node
- * 26.13.1 time per iteration on an M5 Max. `classes` may fall back to general
- * semantics: classes with `extends` do not lower natively yet;
- * `basicClasses` has no inheritance and must stay typed. */
+ * 26.13.1 time per iteration on an M5 Max. `classes` exercises typed class
+ * inheritance (C2); `basicClasses` exercises base classes without inheritance. */
 const suites: Record<
   string,
   { file: string; typed: boolean; scales: Record<string, number> }
@@ -57,7 +56,7 @@ const suites: Record<
       escape: 50000,
     },
   },
-  classes: { file: "classes.ts", typed: false, scales: { classes: 10000 } },
+  classes: { file: "classes.ts", typed: true, scales: { classes: 10000 } },
   basicClasses: {
     file: "classes-basic.ts",
     typed: true,

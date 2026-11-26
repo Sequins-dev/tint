@@ -821,7 +821,10 @@ export function resolveInterfaceTypes(
             "class-method-inference",
             "class method return requires annotation until body inference is available",
           );
-        type = signature(member.parameters, resolve(result), receiver, member);
+        type = methodSignature(
+          signature(member.parameters, resolve(result), receiver, member),
+          member,
+        );
       } else {
         // An accessor pair is one property of the instance (or constructor),
         // whose getter and setter agree on its type, plus hidden slots on
@@ -872,7 +875,11 @@ export function resolveInterfaceTypes(
         continue;
       }
       parameters = outer;
-      const property: Property = { name, type, readonly: false };
+      const property: Property = {
+        name,
+        type,
+        readonly: member.kind === "field" && member.readonly === true,
+      };
       if (!isStatic && inherited.has(name)) {
         // An override keeps the base's position (the derived layout is a
         // prefix extension); it must replace a member of the same kind.

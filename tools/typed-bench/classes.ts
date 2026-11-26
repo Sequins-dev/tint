@@ -1,8 +1,6 @@
 // Class kernel of the typed code-generation benchmark
-// (docs/results/typed-codegen-baseline-v1.md). Classes with `extends` do not
-// lower natively yet (docs/design-typed-classes.md, C2), so this file is a
-// separate image that is allowed to fall back to general semantics; it
-// measures that gap, not typed code.
+// (docs/results/typed-codegen-baseline-v1.md): fields, methods, inheritance
+// and polymorphic dispatch compiled on the typed path (docs/design-typed-classes.md, C2).
 // Erasable syntax only; Node 26.13.1 runs the stripped text.
 
 class Particle {

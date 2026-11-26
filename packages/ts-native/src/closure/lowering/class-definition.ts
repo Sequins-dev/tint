@@ -2,6 +2,7 @@ import {
   createFunctionBuilder,
   type FunctionIR,
   type RecordLayout,
+  type ScalarType,
   type Span,
 } from "@tint/ir/scalar";
 import type { FunctionSignature } from "../../scalar.ts";
@@ -17,6 +18,10 @@ export interface ClassDefinitionClosure {
   readonly record: number;
   /** Prototype for construction, constructor for static initialization. */
   readonly receiverField: number;
+  /** Optional field in the construction environment holding the class constructor (new.target). */
+  readonly constructorField?: number | undefined;
+  /** Optional field in the construction environment holding the base $init closure (parameter 1). */
+  readonly baseInitField?: number | undefined;
   readonly entries: readonly ClassDefinitionEntry[];
 }
 export interface ClassDefinitionBinding {
@@ -33,37 +38,49 @@ export interface ClassDefinitionPlan extends Span {
     readonly constructorField: number;
     readonly methods: readonly ClassDefinitionEntry[];
     /** A derived class's hidden link to the base prototype, which the
-     * definition receives as its one parameter (C2). */
+     * definition receives as its first parameter (C2). */
     readonly link?: number | undefined;
   };
   readonly state: {
     readonly record: number;
     readonly prototypeField: number;
     readonly constructionField: number;
+    /** Optional constructor-state field holding the $init closure (C2). */
+    readonly initializationField?: number | undefined;
     readonly methods: readonly ClassDefinitionEntry[];
   };
   /** Class [[Call]] entry; the source adapter supplies its TypeError behavior. */
   readonly callTarget: number;
   readonly construction: ClassDefinitionClosure;
+  /** Optional $init target sharing the construction environment (C2). */
+  readonly initialization?: { readonly target: number } | undefined;
   readonly statics?: ClassDefinitionClosure;
   readonly innerBinding?: ClassDefinitionBinding;
   readonly outerBinding?: ClassDefinitionBinding;
 }
 
-/** Define a base class from checked layouts and lexical closures. Computed-key and
- * heritage evaluation precede this phase; no source evaluation is reordered here. */
+/** Define a base or derived class from checked layouts and lexical closures.
+ * Computed-key and heritage evaluation precede this phase; no source evaluation
+ * is reordered here. */
 export function buildClassDefinition(
   plan: ClassDefinitionPlan,
   records: readonly RecordLayout[],
   signatures: readonly FunctionSignature[],
 ): FunctionIR {
   const link = plan.prototype.link;
-  // A derived definition receives the base prototype (evaluated with the
-  // heritage clause) as parameter slot 0.
+  const hasBaseInit = plan.construction.baseInitField !== undefined;
+  // A derived definition receives the base prototype as parameter 0 (and the
+  // base $init closure as parameter 1 when baseInitField is planned).
+  const parameters: ScalarType[] =
+    link === undefined
+      ? []
+      : hasBaseInit
+        ? ["reference", "reference"]
+        : ["reference"];
   const b = createFunctionBuilder(
     plan.id,
     plan.name,
-    link === undefined ? [] : ["reference"],
+    parameters,
     "reference",
     plan,
   );
@@ -128,6 +145,7 @@ export function buildClassDefinition(
     specialValue: number | undefined,
     entries: readonly ClassDefinitionEntry[],
     linkField: number | undefined = undefined,
+    extra: readonly { readonly field: number; readonly slot: number }[] = [],
   ): number {
     const layout = records[record];
     if (layout === undefined) throw "class definition record invariant";
@@ -142,6 +160,10 @@ export function buildClassDefinition(
     if (specialValue !== undefined) put(specialField, specialValue);
     // Parameter slot 0 holds the base prototype.
     if (linkField !== undefined) put(linkField, 0);
+    for (const item of extra) {
+      if (item === undefined) throw "class definition extra field invariant";
+      put(item.field, item.slot);
+    }
     for (const entry of entries) {
       if (entry === undefined) throw "class definition entry invariant";
       if (entry.field === specialField)
@@ -243,13 +265,43 @@ export function buildClassDefinition(
     plan.prototype.constructorField,
     constructor,
   );
-  const construction = entry(plan.construction, prototype);
+  const constructionExtras: {
+    readonly field: number;
+    readonly slot: number;
+  }[] = [];
+  const ctorField = plan.construction.constructorField;
+  if (ctorField !== undefined)
+    constructionExtras.push({
+      field: ctorField,
+      slot: constructor,
+    });
+  const baseInitField = plan.construction.baseInitField;
+  if (baseInitField !== undefined)
+    constructionExtras.push({
+      field: baseInitField,
+      slot: 1,
+    });
+  const constructionEnv = allocate(
+    plan.construction.record,
+    plan.construction.receiverField,
+    prototype,
+    plan.construction.entries,
+    undefined,
+    constructionExtras,
+  );
+  const construction = closure(plan.construction.target, constructionEnv);
   initialize(
     state,
     plan.state.record,
     plan.state.constructionField,
     construction,
   );
+  const initialization = plan.initialization,
+    initializationField = plan.state.initializationField;
+  if (initialization !== undefined && initializationField !== undefined) {
+    const initEntry = closure(initialization.target, constructionEnv);
+    initialize(state, plan.state.record, initializationField, initEntry);
+  }
   const inner = plan.innerBinding;
   if (inner !== undefined) publish(inner, constructor);
   const statics = plan.statics;
