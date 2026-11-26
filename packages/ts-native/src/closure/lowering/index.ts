@@ -2425,6 +2425,28 @@ function lowerEntries(
               if (bigints === undefined)
                 fail("BigInt literals require the bigint runtime");
               break;
+            case "class-expression": {
+              if (
+                !classEntries.some(
+                  (item) => item !== undefined && item.node === node,
+                )
+              )
+                fail(
+                  "class expressions are lowered where their contract resolves",
+                );
+              const heritage = node.definition.heritage;
+              if (heritage !== undefined) expr(heritage);
+              break;
+            }
+            case "private-in": {
+              const brand = checked.privateBrandChecks?.get(node);
+              if (brand === undefined || recordContracts === undefined)
+                fail("private brand check requires private layouts");
+              const ownerLocal = localByNode.get(brand.contract.definition)?.id;
+              recordContracts.planPrivateBrandCheck(node, brand, ownerLocal);
+              expr(node.object);
+              break;
+            }
             case "new-target":
               break;
             case "this": {
@@ -2551,6 +2573,26 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (node.private === true) {
+                const priv = checked.privateAccesses?.get(node);
+                if (
+                  priv === undefined ||
+                  recordContracts === undefined ||
+                  type === "void"
+                )
+                  fail("unsupported private member read");
+                const ownerLocal = localByNode.get(
+                  priv.contract.definition,
+                )?.id;
+                recordContracts.planPrivateAccess(
+                  node,
+                  priv,
+                  ownerLocal,
+                  chain === undefined ? type : scalar(chain),
+                );
+                expr(node.object);
+                break;
+              }
               if (checked.intrinsics.get(node) === "super-member") {
                 builtin = "super-member";
                 const baseProtoType = checked.expressions.get(node.object);
@@ -3009,6 +3051,28 @@ function lowerEntries(
                 builtin = "list-resize";
                 expr(target.object);
                 if (target.kind === "index") expr(target.index);
+                if (node.kind !== "update") expr(node.value);
+                break;
+              }
+              if (target.kind === "member" && target.private === true) {
+                const priv = checked.privateAccesses?.get(target);
+                const targetType = checked.expressions.get(target);
+                if (
+                  priv === undefined ||
+                  recordContracts === undefined ||
+                  targetType === undefined
+                )
+                  fail("unsupported private member assignment");
+                const ownerLocal = localByNode.get(
+                  priv.contract.definition,
+                )?.id;
+                recordContracts.planPrivateAccess(
+                  target,
+                  priv,
+                  ownerLocal,
+                  scalar(targetType),
+                );
+                expr(target.object);
                 if (node.kind !== "update") expr(node.value);
                 break;
               }
@@ -4319,7 +4383,7 @@ function lowerEntries(
           case "class":
             if (
               !classEntries.some(
-                (item) => item !== undefined && item.statement === node,
+                (item) => item !== undefined && item.node === node,
               )
             )
               fail(

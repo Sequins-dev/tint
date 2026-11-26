@@ -177,7 +177,7 @@ export function checkClassInitialization(
         case "identifier":
           return;
         case "private-in":
-          expression(node.object);
+          if (!receiver(node.object)) expression(node.object);
           return;
         case "new-target":
         case "elision":
@@ -548,9 +548,13 @@ export function checkClassInitialization(
       depth--;
     }
   }
-  function runFieldInitializers(mode: boolean): void {
+  function runFieldInitializers(mode: boolean): boolean {
     for (const member of definition.elements) {
       if (member === undefined) throw "class member invariant";
+      if (mode && member.kind === "static-block") {
+        if (!statement(member.body)) return false;
+        continue;
+      }
       if (member.kind !== "field" || member.static !== mode) continue;
       const initializer = member.initializer;
       if (initializer !== undefined) {
@@ -563,6 +567,7 @@ export function checkClassInitialization(
         if (name !== undefined) ready.delete(name);
       }
     }
+    return true;
   }
   try {
     for (const mode of [false, true]) {
@@ -600,9 +605,9 @@ export function checkClassInitialization(
         }
       // In a derived class with an explicit constructor, own field
       // initializers run when super(...) returns rather than before the body.
-      if (mode || !derived || constructorMember === undefined)
-        runFieldInitializers(mode);
       let normal = true;
+      if (mode || !derived || constructorMember === undefined)
+        normal = runFieldInitializers(mode);
       if (!mode && constructorMember?.kind === "method") {
         for (const parameter of constructorMember.parameters) {
           if (parameter === undefined) throw "parameter invariant";

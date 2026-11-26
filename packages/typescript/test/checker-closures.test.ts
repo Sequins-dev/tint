@@ -3970,3 +3970,92 @@ test("instanceof and checked downcast narrow unknown to SharedArrayBuffer", () =
   assert.ok(intrinsics.includes("shared-buffer-instanceof"));
   assert.equal(indexValues(narrowed.value.downcasts!).length, 1);
 });
+test("Phase C3 private elements, brand checks, static blocks, and class expressions check contracts and nominal typing", () => {
+  const ok = check(`
+    interface Pub {
+      readonly pub: number;
+    }
+    class Base {
+      #x: number = 1;
+      readonly #id: string;
+      pub: number = 2;
+      static #count: number = 0;
+      static {
+        Base.#count += 1;
+      }
+      constructor(id: string) {
+        this.#id = id;
+      }
+      #m(): number {
+        return this.#x;
+      }
+      get #g(): number {
+        return this.#x;
+      }
+      set #g(v: number) {
+        this.#x = v;
+      }
+      read(u: unknown): number {
+        if (#x in u) return u.#x + u.#m() + u.#g + Base.#count;
+        return -1;
+      }
+    }
+    class StaticHolder {
+      static #count: number = 0;
+      static ready: number;
+      static {
+        StaticHolder.ready = StaticHolder.#count + 1;
+      }
+      static read(): number {
+        return StaticHolder.ready;
+      }
+    }
+    class Derived extends Base {
+      #x: string = "ok";
+      readDerived(): string {
+        return this.#x;
+      }
+    }
+    const Expr = class Inner extends Base {
+      #k: number = 3;
+      static make(): Inner {
+        return new Inner("a");
+      }
+      val(): number {
+        return this.#k;
+      }
+    };
+    function use(): number {
+      const d = new Derived("d");
+      const p: Pub = d;
+      const e = Expr.make();
+      return p.pub + d.read(d) + StaticHolder.read() + e.val();
+    }
+  `);
+  assert.ok(ok.ok, JSON.stringify(ok));
+  // Nominal typing, private scoping, immutability, and explicit fallbacks.
+  for (const text of [
+    // Private access outside declaring class.
+    "class A { #x: number = 1; } function f(a: A): number { return a.#x; }",
+    // Structural plain object cannot satisfy a class with private members.
+    "class A { #x: number = 1; pub: number = 1; } function f(): A { return { pub: 1 }; }",
+    // Unrelated class with same private name cannot satisfy A.
+    "class A { #x: number = 1; } class B { #x: number = 1; } function f(b: B): A { return b; }",
+    // Cannot write to private method.
+    "class A { #m(): number { return 1; } bad(): void { this.#m = (): number => 2; } }",
+    // Cannot write to readonly private field outside constructor.
+    "class A { readonly #x: number = 1; bad(): void { this.#x = 2; } }",
+    // Cannot write to getter-only private accessor.
+    "class A { get #x(): number { return 1; } bad(): void { this.#x = 2; } }",
+    // Cannot read setter-only private accessor.
+    "class A { set #x(v: number) {} bad(): number { return this.#x; } }",
+    // Primitive RHS of private-in is a type error.
+    "class A { #x: number = 1; bad(): boolean { return #x in 42; } }",
+    // Named class expression inner name is invisible outside and immutable inside.
+    "const C = class Inner {}; function f(): unknown { return Inner; }",
+    "const C = class Inner { static { Inner = C; } };",
+    // Dynamic heritage falls back explicitly.
+    "class A {} function g(): unknown { return A; } const B = class extends g() {};",
+  ])
+    assert.equal(check(text).ok, false, text);
+});

@@ -1581,6 +1581,7 @@ export type {
   BindingOperation,
   ClosureIntrinsic,
   CheckedClosures,
+  PrivateMemberAccess,
   NativeRecordViewField,
   NativeCallbackView,
   CheckedTypeSystem,
@@ -1596,9 +1597,15 @@ export type {
   InterfaceResolutionCache,
   ClassContract,
   ClassMemberContract,
+  ClassPrivateMember,
 } from "./interfaces.ts";
 
-export { classAccessorSlot } from "./interfaces.ts";
+export {
+  classAccessorSlot,
+  classPrivateAccessorSlot,
+  classPrivateBrandSlot,
+  classPrivateSlot,
+} from "./interfaces.ts";
 export { cViewMember } from "./c-views.ts";
 export type {
   CViewMember,

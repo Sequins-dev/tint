@@ -10,7 +10,14 @@ import {
   createKeyIndex,
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
-import type { CheckedClosures, ClassContract } from "@tint/typescript/checker";
+import {
+  classPrivateAccessorSlot,
+  classPrivateBrandSlot,
+  classPrivateSlot,
+  type CheckedClosures,
+  type ClassContract,
+  type PrivateMemberAccess,
+} from "@tint/typescript/checker";
 import type { Expression } from "@tint/typescript/syntax";
 import {
   isNativeTypedArray,
@@ -28,6 +35,8 @@ import type {
   ConstructionField,
   ConstructorCall,
   ClassInstanceTest,
+  PrivateAccessPlan,
+  PrivateBrandCheckPlan,
   CollectionElement,
 } from "../../scalar.ts";
 import {
@@ -808,6 +817,19 @@ export interface RecordContracts extends RecordOperations {
     name: string,
     type: ScalarType,
   ) => void;
+  /** Plan private field, method, or accessor access (`obj.#x`). */
+  readonly planPrivateAccess: (
+    node: Expression,
+    info: PrivateMemberAccess,
+    ownerLocal: number | undefined,
+    type: ScalarType,
+  ) => void;
+  /** Plan private brand check (`#x in obj`). */
+  readonly planPrivateBrandCheck: (
+    node: Expression,
+    info: PrivateMemberAccess,
+    ownerLocal: number | undefined,
+  ) => void;
 }
 /** Optional frontend identity partitions otherwise equal physical layouts. An
  * absent key retains ordinary storage interning; keys belong to this checked graph. */
@@ -1361,6 +1383,10 @@ export function createRecordContracts(
     constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash),
     classInstanceTests = createKeyIndex<Expression, ClassInstanceTest>(
       syntaxHash,
+    ),
+    privateAccesses = createKeyIndex<Expression, PrivateAccessPlan>(syntaxHash),
+    privateBrandChecks = createKeyIndex<Expression, PrivateBrandCheckPlan>(
+      syntaxHash,
     );
   const spreads = new Map<
     Expression,
@@ -1834,6 +1860,7 @@ export function createRecordContracts(
       instance,
       prototype,
       prototypeField: planned.prototypeField,
+      privateBrandField: planned.privateBrandField,
       prototypeLink: planned.prototypeLink,
       definitionEnvironment,
       constructionEnvironment,
@@ -1952,10 +1979,14 @@ export function createRecordContracts(
     constructions,
     constructors,
     classInstanceTests,
+    privateAccesses,
+    privateBrandChecks,
     clearFunctionOperations: () => {
       constructions.clear();
       constructors.clear();
       classInstanceTests.clear();
+      privateAccesses.clear();
+      privateBrandChecks.clear();
       accesses.clear();
       spreads.clear();
     },
@@ -2397,6 +2428,228 @@ export function createRecordContracts(
       if (choices.length === 0)
         fail("super property access requires known receiver layouts");
       accesses.set(node, { type, choices });
+    },
+    planPrivateAccess: (node, info, ownerLocal, type) => {
+      const contract = info.contract,
+        member = info.member;
+      const storage = classes.find((c) => c?.contract === contract);
+      if (storage === undefined) fail("missing private member class storage");
+      function familySlotChoices(slotName: string): RecordAccessChoice[] {
+        const family = classShapes[contract.instance] ?? [];
+        const choices: RecordAccessChoice[] = [];
+        for (const rec of family) {
+          if (rec === undefined) throw "private family record invariant";
+          const field = names[rec]?.indexOf(slotName) ?? -1;
+          const fieldInfo = records[rec]?.fields[field];
+          if (field < 0 || fieldInfo === undefined)
+            fail("missing private instance field storage: " + slotName);
+          choices.push({
+            record: rec,
+            field,
+            type: fieldInfo.type,
+            initialized: fieldInfo.stateOffset !== undefined,
+          });
+        }
+        if (choices.length === 0)
+          fail("private instance access requires class instance layouts");
+        return choices;
+      }
+      function stateSlotAccess(
+        slotName: string,
+        accessType: ScalarType,
+      ): RecordAccess {
+        const state = storage?.constructorState;
+        if (state === undefined) throw "private constructor state invariant";
+        const field = names[state]?.indexOf(slotName) ?? -1;
+        const fieldInfo = records[state]?.fields[field];
+        if (field < 0 || fieldInfo === undefined)
+          fail("missing private constructor state slot: " + slotName);
+        return {
+          type: accessType,
+          functionEnvironment: true,
+          choices: [
+            {
+              record: state,
+              field,
+              type: fieldInfo.type,
+              initialized: fieldInfo.stateOffset !== undefined,
+            },
+          ],
+        };
+      }
+      if (!member.static && member.kind === "field") {
+        const slotName = classPrivateSlot(contract.instance, member.name);
+        privateAccesses.set(node, {
+          kind: "instance-field",
+          name: member.name,
+          type,
+          fieldAccess: { type, choices: familySlotChoices(slotName) },
+        });
+        return;
+      }
+      if (ownerLocal === undefined)
+        fail(
+          "private member access requires declaring class constructor local",
+        );
+      if (member.static && member.kind === "field") {
+        const slotName = classPrivateSlot(contract.instance, member.name);
+        privateAccesses.set(node, {
+          kind: "static-field",
+          name: member.name,
+          type,
+          ownerLocal,
+          staticFieldAccess: stateSlotAccess(slotName, type),
+        });
+        return;
+      }
+      if (member.kind === "method") {
+        const slotName = classPrivateSlot(contract.instance, member.name);
+        const methodAccess = stateSlotAccess(slotName, "reference");
+        if (member.static) {
+          privateAccesses.set(node, {
+            kind: "static-method",
+            name: member.name,
+            type: "reference",
+            ownerLocal,
+            methodAccess,
+          });
+        } else {
+          const brandName = classPrivateBrandSlot(contract.instance);
+          privateAccesses.set(node, {
+            kind: "instance-method",
+            name: member.name,
+            type: "reference",
+            ownerLocal,
+            brandCheck: {
+              type: "boolean",
+              choices: familySlotChoices(brandName),
+            },
+            methodAccess,
+          });
+        }
+        return;
+      }
+      const witness = callableWitness;
+      if (witness === undefined)
+        fail("private class accessors require callable signature witnesses");
+      const getSlot =
+        member.getter === undefined
+          ? undefined
+          : stateSlotAccess(
+              classPrivateAccessorSlot(contract.instance, "get", member.name),
+              "reference",
+            );
+      const setSlot =
+        member.setter === undefined
+          ? undefined
+          : stateSlotAccess(
+              classPrivateAccessorSlot(contract.instance, "set", member.name),
+              "reference",
+            );
+      const accessor: {
+        get?: RecordAccess;
+        getTarget?: number;
+        set?: RecordAccess;
+        setTarget?: number;
+      } = {};
+      const getterType = member.getter,
+        setterType = member.setter;
+      if (getSlot !== undefined && getterType !== undefined) {
+        accessor.get = getSlot;
+        accessor.getTarget = witness(getterType);
+      }
+      if (setSlot !== undefined && setterType !== undefined) {
+        accessor.set = setSlot;
+        accessor.setTarget = witness(setterType);
+      }
+      if (member.static) {
+        privateAccesses.set(node, {
+          kind: "static-accessor",
+          name: member.name,
+          type,
+          ownerLocal,
+          accessor,
+        });
+      } else {
+        const brandName = classPrivateBrandSlot(contract.instance);
+        privateAccesses.set(node, {
+          kind: "instance-accessor",
+          name: member.name,
+          type,
+          ownerLocal,
+          brandCheck: {
+            type: "boolean",
+            choices: familySlotChoices(brandName),
+          },
+          accessor,
+        });
+      }
+    },
+    planPrivateBrandCheck: (node, info, ownerLocal) => {
+      const contract = info.contract,
+        member = info.member;
+      const storage = classes.find((c) => c?.contract === contract);
+      if (storage === undefined) fail("missing private brand class storage");
+      if (member.static) {
+        if (ownerLocal === undefined)
+          fail("static private brand check requires declaring class local");
+        let check: RecordAccess | undefined;
+        if (member.kind === "field") {
+          const slotName = classPrivateSlot(contract.instance, member.name);
+          const state = storage.constructorState;
+          const field = names[state]?.indexOf(slotName) ?? -1;
+          const fieldInfo = records[state]?.fields[field];
+          if (field < 0 || fieldInfo === undefined)
+            fail("missing static private field storage: " + slotName);
+          check = {
+            type: fieldInfo.type,
+            functionEnvironment: true,
+            choices: [
+              {
+                record: state,
+                field,
+                type: fieldInfo.type,
+                initialized: fieldInfo.stateOffset !== undefined,
+              },
+            ],
+          };
+        }
+        privateBrandChecks.set(node, {
+          static: true,
+          name: member.name,
+          ownerLocal,
+          ...(check === undefined ? {} : { check }),
+        });
+        return;
+      }
+      const slotName =
+        member.kind === "field"
+          ? classPrivateSlot(contract.instance, member.name)
+          : classPrivateBrandSlot(contract.instance);
+      const family = classShapes[contract.instance] ?? [];
+      const choices: RecordAccessChoice[] = [];
+      let checkType: ScalarType = "boolean";
+      for (const rec of family) {
+        if (rec === undefined) throw "private brand family invariant";
+        const field = names[rec]?.indexOf(slotName) ?? -1;
+        const fieldInfo = records[rec]?.fields[field];
+        if (field < 0 || fieldInfo === undefined)
+          fail("missing private brand slot: " + slotName);
+        checkType = fieldInfo.type;
+        choices.push({
+          record: rec,
+          field,
+          type: fieldInfo.type,
+          initialized: fieldInfo.stateOffset !== undefined,
+        });
+      }
+      if (choices.length === 0)
+        fail("private brand check requires class instance layouts");
+      privateBrandChecks.set(node, {
+        static: false,
+        name: member.name,
+        check: { type: checkType, choices },
+      });
     },
   };
 }

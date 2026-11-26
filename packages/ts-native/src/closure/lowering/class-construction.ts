@@ -12,11 +12,16 @@ export interface ClassConstructionEntry {
   readonly field: number;
   readonly target: number;
 }
-export type ClassFieldInitialization = Span & {
-  readonly field: number;
-} & (
-    | { readonly kind: "call"; readonly entry: ClassConstructionEntry }
-    | { readonly kind: "undefined" }
+export type ClassFieldInitialization = Span &
+  (
+    | {
+        readonly kind: "call";
+        readonly field: number;
+        readonly entry: ClassConstructionEntry;
+      }
+    | { readonly kind: "undefined"; readonly field: number }
+    | { readonly kind: "brand"; readonly field: number }
+    | { readonly kind: "static-block"; readonly entry: ClassConstructionEntry }
   );
 export interface ClassConstructionPlan extends Span {
   readonly id: number;
@@ -226,6 +231,19 @@ export function buildClassInit(
     params.push(param);
   }
   const b = createFunctionBuilder(plan.id, plan.name, params, "void", span);
+  const needsTrap =
+    plan.baseInit !== undefined ||
+    plan.body !== undefined ||
+    plan.fields.length > 0;
+  if (!needsTrap) {
+    b.end({
+      kind: "return",
+      value: undefined,
+      start: span.start,
+      end: span.end,
+    });
+    return { ...b.finish(), closureEnvironment: plan.environment };
+  }
   const trap = b.block(),
     env = b.slot("reference");
   const envValue = b.next();
@@ -518,6 +536,8 @@ function emitFamilyFieldInitializations(
   const initialized = new Uint8Array(instance.fields.length);
   for (const field of fields) {
     if (field === undefined) throw "class field initializer invariant";
+    if (field.kind === "static-block")
+      throw "instance static-block initialization invariant";
     const storage = instance.fields[field.field];
     if (
       storage === undefined ||
@@ -531,7 +551,18 @@ function emitFamilyFieldInitializations(
     let value: number | undefined;
     if (field.kind === "call")
       value = callInitializer(field.entry, storage.type, field);
-    else {
+    else if (field.kind === "brand") {
+      const id = b.next();
+      b.emit({
+        kind: "constant",
+        id,
+        value: true,
+        start: field.start,
+        end: field.end,
+      });
+      value = b.slot("boolean");
+      b.save(value, id);
+    } else {
       const id = b.next(),
         source = { start: field.start, end: field.end };
       switch (storage.type) {
@@ -835,6 +866,10 @@ function buildInitialization(
   const initialized = new Uint8Array(instance.fields.length);
   for (const field of plan.fields) {
     if (field === undefined) throw "class field initializer invariant";
+    if (field.kind === "static-block") {
+      invoke(field.entry, [], undefined, field);
+      continue;
+    }
     const storage = instance.fields[field.field];
     if (
       storage === undefined ||
@@ -848,7 +883,18 @@ function buildInitialization(
     let value: number | undefined;
     if (field.kind === "call")
       value = invoke(field.entry, [], storage.type, field);
-    else {
+    else if (field.kind === "brand") {
+      const id = b.next();
+      b.emit({
+        kind: "constant",
+        id,
+        value: true,
+        start: field.start,
+        end: field.end,
+      });
+      value = b.slot("boolean");
+      b.save(value, id);
+    } else {
       const id = b.next(),
         source = { start: field.start, end: field.end };
       switch (storage.type) {

@@ -743,7 +743,10 @@ function bindProgram(
       owner = f.parent;
     }
   }
-  const privateScopes: { names: Map<string, number> }[] = [];
+  const privateScopes: {
+    readonly names: Map<string, number>;
+    readonly ownerBinding: number | undefined;
+  }[] = [];
   const externalPrivateNames: string[] = [];
   const externalPrivateSet = new Set<string>();
   let restrictedArguments: boolean =
@@ -902,8 +905,6 @@ function bindProgram(
       expr(decorator, parent);
     }
     const local = scope(parent, "block", node, parent.owner);
-    if (node.name !== undefined) declare(local, node.name, "const", node);
-    if (node.heritage !== undefined) expr(node.heritage, local);
     const names = new Map<string, number>();
     for (const element of node.elements) {
       if (element === undefined) throw "CLASS_ELEMENT_INVARIANT";
@@ -928,7 +929,13 @@ function bindProgram(
         names.set(key.value, existing | mask);
       } else names.set(key.value, mask);
     }
-    privateScopes.push({ names });
+    const innerName =
+      node.name ?? (!javascript && names.size > 0 ? "\0class" : undefined);
+    if (innerName !== undefined) declare(local, innerName, "const", node);
+    const ownerBinding =
+      innerName === undefined ? undefined : local.names.get(innerName);
+    if (node.heritage !== undefined) expr(node.heritage, local);
+    privateScopes.push({ names, ownerBinding });
     try {
       for (const element of node.elements) {
         if (element === undefined) throw "CLASS_ELEMENT_INVARIANT";
@@ -951,11 +958,15 @@ function bindProgram(
       classOwner = enclosingClass;
     }
   }
-  function checkPrivateName(name: string, node: Span): void {
+  function checkPrivateName(name: string, node: Span, s: ScopeState): void {
     for (let i = privateScopes.length - 1; i >= 0; i--) {
       const privateScope = privateScopes[i];
       if (privateScope === undefined) throw "PRIVATE_SCOPE_INVARIANT";
-      if (privateScope.names.has(name)) return;
+      if (privateScope.names.has(name)) {
+        if (!javascript && privateScope.ownerBinding !== undefined)
+          capture(privateScope.ownerBinding, s, "read");
+        return;
+      }
     }
     if (evalContext !== undefined && evalContext.privateEnvironment) {
       if (!externalPrivateSet.has(name)) {
@@ -978,7 +989,7 @@ function bindProgram(
           classDefinition(node.definition, s);
           break;
         case "private-in":
-          checkPrivateName(node.name, node);
+          checkPrivateName(node.name, node, s);
           expr(node.object, s);
           break;
         case "new-target":
@@ -1102,7 +1113,7 @@ function bindProgram(
           }
           break;
         case "member":
-          if (node.private) checkPrivateName(node.property, node);
+          if (node.private) checkPrivateName(node.property, node, s);
           expr(node.object, s);
           break;
         case "index":

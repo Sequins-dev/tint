@@ -84,6 +84,7 @@ import {
   realmLibraryType,
   resolveInterfaceTypes,
   type ClassContract,
+  type ClassPrivateMember,
   type InterfaceFallback,
   type InterfaceResolutionCache,
 } from "./interfaces.ts";
@@ -326,6 +327,10 @@ type ValueDestination =
       readonly call: Expression & { readonly kind: "call" | "new" };
       readonly index: number;
     };
+export interface PrivateMemberAccess {
+  readonly contract: ClassContract;
+  readonly member: ClassPrivateMember;
+}
 export interface CheckedClosures {
   readonly bindingRealm?: ReadonlyKeyIndex<Span, boolean>;
   readonly needsBindingRealm?: boolean;
@@ -384,6 +389,13 @@ export interface CheckedClosures {
    * (class-initialization.ts): their storage admits `undefined`, and their
    * reads ("uninitialized-field-read") are speculative general values. */
   readonly uninitializedFields?: ReadonlyKeyIndex<Span, boolean>;
+  /** Resolved private member accesses (`obj.#x`) mapped to their declaring class and member. */
+  readonly privateAccesses?: ReadonlyKeyIndex<Expression, PrivateMemberAccess>;
+  /** Resolved private brand checks (`#x in obj`) mapped to their declaring class and member. */
+  readonly privateBrandChecks?: ReadonlyKeyIndex<
+    Expression,
+    PrivateMemberAccess
+  >;
   readonly operations: readonly BindingOperation[];
 }
 export interface NativeCallbackView {
@@ -833,26 +845,21 @@ function checkClosureModuleLayout(
     try {
       switch (node.kind) {
         case "class":
+        case "class-expression":
           if (typeParameterCount(node.definition.typeParameters) !== 0)
             fail(
               node,
               "UNSUPPORTED",
               "generic class bodies require specialization",
             );
+          if (node.definition.heritage !== undefined)
+            collect(node.definition.heritage);
           for (const member of node.definition.elements) {
             if (member === undefined) throw "class member invariant";
-            if (member.kind === "static-block")
-              fail(
-                member,
-                "UNSUPPORTED",
-                "typed class static blocks require initialization lowering",
-                false,
-                {
-                  capability: "class-static-block",
-                  ownerKind: "class",
-                  owner: node,
-                },
-              );
+            if (member.kind === "static-block") {
+              collect(member.body);
+              continue;
+            }
             if (member.kind !== "field" && member.async)
               fail(
                 member,
@@ -1321,7 +1328,8 @@ function checkClosureModuleLayout(
       number,
       {
         readonly contract: ClassContract;
-        readonly kind: "constructor" | "method" | "field" | "accessor";
+        readonly kind:
+          "constructor" | "method" | "field" | "accessor" | "static-block";
         readonly static: boolean;
       }
     >();
@@ -1707,9 +1715,16 @@ function checkClosureModuleLayout(
     for (const member of contract.members) {
       if (member === undefined) throw "class member contract invariant";
       const element = member.node;
-      if (element.kind === "static-block") continue;
       const fnId = functions.get(element);
       if (fnId === undefined) continue;
+      if (element.kind === "static-block") {
+        memberClass.set(fnId, {
+          contract,
+          kind: "static-block",
+          static: true,
+        });
+        continue;
+      }
       const name = literalPropertyName(element.key);
       const kind: "constructor" | "method" | "field" | "accessor" =
         element.kind === "field"
@@ -1733,7 +1748,14 @@ function checkClosureModuleLayout(
       if (b === undefined) throw "reference invariant";
       references.set(r.node, b);
     }
-  } /** A typed class value reaching general code needs the record views of
+  }
+  const privateAccesses = createKeyIndex<Expression, PrivateMemberAccess>(
+    syntaxHash,
+  );
+  const privateBrandChecks = createKeyIndex<Expression, PrivateMemberAccess>(
+    syntaxHash,
+  );
+  /** A typed class value reaching general code needs the record views of
    * step 4 (docs/design-typed-classes.md). Until they exist the module takes
    * the general path, which runs it with JavaScript semantics. Class values
    * are values of a class's own types and of the object types they are
@@ -1813,12 +1835,28 @@ function checkClosureModuleLayout(
       number,
       Statement & { readonly kind: "function" }
     >();
+    const emptyConstObjects = new Set<number>();
     rewriteModule(module, {
       statement: (mapped, original) => {
         if (original.kind === "function") {
           const declared = declarations.get(original);
           if (declared !== undefined)
             declaredFunctions.set(declared.id, original);
+        } else if (original.kind === "variable" && original.mode === "const") {
+          for (const d of original.declarations) {
+            if (
+              d !== undefined &&
+              d.kind !== "object-binding" &&
+              d.kind !== "array-binding" &&
+              d.initializer !== undefined
+            ) {
+              const init = ungroup(d.initializer);
+              if (init.kind === "object" && init.properties.length === 0) {
+                const b = declarations.get(d);
+                if (b !== undefined) emptyConstObjects.add(b.id);
+              }
+            }
+          }
         }
         return mapped;
       },
@@ -1833,9 +1871,18 @@ function checkClosureModuleLayout(
       return declaration === undefined ? undefined : functions.get(declaration);
     }
     function tainted(node: Expression): boolean {
+      const value = ungroup(node);
+      if (value.kind === "object")
+        return value.properties.some(
+          (p) => p !== undefined && tainted(p.value),
+        );
+      if (value.kind === "identifier") {
+        const target = references.get(value);
+        if (target !== undefined && emptyConstObjects.has(target.id))
+          return false;
+      }
       const type = expressions.get(node);
       if (type !== undefined && holdsClassValues(type)) return true;
-      const value = ungroup(node);
       switch (value.kind) {
         case "identifier": {
           const target = references.get(value);
@@ -1879,41 +1926,61 @@ function checkClosureModuleLayout(
             ? undefined
             : declaredFunctions.get(target.id)?.parameters;
       } else {
-        const receiver =
-          call.kind === "new"
-            ? expressions.get(callee)
-            : callee.kind === "member"
-              ? expressions.get(callee.object)
-              : undefined;
-        const name =
-          call.kind === "new"
-            ? "constructor"
-            : callee.kind === "member"
-              ? callee.property
-              : undefined;
-        for (const contract of contracts.classes) {
-          if (contract === undefined) throw "class contract invariant";
-          const side =
-            call.kind === "new" ? contract.constructor : contract.instance;
-          if (
-            receiver === undefined ||
-            name === undefined ||
-            !(
-              receiver === side ||
-              (system.assignable(receiver, side) &&
-                system.assignable(side, receiver))
-            )
-          )
-            continue;
-          for (const member of contract.members) {
-            if (member === undefined) throw "class member contract invariant";
-            const element = member.node;
-            if (
-              element.kind === "method" &&
-              element.static === false &&
-              literalPropertyName(element.key) === name
-            )
-              parameters = element.parameters;
+        const priv =
+          call.kind === "call" && callee.kind === "member" && callee.private
+            ? privateAccesses.get(callee)
+            : undefined;
+        const privNode = priv?.member.node;
+        if (privNode !== undefined && privNode.kind === "method") {
+          parameters = privNode.parameters;
+        } else {
+          const receiver =
+            call.kind === "new"
+              ? expressions.get(callee)
+              : callee.kind === "member"
+                ? expressions.get(callee.object)
+                : undefined;
+          const name =
+            call.kind === "new"
+              ? "constructor"
+              : callee.kind === "member"
+                ? callee.property
+                : undefined;
+          for (const contract of contracts.classes) {
+            if (contract === undefined) throw "class contract invariant";
+            if (receiver === undefined || name === undefined) continue;
+            const matchInstance =
+              call.kind !== "new" &&
+              (receiver === contract.instance ||
+                (system.assignable(receiver, contract.instance) &&
+                  system.assignable(contract.instance, receiver)));
+            const matchConstructor =
+              receiver === contract.constructor ||
+              (system.assignable(receiver, contract.constructor) &&
+                system.assignable(contract.constructor, receiver));
+            if (!matchInstance && !matchConstructor) continue;
+            const wantStatic = call.kind !== "new" && matchConstructor;
+            let cursor: ClassContract | undefined = contract;
+            while (cursor !== undefined && parameters === undefined) {
+              for (const member of cursor.members) {
+                if (member === undefined)
+                  throw "class member contract invariant";
+                const element = member.node;
+                if (
+                  element.kind === "method" &&
+                  element.static === wantStatic &&
+                  element.private !== true &&
+                  literalPropertyName(element.key) === name
+                )
+                  parameters = element.parameters;
+              }
+              if (wantStatic) break;
+              const nextBase: number | undefined = cursor.base;
+              cursor =
+                nextBase === undefined
+                  ? undefined
+                  : classByInstance.get(nextBase);
+            }
           }
         }
       }
@@ -2088,6 +2155,12 @@ function checkClosureModuleLayout(
     for (const statement of body.statements)
       if (statement !== undefined && statement.kind === "class")
         declareClassBinding(statement, false);
+  }
+  for (const contract of contracts.classes) {
+    if (contract === undefined) throw "class contract invariant";
+    const inner = declarations.get(contract.definition);
+    if (inner !== undefined && bindingTypes[inner.id] === undefined)
+      bindingTypes[inner.id] = contract.constructor;
   }
   const assignedVars = new Set<number>();
   for (const node of varAssignments) {
@@ -2683,6 +2756,7 @@ function checkClosureModuleLayout(
       case "null":
         return true;
       case "member":
+      case "private-in":
         return pure(node.object);
       case "index":
         // Strict-profile indexed reads do not invoke user-defined accessors.
@@ -3085,7 +3159,126 @@ function checkClosureModuleLayout(
     if (type?.kind === "union") return type.members.every(isErrorType);
     return isErrorKind(type?.kind);
   }
+  function resolvePrivateMember(
+    name: string,
+    owner: number | undefined,
+    node: Span,
+  ): PrivateMemberAccess {
+    let cursor = owner;
+    while (cursor !== undefined) {
+      const enclosing = memberClass.get(cursor);
+      const privates = enclosing?.contract.privateMembers;
+      if (enclosing !== undefined && privates !== undefined) {
+        for (const entry of privates) {
+          if (entry !== undefined && entry.name === name)
+            return { contract: enclosing.contract, member: entry };
+        }
+      }
+      cursor = graph.functions[cursor]?.parent;
+    }
+    return fail(
+      node,
+      "PROPERTY",
+      "private member is not in scope: " + name,
+      true,
+    );
+  }
+  function privateReadonlyAllowed(
+    contract: ClassContract,
+    isStatic: boolean,
+    owner: number | undefined,
+  ): boolean {
+    const current = owner === undefined ? undefined : memberClass.get(owner);
+    if (current === undefined || current.contract !== contract) return false;
+    return isStatic
+      ? current.kind === "static-block"
+      : current.kind === "constructor";
+  }
+  function requirePrivateReceiver(
+    obj: number,
+    info: PrivateMemberAccess,
+    node: Span,
+  ): void {
+    if (!info.member.static) {
+      requireType(obj, info.contract.instance, node);
+      return;
+    }
+    function check(id: number): boolean {
+      const t = types[id];
+      if (t !== undefined && t.kind === "union")
+        return t.members.every((m) => check(m));
+      if (system.assignable(id, info.contract.constructor)) return true;
+      const cls = classByConstructor.get(id);
+      return (
+        cls !== undefined &&
+        classDerivesFrom(cls.instance, info.contract.instance)
+      );
+    }
+    if (!check(obj)) requireType(obj, info.contract.constructor, node);
+  }
   let instancePropertyNarrowing = false;
+  function refinePrivateIn(
+    node: Expression,
+    truth: boolean,
+    base: Set<number>,
+  ): Set<number> | undefined {
+    if (!truth || node.kind !== "private-in") return undefined;
+    const check = privateBrandChecks.get(node);
+    const target = stablePath(node.object);
+    const binding = target?.binding,
+      property = target?.property;
+    const declared = expressions.get(node.object);
+    if (check === undefined || binding === undefined || declared === undefined)
+      return undefined;
+    const candidate = check.member.static
+      ? check.contract.constructor
+      : check.contract.instance;
+    const selected: number[] = [];
+    function collect(id: number): void {
+      const type = types[id];
+      if (type !== undefined && type.kind === "union") {
+        for (const member of type.members) {
+          if (member === undefined) throw "private-in member invariant";
+          collect(member);
+        }
+      } else if (
+        id === candidate ||
+        (!check?.member.static &&
+          classByInstance.has(id) &&
+          classByInstance.has(candidate) &&
+          classDerivesFrom(id, candidate)) ||
+        system.assignable(id, candidate)
+      ) {
+        selected.push(id);
+      } else if (
+        type?.kind === "unknown" ||
+        system.assignable(candidate, id) ||
+        (!check?.member.static &&
+          classByInstance.has(id) &&
+          classByInstance.has(candidate) &&
+          classDerivesFrom(candidate, id))
+      ) {
+        selected.push(candidate);
+      }
+    }
+    collect(declared);
+    if (selected.length === 0) selected.push(candidate);
+    const refined = unionSubset(selected, node);
+    if (refined === declared) return undefined;
+    const result = new Set(base);
+    for (const token of result) {
+      const fact = narrowed[token - graph.bindings.length];
+      if (
+        fact !== undefined &&
+        fact.binding === binding.id &&
+        fact.property === property
+      )
+        result.delete(token);
+    }
+    result.add(narrowToken(binding.id, refined, property));
+    if (property !== undefined) instancePropertyNarrowing = true;
+    return result;
+  }
   const instanceofTypes = createKeyIndex<Expression, number>(syntaxHash);
   const arrayFlowTypes = createStringIndex<number>();
   function refineInstanceof(
@@ -3150,7 +3343,7 @@ function checkClosureModuleLayout(
     }
     function collect(id: number): void {
       const type = types[id];
-      if (type?.kind === "union") {
+      if (type !== undefined && type.kind === "union") {
         for (const member of type.members) {
           if (member === undefined) throw "instanceof member invariant";
           collect(member);
@@ -4083,6 +4276,8 @@ function checkClosureModuleLayout(
     }
     const instance = refineInstanceof(node, truth, base);
     if (instance !== undefined) return instance;
+    const brand = refinePrivateIn(node, truth, base);
+    if (brand !== undefined) return brand;
     const nullable = refineNullBinding(node, truth, base);
     if (nullable !== undefined) return nullable;
     const literal = refineLiteralBinding(node, truth, base);
@@ -4197,7 +4392,21 @@ function checkClosureModuleLayout(
         "object, array and arrow expressions need a contextual or explicit type",
       );
     const t = types[expected];
-    if (t?.kind === kind) return expected;
+    if (t !== undefined && t.kind === kind) {
+      if (
+        kind === "object" &&
+        node.kind === "object" &&
+        t.kind === "object" &&
+        t.privateBrands !== undefined
+      )
+        fail(
+          node,
+          "TYPE_MISMATCH",
+          "object literal cannot satisfy a class with private members",
+          true,
+        );
+      return expected;
+    }
     const choices: number[] = [],
       visited = new Set<number>();
     function candidates(id: number): void {
@@ -4215,6 +4424,7 @@ function checkClosureModuleLayout(
         !choices.includes(id)
       ) {
         if (candidate.kind === "object" && node.kind === "object") {
+          if (candidate.privateBrands !== undefined) return;
           const properties = node.properties;
           const candidateProperties = candidate.properties;
           if (
@@ -4557,9 +4767,11 @@ function checkClosureModuleLayout(
     );
   }
   function checkClass(
-    node: Statement & { readonly kind: "class" },
+    node:
+      | (Statement & { readonly kind: "class" })
+      | (Expression & { readonly kind: "class-expression" }),
     owner: number | undefined,
-  ): void {
+  ): number {
     const contract = classContracts.get(node.definition);
     // A class in a function body has a contract only when it is declared
     // directly in a module-level function (a module instance's initializer
@@ -4590,6 +4802,7 @@ function checkClosureModuleLayout(
         element.kind === "method" && !element.static && name === "constructor";
       if (
         element.kind === "field" &&
+        (!element.private || element.initializer === undefined) &&
         !system.assignable(undefinedType, member.type)
       )
         required.add(element);
@@ -4598,6 +4811,7 @@ function checkClosureModuleLayout(
       const method =
         element.kind === "method" &&
         !element.static &&
+        !element.private &&
         !constructor &&
         name !== undefined &&
         !prototypesWritten &&
@@ -4608,14 +4822,19 @@ function checkClosureModuleLayout(
         name !== undefined
       )
         accessors.add((element.static ? "static " : "") + name);
-      if (element.kind === "field" || constructor || method) {
+      if (
+        element.kind === "field" ||
+        element.kind === "static-block" ||
+        constructor ||
+        method
+      ) {
         const id = functions.get(element);
         if (id !== undefined) receiverOwners.add(id);
       }
     }
     const receivers = new Set<Expression>(),
       constructors = new Set<Expression>();
-    const outer = binding(node),
+    const outer = node.kind === "class" ? binding(node) : undefined,
       inner = declarations.get(node.definition);
     for (const reference of graph.receiverReferences) {
       if (reference === undefined) throw "receiver reference invariant";
@@ -4626,7 +4845,7 @@ function checkClosureModuleLayout(
     for (const reference of graph.references) {
       if (reference === undefined) throw "reference invariant";
       if (
-        reference.binding === outer.id ||
+        (outer !== undefined && reference.binding === outer.id) ||
         (inner !== undefined && reference.binding === inner.id)
       )
         constructors.add(reference.node);
@@ -4728,7 +4947,8 @@ function checkClosureModuleLayout(
       for (const member of contract.members) {
         if (member === undefined) throw "class member contract invariant";
         const element = member.node;
-        if (element.kind !== "field" || element.static) continue;
+        if (element.kind !== "field" || element.static || element.private)
+          continue;
         const name = literalPropertyName(element.key);
         const site =
           name === undefined ? undefined : initialization.unproven.get(name);
@@ -4749,12 +4969,13 @@ function checkClosureModuleLayout(
       }
       unprovenClassFields.push({ contract, names });
     }
-    cell(
-      outer,
-      { kind: "initialize", value: contract.constructor },
-      node,
-      owner,
-    );
+    if (outer !== undefined)
+      cell(
+        outer,
+        { kind: "initialize", value: contract.constructor },
+        node,
+        owner,
+      );
     if (inner !== undefined)
       cell(
         inner,
@@ -4795,12 +5016,10 @@ function checkClosureModuleLayout(
             "invalid constructor body signature",
           );
         }
-        if (element.kind === "static-block")
-          fail(
-            element,
-            "UNSUPPORTED",
-            "typed class static blocks require initialization lowering",
-          );
+        if (element.kind === "static-block") {
+          checkFunction(element, [], undefined, element.body, member.type);
+          continue;
+        }
         checkFunction(
           element,
           element.parameters,
@@ -4810,6 +5029,7 @@ function checkClosureModuleLayout(
         );
       }
     }
+    return contract.constructor;
   }
   // Live results exclude only the undefined introduced by a skipped chain.
   // Ordinary undefined-valued properties remain part of the live contract.
@@ -5146,7 +5366,7 @@ function checkClosureModuleLayout(
     }
     function collect(id: number): void {
       const type = types[id];
-      if (type?.kind === "union") {
+      if (type !== undefined && type.kind === "union") {
         for (const member of type.members) {
           if (member === undefined) throw "dynamic key invariant";
           collect(member);
@@ -5667,12 +5887,33 @@ function checkClosureModuleLayout(
             "rest-call-layout",
             "spread arguments are only supported in the rest position",
           );
-        case "private-in":
-          return fail(
-            node,
-            "UNSUPPORTED",
-            "typed private brand checks require private layouts",
-          );
+        case "class-expression":
+          result = checkClass(node, owner);
+          break;
+        case "private-in": {
+          const info = resolvePrivateMember(node.name, owner, node);
+          const obj = expression(node.object, owner);
+          const objType = types[obj];
+          if (
+            objType?.kind === "number" ||
+            objType?.kind === "string" ||
+            objType?.kind === "boolean" ||
+            objType?.kind === "bigint" ||
+            objType?.kind === "undefined" ||
+            objType?.kind === "null" ||
+            objType?.kind === "literal" ||
+            objType?.kind === "void"
+          )
+            fail(
+              node.object,
+              "TYPE_MISMATCH",
+              "The right-hand side of an 'in' expression must not be a primitive.",
+              true,
+            );
+          privateBrandChecks.set(node, info);
+          result = boolean;
+          break;
+        }
         case "new-target": {
           const receiverOwner =
             owner === undefined ? undefined : graph.functions[owner]?.receiver;
@@ -6387,6 +6628,24 @@ function checkClosureModuleLayout(
           break;
         }
         case "member": {
+          if (node.private === true) {
+            const obj = chainReceiver(node.object, node.optional === true);
+            const info = resolvePrivateMember(node.property, owner, node);
+            requirePrivateReceiver(obj, info, node.object);
+            if (
+              info.member.kind === "accessor" &&
+              info.member.getter === undefined
+            )
+              fail(
+                node,
+                "PROPERTY",
+                "private accessor has no getter: " + node.property,
+                true,
+              );
+            privateAccesses.set(node, info);
+            result = info.member.type;
+            break;
+          }
           const receiver = ungroup(node.object);
           if (receiver.kind === "super") {
             const receiverOwner =
@@ -7441,6 +7700,7 @@ function checkClosureModuleLayout(
           }
           if (
             target.kind === "member" &&
+            target.private !== true &&
             ungroup(target.object).kind !== "super"
           ) {
             const receiver = ungroup(target.object);
@@ -8717,11 +8977,15 @@ function checkClosureModuleLayout(
           if (signature?.kind !== "function")
             fail(node, "TYPE_MISMATCH", "callee must have a function type");
           const args = callArguments(node, owner, signature);
-          const checked = system.call(
-            callee,
-            args,
-            callReceiverType(node.callee),
-          );
+          const privCall =
+            target.kind === "member" && target.private === true
+              ? privateAccesses.get(target)
+              : undefined;
+          const receiverForCall =
+            privCall !== undefined && privCall.member.static
+              ? privCall.contract.constructor
+              : callReceiverType(node.callee);
+          const checked = system.call(callee, args, receiverForCall);
           if (!checked.ok) fail(node, checked.error, "invalid call");
           invalidateCalls();
           result = checked.value;
@@ -8738,6 +9002,123 @@ function checkClosureModuleLayout(
           while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
             const object = expression(target.object, owner);
+            if (target.kind === "member" && target.private === true) {
+              const info = resolvePrivateMember(target.property, owner, target);
+              requirePrivateReceiver(object, info, target.object);
+              if (info.member.kind === "method")
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot update private method: " + target.property,
+                  true,
+                );
+              if (
+                info.member.kind === "accessor" &&
+                (info.member.getter === undefined ||
+                  info.member.setter === undefined)
+              )
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "private accessor update requires both getter and setter: " +
+                    target.property,
+                  true,
+                );
+              if (
+                info.member.kind === "field" &&
+                info.member.readonly &&
+                !privateReadonlyAllowed(
+                  info.contract,
+                  info.member.static,
+                  owner,
+                )
+              )
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot update readonly private field: " + target.property,
+                  true,
+                );
+              const propType = info.member.type;
+              expressions.set(target, propType);
+              privateAccesses.set(target, info);
+              intrinsics.set(node, "record-write");
+              if (
+                node.kind === "compound" &&
+                (node.operator === "&&" || node.operator === "||")
+              ) {
+                const prim = system.assignable(propType, number)
+                  ? number
+                  : system.assignable(propType, string)
+                    ? string
+                    : system.assignable(propType, boolean)
+                      ? boolean
+                      : undefined;
+                if (prim === undefined)
+                  unsupported(
+                    target,
+                    "realm-aggregate-update",
+                    "logical property assignment requires a present primitive field",
+                  );
+                const before = new Set(present),
+                  right = expression(node.value, owner, prim);
+                requireType(right, prim, node.value);
+                requireType(right, propType, node.value);
+                invalidateCalls();
+                present = intersect(before, present);
+                result = prim;
+                break;
+              }
+              if (node.kind === "compound" && node.operator === "??") {
+                const base = presentType(propType) ?? propType;
+                const prim = system.assignable(base, number)
+                  ? number
+                  : system.assignable(base, string)
+                    ? string
+                    : system.assignable(base, boolean)
+                      ? boolean
+                      : undefined;
+                if (prim === undefined)
+                  unsupported(
+                    target,
+                    "realm-aggregate-update",
+                    "nullish property assignment requires an optional primitive field",
+                  );
+                const optionalPrim = unionSubset([prim, undefinedType], node);
+                requireType(propType, optionalPrim, target);
+                const before = new Set(present),
+                  right = expression(node.value, owner, propType);
+                requireType(right, optionalPrim, node.value);
+                requireType(right, propType, node.value);
+                invalidateCalls();
+                present = system.assignable(propType, prim)
+                  ? before
+                  : intersect(before, present);
+                result =
+                  system.assignable(propType, prim) ||
+                  system.assignable(right, prim)
+                    ? prim
+                    : optionalPrim;
+                break;
+              }
+              if (
+                node.kind === "compound" &&
+                node.operator === "+" &&
+                system.assignable(propType, string)
+              ) {
+                const right = expression(node.value, owner, string);
+                requireType(right, string, node.value);
+                invalidateCalls();
+                result = string;
+                break;
+              }
+              requireType(propType, number, target);
+              if (node.kind === "compound")
+                requireType(expression(node.value, owner), number, node.value);
+              invalidateCalls();
+              result = number;
+              break;
+            }
             const keyType =
               target.kind === "index"
                 ? expression(target.index, owner)
@@ -9211,6 +9592,50 @@ function checkClosureModuleLayout(
               dynamicEnrollments.set(node.value, targetType);
           } else if (target.kind === "member" || target.kind === "index") {
             const receiver = expression(target.object, owner);
+            if (target.kind === "member" && target.private === true) {
+              const info = resolvePrivateMember(target.property, owner, target);
+              requirePrivateReceiver(receiver, info, target.object);
+              if (info.member.kind === "method")
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot assign to private method: " + target.property,
+                  true,
+                );
+              if (
+                info.member.kind === "accessor" &&
+                info.member.setter === undefined
+              )
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot assign to private getter-only accessor: " +
+                    target.property,
+                  true,
+                );
+              if (
+                info.member.kind === "field" &&
+                info.member.readonly &&
+                !privateReadonlyAllowed(
+                  info.contract,
+                  info.member.static,
+                  owner,
+                )
+              )
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot assign to readonly private field: " + target.property,
+                  true,
+                );
+              result = expression(node.value, owner, info.member.type);
+              requireType(result, info.member.type, node.value);
+              expressions.set(target, info.member.type);
+              privateAccesses.set(target, info);
+              intrinsics.set(node, "record-write");
+              invalidateCalls();
+              break;
+            }
             const receiverType = types[receiver];
             if (
               receiverType?.kind === "object" &&
@@ -11239,6 +11664,8 @@ function checkClosureModuleLayout(
       nativeRecordViews,
       finitePropertyKeys,
       uninitializedFields,
+      privateAccesses,
+      privateBrandChecks,
       operations,
       intrinsics,
       cViewUses,

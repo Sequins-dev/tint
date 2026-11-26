@@ -1,5 +1,8 @@
 import {
   classAccessorSlot,
+  classPrivateAccessorSlot,
+  classPrivateBrandSlot,
+  classPrivateSlot,
   type ClassContract,
 } from "@tint/typescript/checker";
 import type { ClassElement } from "@tint/typescript/syntax";
@@ -17,6 +20,8 @@ export interface ClassRecordStorage {
   readonly instance: number;
   readonly prototype: number;
   readonly prototypeField: number;
+  /** Hidden instance brand cell for private methods/accessors (C3). */
+  readonly privateBrandField: number | undefined;
   /** A derived prototype's hidden link to the base prototype (C2). */
   readonly prototypeLink: number | undefined;
   readonly constructorState: number;
@@ -46,9 +51,9 @@ export interface ClassMemberEnvironment {
   /** Instance data fields in source order. An initializer closure has a
    * definition environment field and a construction environment field. */
   readonly fields: readonly ClassFieldStorage[];
-  /** Static data fields in source order; initializers use the statics
-   * environment field. */
-  readonly staticFields: readonly ClassFieldStorage[];
+  /** Static fields and static initialization blocks in source order; closures
+   * use the statics environment. */
+  readonly staticSteps: readonly ClassStaticStepStorage[];
   /** The constructor body, when the class declares one. */
   readonly body:
     | {
@@ -86,6 +91,14 @@ export interface ClassFieldStorage {
    * hold it; otherwise construction leaves them for the constructor body. */
   readonly undefinedDefault: boolean;
 }
+export type ClassStaticStepStorage =
+  | ({ readonly kind: "field" } & ClassFieldStorage)
+  | {
+      readonly kind: "static-block";
+      readonly element: ClassElement;
+      readonly environmentField: number;
+      readonly constructionField: number;
+    };
 export interface ClassAccessorStorage {
   readonly name: string;
   readonly static: boolean;
@@ -108,6 +121,7 @@ export interface PlannedClassRecords {
    * state) fields, no instance (or constructor state) field. */
   readonly accessors: readonly ClassAccessorStorage[];
   readonly prototypeField: number;
+  readonly privateBrandField: number | undefined;
   /** Derived classes: the prototype's hidden link to the base prototype,
    * and per prototype field the base prototype field it falls through to
    * (-1: none). */
@@ -295,6 +309,62 @@ export function planClassRecords(
       deferred: inheritedField < 0 && !deletable,
     });
   }
+  function holdsUndefinedType(type: ScalarType): boolean {
+    return [
+      "optional-number",
+      "optional-boolean",
+      "optional-string",
+      "optional-reference",
+      "general",
+      "primitive",
+    ].includes(type);
+  }
+  function widenForUninitializedPrivate(type: ScalarType): ScalarType {
+    if (holdsUndefinedType(type)) return type;
+    if (type === "number") return "optional-number";
+    if (type === "boolean") return "optional-boolean";
+    if (type === "string") return "optional-string";
+    if (type === "reference") return "optional-reference";
+    return "general";
+  }
+  const privateMembers = contract.privateMembers ?? [];
+  const needsPrivateBrand = privateMembers.some(
+    (entry) =>
+      entry !== undefined &&
+      !entry.static &&
+      (entry.kind === "method" || entry.kind === "accessor"),
+  );
+  let privateBrandField: number | undefined;
+  if (needsPrivateBrand) {
+    privateBrandField = baseFields + instanceFields.length;
+    instanceNames.push(classPrivateBrandSlot(contract.instance));
+    inherited.push(-1);
+    instanceFields.push({
+      type: "boolean",
+      mutable: false,
+      optional: false,
+      initialized: true,
+    });
+  }
+  for (const pm of privateMembers) {
+    if (pm === undefined || pm.static || pm.kind !== "field") continue;
+    let type: ScalarType | undefined = encoding(pm.type);
+    if (type === undefined) fail("unsupported private field storage");
+    const pmNode = pm.node;
+    if (pmNode.kind === "field" && pmNode.initializer === undefined)
+      type = widenForUninitializedPrivate(type);
+    instanceNames.push(classPrivateSlot(contract.instance, pm.name));
+    inherited.push(-1);
+    instanceFields.push({
+      type,
+      mutable: true,
+      optional: false,
+      initialized: true,
+    });
+  }
+  const hasStaticBlock = contract.members.some(
+    (entry) => entry?.node.kind === "static-block",
+  );
   const constructorNames: string[] = [],
     constructorFields: RecordFieldStorage[] = [];
   for (const property of constructor.properties) {
@@ -306,7 +376,7 @@ export function planClassRecords(
     const member = contract.members.find((member) => {
       if (member === undefined) throw "class member invariant";
       const element = member.node;
-      if (element.kind === "static-block") return false;
+      if (element.kind === "static-block" || element.private) return false;
       const key = element.key;
       return (
         element.static &&
@@ -317,14 +387,74 @@ export function planClassRecords(
             : undefined) === property.name
       );
     });
+    const memberNode = member?.node;
+    const staticField =
+      memberNode !== undefined && memberNode.kind === "field"
+        ? memberNode
+        : undefined;
+    const deferredStatic =
+      staticField !== undefined &&
+      staticField.initializer === undefined &&
+      !holdsUndefinedType(type) &&
+      hasStaticBlock;
     constructorNames.push(property.name);
     constructorFields.push({
       type,
       // A class's `prototype` is non-writable; statics are writable.
       mutable: property.name !== "prototype",
       optional: false,
-      initialized: member?.node.kind === "field",
+      initialized: staticField !== undefined && !deferredStatic,
+      deferred: deferredStatic,
     });
+  }
+  // Private methods, private accessors (instance & static), and static private
+  // fields live on the declaring class's constructorState (immune to prototype
+  // mutation).
+  for (const pm of privateMembers) {
+    if (pm === undefined) throw "private member invariant";
+    if (pm.kind === "field") {
+      if (!pm.static) continue;
+      let type: ScalarType | undefined = encoding(pm.type);
+      if (type === undefined) fail("unsupported static private field storage");
+      const pmNode = pm.node;
+      if (pmNode.kind === "field" && pmNode.initializer === undefined)
+        type = widenForUninitializedPrivate(type);
+      constructorNames.push(classPrivateSlot(contract.instance, pm.name));
+      constructorFields.push({
+        type,
+        mutable: true,
+        optional: false,
+        initialized: true,
+      });
+    } else if (pm.kind === "method") {
+      constructorNames.push(classPrivateSlot(contract.instance, pm.name));
+      constructorFields.push({
+        type: "reference",
+        mutable: false,
+        optional: false,
+      });
+    } else {
+      if (pm.getter !== undefined) {
+        constructorNames.push(
+          classPrivateAccessorSlot(contract.instance, "get", pm.name),
+        );
+        constructorFields.push({
+          type: "reference",
+          mutable: false,
+          optional: false,
+        });
+      }
+      if (pm.setter !== undefined) {
+        constructorNames.push(
+          classPrivateAccessorSlot(contract.instance, "set", pm.name),
+        );
+        constructorFields.push({
+          type: "reference",
+          mutable: false,
+          optional: false,
+        });
+      }
+    }
   }
   // The construction and initialization closures are installed after cyclic
   // class state is allocated. They have no source property names and are
@@ -355,7 +485,7 @@ export function planClassRecords(
   const methods: ClassMethodStorage[] = [],
     staticMethods: ClassMethodStorage[] = [],
     fields: ClassFieldStorage[] = [],
-    staticFields: ClassFieldStorage[] = [];
+    staticSteps: ClassStaticStepStorage[] = [];
   let body:
     | {
         element: ClassElement;
@@ -397,8 +527,89 @@ export function planClassRecords(
   for (const member of contract.members) {
     if (member === undefined) throw "class member invariant";
     const element = member.node;
-    if (element.kind === "static-block")
-      fail("class static blocks are not lowered yet");
+    if (element.kind === "static-block") {
+      staticSteps.push({
+        kind: "static-block",
+        element,
+        environmentField: staticsFields,
+        constructionField: staticsFields,
+      });
+      staticsFields++;
+      continue;
+    }
+    if (element.private === true) {
+      const key = element.key;
+      if (key.kind !== "string") fail("private member key invariant");
+      if (element.kind === "get" || element.kind === "set") {
+        const slotName = classPrivateAccessorSlot(
+          contract.instance,
+          element.kind,
+          key.value,
+        );
+        const field = constructorNames.indexOf(slotName);
+        if (field < 0) fail("private accessor storage invariant");
+        staticMethods.push({
+          element,
+          field,
+          environmentField: environmentFields++,
+        });
+        continue;
+      }
+      const slotName = classPrivateSlot(contract.instance, key.value);
+      if (element.kind === "method") {
+        const field = constructorNames.indexOf(slotName);
+        if (field < 0) fail("private method storage invariant");
+        staticMethods.push({
+          element,
+          field,
+          environmentField: environmentFields++,
+        });
+        continue;
+      }
+      if (element.kind !== "field") fail("private member kind invariant");
+      const initializer = element.initializer;
+      if (element.static) {
+        const field = constructorNames.indexOf(slotName);
+        if (field < 0) fail("static private field storage invariant");
+        const undefinedDefault = holdsUndefined(constructorFields[field]);
+        let staticInitializer: ClassFieldStorage["initializer"];
+        if (initializer !== undefined) {
+          staticInitializer = {
+            environmentField: staticsFields,
+            constructionField: staticsFields,
+          };
+          staticsFields++;
+        }
+        staticSteps.push({
+          kind: "field",
+          element,
+          field,
+          initializer: staticInitializer,
+          undefinedDefault,
+        });
+        continue;
+      }
+      const field = instanceNames.indexOf(slotName);
+      if (field < 0) fail("instance private field storage invariant");
+      let fieldInitializer: ClassFieldStorage["initializer"];
+      if (initializer !== undefined) {
+        fieldInitializer = {
+          environmentField: environmentFields++,
+          constructionField: constructionFields++,
+        };
+      }
+      fields.push({
+        element,
+        field,
+        initializer: fieldInitializer,
+        undefinedDefault: holdsUndefined(
+          field < baseFields
+            ? base?.instance.fields[field]
+            : instanceFields[field - baseFields],
+        ),
+      });
+      continue;
+    }
     const name = nameOf(element);
     if (element.kind === "get" || element.kind === "set") {
       const getter = element.kind === "get",
@@ -463,7 +674,7 @@ export function planClassRecords(
       const field = constructorNames.indexOf(name);
       if (field < 0) fail("class static field storage invariant");
       const undefinedDefault = holdsUndefined(constructorFields[field]);
-      if (initializer === undefined && !undefinedDefault)
+      if (initializer === undefined && !undefinedDefault && !hasStaticBlock)
         fail(
           "static fields without an initializer need a type admitting undefined",
         );
@@ -475,7 +686,8 @@ export function planClassRecords(
         };
         staticsFields++;
       }
-      staticFields.push({
+      staticSteps.push({
+        kind: "field",
         element,
         field,
         initializer: staticInitializer,
@@ -523,14 +735,14 @@ export function planClassRecords(
       methods,
       staticMethods,
       fields,
-      staticFields,
+      staticSteps,
       body,
       definitionEnvironment: closureEnvironment(environmentFields),
       constructionEnvironment: closureEnvironment(constructionFields),
       constructorField,
       baseInitField,
       staticsEnvironment:
-        staticFields.length === 0
+        staticSteps.length === 0
           ? undefined
           : closureEnvironment(staticsFields),
     },
@@ -557,5 +769,6 @@ export function planClassRecords(
     unproven: unprovenFields,
     accessors,
     prototypeField,
+    privateBrandField,
   };
 }
