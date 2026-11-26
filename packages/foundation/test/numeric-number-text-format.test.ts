@@ -19,6 +19,16 @@ test("safe integer formatting avoids arbitrary-precision workspaces", () => {
     }
     for (let delta = 0; delta < 32; delta++)
       values.push(Number.MAX_SAFE_INTEGER - delta);
+    // Around the 10^8 split, whose rounded quotient needs correcting.
+    for (const high of [1, 9, 10, 12345678, 90071991, 90071992])
+      for (const low of [-1, 0, 1, 99999999])
+        if (high * 100000000 + low <= Number.MAX_SAFE_INTEGER)
+          values.push(high * 100000000 + low);
+    let state = 31;
+    for (let i = 0; i < 2000; i++) {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      values.push((state % 2 ** (i % 22)) * 2 ** (i % 32) + (state & 1023));
+    }
     for (const value of values) {
       assert.equal(numeric.numberToString(value), String(value));
       assert.equal(numeric.numberToString(-value), String(-value));

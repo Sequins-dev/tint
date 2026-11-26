@@ -161,17 +161,22 @@ export function prepareModuleInstance(
         break;
       }
       case "class":
-        return {
-          ok: false,
-          error:
-            "module instance classes require scoped contract and construction lowering",
-          fallback: {
-            capability: "module-class-construction",
-            ownerKind: "class",
-            location: { start: statement.start, end: statement.end },
-            owner: { start: statement.start, end: statement.end },
-          },
-        };
+        // Evaluated in the initializer at its source position; the checker
+        // resolves its contract there (docs/design-typed-classes.md, C1).
+        if (typeParameterCount(statement.definition.typeParameters) !== 0)
+          return {
+            ok: false,
+            error: "module instance requires specialized classes",
+            fallback: {
+              capability: "module-class-construction",
+              ownerKind: "class",
+              location: { start: statement.start, end: statement.end },
+              owner: { start: statement.start, end: statement.end },
+            },
+          };
+        names.set(statement.name, 1);
+        body.push({ ...statement, exported: false });
+        break;
       case "expression":
       case "debugger":
       case "empty":

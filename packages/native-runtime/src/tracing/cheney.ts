@@ -14,6 +14,9 @@ import {
   nativeArrayOwnerOffset,
   nativeArrayBorrowedByteLength,
   nativeArrayViewByteLength,
+  nativeTypedArrayMarker,
+  nativeTypedArrayElementBytes,
+  nativeBuiltinMarkerLimit,
 } from "@tint/abi/host";
 import {
   nativeWeakSlotMarker,
@@ -180,10 +183,10 @@ export function cheneyExtent(
   flags: number,
 ): number {
   let size = 0;
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) size = nativeWeakSlotByteLength;
     else {
-      if (marker % 8 !== 0 || flags !== 0) throw "CHENEY_HEADER";
+      if ((marker & 7) !== 0 || flags !== 0) throw "CHENEY_HEADER";
       size = read(marker);
     }
   } else if (marker === 1 && flags >= nativeStringSlicedFlag) {
@@ -204,14 +207,14 @@ export function cheneyExtent(
   } else if (marker === 6)
     size =
       nativeArrayInlineOffset + read(address + nativeArrayLengthOffset) * 8;
-  else if (marker >= 2) {
+  else if (nativeTypedArrayMarker(marker)) {
     if (flags === 2) size = nativeArrayViewByteLength;
     else if (flags === 1) size = nativeArrayBorrowedByteLength;
     else if (flags === 0)
       size =
         nativeArrayInlineOffset +
         read(address + nativeArrayLengthOffset) *
-          (marker === 2 ? 1 : marker === 3 ? 2 : marker === 4 ? 4 : 8);
+          nativeTypedArrayElementBytes(marker);
     else throw "CHENEY_HEADER";
   } else throw "CHENEY_HEADER";
   return ((size + 7) >>> 3) << 3;
@@ -228,7 +231,10 @@ function evacuate(
   if (header >= nativeHeaderForwarded) return header - nativeHeaderForwarded;
   const marker = headerMarker(header),
     flags = headerFlags(header),
-    size = cheneyExtent(address, marker, flags),
+    size =
+      marker >= nativeBuiltinMarkerLimit && (marker & 7) === 0 && flags === 0
+        ? ((read(marker) + 7) >>> 3) << 3
+        : cheneyExtent(address, marker, flags),
     toBase = state.toBase,
     free = state.free,
     destination = toBase + free,
@@ -250,7 +256,7 @@ function evacuate(
     word = unit >>> 5;
   starts[word] = (starts[word] ?? 0) | (1 << (unit & 31));
   write(address, destination + nativeHeaderForwarded);
-  if (marker >= 2 && marker <= 5) {
+  if (nativeTypedArrayMarker(marker)) {
     if (flags === 0)
       write(
         destination + nativeArrayDataOffset,
@@ -339,7 +345,7 @@ function scanObject(
 ): number {
   const header = read(address),
     marker = headerMarker(header);
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) {
       if (strongWeak) {
         generalSlot(state, starts, address + nativeWeakSlotKeyOffset);
@@ -347,7 +353,7 @@ function scanObject(
       }
       return nativeWeakSlotByteLength;
     }
-    if (marker % 8 !== 0 || header !== marker) throw "CHENEY_HEADER";
+    if ((marker & 7) !== 0 || header !== marker) throw "CHENEY_HEADER";
     scanFields(state, starts, marker + 8, address);
     return ((read(marker) + 7) >>> 3) << 3;
   }
@@ -364,7 +370,7 @@ function scanObject(
       else if (value >= state.sharedBase && value < state.sharedEnd)
         markShared(state, value);
     }
-  } else if (marker >= 2 && marker <= 5 && flags === 2)
+  } else if (nativeTypedArrayMarker(marker) && flags === 2)
     // Copies fixed their owner when evacuated; this covers in-place scans.
     referenceSlot(state, starts, address + nativeArrayOwnerOffset);
   else if (marker === 1 && flags >= nativeStringSlicedFlag)
@@ -677,7 +683,11 @@ function popcount(word: number): number {
 /** Aligned extent of the object with this header; records (most objects)
  * read their descriptor's extent directly. */
 export function compactObjectSize(address: number, header: number): number {
-  if (header > 7 && header < nativeHeaderFlagUnit)
+  if (
+    header >= nativeBuiltinMarkerLimit &&
+    (header & 7) === 0 &&
+    header < nativeHeaderFlagUnit
+  )
     return ((read(header) + 7) >>> 3) << 3;
   return cheneyExtent(address, headerMarker(header), headerFlags(header));
 }
@@ -740,7 +750,7 @@ function markFields(
 function markChildren(state: CompactState, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     // A weak slot's key and value wait for the strong closure.
     if (marker === nativeWeakSlotMarker) state.sawWeak = true;
     else markFields(state, marker + 8, address);
@@ -748,7 +758,7 @@ function markChildren(state: CompactState, address: number): void {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
       markReference(state, read(address + nativeArrayInlineOffset + index * 8));
-  } else if (marker >= 2 && headerFlags(header) === 2) {
+  } else if (nativeTypedArrayMarker(marker) && headerFlags(header) === 2) {
     state.sawView = true;
     markReference(state, read(address + nativeArrayOwnerOffset));
   } else if (marker === 1 && headerFlags(header) >= nativeStringSlicedFlag)
@@ -862,7 +872,7 @@ function forwardFields(
 function relocateView(state: CompactState, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
-  if (marker < 2 || marker > 5) return;
+  if (!nativeTypedArrayMarker(marker)) return;
   if (headerFlags(header) === 2) {
     // A view's elements move with its terminal owning array.
     let owner = read(address + nativeArrayOwnerOffset);
@@ -894,12 +904,13 @@ export function compactForwardChildren(
   if (marker === nativeWeakSlotMarker) {
     forwardGeneral(state, address + nativeWeakSlotKeyOffset);
     forwardGeneral(state, address + nativeWeakSlotValueOffset);
-  } else if (marker > 6) forwardFields(state, marker + 8, address);
+  } else if (marker >= nativeBuiltinMarkerLimit)
+    forwardFields(state, marker + 8, address);
   else if (marker === 6) {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
       forwardReference(state, address + nativeArrayInlineOffset + index * 8);
-  } else if (marker >= 2) {
+  } else if (nativeTypedArrayMarker(marker)) {
     const flags = headerFlags(header);
     if (flags === 2) forwardReference(state, address + nativeArrayOwnerOffset);
   } else if (marker === 1 && headerFlags(header) >= nativeStringSlicedFlag)
@@ -913,7 +924,7 @@ export function compactForwardObject(
   header: number,
 ): void {
   compactForwardChildren(state, address, header);
-  if (header >= 2 && header <= 5)
+  if (header < nativeHeaderFlagUnit && nativeTypedArrayMarker(header))
     write(
       address + nativeArrayDataOffset,
       compactForward(state, address) + nativeArrayInlineOffset,
@@ -947,7 +958,11 @@ function compactLive(
         size = compactObjectSize(address, header),
         destination = cursor;
       if (fieldsPending) compactForwardChildren(state, address, header);
-      if (fieldsPending && header >= 2 && header <= 5)
+      if (
+        fieldsPending &&
+        header < nativeHeaderFlagUnit &&
+        nativeTypedArrayMarker(header)
+      )
         write(
           address + nativeArrayDataOffset,
           destination + nativeArrayInlineOffset,

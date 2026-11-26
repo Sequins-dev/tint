@@ -9,7 +9,9 @@ import {
 } from "@tint/ir/scalar";
 import type { CType } from "@tint/abi/c";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
+import { emitModule as emitX64Module } from "@tint/codegen/x86_64/scalar";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { linuxX86_64HostFacts } from "@tint/platform/linux/host-abi";
 
 const s = (
   scalar: "i8" | "u16" | "i32" | "u32" | "i64" | "u64" | "f32" | "f64",
@@ -372,4 +374,28 @@ test("an int64 loop counter passed as a C integer stays int64 (no double round t
   // converts i to compare it with the double n.
   assert.ok(!has(0xfffffc00, 0x1e780000), "fcvtzs w, d");
   assert.ok(!has(0xfffffc00, 0x9e780000), "fcvtzs x, d");
+});
+
+test("x86-64 retains may-callback c-call return-pc safepoint labels across endScope", () => {
+  const module = bound(
+    {
+      symbol: "invoke_cb",
+      signature: {
+        parameters: [],
+        result: s("i32"),
+        fixedParameters: 0,
+        callClass: "may-callback",
+        errno: "none",
+      },
+      operands: ["bytes", "callback"],
+      result: "number",
+      mayCallback: true,
+      callbacks: [],
+    },
+    ["Uint8Array", "reference"],
+    "number",
+  );
+  const emitted = emitX64Module(module, linuxX86_64HostFacts());
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  assert.ok(emitted.value.stackMaps.length > 0);
 });

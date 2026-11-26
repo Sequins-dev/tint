@@ -173,3 +173,106 @@ test("a read reached on another path without the earlier read is kept", () => {
 test("exhausted budgets plan nothing", () => {
   assert.equal(reuseUnionReads(program([0, 1], [0, 1]), 3), undefined);
 });
+
+test("reuses union field reads through reference-value unwraps", () => {
+  // Slot 0 is optional-reference; both chains unwrap it via reference-value.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "optionalUnion",
+    exported: true,
+    parameters: [0],
+    slots: ["optional-reference", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "reference-value", id: 1, value: 0, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          object: 1,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 2,
+          alternate: 1,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 2, slot: 0, ...s },
+          { kind: "reference-value", id: 3, value: 2, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          object: 3,
+          record: 1,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 2,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 4, slot: 0, ...s },
+          { kind: "reference-value", id: 5, value: 4, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          object: 5,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 4,
+          alternate: 3,
+          ...s,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "reference-value", id: 7, value: 6, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          object: 7,
+          record: 1,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 4,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 8, slot: 1, ...s },
+          { kind: "load", id: 9, slot: 2, ...s },
+          { kind: "binary", id: 10, operator: "+", left: 8, right: 9, ...s },
+        ],
+        terminator: { kind: "return", value: 10, ...s },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  check(fn);
+  const result = reuseUnionReads(fn, 100000);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  check(result.fn);
+  assert.equal(result.fn.blocks[2]?.terminator.kind, "jump");
+});

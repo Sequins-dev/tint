@@ -1,5 +1,6 @@
 import {
   instructionResult,
+  isNativeTypedArray,
   visitInstructionOperands,
   visitTerminatorOperands,
   substituteInstructionValues,
@@ -42,12 +43,21 @@ function crossingType(
   module: ModuleIR,
 ): ScalarType | undefined {
   switch (op.kind) {
-    case "call": {
+    case "call":
+    case "call-indirect": {
       const type = module.functions[op.target]?.returnType;
       return type === undefined || type === "void" ? undefined : type;
     }
+    case "function-new":
     case "reference-value":
       return "reference";
+    case "general-is":
+      return "boolean";
+    case "general-value":
+      return op.type;
+    case "general-wrap":
+    case "general-none":
+      return "general";
     case "reference-wrap":
     case "reference-none":
     case "string-reference":
@@ -131,6 +141,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-length":
     case "array-write":
     case "array-store":
+    case "array-fill":
     case "array-atomic":
     // Tag tests and payload views of general values are pure inline
     // sequences (a mismatched checked view traps).
@@ -174,7 +185,28 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "record-read":
     case "record-new":
     case "reference-vector-new":
+    // General values: a method's receiver conversion (general-is and
+    // general-value of its receiver parameter) and wrapped results.
+    case "general-is":
+    case "general-value":
+    case "general-wrap":
+    case "general-none":
+    // A function value's own environment (a class constructor's state):
+    // a pure read of an explicit operand, unlike closure-environment.
+    case "function-environment":
+    // Thrown errors (such as a class binding's TDZ ReferenceError) and
+    // their messages are position-independent.
+    case "string-literal":
+    case "error-new":
+    // A closure's environment is an explicit operand: it clones with the
+    // callee (a factory such as makeCounter then exposes its closure to
+    // devirtualization in the caller).
+    case "function-new":
       return references;
+    // An indirect call stays a call in the caller, as a direct one does.
+    // Script calls (a JavaScript call header) stay out.
+    case "call-indirect":
+      return references && op.scriptArguments === undefined;
     // A direct call stays a call in the caller: an exception it throws
     // reaches the caller's handler, as it did through the callee.
     case "call":
@@ -186,6 +218,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
       return (
         op.operation === "memory-read-word" ||
         op.operation === "memory-write-word" ||
+        op.operation === "memory-move" ||
         op.operation === "memory-compare-exchange-word" ||
         op.operation === "memory-fetch-add-word" ||
         op.operation === "memory-load-acquire-word" ||
@@ -354,6 +387,7 @@ export function inlineSmallFunctions(
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
     effectful = new Uint8Array(module.functions.length),
+    directCallers = new Uint32Array(module.functions.length),
     intrinsic = new Uint8Array(module.functions.length),
     costs: number[] = [];
   let visited = 0,
@@ -410,16 +444,24 @@ export function inlineSmallFunctions(
       }
       const type = fn.slots[slot];
       if (type === undefined) throw "inline slot invariant";
+      // Multi-block callees copy parameters into traced slots in the caller,
+      // and non-parameter traced locals always add caller slots: bound them
+      // under referenceAllowance (eligibility 2) rather than unbounded scalar
+      // expansion. Straight-line helpers alias parameters directly.
+      if (
+        !scalar(type) &&
+        !isNativeTypedArray(type) &&
+        (fn.blocks.length > 1 || !fn.parameters.includes(slot))
+      )
+        original = false;
       if (
         !scalar(type) &&
         type !== "reference" &&
         type !== "optional-reference" &&
         type !== "string" &&
         type !== "optional-string" &&
-        type !== "Uint8Array" &&
-        type !== "Uint16Array" &&
-        type !== "Uint32Array" &&
-        type !== "Float64Array" &&
+        type !== "general" &&
+        !isNativeTypedArray(type) &&
         !fn.parameters.includes(slot)
       )
         good = false;
@@ -433,9 +475,12 @@ export function inlineSmallFunctions(
       if (block.exception !== undefined) good = false;
       const term = block.terminator;
       if (term.kind === "return") returns++;
-      // Checked record reads and writes clone with their slots; cells keep
-      // their owner's environment and stay out.
-      if (term.kind === "record-cell" || term.kind === "cell") good = false;
+      // Checked record reads and writes, and record cells (whose
+      // environment object is an explicit operand), clone with their slots;
+      // frame cells keep their owner's environment and stay out.
+      if (term.kind === "record" || term.kind === "record-cell")
+        original = false;
+      if (term.kind === "cell") good = false;
       for (const op of block.instructions) {
         if (op === undefined) throw "inline instruction invariant";
         if (visited >= budget) return exhausted();
@@ -447,6 +492,8 @@ export function inlineSmallFunctions(
           op.kind === "reference-vector-new"
         )
           effectful[fn.id] = 1;
+        if (op.kind === "call" && op.target !== fn.id)
+          directCallers[op.target] = (directCallers[op.target] ?? 0) + 1;
         // Recursive callees keep their calls (each round would unroll one
         // more level).
         if (op.kind === "call" && op.target === fn.id) good = false;
@@ -540,8 +587,24 @@ export function inlineSmallFunctions(
       functions.push(fn);
       continue;
     }
-    let allowance = incremental ? 128 : originalCount + 128,
-      referenceAllowance = 128,
+    // referenceAllowance: total cost of CFG callees with traced reference
+    // slots (eligibility 2) one caller absorbs. Collection accessors (a
+    // number list's read, push and resize cost 35-58 each) are this kind, so
+    // a loop over several lists needs room for a handful of them.
+    // A callee already eligible for inlining with internal callers stays within
+    // maxExpansion, so inlining a cold slow path (such as writeNumberList into
+    // pushNumberList) does not disqualify the wrapper from later rounds.
+    const selfCost = costs[fn.id] ?? 0,
+      keepInlineable =
+        !incremental &&
+        eligible[fn.id] !== 0 &&
+        (directCallers[fn.id] ?? 0) > 0;
+    let allowance = incremental
+        ? 128
+        : keepInlineable
+          ? Math.min(originalCount + 128, Math.max(0, maxExpansion - selfCost))
+          : originalCount + 128,
+      referenceAllowance = 384,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),
       blocks: Block[] = [],
@@ -940,6 +1003,7 @@ export function inlineSmallFunctions(
               case "undefined":
               case "boolean-none":
               case "reference-none":
+              case "general-none":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -1000,6 +1064,35 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
+              case "function-environment":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  callee: value(instruction.callee),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-literal":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "error-new":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  message: value(instruction.message),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
               case "optional-wrap":
               case "optional-present":
               case "optional-value":
@@ -1013,6 +1106,7 @@ export function inlineSmallFunctions(
               case "general-is":
               case "general-record-is":
               case "general-value":
+              case "general-wrap":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -1292,6 +1386,18 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
+              case "array-fill":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  value: value(instruction.value),
+                  from: value(instruction.from),
+                  to: value(instruction.to),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
               case "array-store":
                 cloned.push({
                   ...instruction,
@@ -1329,6 +1435,35 @@ export function inlineSmallFunctions(
                     ? {}
                     : { receiver: value(instruction.receiver) }),
                   arguments: instruction.arguments.map(value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "call-indirect":
+                cloned.push({
+                  ...instruction,
+                  id:
+                    instruction.id === undefined
+                      ? undefined
+                      : value(instruction.id),
+                  callee: value(instruction.callee),
+                  ...(instruction.receiver === undefined
+                    ? {}
+                    : { receiver: value(instruction.receiver) }),
+                  arguments: instruction.arguments.map(value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "function-new":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  ...(instruction.environment === undefined
+                    ? {}
+                    : { environment: value(instruction.environment) }),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,
@@ -1400,6 +1535,17 @@ export function inlineSmallFunctions(
               inline: termAt.inline,
             };
           else if (term.kind === "record")
+            terminator = {
+              ...term,
+              object: value(term.object),
+              slot: slot(term.slot),
+              consequent: target(term.consequent),
+              alternate: target(term.alternate),
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
+            };
+          else if (term.kind === "record-cell")
             terminator = {
               ...term,
               object: value(term.object),

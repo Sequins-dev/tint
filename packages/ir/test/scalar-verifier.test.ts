@@ -1119,6 +1119,59 @@ test("record writes require the declared field type and mutable storage", () => 
   );
 });
 
+test("record deletes require a mutable field with presence", () => {
+  const f: FunctionIR = {
+    id: 0,
+    name: "remove",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["reference", "optional-number"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "delete",
+          slot: 1,
+          consequent: 1,
+          alternate: 1,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+    ],
+  };
+  const field = {
+    offset: 24,
+    presenceOffset: 16,
+    type: "optional-number" as const,
+    mutable: true,
+  };
+  assert.ok(
+    verify({ records: [{ byteLength: 32, fields: [field] }], functions: [f] })
+      .ok,
+  );
+  const { presenceOffset: _, ...absent } = field;
+  for (const changed of [absent, { ...field, mutable: false }])
+    assert.ok(
+      !verify({
+        records: [{ byteLength: 32, fields: [changed] }],
+        functions: [f],
+      }).ok,
+      JSON.stringify(changed),
+    );
+});
+
 test("record construction initializes every declared field with a matching value", () => {
   const f: FunctionIR = {
     id: 0,

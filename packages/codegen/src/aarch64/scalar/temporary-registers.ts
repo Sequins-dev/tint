@@ -86,6 +86,10 @@ export function temporaryRegisters(
    * opaque operation but no safepoint needs no root: it joins the word
    * temporaries (callee-saved, preserved by calls and helpers). */
   collects?: (op: Instruction) => boolean,
+  /** Opaque instructions whose code preserves d16..d31 (inline allocations
+   * that save and restore them around their slow-path call): numeric
+   * temporaries may cross them. References still may not. */
+  preservesFloats?: (op: Instruction) => boolean,
 ): Uint8Array | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
@@ -118,7 +122,9 @@ export function temporaryRegisters(
       if (op === undefined) throw "temporary instruction invariant";
       if (++work > maxWork) return undefined;
       position++;
-      const safe = transparent(op),
+      const safe =
+          transparent(op) ||
+          (preservesFloats !== undefined && preservesFloats(op)),
         referenceSafe = referenceTransparent(op);
       if (!safe) epoch++;
       if (!referenceSafe) referenceEpoch++;
@@ -149,7 +155,18 @@ export function temporaryRegisters(
         if (reference) hasReferenceCandidate = true;
         if (candidates[id] === 3) hasWordCandidate = true;
         epochs[id] = reference ? referenceEpoch : epoch;
-        if (candidates[id] !== 3 && !(reference ? referenceSafe : safe))
+        const writesRefAfter =
+          collects !== undefined &&
+          reference &&
+          (op.kind === "array-new" ||
+            op.kind === "record-new" ||
+            op.kind === "reference-vector-new" ||
+            op.kind === "string-literal");
+        if (
+          candidates[id] !== 3 &&
+          !writesRefAfter &&
+          !(reference ? referenceSafe : safe)
+        )
           valid[id] = 0;
       }
     }
@@ -227,8 +244,18 @@ export function temporaryRegisters(
         const start = starts[id] ?? 0,
           end = ends[id] ?? 0;
         if (end <= start) continue;
+        const canReuseEnded =
+          op.kind === "binary" &&
+          (op.operator === "&" ||
+            op.operator === "<<" ||
+            op.operator === ">>" ||
+            op.operator === ">>>" ||
+            op.operator === "imul");
         for (let r = 0; r < wordRegisters; r++)
-          if ((words[r] ?? 0) < start) {
+          if (
+            (words[r] ?? 0) < start ||
+            (canReuseEnded && (words[r] ?? 0) === start)
+          ) {
             words[r] = end;
             registers[id] = 32 + 19 + r;
             break;

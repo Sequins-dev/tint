@@ -609,6 +609,7 @@ function functionFlows(
           case "array-read":
           case "array-element":
           case "array-copy":
+          case "array-fill":
           case "array-write":
           case "array-store":
           case "undefined":

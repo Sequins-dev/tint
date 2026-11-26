@@ -63,6 +63,9 @@ VERSION = 3
 # Version 2 headers are one word: the marker (or record descriptor address)
 # in the bits below FLAGS_SHIFT, the kind flags in the three bits above it.
 FLAGS_SHIFT = 48
+# Built-in kind markers are below this; records' descriptor addresses are not
+# (nativeBuiltinMarkerLimit in packages/abi/src/host.ts).
+BUILTIN_MARKER_LIMIT = 32
 # Object layouts of the version 2 header (packages/abi/src/host.ts).
 LENGTH_OFFSET = 8
 STRING_UNITS_OFFSET = 16
@@ -1250,7 +1253,7 @@ def object_kind(inferior, address):
     marker, flags = split_header(read_u64(inferior, address))
     if marker == 0:
         return None, "uninitialized", None
-    if marker <= 7:
+    if marker < BUILTIN_MARKER_LIMIT:
         name = None
         try:
             kind = Descriptor(inferior).kind_for(marker, flags)
@@ -1327,3 +1330,41 @@ def is_number_list_fields(fields):
 
 def is_entry_chain_fields(fields):
     return "head" in fields and "tail" in fields and ("size" in fields or "count" in fields)
+
+
+def is_dense_map_fields(fields):
+    return (
+        "keys" in fields
+        and "values" in fields
+        and "slots" in fields
+        and "size" in fields
+        and "length" in fields
+        and ("hashes" in fields or "deleted" in fields)
+    )
+
+
+def dense_map_live_indices(inferior, hashes_addr, deleted_addr, length):
+    """Live entry indices (in insertion order) of a StringKeyMap / NumberKeyMap."""
+    count = min(max(length, 0), CHILD_LIMIT)
+    if count == 0:
+        return []
+    if hashes_addr:
+        cap = min(count, read_u64(inferior, hashes_addr + LENGTH_OFFSET))
+        raw = inferior.read(hashes_addr + ARRAY_INLINE_OFFSET, cap * 4) if cap else b""
+        return [i for i in range(cap) if struct.unpack_from("<I", raw, i * 4)[0] != 0xFFFFFFFF]
+    if deleted_addr:
+        cap = min(count, read_u64(inferior, deleted_addr + LENGTH_OFFSET))
+        raw = inferior.read(deleted_addr + ARRAY_INLINE_OFFSET, cap) if cap else b""
+        return [i for i in range(cap) if raw[i] == 0]
+    return list(range(count))
+
+
+def float64_array_values(inferior, array_addr, count):
+    """Leading Float64Array elements up to count."""
+    if not array_addr or count <= 0:
+        return ()
+    cap = min(count, read_u64(inferior, array_addr + LENGTH_OFFSET), CHILD_LIMIT)
+    if cap <= 0:
+        return ()
+    raw = inferior.read(array_addr + ARRAY_INLINE_OFFSET, cap * 8)
+    return struct.unpack("<%dd" % cap, raw)

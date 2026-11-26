@@ -28,6 +28,7 @@ import {
   nativeCStackReserveBytes,
   nativeHeaderFlagUnit,
   nativeHeaderFlagsShift,
+  nativeBuiltinMarkerLimit,
   nativeStringLengthOffset,
   nativeStringIndexField,
   nativeStringIndexFieldOffset,
@@ -83,6 +84,7 @@ import {
 import {
   recordDispatchChains,
   type RecordDispatchChain,
+  type RecordDispatchGroup,
 } from "./record-dispatch.ts";
 import {
   deadSlotClearPlan,
@@ -90,7 +92,10 @@ import {
   poolClearPlan,
   preSafepointResults,
 } from "./pool-clears.ts";
-import { shareFrameSlots, type SlotSharing } from "./slot-sharing.ts";
+import {
+  shareFrameSlots,
+  type SlotSharing,
+} from "../../scalar/slot-sharing.ts";
 import { aliasedSlotLoads } from "./slot-aliases.ts";
 import { slotHomes, type SlotHomes } from "./slot-registers.ts";
 import {
@@ -113,9 +118,14 @@ export type {
 } from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import {
+  chainedBlockOrder,
   fallsThrough,
+  findSelectDiamonds,
   forwardableEntries,
-  orderBlocks,
+  orderBlockIds,
+  provenNonNullValues,
+  type NestedSelect,
+  type SelectArm,
 } from "./block-entries.ts";
 import {
   fusedPropertyAccesses,
@@ -171,7 +181,7 @@ import {
   sharedMemoryPrimitive,
   type SharedMemoryPrimitive,
 } from "./shared-memory.ts";
-import { memoryMover } from "./memory.ts";
+import { memoryFiller, memoryMover } from "./memory.ts";
 import { externalMemoryCapability } from "./external-memory.ts";
 import {
   emitDualMappingMap,
@@ -191,10 +201,13 @@ export type LeafHelperKind =
   | "array-initialize"
   | "memory-move"
   | "array-copy"
+  | "array-fill"
   | "remember-object"
   | "stack-overflow";
 import {
   cachedListReadPrefix,
+  uncheckedListReadPrefix,
+  uncheckedListWritePrefix,
   listVectorPrefix,
   verify,
   maximumStringLength,
@@ -234,6 +247,12 @@ import {
   callbackState,
   naturalLoops,
   blockSuccessors,
+  isNativeTypedArray,
+  nativeTypedArray,
+  typedArrayIntegerElements,
+  typedArrayLayout,
+  typedArrayMarker,
+  typedArrayScale,
   activationFieldType,
   type LoopForest,
   type SlotLiveness,
@@ -244,6 +263,7 @@ import {
   type Verification,
   type RecordLayout,
   type ScalarType,
+  type NativeTypedArray,
   type Span,
   type Block as IRBlock,
   type Instruction as IRInstruction,
@@ -567,6 +587,7 @@ function leafHelperBody(kind: LeafHelperKind): {
     return { body: arrayInitializer(), aligned: false };
   if (kind === "memory-move" || kind === "array-copy")
     return { body: memoryMover(kind === "array-copy"), aligned: false };
+  if (kind === "array-fill") return { body: memoryFiller(), aligned: false };
   if (kind === "remember-object")
     return { body: rememberedBarrier(), aligned: false };
   if (kind === "stack-overflow")
@@ -576,17 +597,15 @@ function leafHelperBody(kind: LeafHelperKind): {
   return { body: stringHelper(kind), aligned: true };
 }
 function managed(type: string): boolean {
-  return [
-    "primitive",
-    "reference",
-    "optional-reference",
-    "optional-string",
-    "string",
-    "Uint8Array",
-    "Uint16Array",
-    "Uint32Array",
-    "Float64Array",
-  ].includes(type);
+  return (
+    [
+      "primitive",
+      "reference",
+      "optional-reference",
+      "optional-string",
+      "string",
+    ].includes(type) || isNativeTypedArray(type)
+  );
 }
 /** A frameless early exit's returned value and parameter test. */
 type EarlyValue =
@@ -722,10 +741,22 @@ interface ListReadShape {
   readonly header: number;
   readonly field: number;
   /** cached: a cacheListVectors reader (vector, list, index) whose first
-   * argument is the list's current root vector or none. */
-  readonly mode: "read" | "has" | "cached";
+   * argument is the list's current root vector or none.
+   * unchecked: a preheader-guarded reader (vector, list, index) whose vector
+   * is proven non-null with length > index. */
+  readonly mode: "read" | "has" | "cached" | "unchecked";
 }
 function listReadShape(fn: FunctionIR): ListReadShape | undefined {
+  if (fn.import === true) return undefined;
+  if (fn.name.startsWith(uncheckedListReadPrefix))
+    return (fn.returnType === "optional-reference" ||
+      fn.returnType === "optional-string") &&
+      fn.parameters.length === 3 &&
+      fn.slots[0] === "optional-reference" &&
+      fn.slots[1] === "reference" &&
+      fn.slots[2] === "number"
+      ? { header: -1, field: -1, mode: "unchecked" }
+      : undefined;
   if (fn.name.startsWith(cachedListReadPrefix))
     return (fn.returnType === "optional-reference" ||
       fn.returnType === "optional-string") &&
@@ -817,8 +848,20 @@ function listVectorShape(fn: FunctionIR): number | undefined {
  * vector itself), recognized from its IR like listReadShape. */
 interface ListWriteShape {
   readonly header: number;
+  readonly unchecked?: boolean;
 }
 function listWriteShape(fn: FunctionIR): ListWriteShape | undefined {
+  if (fn.import === true) return undefined;
+  if (fn.name.startsWith(uncheckedListWritePrefix))
+    return fn.returnType === "void" &&
+      fn.parameters.length === 4 &&
+      fn.slots[0] === "reference" &&
+      fn.slots[1] === "reference" &&
+      fn.slots[2] === "number" &&
+      (fn.slots[3] === "optional-reference" ||
+        fn.slots[3] === "optional-string")
+      ? { header: -1, unchecked: true }
+      : undefined;
   if (
     !fn.name.startsWith("__tint_reference_list_write$") ||
     fn.returnType !== "void" ||
@@ -888,6 +931,7 @@ export type CodegenAnalysis =
   | "entry-live-homes"
   | "dead-slot-roots"
   | "join-record-guards"
+  | "proven-non-null"
   | "safepoint-liveness";
 
 export interface EmissionOptions {
@@ -3328,21 +3372,68 @@ function emitModuleForms(
    * edge to a managed object: it emits code using x12..x14 and returns the
    * sites of `b.ne` branches that skip the helper. Clobbers x10..x16 like
    * the helper. */
-  function rememberObject(unneeded?: () => readonly number[]): void {
+  function rememberObject(
+    defer?: (emitSlow: () => void) => void,
+    objReg: number = 9,
+    loadContext?: () => void,
+    unneeded?: () => readonly number[],
+  ): void {
+    if (cachedNurseryBaseInX16 && defer !== undefined) {
+      emit({
+        op: "sub-reg",
+        width: 64,
+        rd: "zr",
+        rn: objReg,
+        rm: 16,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      });
+      const old = instructions.length;
+      emit({ op: "b.cond", condition: "cc", displacement: 0 });
+      const done = instructions.length;
+      clearWordCaches();
+      defer(() => {
+        clearWordCaches();
+        patchInstruction(old, {
+          op: "b.cond",
+          condition: "cc",
+          displacement: (instructions.length - old) * 4,
+        });
+        const skips = unneeded === undefined ? [] : unneeded();
+        if (objReg !== 9)
+          emit({
+            op: "orr-reg",
+            width: 64,
+            rd: 9,
+            rn: "zr",
+            rm: objReg,
+          });
+        if (loadContext !== undefined) loadContext();
+        callHelper("remember-object");
+        const back = instructions.length;
+        for (const skip of skips)
+          patchInstruction(skip, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (back - skip) * 4,
+          });
+        emit({ op: "b", displacement: (done - instructions.length) * 4 });
+      });
+      return;
+    }
+    if (objReg !== 9)
+      emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: objReg });
+    if (loadContext !== undefined) loadContext();
     emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 });
     const unpublished = instructions.length;
     emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
-    emit({ op: "ldr", width: 32, rt: 13, rn: 12, offset: 8 });
-    emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 8 });
     emit({
-      op: "add-reg",
+      op: "ldr",
       width: 64,
-      rd: 13,
-      rn: 14,
-      rm: 13,
-      shift: "lsl",
-      amount: 0,
-      setFlags: false,
+      rt: 13,
+      rn: 12,
+      offset: nativeGenerationalNurseryAddressOffset,
     });
     emit({
       op: "sub-reg",
@@ -3354,6 +3445,37 @@ function emitModuleForms(
       amount: 0,
       setFlags: true,
     });
+    if (defer !== undefined) {
+      const old = instructions.length;
+      emit({ op: "b.cond", condition: "cc", displacement: 0 });
+      const done = instructions.length;
+      patchInstruction(unpublished, {
+        op: "cbz",
+        width: 64,
+        rt: 12,
+        displacement: (done - unpublished) * 4,
+      });
+      clearWordCaches();
+      defer(() => {
+        clearWordCaches();
+        patchInstruction(old, {
+          op: "b.cond",
+          condition: "cc",
+          displacement: (instructions.length - old) * 4,
+        });
+        const skips = unneeded === undefined ? [] : unneeded();
+        callHelper("remember-object");
+        const back = instructions.length;
+        for (const skip of skips)
+          patchInstruction(skip, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (back - skip) * 4,
+          });
+        emit({ op: "b", displacement: (done - instructions.length) * 4 });
+      });
+      return;
+    }
     const young = instructions.length;
     emit({ op: "b.cond", condition: "cs", displacement: 0 });
     const skips = unneeded === undefined ? [] : unneeded();
@@ -3789,6 +3911,7 @@ function emitModuleForms(
     const owner = functionId;
     return (
       owner !== undefined &&
+      !debugSpans &&
       !forms.islands.has(owner) &&
       !forms.longBranches.has(owner)
     );
@@ -3832,6 +3955,7 @@ function emitModuleForms(
   // start relied on (checked against the function's final fixups) and the
   // island veneers that only relay an already recorded edge.
   const edgeWords = new Map<number, Map<number, number>>(),
+    edgeNurseryBase = new Map<number, boolean>(),
     edgeBranches = new Map<number, number>(),
     seededEntries = new Map<number, number>(),
     veneerFixups = new Set<number>();
@@ -3841,16 +3965,41 @@ function emitModuleForms(
       const words = new Map<number, number>();
       for (const [offset, held] of stackWords) words.set(offset, held);
       edgeWords.set(block, words);
+      edgeNurseryBase.set(block, cachedNurseryBaseInX16);
     } else {
       const disagreeing: number[] = [];
       for (const [offset, held] of known)
         if (stackWords.get(offset) !== held) disagreeing.push(offset);
       for (const offset of disagreeing)
         if (offset !== undefined) known.delete(offset);
+      if (!cachedNurseryBaseInX16) edgeNurseryBase.set(block, false);
     }
     if (isBranch) edgeBranches.set(block, (edgeBranches.get(block) ?? 0) + 1);
   }
+  /** Callee-saved GP register (>= 19) whose typed-array data pointer
+   * `[reg, #nativeArrayDataOffset]` is currently cached in x15, or -1. */
+  let cachedArrayDataReg: number = -1;
+  /** SSA value ID of a just-constructed inline typed array whose data pointer
+   * is currently cached in x15, or -1. */
+  let cachedArrayDataVal: number = -1;
+  /** Whether x16 currently holds the generational nursery base address (or 0
+   * when generational GC is unpublished). */
+  let cachedNurseryBaseInX16: boolean = false;
+  let lastFloatSpillOffset: number = -1;
+  let lastFloatSpillReg: number = -1;
+  function clearWordCaches(): void {
+    cachedArrayDataReg = -1;
+    cachedArrayDataVal = -1;
+    cachedNurseryBaseInX16 = false;
+    lastFloatSpillOffset = -1;
+    lastFloatSpillReg = -1;
+    if (stackWords.size > 0) stackWords.clear();
+  }
   function forgetRegister(register: number): void {
+    if (register === 15) cachedArrayDataVal = -1;
+    if (register === 15 || register === cachedArrayDataReg)
+      cachedArrayDataReg = -1;
+    if (register === 16) cachedNurseryBaseInX16 = false;
     for (const [offset, held] of stackWords)
       if (held === register) stackWords.delete(offset);
   }
@@ -3875,6 +4024,9 @@ function emitModuleForms(
       case "orr-reg":
       case "eor-reg":
       case "orn-reg":
+      case "and-imm":
+      case "orr-imm":
+      case "eor-imm":
       case "lslv":
       case "lsrv":
       case "asrv":
@@ -3922,6 +4074,7 @@ function emitModuleForms(
       case "fmov-d-x":
       case "fmov-d-imm":
       case "fcmp":
+      case "fcsel":
       case "ldr-d":
       case "ldp-d":
       case "nop":
@@ -3941,7 +4094,7 @@ function emitModuleForms(
   function settleJoin(): void {
     if (joins.has(instructions.length)) {
       joins.delete(instructions.length);
-      stackWords.clear();
+      clearWordCaches();
     }
   }
   function emit(i: Instruction): void {
@@ -3982,11 +4135,45 @@ function emitModuleForms(
     if (i.op === "str-d" && i.rn === "sp") {
       emitWord(i);
       stackWords.delete(i.offset);
+      if (i.offset <= 32760) {
+        lastFloatSpillOffset = i.offset;
+        lastFloatSpillReg = i.rt;
+      } else {
+        lastFloatSpillOffset = -1;
+        lastFloatSpillReg = -1;
+      }
+      return;
+    }
+    if (
+      i.op === "ldr-d" &&
+      i.rn === "sp" &&
+      i.offset === lastFloatSpillOffset &&
+      lastFloatSpillReg >= 0
+    ) {
+      const held = lastFloatSpillReg;
+      lastFloatSpillOffset = -1;
+      lastFloatSpillReg = -1;
+      if (held === i.rt && lastJoin < instructions.length) return;
+      if (held !== i.rt) {
+        emitWord({ op: "fmov-d-d", rd: i.rt, rn: held });
+        return;
+      }
+    }
+    lastFloatSpillOffset = -1;
+    lastFloatSpillReg = -1;
+    if (
+      (i.op === "str" && i.rn !== "sp" && i.rn !== 17) ||
+      (i.op === "stp" && i.mode === "offset" && i.rn !== "sp" && i.rn !== 17) ||
+      i.op === "str-indexed" ||
+      i.op === "str-d" ||
+      (i.op === "stp-d" && i.rn !== "sp" && i.rn !== 17)
+    ) {
+      emitWord(i);
       return;
     }
     const encoded = encode(i),
       writes = registerWrites(i, encoded.ok ? encoded.value : 0);
-    if (writes === undefined || !encoded.ok) stackWords.clear();
+    if (writes === undefined || !encoded.ok) clearWordCaches();
     else
       for (const register of writes)
         if (register !== undefined) forgetRegister(register);
@@ -4067,12 +4254,12 @@ function emitModuleForms(
       instruction.displacement > 0
     ) {
       const target = index + instruction.displacement / 4;
-      if (target <= instructions.length) stackWords.clear();
+      if (target <= instructions.length) clearWordCaches();
       else {
         joins.add(target);
         if (target > lastJoin) lastJoin = target;
       }
-    } else stackWords.clear();
+    } else clearWordCaches();
     const encoded = encode(instruction);
     if (!encoded.ok) fail("ENCODING", encoded.error);
     writeWord(instructions, index, encoded.value);
@@ -5374,8 +5561,9 @@ function emitModuleForms(
           });
       }
       // A conditional branch writes no register: the fallthrough keeps the
-      // words its edge was recorded with.
-      const kept = new Map<number, number>();
+      // words its edge was recorded with (and x16's cached nursery base).
+      const kept = new Map<number, number>(),
+        keptNursery = cachedNurseryBaseInX16;
       if (localBlock !== undefined)
         for (const [offset, held] of stackWords) kept.set(offset, held);
       if (branch.op === "b.cond")
@@ -5392,6 +5580,7 @@ function emitModuleForms(
         return;
       }
       for (const [offset, held] of kept) stackWords.set(offset, held);
+      if (keptNursery) cachedNurseryBaseInX16 = true;
       return;
     }
     // Long form: conditional A64 branches reach only 1 MiB. Keep their
@@ -5493,6 +5682,11 @@ function emitModuleForms(
       return;
     }
     trapSites.push({ index: instructions.length, branch });
+    // A trap guard writes no register: its fallthrough keeps cached words and
+    // the nursery base in x16.
+    const kept = new Map<number, number>(),
+      keptNursery = cachedNurseryBaseInX16;
+    for (const [offset, held] of stackWords) kept.set(offset, held);
     if (branch.op === "b.cond")
       emit({ op: "b.cond", condition: branch.condition, displacement: 0 });
     else if (branch.op === "cbz" || branch.op === "cbnz")
@@ -5503,6 +5697,8 @@ function emitModuleForms(
         displacement: 0,
       });
     else throw "trap branch invariant";
+    for (const [offset, held] of kept) stackWords.set(offset, held);
+    if (keptNursery) cachedNurseryBaseInX16 = true;
   }
   /** Between blocks, once the oldest pending trap site is half a conditional
    * range away, emit `b +8; brk #3` and point the pending sites there, so
@@ -5522,7 +5718,7 @@ function emitModuleForms(
     readonly block: number;
   }[] = [];
   function branchIsland(): void {
-    stackWords.clear();
+    clearWordCaches();
     const owner = functionId;
     if (owner === undefined || !forms.islands.has(owner)) return;
     const oldest = forwardSites[0];
@@ -5587,7 +5783,7 @@ function emitModuleForms(
     }
   }
   function trapIsland(): void {
-    stackWords.clear();
+    clearWordCaches();
     const owner = functionId;
     if (owner === undefined || !forms.islands.has(owner)) return;
     const oldest = trapSites[0];
@@ -5704,7 +5900,8 @@ function emitModuleForms(
     let hasFunctionOperations = false,
       hasResultDiscard = false,
       hasTypeErrors = false,
-      hasPlainErrors = false;
+      hasPlainErrors = false,
+      hasReferenceErrors = false;
     for (const header of module.functions) {
       if (header === undefined) throw "feature function invariant";
       const fn = bodies.get(header.id);
@@ -5740,6 +5937,7 @@ function emitModuleForms(
               hasTypeErrors = true;
               if (op.kind === "error-new" && op.error === "Error")
                 hasPlainErrors = true;
+              if (op.error === "ReferenceError") hasReferenceErrors = true;
             }
           }
         }
@@ -5817,9 +6015,12 @@ function emitModuleForms(
           },
         ],
       });
-    const typeErrorRecord = recordLayouts.length;
+    // Native error descriptors: TypeError, RangeError, then Error and
+    // ReferenceError when the module creates them.
+    const typeErrorRecord = recordLayouts.length,
+      errorDescriptorCount = hasReferenceErrors ? 4 : hasPlainErrors ? 3 : 2;
     if (hasTypeErrors)
-      for (let i = 0; i < (hasPlainErrors ? 3 : 2); i++)
+      for (let i = 0; i < errorDescriptorCount; i++)
         recordLayouts.push({
           byteLength: recordHeaderBytes + 8,
           fields: [
@@ -6003,7 +6204,7 @@ function emitModuleForms(
       }
       truncateWords(instructions, mark.words);
       // Forwarding state describes only the code that remains.
-      stackWords.clear();
+      clearWordCaches();
       for (const join of joins) if (join >= mark.words) joins.delete(join);
       lastJoin = -1;
       for (const join of joins) if (join > lastJoin) lastJoin = join;
@@ -6074,6 +6275,10 @@ function emitModuleForms(
         recordGuardsKnown = false,
         cachedChainGuards: Uint8Array | undefined,
         cachedJoinGuards: Uint8Array | undefined;
+      // record-has instructions whose object the join dataflow proves.
+      const provenPresence = new Set<IRInstruction>();
+      /** Record terminators whose object is one of two known layouts. */
+      const layoutPairs = new Map<number, readonly number[]>();
       // Numbers whose uses all want integers take GP homes, but one computed
       // as a double moves between banks at its definition and at each use.
       // The first attempt records those; one re-emission gives them FP homes.
@@ -6223,12 +6428,90 @@ function emitModuleForms(
               integerSlots[block.exception.slot] = 0;
             const t = block.terminator;
             if (
-              t.kind === "record" ||
+              (t.kind === "record" && t.operation !== "write") ||
               t.kind === "record-cell" ||
               t.kind === "cell"
             )
               integerSlots[t.slot] = 0;
           }
+          // Number slots whose every store writes `a +/- b` of two proven
+          // non-(-0) 32-bit integers hold an exact int64 in [-2^33, 2^33],
+          // keeping multi-term bitwise sums (e.g. `(sum + x + y) | 0` across
+          // a split block) in GP integer registers instead of demoting `sum`.
+          const sumBlocked = new Uint8Array(fn.slots.length),
+            sumWritten = new Uint8Array(fn.slots.length);
+          if (fn.receiverSlot !== undefined) sumBlocked[fn.receiverSlot] = 1;
+          for (const p of fn.parameters) if (p !== undefined) sumBlocked[p] = 1;
+          for (const block of fn.blocks) {
+            if (block === undefined) continue;
+            if (block.exception !== undefined)
+              sumBlocked[block.exception.slot] = 1;
+            const t = block.terminator;
+            if (
+              (t.kind === "record" && t.operation !== "write") ||
+              t.kind === "record-cell" ||
+              t.kind === "cell"
+            )
+              sumBlocked[t.slot] = 1;
+            const wordVal = new Set<number>(),
+              sumVal = new Set<number>();
+            for (const op of block.instructions) {
+              if (op === undefined) continue;
+              if (
+                op.kind === "load" &&
+                integerSlots[op.slot] === 1 &&
+                (slotIntegerFacts[op.slot] === 1 ||
+                  ((safeSlotBounds[op.slot] ?? 0) > 0 &&
+                    (safeSlotBounds[op.slot] ?? 0) <= 0xffffffff))
+              )
+                wordVal.add(op.id);
+              else if (op.kind === "constant") {
+                const v = op.value;
+                if (
+                  typeof v === "number" &&
+                  Number.isInteger(v) &&
+                  v >= -2147483648 &&
+                  v <= 4294967295 &&
+                  (v !== 0 || 1 / v > 0)
+                )
+                  wordVal.add(op.id);
+              } else if (
+                op.kind === "array-length" ||
+                op.kind === "string-length" ||
+                (op.kind === "unary" &&
+                  (op.operator === "~" ||
+                    op.operator === "uint32" ||
+                    op.operator === "boolean-number")) ||
+                (op.kind === "binary" &&
+                  ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                    op.operator,
+                  ))
+              )
+                wordVal.add(op.id);
+              else if (
+                op.kind === "binary" &&
+                (op.operator === "+" || op.operator === "-") &&
+                wordVal.has(op.left) &&
+                wordVal.has(op.right)
+              )
+                sumVal.add(op.id);
+              else if (op.kind === "store") {
+                if (sumVal.has(op.value) || wordVal.has(op.value))
+                  sumWritten[op.slot] = 1;
+                else sumBlocked[op.slot] = 1;
+              }
+            }
+          }
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            if (
+              fn.slots[slot] === "number" &&
+              integerSlots[slot] === 0 &&
+              sumBlocked[slot] === 0 &&
+              sumWritten[slot] === 1
+            ) {
+              safeSlotBounds[slot] = 0x200000000;
+              integerSlots[slot] = 1;
+            }
         }
         const valueIds = createNumberIndex(),
           values: (Value | undefined)[] = [];
@@ -6283,13 +6566,14 @@ function emitModuleForms(
               const result = instructionResult(op);
               if (result === undefined) continue;
               const index = valueIds.intern(result),
-                slotType = op.kind === "load" ? fn.slots[op.slot] : undefined;
+                slotArray = nativeTypedArray(
+                  op.kind === "load" ? fn.slots[op.slot] : undefined,
+                );
               if (
-                slotType === "Uint8Array" ||
-                slotType === "Uint16Array" ||
-                slotType === "Uint32Array" ||
+                (slotArray !== undefined &&
+                  typedArrayIntegerElements(slotArray)) ||
                 ((op.kind === "array-new" || op.kind === "array-view") &&
-                  op.type !== "Float64Array") ||
+                  typedArrayIntegerElements(op.type)) ||
                 (op.kind === "array-subarray" &&
                   integerArrays[valueIds.intern(op.array)] === 1)
               )
@@ -6344,7 +6628,9 @@ function emitModuleForms(
               if (op.kind === "optional-wrap")
                 signs[valueIds.intern(op.value)] = 1;
               else if (
-                (op.kind === "array-write" || op.kind === "array-store") &&
+                (op.kind === "array-write" ||
+                  op.kind === "array-store" ||
+                  op.kind === "array-fill") &&
                 integerArrays[valueIds.intern(op.array)] !== 1
               )
                 signs[valueIds.intern(op.value)] = 1;
@@ -6419,15 +6705,19 @@ function emitModuleForms(
                       op.operator === "*") &&
                       uses[valueIds.intern(op.id)] === 1) ||
                     comparisonOperators.includes(op.operator))) ||
-                // Rounding an integer is the identity (see the unary case).
+                // Rounding an integer is the identity (see the unary case);
+                // uint32 passes its exact integer operand through when integer.
                 (op.kind === "unary" &&
-                  (op.operator === "trunc" || op.operator === "ceil") &&
+                  (op.operator === "trunc" ||
+                    op.operator === "ceil" ||
+                    op.operator === "uint32") &&
                   uses[valueIds.intern(op.id)] === 1) ||
                 op.kind === "array-read" ||
                 op.kind === "array-element" ||
                 op.kind === "array-valid" ||
                 op.kind === "array-write" ||
                 op.kind === "array-store" ||
+                op.kind === "array-fill" ||
                 // Atomic operands convert like element writes (wordValue)
                 // and the index like an element read (arrayIndex).
                 op.kind === "array-atomic" ||
@@ -6441,9 +6731,10 @@ function emitModuleForms(
                 // converts with floatLoad).
                 op.kind === "string-code-unit" ||
                 // Slice bounds load through floatLoad, and optional/general
-                // payloads are converted when wrapped.
+                // payloads and record number fields convert when stored/wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
+                op.kind === "record-new" ||
                 // Code units load through wordValue, which reads an int64
                 // directly.
                 op.kind === "string-from-code-units" ||
@@ -6521,6 +6812,11 @@ function emitModuleForms(
           }
         const integerLoadWeights = new Float64Array(fn.slots.length),
           floatLoadWeights = new Float64Array(fn.slots.length);
+        // Integer slots whose every read feeds only 32-bit bitwise ops and
+        // whose every write stores a 32-bit bitwise op or int32 constant need
+        // no `sxtw` on stores (eliminating a 1-cycle critical-path stall in
+        // loop-carried bitwise mixers).
+        const wordOnlySlots = new Uint8Array(fn.slots.length);
         for (let changed = true; changed;) {
           changed = false;
           integerUses = findIntegerUses();
@@ -6554,6 +6850,122 @@ function emitModuleForms(
               changed = true;
             }
         }
+        {
+          const notWordOnly = new Uint8Array(fn.slots.length),
+            boundInvalid = new Uint8Array(fn.slots.length),
+            slotBound = new Float64Array(fn.slots.length);
+          for (const p of fn.parameters)
+            if (p !== undefined) {
+              notWordOnly[p] = 1;
+              boundInvalid[p] = 1;
+            }
+          if (fn.receiverSlot !== undefined) {
+            notWordOnly[fn.receiverSlot] = 1;
+            boundInvalid[fn.receiverSlot] = 1;
+          }
+          for (const block of fn.blocks) {
+            if (block === undefined) continue;
+            if (block.exception !== undefined) {
+              notWordOnly[block.exception.slot] = 1;
+              boundInvalid[block.exception.slot] = 1;
+            }
+            const t = block.terminator;
+            if (
+              t.kind === "record" ||
+              t.kind === "record-cell" ||
+              t.kind === "cell"
+            ) {
+              notWordOnly[t.slot] = 1;
+              if (t.operation !== "write") boundInvalid[t.slot] = 1;
+            }
+            const loadSlots = new Map<number, number>(),
+              wordVals = new Set<number>(),
+              consts = new Map<number, number>(),
+              valBounds = new Map<number, number>();
+            for (const op of block.instructions) {
+              if (op === undefined) continue;
+              if (op.kind === "load") {
+                loadSlots.set(op.id, op.slot);
+              } else if (op.kind === "constant") {
+                const v = op.value;
+                if (typeof v === "number") {
+                  consts.set(op.id, v);
+                  if (
+                    Number.isInteger(v) &&
+                    v >= -2147483648 &&
+                    v <= 2147483647
+                  ) {
+                    wordVals.add(op.id);
+                    valBounds.set(op.id, Math.max(1, Math.abs(v)));
+                  }
+                }
+              } else if (
+                (op.kind === "binary" &&
+                  ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                    op.operator,
+                  )) ||
+                (op.kind === "unary" && op.operator === "~")
+              ) {
+                wordVals.add(op.id);
+                if (op.kind === "binary" && op.operator === "&") {
+                  const lc = consts.get(op.left),
+                    rc = consts.get(op.right);
+                  const mask =
+                    rc !== undefined &&
+                    Number.isInteger(rc) &&
+                    rc >= 0 &&
+                    rc <= 67108863
+                      ? rc
+                      : lc !== undefined &&
+                          Number.isInteger(lc) &&
+                          lc >= 0 &&
+                          lc <= 67108863
+                        ? lc
+                        : undefined;
+                  if (mask !== undefined)
+                    valBounds.set(op.id, Math.max(1, mask));
+                } else if (op.kind === "binary" && op.operator === ">>>") {
+                  const rc = consts.get(op.right);
+                  if (
+                    rc !== undefined &&
+                    Number.isInteger(rc) &&
+                    rc >= 6 &&
+                    rc <= 31
+                  )
+                    valBounds.set(op.id, Math.max(1, 0xffffffff >>> rc));
+                }
+              } else if (op.kind === "store") {
+                if (!wordVals.has(op.value)) notWordOnly[op.slot] = 1;
+                const src = loadSlots.get(op.value);
+                if (src !== undefined) notWordOnly[src] = 1;
+                const b = valBounds.get(op.value);
+                if (b === undefined) boundInvalid[op.slot] = 1;
+                else if (b > (slotBound[op.slot] ?? 0)) slotBound[op.slot] = b;
+              } else {
+                visitInstructionOperands(op, (id) => {
+                  const src = loadSlots.get(id);
+                  if (src !== undefined) notWordOnly[src] = 1;
+                });
+              }
+            }
+            visitTerminatorOperands(t, (id) => {
+              const src = loadSlots.get(id);
+              if (src !== undefined) notWordOnly[src] = 1;
+            });
+          }
+          for (let s = 0; s < fn.slots.length; s++) {
+            if (integerSlots[s] === 1 && notWordOnly[s] === 0)
+              wordOnlySlots[s] = 1;
+            if (
+              integerSlots[s] === 1 &&
+              boundInvalid[s] === 0 &&
+              (slotBound[s] ?? 0) > 0 &&
+              ((safeSlotBounds[s] ?? 0) === 0 ||
+                (slotBound[s] ?? 0) < (safeSlotBounds[s] ?? 0))
+            )
+              safeSlotBounds[s] = slotBound[s] ?? 0;
+          }
+        }
         // Numeric constants used only as shift amounts fold into immediate
         // shifts, and undefined values used only as an operand of an optional
         // equality fold into a presence test; neither is materialized.
@@ -6570,6 +6982,7 @@ function emitModuleForms(
         // only removes slots, from an optimistic start).
         const constantFlags = new Uint8Array(resultBound),
           constantNumbers = new Float64Array(resultBound),
+          zeroRefValues = new Uint8Array(resultBound),
           nonNegativeValues = new Uint8Array(resultBound),
           nonNegativeSlots = nonNegativeZeroSlots.slice();
         /** The value of numeric constant `id`, else undefined. */
@@ -6602,6 +7015,10 @@ function emitModuleForms(
         }
         /** Records `op`'s literal, constant and non-negative facts. */
         function markNonNegative(op: IRInstruction): void {
+          if (op.kind === "reference-none") {
+            zeroRefValues[valueIds.intern(op.id)] = 1;
+            return;
+          }
           if (op.kind === "string-literal") stringLiterals.set(op.id, op.value);
           else if (op.kind === "constant") {
             const constant = op.value;
@@ -6824,6 +7241,7 @@ function emitModuleForms(
           }
         }
         const foldedConstants = new Uint8Array(resultBound),
+          deferredImmediateConst = new Uint8Array(resultBound),
           // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
           zeroConstants = new Uint8Array(resultBound),
           undefinedValues = new Uint8Array(resultBound),
@@ -6847,19 +7265,49 @@ function emitModuleForms(
           // emits one ROR (rotateAmounts holds n + 1) and the shifts none.
           rotateAmounts = new Uint8Array(resultBound),
           rotateSources = new Uint32Array(resultBound),
-          rotatedShifts = new Uint8Array(resultBound);
+          rotatedShifts = new Uint8Array(resultBound),
+          // `a op (b shift k)` with single-use constant shift: emits one
+          // shifted AND/ORR/EOR instruction and the shift none.
+          shiftedOps = new Map<
+            number,
+            {
+              readonly other: number;
+              readonly source: number;
+              readonly shift: "lsl" | "lsr" | "asr";
+              readonly amount: number;
+            }
+          >(),
+          fusedShifts = new Uint8Array(resultBound),
+          // `(x & imm) === 0` / `!== 0` driving a branch: elides `&` and emits
+          // one `ands-imm` (`tst`) at the comparison.
+          fusedBitTests = new Uint8Array(resultBound),
+          // Literal `constant 2` SSA values (not loaded slots) for `x * 2 -> fadd x, x`.
+          literalTwo = new Uint8Array(resultBound),
+          // Bitwise results used only by an integer typed-array store
+          // (skipping redundant sxtw) and adjacent redundant masks/or-0.
+          lowWordStoreValues = new Uint8Array(resultBound),
+          storeBypassCandidate = new Map<number, number>(),
+          elidedStoreSource = new Map<number, number>(),
+          // `(int32 +/- f64) | 0` or `^ 0` with single-use `+/-` followed only
+          // by constants before the bitwise op: maps add/sub id -> bitwise id.
+          pendingFusedAdd = new Map<number, number>(),
+          // Direct-to-slot register targeting: 0 = none, reg + 1 = target register.
+          directFloatTarget = new Uint8Array(resultBound),
+          directIntTarget = new Uint8Array(resultBound),
+          emittedDirectStore = new Uint8Array(resultBound);
         /** The typed array a fused read (by its result ID) indexed. */
         function arrayOf(read: number): number {
           const array = fusedArrays.get(read);
           if (array === undefined) throw "fused read array invariant";
           return array;
         }
+        const valueUses = new Uint32Array(resultBound);
         {
           const literalValues = new Uint8Array(resultBound);
           for (const [literal] of stringLiterals)
             literalValues[valueIds.intern(literal)] = 1;
           const numericConstants = new Uint8Array(resultBound),
-            uses = new Uint32Array(resultBound),
+            uses = valueUses,
             folded = new Uint32Array(resultBound);
           for (const block of fn.blocks) {
             if (block === undefined) throw "zero value block invariant";
@@ -6886,9 +7334,16 @@ function emitModuleForms(
             // host operations take them as immediates (wordKinds 3, set as
             // each constant is emitted) and never read their frame words.
             const wordImmediates = new Set<number>(),
+              float64Arrays = new Set<number>(),
               scriptArgImmediates = new Set<number>();
             for (const op of block.instructions) {
               if (op === undefined) throw "constant use instruction invariant";
+              if (
+                (op.kind === "array-new" && op.type === "Float64Array") ||
+                (op.kind === "load" && fn.slots[op.slot] === "Float64Array") ||
+                (op.kind === "reference-value" && op.type === "Float64Array")
+              )
+                float64Arrays.add(op.id);
               if (op.kind === "constant") {
                 const constant = op.value;
                 if (typeof constant === "number") {
@@ -6967,6 +7422,26 @@ function emitModuleForms(
                 }
               }
               if (
+                (op.kind === "array-store" ||
+                  op.kind === "array-element" ||
+                  (op.kind === "array-read" &&
+                    fusedFallbacks.get(op.id) === undefined &&
+                    fusedReads[valueIds.intern(op.id)] === 0)) &&
+                float64Arrays.has(op.array)
+              ) {
+                const idxVal = numberConstant(op.index);
+                if (
+                  idxVal !== undefined &&
+                  Number.isInteger(idxVal) &&
+                  idxVal >= 0 &&
+                  idxVal <= 4095 &&
+                  !(idxVal === 0 && 1 / idxVal < 0)
+                ) {
+                  const index = valueIds.intern(op.index);
+                  folded[index] = (folded[index] ?? 0) + 1;
+                }
+              }
+              if (
                 op.kind === "binary" &&
                 (op.operator === "<<" ||
                   op.operator === ">>" ||
@@ -6975,6 +7450,27 @@ function emitModuleForms(
                 const index = valueIds.intern(op.right);
                 if (numericConstants[index] === 1)
                   folded[index] = (folded[index] ?? 0) + 1;
+              }
+              if (
+                op.kind === "array-new" ||
+                op.kind === "reference-vector-new"
+              ) {
+                const len = numberConstant(op.length);
+                const shift =
+                  op.kind === "reference-vector-new"
+                    ? 3
+                    : typedArrayScale(op.type);
+                if (
+                  len !== undefined &&
+                  Number.isInteger(len) &&
+                  len >= 0 &&
+                  len <= 0xffffffff &&
+                  !(len === 0 && 1 / len < 0) &&
+                  nativeArrayInlineOffset + 7 + len * (1 << shift) <= 0xffffffff
+                ) {
+                  const index = valueIds.intern(op.length);
+                  folded[index] = (folded[index] ?? 0) + 1;
+                }
               }
               if (
                 op.kind === "binary" &&
@@ -6987,6 +7483,100 @@ function emitModuleForms(
                   folded[right] = (folded[right] ?? 0) + 1;
                 else if (zeroConstants[left] === 1)
                   folded[left] = (folded[left] ?? 0) + 1;
+              }
+              if (op.kind === "binary" && op.operator === "imul") {
+                const rc = numberConstant(op.right),
+                  lc = numberConstant(op.left);
+                if (
+                  rc !== undefined &&
+                  lc === undefined &&
+                  Number.isInteger(rc) &&
+                  rc >= -2147483648 &&
+                  rc <= 4294967295
+                ) {
+                  const idx = valueIds.intern(op.right);
+                  if (wordMultiplierShift(rc) === 0)
+                    folded[idx] = (folded[idx] ?? 0) + 1;
+                  else deferredImmediateConst[idx] = 1;
+                } else if (
+                  lc !== undefined &&
+                  rc === undefined &&
+                  Number.isInteger(lc) &&
+                  lc >= -2147483648 &&
+                  lc <= 4294967295
+                ) {
+                  const idx = valueIds.intern(op.left);
+                  if (wordMultiplierShift(lc) === 0)
+                    folded[idx] = (folded[idx] ?? 0) + 1;
+                  else deferredImmediateConst[idx] = 1;
+                }
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === "&" ||
+                  op.operator === "|" ||
+                  op.operator === "^")
+              ) {
+                for (let side = 0; side < 2; side++) {
+                  const cid = side === 0 ? op.right : op.left,
+                    cv = numberConstant(cid);
+                  if (
+                    cv !== undefined &&
+                    Number.isInteger(cv) &&
+                    cv >= -2147483648 &&
+                    cv <= 4294967295 &&
+                    logicalImmediate32(cv >>> 0) !== undefined
+                  )
+                    deferredImmediateConst[valueIds.intern(cid)] = 1;
+                }
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === "+" ||
+                  op.operator === "-" ||
+                  op.operator === "*") &&
+                integerUses[valueIds.intern(op.id)] === 1
+              ) {
+                for (let side = 0; side < 2; side++) {
+                  const cid = side === 0 ? op.right : op.left,
+                    cv = numberConstant(cid);
+                  if (
+                    cv !== undefined &&
+                    Number.isInteger(cv) &&
+                    ((op.operator === "*" &&
+                      multiplierShift(cv) !== undefined) ||
+                      ((op.operator === "+" || op.operator === "-") &&
+                        Math.abs(cv) <= 4095))
+                  )
+                    deferredImmediateConst[valueIds.intern(cid)] = 1;
+                }
+              }
+              if (op.kind === "record-new") {
+                const layout = module.records?.[op.record];
+                if (layout !== undefined)
+                  for (let fi = 0; fi < layout.fields.length; fi++) {
+                    const field = layout.fields[fi],
+                      arg = op.arguments[fi];
+                    if (
+                      field === undefined ||
+                      arg === undefined ||
+                      field.offset > 32760
+                    )
+                      continue;
+                    const argIdx = valueIds.intern(arg);
+                    if (
+                      zeroValues[argIdx] !== 1 &&
+                      undefinedValues[argIdx] !== 1 &&
+                      field.type === "number"
+                    ) {
+                      const constant = numberConstant(arg);
+                      if (
+                        constant !== undefined &&
+                        float64Immediate(constant) !== undefined
+                      )
+                        folded[argIdx] = (folded[argIdx] ?? 0) + 1;
+                    }
+                  }
               }
               // A short literal compared inline is read as an immediate
               // (see the string equality case: the right literal if any).
@@ -7025,50 +7615,164 @@ function emitModuleForms(
             constantValues = new Map<number, number>();
           for (const block of fn.blocks) {
             if (block === undefined) throw "rotate block invariant";
-            const shifts = new Map<number, IRInstruction>();
-            for (const op of block.instructions) {
+            const shifts = new Map<number, IRInstruction>(),
+              shiftPos = new Map<number, number>(),
+              addIndex = new Map<number, number>();
+            for (let at = 0; at < block.instructions.length; at++) {
+              const op = block.instructions[at];
               if (op === undefined) throw "rotate instruction invariant";
               if (op.kind === "constant") {
                 const constant = op.value;
-                if (typeof constant === "number")
+                if (typeof constant === "number") {
                   constantValues.set(op.id, constant);
+                  if (constant === 2) literalTwo[valueIds.intern(op.id)] = 1;
+                }
               }
               if (
                 op.kind === "binary" &&
-                (op.operator === ">>>" || op.operator === "<<")
+                op.operator === "*" &&
+                integerUses[valueIds.intern(op.id)] !== 1
+              ) {
+                const li = valueIds.intern(op.left),
+                  ri = valueIds.intern(op.right);
+                if ((literalTwo[li] === 1) !== (literalTwo[ri] === 1)) {
+                  const twoIdx = literalTwo[ri] === 1 ? ri : li;
+                  folded[twoIdx] = (folded[twoIdx] ?? 0) + 1;
+                }
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === "+" || op.operator === "-")
               )
+                addIndex.set(op.id, at);
+              if (
+                op.kind === "binary" &&
+                (op.operator === "|" || op.operator === "^")
+              ) {
+                const rightZero =
+                    zeroConstants[valueIds.intern(op.right)] === 1,
+                  leftZero = zeroConstants[valueIds.intern(op.left)] === 1;
+                if (rightZero || leftZero) {
+                  const candidate = rightZero ? op.left : op.right,
+                    pos = addIndex.get(candidate);
+                  if (
+                    pos !== undefined &&
+                    uses[valueIds.intern(candidate)] === 1
+                  ) {
+                    let pureBetween = true;
+                    for (let mid = pos + 1; mid < at; mid++) {
+                      const between = block.instructions[mid];
+                      if (
+                        between === undefined ||
+                        between.kind !== "constant"
+                      ) {
+                        pureBetween = false;
+                        break;
+                      }
+                    }
+                    if (pureBetween) pendingFusedAdd.set(candidate, op.id);
+                  }
+                }
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === ">>>" ||
+                  op.operator === "<<" ||
+                  op.operator === ">>")
+              ) {
                 shifts.set(op.id, op);
-              if (op.kind !== "binary" || op.operator !== "|") continue;
-              const left = shifts.get(op.left),
-                right = shifts.get(op.right);
+                shiftPos.set(op.id, at);
+              }
+              let matchedRotate = false;
+              if (op.kind === "binary" && op.operator === "|") {
+                const left = shifts.get(op.left),
+                  right = shifts.get(op.right);
+                if (
+                  left !== undefined &&
+                  right !== undefined &&
+                  left.kind === "binary" &&
+                  right.kind === "binary" &&
+                  (left.operator === ">>>" || left.operator === "<<") &&
+                  (right.operator === ">>>" || right.operator === "<<") &&
+                  left.left === right.left &&
+                  left.operator !== right.operator &&
+                  uses[valueIds.intern(left.id)] === 1 &&
+                  uses[valueIds.intern(right.id)] === 1
+                ) {
+                  const unsigned = left.operator === ">>>" ? left : right,
+                    shifted = left.operator === ">>>" ? right : left,
+                    down = constantValues.get(unsigned.right),
+                    up = constantValues.get(shifted.right);
+                  if (
+                    down !== undefined &&
+                    up !== undefined &&
+                    Number.isInteger(down) &&
+                    Number.isInteger(up) &&
+                    ((down % 32) + 32 + (up % 32)) % 32 === 0
+                  ) {
+                    rotateAmounts[valueIds.intern(op.id)] =
+                      (((down % 32) + 32) % 32) + 1;
+                    rotateSources[valueIds.intern(op.id)] = unsigned.left;
+                    rotatedShifts[valueIds.intern(left.id)] = 1;
+                    rotatedShifts[valueIds.intern(right.id)] = 1;
+                    matchedRotate = true;
+                  }
+                }
+              }
               if (
-                left === undefined ||
-                right === undefined ||
-                left.kind !== "binary" ||
-                right.kind !== "binary" ||
-                left.left !== right.left ||
-                left.operator === right.operator ||
-                uses[valueIds.intern(left.id)] !== 1 ||
-                uses[valueIds.intern(right.id)] !== 1
-              )
-                continue;
-              const unsigned = left.operator === ">>>" ? left : right,
-                shifted = left.operator === ">>>" ? right : left,
-                down = constantValues.get(unsigned.right),
-                up = constantValues.get(shifted.right);
-              if (
-                down === undefined ||
-                up === undefined ||
-                !Number.isInteger(down) ||
-                !Number.isInteger(up) ||
-                ((down % 32) + 32 + (up % 32)) % 32 !== 0
-              )
-                continue;
-              rotateAmounts[valueIds.intern(op.id)] =
-                (((down % 32) + 32) % 32) + 1;
-              rotateSources[valueIds.intern(op.id)] = unsigned.left;
-              rotatedShifts[valueIds.intern(left.id)] = 1;
-              rotatedShifts[valueIds.intern(right.id)] = 1;
+                !matchedRotate &&
+                op.kind === "binary" &&
+                (op.operator === "&" ||
+                  op.operator === "|" ||
+                  op.operator === "^") &&
+                zeroConstants[valueIds.intern(op.left)] !== 1 &&
+                zeroConstants[valueIds.intern(op.right)] !== 1
+              ) {
+                const tryFuseShift = (
+                  shiftId: number,
+                  otherId: number,
+                ): boolean => {
+                  const s = shifts.get(shiftId);
+                  if (
+                    s === undefined ||
+                    s.kind !== "binary" ||
+                    uses[valueIds.intern(s.id)] !== 1 ||
+                    rotatedShifts[valueIds.intern(s.id)] === 1
+                  )
+                    return false;
+                  const countVal = constantValues.get(s.right);
+                  if (countVal === undefined || !Number.isInteger(countVal))
+                    return false;
+                  const sAt = shiftPos.get(shiftId);
+                  if (sAt === undefined) return false;
+                  // Keep shift source live at `op`: either it IS `otherId`
+                  // (already an operand of `op`) or only constants separate them.
+                  if (s.left !== otherId) {
+                    for (let mid = sAt + 1; mid < at; mid++) {
+                      const between = block.instructions[mid];
+                      if (between === undefined || between.kind !== "constant")
+                        return false;
+                    }
+                  }
+                  const amount = ((countVal % 32) + 32) % 32;
+                  const shift =
+                    s.operator === "<<"
+                      ? "lsl"
+                      : s.operator === ">>"
+                        ? "asr"
+                        : "lsr";
+                  shiftedOps.set(op.id, {
+                    other: otherId,
+                    source: s.left,
+                    shift,
+                    amount,
+                  });
+                  fusedShifts[valueIds.intern(s.id)] = 1;
+                  return true;
+                };
+                if (!tryFuseShift(op.right, op.left))
+                  tryFuseShift(op.left, op.right);
+              }
             }
           }
           for (const block of fn.blocks) {
@@ -7112,8 +7816,18 @@ function emitModuleForms(
               }
             }
           }
+          const debugBoundValues = new Uint8Array(
+            debugSpans && fn.debug !== undefined ? resultBound : 0,
+          );
+          if (debugSpans && fn.debug !== undefined)
+            for (const binding of fn.debug.values)
+              if (binding !== undefined) {
+                const idx = valueIds.intern(binding.value);
+                if (idx < debugBoundValues.length) debugBoundValues[idx] = 1;
+              }
           for (let index = 0; index < resultBound; index++)
             if (
+              debugBoundValues[index] !== 1 &&
               (numericConstants[index] === 1 ||
                 undefinedValues[index] === 1 ||
                 noneValues[index] === 1 ||
@@ -7142,6 +7856,12 @@ function emitModuleForms(
             if (op?.kind === "c-call" && op.call.mayCallback === true)
               callsBack = true;
         function mayCollect(op: IRInstruction): boolean {
+          if (
+            op.kind === "call" &&
+            op.environment === undefined &&
+            listReadShapes(op.target)?.mode === "unchecked"
+          )
+            return false;
           return op.kind === "call"
             ? closedRoots === undefined ||
                 noSafepoints === undefined ||
@@ -7158,6 +7878,7 @@ function emitModuleForms(
         // Debug variables and inline scopes; never changes emitted code.
         const tracker = debugSpans ? createDebugTracker(fn) : undefined;
         trapSites = [];
+        const deferredAllocSlowPaths: (() => void)[] = [];
         coldStubs = [];
         // Calls that may reach a collection, by return offset: each gets a
         // stack map of the frame words live while it runs (see stack-maps.ts).
@@ -7186,15 +7907,34 @@ function emitModuleForms(
         const fusedAccesses = hasCViewAccesses(fn)
           ? undefined
           : fusedPropertyAccesses(fn);
-        const orderedBlocks = orderBlocks(fn, fusedAccesses),
-          forwardable = forwardableEntries(fn, orderedBlocks),
+        // Script entries and functions with fused script property accesses use
+        // hot-trace ordering (sinking IC misses and list-bridge fallbacks);
+        // typed functions keep single-predecessor continuation chaining (P7).
+        const inlineCall = (target: number): boolean =>
+          listReadShapes(target) !== undefined ||
+          writeShapes[target]?.unchecked === true;
+        const layout =
+          fn.scriptEntry === true ||
+          (fusedAccesses !== undefined && fusedAccesses.size > 0)
+            ? orderBlockIds(fn, fusedAccesses)
+            : chainedBlockOrder(fn, inlineCall);
+        let functionIrInstructions = 0;
+        for (const block of fn.blocks)
+          if (block !== undefined)
+            functionIrInstructions += block.instructions.length;
+        const forwardable = forwardableEntries(fn, layout),
           coldReciprocals: ColdReciprocalStub[] = [],
           coldNaNs: ColdNaNStub[] = [],
           coldListReads: ColdListReadStub[] = [],
           coldSlices: ColdSliceStub[] = [],
-          allowColdStubs = !forms.far && fn.blocks.length <= 512,
+          allowColdStubs =
+            !debugSpans &&
+            !forms.far &&
+            fn.blocks.length <= 512 &&
+            functionIrInstructions <= 4096,
           functionFixups = fixups.length;
         edgeWords.clear();
+        edgeNurseryBase.clear();
         edgeBranches.clear();
         seededEntries.clear();
         veneerFixups.clear();
@@ -7271,33 +8011,62 @@ function emitModuleForms(
           borrowedEnvironmentOffset = resultPointerOffset + 8,
           allocationOffset =
             borrowedEnvironmentOffset + (fn.environment === undefined ? 0 : 8),
-          // Frame words owned by the function start here: the collector finds
-          // the live ones through per-safepoint stack maps (no frame header).
-          localsBase =
-            allocationOffset +
-            (fn.blocks.some((b) =>
+          allocationScratchBytes = fn.blocks.some((b) => {
+            let batchCandidates = 0;
+            for (const op of b.instructions) {
+              if (
+                op.kind === "string-from-code-units" ||
+                op.kind === "string-concat" ||
+                op.kind === "string-slice" ||
+                op.kind === "string-allocate" ||
+                op.kind === "string-from-latin1" ||
+                op.kind === "string-from-utf8" ||
+                op.kind === "string-ascii-case" ||
+                op.kind === "number-string-cache" ||
+                op.kind === "string-split-cache" ||
+                op.kind === "array-new" ||
+                op.kind === "weak-slot-new" ||
+                op.kind === "reference-vector-new" ||
+                op.kind === "array-subarray" ||
+                op.kind === "array-view" ||
+                (op.kind === "host-call" &&
+                  op.operation === "memory-read-string")
+              )
+                return true;
+              if (
+                linearAllocation &&
+                (op.kind === "record-new" || op.kind === "function-new")
+              ) {
+                batchCandidates++;
+                if (batchCandidates >= 2) return true;
+              }
+            }
+            return false;
+          })
+            ? 32
+            : 0,
+          // Record constructors with numeric fields keep numeric temporaries
+          // (d16..d31) live across their allocation: the slow path saves
+          // them here around the allocator call (see preservesFloats).
+          floatSaveOffset = allocationOffset + allocationScratchBytes,
+          floatSaveBytes =
+            floatSaveOffset + 128 <= 32760 &&
+            fn.blocks.some((b) =>
               b.instructions.some(
                 (op) =>
-                  op.kind === "string-from-code-units" ||
-                  op.kind === "string-concat" ||
-                  op.kind === "string-slice" ||
-                  op.kind === "string-allocate" ||
-                  op.kind === "string-from-latin1" ||
-                  op.kind === "string-from-utf8" ||
-                  op.kind === "string-ascii-case" ||
-                  op.kind === "number-string-cache" ||
-                  op.kind === "string-split-cache" ||
-                  op.kind === "array-new" ||
-                  op.kind === "weak-slot-new" ||
-                  op.kind === "reference-vector-new" ||
-                  op.kind === "array-subarray" ||
-                  op.kind === "array-view" ||
-                  (op.kind === "host-call" &&
-                    op.operation === "memory-read-string"),
+                  op.kind === "record-new" &&
+                  (module.records?.[op.record]?.fields ?? []).some(
+                    (field) =>
+                      field.type === "number" ||
+                      field.type === "optional-number",
+                  ),
               ),
             )
-              ? 32
-              : 0),
+              ? 128
+              : 0,
+          // Frame words owned by the function start here: the collector finds
+          // the live ones through per-safepoint stack maps (no frame header).
+          localsBase = floatSaveOffset + floatSaveBytes,
           environmentOffset =
             fn.closureEnvironment === undefined
               ? borrowedEnvironmentOffset
@@ -7371,24 +8140,6 @@ function emitModuleForms(
           const handler = block.exception;
           if (handler !== undefined) privateSlots[handler.slot] = 1;
         }
-        if (!sharingKnown) {
-          cachedSharing =
-            slotBytes > 64 && !leafRegisters
-              ? shareFrameSlots(
-                  fn,
-                  (slot) => privateSlots[slot] !== 1,
-                  work(40000000),
-                  // Integer slots hold int64, other numbers doubles: their
-                  // groups take different register classes.
-                  (slot) =>
-                    integerSlots[slot] === 1
-                      ? "integer"
-                      : (fn.slots[slot] ?? ""),
-                )
-              : undefined;
-          sharingKnown = true;
-        }
-        const sharing = cachedSharing;
         if (!homesKnown) {
           cachedHomes = leafRegisters
             ? undefined
@@ -7398,8 +8149,8 @@ function emitModuleForms(
                 slotHomes(
                   fn,
                   integerSlots,
-                  sharing === undefined ? undefined : sharing.color,
-                  [28, 27, 26, 25, 24, 23, 22],
+                  undefined,
+                  [28, 27, 26, 25, 24, 23, 22, 21],
                   {
                     // Single-word managed references; the collector sees them
                     // through their frame words, refreshed around safepoints.
@@ -7415,6 +8166,8 @@ function emitModuleForms(
                     collects: mayCollect,
                   },
                   work(2000000),
+                  undefined,
+                  inlineCall,
                 ),
               );
           // Homes planned without interference: one register per group.
@@ -7427,6 +8180,35 @@ function emitModuleForms(
           homesKnown = true;
         }
         homes = cachedHomes;
+        if (!sharingKnown) {
+          cachedSharing =
+            slotBytes > 64 && !leafRegisters
+              ? shareFrameSlots(
+                  fn,
+                  (slot) => privateSlots[slot] !== 1,
+                  work(40000000),
+                  // Slots that got the same register home (and managed-ness)
+                  // may share a frame word without distorting scalarRegisters;
+                  // spilled slots share by storage class as before.
+                  (slot) => {
+                    const reg =
+                      homes === undefined ? 0 : (homes.registers[slot] ?? 0);
+                    if (reg !== 0) {
+                      const t = fn.slots[slot];
+                      return (
+                        (t !== undefined && managed(t) ? "rm" : "rn") +
+                        String(reg)
+                      );
+                    }
+                    return integerSlots[slot] === 1
+                      ? "integer"
+                      : (fn.slots[slot] ?? "");
+                  },
+                )
+              : undefined;
+          sharingKnown = true;
+        }
+        const sharing = cachedSharing;
         /** Register-homed reference slots live while an instruction that
          * may collect runs: its stack map lists their registers. */
         function registerRoots(
@@ -7970,7 +8752,12 @@ function emitModuleForms(
               if (
                 id !== undefined &&
                 id < candidates.length &&
-                !aliasedLoad(id)
+                !aliasedLoad(id) &&
+                foldedConstants[valueIds.intern(id)] !== 1 &&
+                !(
+                  deferredImmediateConst[valueIds.intern(id)] === 1 &&
+                  (valueUses[valueIds.intern(id)] ?? 0) === 1
+                )
               ) {
                 const type = value(id).type;
                 // Booleans, length-only slices, and numbers whose every use
@@ -7980,7 +8767,11 @@ function emitModuleForms(
                   lengthOnlySlices[valueIds.intern(id)] === 1 ||
                   (type === "number" &&
                     integerUses[valueIds.intern(id)] === 1 &&
-                    !floatWords.has(id))
+                    !floatWords.has(id) &&
+                    !(
+                      op.kind === "optional-value-or" &&
+                      fusedDefaults[valueIds.intern(id)] !== 1
+                    ))
                 )
                   candidates[id] = 3;
                 // NaN-boxed optional numbers are single FP words too.
@@ -8004,8 +8795,26 @@ function emitModuleForms(
                       noSafepoints[op.target] !== 1
                     : op.kind === "call-indirect" ||
                       (irInstructionEffects(op) & irEffectAllocate) !== 0,
+            floatSaveBytes === 0
+              ? undefined
+              : (op: IRInstruction): boolean => op.kind === "record-new",
           );
         }
+        // FP temporaries a record constructor's slow path saves: every
+        // d16..d31 some numeric temporary of this function is homed in.
+        let floatTemporaryMask = 0;
+        const floatTemporaries = transientRegisters;
+        if (floatSaveBytes !== 0 && floatTemporaries !== undefined)
+          for (let id = 0; id < floatTemporaries.length; id++) {
+            const register = floatTemporaries[id] ?? 0;
+            if (
+              register >= 16 &&
+              register <= 31 &&
+              (value(id).type === "number" ||
+                value(id).type === "optional-number")
+            )
+              floatTemporaryMask |= 1 << (register - 16);
+          }
         function isManagedValue(id: number, type: ScalarType): boolean {
           return managed(type) && lengthOnlySlices[valueIds.intern(id)] !== 1;
         }
@@ -8411,7 +9220,14 @@ function emitModuleForms(
               ),
           );
         const start = instructions.length * 4,
-          offsets: (number | undefined)[] = [];
+          offsets: (number | undefined)[] = [],
+          canDeferColdStub = (): boolean =>
+            allowColdStubs && instructions.length - start / 4 < 131072,
+          deferRememberSlow = ():
+            ((emitSlow: () => void) => void) | undefined =>
+            canDeferColdStub()
+              ? (emitSlow) => deferredAllocSlowPaths.push(emitSlow)
+              : undefined;
         blockOffsets.push({ offsets });
         const frameRanges: { offset: number; byteLength: number }[] = [];
         let frameStart: number | undefined;
@@ -8538,26 +9354,20 @@ function emitModuleForms(
         }
         /** d8.. at calleeSaveOffset + 8i, paired while in LDP/STP reach. */
         function calleeSaves(load: boolean): void {
-          // Pairs need a signed offset within 504 bytes of their base: a save
-          // area beyond that addresses from x16 = SP + calleeSaveOffset (x16
-          // is scratch in prologues and epilogues).
+          // Pairs need a signed offset within 504 bytes of their base, and
+          // single loads/stores reach 32760 bytes: a save area beyond reach
+          // addresses from x16 = SP + calleeSaveOffset (x16 is scratch in
+          // prologues and epilogues).
           const saved = preservedCount + savedWords.length,
             based =
-              saved >= 2 &&
-              calleeSaveOffset + saved * 8 > 512 &&
-              calleeSaveOffset <= 4095;
+              saved > 0 &&
+              (calleeSaveOffset + (saved - 1) * 8 > 32760 ||
+                (saved >= 2 &&
+                  calleeSaveOffset + saved * 8 > 512 &&
+                  calleeSaveOffset <= 4095));
           const rn: number | "sp" = based ? 16 : "sp",
             origin = based ? calleeSaveOffset : 0;
-          if (based)
-            emit({
-              op: "add-imm",
-              width: 64,
-              rd: 16,
-              rn: "sp",
-              immediate: calleeSaveOffset,
-              shift: 0,
-              setFlags: false,
-            });
+          if (based) address(16, calleeSaveOffset);
           for (let index = 0; index < preservedCount; index++) {
             const offset = calleeSaveOffset + index * 8 - origin,
               rt = 8 + index;
@@ -9609,8 +10419,7 @@ function emitModuleForms(
             rawStore(9, offset);
           }
         }
-        if (orderedBlocks[0]?.id !== fn.entry)
-          branch({ op: "b" }, fn.id, fn.entry);
+        if (fn.blocks[0]?.id !== fn.entry) branch({ op: "b" }, fn.id, fn.entry);
         const nonNullValues = new Uint8Array(values.length),
           // Numbers whose bits are never a signalling NaN, so wrapping them
           // as optional numbers needs no quieting: FP arithmetic results
@@ -9693,13 +10502,61 @@ function emitModuleForms(
         }
         function wordMagnitude(index: number): number {
           const kind = wordKinds[index] ?? 0;
-          if (kind === 2 || kind === 5) return 4294967295;
+          if (kind === 2 || kind === 5) {
+            const magnitude = wordMagnitudes[index] ?? 0;
+            return magnitude > 0 ? magnitude : 4294967295;
+          }
           if (kind === 3) return wordConstants[index] ?? 0;
           if (kind === 1 || kind === 6 || kind === 7) {
             const magnitude = wordMagnitudes[index] ?? 0;
             if (magnitude > 0) return magnitude;
           }
           return -1;
+        }
+        /** ToUint8Clamp of a number into x9: NaN and anything below 0.5
+         * give 0, anything from 254.5 gives 255, and the rest round to
+         * nearest, ties to even. */
+        function clampedValue(id: number): void {
+          if (storedAsInteger(id)) {
+            const integer = intRegister(id, 9);
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn: integer,
+              immediate: 0,
+              shift: 0,
+              setFlags: true,
+            });
+            emit({
+              op: "csel",
+              width: 64,
+              rd: 9,
+              rn: "zr",
+              rm: integer,
+              condition: "lt",
+            });
+          } else
+            // Saturates negatives to 0 and NaN to 0.
+            emit({ op: "fcvtnu-w-d", rd: 9, rn: floatOperand(id, 0) });
+          imm(10, 255);
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 9,
+            immediate: 255,
+            shift: 0,
+            setFlags: true,
+          });
+          emit({
+            op: "csel",
+            width: 64,
+            rd: 9,
+            rn: 10,
+            rm: 9,
+            condition: "hi",
+          });
         }
         function wordValue(id: number): void {
           if (nanSentinelWords[valueIds.intern(id)] === 1) {
@@ -9734,6 +10591,8 @@ function emitModuleForms(
           else if (kind === 2 || kind === 5 || kind === 6 || kind === 7)
             emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
           else if (jsConvert)
+            // FJCVTZS is ECMAScript ToInt32 (truncation modulo 2^32, NaN and
+            // infinities to 0); its low 32 bits are ToUint32's too.
             emit({ op: "fjcvtzs", rd: 9, rn: floatOperand(id, 0) });
           else {
             // fcvtzs truncates toward zero, ToUint32's first step, and maps
@@ -9799,52 +10658,50 @@ function emitModuleForms(
             emit({ op: "orr-reg", width: 64, rd: scratch, rn: "zr", rm: 9 });
           return scratch;
         }
+        /** Block-local FP values computed directly into a slot's FP register
+         * home (multi-use `directFloatTarget`). */
+        const directFloatAlias = new Map<number, number>();
         function floatLoad(
           rt: number,
           id: number,
           byteOffset: number = 0,
         ): void {
-          if (byteOffset === 0 && nanSentinelWords[valueIds.intern(id)] === 1) {
-            const reg = rawRegister(id, 17);
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: "zr",
-              rn: reg,
-              rm: reg,
-              shift: "lsl",
-              amount: 0,
-              setFlags: true,
-            });
-            const finite = instructions.length;
-            emit({ op: "b.cond", condition: "vc", displacement: 0 });
-            emit({
-              op: "movz",
-              width: 64,
-              rd: 17,
-              immediate: 0x7ff8,
-              shift: 48,
-            });
-            emit({ op: "fmov-d-x", rd: rt, rn: 17 });
-            const done = instructions.length;
-            emit({ op: "b", displacement: 0 });
-            patchInstruction(finite, {
-              op: "b.cond",
-              condition: "vc",
-              displacement: (instructions.length - finite) * 4,
-            });
-            emit({ op: "scvtf-d-x", rd: rt, rn: reg });
-            patchInstruction(done, {
-              op: "b",
-              displacement: (instructions.length - done) * 4,
-            });
-            return;
-          }
-          if (byteOffset === 0 && storedAsInteger(id)) {
-            const reg = rawRegister(id, 17);
-            if (nanSentinelRemainders[valueIds.intern(id)] === 1) {
-              const nonNegativeValue = instructions.length;
-              emit({ op: "tbz", rt: reg, bit: 63, displacement: 0 });
+          if (byteOffset === 0) {
+            const aliased = directFloatAlias.get(id);
+            if (aliased !== undefined) {
+              if (aliased !== rt) emit({ op: "fmov-d-d", rd: rt, rn: aliased });
+              return;
+            }
+            const deferred = deferredIntegers.get(id);
+            if (deferred !== undefined) {
+              const bits = encodeFloat64(deferred);
+              if (bits.lo === 0 && bits.hi === 0)
+                emit({ op: "fmov-d-x", rd: rt, rn: "zr" });
+              else {
+                const immediate = float64Immediate(deferred);
+                if (immediate !== undefined)
+                  emit({ op: "fmov-d-imm", rd: rt, imm8: immediate });
+                else {
+                  imm64(17, bits.lo, bits.hi);
+                  emit({ op: "fmov-d-x", rd: rt, rn: 17 });
+                }
+              }
+              return;
+            }
+            if (nanSentinelWords[valueIds.intern(id)] === 1) {
+              const reg = rawRegister(id, 17);
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: "zr",
+                rn: reg,
+                rm: reg,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              const finite = instructions.length;
+              emit({ op: "b.cond", condition: "vc", displacement: 0 });
               emit({
                 op: "movz",
                 width: 64,
@@ -9855,11 +10712,10 @@ function emitModuleForms(
               emit({ op: "fmov-d-x", rd: rt, rn: 17 });
               const done = instructions.length;
               emit({ op: "b", displacement: 0 });
-              patchInstruction(nonNegativeValue, {
-                op: "tbz",
-                rt: reg,
-                bit: 63,
-                displacement: (instructions.length - nonNegativeValue) * 4,
+              patchInstruction(finite, {
+                op: "b.cond",
+                condition: "vc",
+                displacement: (instructions.length - finite) * 4,
               });
               emit({ op: "scvtf-d-x", rd: rt, rn: reg });
               patchInstruction(done, {
@@ -9868,9 +10724,38 @@ function emitModuleForms(
               });
               return;
             }
-            // Exact (|x| < 2^53), so the conversion is too.
-            emit({ op: "scvtf-d-x", rd: rt, rn: reg });
-            return;
+            if (storedAsInteger(id)) {
+              const reg = rawRegister(id, 17);
+              if (nanSentinelRemainders[valueIds.intern(id)] === 1) {
+                const nonNegativeValue = instructions.length;
+                emit({ op: "tbz", rt: reg, bit: 63, displacement: 0 });
+                emit({
+                  op: "movz",
+                  width: 64,
+                  rd: 17,
+                  immediate: 0x7ff8,
+                  shift: 48,
+                });
+                emit({ op: "fmov-d-x", rd: rt, rn: 17 });
+                const done = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchInstruction(nonNegativeValue, {
+                  op: "tbz",
+                  rt: reg,
+                  bit: 63,
+                  displacement: (instructions.length - nonNegativeValue) * 4,
+                });
+                emit({ op: "scvtf-d-x", rd: rt, rn: reg });
+                patchInstruction(done, {
+                  op: "b",
+                  displacement: (instructions.length - done) * 4,
+                });
+                return;
+              }
+              // Exact (|x| < 2^53), so the conversion is too.
+              emit({ op: "scvtf-d-x", rd: rt, rn: reg });
+              return;
+            }
           }
           const storage = scalarRegisters,
             offset = value(id).offset + byteOffset,
@@ -9980,6 +10865,12 @@ function emitModuleForms(
         /** Ordinary numeric ALU operands may name their existing FP homes. Only
          * stack-backed values need a scratch load; no conversion or guard changes. */
         function floatOperand(id: number, scratch: number): number {
+          const aliased = directFloatAlias.get(id);
+          if (aliased !== undefined) return aliased;
+          if (deferredIntegers.has(id)) {
+            floatLoad(scratch, id);
+            return scratch;
+          }
           const storage = scalarRegisters,
             offset = value(id).offset,
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
@@ -10122,7 +11013,9 @@ function emitModuleForms(
             return wordMultiplierShift(constant) !== 0 ? operand : undefined;
           if (op.operator === "&" || op.operator === "|" || op.operator === "^")
             return rotatedShifts[valueIds.intern(op.id)] !== 1 &&
+              fusedShifts[valueIds.intern(op.id)] !== 1 &&
               (rotateAmounts[valueIds.intern(op.id)] ?? 0) === 0 &&
+              !shiftedOps.has(op.id) &&
               (logicalImmediate32(constant >>> 0) !== undefined ||
                 wordIdentity(op.operator, constant))
               ? operand
@@ -11581,120 +12474,361 @@ function emitModuleForms(
         // Size emission must be nonallocating and preserve x9 when writing x10.
         // prepare runs before the callback; size can reload stable stack metadata after it.
         // Returns an uninitialized object in x9. Initialize and publish before any safepoint.
+        // When `currentBatchKind` is 1 ("head"), the fast path reserves
+        // `currentBatchTotal` bytes at once and stores the next object address
+        // in `allocationOffset` (or 0 on the slow path); kinds 2 ("mid") and 3
+        // ("tail") consume that cursor directly when non-zero.
+        let currentBatchKind = 0;
+        let currentBatchTotal = 0;
         function allocate(
           prepare: () => void,
           size: (rd: number) => void,
+          preserveFloats: boolean = false,
+          constSize?: number,
         ): void {
+          const batchKind = currentBatchKind,
+            batchTotal = currentBatchTotal;
+          currentBatchKind = 0;
+          currentBatchTotal = 0;
           pollWorkerStop();
           prepare();
           let fastDone = -1;
+          const emitSlowPath = (
+            slowSize: (rd: number) => void,
+            clearBatch: boolean,
+          ): void => {
+            const saved = preserveFloats ? floatTemporaryMask : 0;
+            for (let r = 0; r < 16; r++)
+              if ((saved & (1 << r)) !== 0)
+                emit({
+                  op: "str-d",
+                  rt: 16 + r,
+                  rn: "sp",
+                  offset: floatSaveOffset + r * 8,
+                });
+            rawLoad(0, contextOffset);
+            address(3, resultOffset);
+            slowSize(9);
+            callHelper("allocate-call");
+            emit({ op: "blr", rn: 16 });
+            safepoint();
+            emit({
+              op: "sub-imm",
+              width: 32,
+              rd: "zr",
+              rn: 0,
+              immediate: 1,
+              shift: 0,
+              setFlags: true,
+            });
+            exceptionalBranch({ op: "b.cond", condition: "ne" });
+            // The allocator returns `number | undefined` (one NaN-boxed word);
+            // allocate-finish checks it and forms the object's address in x9.
+            rawLoad(9, resultOffset + 16);
+            slowSize(10);
+            rawLoad(11, contextOffset);
+            callHelper("allocate-finish");
+            for (let r = 0; r < 16; r++)
+              if ((saved & (1 << r)) !== 0)
+                emit({
+                  op: "ldr-d",
+                  rt: 16 + r,
+                  rn: "sp",
+                  offset: floatSaveOffset + r * 8,
+                });
+            if (clearBatch) rawStore("zr", allocationOffset);
+          };
           if (linearAllocation) {
             // All allocation producers pass positive aligned uint32 extents. The
             // runtime publishes stable control storage and maintains its cursor.
-            size(9);
-            rawLoad(10, contextOffset);
-            emit({
-              op: "ldr",
-              width: 64,
-              rt: 12,
-              rn: 10,
-              offset: nativeAllocationStateOffset,
-            });
-            const absent = instructions.length;
-            emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
-            emit({ op: "ldr", width: 32, rt: 11, rn: 12, offset: 0 });
-            emit({ op: "ldr", width: 32, rt: 13, rn: 12, offset: 4 });
-            // The limit may be lowered below the top at any time (a debugger
-            // arming allocation sampling while an allocation was between
-            // this check and its store), so compare top + size with it
-            // rather than size with limit - top, which would wrap. Top,
-            // limit and size are uint32 offsets zero-extended into 64-bit
-            // registers, so the sum cannot wrap; the slow path rejects any
-            // request of 2^31 bytes or more.
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: 14,
-              rn: 11,
-              rm: 9,
-              shift: "lsl",
-              amount: 0,
-              setFlags: false,
-            });
-            emit({
-              op: "sub-reg",
-              width: 64,
-              rd: "zr",
-              rn: 14,
-              rm: 13,
-              shift: "lsl",
-              amount: 0,
-              setFlags: true,
-            });
-            const exhausted = instructions.length;
-            emit({ op: "b.cond", condition: "hi", displacement: 0 });
-            emit({ op: "str", width: 32, rt: 14, rn: 12, offset: 0 });
-            // The generational nursery keeps no start bits: it is
-            // bump-allocated without gaps, so the compactor's rare fallback
-            // and heap tools walk it by extents. Add the young top to the
-            // nursery's absolute address.
-            emit({
-              op: "ldr",
-              width: 64,
-              rt: 9,
-              rn: 12,
-              offset: nativeGenerationalNurseryAddressOffset,
-            });
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: 9,
-              rn: 9,
-              rm: 11,
-              shift: "lsl",
-              amount: 0,
-              setFlags: false,
-            });
-            fastDone = instructions.length;
-            emit({ op: "b", displacement: 0 });
-            const slow = instructions.length;
-            patchInstruction(absent, {
-              op: "cbz",
-              width: 64,
-              rt: 12,
-              displacement: (slow - absent) * 4,
-            });
-            patchInstruction(exhausted, {
-              op: "b.cond",
-              condition: "hi",
-              displacement: (slow - exhausted) * 4,
-            });
+            const immediateSize =
+              constSize !== undefined && constSize >= 0 && constSize <= 4095
+                ? constSize
+                : -1;
+            const deferSlow =
+              immediateSize >= 0 &&
+              allowColdStubs &&
+              instructions.length - start / 4 < 131072;
+            if ((batchKind === 2 || batchKind === 3) && immediateSize >= 0) {
+              const hadNursery = cachedNurseryBaseInX16;
+              const preservedWords: {
+                readonly offset: number;
+                readonly reg: number;
+              }[] = [];
+              for (const [off, reg] of stackWords)
+                if ((reg >= 4 && reg <= 8) || reg === 15)
+                  preservedWords.push({ offset: off, reg });
+              rawLoad(9, allocationOffset);
+              const batchSlow = instructions.length;
+              emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+              if (batchKind === 2) {
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 13,
+                  rn: 9,
+                  immediate: immediateSize,
+                  shift: 0,
+                  setFlags: false,
+                });
+                rawStore(13, allocationOffset);
+              }
+              if (deferSlow) {
+                const returnAt = instructions.length,
+                  capturedBlock = blockId,
+                  capturedSite = siteIndex,
+                  capturedSpan = span,
+                  capturedBytes = immediateSize,
+                  isMiddle = batchKind === 2;
+                clearWordCaches();
+                if (isMiddle) stackWords.set(allocationOffset, 13);
+                for (const entry of preservedWords)
+                  if (entry !== undefined)
+                    stackWords.set(entry.offset, entry.reg);
+                if (hadNursery) cachedNurseryBaseInX16 = true;
+                deferredAllocSlowPaths.push(() => {
+                  const prevBlock = blockId,
+                    prevSite = siteIndex,
+                    prevSpan = span;
+                  blockId = capturedBlock;
+                  siteIndex = capturedSite;
+                  span = capturedSpan;
+                  clearWordCaches();
+                  patchInstruction(batchSlow, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 9,
+                    displacement: (instructions.length - batchSlow) * 4,
+                  });
+                  emitSlowPath((rd) => imm(rd, capturedBytes), false);
+                  if (isMiddle) imm(13, 0);
+                  for (const entry of preservedWords)
+                    if (entry !== undefined) rawLoad(entry.reg, entry.offset);
+                  if (hadNursery) {
+                    rawLoad(10, contextOffset);
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 16,
+                      rn: 10,
+                      offset: nativeAllocationStateOffset,
+                    });
+                    const unpub = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 16, displacement: 0 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 16,
+                      rn: 16,
+                      offset: nativeGenerationalNurseryAddressOffset,
+                    });
+                    patchInstruction(unpub, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 16,
+                      displacement: (instructions.length - unpub) * 4,
+                    });
+                  }
+                  emit({
+                    op: "b",
+                    displacement: (returnAt - instructions.length) * 4,
+                  });
+                  blockId = prevBlock;
+                  siteIndex = prevSite;
+                  span = prevSpan;
+                });
+                return;
+              }
+              fastDone = instructions.length;
+              emit({ op: "b", displacement: 0 });
+              patchInstruction(batchSlow, {
+                op: "cbz",
+                width: 64,
+                rt: 9,
+                displacement: (instructions.length - batchSlow) * 4,
+              });
+            } else {
+              const reserveSize =
+                batchKind === 1 && batchTotal > 0 && batchTotal <= 4095
+                  ? batchTotal
+                  : immediateSize;
+              if (reserveSize < 0) size(9);
+              rawLoad(10, contextOffset);
+              emit({
+                op: "ldr",
+                width: 64,
+                rt: 12,
+                rn: 10,
+                offset: nativeAllocationStateOffset,
+              });
+              const absent = instructions.length;
+              emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
+              emit({
+                op: "ldp",
+                width: 32,
+                rt: 11,
+                rt2: 13,
+                rn: 12,
+                offset: 0,
+                mode: "offset",
+              });
+              // The limit may be lowered below the top at any time (a debugger
+              // arming allocation sampling while an allocation was between
+              // this check and its store), so compare top + size with it
+              // rather than size with limit - top, which would wrap. Top,
+              // limit and size are uint32 offsets zero-extended into 64-bit
+              // registers, so the sum cannot wrap; the slow path rejects any
+              // request of 2^31 bytes or more.
+              if (reserveSize >= 0)
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 14,
+                  rn: 11,
+                  immediate: reserveSize,
+                  shift: 0,
+                  setFlags: false,
+                });
+              else
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 14,
+                  rn: 11,
+                  rm: 9,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: "zr",
+                rn: 14,
+                rm: 13,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              const exhausted = instructions.length;
+              emit({ op: "b.cond", condition: "hi", displacement: 0 });
+              emit({ op: "str", width: 32, rt: 14, rn: 12, offset: 0 });
+              // The generational nursery keeps no start bits: it is
+              // bump-allocated without gaps, so the compactor's rare fallback
+              // and heap tools walk it by extents. Add the young top to the
+              // nursery's absolute address (cached in x16 for subsequent
+              // write barriers in the same block).
+              emit({
+                op: "ldr",
+                width: 64,
+                rt: 16,
+                rn: 12,
+                offset: nativeGenerationalNurseryAddressOffset,
+              });
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 9,
+                rn: 16,
+                rm: 11,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+              if (batchKind === 1 && immediateSize >= 0) {
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 13,
+                  rn: 9,
+                  immediate: immediateSize,
+                  shift: 0,
+                  setFlags: false,
+                });
+                rawStore(13, allocationOffset);
+              }
+              if (deferSlow) {
+                const returnAt = instructions.length,
+                  capturedBlock = blockId,
+                  capturedSite = siteIndex,
+                  capturedSpan = span,
+                  capturedBytes = immediateSize,
+                  clearBatch = batchKind === 1;
+                clearWordCaches();
+                if (clearBatch) stackWords.set(allocationOffset, 13);
+                cachedNurseryBaseInX16 = true;
+                deferredAllocSlowPaths.push(() => {
+                  const prevBlock = blockId,
+                    prevSite = siteIndex,
+                    prevSpan = span;
+                  blockId = capturedBlock;
+                  siteIndex = capturedSite;
+                  span = capturedSpan;
+                  clearWordCaches();
+                  const slow = instructions.length;
+                  patchInstruction(absent, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 12,
+                    displacement: (slow - absent) * 4,
+                  });
+                  patchInstruction(exhausted, {
+                    op: "b.cond",
+                    condition: "hi",
+                    displacement: (slow - exhausted) * 4,
+                  });
+                  emitSlowPath((rd) => imm(rd, capturedBytes), clearBatch);
+                  if (clearBatch) imm(13, 0);
+                  rawLoad(10, contextOffset);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 16,
+                    rn: 10,
+                    offset: nativeAllocationStateOffset,
+                  });
+                  const unpub = instructions.length;
+                  emit({ op: "cbz", width: 64, rt: 16, displacement: 0 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 16,
+                    rn: 16,
+                    offset: nativeGenerationalNurseryAddressOffset,
+                  });
+                  patchInstruction(unpub, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 16,
+                    displacement: (instructions.length - unpub) * 4,
+                  });
+                  emit({
+                    op: "b",
+                    displacement: (returnAt - instructions.length) * 4,
+                  });
+                  blockId = prevBlock;
+                  siteIndex = prevSite;
+                  span = prevSpan;
+                });
+                return;
+              }
+              fastDone = instructions.length;
+              emit({ op: "b", displacement: 0 });
+              const slow = instructions.length;
+              patchInstruction(absent, {
+                op: "cbz",
+                width: 64,
+                rt: 12,
+                displacement: (slow - absent) * 4,
+              });
+              patchInstruction(exhausted, {
+                op: "b.cond",
+                condition: "hi",
+                displacement: (slow - exhausted) * 4,
+              });
+            }
           }
-          // The slow path: the shared allocate-call kernel zeroes the result
-          // area and loads the allocator's arguments; the call, its
-          // safepoint and exceptional edge stay here.
-          rawLoad(0, contextOffset);
-          address(3, resultOffset);
-          size(9);
-          callHelper("allocate-call");
-          emit({ op: "blr", rn: 16 });
-          safepoint();
-          emit({
-            op: "sub-imm",
-            width: 32,
-            rd: "zr",
-            rn: 0,
-            immediate: 1,
-            shift: 0,
-            setFlags: true,
-          });
-          exceptionalBranch({ op: "b.cond", condition: "ne" });
-          // The allocator returns `number | undefined` (one NaN-boxed word);
-          // allocate-finish checks it and forms the object's address in x9.
-          rawLoad(9, resultOffset + 16);
-          size(10);
-          rawLoad(11, contextOffset);
-          callHelper("allocate-finish");
+          emitSlowPath(size, batchKind === 1);
           if (fastDone >= 0)
             patchInstruction(fastDone, {
               op: "b",
@@ -12034,6 +13168,61 @@ function emitModuleForms(
         /** Bounds-checks `index` against `array`: x13 holds whether it is a
          * valid element index, x10 the element base, x11 the length; returns
          * the GP register holding the index as an integer (x9 or its home). */
+        function typedArrayType(type: ScalarType): NativeTypedArray {
+          const array = nativeTypedArray(type);
+          if (array === undefined) throw "typed array element invariant";
+          return array;
+        }
+        /** Load element `index` (a register, scaled by the element size) of
+         * the typed array whose data pointer is in `base`: integer kinds as
+         * an exact int64 in `integer` (zero- or sign-extended), floating-
+         * point kinds as a double in FP register `float`. Returns whether
+         * the element is a double. */
+        function loadElement(
+          type: ScalarType,
+          base: number,
+          index: number,
+          integer: number,
+          float: number,
+        ): boolean {
+          const layout = typedArrayLayout(typedArrayType(type)),
+            scale = typedArrayScale(type);
+          if (layout.element === "float") {
+            emit({
+              op: "ldr-indexed",
+              size: scale,
+              fp: true,
+              rt: float,
+              rn: base,
+              rm: index,
+              scaled: true,
+            });
+            if (scale === 2) emit({ op: "fcvt-d-s", rd: float, rn: float });
+            return true;
+          }
+          // LDRSB/LDRSH/LDRSW sign-extend to 64 bits in the load itself.
+          emit({
+            op: "ldr-indexed",
+            size: scale,
+            fp: false,
+            rt: integer,
+            rn: base,
+            rm: index,
+            scaled: scale !== 0,
+            signed: layout.element === "signed",
+          });
+          return false;
+        }
+        /** An integer element loaded by loadElement as a double. */
+        function elementToDouble(
+          type: ScalarType,
+          rd: number,
+          rn: number,
+        ): void {
+          if (typedArrayLayout(typedArrayType(type)).element === "signed")
+            emit({ op: "scvtf-d-x", rd, rn });
+          else emit({ op: "ucvtf-d-w", rd, rn });
+        }
         function arrayIndex(
           array: number,
           index: number,
@@ -12105,11 +13294,23 @@ function emitModuleForms(
           return register;
         }
         /** The byte length of typed ArrayBuffer `buffer` (an owning or
-         * borrowed array: marker 2-5 for 1-, 2-, 4- and 8-byte elements)
-         * into `rd`; x13 keeps the element width's shift. */
+         * borrowed array: marker < nativeBuiltinMarkerLimit with low three
+         * bits 2-5 for 1-, 2-, 4- and 8-byte elements) into `rd`; x13 keeps
+         * the element width's shift. */
         function bufferByteLength(buffer: number, rd: number): void {
           emit({ op: "ldr", width: 64, rt: 13, rn: buffer, offset: 0 });
           emit({ op: "ubfm", width: 64, rd: 13, rn: 13, immr: 0, imms: 47 });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 13,
+            immediate: nativeBuiltinMarkerLimit,
+            shift: 0,
+            setFlags: true,
+          });
+          trapIf({ op: "b.cond", condition: "cs" });
+          emit({ op: "ubfm", width: 64, rd: 13, rn: 13, immr: 0, imms: 2 });
           emit({
             op: "sub-imm",
             width: 64,
@@ -12289,20 +13490,12 @@ function emitModuleForms(
         }
         function arrayView(op: {
           readonly id: number;
-          readonly type:
-            "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+          readonly type: NativeTypedArray;
           readonly buffer: number;
           readonly byteOffset: number;
           readonly length: number;
         }): void {
-          const shift =
-            op.type === "Uint8Array"
-              ? 0
-              : op.type === "Uint16Array"
-                ? 1
-                : op.type === "Float64Array"
-                  ? 3
-                  : 2;
+          const shift = typedArrayScale(op.type);
           allocate(
             () => {
               function bound(id: number, offset: number): void {
@@ -12370,7 +13563,11 @@ function emitModuleForms(
           rawValue(10, op.buffer);
           rawLoad(11, allocationOffset + 8);
           rawLoad(12, allocationOffset + 16);
-          imm64(13, shift + 2, 2 * (nativeHeaderFlagUnit / 4294967296));
+          imm64(
+            13,
+            typedArrayMarker(op.type),
+            2 * (nativeHeaderFlagUnit / 4294967296),
+          );
           emit({ op: "str", width: 64, rt: 13, rn: 9, offset: 0 });
           emit({
             op: "str",
@@ -12424,7 +13621,123 @@ function emitModuleForms(
           length: number,
           elementShift: number,
           marker: number,
+          skipZero: boolean = false,
         ): void {
+          const constLen = numberConstant(length);
+          if (
+            constLen !== undefined &&
+            Number.isInteger(constLen) &&
+            constLen >= 0 &&
+            constLen <= 0xffffffff &&
+            !(constLen === 0 && 1 / constLen < 0)
+          ) {
+            const rawExtent =
+              nativeArrayInlineOffset + 7 + constLen * (1 << elementShift);
+            if (rawExtent <= 0xffffffff) {
+              const byteLen = Math.floor(rawExtent / 8) * 8;
+              allocate(
+                () => {},
+                (rd) => imm(rd, byteLen),
+                false,
+                byteLen,
+              );
+              const payloadBytes = byteLen - nativeArrayInlineOffset;
+              if (payloadBytes <= 64) {
+                imm(12, marker);
+                if (constLen === 0)
+                  emit({
+                    op: "stp",
+                    width: 64,
+                    rt: 12,
+                    rt2: "zr",
+                    rn: 9,
+                    offset: 0,
+                    mode: "offset",
+                  });
+                else {
+                  imm(10, constLen);
+                  emit({
+                    op: "stp",
+                    width: 64,
+                    rt: 12,
+                    rt2: 10,
+                    rn: 9,
+                    offset: 0,
+                    mode: "offset",
+                  });
+                }
+                if (marker === 6) {
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: "zr",
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                } else {
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 15,
+                    rn: 9,
+                    immediate: nativeArrayInlineOffset,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 15,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                }
+                if (!skipZero) {
+                  let off: number = nativeArrayInlineOffset;
+                  while (off + 16 <= byteLen) {
+                    emit({
+                      op: "stp",
+                      width: 64,
+                      rt: "zr",
+                      rt2: "zr",
+                      rn: 9,
+                      offset: off,
+                      mode: "offset",
+                    });
+                    off += 16;
+                  }
+                  if (off < byteLen)
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: "zr",
+                      rn: 9,
+                      offset: off,
+                    });
+                }
+                saveRaw(9, id);
+                if (marker !== 6) {
+                  cachedArrayDataVal = id;
+                  cachedArrayDataReg = -1;
+                }
+                return;
+              }
+              imm(10, constLen);
+              imm(11, byteLen);
+              imm(12, marker);
+              callHelper("array-initialize");
+              if (marker === 6)
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: "zr",
+                  rn: 9,
+                  offset: nativeArrayDataOffset,
+                });
+              saveRaw(9, id);
+              return;
+            }
+          }
           allocate(
             () => {
               rawValue(9, length);
@@ -12551,11 +13864,25 @@ function emitModuleForms(
             stableGuards,
           );
           // Join-crossing proofs; emission-only, never fed back into the IR.
+          provenPresence.clear();
+          layoutPairs.clear();
           cachedJoinGuards = limited<Uint8Array>(
             "join-record-guards",
             fn,
-            dataflowRecordGuards(fn, work(2000000), stableGuards),
+            dataflowRecordGuards(
+              fn,
+              work(2000000),
+              stableGuards,
+              undefined,
+              provenPresence,
+              layoutPairs,
+            ),
           );
+          // An exhausted analysis proves nothing.
+          if (cachedJoinGuards === undefined) {
+            provenPresence.clear();
+            layoutPairs.clear();
+          }
           recordGuardsKnown = true;
         }
         const chainGuards = cachedChainGuards,
@@ -12575,6 +13902,35 @@ function emitModuleForms(
             flowGuards === undefined || ((flowGuards[block] ?? 0) & 1) === 0
           );
         });
+        const provenNonNull = limited<Uint8Array>(
+          "proven-non-null",
+          fn,
+          provenNonNullValues(
+            fn,
+            (id) => valueIds.intern(id),
+            values.length,
+            work(2000000),
+          ),
+        );
+        const skippedCasts = new Uint8Array(values.length);
+        if (provenNonNull !== undefined)
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "skipped cast block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "skipped cast instruction invariant";
+              if (
+                (op.kind === "string-wrap" ||
+                  op.kind === "string-value" ||
+                  op.kind === "reference-wrap" ||
+                  op.kind === "reference-value" ||
+                  op.kind === "primitive-wrap" ||
+                  op.kind === "primitive-reference") &&
+                (valueUses[valueIds.intern(op.id)] ?? 0) === 0 &&
+                provenNonNull[valueIds.intern(op.value)] === 1
+              )
+                skippedCasts[valueIds.intern(op.id)] = 1;
+            }
+          }
         // Exact block-entry clears: zero only pool words some path may have
         // written since the last clear. Collecting blocks still observe an
         // all-zero pool, as with whole-prefix or whole-pool clears.
@@ -12634,9 +13990,11 @@ function emitModuleForms(
                   // Only words whose store reaches the stack slot itself.
                   const registers = scalarRegisters,
                     stored: number[] = [];
-                  for (const word of poolWords(
-                    preSafepointResults(current, noSafepoints),
-                  )) {
+                  const written = preSafepointResults(
+                    current,
+                    noSafepoints,
+                  ).filter((id) => skippedCasts[valueIds.intern(id)] !== 1);
+                  for (const word of poolWords(written)) {
                     if (word === undefined) throw "covered word invariant";
                     if (
                       registers === undefined ||
@@ -12654,6 +14012,23 @@ function emitModuleForms(
                 work(50000000),
               )
             : undefined;
+        const selects = findSelectDiamonds(
+          fn,
+          integerSlots,
+          dispatch?.fused,
+          (block) =>
+            (deadClears?.[block]?.length ?? 0) === 0 &&
+            (deadSlots?.[block]?.length ?? 0) === 0 &&
+            (poolClears?.[block]?.length ?? 0) === 0 &&
+            (preciseRoots ||
+              poolClears !== undefined ||
+              ((incomingReferences[block] ?? 0) === 0 &&
+                (incomingGenerals[block] ?? 0) === 0)),
+        );
+        for (const [head, diamond] of selects.diamonds) {
+          if (head < 0) continue;
+          forwardable.delete(diamond.join);
+        }
         // Operation ranges (analysis tooling): each IR operation owns the
         // words emitted from its start to the next operation, terminator or
         // block boundary. Representations are read after emission, once
@@ -12977,30 +14352,30 @@ function emitModuleForms(
           viewValueTokens.set(id, token);
           return token;
         }
-        for (
-          let blockIndex = 0;
-          blockIndex < orderedBlocks.length;
-          blockIndex++
-        ) {
-          const b = orderedBlocks[blockIndex];
-          let nextBlockIndex = blockIndex + 1;
-          while (nextBlockIndex < orderedBlocks.length) {
-            const candidate = orderedBlocks[nextBlockIndex];
-            if (candidate === undefined || dispatch?.fused[candidate.id] !== 1)
-              break;
-            nextBlockIndex++;
-          }
-          const nextBlock = orderedBlocks[nextBlockIndex]?.id;
+        for (let position = 0; position < layout.length; position++) {
+          const b = fn.blocks[layout[position] ?? -1];
           if (b === undefined) throw "block invariant";
           deferredIntegers.clear();
-          // Fused dispatch continuations are unreachable; their head tests
-          // every candidate layout.
-          if (dispatch?.fused[b.id] === 1) {
-            stackWords.clear();
+          // Fused dispatch/select continuations are unreachable; their head
+          // already executed them.
+          if (dispatch?.fused[b.id] === 1 || selects.fused[b.id] === 1) {
+            clearWordCaches();
             offsets[b.id * 2] = instructions.length * 4;
             joinLabelRun(b.id, true);
             continue;
           }
+          let nextPosition = position + 1;
+          while (nextPosition < layout.length) {
+            const candidate = layout[nextPosition];
+            if (
+              candidate === undefined ||
+              (dispatch?.fused[candidate] !== 1 &&
+                selects.fused[candidate] !== 1)
+            )
+              break;
+            nextPosition++;
+          }
+          const nextBlock = layout[nextPosition];
           const transient = transientRegisters,
             storage = scalarRegisters;
           if (transient !== undefined && storage !== undefined)
@@ -13045,9 +14420,14 @@ function emitModuleForms(
           branchIsland();
           trapIsland();
           blockId = b.id;
-          stackWords.clear();
+          clearWordCaches();
           if (entry !== undefined) {
             for (const [offset, held] of entry) stackWords.set(offset, held);
+            if (
+              !forms.farBranches.has(fn.id) &&
+              edgeNurseryBase.get(b.id) === true
+            )
+              cachedNurseryBaseInX16 = true;
             joins.delete(instructions.length);
             seededEntries.set(b.id, edgeBranches.get(b.id) ?? 0);
             accountedLabels.add(b.id);
@@ -13146,22 +14526,57 @@ function emitModuleForms(
           }
           if (pollHeaders.has(b.id) || (pollEntry && b.id === fn.entry))
             workerStopPoll();
-          // SSA values are block-local. A final comparison used by the branch
-          // has no other consumer, so its flags can replace a boolean carrier.
-          const finalInstruction = b.instructions[b.instructions.length - 1];
-          let comparisonValue: number | undefined = undefined;
-          if (
-            finalInstruction !== undefined &&
-            (finalInstruction.kind === "binary" ||
-              finalInstruction.kind === "general-is" ||
-              finalInstruction.kind === "optional-present")
-          ) {
-            const terminator = b.terminator;
+          // SSA values are block-local. A comparison used by the branch has no
+          // other consumer when followed only by flag-preserving stores of
+          // other values, so its flags can replace a boolean carrier.
+          const blockDiamond = selects.diamonds.get(b.id),
+            blockTerm = b.terminator;
+          let comparisonValue: number | undefined = undefined,
+            comparisonIndex = -1;
+          if (blockTerm.kind === "branch") {
+            const condId = blockTerm.condition;
+            let scan = b.instructions.length - 1;
+            while (scan >= 0) {
+              const tail = b.instructions[scan];
+              if (
+                tail !== undefined &&
+                tail.kind === "store" &&
+                tail.value !== condId &&
+                (integerSlots[tail.slot] !== 1 || storedAsInteger(tail.value))
+              )
+                scan--;
+              else break;
+            }
+            const candidate = scan >= 0 ? b.instructions[scan] : undefined;
+            const nestedSafe =
+              blockDiamond?.nested === undefined ||
+              (scan === b.instructions.length - 1 &&
+                candidate !== undefined &&
+                (candidate.kind === "optional-present" ||
+                  (candidate.kind === "binary" &&
+                    (candidate.operator === "===" ||
+                      candidate.operator === "!==" ||
+                      candidate.operator === "==" ||
+                      candidate.operator === "!=" ||
+                      candidate.operator === "<" ||
+                      candidate.operator === "<=" ||
+                      candidate.operator === ">" ||
+                      candidate.operator === ">=") &&
+                    (typeOf(candidate.left) === "number" ||
+                      typeOf(candidate.left) === "boolean" ||
+                      typeOf(candidate.left) === "reference" ||
+                      typeOf(candidate.left) === "optional-reference"))));
             if (
-              terminator.kind === "branch" &&
-              finalInstruction.id === terminator.condition
-            )
-              comparisonValue = finalInstruction.id;
+              candidate !== undefined &&
+              (candidate.kind === "binary" ||
+                candidate.kind === "general-is" ||
+                candidate.kind === "optional-present") &&
+              candidate.id === condId &&
+              nestedSafe
+            ) {
+              comparisonValue = candidate.id;
+              comparisonIndex = scan;
+            }
           }
           let comparisonBranch: Condition | "emitted" | undefined = undefined;
           const fusion = fusedAccesses?.get(b.id);
@@ -13183,57 +14598,672 @@ function emitModuleForms(
               foldedPresentOp === undefined ? undefined : foldedPresentOp.id,
             foldedPresentSource =
               foldedPresentOp === undefined ? undefined : foldedPresentOp.value;
-          let fusedNumberElement = -1;
-          const wrappedNumberValues = new Map<number, number>();
-          for (
-            let operationIndex = 0;
-            operationIndex < b.instructions.length;
-            operationIndex++
+          let blockBitTest:
+            | {
+                readonly andId: number;
+                readonly source: number;
+                readonly n: 0 | 1;
+                readonly immr: number;
+                readonly imms: number;
+              }
+            | undefined = undefined;
+          if (
+            comparisonValue !== undefined &&
+            comparisonIndex >= 1 &&
+            blockDiamond?.nested === undefined
           ) {
-            const op: IRInstruction | undefined =
-              b.instructions[operationIndex];
-            if (op === undefined) throw "instruction invariant";
-            siteIndex = operationIndex;
+            const cmpOp = b.instructions[comparisonIndex];
             if (
-              op.kind !== "load" &&
-              op.kind !== "store" &&
-              op.kind !== "constant" &&
-              !(
-                op.kind === "c-memory" &&
-                (op.access.operation === "load" ||
-                  op.access.operation === "store" ||
-                  op.access.operation === "fits" ||
-                  op.access.operation === "available")
+              cmpOp !== undefined &&
+              cmpOp.kind === "binary" &&
+              (cmpOp.operator === "===" ||
+                cmpOp.operator === "!==" ||
+                cmpOp.operator === "==" ||
+                cmpOp.operator === "!=") &&
+              typeOf(cmpOp.left) === "number"
+            ) {
+              const rZero = zeroConstants[valueIds.intern(cmpOp.right)] === 1,
+                lZero = zeroConstants[valueIds.intern(cmpOp.left)] === 1;
+              if (rZero !== lZero) {
+                const bitId = rZero ? cmpOp.left : cmpOp.right;
+                if ((valueUses[valueIds.intern(bitId)] ?? 0) === 1) {
+                  let scanBit = comparisonIndex - 1;
+                  while (
+                    scanBit >= 0 &&
+                    b.instructions[scanBit]?.kind === "constant"
+                  )
+                    scanBit--;
+                  const bitOp =
+                    scanBit >= 0 ? b.instructions[scanBit] : undefined;
+                  if (
+                    bitOp !== undefined &&
+                    bitOp.kind === "binary" &&
+                    bitOp.operator === "&" &&
+                    bitOp.id === bitId &&
+                    bitOp.left !== bitOp.right &&
+                    !shiftedOps.has(bitOp.id) &&
+                    rotatedShifts[valueIds.intern(bitOp.id)] !== 1 &&
+                    fusedShifts[valueIds.intern(bitOp.id)] !== 1
+                  ) {
+                    const lc = numberConstant(bitOp.left),
+                      rc = numberConstant(bitOp.right);
+                    const mask = rc ?? lc;
+                    const source = rc !== undefined ? bitOp.left : bitOp.right;
+                    if (mask !== undefined) {
+                      const fields = logicalImmediate32(mask >>> 0);
+                      if (fields !== undefined) {
+                        fusedBitTests[valueIds.intern(bitOp.id)] = 1;
+                        blockBitTest = {
+                          andId: bitOp.id,
+                          source,
+                          n: fields.n,
+                          immr: fields.immr,
+                          imms: fields.imms,
+                        };
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          const activeFusedAdd = new Map<
+            number,
+            {
+              readonly add: boolean;
+              readonly left: number;
+              readonly right: number;
+              readonly leftIsInt: boolean;
+            }
+          >();
+          /** Optional-number `?? 0` values elided directly into a fused
+           * `(int +/- (opt ?? 0)) | 0`: FJCVTZS sets Z=0 for NaN (including
+           * absentNumber), routing undefined cleanly to the slow path. */
+          const elidedOptOr = new Map<number, number>();
+          // Bitwise results feeding only an adjacent non-clamped integer
+          // typed-array store need no sxtw (and redundant |0/^0/&0xff/&0xffff
+          // masks can be bypassed when the source is already an exact integer).
+          for (let at = 1; at < b.instructions.length; at++) {
+            const op = b.instructions[at];
+            if (op === undefined) continue;
+            if (
+              op.kind === "store" &&
+              wordOnlySlots[op.slot] === 1 &&
+              (valueUses[valueIds.intern(op.value)] ?? 0) === 1
+            ) {
+              lowWordStoreValues[valueIds.intern(op.value)] = 1;
+              continue;
+            }
+            if (op.kind !== "array-store") continue;
+            const arrType = value(op.array).type,
+              elem = typedArrayLayout(typedArrayType(arrType)).element,
+              scale = typedArrayScale(arrType);
+            if (
+              elem === "float" ||
+              elem === "clamped" ||
+              (valueUses[valueIds.intern(op.value)] ?? 0) !== 1
+            )
+              continue;
+            const prev = b.instructions[at - 1];
+            if (
+              prev === undefined ||
+              prev.kind !== "binary" ||
+              prev.id !== op.value ||
+              !["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                prev.operator,
               )
             )
-              viewToken = -1;
-            else if (op.kind === "load") {
-              const index = viewSlots.get(op.slot) ?? -1,
-                known = index < 0 ? -1 : (viewSlotTokens[index] ?? -1);
-              if (known >= 0) viewValueTokens.set(op.id, known);
-              else if (index >= 0)
-                viewSlotTokens[index] = viewValueToken(op.id);
-            } else if (op.kind === "store") {
-              const index = viewSlots.get(op.slot) ?? -1;
-              if (index >= 0) viewSlotTokens[index] = viewValueToken(op.value);
+              continue;
+            lowWordStoreValues[valueIds.intern(prev.id)] = 1;
+            if (
+              (prev.operator === "|" || prev.operator === "^") &&
+              !pendingFusedAdd.has(prev.left) &&
+              !pendingFusedAdd.has(prev.right)
+            ) {
+              if (zeroConstants[valueIds.intern(prev.right)] === 1)
+                storeBypassCandidate.set(prev.id, prev.left);
+              else if (zeroConstants[valueIds.intern(prev.left)] === 1)
+                storeBypassCandidate.set(prev.id, prev.right);
+            } else if (prev.operator === "&" && (scale === 0 || scale === 1)) {
+              const need = scale === 0 ? 0xff : 0xffff,
+                rc = numberConstant(prev.right),
+                lc = numberConstant(prev.left);
+              if (
+                rc !== undefined &&
+                Number.isInteger(rc) &&
+                (rc & need) === need
+              )
+                storeBypassCandidate.set(prev.id, prev.left);
+              else if (
+                lc !== undefined &&
+                Number.isInteger(lc) &&
+                (lc & need) === need
+              )
+                storeBypassCandidate.set(prev.id, prev.right);
             }
-            if (recordOperations) beginOperation(b.id, operationIndex, op);
-            if (tracker !== undefined)
-              tracker.operation(
-                b.id,
-                operationIndex,
-                op.inline ?? -1,
-                instructions.length * 4,
-              );
-            span = { start: op.start, end: op.end };
+          }
+          // Direct-to-slot register targeting: when a binary op feeds a store
+          // into a register-homed slot (FP number slot or GP integer slot) and
+          // nothing between them touches that register or throws, compute
+          // directly into the slot register (eliminating 2-cycle FP fmov on
+          // loop-carried sums/stencils and redundant GP mov on loop counters).
+          directFloatAlias.clear();
+          if (tracker === undefined && scalarRegisters !== undefined) {
+            const regs = scalarRegisters;
+            for (let sIdx = 0; sIdx < b.instructions.length; sIdx++) {
+              const sOp = b.instructions[sIdx];
+              if (
+                sOp === undefined ||
+                sOp.kind !== "store" ||
+                fn.slots[sOp.slot] !== "number"
+              )
+                continue;
+              const isIntSlot = integerSlots[sOp.slot] === 1;
+              const destReg = regs[slotOffset(sOp.slot) / 8] ?? 0;
+              if (isIntSlot ? destReg < 32 : destReg === 0 || destReg >= 32)
+                continue;
+              const valIdx = valueIds.intern(sOp.value),
+                useTotal = valueUses[valIdx] ?? 0;
+              if (useTotal < 1 || (isIntSlot && useTotal !== 1)) continue;
+              if (!isIntSlot && directFloatTarget[valIdx] !== 0) continue;
+              let defIdx = -1,
+                safe = true;
+              for (let k = sIdx - 1; k >= 0; k--) {
+                const mid = b.instructions[k];
+                if (mid === undefined) {
+                  safe = false;
+                  break;
+                }
+                if (
+                  (mid.kind === "binary" ||
+                    (isIntSlot &&
+                      mid.kind === "unary" &&
+                      mid.operator === "uint32")) &&
+                  mid.id === sOp.value
+                ) {
+                  defIdx = k;
+                  break;
+                }
+                if (
+                  mid.kind !== "load" &&
+                  mid.kind !== "store" &&
+                  mid.kind !== "constant" &&
+                  mid.kind !== "binary" &&
+                  mid.kind !== "unary" &&
+                  mid.kind !== "array-element" &&
+                  mid.kind !== "array-store" &&
+                  mid.kind !== "array-length" &&
+                  mid.kind !== "string-length" &&
+                  mid.kind !== "reference-value" &&
+                  mid.kind !== "optional-wrap"
+                ) {
+                  safe = false;
+                  break;
+                }
+                if (
+                  (mid.kind === "load" || mid.kind === "store") &&
+                  (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                ) {
+                  safe = false;
+                  break;
+                }
+              }
+              if (!safe || defIdx < 0) continue;
+              let ins = b.instructions[defIdx],
+                targetValId = sOp.value,
+                targetValIdx = valIdx,
+                bypassOrIdx = -1;
+              // When storing `uint32(x)` to an integer slot where `x` is a
+              // single-use integer `binary` op in this block, elide the
+              // identity `uint32` copy and target `x` directly into `destReg`.
+              if (
+                isIntSlot &&
+                ins !== undefined &&
+                ins.kind === "unary" &&
+                ins.operator === "uint32" &&
+                !storeBypassCandidate.has(ins.id)
+              ) {
+                const innerId = ins.operand,
+                  innerIdx = valueIds.intern(innerId);
+                if ((valueUses[innerIdx] ?? 0) === 1) {
+                  let innerDef = -1,
+                    innerSafe = true;
+                  for (let k = defIdx - 1; k >= 0; k--) {
+                    const mid = b.instructions[k];
+                    if (mid === undefined) {
+                      innerSafe = false;
+                      break;
+                    }
+                    if (mid.kind === "binary" && mid.id === innerId) {
+                      innerDef = k;
+                      break;
+                    }
+                    if (
+                      mid.kind !== "load" &&
+                      mid.kind !== "store" &&
+                      mid.kind !== "constant" &&
+                      mid.kind !== "binary" &&
+                      mid.kind !== "unary"
+                    ) {
+                      innerSafe = false;
+                      break;
+                    }
+                    if (
+                      (mid.kind === "load" || mid.kind === "store") &&
+                      (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                    ) {
+                      innerSafe = false;
+                      break;
+                    }
+                  }
+                  const innerOp =
+                    innerSafe && innerDef >= 0
+                      ? b.instructions[innerDef]
+                      : undefined;
+                  if (
+                    innerOp !== undefined &&
+                    innerOp.kind === "binary" &&
+                    (innerOp.operator === "+" ||
+                      innerOp.operator === "-" ||
+                      innerOp.operator === "*") &&
+                    !pendingFusedAdd.has(innerOp.id)
+                  ) {
+                    bypassOrIdx = defIdx;
+                    defIdx = innerDef;
+                    ins = innerOp;
+                    targetValId = innerId;
+                    targetValIdx = innerIdx;
+                  }
+                }
+              }
+              if (
+                ins === undefined ||
+                ins.kind !== "binary" ||
+                pendingFusedAdd.has(ins.id)
+              )
+                continue;
+              // When storing `(x | 0)` or `(x ^ 0)` to an integer slot where `x`
+              // is already a single-use signed 32-bit bitwise op in this block,
+              // elide the redundant `| 0` and target `x` directly into `destReg`.
+              if (
+                isIntSlot &&
+                (ins.operator === "|" || ins.operator === "^") &&
+                !pendingFusedAdd.has(ins.left) &&
+                !pendingFusedAdd.has(ins.right) &&
+                !storeBypassCandidate.has(ins.id) &&
+                (zeroConstants[valueIds.intern(ins.right)] === 1 ||
+                  zeroConstants[valueIds.intern(ins.left)] === 1)
+              ) {
+                const innerId =
+                    zeroConstants[valueIds.intern(ins.right)] === 1
+                      ? ins.left
+                      : ins.right,
+                  innerIdx = valueIds.intern(innerId);
+                if ((valueUses[innerIdx] ?? 0) === 1) {
+                  let innerDef = -1,
+                    innerSafe = true;
+                  for (let k = defIdx - 1; k >= 0; k--) {
+                    const mid = b.instructions[k];
+                    if (mid === undefined) {
+                      innerSafe = false;
+                      break;
+                    }
+                    if (mid.kind === "binary" && mid.id === innerId) {
+                      innerDef = k;
+                      break;
+                    }
+                    if (
+                      mid.kind !== "load" &&
+                      mid.kind !== "store" &&
+                      mid.kind !== "constant" &&
+                      mid.kind !== "binary" &&
+                      mid.kind !== "unary"
+                    ) {
+                      innerSafe = false;
+                      break;
+                    }
+                    if (
+                      (mid.kind === "load" || mid.kind === "store") &&
+                      (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                    ) {
+                      innerSafe = false;
+                      break;
+                    }
+                  }
+                  const innerOp =
+                    innerSafe && innerDef >= 0
+                      ? b.instructions[innerDef]
+                      : undefined;
+                  if (
+                    innerOp !== undefined &&
+                    innerOp.kind === "binary" &&
+                    ["&", "|", "^", "<<", ">>", "imul"].includes(
+                      innerOp.operator,
+                    ) &&
+                    rotatedShifts[innerIdx] !== 1 &&
+                    fusedShifts[innerIdx] !== 1 &&
+                    !storeBypassCandidate.has(innerOp.id) &&
+                    !pendingFusedAdd.has(innerOp.id)
+                  ) {
+                    bypassOrIdx = defIdx;
+                    defIdx = innerDef;
+                    ins = innerOp;
+                    targetValId = innerId;
+                    targetValIdx = innerIdx;
+                  }
+                }
+              }
+              if (ins === undefined || ins.kind !== "binary") continue;
+              if (isIntSlot) {
+                if (
+                  ins.operator !== "+" &&
+                  ins.operator !== "-" &&
+                  ins.operator !== "*" &&
+                  ins.operator !== "&" &&
+                  ins.operator !== "|" &&
+                  ins.operator !== "^" &&
+                  ins.operator !== "<<" &&
+                  ins.operator !== ">>" &&
+                  ins.operator !== ">>>" &&
+                  ins.operator !== "imul"
+                )
+                  continue;
+                if (
+                  rotatedShifts[targetValIdx] === 1 ||
+                  fusedShifts[targetValIdx] === 1 ||
+                  storeBypassCandidate.has(ins.id)
+                )
+                  continue;
+              } else if (
+                !["+", "-", "*", "/", "min", "max"].includes(ins.operator) ||
+                integerUses[targetValIdx] === 1
+              )
+                continue;
+              // For multi-use FP values, every other consumer must read via
+              // floatOperand/floatLoad and no write to `destReg` (or call) may
+              // occur before the last use of `sOp.value`.
+              if (!isIntSlot && useTotal > 1) {
+                let lastUse = sIdx;
+                for (let k = defIdx + 1; k < b.instructions.length; k++) {
+                  const later = b.instructions[k];
+                  if (later === undefined) {
+                    safe = false;
+                    break;
+                  }
+                  let usesVal = false;
+                  visitInstructionOperands(later, (id) => {
+                    if (id === sOp.value) usesVal = true;
+                  });
+                  if (usesVal) {
+                    if (k > lastUse) lastUse = k;
+                    if (k !== sIdx) {
+                      const okConsumer =
+                        (later.kind === "array-store" &&
+                          later.value === sOp.value &&
+                          later.index !== sOp.value &&
+                          (value(later.array).type === "Float64Array" ||
+                            value(later.array).type === "Float32Array")) ||
+                        (later.kind === "binary" &&
+                          ["+", "-", "*", "/", "min", "max"].includes(
+                            later.operator,
+                          ));
+                      if (!okConsumer) {
+                        safe = false;
+                        break;
+                      }
+                    }
+                  }
+                }
+                visitTerminatorOperands(b.terminator, (id) => {
+                  if (id === sOp.value) safe = false;
+                });
+                for (let k = defIdx + 1; safe && k <= lastUse; k++) {
+                  if (k === sIdx) continue;
+                  const later = b.instructions[k];
+                  if (
+                    later === undefined ||
+                    (later.kind === "store" &&
+                      (regs[slotOffset(later.slot) / 8] ?? 0) === destReg)
+                  )
+                    safe = false;
+                  else if (
+                    later.kind !== "load" &&
+                    later.kind !== "store" &&
+                    later.kind !== "constant" &&
+                    later.kind !== "binary" &&
+                    later.kind !== "unary" &&
+                    later.kind !== "array-element" &&
+                    later.kind !== "array-store" &&
+                    later.kind !== "array-length" &&
+                    later.kind !== "string-length" &&
+                    later.kind !== "reference-value" &&
+                    later.kind !== "optional-wrap"
+                  )
+                    safe = false;
+                }
+                if (!safe) continue;
+              }
+              const checkLiveReg = (id: number): void => {
+                if (
+                  id !== sOp.value &&
+                  id !== targetValId &&
+                  homeOf(id) === destReg
+                )
+                  safe = false;
+              };
+              for (let k = defIdx + 1; k < b.instructions.length; k++) {
+                if (k === sIdx || k === bypassOrIdx) continue;
+                const later = b.instructions[k];
+                if (later !== undefined)
+                  visitInstructionOperands(later, checkLiveReg);
+              }
+              visitTerminatorOperands(b.terminator, checkLiveReg);
+              if (!safe) continue;
+              if (bypassOrIdx >= 0) {
+                storeBypassCandidate.set(sOp.value, targetValId);
+                if (wordOnlySlots[sOp.slot] === 1)
+                  lowWordStoreValues[targetValIdx] = 1;
+              }
+              if (isIntSlot) directIntTarget[targetValIdx] = destReg - 32 + 1;
+              else directFloatTarget[targetValIdx] = destReg + 1;
+            }
+          }
+          const loadFloatSelectArm = (
+            arm: SelectArm,
+            scratch: number,
+          ): number => {
+            if (arm.kind === "load") {
+              const offset = slotOffset(arm.slot),
+                reg = scalarRegisters?.[offset / 8] ?? 0;
+              if (integerSlots[arm.slot] === 1) {
+                const intReg = reg >= 32 ? reg - 32 : 9;
+                if (reg < 32) rawLoad(9, offset);
+                emit({ op: "scvtf-d-x", rd: scratch, rn: intReg });
+                return scratch;
+              }
+              if (reg > 0 && reg < 32) return reg;
+              if (reg >= 32)
+                emit({ op: "fmov-d-x", rd: scratch, rn: reg - 32 });
+              else emit({ op: "ldr-d", rt: scratch, rn: "sp", offset });
+              return scratch;
+            }
+            const constant = arm.value;
+            if (typeof constant !== "number")
+              throw "float select arm invariant";
+            const bits = encodeFloat64(constant);
+            if (bits.lo === 0 && bits.hi === 0) {
+              emit({ op: "fmov-d-x", rd: scratch, rn: "zr" });
+              return scratch;
+            }
+            const immediate = float64Immediate(constant);
+            if (immediate !== undefined) {
+              emit({ op: "fmov-d-imm", rd: scratch, imm8: immediate });
+              return scratch;
+            }
+            imm64(9, bits.lo, bits.hi);
+            emit({ op: "fmov-d-x", rd: scratch, rn: 9 });
+            return scratch;
+          };
+          const loadRawSelectArm = (
+            arm: SelectArm,
+            scratch: number,
+          ): number | "zr" => {
+            if (arm.kind === "none") return "zr";
+            if (arm.kind === "constant") {
+              const constant = arm.value;
+              if (typeof constant === "boolean") {
+                if (!constant) return "zr";
+                imm(scratch, 1);
+                return scratch;
+              }
+              const lo = ((constant % 4294967296) + 4294967296) % 4294967296,
+                hi =
+                  (Math.floor(constant / 4294967296) + 4294967296) % 4294967296;
+              if (lo === 0 && hi === 0) return "zr";
+              imm64(scratch, lo, hi);
+              return scratch;
+            }
+            const offset = slotOffset(arm.slot),
+              reg = scalarRegisters?.[offset / 8] ?? 0;
+            if (reg >= 32) return reg - 32;
+            rawLoad(scratch, offset);
+            return scratch;
+          };
+          const emitNestedSelect = (
+            nested: NestedSelect,
+            isFloat: boolean,
+          ): void => {
+            clearWordCaches();
+            const cmp = nested.compare;
+            let innerCond: Condition;
+            let cachedCmpLeftReg = -1,
+              cachedCmpRightReg = -1;
+            if (cmp.type === "number") {
+              const isIntOperand = (arm: SelectArm): boolean =>
+                arm.kind === "load"
+                  ? integerSlots[arm.slot] === 1
+                  : arm.kind === "constant" &&
+                    typeof arm.value === "number" &&
+                    Number.isSafeInteger(arm.value) &&
+                    !(arm.value === 0 && 1 / arm.value < 0);
+              const integerCmp =
+                isIntOperand(cmp.left) && isIntOperand(cmp.right);
+              if (integerCmp) {
+                const lReg = loadRawSelectArm(cmp.left, 9),
+                  rReg = loadRawSelectArm(cmp.right, 10);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: lReg,
+                  rm: rReg,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+              } else {
+                const lReg = loadFloatSelectArm(cmp.left, 0),
+                  rReg = loadFloatSelectArm(cmp.right, 1);
+                cachedCmpLeftReg = lReg;
+                cachedCmpRightReg = rReg;
+                emit({ op: "fcmp", rn: lReg, rm: rReg });
+              }
+              innerCond =
+                cmp.operator === "===" || cmp.operator === "=="
+                  ? "eq"
+                  : cmp.operator === "!==" || cmp.operator === "!="
+                    ? "ne"
+                    : cmp.operator === "<"
+                      ? integerCmp
+                        ? "lt"
+                        : "mi"
+                      : cmp.operator === "<="
+                        ? integerCmp
+                          ? "le"
+                          : "ls"
+                        : cmp.operator === ">"
+                          ? "gt"
+                          : "ge";
+            } else {
+              const lReg = loadRawSelectArm(cmp.left, 9),
+                rReg = loadRawSelectArm(cmp.right, 10);
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: "zr",
+                rn: lReg,
+                rm: rReg,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              innerCond =
+                cmp.operator === "===" || cmp.operator === "==" ? "eq" : "ne";
+            }
+            if (isFloat) {
+              const sameFloat = (
+                a: number | boolean,
+                b: number | boolean,
+              ): boolean =>
+                typeof a === "number" &&
+                typeof b === "number" &&
+                a === b &&
+                (a !== 0 || 1 / a === 1 / b);
+              const reuseFloat = (arm: SelectArm, scratch: number): number => {
+                if (
+                  cachedCmpRightReg >= 0 &&
+                  arm.kind === "constant" &&
+                  cmp.right.kind === "constant" &&
+                  sameFloat(arm.value, cmp.right.value)
+                )
+                  return cachedCmpRightReg;
+                if (
+                  cachedCmpLeftReg >= 0 &&
+                  arm.kind === "constant" &&
+                  cmp.left.kind === "constant" &&
+                  sameFloat(arm.value, cmp.left.value)
+                )
+                  return cachedCmpLeftReg;
+                return loadFloatSelectArm(arm, scratch);
+              };
+              const tReg = reuseFloat(nested.innerDiamond.trueArm, 0),
+                fReg = reuseFloat(
+                  nested.innerDiamond.falseArm,
+                  tReg === 1 ? 0 : 1,
+                );
+              emit({
+                op: "fcsel",
+                rd: 2,
+                rn: tReg,
+                rm: fReg,
+                condition: innerCond,
+              });
+            } else {
+              const tReg = loadRawSelectArm(nested.innerDiamond.trueArm, 9),
+                fReg = loadRawSelectArm(nested.innerDiamond.falseArm, 10);
+              emit({
+                op: "csel",
+                width: 64,
+                rd: 14,
+                rn: tReg,
+                rm: fReg,
+                condition: innerCond,
+              });
+            }
+            clearWordCaches();
+          };
+          const blockNested = blockDiamond?.nested;
+          const recordInstructionFacts = (op: IRInstruction): void => {
             if (op.kind === "load") {
               const index = valueIds.intern(op.id);
               if (slotIntegerFacts !== undefined) {
                 const mask = slotIntegerFacts[op.slot] ?? 0,
                   safeBound = safeSlotBounds[op.slot] ?? 0;
                 if (fn.slots[op.slot] === "number") {
-                  if (mask === 1) wordKinds[index] = 2;
-                  else if (safeBound > 0) {
+                  if (mask === 1) {
+                    wordKinds[index] = 2;
+                    if (safeBound > 0) wordMagnitudes[index] = safeBound;
+                  } else if (safeBound > 0) {
                     wordKinds[index] = 6;
                     wordMagnitudes[index] = safeBound;
                   } else if (mask !== 0 && (mask & ~3) === 0)
@@ -13255,7 +15285,12 @@ function emitModuleForms(
               if (
                 op.kind === "reference-value" ||
                 op.kind === "primitive-wrap" ||
-                op.kind === "primitive-reference"
+                op.kind === "primitive-reference" ||
+                op.kind === "record-new" ||
+                op.kind === "array-new" ||
+                op.kind === "reference-vector-new" ||
+                op.kind === "function-new" ||
+                op.kind === "string-literal"
               )
                 nonNullValues[valueIds.intern(op.id)] = 1;
               else if (op.kind === "reference-wrap")
@@ -13317,9 +15352,37 @@ function emitModuleForms(
                 ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
                   op.operator,
                 ))
-            )
-              wordKinds[valueIds.intern(op.id)] = 2;
-            else if (
+            ) {
+              const index = valueIds.intern(op.id);
+              wordKinds[index] = 2;
+              if (op.kind === "binary" && op.operator === "&") {
+                const lc = numberConstant(op.left),
+                  rc = numberConstant(op.right);
+                const mask =
+                  rc !== undefined &&
+                  Number.isInteger(rc) &&
+                  rc >= 0 &&
+                  rc <= 2147483647
+                    ? rc
+                    : lc !== undefined &&
+                        Number.isInteger(lc) &&
+                        lc >= 0 &&
+                        lc <= 2147483647
+                      ? lc
+                      : undefined;
+                if (mask !== undefined)
+                  wordMagnitudes[index] = Math.max(1, mask);
+              } else if (op.kind === "binary" && op.operator === ">>>") {
+                const rc = numberConstant(op.right);
+                if (
+                  rc !== undefined &&
+                  Number.isInteger(rc) &&
+                  rc >= 1 &&
+                  rc <= 31
+                )
+                  wordMagnitudes[index] = Math.max(1, 0xffffffff >>> rc);
+              }
+            } else if (
               op.kind === "array-length" ||
               op.kind === "string-length" ||
               op.kind === "element-count" ||
@@ -13328,12 +15391,12 @@ function emitModuleForms(
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
               op.kind === "array-read" &&
-              value(op.array).type !== "Float64Array"
+              typedArrayIntegerElements(typedArrayType(value(op.array).type))
             )
               wordKinds[valueIds.intern(op.id)] = 4;
             else if (
               op.kind === "array-element" &&
-              value(op.array).type !== "Float64Array"
+              typedArrayIntegerElements(typedArrayType(value(op.array).type))
             )
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
@@ -13446,6 +15509,245 @@ function emitModuleForms(
                 wordMagnitudes[index] = Math.max(1, magnitude);
               }
             }
+            if (op.kind === "binary" && op.operator === "%") {
+              // An exact integer modulo a nonzero integer constant d is an
+              // integer below |d| in magnitude (-0 aside, as for sums); one
+              // modulo a nonzero slot's value is below that value's bound,
+              // and no larger than the dividend.
+              const divisor = numberConstant(op.right),
+                index = valueIds.intern(op.id);
+              if (
+                divisor !== undefined &&
+                Number.isSafeInteger(divisor) &&
+                divisor !== 0 &&
+                exactInteger(op.left)
+              ) {
+                wordKinds[index] = 6;
+                wordMagnitudes[index] = Math.max(1, Math.abs(divisor) - 1);
+              } else if (
+                nonzeroValues[valueIds.intern(op.right)] === 1 &&
+                exactInteger(op.left) &&
+                exactInteger(op.right)
+              ) {
+                const left = wordMagnitude(valueIds.intern(op.left)),
+                  right = wordMagnitude(valueIds.intern(op.right));
+                if (left >= 0 && right >= 0) {
+                  wordKinds[index] = 6;
+                  wordMagnitudes[index] = Math.max(
+                    1,
+                    Math.min(left, right - 1),
+                  );
+                }
+              }
+            }
+          };
+          // Batch contiguous constant-size nursery allocations separated only by
+          // non-allocating, non-trapping instructions into one nursery check.
+          let batchAllocKind: Uint8Array | undefined = undefined,
+            batchAllocBytes: Uint16Array | undefined = undefined;
+          if (
+            linearAllocation &&
+            !interruptible &&
+            allocationScratchBytes >= 24 &&
+            allocationOffset + 24 <= 32760 &&
+            b.instructions.length >= 2
+          ) {
+            const batchSize = (inst: IRInstruction): number => {
+              if (inst.kind === "record-new") {
+                const layout = module.records?.[inst.record];
+                return layout !== undefined &&
+                  layout.byteLength > 0 &&
+                  layout.byteLength <= 4095
+                  ? layout.byteLength
+                  : 0;
+              }
+              if (inst.kind === "array-new") {
+                const constLen = numberConstant(inst.length);
+                if (
+                  constLen !== undefined &&
+                  Number.isInteger(constLen) &&
+                  constLen >= 0 &&
+                  constLen <= 0xffffffff &&
+                  !(constLen === 0 && 1 / constLen < 0)
+                ) {
+                  const scale = typedArrayScale(inst.type),
+                    rawExtent =
+                      nativeArrayInlineOffset + 7 + constLen * (1 << scale);
+                  if (rawExtent <= 0xffffffff) {
+                    const byteLen = Math.floor(rawExtent / 8) * 8;
+                    if (
+                      byteLen <= 4095 &&
+                      byteLen - nativeArrayInlineOffset <= 64
+                    )
+                      return byteLen;
+                  }
+                }
+                return 0;
+              }
+              if (
+                inst.kind === "function-new" &&
+                inst.environment === undefined &&
+                nativeFunctionByteLength <= 4095
+              )
+                return nativeFunctionByteLength;
+              return 0;
+            };
+            const batchSafeOp = (inst: IRInstruction): boolean => {
+              if (
+                inst.kind === "constant" ||
+                inst.kind === "load" ||
+                inst.kind === "store" ||
+                inst.kind === "array-store" ||
+                inst.kind === "reference-none" ||
+                inst.kind === "undefined" ||
+                inst.kind === "boolean-wrap" ||
+                inst.kind === "optional-wrap" ||
+                inst.kind === "reference-wrap" ||
+                inst.kind === "string-wrap" ||
+                inst.kind === "primitive-wrap" ||
+                inst.kind === "string-reference" ||
+                inst.kind === "reference-string" ||
+                inst.kind === "closure-environment"
+              )
+                return true;
+              if (
+                (inst.kind === "reference-value" ||
+                  inst.kind === "string-value" ||
+                  inst.kind === "primitive-reference") &&
+                provenNonNull !== undefined &&
+                provenNonNull[valueIds.intern(inst.value)] === 1
+              )
+                return true;
+              if (inst.kind === "unary")
+                return (
+                  inst.operator === "neg" ||
+                  inst.operator === "-" ||
+                  inst.operator === "~" ||
+                  inst.operator === "!" ||
+                  inst.operator === "uint32" ||
+                  inst.operator === "trunc" ||
+                  inst.operator === "ceil" ||
+                  inst.operator === "abs" ||
+                  inst.operator === "sqrt" ||
+                  inst.operator === "boolean-number"
+                );
+              if (inst.kind === "binary") {
+                if (
+                  inst.operator === "/" ||
+                  inst.operator === "%" ||
+                  inst.operator === "**"
+                )
+                  return false;
+                const lt = value(inst.left).type,
+                  rt = value(inst.right).type;
+                return (
+                  (lt === "number" && rt === "number") ||
+                  (lt === "boolean" && rt === "boolean")
+                );
+              }
+              return false;
+            };
+            let runIndices: number[] = [],
+              runTotal = 0;
+            const commitRun = (): void => {
+              if (runIndices.length >= 2) {
+                const kindArr =
+                    batchAllocKind ?? new Uint8Array(b.instructions.length),
+                  bytesArr =
+                    batchAllocBytes ?? new Uint16Array(b.instructions.length);
+                batchAllocKind = kindArr;
+                batchAllocBytes = bytesArr;
+                const firstIdx = runIndices[0],
+                  lastIdx = runIndices[runIndices.length - 1];
+                if (firstIdx !== undefined && lastIdx !== undefined) {
+                  kindArr[firstIdx] = 1;
+                  bytesArr[firstIdx] = runTotal;
+                  for (let r = 1; r < runIndices.length - 1; r++) {
+                    const midIdx = runIndices[r];
+                    if (midIdx !== undefined) kindArr[midIdx] = 2;
+                  }
+                  kindArr[lastIdx] = 3;
+                }
+              }
+              runIndices = [];
+              runTotal = 0;
+            };
+            for (let idx = 0; idx < b.instructions.length; idx++) {
+              const inst = b.instructions[idx];
+              if (inst === undefined) {
+                commitRun();
+                continue;
+              }
+              const sz = batchSize(inst);
+              if (sz > 0) {
+                if (runIndices.length > 0 && runTotal + sz <= 4095) {
+                  runIndices.push(idx);
+                  runTotal += sz;
+                } else {
+                  commitRun();
+                  runIndices.push(idx);
+                  runTotal = sz;
+                }
+              } else if (runIndices.length > 0 && !batchSafeOp(inst)) {
+                commitRun();
+              }
+            }
+            commitRun();
+          }
+          let fusedNumberElement = -1;
+          const wrappedNumberValues = new Map<number, number>();
+          for (
+            let operationIndex = 0;
+            operationIndex < b.instructions.length;
+            operationIndex++
+          ) {
+            if (
+              blockDiamond !== undefined &&
+              blockNested !== undefined &&
+              operationIndex === comparisonIndex
+            ) {
+              const nestedFloat =
+                fn.slots[blockDiamond.targetSlot] === "number" &&
+                integerSlots[blockDiamond.targetSlot] !== 1;
+              emitNestedSelect(blockNested, nestedFloat);
+            }
+            const op: IRInstruction | undefined =
+              b.instructions[operationIndex];
+            if (op === undefined) throw "instruction invariant";
+            siteIndex = operationIndex;
+            if (
+              op.kind !== "load" &&
+              op.kind !== "store" &&
+              op.kind !== "constant" &&
+              !(
+                op.kind === "c-memory" &&
+                (op.access.operation === "load" ||
+                  op.access.operation === "store" ||
+                  op.access.operation === "fits" ||
+                  op.access.operation === "available")
+              )
+            )
+              viewToken = -1;
+            else if (op.kind === "load") {
+              const index = viewSlots.get(op.slot) ?? -1,
+                known = index < 0 ? -1 : (viewSlotTokens[index] ?? -1);
+              if (known >= 0) viewValueTokens.set(op.id, known);
+              else if (index >= 0)
+                viewSlotTokens[index] = viewValueToken(op.id);
+            } else if (op.kind === "store") {
+              const index = viewSlots.get(op.slot) ?? -1;
+              if (index >= 0) viewSlotTokens[index] = viewValueToken(op.value);
+            }
+            if (recordOperations) beginOperation(b.id, operationIndex, op);
+            if (tracker !== undefined)
+              tracker.operation(
+                b.id,
+                operationIndex,
+                op.inline ?? -1,
+                instructions.length * 4,
+              );
+            span = { start: op.start, end: op.end };
+            recordInstructionFacts(op);
             // Binary operations keep an immediate operand deferred, and
             // integer slot stores write a deferred constant directly.
             if (
@@ -13453,6 +15755,8 @@ function emitModuleForms(
               !(op.kind === "store" && integerSlots[op.slot] === 1)
             )
               visitInstructionOperands(op, materializeInteger);
+            currentBatchKind = batchAllocKind?.[operationIndex] ?? 0;
+            currentBatchTotal = batchAllocBytes?.[operationIndex] ?? 0;
             switch (op.kind) {
               case "function-address":
                 if (
@@ -13630,16 +15934,7 @@ function emitModuleForms(
                     nzcv: 4,
                     condition: "ne",
                   });
-                const marker =
-                  op.type === "Uint8Array"
-                    ? 2
-                    : op.type === "Uint16Array"
-                      ? 3
-                      : op.type === "Uint32Array"
-                        ? 4
-                        : op.type === "Float64Array"
-                          ? 5
-                          : 0;
+                const marker = typedArrayMarker(op.type);
                 if (marker === 0) {
                   if (op.branch === true && op.id === comparisonValue)
                     comparisonBranch = "eq";
@@ -13933,7 +16228,9 @@ function emitModuleForms(
                       ? 1
                       : op.error === "Error"
                         ? 2
-                        : 0),
+                        : op.error === "ReferenceError"
+                          ? 3
+                          : 0),
                 );
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
                 rawValue(10, op.message);
@@ -13963,7 +16260,12 @@ function emitModuleForms(
                 rawLoad(10, value(op.value).offset + 8);
                 emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 0 });
                 descriptorPointer(
-                  typeErrorRecord + (op.error === "RangeError" ? 1 : 0),
+                  typeErrorRecord +
+                    (op.error === "RangeError"
+                      ? 1
+                      : op.error === "ReferenceError"
+                        ? 3
+                        : 0),
                 );
                 emit({
                   op: "sub-reg",
@@ -13977,8 +16279,7 @@ function emitModuleForms(
                 });
                 emit({ op: "cset", rd: 9, condition: "eq" });
                 if (op.error === "Error") {
-                  const count = hasPlainErrors ? 3 : 2;
-                  for (let i = 1; i < count; i++) {
+                  for (let i = 1; i < errorDescriptorCount; i++) {
                     descriptorPointer(typeErrorRecord + i);
                     emit({
                       op: "sub-reg",
@@ -14411,16 +16712,7 @@ function emitModuleForms(
                   trapIf({ op: "b.cond", condition: "ne" });
                 }
                 rawLoad(9, value(op.value).offset + 8);
-                const marker =
-                  op.type === "Uint8Array"
-                    ? 2
-                    : op.type === "Uint16Array"
-                      ? 3
-                      : op.type === "Uint32Array"
-                        ? 4
-                        : op.type === "Float64Array"
-                          ? 5
-                          : 0;
+                const marker = typedArrayMarker(op.type);
                 if (marker !== 0) {
                   // The object's header marker (bits 0-47) must be 2:
                   // a typed array of 1-byte elements (any storage kind).
@@ -14540,14 +16832,7 @@ function emitModuleForms(
                   rn: 13,
                   rm: 11,
                   shift: "lsl",
-                  amount:
-                    value(op.array).type === "Uint8Array"
-                      ? 0
-                      : value(op.array).type === "Uint16Array"
-                        ? 1
-                        : value(op.array).type === "Float64Array"
-                          ? 3
-                          : 2,
+                  amount: typedArrayScale(value(op.array).type),
                   setFlags: false,
                 });
                 emit({
@@ -14733,7 +17018,7 @@ function emitModuleForms(
                     rm: 10,
                   });
                   rawLoad(10, contextOffset);
-                  rememberObject();
+                  rememberObject(deferRememberSlow());
                 }
                 break;
               case "weak-slot-clear":
@@ -14748,26 +17033,79 @@ function emitModuleForms(
               case "reference-vector-new":
                 allocateIndexed(op.id, op.length, 3, 6);
                 break;
-              case "array-new":
+              case "array-new": {
+                const scale = typedArrayScale(op.type);
+                let skipZero = false;
+                const constLen = numberConstant(op.length);
+                if (
+                  constLen !== undefined &&
+                  Number.isInteger(constLen) &&
+                  constLen >= 1 &&
+                  constLen <= 8
+                ) {
+                  const rawExtent =
+                      nativeArrayInlineOffset + 7 + constLen * (1 << scale),
+                    byteLen = Math.floor(rawExtent / 8) * 8,
+                    payloadBytes = byteLen - nativeArrayInlineOffset;
+                  if (
+                    payloadBytes <= 64 &&
+                    constLen * (1 << scale) === payloadBytes
+                  ) {
+                    let covered = 0;
+                    const targetMask = (1 << constLen) - 1,
+                      localConst = new Map<number, number>();
+                    for (
+                      let look = operationIndex + 1;
+                      look < b.instructions.length;
+                      look++
+                    ) {
+                      const nextOp = b.instructions[look];
+                      if (nextOp === undefined) break;
+                      if (nextOp.kind === "constant") {
+                        const nv = nextOp.value;
+                        if (typeof nv === "number") {
+                          localConst.set(nextOp.id, nv);
+                          continue;
+                        }
+                      }
+                      if (
+                        nextOp.kind === "array-store" &&
+                        nextOp.array === op.id
+                      ) {
+                        const idx =
+                          localConst.get(nextOp.index) ??
+                          numberConstant(nextOp.index);
+                        if (
+                          idx !== undefined &&
+                          Number.isInteger(idx) &&
+                          idx >= 0 &&
+                          idx < constLen
+                        )
+                          covered |= 1 << idx;
+                        if (covered === targetMask) {
+                          skipZero = true;
+                          break;
+                        }
+                        continue;
+                      }
+                      if (
+                        nextOp.kind !== "load" &&
+                        nextOp.kind !== "unary" &&
+                        nextOp.kind !== "binary"
+                      )
+                        break;
+                    }
+                  }
+                }
                 allocateIndexed(
                   op.id,
                   op.length,
-                  op.type === "Uint8Array"
-                    ? 0
-                    : op.type === "Uint16Array"
-                      ? 1
-                      : op.type === "Float64Array"
-                        ? 3
-                        : 2,
-                  op.type === "Uint8Array"
-                    ? 2
-                    : op.type === "Uint16Array"
-                      ? 3
-                      : op.type === "Float64Array"
-                        ? 5
-                        : 4,
+                  scale,
+                  typedArrayMarker(op.type),
+                  skipZero,
                 );
                 break;
+              }
               case "string-literal":
                 // Used only by inline equality tests: never materialized.
                 if (foldedConstants[valueIds.intern(op.id)] === 1) break;
@@ -17664,9 +20002,67 @@ function emitModuleForms(
               case "reference-value":
               case "primitive-wrap":
               case "primitive-reference":
-                rawValue(9, op.value);
-                trapIf({ op: "cbz", width: 64, rt: 9 });
-                saveRaw(9, op.id);
+                if (skippedCasts[valueIds.intern(op.id)] === 1) break;
+                if (
+                  provenNonNull !== undefined &&
+                  provenNonNull[valueIds.intern(op.value)] === 1
+                ) {
+                  const nextOp = b.instructions[siteIndex + 1];
+                  if (
+                    tracker === undefined &&
+                    nextOp !== undefined &&
+                    nextOp.kind === "store" &&
+                    nextOp.value === op.id &&
+                    (valueUses[valueIds.intern(op.id)] ?? 0) === 1 &&
+                    scalarByteLength(value(op.value).type) === 8
+                  ) {
+                    elidedStoreSource.set(op.id, op.value);
+                    break;
+                  }
+                  const target = rawTarget(op.id, 9);
+                  if (target === 9 && homeOf(op.value) >= 32) {
+                    saveRaw(homeOf(op.value) - 32, op.id);
+                    break;
+                  }
+                  rawValue(target, op.value);
+                  saveRaw(target, op.id);
+                  break;
+                }
+                const castSrc = rawRegister(op.value, 9);
+                trapIf({ op: "cbz", width: 64, rt: castSrc });
+                if (
+                  tracker === undefined &&
+                  (valueUses[valueIds.intern(op.id)] ?? 0) === 1 &&
+                  homeOf(op.value) >= 32
+                ) {
+                  let elidedCast = false;
+                  for (
+                    let k = operationIndex + 1;
+                    k < b.instructions.length && k <= operationIndex + 5;
+                    k++
+                  ) {
+                    const nextAfterCast = b.instructions[k];
+                    if (nextAfterCast === undefined) break;
+                    if (
+                      nextAfterCast.kind === "call" &&
+                      writeShapes[nextAfterCast.target]?.unchecked === true &&
+                      nextAfterCast.arguments[0] === op.id
+                    ) {
+                      elidedCast = true;
+                      break;
+                    }
+                    if (
+                      nextAfterCast.kind !== "load" &&
+                      nextAfterCast.kind !== "constant"
+                    )
+                      break;
+                  }
+                  if (elidedCast) {
+                    elidedStoreSource.set(op.id, op.value);
+                    break;
+                  }
+                }
+                saveRaw(castSrc, op.id);
                 break;
               case "string-reference":
               case "reference-string":
@@ -17702,6 +20098,8 @@ function emitModuleForms(
                 allocate(
                   () => {},
                   (rd) => imm(rd, nativeFunctionByteLength),
+                  false,
+                  nativeFunctionByteLength,
                 );
                 descriptorPointer(functionRecord);
                 emit({
@@ -17758,9 +20156,12 @@ function emitModuleForms(
               case "record-new": {
                 const layout = module.records?.[op.record];
                 if (layout === undefined) throw "record constructor invariant";
+                const recordBatchKind = currentBatchKind;
                 allocate(
                   () => {},
                   (rd) => imm(rd, layout.byteLength),
+                  floatSaveBytes !== 0,
+                  layout.byteLength,
                 );
                 descriptorPointer(op.record);
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
@@ -17797,19 +20198,182 @@ function emitModuleForms(
                     // A missing optional number is `undefined`, not +0.
                     if (
                       (arg === undefined && field.type !== "optional-number") ||
-                      zeroValues[argIndex] === 1
+                      (argIndex >= 0 && zeroValues[argIndex] === 1)
                     ) {
                       zeroWords.push(offset);
                       continue;
                     }
-                    if (arg === undefined || undefinedValues[argIndex] === 1)
+                    const nextNumField =
+                        word === 0 &&
+                        field.type === "number" &&
+                        arg !== undefined &&
+                        field.stateOffset === undefined &&
+                        field.presenceOffset === undefined &&
+                        offset <= 504 &&
+                        offset % 8 === 0
+                          ? layout.fields[i + 1]
+                          : undefined,
+                      nextNumArg =
+                        nextNumField !== undefined
+                          ? op.arguments[i + 1]
+                          : undefined;
+                    if (
+                      arg !== undefined &&
+                      nextNumField !== undefined &&
+                      nextNumField.type === "number" &&
+                      nextNumField.offset === offset + 8 &&
+                      nextNumField.stateOffset === undefined &&
+                      nextNumField.presenceOffset === undefined &&
+                      nextNumArg !== undefined
+                    ) {
+                      const loadFieldFloat = (
+                        valId: number,
+                        scratch: number,
+                      ): number => {
+                        const c = numberConstant(valId);
+                        if (c !== undefined) {
+                          const bits = encodeFloat64(c);
+                          if (bits.lo === 0 && bits.hi === 0) {
+                            emit({ op: "fmov-d-x", rd: scratch, rn: "zr" });
+                            return scratch;
+                          }
+                          const immediate = float64Immediate(c);
+                          if (immediate !== undefined) {
+                            emit({
+                              op: "fmov-d-imm",
+                              rd: scratch,
+                              imm8: immediate,
+                            });
+                            return scratch;
+                          }
+                        }
+                        return floatOperand(valId, scratch);
+                      };
+                      const rt = loadFieldFloat(arg, 0),
+                        rt2 = loadFieldFloat(nextNumArg, 1);
+                      emit({ op: "stp-d", rt, rt2, rn: 9, offset });
+                      i++;
+                      continue;
+                    }
+                    if (
+                      arg !== undefined &&
+                      field.type === "number" &&
+                      offset <= 32760
+                    ) {
+                      const constant = numberConstant(arg);
+                      if (constant !== undefined) {
+                        const bits = encodeFloat64(constant);
+                        if (bits.lo === 0 && bits.hi === 0) {
+                          zeroWords.push(offset);
+                          continue;
+                        }
+                        const immediate = float64Immediate(constant);
+                        if (immediate !== undefined) {
+                          emit({ op: "fmov-d-imm", rd: 0, imm8: immediate });
+                          emit({ op: "str-d", rt: 0, rn: 9, offset });
+                          continue;
+                        }
+                      }
+                    }
+                    if (
+                      arg !== undefined &&
+                      field.type === "number" &&
+                      storedAsInteger(arg)
+                    ) {
+                      floatLoad(0, arg);
+                      if (offset <= 32760)
+                        emit({ op: "str-d", rt: 0, rn: 9, offset });
+                      else {
+                        emit({ op: "fmov-x-d", rd: 10, rn: 0 });
+                        const base = fieldBase(offset);
+                        emit({
+                          op: "str",
+                          width: 64,
+                          rt: 10,
+                          rn: base,
+                          offset: base === 9 ? offset : 0,
+                        });
+                      }
+                      continue;
+                    }
+                    // A word already in a register home is stored from it
+                    // (an FP home without a bank transfer).
+                    if (
+                      arg !== undefined &&
+                      word === 0 &&
+                      zeroRefValues[valueIds.intern(arg)] === 1
+                    ) {
+                      zeroWords.push(offset);
+                      continue;
+                    }
+                    const home =
+                      arg === undefined
+                        ? 0
+                        : (scalarRegisters?.[(value(arg).offset + word) / 8] ??
+                          0);
+                    if (home !== 0 && offset <= 32760) {
+                      if (home < 32)
+                        emit({ op: "str-d", rt: home, rn: 9, offset });
+                      else
+                        emit({
+                          op: "str",
+                          width: 64,
+                          rt: home - 32,
+                          rn: 9,
+                          offset,
+                        });
+                      continue;
+                    }
+                    let srcReg = 10;
+                    if (
+                      arg === undefined ||
+                      (argIndex >= 0 && undefinedValues[argIndex] === 1)
+                    )
                       absentNumber(10);
-                    else rawLoad(10, value(arg).offset + word);
+                    else {
+                      const srcOff = value(arg).offset + word,
+                        cached = stackWords.get(srcOff);
+                      if (cached !== undefined && cached !== 9 && cached !== 12)
+                        srcReg = cached;
+                      else rawLoad(10, srcOff);
+                    }
+                    const nextField =
+                        word === 0 &&
+                        scalarByteLength(field.type) === 8 &&
+                        field.presenceOffset === undefined &&
+                        offset <= 504 &&
+                        offset % 8 === 0
+                          ? layout.fields[i + 1]
+                          : undefined,
+                      nextArg =
+                        nextField !== undefined
+                          ? op.arguments[i + 1]
+                          : undefined;
+                    if (
+                      nextField !== undefined &&
+                      nextField.offset === offset + 8 &&
+                      scalarByteLength(nextField.type) === 8 &&
+                      nextField.presenceOffset === undefined &&
+                      nextArg !== undefined &&
+                      zeroRefValues[valueIds.intern(nextArg)] === 1
+                    ) {
+                      emit({
+                        op: "stp",
+                        width: 64,
+                        rt: srcReg,
+                        rt2: "zr",
+                        rn: 9,
+                        offset,
+                        mode: "offset",
+                      });
+                      i++;
+                      continue;
+                    }
                     const base = fieldBase(offset);
                     emit({
                       op: "str",
                       width: 64,
-                      rt: 10,
+                      rt: srcReg,
                       rn: base,
                       offset: base === 9 ? offset : 0,
                     });
@@ -17901,7 +20465,57 @@ function emitModuleForms(
                   index++;
                 }
                 // No safepoint occurs between allocation, initialization and root publication.
+                const nextAfterRecord = b.instructions[operationIndex + 1];
+                if (
+                  tracker === undefined &&
+                  nextAfterRecord !== undefined &&
+                  (valueUses[valueIds.intern(op.id)] ?? 0) === 1
+                ) {
+                  if (
+                    nextAfterRecord.kind === "store" &&
+                    nextAfterRecord.value === op.id &&
+                    scalarByteLength(
+                      fn.slots[nextAfterRecord.slot] ?? "number",
+                    ) === 8 &&
+                    integerSlots[nextAfterRecord.slot] !== 1
+                  ) {
+                    rawStore(9, slotOffset(nextAfterRecord.slot));
+                    emittedDirectStore[valueIds.intern(op.id)] = 1;
+                    break;
+                  }
+                  if (
+                    nextAfterRecord.kind === "reference-wrap" &&
+                    nextAfterRecord.value === op.id &&
+                    (valueUses[valueIds.intern(nextAfterRecord.id)] ?? 0) === 1
+                  ) {
+                    const afterWrap = b.instructions[operationIndex + 2];
+                    if (
+                      afterWrap !== undefined &&
+                      afterWrap.kind === "store" &&
+                      afterWrap.value === nextAfterRecord.id &&
+                      scalarByteLength(fn.slots[afterWrap.slot] ?? "number") ===
+                        8 &&
+                      integerSlots[afterWrap.slot] !== 1
+                    ) {
+                      rawStore(9, slotOffset(afterWrap.slot));
+                      skippedCasts[valueIds.intern(nextAfterRecord.id)] = 1;
+                      emittedDirectStore[valueIds.intern(nextAfterRecord.id)] =
+                        1;
+                      break;
+                    }
+                  }
+                }
                 saveRaw(9, op.id);
+                if (recordBatchKind === 2 && homeOf(op.id) === 0) {
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: 15,
+                    rn: "zr",
+                    rm: 9,
+                  });
+                  stackWords.set(value(op.id).offset, 15);
+                }
                 break;
               }
               case "constant": {
@@ -17909,11 +20523,17 @@ function emitModuleForms(
                 const constant = op.value,
                   home = value(op.id).offset,
                   register = scalarRegisters?.[home / 8] ?? 0;
+                // Materialized straight into a GP home when there is one.
+                const target = rawTarget(op.id, 9);
                 if (typeof constant === "boolean") {
                   if (constant) {
-                    imm(9, 1);
-                    saveRaw(9, op.id);
-                  } else rawStore("zr", home);
+                    imm(target, 1);
+                    saveRaw(target, op.id);
+                  } else {
+                    rawStore("zr", home);
+                    if (tracker !== undefined)
+                      tracker.saved(op.id, instructions.length * 4);
+                  }
                   break;
                 }
                 if (
@@ -17930,6 +20550,8 @@ function emitModuleForms(
                 if (bits.lo === 0 && bits.hi === 0) {
                   // +0: no materialized bits in either register class.
                   rawStore("zr", home);
+                  if (tracker !== undefined)
+                    tracker.saved(op.id, instructions.length * 4);
                   break;
                 }
                 const immediate =
@@ -17938,10 +20560,12 @@ function emitModuleForms(
                     : undefined;
                 if (immediate !== undefined) {
                   emit({ op: "fmov-d-imm", rd: register, imm8: immediate });
+                  if (tracker !== undefined)
+                    tracker.saved(op.id, instructions.length * 4);
                   break;
                 }
-                imm64(9, bits.lo, bits.hi);
-                saveRaw(9, op.id);
+                imm64(target, bits.lo, bits.hi);
+                saveRaw(target, op.id);
                 break;
               }
               case "record-read": {
@@ -18760,25 +21384,30 @@ function emitModuleForms(
                   rawLoad(10, contextOffset);
                   const transitionOffset = siteShape.offset + 16,
                     valueOffset = value(op.value).offset;
-                  rememberObject((): readonly number[] => {
-                    emit({
-                      op: "ldr",
-                      width: 64,
-                      rt: 13,
-                      rn: site,
-                      offset: transitionOffset,
-                    });
-                    const transition = instructions.length;
-                    emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
-                    const skips = nonReferenceTag(valueOffset);
-                    patchInstruction(transition, {
-                      op: "cbnz",
-                      width: 64,
-                      rt: 13,
-                      displacement: (instructions.length - transition) * 4,
-                    });
-                    return skips;
-                  });
+                  rememberObject(
+                    undefined,
+                    9,
+                    undefined,
+                    (): readonly number[] => {
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 13,
+                        rn: site,
+                        offset: transitionOffset,
+                      });
+                      const transition = instructions.length;
+                      emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                      const skips = nonReferenceTag(valueOffset);
+                      patchInstruction(transition, {
+                        op: "cbnz",
+                        width: 64,
+                        rt: 13,
+                        displacement: (instructions.length - transition) * 4,
+                      });
+                      return skips;
+                    },
+                  );
                 }
                 if (fusedMiss !== undefined) break;
                 const target = rawTarget(op.id, 12);
@@ -19948,6 +22577,22 @@ function emitModuleForms(
               case "record-has": {
                 const field = module.records?.[op.record]?.fields[op.field];
                 if (field === undefined) throw "record presence invariant";
+                // Record flow may prove the object is always this layout
+                // and never null: then only the presence byte remains.
+                const presence = field.presenceOffset;
+                if (
+                  (provenListHeader(op.object, op.record) === 2 ||
+                    provenPresence.has(op)) &&
+                  (presence === undefined || presence < 4096)
+                ) {
+                  if (presence === undefined) imm(12, 1);
+                  else {
+                    rawValue(9, op.object);
+                    emit({ op: "ldrb", rt: 12, rn: 9, offset: presence });
+                  }
+                  saveRaw(12, op.id);
+                  break;
+                }
                 rawValue(9, op.object);
                 imm(12, 0);
                 const absent = instructions.length;
@@ -20076,23 +22721,139 @@ function emitModuleForms(
                   // A fused typed-array read left its element word (zero when
                   // absent) in the payload word: convert it, no selection.
                   rawValue(11, op.value);
-                  if (value(arrayOf(op.value)).type === "Float64Array")
+                  const elements = value(arrayOf(op.value)).type;
+                  if (!typedArrayIntegerElements(typedArrayType(elements)))
                     saveRaw(11, op.id);
                   else if (wantsInteger(op.id)) {
                     saveRaw(11, op.id);
                     markInteger(op.id);
                   } else {
-                    emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                    elementToDouble(elements, 0, 11);
                     floatStore(0, op.id);
                   }
                   break;
                 }
                 // Present selects the payload; absent the fallback.
+                const optHome = homeOf(op.value),
+                  dstHome = homeOf(op.id);
+                if (
+                  tracker === undefined &&
+                  options.hostABI?.javascriptConversion?.kind === "baseline" &&
+                  numberConstant(op.fallback) === 0 &&
+                  (valueUses[valueIds.intern(op.id)] ?? 0) === 1 &&
+                  optHome > 0 &&
+                  optHome < 32
+                ) {
+                  let fusedOk = false;
+                  for (
+                    let k = operationIndex + 1;
+                    k < b.instructions.length;
+                    k++
+                  ) {
+                    const cand = b.instructions[k];
+                    if (cand === undefined) break;
+                    if (
+                      cand.kind === "binary" &&
+                      (cand.operator === "+" || cand.operator === "-") &&
+                      (cand.left === op.id || cand.right === op.id)
+                    ) {
+                      const fusedOrId = pendingFusedAdd.get(cand.id);
+                      if (fusedOrId !== undefined) {
+                        const otherId =
+                          cand.left === op.id ? cand.right : cand.left;
+                        const otherIdx = valueIds.intern(otherId),
+                          otherKind = wordKinds[otherIdx] ?? 0;
+                        let otherFusable =
+                          storedAsInteger(otherId) &&
+                          (otherKind === 2 ||
+                            otherKind === 3 ||
+                            (otherKind === 6 &&
+                              wordMagnitude(otherIdx) <= 0x10000000000000));
+                        if (!otherFusable) {
+                          for (let m = operationIndex + 1; m < k; m++) {
+                            const mid = b.instructions[m];
+                            if (
+                              mid !== undefined &&
+                              mid.kind === "load" &&
+                              mid.id === otherId &&
+                              integerSlots[mid.slot] === 1 &&
+                              (otherKind === 2 ||
+                                otherKind === 3 ||
+                                (otherKind === 6 &&
+                                  wordMagnitude(otherIdx) <= 0x10000000000000))
+                            ) {
+                              otherFusable = true;
+                              break;
+                            }
+                          }
+                        }
+                        if (otherFusable) {
+                          // Verify no instruction between `cand` and `fusedOrId`
+                          // clobbers `optHome`.
+                          let safeToOr = true;
+                          for (let m = k + 1; m < b.instructions.length; m++) {
+                            const tail = b.instructions[m];
+                            if (tail === undefined) {
+                              safeToOr = false;
+                              break;
+                            }
+                            if (tail.kind === "binary" && tail.id === fusedOrId)
+                              break;
+                            if (
+                              tail.kind !== "load" &&
+                              tail.kind !== "constant" &&
+                              tail.kind !== "binary"
+                            ) {
+                              safeToOr = false;
+                              break;
+                            }
+                          }
+                          if (safeToOr) fusedOk = true;
+                        }
+                      }
+                      break;
+                    }
+                    if (
+                      cand.kind !== "load" &&
+                      cand.kind !== "constant" &&
+                      cand.kind !== "binary"
+                    )
+                      break;
+                  }
+                  if (fusedOk) {
+                    elidedOptOr.set(op.id, op.value);
+                    break;
+                  }
+                }
+                if (
+                  optHome > 0 &&
+                  optHome < 32 &&
+                  dstHome > 0 &&
+                  dstHome < 32
+                ) {
+                  const optional = rawRegister(op.value, 9);
+                  absentFlags(optional, 10);
+                  const fallback = floatOperand(op.fallback, 1);
+                  emit({
+                    op: "fcsel",
+                    rd: dstHome,
+                    rn: fallback,
+                    rm: optHome,
+                    condition: "eq",
+                  });
+                  if (tracker !== undefined)
+                    tracker.saved(op.id, instructions.length * 4);
+                  break;
+                }
                 const optional = rawRegister(op.value, 9);
                 absentFlags(optional, 10);
                 // The fallback is never int64 storage (see the integer
                 // operand acceptance list).
-                const fallback = rawRegister(op.fallback, 11);
+                const fbConst = numberConstant(op.fallback),
+                  fallback: number | "zr" =
+                    fbConst === 0 && 1 / fbConst > 0
+                      ? "zr"
+                      : rawRegister(op.fallback, 11);
                 const target = rawTarget(op.id, 9);
                 emit({
                   op: "csel",
@@ -21407,7 +24168,7 @@ function emitModuleForms(
                   function label(name: string): void {
                     if (labels.has(name)) throw "duplicate inline label";
                     labels.set(name, instructions.length);
-                    stackWords.clear();
+                    clearWordCaches();
                   }
                   function branch(
                     name: string,
@@ -24137,6 +26898,16 @@ function emitModuleForms(
                       imm(index, wordConstants[fact] ?? 0);
                       continue;
                     }
+                    const safeConst = numberConstant(argument(index));
+                    if (
+                      safeConst !== undefined &&
+                      Number.isSafeInteger(safeConst) &&
+                      safeConst >= 0 &&
+                      !(safeConst === 0 && 1 / safeConst < 0)
+                    ) {
+                      imm(index, safeConst);
+                      continue;
+                    }
                     if (storedAsInteger(argument(index))) {
                       // Already an exact integer: only the range remains.
                       rawValue(index, argument(index));
@@ -24728,14 +27499,7 @@ function emitModuleForms(
                   rn: 10,
                   offset: nativeArrayLengthOffset,
                 });
-                const shift =
-                  value(op.array).type === "Uint8Array"
-                    ? 0
-                    : value(op.array).type === "Uint16Array"
-                      ? 1
-                      : value(op.array).type === "Float64Array"
-                        ? 3
-                        : 2;
+                const shift = typedArrayScale(value(op.array).type);
                 if (shift !== 0)
                   emit({
                     op: "add-reg",
@@ -24801,6 +27565,19 @@ function emitModuleForms(
                 break;
               case "reference-vector-length":
                 vectorHeader(op.vector);
+                if (wantsInteger(op.id)) {
+                  const target = rawTarget(op.id, 9);
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: target,
+                    rn: 10,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
                 emit({
                   op: "ldr",
                   width: 32,
@@ -24848,7 +27625,7 @@ function emitModuleForms(
                 if (generationalBarriers) {
                   rawValue(9, op.vector);
                   rawLoad(10, contextOffset);
-                  rememberObject();
+                  rememberObject(deferRememberSlow());
                 }
                 break;
               case "reference-vector-copy": {
@@ -25000,7 +27777,7 @@ function emitModuleForms(
                     setFlags: false,
                   });
                   rawLoad(10, contextOffset);
-                  rememberObject();
+                  rememberObject(deferRememberSlow());
                 }
                 patchInstruction(emptyCopy, {
                   op: "cbz",
@@ -25010,83 +27787,220 @@ function emitModuleForms(
                 });
                 break;
               }
-              case "array-read":
+              case "array-read": {
+                const readType = value(op.array).type,
+                  readFpHome = homeOf(op.id),
+                  constReadIdx = numberConstant(op.index);
+                if (
+                  readType === "Float64Array" &&
+                  fusedFallbacks.get(op.id) === undefined &&
+                  fusedReads[valueIds.intern(op.id)] === 0 &&
+                  constReadIdx !== undefined &&
+                  Number.isInteger(constReadIdx) &&
+                  constReadIdx >= 0 &&
+                  constReadIdx <= 4095 &&
+                  !(constReadIdx === 0 && 1 / constReadIdx < 0)
+                ) {
+                  const arrReg = rawRegister(op.array, 9);
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 11,
+                    rn: arrReg,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: arrReg,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: constReadIdx,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  if (readFpHome > 0 && readFpHome < 32) {
+                    const absent = instructions.length;
+                    emit({ op: "b.cond", condition: "ls", displacement: 0 });
+                    emit({
+                      op: "ldr-d",
+                      rt: readFpHome,
+                      rn: 10,
+                      offset: constReadIdx * 8,
+                    });
+                    quietNumber(readFpHome, readFpHome);
+                    if (canDeferColdStub()) {
+                      const resumeAt = instructions.length;
+                      clearWordCaches();
+                      deferredAllocSlowPaths.push(() => {
+                        clearWordCaches();
+                        patchInstruction(absent, {
+                          op: "b.cond",
+                          condition: "ls",
+                          displacement: (instructions.length - absent) * 4,
+                        });
+                        absentNumber(11);
+                        emit({ op: "fmov-d-x", rd: readFpHome, rn: 11 });
+                        emit({
+                          op: "b",
+                          displacement: (resumeAt - instructions.length) * 4,
+                        });
+                      });
+                    } else {
+                      const done = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(absent, {
+                        op: "b.cond",
+                        condition: "ls",
+                        displacement: (instructions.length - absent) * 4,
+                      });
+                      absentNumber(11);
+                      emit({ op: "fmov-d-x", rd: readFpHome, rn: 11 });
+                      patchInstruction(done, {
+                        op: "b",
+                        displacement: (instructions.length - done) * 4,
+                      });
+                    }
+                    if (tracker !== undefined)
+                      tracker.saved(op.id, instructions.length * 4);
+                    break;
+                  }
+                  const absent = instructions.length;
+                  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+                  emit({
+                    op: "ldr-d",
+                    rt: 0,
+                    rn: 10,
+                    offset: constReadIdx * 8,
+                  });
+                  quietNumber(0, 0);
+                  emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                  const done = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(absent, {
+                    op: "b.cond",
+                    condition: "ls",
+                    displacement: (instructions.length - absent) * 4,
+                  });
+                  absentNumber(11);
+                  patchInstruction(done, {
+                    op: "b",
+                    displacement: (instructions.length - done) * 4,
+                  });
+                  saveRaw(11, op.id);
+                  break;
+                }
                 const readIndex = arrayIndex(op.array, op.index);
                 if (
                   fusedFallbacks.get(op.id) === undefined &&
                   fusedReads[valueIds.intern(op.id)] === 0
                 ) {
+                  const fpHome = homeOf(op.id);
+                  if (fpHome > 0 && fpHome < 32) {
+                    // Load in-bounds elements directly into the FP home and
+                    // keep absent NaN materialization off the hot path.
+                    const absent = instructions.length;
+                    emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                    if (loadElement(readType, 10, readIndex, 11, fpHome)) {
+                      if (readType === "Float64Array")
+                        quietNumber(fpHome, fpHome);
+                    } else elementToDouble(readType, fpHome, 11);
+                    if (canDeferColdStub()) {
+                      const resumeAt = instructions.length;
+                      clearWordCaches();
+                      deferredAllocSlowPaths.push(() => {
+                        clearWordCaches();
+                        patchInstruction(absent, {
+                          op: "cbz",
+                          width: 32,
+                          rt: 13,
+                          displacement: (instructions.length - absent) * 4,
+                        });
+                        absentNumber(11);
+                        emit({ op: "fmov-d-x", rd: fpHome, rn: 11 });
+                        emit({
+                          op: "b",
+                          displacement: (resumeAt - instructions.length) * 4,
+                        });
+                      });
+                    } else {
+                      const done = instructions.length;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(absent, {
+                        op: "cbz",
+                        width: 32,
+                        rt: 13,
+                        displacement: (instructions.length - absent) * 4,
+                      });
+                      absentNumber(11);
+                      emit({ op: "fmov-d-x", rd: fpHome, rn: 11 });
+                      patchInstruction(done, {
+                        op: "b",
+                        displacement: (instructions.length - done) * 4,
+                      });
+                    }
+                    if (tracker !== undefined)
+                      tracker.saved(op.id, instructions.length * 4);
+                    break;
+                  }
                   // The boxed result starts as `undefined`; only an
                   // in-range element replaces it, as a quiet number: words
-                  // convert exactly, and doubles are quieted, as their raw
-                  // bits could be the reserved `undefined` NaN.
-                  const type = value(op.array).type,
-                    scale =
-                      type === "Uint8Array"
-                        ? 0
-                        : type === "Uint16Array"
-                          ? 1
-                          : type === "Float64Array"
-                            ? 3
-                            : 2;
+                  // convert exactly, Float32 widening always gives a quiet
+                  // NaN, and doubles are quieted, as their raw bits could
+                  // be the reserved `undefined` NaN.
                   absentNumber(11);
-                  emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
-                  emit({
-                    op: "ldr-indexed",
-                    size: scale,
-                    fp: type === "Float64Array",
-                    rt: type === "Float64Array" ? 0 : 11,
-                    rn: 10,
-                    rm: readIndex,
-                    scaled: scale !== 0,
-                  });
-                  if (type === "Float64Array") quietNumber(0, 0);
-                  else emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                  const absent = instructions.length;
+                  emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                  if (loadElement(readType, 10, readIndex, 11, 0)) {
+                    if (readType === "Float64Array") quietNumber(0, 0);
+                  } else elementToDouble(readType, 0, 11);
                   emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                  patchInstruction(absent, {
+                    op: "cbz",
+                    width: 32,
+                    rt: 13,
+                    displacement: (instructions.length - absent) * 4,
+                  });
                   saveRaw(11, op.id);
                   break;
                 }
+                // The element (zero when absent) as an exact int64 or, for
+                // floating-point kinds, its double's bits.
                 imm(11, 0);
-                emit({ op: "cbz", width: 32, rt: 13, displacement: 12 });
-                emit({
-                  op: "add-reg",
-                  width: 64,
-                  rd: 10,
-                  rn: 10,
-                  rm: readIndex,
-                  shift: "lsl",
-                  amount:
-                    value(op.array).type === "Uint8Array"
-                      ? 0
-                      : value(op.array).type === "Uint16Array"
-                        ? 1
-                        : value(op.array).type === "Float64Array"
-                          ? 3
-                          : 2,
-                  setFlags: false,
+                const skipRead = instructions.length;
+                emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                if (readType === "Float64Array")
+                  emit({
+                    op: "ldr-indexed",
+                    size: 3,
+                    fp: false,
+                    rt: 11,
+                    rn: 10,
+                    rm: readIndex,
+                    scaled: true,
+                  });
+                else if (loadElement(readType, 10, readIndex, 11, 0))
+                  emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                patchInstruction(skipRead, {
+                  op: "cbz",
+                  width: 32,
+                  rt: 13,
+                  displacement: (instructions.length - skipRead) * 4,
                 });
-                emit(
-                  value(op.array).type === "Uint8Array"
-                    ? { op: "ldrb", rt: 11, rn: 10, offset: 0 }
-                    : value(op.array).type === "Uint16Array"
-                      ? { op: "ldrh", rt: 11, rn: 10, offset: 0 }
-                      : {
-                          op: "ldr",
-                          width:
-                            value(op.array).type === "Float64Array" ? 64 : 32,
-                          rt: 11,
-                          rn: 10,
-                          offset: 0,
-                        },
-                );
                 const constantFallback = fusedFallbacks.get(op.id);
                 if (constantFallback !== undefined) {
                   // `?? constant`: the read's own home receives the final
                   // number, the converted element or the constant's bits.
                   const absent = instructions.length;
                   emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
-                  if (value(op.array).type !== "Float64Array") {
-                    emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                  if (typedArrayIntegerElements(typedArrayType(readType))) {
+                    elementToDouble(readType, 0, 11);
                     emit({ op: "fmov-x-d", rd: 11, rn: 0 });
                   }
                   const done = instructions.length;
@@ -25111,104 +28025,221 @@ function emitModuleForms(
                 // the result's home may not be free before that point.
                 saveRaw(11, op.id);
                 break;
+              }
               case "array-element":
               case "array-store": {
                 // The index is a proven integer within the fixed length:
                 // address the element directly, without checks.
                 const type = value(op.array).type,
-                  scale =
-                    type === "Uint8Array"
-                      ? 0
-                      : type === "Uint16Array"
-                        ? 1
-                        : type === "Float64Array"
-                          ? 3
-                          : 2;
+                  array = typedArrayType(type),
+                  element = typedArrayLayout(array).element,
+                  scale = typedArrayScale(type);
+                const storeVal =
+                  op.kind === "array-store"
+                    ? (elidedStoreSource.get(op.value) ?? op.value)
+                    : 0;
+                if (op.kind === "array-store") materializeInteger(storeVal);
                 // Word elements convert first (possibly through a helper,
-                // which clobbers scratch registers) and are staged; doubles
-                // are stored from their register after the address.
-                if (op.kind === "array-store" && type !== "Float64Array") {
-                  wordValue(op.value);
+                // which clobbers scratch registers) and are staged; int64
+                // or low-32 word values store their low bits (ToInt8/16/32
+                // and ToUint8/16/32 of an exact integer) straight from a
+                // register, as doubles do.
+                const directWord =
+                  op.kind === "array-store" &&
+                  element !== "float" &&
+                  element !== "clamped" &&
+                  (storedAsInteger(storeVal) || storedAsWord(storeVal));
+                // A clamped byte is computed inline (no helper), so it stays
+                // in x9, which the index and data pointer loads leave alone.
+                if (op.kind === "array-store" && element === "clamped")
+                  clampedValue(storeVal);
+                else if (
+                  op.kind === "array-store" &&
+                  element !== "float" &&
+                  !directWord
+                ) {
+                  wordValue(storeVal);
                   rawStore(9, resultOffset + 24);
                 }
                 const fact = valueIds.intern(op.index);
+                let constIdx: number | undefined = undefined;
+                if (element === "float" && scale === 3) {
+                  const c = numberConstant(op.index);
+                  if (
+                    c !== undefined &&
+                    Number.isInteger(c) &&
+                    c >= 0 &&
+                    c <= 4095 &&
+                    !(c === 0 && 1 / c < 0)
+                  )
+                    constIdx = c;
+                  else if (
+                    wordKinds[fact] === 3 &&
+                    (wordConstants[fact] ?? 0) <= 4095
+                  )
+                    constIdx = wordConstants[fact] ?? 0;
+                }
                 let index = 12;
-                if (storedAsInteger(op.index))
-                  index = intRegister(op.index, 12);
-                else if (wordKinds[fact] === 3)
-                  imm(12, wordConstants[fact] ?? 0);
-                else {
-                  floatLoad(0, op.index);
-                  emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
+                if (constIdx === undefined) {
+                  if (storedAsInteger(op.index))
+                    index = intRegister(op.index, 12);
+                  else if (wordKinds[fact] === 3)
+                    imm(12, wordConstants[fact] ?? 0);
+                  else {
+                    floatLoad(0, op.index);
+                    emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
+                  }
                 }
                 const hoistedBase = hoistedArrayDataValues.get(op.array);
                 let dataReg = 10;
                 if (hoistedBase !== undefined) {
                   dataReg = hoistedBase;
+                } else if (cachedArrayDataVal === op.array) {
+                  dataReg = 15;
                 } else {
-                  rawValue(10, op.array);
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: 10,
-                    rn: 10,
-                    offset: nativeArrayDataOffset,
-                  });
+                  const arrReg = rawRegister(op.array, 10);
+                  if (arrReg >= 19) {
+                    dataReg = 15;
+                    if (cachedArrayDataReg !== arrReg) {
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 15,
+                        rn: arrReg,
+                        offset: nativeArrayDataOffset,
+                      });
+                      cachedArrayDataReg = arrReg;
+                      cachedArrayDataVal = -1;
+                    }
+                  } else {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: arrReg,
+                      offset: nativeArrayDataOffset,
+                    });
+                  }
                 }
-                if (op.kind === "array-store" && type === "Float64Array") {
-                  let element = 0;
-                  if (storedAsInteger(op.value)) floatLoad(0, op.value);
-                  else element = floatOperand(op.value, 0);
-                  emit({
-                    op: "str-indexed",
-                    size: 3,
-                    fp: true,
-                    rt: element,
-                    rn: dataReg,
-                    rm: index,
-                    scaled: true,
-                  });
+                if (op.kind === "array-store" && element === "float") {
+                  if (
+                    scale === 3 &&
+                    constIdx !== undefined &&
+                    constIdx * 8 <= 504 &&
+                    (dataReg === 15 || hoistedBase !== undefined)
+                  ) {
+                    let nextStoreIdx = operationIndex + 1;
+                    while (nextStoreIdx < b.instructions.length) {
+                      const cand = b.instructions[nextStoreIdx];
+                      if (
+                        cand !== undefined &&
+                        cand.kind === "constant" &&
+                        foldedConstants[valueIds.intern(cand.id)] === 1
+                      ) {
+                        nextStoreIdx++;
+                        continue;
+                      }
+                      break;
+                    }
+                    const nextStore = b.instructions[nextStoreIdx];
+                    if (
+                      nextStore !== undefined &&
+                      nextStore.kind === "array-store" &&
+                      nextStore.array === op.array &&
+                      numberConstant(nextStore.index) === constIdx + 1
+                    ) {
+                      const storeVal2 =
+                        elidedStoreSource.get(nextStore.value) ??
+                        nextStore.value;
+                      let v1 = 0;
+                      if (storedAsInteger(storeVal)) floatLoad(0, storeVal);
+                      else v1 = floatOperand(storeVal, 0);
+                      let v2 = 1;
+                      if (storedAsInteger(storeVal2)) floatLoad(1, storeVal2);
+                      else v2 = floatOperand(storeVal2, 1);
+                      emit({
+                        op: "stp-d",
+                        rt: v1,
+                        rt2: v2,
+                        rn: dataReg,
+                        offset: constIdx * 8,
+                      });
+                      operationIndex = nextStoreIdx;
+                      break;
+                    }
+                  }
+                  let value = 0;
+                  if (storedAsInteger(storeVal)) floatLoad(0, storeVal);
+                  else value = floatOperand(storeVal, 0);
+                  if (scale === 2) {
+                    // ECMAScript's Float32 conversion rounds to nearest,
+                    // ties to even, as FCVT does.
+                    emit({ op: "fcvt-s-d", rd: 0, rn: value });
+                    value = 0;
+                  }
+                  if (constIdx !== undefined)
+                    emit({
+                      op: "str-d",
+                      rt: value,
+                      rn: dataReg,
+                      offset: constIdx * 8,
+                    });
+                  else
+                    emit({
+                      op: "str-indexed",
+                      size: scale,
+                      fp: true,
+                      rt: value,
+                      rn: dataReg,
+                      rm: index,
+                      scaled: true,
+                    });
                   break;
                 }
                 if (op.kind === "array-store") {
-                  rawLoad(11, resultOffset + 24);
+                  let word = 11;
+                  if (directWord)
+                    word = storedAsInteger(storeVal)
+                      ? intRegister(storeVal, 11)
+                      : rawRegister(storeVal, 11);
+                  else if (element === "clamped") word = 9;
+                  else rawLoad(11, resultOffset + 24);
                   emit({
                     op: "str-indexed",
                     size: scale,
                     fp: false,
-                    rt: 11,
+                    rt: word,
                     rn: dataReg,
                     rm: index,
                     scaled: scale !== 0,
                   });
                   break;
                 }
-                if (type === "Float64Array") {
+                if (element === "float") {
                   // Straight into the result's FP home when it has one.
                   const target = floatTarget(op.id, 0);
-                  emit({
-                    op: "ldr-indexed",
-                    size: 3,
-                    fp: true,
-                    rt: target,
-                    rn: dataReg,
-                    rm: index,
-                    scaled: true,
-                  });
+                  if (constIdx !== undefined)
+                    emit({
+                      op: "ldr-d",
+                      rt: target,
+                      rn: dataReg,
+                      offset: constIdx * 8,
+                    });
+                  else loadElement(type, dataReg, index, 11, target);
                   floatStore(target, op.id);
                   break;
                 }
-                emit({
-                  op: "ldr-indexed",
-                  size: scale,
-                  fp: false,
-                  rt: 11,
-                  rn: 10,
-                  rm: index,
-                  scaled: scale !== 0,
-                });
+                if (wantsInteger(op.id)) {
+                  // Integer elements load as an exact int64.
+                  const target = intTarget(op.id, 11);
+                  loadElement(type, dataReg, index, target, 0);
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
+                loadElement(type, dataReg, index, 11, 0);
                 const target = floatTarget(op.id, 0);
-                emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+                elementToDouble(type, target, 11);
                 floatStore(target, op.id);
                 break;
               }
@@ -25217,63 +28248,141 @@ function emitModuleForms(
                 rawValue(1, op.source);
                 floatLoad(0, op.offset);
                 const type = value(op.array).type;
-                imm(
-                  5,
-                  type === "Uint8Array"
-                    ? 0
-                    : type === "Uint16Array"
-                      ? 1
-                      : type === "Uint32Array"
-                        ? 2
-                        : 3,
-                );
+                imm(5, typedArrayScale(type));
                 callHelper("array-copy");
                 saveRaw(0, op.id);
                 break;
               }
-              case "array-write":
-                if (value(op.array).type === "Float64Array") {
+              case "array-fill": {
+                // The element's bits once, replicated to a 64-bit pattern
+                // the fill helper stores over [from, to).
+                const type = value(op.array).type,
+                  element = typedArrayLayout(typedArrayType(type)).element,
+                  scale = typedArrayScale(type);
+                if (type === "Float64Array") {
                   if (storedAsInteger(op.value)) {
                     floatLoad(0, op.value);
                     emit({ op: "fmov-x-d", rd: 9, rn: 0 });
                   } else rawValue(9, op.value);
-                } else wordValue(op.value);
+                } else if (element === "float") {
+                  floatLoad(0, op.value);
+                  emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                  emit({ op: "fmov-w-s", rd: 9, rn: 0 });
+                } else if (element === "clamped") clampedValue(op.value);
+                else wordValue(op.value);
+                if (scale < 3) {
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    immr: 0,
+                    imms: (8 << scale) - 1,
+                  });
+                  const repeat =
+                    scale === 0 ? 0x01010101 : scale === 1 ? 0x00010001 : 1;
+                  imm64(10, repeat, repeat);
+                  emit({
+                    op: "madd",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    rm: 10,
+                    ra: "zr",
+                  });
+                }
                 rawStore(9, resultOffset + 24);
-                const storeIndex = arrayIndex(op.array, op.index);
-                emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
-                rawLoad(11, resultOffset + 24);
+                intOperand(op.from, 10);
+                intOperand(op.to, 11);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 1,
+                  rn: 11,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const empty = instructions.length;
+                emit({ op: "b.cond", condition: "le", displacement: 0 });
+                rawValue(12, op.array);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 12,
+                  offset: nativeArrayDataOffset,
+                });
                 emit({
                   op: "add-reg",
                   width: 64,
-                  rd: 10,
-                  rn: 10,
-                  rm: storeIndex,
+                  rd: 0,
+                  rn: 12,
+                  rm: 10,
                   shift: "lsl",
-                  amount:
-                    value(op.array).type === "Uint8Array"
-                      ? 0
-                      : value(op.array).type === "Uint16Array"
-                        ? 1
-                        : value(op.array).type === "Float64Array"
-                          ? 3
-                          : 2,
+                  amount: scale,
                   setFlags: false,
                 });
-                emit(
-                  value(op.array).type === "Uint8Array"
-                    ? { op: "strb", rt: 11, rn: 10, offset: 0 }
-                    : value(op.array).type === "Uint16Array"
-                      ? { op: "strh", rt: 11, rn: 10, offset: 0 }
-                      : {
-                          op: "str",
-                          width:
-                            value(op.array).type === "Float64Array" ? 64 : 32,
-                          rt: 11,
-                          rn: 10,
-                          offset: 0,
-                        },
-                );
+                if (scale !== 0)
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 1,
+                    rn: "zr",
+                    rm: 1,
+                    shift: "lsl",
+                    amount: scale,
+                    setFlags: false,
+                  });
+                rawLoad(2, resultOffset + 24);
+                callHelper("array-fill");
+                patchInstruction(empty, {
+                  op: "b.cond",
+                  condition: "le",
+                  displacement: (instructions.length - empty) * 4,
+                });
                 break;
+              }
+              case "array-write": {
+                const type = value(op.array).type,
+                  element = typedArrayLayout(typedArrayType(type)).element,
+                  scale = typedArrayScale(type);
+                // Stage the element's bits: a double's, a Float32's, a
+                // clamped byte or a word's low bits.
+                if (type === "Float64Array") {
+                  if (storedAsInteger(op.value)) {
+                    floatLoad(0, op.value);
+                    emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                  } else rawValue(9, op.value);
+                } else if (element === "float") {
+                  floatLoad(0, op.value);
+                  emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                  emit({ op: "fmov-w-s", rd: 9, rn: 0 });
+                } else if (element === "clamped") clampedValue(op.value);
+                else wordValue(op.value);
+                rawStore(9, resultOffset + 24);
+                const storeIndex = arrayIndex(op.array, op.index);
+                const invalid = instructions.length;
+                emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                rawLoad(11, resultOffset + 24);
+                emit({
+                  op: "str-indexed",
+                  size: scale,
+                  fp: false,
+                  rt: 11,
+                  rn: 10,
+                  rm: storeIndex,
+                  scaled: scale !== 0,
+                });
+                patchInstruction(invalid, {
+                  op: "cbz",
+                  width: 32,
+                  rt: 13,
+                  displacement: (instructions.length - invalid) * 4,
+                });
+                break;
+              }
               case "load":
                 if (integerSlots[op.slot] === 1) {
                   if (wantsInteger(op.id)) {
@@ -25299,21 +28408,23 @@ function emitModuleForms(
                 if (tracker !== undefined)
                   tracker.saved(op.id, instructions.length * 4);
                 break;
-              case "store":
+              case "store": {
                 // A copy only a fused miss test would read.
                 if (
                   fusion !== undefined &&
                   fusion.skipped.indexOf(operationIndex) >= 0
                 )
                   break;
+                const storeSrc = elidedStoreSource.get(op.value) ?? op.value;
+                if (emittedDirectStore[valueIds.intern(storeSrc)] === 1) break;
                 if (integerSlots[op.slot] === 1) {
-                  const constant = deferredIntegers.get(op.value);
+                  const constant = deferredIntegers.get(storeSrc);
                   if (constant !== undefined)
                     writeInteger(constant, slotOffset(op.slot));
-                  else if (storedAsInteger(op.value))
-                    copyRawWord(value(op.value).offset, slotOffset(op.slot));
+                  else if (storedAsInteger(storeSrc))
+                    copyRawWord(value(storeSrc).offset, slotOffset(op.slot));
                   else {
-                    intOperand(op.value, 9);
+                    intOperand(storeSrc, 9);
                     rawStore(9, slotOffset(op.slot));
                   }
                   const recip = reciprocalStoreOffsets[op.slot] ?? 0;
@@ -25328,14 +28439,15 @@ function emitModuleForms(
                   break;
                 }
                 if (
-                  value(op.value).type === "general" ||
-                  value(op.value).type === "optional-boolean"
+                  value(storeSrc).type === "general" ||
+                  value(storeSrc).type === "optional-boolean"
                 ) {
-                  copyGeneralPair(value(op.value).offset, slotOffset(op.slot));
+                  copyGeneralPair(value(storeSrc).offset, slotOffset(op.slot));
                   break;
                 }
-                copyRawWord(value(op.value).offset, slotOffset(op.slot));
+                copyRawWord(value(storeSrc).offset, slotOffset(op.slot));
                 break;
+              }
               case "unary": {
                 if (
                   (op.operator === "ceil" || op.operator === "trunc") &&
@@ -25439,7 +28551,10 @@ function emitModuleForms(
                 } else if (op.operator === "uint32") {
                   // An exact uint32 by contract: as int64 when every use
                   // wants an integer, otherwise the unchanged double.
-                  if (wantsInteger(op.id)) {
+                  const bypass = storeBypassCandidate.get(op.id);
+                  if (bypass !== undefined && storedAsInteger(bypass)) {
+                    elidedStoreSource.set(op.id, bypass);
+                  } else if (wantsInteger(op.id)) {
                     const target = intTarget(op.id, 9);
                     intOperand(op.operand, target);
                     saveRaw(target, op.id);
@@ -25476,14 +28591,38 @@ function emitModuleForms(
                 break;
               }
               case "binary": {
-                const immediate = binaryImmediate(op);
+                if (fusedBitTests[valueIds.intern(op.id)] === 1) break;
+                if (blockBitTest !== undefined && op.id === comparisonValue) {
+                  materializeInteger(blockBitTest.source);
+                  const rn = wordOperand(blockBitTest.source, 9);
+                  emit({
+                    op: "ands-imm",
+                    width: 32,
+                    rd: "zr",
+                    rn,
+                    n: blockBitTest.n,
+                    immr: blockBitTest.immr,
+                    imms: blockBitTest.imms,
+                  });
+                  comparisonBranch =
+                    op.operator === "===" || op.operator === "==" ? "eq" : "ne";
+                  break;
+                }
+                const immediate = binaryImmediate(op),
+                  floatCompare =
+                    comparisonOperators.includes(op.operator) &&
+                    typeOf(op.left) === "number" &&
+                    !(exactInteger(op.left) && exactInteger(op.right));
                 visitInstructionOperands(op, (id) => {
-                  if (id !== immediate) materializeInteger(id);
+                  if (id !== immediate && !floatCompare) materializeInteger(id);
                 });
                 if ((rotateAmounts[valueIds.intern(op.id)] ?? 0) !== 0)
                   materializeInteger(
                     rotateSources[valueIds.intern(op.id)] ?? 0,
                   );
+                const shiftedInit = shiftedOps.get(op.id);
+                if (shiftedInit !== undefined)
+                  materializeInteger(shiftedInit.source);
                 const leftNone =
                     noneValues[valueIds.intern(op.left)] === 1 &&
                     foldedConstants[valueIds.intern(op.left)] === 1,
@@ -25748,7 +28887,9 @@ function emitModuleForms(
                   const branchTerminator = b.terminator;
                   if (
                     op.id === comparisonValue &&
-                    branchTerminator.kind === "branch"
+                    comparisonIndex === b.instructions.length - 1 &&
+                    branchTerminator.kind === "branch" &&
+                    blockDiamond === undefined
                   ) {
                     stringEqual(leftPresent, rightPresent, {
                       fnId: fn.id,
@@ -25900,7 +29041,9 @@ function emitModuleForms(
                       immediate === op.right ? op.left : op.right,
                       9,
                     ),
-                    target = intTarget(op.id, 9);
+                    opIdx = valueIds.intern(op.id),
+                    direct = directIntTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : intTarget(op.id, 9);
                   if (op.operator === "*") {
                     const k = multiplierShift(constant);
                     if (k === undefined) throw "multiplier invariant";
@@ -25939,45 +29082,132 @@ function emitModuleForms(
                       setFlags: false,
                     });
                   }
-                  saveRaw(target, op.id);
+                  if (direct === 0) saveRaw(target, op.id);
+                  else emittedDirectStore[opIdx] = 1;
                   markInteger(op.id);
                 } else if (integerArithmetic(op)) {
                   // Bounded below 2^53 (kind 6), so the int64 result is
                   // exact but for -0 (from a product, or a -0 operand),
                   // which becomes +0: its uses do not observe the sign (see
                   // findIntegerUses).
+                  // A product by 2^k or 2^k + 1 (k <= 4) is one shifted
+                  // add: shorter latency than MADD, the same int64 result.
+                  const rightIndex = valueIds.intern(op.right),
+                    factor =
+                      op.operator === "*" && wordKinds[rightIndex] === 3
+                        ? (wordConstants[rightIndex] ?? 0)
+                        : 0,
+                    shift =
+                      factor === 2 || factor === 3
+                        ? 1
+                        : factor === 4 || factor === 5
+                          ? 2
+                          : factor === 8 || factor === 9
+                            ? 3
+                            : factor === 16 || factor === 17
+                              ? 4
+                              : 0;
                   const left = intRegister(op.left, 9),
-                    right = intRegister(op.right, 10),
-                    target = intTarget(op.id, 9);
+                    right = shift !== 0 ? left : intRegister(op.right, 10),
+                    opIdx = valueIds.intern(op.id),
+                    direct = directIntTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : intTarget(op.id, 9);
                   emit(
-                    op.operator === "*"
+                    shift !== 0
                       ? {
-                          op: "madd",
+                          op: "add-reg",
                           width: 64,
                           rd: target,
-                          rn: left,
-                          rm: right,
-                          ra: "zr",
-                        }
-                      : {
-                          op: op.operator === "+" ? "add-reg" : "sub-reg",
-                          width: 64,
-                          rd: target,
-                          rn: left,
-                          rm: right,
+                          rn: factor % 2 === 1 ? left : "zr",
+                          rm: left,
                           shift: "lsl",
-                          amount: 0,
+                          amount: shift,
                           setFlags: false,
-                        },
+                        }
+                      : op.operator === "*"
+                        ? {
+                            op: "madd",
+                            width: 64,
+                            rd: target,
+                            rn: left,
+                            rm: right,
+                            ra: "zr",
+                          }
+                        : {
+                            op: op.operator === "+" ? "add-reg" : "sub-reg",
+                            width: 64,
+                            rd: target,
+                            rn: left,
+                            rm: right,
+                            shift: "lsl",
+                            amount: 0,
+                            setFlags: false,
+                          },
                   );
-                  saveRaw(target, op.id);
+                  if (direct === 0) saveRaw(target, op.id);
+                  else emittedDirectStore[opIdx] = 1;
                   markInteger(op.id);
                 } else if (
                   ["+", "-", "*", "/", "min", "max"].includes(op.operator)
                 ) {
+                  const fusedOr =
+                    op.operator === "+" || op.operator === "-"
+                      ? pendingFusedAdd.get(op.id)
+                      : undefined;
+                  const isFusableInt = (id: number): boolean => {
+                    if (!storedAsInteger(id)) return false;
+                    const idx = valueIds.intern(id),
+                      k = wordKinds[idx] ?? 0;
+                    return (
+                      k === 2 ||
+                      k === 3 ||
+                      (k === 6 && wordMagnitude(idx) <= 0x10000000000000)
+                    );
+                  };
+                  const leftIsInt = isFusableInt(op.left),
+                    rightIsInt = isFusableInt(op.right);
+                  if (
+                    fusedOr !== undefined &&
+                    options.hostABI?.javascriptConversion?.kind ===
+                      "baseline" &&
+                    leftIsInt !== rightIsInt &&
+                    typeOf(op.left) === "number" &&
+                    typeOf(op.right) === "number"
+                  ) {
+                    activeFusedAdd.set(fusedOr, {
+                      add: op.operator === "+",
+                      left: op.left,
+                      right: op.right,
+                      leftIsInt,
+                    });
+                    break;
+                  }
+                  const opIdx = valueIds.intern(op.id),
+                    direct = directFloatTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : floatTarget(op.id, 0);
+                  // IEEE-754 `x * 2 === x + x` bit-for-bit for every float64
+                  // (including ±0, ±Inf, NaN, subnormals). Only fold when the
+                  // `2` is a literal constant (not a loaded variable slot).
+                  if (op.operator === "*") {
+                    const leftTwo = literalTwo[valueIds.intern(op.left)] === 1,
+                      rightTwo = literalTwo[valueIds.intern(op.right)] === 1;
+                    if (leftTwo !== rightTwo) {
+                      const src = floatOperand(
+                        rightTwo ? op.left : op.right,
+                        0,
+                      );
+                      emit({ op: "fadd", rd: target, rn: src, rm: src });
+                      if (direct === 0) floatStore(target, op.id);
+                      else {
+                        emittedDirectStore[opIdx] = 1;
+                        if ((valueUses[opIdx] ?? 0) > 1)
+                          directFloatAlias.set(op.id, target);
+                      }
+                      break;
+                    }
+                  }
                   const left = floatOperand(op.left, 0),
-                    right = floatOperand(op.right, 1),
-                    target = floatTarget(op.id, 0);
+                    right = floatOperand(op.right, 1);
                   emit({
                     op:
                       op.operator === "+"
@@ -25995,7 +29225,12 @@ function emitModuleForms(
                     rn: left,
                     rm: right,
                   });
-                  floatStore(target, op.id);
+                  if (direct === 0) floatStore(target, op.id);
+                  else {
+                    emittedDirectStore[opIdx] = 1;
+                    if ((valueUses[opIdx] ?? 0) > 1)
+                      directFloatAlias.set(op.id, target);
+                  }
                 } else if (
                   op.operator === "%" &&
                   exactInteger(op.left) &&
@@ -26345,21 +29580,32 @@ function emitModuleForms(
                     op.operator,
                   )
                 ) {
-                  if (rotatedShifts[valueIds.intern(op.id)] === 1) break;
+                  const opIdx = valueIds.intern(op.id);
+                  if (rotatedShifts[opIdx] === 1 || fusedShifts[opIdx] === 1)
+                    break;
+                  const bypass = storeBypassCandidate.get(op.id);
+                  if (
+                    bypass !== undefined &&
+                    (storedAsInteger(bypass) || storedAsWord(bypass))
+                  ) {
+                    elidedStoreSource.set(op.id, bypass);
+                    break;
+                  }
                   const rightIndex = valueIds.intern(op.right),
                     rightKind = wordKinds[rightIndex] ?? 0,
-                    rotation = rotateAmounts[valueIds.intern(op.id)] ?? 0;
+                    rotation = rotateAmounts[opIdx] ?? 0,
+                    shifted = shiftedOps.get(op.id),
+                    direct = directIntTarget[opIdx] ?? 0;
                   // Word and int64 results are computed into their GP home.
                   const target =
-                    storedAsWord(op.id) || wantsInteger(op.id)
-                      ? rawTarget(op.id, 9)
-                      : 9;
+                    direct !== 0
+                      ? direct - 1
+                      : storedAsWord(op.id) || wantsInteger(op.id)
+                        ? rawTarget(op.id, 9)
+                        : 9;
                   let extended = false;
                   if (rotation !== 0) {
-                    const source = wordOperand(
-                      rotateSources[valueIds.intern(op.id)] ?? 0,
-                      9,
-                    );
+                    const source = wordOperand(rotateSources[opIdx] ?? 0, 9);
                     emit({
                       op: "extr",
                       width: 32,
@@ -26367,6 +29613,26 @@ function emitModuleForms(
                       rn: source,
                       rm: source,
                       lsb: rotation - 1,
+                    });
+                  } else if (shifted !== undefined) {
+                    const left = wordOperand(shifted.other, 13),
+                      right =
+                        shifted.source === shifted.other
+                          ? left
+                          : wordOperand(shifted.source, 9);
+                    emit({
+                      op:
+                        op.operator === "&"
+                          ? "and-reg"
+                          : op.operator === "|"
+                            ? "orr-reg"
+                            : "eor-reg",
+                      width: 32,
+                      rd: target,
+                      rn: left,
+                      rm: right,
+                      shift: shifted.shift,
+                      amount: shifted.amount,
                     });
                   } else if (
                     (op.operator === "<<" ||
@@ -26402,23 +29668,158 @@ function emitModuleForms(
                     (zeroConstants[rightIndex] === 1 ||
                       zeroConstants[valueIds.intern(op.left)] === 1)
                   ) {
-                    // `x | 0` and `x ^ 0`: the other operand's low 32 bits,
-                    // sign-extended at once for an int64 result.
-                    const source = wordOperand(
-                      zeroConstants[rightIndex] === 1 ? op.left : op.right,
-                      9,
-                    );
-                    if (!storedAsWord(op.id) && wantsInteger(op.id)) {
-                      emit({ op: "sxtw", rd: target, rn: source });
-                      extended = true;
-                    } else
-                      emit({
-                        op: "orr-reg",
-                        width: 32,
-                        rd: target,
-                        rn: "zr",
-                        rm: source,
-                      });
+                    const fusedAdd = activeFusedAdd.get(op.id);
+                    if (fusedAdd !== undefined) {
+                      // `(int32 +/- f64) | 0`: convert the float operand with
+                      // FJCVTZS (which sets Z=1 iff it is an exact signed
+                      // int32) and add/sub in 32-bit GP registers, breaking
+                      // the GP->FP->GP loop-carried dependency chain on `int`.
+                      const intId = fusedAdd.leftIsInt
+                          ? fusedAdd.left
+                          : fusedAdd.right,
+                        fltId = fusedAdd.leftIsInt
+                          ? fusedAdd.right
+                          : fusedAdd.left,
+                        optOrigin = elidedOptOr.get(fltId);
+                      const intReg = intRegister(intId, 10),
+                        fltReg = floatOperand(optOrigin ?? fltId, 0);
+                      emit({ op: "fjcvtzs", rd: 9, rn: fltReg });
+                      const toSlow = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                      if (fusedAdd.add)
+                        emit({
+                          op: "add-reg",
+                          width: 32,
+                          rd: target,
+                          rn: intReg,
+                          rm: 9,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      else
+                        emit({
+                          op: "sub-reg",
+                          width: 32,
+                          rd: target,
+                          rn: fusedAdd.leftIsInt ? intReg : 9,
+                          rm: fusedAdd.leftIsInt ? 9 : intReg,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      const emitFusedAddSlow = (
+                        sIntReg: number,
+                        sFltReg: number,
+                        sTarget: number,
+                        sAdd: boolean,
+                        sLeftIsInt: boolean,
+                        sIsOptZero: boolean,
+                      ): void => {
+                        emit({ op: "scvtf-d-x", rd: 1, rn: sIntReg });
+                        let rhsReg = sFltReg;
+                        if (sIsOptZero) {
+                          emit({ op: "fmov-x-d", rd: 9, rn: sFltReg });
+                          absentFlags(9, 10);
+                          emit({ op: "fmov-d-x", rd: 2, rn: "zr" });
+                          emit({
+                            op: "fcsel",
+                            rd: 2,
+                            rn: 2,
+                            rm: sFltReg,
+                            condition: "eq",
+                          });
+                          rhsReg = 2;
+                        }
+                        emit({
+                          op: sAdd ? "fadd" : "fsub",
+                          rd: 0,
+                          rn: sLeftIsInt ? 1 : rhsReg,
+                          rm: sLeftIsInt ? rhsReg : 1,
+                        });
+                        emit({ op: "fjcvtzs", rd: sTarget, rn: 0 });
+                      };
+                      if (canDeferColdStub()) {
+                        const resumeAt = instructions.length,
+                          capturedIntReg = intReg,
+                          capturedFltReg = fltReg,
+                          capturedTarget = target,
+                          capturedAdd = fusedAdd.add,
+                          capturedLeftIsInt = fusedAdd.leftIsInt,
+                          capturedOptZero = optOrigin !== undefined;
+                        clearWordCaches();
+                        deferredAllocSlowPaths.push(() => {
+                          clearWordCaches();
+                          patchInstruction(toSlow, {
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: (instructions.length - toSlow) * 4,
+                          });
+                          emitFusedAddSlow(
+                            capturedIntReg,
+                            capturedFltReg,
+                            capturedTarget,
+                            capturedAdd,
+                            capturedLeftIsInt,
+                            capturedOptZero,
+                          );
+                          emit({
+                            op: "b",
+                            displacement: (resumeAt - instructions.length) * 4,
+                          });
+                        });
+                      } else {
+                        const toDone = instructions.length;
+                        emit({ op: "b", displacement: 0 });
+                        patchInstruction(toSlow, {
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: (instructions.length - toSlow) * 4,
+                        });
+                        emitFusedAddSlow(
+                          intReg,
+                          fltReg,
+                          target,
+                          fusedAdd.add,
+                          fusedAdd.leftIsInt,
+                          optOrigin !== undefined,
+                        );
+                        patchInstruction(toDone, {
+                          op: "b",
+                          displacement: (instructions.length - toDone) * 4,
+                        });
+                      }
+                      if (
+                        !storedAsWord(op.id) &&
+                        wantsInteger(op.id) &&
+                        lowWordStoreValues[opIdx] !== 1
+                      ) {
+                        emit({ op: "sxtw", rd: target, rn: target });
+                        extended = true;
+                      }
+                    } else {
+                      // `x | 0` and `x ^ 0`: the other operand's low 32 bits,
+                      // sign-extended at once for an int64 result.
+                      const source = wordOperand(
+                        zeroConstants[rightIndex] === 1 ? op.left : op.right,
+                        9,
+                      );
+                      if (
+                        !storedAsWord(op.id) &&
+                        wantsInteger(op.id) &&
+                        lowWordStoreValues[opIdx] !== 1
+                      ) {
+                        emit({ op: "sxtw", rd: target, rn: source });
+                        extended = true;
+                      } else if (target !== source)
+                        emit({
+                          op: "orr-reg",
+                          width: 32,
+                          rd: target,
+                          rn: "zr",
+                          rm: source,
+                        });
+                    }
                   } else if (
                     immediate !== undefined &&
                     op.operator === "imul"
@@ -26479,7 +29880,7 @@ function emitModuleForms(
                         immediate === op.right ? op.left : op.right,
                         9,
                       );
-                    if (fields !== undefined)
+                    if (fields !== undefined) {
                       emit({
                         op:
                           op.operator === "&"
@@ -26494,7 +29895,9 @@ function emitModuleForms(
                         immr: fields.immr,
                         imms: fields.imms,
                       });
-                    else if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                      if (op.operator === "&" && constant >>> 0 <= 0x7fffffff)
+                        extended = true;
+                    } else if (!storedAsWord(op.id) && wantsInteger(op.id)) {
                       emit({ op: "sxtw", rd: target, rn: source });
                       extended = true;
                     } else
@@ -26505,6 +29908,28 @@ function emitModuleForms(
                         rn: "zr",
                         rm: source,
                       });
+                  } else if (
+                    op.operator === "imul" &&
+                    (foldedConstants[valueIds.intern(op.right)] === 1 ||
+                      foldedConstants[valueIds.intern(op.left)] === 1)
+                  ) {
+                    const rightFolded =
+                        foldedConstants[valueIds.intern(op.right)] === 1,
+                      other = rightFolded ? op.left : op.right,
+                      constVal = numberConstant(
+                        rightFolded ? op.right : op.left,
+                      );
+                    if (constVal === undefined) throw "imul constant invariant";
+                    const left = wordOperand(other, 13);
+                    imm(10, constVal >>> 0);
+                    emit({
+                      op: "madd",
+                      width: 32,
+                      rd: target,
+                      rn: left,
+                      rm: 10,
+                      ra: "zr",
+                    });
                   } else {
                     // The left operand stays in x13 (or its home) while the
                     // right one may call the conversion helper.
@@ -26586,20 +30011,28 @@ function emitModuleForms(
                     truncatedSums[valueIds.intern(sum.id)] = 1;
                     extended = true;
                   }
-                  if (storedAsWord(op.id)) saveRaw(target, op.id);
-                  else if (wantsInteger(op.id)) {
-                    // A W-register result is zero-extended: right for >>>.
-                    if (op.operator !== ">>>" && !extended)
-                      emit({ op: "sxtw", rd: target, rn: target });
+                  if (direct === 0 && storedAsWord(op.id))
                     saveRaw(target, op.id);
+                  else if (wantsInteger(op.id)) {
+                    // A W-register result is zero-extended: right for >>>,
+                    // and integer typed-array stores read only low bits.
+                    if (
+                      op.operator !== ">>>" &&
+                      !extended &&
+                      lowWordStoreValues[opIdx] !== 1
+                    )
+                      emit({ op: "sxtw", rd: target, rn: target });
+                    if (direct === 0) saveRaw(target, op.id);
+                    else emittedDirectStore[opIdx] = 1;
                     markInteger(op.id);
                   } else {
+                    const ftarget = floatTarget(op.id, 0);
                     emit(
                       op.operator === ">>>"
-                        ? { op: "ucvtf-d-w", rd: 0, rn: target }
-                        : { op: "scvtf-d-w", rd: 0, rn: target },
+                        ? { op: "ucvtf-d-w", rd: ftarget, rn: target }
+                        : { op: "scvtf-d-w", rd: ftarget, rn: target },
                     );
-                    floatStore(0, op.id);
+                    floatStore(ftarget, op.id);
                   }
                 } else if (
                   ["===", "!==", "==", "!=", "<", ">", "<=", ">="].includes(
@@ -26938,6 +30371,80 @@ function emitModuleForms(
                     displacement: (instructions.length - mismatch) * 4,
                   });
                 }
+                if (writeShape !== undefined && writeShape.unchecked === true) {
+                  // Guarded hoisted push write: vector is proven non-null
+                  // reference vector and index is an integer in [0, vector.length).
+                  const rawVector = op.arguments[0],
+                    vector =
+                      rawVector === undefined
+                        ? undefined
+                        : (elidedStoreSource.get(rawVector) ?? rawVector),
+                    index = op.arguments[2],
+                    element = op.arguments[3];
+                  if (
+                    vector === undefined ||
+                    index === undefined ||
+                    element === undefined
+                  )
+                    throw "list write argument invariant";
+                  const vecReg = rawRegister(vector, 10),
+                    indexFact = valueIds.intern(index);
+                  let idxReg = 12;
+                  if (storedAsInteger(index)) idxReg = intRegister(index, 12);
+                  else if (wordKinds[indexFact] === 3)
+                    imm(12, wordConstants[indexFact] ?? 0);
+                  else {
+                    const number = floatOperand(index, 0);
+                    emit({ op: "fcvtzs-x-d", rd: 12, rn: number });
+                  }
+                  const elemNonNull =
+                    nonNullValues[valueIds.intern(element)] === 1 ||
+                    (provenNonNull !== undefined &&
+                      provenNonNull[valueIds.intern(element)] === 1);
+                  const elemReg = elemNonNull ? rawRegister(element, 13) : 13;
+                  if (!elemNonNull) {
+                    rawValue(13, element);
+                    const present = instructions.length;
+                    emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: "zr",
+                      rm: vecReg,
+                    });
+                    patchInstruction(present, {
+                      op: "cbnz",
+                      width: 64,
+                      rt: 13,
+                      displacement: (instructions.length - present) * 4,
+                    });
+                  }
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 14,
+                    rn: vecReg,
+                    immediate: nativeArrayInlineOffset,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "str-indexed",
+                    size: 3,
+                    fp: false,
+                    rt: elemReg,
+                    rn: 14,
+                    rm: idxReg,
+                    scaled: true,
+                  });
+                  if (generationalBarriers) {
+                    rememberObject(deferRememberSlow(), vecReg, () =>
+                      rawLoad(10, contextOffset),
+                    );
+                  }
+                  break;
+                }
                 if (writeShape !== undefined) {
                   // Dense list writes within the vector: store the element
                   // (a stored undefined is the vector itself), extend the
@@ -26984,11 +30491,17 @@ function emitModuleForms(
                   };
                   // Module record flow can prove the list argument is always
                   // a list header (and never null), making those tests dead.
-                  const writeHeader = provenListHeader(list, writeShape.header);
-                  rawValue(9, list);
-                  if (writeHeader !== 2) slowZero(9);
+                  const writeHeader = provenListHeader(list, writeShape.header),
+                    listReg = rawRegister(list, 9);
+                  if (writeHeader !== 2) slowZero(listReg);
                   if (writeHeader === 0) {
-                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: listReg,
+                      offset: 0,
+                    });
                     descriptorPointer(writeShape.header);
                     emit({
                       op: "sub-reg",
@@ -27006,7 +30519,7 @@ function emitModuleForms(
                     op: "ldr",
                     width: 64,
                     rt: 10,
-                    rn: 9,
+                    rn: listReg,
                     offset: rootField.offset,
                   });
                   slowZero(10);
@@ -27059,22 +30572,29 @@ function emitModuleForms(
                     setFlags: true,
                   });
                   slowIf("cs");
-                  rawValue(13, element);
-                  const present = instructions.length;
-                  emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
-                  emit({
-                    op: "orr-reg",
-                    width: 64,
-                    rd: 13,
-                    rn: "zr",
-                    rm: 10,
-                  });
-                  patchInstruction(present, {
-                    op: "cbnz",
-                    width: 64,
-                    rt: 13,
-                    displacement: (instructions.length - present) * 4,
-                  });
+                  const elemNonNull =
+                    nonNullValues[valueIds.intern(element)] === 1 ||
+                    (provenNonNull !== undefined &&
+                      provenNonNull[valueIds.intern(element)] === 1);
+                  const elemReg = elemNonNull ? rawRegister(element, 13) : 13;
+                  if (!elemNonNull) {
+                    rawValue(13, element);
+                    const present = instructions.length;
+                    emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: "zr",
+                      rm: 10,
+                    });
+                    patchInstruction(present, {
+                      op: "cbnz",
+                      width: 64,
+                      rt: 13,
+                      displacement: (instructions.length - present) * 4,
+                    });
+                  }
                   emit({
                     op: "add-imm",
                     width: 64,
@@ -27088,7 +30608,7 @@ function emitModuleForms(
                     op: "str-indexed",
                     size: 3,
                     fp: false,
-                    rt: 13,
+                    rt: elemReg,
                     rn: 14,
                     rm: 12,
                     scaled: true,
@@ -27108,7 +30628,7 @@ function emitModuleForms(
                   emit({
                     op: "ldr-d",
                     rt: 0,
-                    rn: 9,
+                    rn: listReg,
                     offset: lengthField.offset,
                   });
                   emit({ op: "fcmp", rn: 1, rm: 0 });
@@ -27117,7 +30637,7 @@ function emitModuleForms(
                   emit({
                     op: "str-d",
                     rt: 1,
-                    rn: 9,
+                    rn: listReg,
                     offset: lengthField.offset,
                   });
                   patchInstruction(within, {
@@ -27134,7 +30654,7 @@ function emitModuleForms(
                       rm: 10,
                     });
                     rawLoad(10, contextOffset);
-                    rememberObject();
+                    rememberObject(deferRememberSlow());
                   }
                   listReadDone = instructions.length;
                   emit({ op: "b", displacement: 0 });
@@ -27153,6 +30673,62 @@ function emitModuleForms(
                 }
                 const listResult = op.id;
                 if (listShape !== undefined && listResult !== undefined) {
+                  if (listShape.mode === "unchecked") {
+                    const vector = op.arguments[0],
+                      index = op.arguments[2];
+                    if (vector === undefined || index === undefined)
+                      throw "list read argument invariant";
+                    const vectorRegister = rawRegister(vector, 10),
+                      indexFact = valueIds.intern(index);
+                    let indexRegister = 12;
+                    if (storedAsInteger(index))
+                      indexRegister = intRegister(index, 12);
+                    else if (wordKinds[indexFact] === 3)
+                      imm(12, wordConstants[indexFact] ?? 0);
+                    else {
+                      const number = floatOperand(index, 0);
+                      emit({ op: "fcvtzs-x-d", rd: 12, rn: number });
+                    }
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 13,
+                      rn: vectorRegister,
+                      immediate: nativeArrayInlineOffset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "ldr-indexed",
+                      size: 3,
+                      fp: false,
+                      rt: 11,
+                      rn: 13,
+                      rm: indexRegister,
+                      scaled: true,
+                    });
+                    const resultRegister = rawTarget(listResult, 11);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      rm: vectorRegister,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: resultRegister,
+                      rn: "zr",
+                      rm: 11,
+                      condition: "eq",
+                    });
+                    saveRaw(resultRegister, listResult);
+                    break;
+                  }
                   const cachedRead = listShape.mode === "cached",
                     list = op.arguments[cachedRead ? 1 : 0],
                     index = op.arguments[cachedRead ? 2 : 1],
@@ -27441,6 +31017,7 @@ function emitModuleForms(
                 if (op.kind === "call" && op.environment === "inherit")
                   rawLoad(1, environmentOffset);
                 else if (
+                  op.kind !== "call-indirect" &&
                   actuals === undefined &&
                   (directCallee === undefined ||
                     directCallee.import === true ||
@@ -27805,8 +31382,90 @@ function emitModuleForms(
             if (fusion.hit !== nextBlock)
               branch({ op: "b" }, fn.id, fusion.hit);
           } else if (t.kind === "branch") {
+            const diamond = selects.diamonds.get(b.id);
             if (comparisonBranch === "emitted") {
               // The final comparison already branched to consequent/alternate.
+            } else if (diamond !== undefined) {
+              const targetSlot = diamond.targetSlot,
+                dstOffset = slotOffset(targetSlot),
+                dstHome = scalarRegisters?.[dstOffset / 8] ?? 0,
+                isFloat =
+                  fn.slots[targetSlot] === "number" &&
+                  integerSlots[targetSlot] !== 1;
+              const diamondNested = diamond.nested;
+              if (diamondNested !== undefined && comparisonValue === undefined)
+                emitNestedSelect(diamondNested, isFloat);
+              let selectCondition: Condition;
+              if (comparisonBranch !== undefined)
+                selectCondition = comparisonBranch;
+              else {
+                const condReg = rawRegister(
+                  foldedPresentSource !== undefined &&
+                    t.condition === foldedPresent
+                    ? foldedPresentSource
+                    : t.condition,
+                  11,
+                );
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: condReg,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: true,
+                });
+                selectCondition = "ne";
+              }
+              if (isFloat) {
+                const trueReg =
+                    diamond.nested?.inTrueArm === true
+                      ? 2
+                      : loadFloatSelectArm(diamond.trueArm, 0),
+                  falseReg =
+                    diamond.nested?.inTrueArm === false
+                      ? 2
+                      : loadFloatSelectArm(diamond.falseArm, 1),
+                  dstReg = dstHome > 0 && dstHome < 32 ? dstHome : 0;
+                emit({
+                  op: "fcsel",
+                  rd: dstReg,
+                  rn: trueReg,
+                  rm: falseReg,
+                  condition: selectCondition,
+                });
+                if (dstHome >= 32)
+                  emit({ op: "fmov-x-d", rd: dstHome - 32, rn: dstReg });
+                else if (dstHome === 0)
+                  emit({
+                    op: "str-d",
+                    rt: dstReg,
+                    rn: "sp",
+                    offset: dstOffset,
+                  });
+              } else {
+                const trueReg =
+                    diamond.nested?.inTrueArm === true
+                      ? 14
+                      : loadRawSelectArm(diamond.trueArm, 9),
+                  falseReg =
+                    diamond.nested?.inTrueArm === false
+                      ? 14
+                      : loadRawSelectArm(diamond.falseArm, 10),
+                  dstReg = dstHome >= 32 ? dstHome - 32 : 9;
+                emit({
+                  op: "csel",
+                  width: 64,
+                  rd: dstReg,
+                  rn: trueReg,
+                  rm: falseReg,
+                  condition: selectCondition,
+                });
+                if (dstHome < 32) rawStore(dstReg, dstOffset);
+              }
+              clearWordCaches();
+              if (diamond.join !== nextBlock)
+                branch({ op: "b" }, fn.id, diamond.join);
             } else if (comparisonBranch !== undefined) {
               if (t.consequent === nextBlock)
                 branch(
@@ -27856,6 +31515,17 @@ function emitModuleForms(
             if (layout === undefined || field === undefined)
               throw "verified record invariant";
             const chain = dispatch?.chains.get(b.id);
+            // A fused chain needs no test when the object's two known
+            // layouts share one placement group: read that placement.
+            const pair =
+              chain === undefined ? undefined : layoutPairs.get(b.id);
+            let covering: RecordDispatchGroup | undefined;
+            if (chain !== undefined && pair !== undefined)
+              for (const group of chain.groups) {
+                if (group === undefined) throw "dispatch group invariant";
+                if (pair.every((record) => group.records.includes(record)))
+                  covering = group;
+              }
             const byteLength = scalarByteLength(field.type);
             const nonNull =
               nonNullValues[valueIds.intern(t.object)] === 1 ||
@@ -27914,6 +31584,15 @@ function emitModuleForms(
                     });
                     rawStore(10, slotWord);
                   }
+                } else if (
+                  byteLength === 8 &&
+                  moved.type === "number" &&
+                  integerSlots[t.slot] === 1
+                ) {
+                  const intReg = home >= 32 ? home - 32 : 10;
+                  if (home < 32) rawLoad(10, slotWord);
+                  emit({ op: "scvtf-d-x", rd: 0, rn: intReg });
+                  emit({ op: "str-d", rt: 0, rn: object, offset });
                 } else if (byteLength === 8 && home !== 0 && home < 32)
                   emit({ op: "str-d", rt: home, rn: object, offset });
                 else {
@@ -27930,7 +31609,12 @@ function emitModuleForms(
                 }
               }
             }
-            if (chain !== undefined && chain.groups.length > 1) {
+            if (covering !== undefined) {
+              const placed = module.records?.[covering.record];
+              if (placed === undefined) throw "dispatch group invariant";
+              rawValue(9, t.object);
+              transfer(placed, covering.field, 9);
+            } else if (chain !== undefined && chain.groups.length > 1) {
               // One membership test and read per placement group; a group's
               // misses fall through to the next group's test.
               let misses: LocalBranch[] = [];
@@ -27942,7 +31626,7 @@ function emitModuleForms(
                 const last = index === chain.groups.length - 1;
                 if (index > 0) {
                   patchLocalBranches(misses);
-                  stackWords.clear();
+                  clearWordCaches();
                   misses = [];
                 }
                 rawValue(9, t.object);
@@ -27976,9 +31660,9 @@ function emitModuleForms(
               transfer(layout, t.field, object);
             }
             const presenceOffset = field.presenceOffset;
-            if (t.operation === "write" && presenceOffset !== undefined) {
+            if (t.operation !== "read" && presenceOffset !== undefined) {
               rawValue(9, t.object);
-              imm(10, 1);
+              imm(10, t.operation === "delete" ? 0 : 1);
               imm(12, presenceOffset);
               emit({
                 op: "add-reg",
@@ -28001,6 +31685,9 @@ function emitModuleForms(
               rawLoad(10, contextOffset);
               const written = slotOffset(t.slot);
               rememberObject(
+                deferRememberSlow(),
+                9,
+                undefined,
                 field.type === "general"
                   ? (): readonly number[] => nonReferenceTag(written)
                   : undefined,
@@ -28147,6 +31834,9 @@ function emitModuleForms(
                     rawLoad(10, contextOffset);
                     const written = slotOffset(t.slot);
                     rememberObject(
+                      deferRememberSlow(),
+                      9,
+                      undefined,
                       field.type === "general"
                         ? (): readonly number[] => nonReferenceTag(written)
                         : undefined,
@@ -28187,6 +31877,9 @@ function emitModuleForms(
                   // cell helper's w0 completion status.
                   const written = slotOffset(t.slot);
                   rememberObject(
+                    deferRememberSlow(),
+                    9,
+                    undefined,
                     field.type === "general"
                       ? (): readonly number[] => nonReferenceTag(written)
                       : undefined,
@@ -28252,6 +31945,8 @@ function emitModuleForms(
                   leafBase[value(id).offset / 8] ?? 0;
             }
         }
+        for (const emitSlow of deferredAllocSlowPaths)
+          if (emitSlow !== undefined) emitSlow();
         if (coldReciprocals.length > 0) {
           stackWords.clear();
           emitColdReciprocalStubs(
@@ -28291,7 +31986,7 @@ function emitModuleForms(
             rawValue,
             imm,
             prepareStringSize,
-            allocate,
+            (prepare, size) => allocate(prepare, size),
             callHelper,
             (coldBlock, coldIndex) => {
               blockId = coldBlock;
@@ -28308,7 +32003,7 @@ function emitModuleForms(
           if (block === undefined) throw "exception block invariant";
           const handler = block.exception;
           if (handler === undefined) continue;
-          stackWords.clear();
+          clearWordCaches();
           offsets[block.id * 2 + 3] = instructions.length * 4;
           emit({
             op: "sub-imm",
@@ -28378,7 +32073,7 @@ function emitModuleForms(
           branch({ op: "b" }, fn.id, handler.target);
         }
         if (throwExit) {
-          stackWords.clear();
+          clearWordCaches();
           offsets[1] = instructions.length * 4;
           emit({
             op: "sub-imm",
@@ -28409,8 +32104,8 @@ function emitModuleForms(
           // Labels laid out after a seeded block that emitted nothing share
           // its address but get their own entry state.
           const seededStarts = new Set<number>();
-          for (let index = orderedBlocks.length - 1; index >= 0; index--) {
-            const block = orderedBlocks[index];
+          for (let index = layout.length - 1; index >= 0; index--) {
+            const block = fn.blocks[layout[index] ?? -1];
             if (block === undefined) throw "block invariant";
             const start = offsets[block.id * 2];
             if (start === undefined) continue;
@@ -28750,7 +32445,9 @@ function emitModuleForms(
                       storedAsWord(id) ||
                       foldedConstants[index] === 1 ||
                       fusedReads[index] !== 0 ||
-                      rotatedShifts[index] === 1
+                      rotatedShifts[index] === 1 ||
+                      fusedShifts[index] === 1 ||
+                      fusedBitTests[index] === 1
                     )
                       return undefined;
                     return {
@@ -29247,6 +32944,49 @@ function emitModuleForms(
         branch: fixup.branch,
       });
       if (!r.ok) compactFailure(r.error, fixup);
+    }
+    // Collapse chains of unconditional B trampolines (`b -> b -> target`).
+    for (let fixupIndex = 0; fixupIndex < fixups.length; fixupIndex++) {
+      const fixup = fixups[fixupIndex];
+      if (
+        fixup === undefined ||
+        resolvedFixups.has(fixupIndex) ||
+        fixup.far === true ||
+        fixup.branch.op === "bl" ||
+        fixup.block === undefined
+      )
+        continue;
+      const functionBlocks = blockOffsets[fixup.function];
+      const targetOffset =
+        functionBlocks === undefined
+          ? undefined
+          : functionBlocks.offsets[
+              fixup.block < 0 ? -fixup.block * 2 - 1 : fixup.block * 2
+            ];
+      if (targetOffset === undefined) continue;
+      let finalTarget = targetOffset;
+      for (let hop = 0; hop < 8; hop++) {
+        if (finalTarget < 0 || finalTarget + 4 > code.length) break;
+        const word =
+          ((code[finalTarget] ?? 0) |
+            ((code[finalTarget + 1] ?? 0) << 8) |
+            ((code[finalTarget + 2] ?? 0) << 16) |
+            ((code[finalTarget + 3] ?? 0) << 24)) >>>
+          0;
+        if ((word & 0xfc000000) >>> 0 !== 0x14000000) break;
+        const imm26 = word & 0x03ffffff,
+          signed = (imm26 & 0x02000000) !== 0 ? imm26 - 0x04000000 : imm26,
+          next = finalTarget + signed * 4;
+        if (next === finalTarget) break;
+        finalTarget = next;
+      }
+      if (finalTarget !== targetOffset) {
+        patchBranch(code, {
+          offset: fixup.offset,
+          targetOffset: finalTarget,
+          branch: fixup.branch,
+        });
+      }
     }
     /** Patch a helper call: a BL in compact form, otherwise an x16 address. */
     function patchCall(offset: number, targetOffset: number): boolean {

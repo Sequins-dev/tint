@@ -10,7 +10,9 @@ import { lowerFunction } from "@tint/ts-native/scalar";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { createRecordContracts } from "@tint/ts-native/closure/records";
 
-/** Exercise class layouts and initialized reads before full class construction exists. */
+/** Exercise class layouts and field reads without class construction: own
+ * data fields are deferred (no initialization state), so construction writes
+ * them and reads are plain record accesses. */
 export function classRecordFixture(): { module: ModuleIR; bytes: number } {
   const bytes = new TextEncoder().encode(
     "class Box{value:number=42;read():number{return this.value;}}function read(box:Box):number{return box.value;}",
@@ -109,8 +111,8 @@ export function classRecordFixture(): { module: ModuleIR; bytes: number } {
                 { kind: "store", slot: 2, value: 3, ...s },
               ],
               terminator: {
-                kind: "record-cell",
-                operation: "initialize",
+                kind: "record",
+                operation: "write",
                 object: 2,
                 record: storage.instance,
                 field: 0,

@@ -71,6 +71,57 @@ test("union field reads with one placement fuse into one shared read", () => {
   assert.deepEqual([...plan.chains], [[0, oneGroup([0, 1, 2], 3)]]);
   assert.deepEqual([...plan.fused], [0, 1, 1, 0, 0]);
 });
+test("continuations that unwrap an optional receiver slot fuse", () => {
+  // Copy propagation reads an optional source slot and unwraps it at each
+  // load; the continuation's unwrap cannot fail (the head unwrapped the
+  // same slot contents).
+  const unwrapped = (id: number, record: number, alternate: number): Block => ({
+    id,
+    instructions: [
+      { kind: "load", id: id + 10, slot: 0, ...s },
+      { kind: "reference-value", id, value: id + 10, ...s },
+    ],
+    terminator: {
+      kind: "record",
+      object: id,
+      record,
+      field: 0,
+      operation: "read",
+      slot: 1,
+      consequent: 4,
+      alternate,
+      ...s,
+    },
+  });
+  const optional = (fn: FunctionIR): FunctionIR => ({
+    ...fn,
+    slots: ["optional-reference", "number"],
+  });
+  const fn = optional(
+    chain(unwrapped(1, 1, 2), unwrapped(2, 2, 3), unwrapped(0, 0, 1)),
+  );
+  const plan = recordDispatchChains(fn, records, () => true);
+  assert.deepEqual([...plan!.chains], [[0, oneGroup([0, 1, 2], 3)]]);
+  assert.deepEqual([...plan!.fused], [0, 1, 1, 0, 0]);
+  assert.ok(emitModule({ records, functions: [fn] }).ok);
+  // An unwrap of anything but the reloaded value keeps the guard.
+  const other = unwrapped(1, 1, 2);
+  const mismatched = optional(
+    chain(
+      {
+        ...other,
+        instructions: [
+          { kind: "load", id: 11, slot: 0, ...s },
+          { kind: "reference-value", id: 1, value: 10, ...s },
+        ],
+      },
+      unwrapped(2, 2, 3),
+      unwrapped(0, 0, 1),
+    ),
+  );
+  const kept = recordDispatchChains(mismatched, records, () => true);
+  assert.deepEqual([...kept!.fused], [0, 0, 0, 0, 0]);
+});
 test("differently placed fields fuse into one test and read per offset", () => {
   const placed = recordDispatchChains(
     chain(candidate(1, 3, 2), candidate(2, 1, 3)),
@@ -156,6 +207,38 @@ test("fused dispatch emits verified code smaller than the guard chain", () => {
   assert.ok(
     emit(chain()) < emit(chain(candidate(1, 1, 2), candidate(2, 3, 3))),
   );
+});
+test("a receiver known to be one of a fused group's layouts reads untested", () => {
+  // Two union reads of one receiver: after the first dispatch the receiver
+  // is layout 0 or `second`. With both in the second chain's placement
+  // group (0 and 1), the second read needs no membership test.
+  const reads = (second: number): FunctionIR => ({
+    id: 0,
+    name: "reads",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      candidate(0, 0, 1, 2),
+      candidate(1, second, 5, 2),
+      candidate(2, 0, 3, 4),
+      candidate(3, 1, 5, 4),
+      {
+        id: 4,
+        instructions: [{ kind: "load", id: 4, slot: 1, ...s }],
+        terminator: { kind: "return", value: 4, ...s },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  });
+  const size = (fn: FunctionIR) => {
+    const emitted = emitModule({ records, functions: [fn] });
+    assert.ok(emitted.ok, JSON.stringify(emitted));
+    return emitted.value.code.length;
+  };
+  assert.ok(size(reads(1)) < size(reads(2)));
 });
 test("continuations reloading a copy of the head's object still fuse", () => {
   // The head reads its parameter slot but first copies the object into a

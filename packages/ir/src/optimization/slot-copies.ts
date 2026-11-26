@@ -1,8 +1,13 @@
-import type { Block, FunctionIR, Instruction } from "../scalar/index.ts";
+import type {
+  Block,
+  FunctionIR,
+  Instruction,
+  SlotBinding,
+} from "../scalar/index.ts";
 import {
   instructionResult,
   provenRecordReads,
-  verifierRecordWork,
+  verifierRecordBudget,
 } from "../scalar/index.ts";
 
 export interface SlotCopyPropagation {
@@ -13,6 +18,9 @@ export interface SlotCopyPropagation {
    * verifier's layout proof. */
   readonly refused: boolean;
 }
+
+/** Rounds of chained copy propagation per function. */
+const maximumRounds = 8;
 
 const transparent = 0,
   valid = 1,
@@ -44,6 +52,62 @@ export function propagateSlotCopies(
 ): SlotCopyPropagation | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
+  // A round rewrites loads of each copy to its immediate source. When that
+  // source is itself a copy (nested inlining copies an argument that was a
+  // parameter copy), later rounds continue down the chain, so every load
+  // ends at the chain's root and facts proven on any link cover all of them.
+  // A cycle of copies stops at the round cap.
+  let current = fn,
+    visited = 0,
+    rewritten = 0;
+  for (let round = 0; round < maximumRounds; round++) {
+    const step = propagationRound(current, budget - visited);
+    if (step === undefined) return undefined;
+    visited += step.visited;
+    rewritten += step.rewritten;
+    current = step.fn;
+    if (!step.chained) break;
+  }
+  if (rewritten === 0) return { fn, visited, rewritten: 0, refused: false };
+  // The verifier proves direct record reads by tracing their object through
+  // slot stores to a descriptor check (provenRecordReads); reading a source
+  // instead of its copy can move the object off that trace. Keep the input
+  // when any read loses its proof.
+  let reads = 0;
+  for (const block of current.blocks) {
+    if (block === undefined) throw "copy block invariant";
+    for (const op of block.instructions)
+      if (op !== undefined && op.kind === "record-read") reads++;
+  }
+  if (reads === 0) return { fn: current, visited, rewritten, refused: false };
+  visited += reads;
+  const proofs = provenRecordReads(
+    current,
+    verifierRecordBudget(current),
+    stableLayouts,
+  );
+  if (proofs === undefined) return { fn, visited, rewritten: 0, refused: true };
+  for (const block of current.blocks) {
+    if (block === undefined) throw "copy block invariant";
+    for (const op of block.instructions)
+      if (op !== undefined && op.kind === "record-read" && proofs[op.id] !== 1)
+        return { fn, visited, rewritten: 0, refused: true };
+  }
+  return { fn: current, visited, rewritten, refused: false };
+}
+
+interface PropagationRound {
+  readonly fn: FunctionIR;
+  readonly visited: number;
+  readonly rewritten: number;
+  /** Some rewritten load now reads a slot that is itself a copy. */
+  readonly chained: boolean;
+}
+
+function propagationRound(
+  fn: FunctionIR,
+  budget: number,
+): PropagationRound | undefined {
   const slotCount = fn.slots.length,
     blockCount = fn.blocks.length;
   let visited = slotCount + blockCount,
@@ -87,11 +151,26 @@ export function propagateSlotCopies(
     rejected = new Uint8Array(slotCount),
     loads = new Uint32Array(slotCount);
   /** The slot a store copies, or -1: the stored value is a load of another
-   * slot earlier in the same block with no store to that slot between. (A
-   * reference copy of an optional reference is not a copy: reading the source
-   * would add an unwrap at every load.) */
+   * slot earlier in the same block with no store to that slot between, or
+   * (a refined copy) the unwrap of such a load of an optional reference
+   * stored to a reference slot. A refined copy's loads become an unwrap of
+   * a source load: a null test per load, which lets facts the copies'
+   * checks establish (descriptor checks) hold for the source and every
+   * copy of it. Only loads a checked field read takes as its object are
+   * rewritten (see `guarded`). */
   function copyOf(block: Block, position: number, value: number): number {
-    const op = definitions[value];
+    let op = definitions[value];
+    if (op !== undefined && op.kind === "reference-value") {
+      const at = positions[op.id] ?? -1;
+      if (block.instructions[at] !== op) return -1;
+      op = definitions[op.value];
+      if (
+        op === undefined ||
+        op.kind !== "load" ||
+        fn.slots[op.slot] !== "optional-reference"
+      )
+        return -1;
+    }
     if (op === undefined || op.kind !== "load") return -1;
     const at = positions[op.id] ?? -1;
     if (block.instructions[at] !== op) return -1;
@@ -127,6 +206,24 @@ export function propagateSlotCopies(
       sources[slot] = source + 1;
     }
   }
+  /** Whether copies of `source` stored in `slot` are unwraps (see copyOf). */
+  function refinedCopy(slot: number, source: number): boolean {
+    return (
+      fn.slots[slot] === "reference" &&
+      fn.slots[source] === "optional-reference"
+    );
+  }
+  // A refined copy's load becomes an unwrap of the source (a null test,
+  // and a new value): worth it only where facts shared with the source
+  // can remove a layout test, i.e. for the object of a checked field read.
+  const guarded = new Uint8Array(maximum + 1);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "copy block invariant";
+    const term = block.terminator;
+    if (term.kind === "record" && term.operation === "read")
+      guarded[term.object] = 1;
+  }
+  visited += blockCount;
   const candidates: number[] = [];
   for (let slot = 0; slot < slotCount; slot++) {
     if (
@@ -138,11 +235,14 @@ export function propagateSlotCopies(
     )
       continue;
     const source = (sources[slot] ?? 0) - 1;
-    if (edgeWritten[source] !== 1 && fn.slots[slot] === fn.slots[source])
+    if (
+      edgeWritten[source] !== 1 &&
+      (fn.slots[slot] === fn.slots[source] || refinedCopy(slot, source))
+    )
       candidates.push(slot);
   }
   if (candidates.length === 0)
-    return { fn, visited, rewritten: 0, refused: false };
+    return { fn, visited, rewritten: 0, chained: false };
   // Copies before their sources: order by the number of candidate hops down
   // to the chain's root (a cycle of copies is cut where it closes).
   const candidate = new Uint8Array(slotCount),
@@ -342,7 +442,8 @@ export function propagateSlotCopies(
 
   for (const slot of candidates) {
     if (slot === undefined) throw "copy candidate invariant";
-    const source = (sources[slot] ?? 0) - 1;
+    const source = (sources[slot] ?? 0) - 1,
+      refined = refinedCopy(slot, source);
     generation++;
     // Blocks reading the slot: its own loads and loads rewritten to it.
     const loadList: number[] = [];
@@ -374,6 +475,7 @@ export function propagateSlotCopies(
         const op = block.instructions[index];
         if (op === undefined) throw "copy instruction invariant";
         if (op.kind !== "load" || loaded(op.id, op.slot) !== slot) continue;
+        if (refined && guarded[op.id] !== 1) continue;
         const state =
           storeStamp[id] === generation
             ? scan(block, index, slot, source)
@@ -461,8 +563,16 @@ export function propagateSlotCopies(
       if (falseStamp[block] !== generation) replace(load, block, source);
     }
   }
-  if (rewritten === 0) return { fn, visited, rewritten: 0, refused: false };
+  if (rewritten === 0) return { fn, visited, rewritten: 0, chained: false };
+  let chained = false,
+    nextValue = maximum + 1;
   const blocks: Block[] = [];
+  const debug = fn.debug;
+  let debugSlots: SlotBinding[] | undefined;
+  const aliasedTo =
+    debug !== undefined && debug.slots.length > 0
+      ? new Int32Array(fn.slots.length).fill(-1)
+      : undefined;
   for (const block of fn.blocks) {
     if (block === undefined) throw "copy block invariant";
     let instructions: Instruction[] | undefined;
@@ -477,39 +587,57 @@ export function propagateSlotCopies(
       if (instructions === undefined)
         instructions = block.instructions.slice(0, index);
       if (op.kind !== "load") throw "copy rewrite invariant";
-      instructions.push({ ...op, slot: replacement - 1 });
+      const sourceSlot = replacement - 1;
+      if (aliasedTo !== undefined) {
+        const previous = aliasedTo[op.slot] ?? -1;
+        if (previous === -1) aliasedTo[op.slot] = sourceSlot;
+        else if (previous !== sourceSlot) aliasedTo[op.slot] = -2;
+      }
+      if (candidate[sourceSlot] === 1) chained = true;
+      if (refinedCopy(op.slot, sourceSlot)) {
+        const loaded = nextValue++,
+          inline = op.inline;
+        instructions.push({ ...op, id: loaded, slot: sourceSlot });
+        instructions.push({
+          kind: "reference-value",
+          id: op.id,
+          value: loaded,
+          start: op.start,
+          end: op.end,
+          ...(inline === undefined ? {} : { inline }),
+        });
+      } else instructions.push({ ...op, slot: sourceSlot });
     }
     blocks.push(
       instructions === undefined ? block : { ...block, instructions },
     );
   }
-  const result: FunctionIR = { ...fn, blocks };
-  // The verifier proves direct record reads by tracing their object through
-  // slot stores to a descriptor check (provenRecordReads); reading a source
-  // instead of its copy can move the object off that trace. Keep the input
-  // when any read loses its proof.
-  let reads = 0;
-  for (const block of blocks) {
-    if (block === undefined) throw "copy block invariant";
-    for (const op of block.instructions)
-      if (op !== undefined && op.kind === "record-read") reads++;
-  }
-  if (reads > 0) {
-    const proofs = provenRecordReads(result, verifierRecordWork, stableLayouts);
-    visited += reads;
-    let proven = proofs !== undefined;
-    if (proofs !== undefined)
-      for (const block of blocks) {
-        if (block === undefined) throw "copy block invariant";
-        for (const op of block.instructions)
-          if (
-            op !== undefined &&
-            op.kind === "record-read" &&
-            proofs[op.id] !== 1
-          )
-            proven = false;
-      }
-    if (!proven) return { fn, visited, rewritten: 0, refused: true };
-  }
-  return { fn: result, visited, rewritten, refused: false };
+  if (debug !== undefined && aliasedTo !== undefined)
+    for (const binding of debug.slots) {
+      if (binding === undefined) throw "copy debug slot invariant";
+      const sourceSlot = aliasedTo[binding.slot] ?? -1;
+      if (sourceSlot < 0) continue;
+      if (debugSlots === undefined) debugSlots = debug.slots.slice();
+      let exists = false;
+      for (const entry of debugSlots)
+        if (
+          entry !== undefined &&
+          entry.slot === sourceSlot &&
+          entry.variable === binding.variable
+        ) {
+          exists = true;
+          break;
+        }
+      if (!exists)
+        debugSlots.push({ slot: sourceSlot, variable: binding.variable });
+    }
+  return {
+    fn:
+      debug === undefined || debugSlots === undefined
+        ? { ...fn, blocks }
+        : { ...fn, blocks, debug: { ...debug, slots: debugSlots } },
+    visited,
+    rewritten,
+    chained,
+  };
 }

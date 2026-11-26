@@ -2827,7 +2827,8 @@ test("closed-module descriptor facts survive direct calls", () => {
 test("memory argument constants discharge numeric validation without truncating large values", () => {
   for (const [length, expected] of [
     [8, 1],
-    [4294967304, 2],
+    [4294967304, 1],
+    [9007199254740992, 2],
     [8.5, 2],
     [NaN, 2],
     [Infinity, 2],
@@ -3658,7 +3659,7 @@ test("bounded integer addition chains bypass generic modulo helpers", () => {
   }
 });
 
-test("managed root frames retain allocated results without redundant extraction roots", () => {
+test("managed root frames retain allocated results across safepoints without redundant extraction roots", () => {
   const result = emitModule({
     records: [{ byteLength: 16, fields: [] }],
     functions: [
@@ -4176,6 +4177,115 @@ test("published tagged calls retain general roots across the opaque code boundar
     generational.ok,
     false,
     "raw executable calls do not grant the tracked-write proof",
+  );
+});
+
+test("record-new pairs adjacent number fields with stp-d and elides optional-value-or into fused int32 add", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [
+          { offset: 8, type: "number", mutable: true },
+          { offset: 16, type: "number", mutable: true },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "pairAndAdd",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["number", "optional-number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 10, value: 0, ...span },
+              { kind: "store", slot: 2, value: 10, ...span },
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "constant", id: 1, value: 1.5, ...span },
+              {
+                kind: "record-new",
+                id: 2,
+                record: 0,
+                arguments: [0, 1],
+                ...span,
+              },
+              { kind: "load", id: 11, slot: 2, ...span },
+              { kind: "load", id: 3, slot: 1, ...span },
+              { kind: "constant", id: 4, value: 0, ...span },
+              {
+                kind: "optional-value-or",
+                id: 5,
+                value: 3,
+                fallback: 4,
+                ...span,
+              },
+              {
+                kind: "binary",
+                id: 6,
+                operator: "+",
+                left: 11,
+                right: 5,
+                ...span,
+              },
+              { kind: "constant", id: 12, value: 0, ...span },
+              {
+                kind: "binary",
+                id: 7,
+                operator: "|",
+                left: 6,
+                right: 12,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 7, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 1,
+            instructions: [],
+            terminator: { kind: "jump", target: 2, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 8, slot: 2, ...span }],
+            terminator: { kind: "return", value: 8, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module, {
+    maxByteLength: 0xffffffff,
+    hostABI: darwinHostABI(),
+    linearAllocation: true,
+    generationalBarriers: true,
+    closedRoots: [0],
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  const code = result.value.code;
+  const words: number[] = [];
+  for (let off = 0; off + 4 <= code.length; off += 4)
+    words.push(
+      (code[off]! |
+        (code[off + 1]! << 8) |
+        (code[off + 2]! << 16) |
+        (code[off + 3]! << 24)) >>>
+        0,
+    );
+  // STP Dt1, Dt2, [Xn, #imm] has top 10 bits 0b0110110100 (0x6d000000).
+  const hasStpD = words.some((w) => (w & 0xffc00000) === 0x6d000000);
+  assert.ok(hasStpD, "adjacent record-new number fields should emit STP D");
+  // FJCVTZS Wd, Dn has mask 0xfffffc00 === 0x1e7e0000.
+  const hasFjcvtzs = words.some((w) => (w & 0xfffffc00) === 0x1e7e0000);
+  assert.ok(
+    hasFjcvtzs,
+    "optional-value-or(opt, 0) feeding fused int32 add should lower via FJCVTZS",
   );
 });
 

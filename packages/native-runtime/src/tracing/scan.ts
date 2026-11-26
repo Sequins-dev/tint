@@ -16,6 +16,9 @@ import {
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeTypedArrayMarker,
+  nativeTypedArrayElementBytes,
+  nativeBuiltinMarkerLimit,
   nativeStringSlicedFlag,
   nativeStringParentOffset,
   nativeStringSlicedByteLength,
@@ -190,7 +193,7 @@ function scanObject(
     }
     return "complete";
   }
-  if (marker >= 1 && marker <= 5) {
+  if (marker === 1 || nativeTypedArrayMarker(marker)) {
     // Strings and arrays share the length offset; a string's length is the
     // word's low 32 bits (its high bits hold the index field).
     const word = read(address + nativeStringLengthOffset),
@@ -219,18 +222,13 @@ function scanObject(
           ? flags === 0
             ? 2
             : 1
-          : marker === 3
-            ? 2
-            : marker === 2
-              ? 1
-              : marker === 4
-                ? 4
-                : 8;
+          : nativeTypedArrayElementBytes(marker);
       if (length * width > byteLength - payload) return "invalid";
     }
     return "complete";
   }
-  if (!pointer(marker) || flags !== 0) return "invalid";
+  if (marker < nativeBuiltinMarkerLimit || !pointer(marker) || flags !== 0)
+    return "invalid";
   const extent = read(marker);
   if (extent === undefined) return "read";
   if (

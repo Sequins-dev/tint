@@ -566,8 +566,16 @@ const deferred = cases.map(({ source, host }) => {
     asynchronous: plan.asynchronous,
   });
 });
+// None of these fixtures invoke eval or Function, so omit the embedded
+// dynamic-evaluation compiler from the test host image.
 const built = withNativeFixtureMemory(() =>
-  createNativeBatchBuilder(workspaceSources())(deferred),
+  createNativeBatchBuilder(
+    workspaceSources(),
+    false,
+    undefined,
+    false,
+    false,
+  )(deferred),
 );
 if (!built.ok) assert.fail(JSON.stringify(built.outcome));
 const image = new NativeImageRunner(built.bytes, nativeTestResources.timeoutMs);

@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { verify, type ModuleIR } from "@tint/ir/scalar";
 import { optimizeModule } from "../src/optimization/index.ts";
+import { pruneUnallocatedRecords } from "../src/optimization/unallocated-records.ts";
+import { scalarizeLoopRecords } from "../src/optimization/loop-records.ts";
 const span = { start: 0, end: 1 };
 function fixture(escape = false): ModuleIR {
   return {
@@ -346,5 +348,382 @@ test("an observed parameter identity keeps a new record on the heap", () => {
     output.module.functions[0]!.blocks[0]!.instructions.some(
       (op) => op.kind === "record-new",
     ),
+  );
+});
+
+test("non-escaping record-cell fields scalarize init, read and write", () => {
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [{ type: "number", mutable: true, offset: 8, stateOffset: 16 }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "cellLocal",
+        exported: true,
+        parameters: [],
+        slots: ["reference", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              {
+                kind: "record-new",
+                id: 0,
+                record: 0,
+                arguments: [undefined],
+                ...span,
+              },
+              { kind: "store", slot: 0, value: 0, ...span },
+              { kind: "constant", id: 1, value: 10, ...span },
+              { kind: "store", slot: 1, value: 1, ...span },
+              { kind: "load", id: 2, slot: 0, ...span },
+            ],
+            terminator: {
+              kind: "record-cell",
+              object: 2,
+              record: 0,
+              field: 0,
+              operation: "initialize",
+              slot: 1,
+              consequent: 1,
+              alternate: 4,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "constant", id: 3, value: 42, ...span },
+              { kind: "store", slot: 1, value: 3, ...span },
+              { kind: "load", id: 4, slot: 0, ...span },
+            ],
+            terminator: {
+              kind: "record-cell",
+              object: 4,
+              record: 0,
+              field: 0,
+              operation: "write",
+              slot: 1,
+              consequent: 2,
+              alternate: 4,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 5, slot: 0, ...span }],
+            terminator: {
+              kind: "record-cell",
+              object: 5,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 3,
+              alternate: 4,
+              ...span,
+            },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "load", id: 6, slot: 1, ...span }],
+            terminator: { kind: "return", value: 6, ...span },
+          },
+          { id: 4, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const output = optimizeModule(input);
+  assert.ok(verify(output.module).ok, JSON.stringify(verify(output.module)));
+  const fn = output.module.functions[0]!;
+  assert.equal(
+    fn.blocks
+      .flatMap((b) => b.instructions)
+      .filter((i) => i.kind === "record-new").length,
+    0,
+  );
+  assert.equal(
+    fn.blocks.filter((b) => b.terminator.kind === "record-cell").length,
+    0,
+  );
+});
+
+test("pruneUnallocatedRecords eliminates unallocated layouts and never-written optional fields", () => {
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [
+          { type: "number", mutable: true, offset: 8 },
+          {
+            type: "optional-number",
+            mutable: true,
+            offset: 16,
+            presenceOffset: 24,
+          },
+        ],
+      },
+      {
+        byteLength: 16,
+        fields: [{ type: "number", mutable: true, offset: 8 }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "pruneMe",
+        exported: true,
+        parameters: [],
+        slots: ["reference", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 7, ...span },
+              {
+                kind: "record-new",
+                id: 1,
+                record: 0,
+                arguments: [0, undefined],
+                ...span,
+              },
+              { kind: "store", slot: 0, value: 1, ...span },
+              { kind: "load", id: 2, slot: 0, ...span },
+            ],
+            // Record 1 is never allocated: jumps straight to alternate (block 2).
+            terminator: {
+              kind: "record",
+              object: 2,
+              record: 1,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 3, slot: 1, ...span }],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 4, slot: 0, ...span },
+              // Field 1 of record 0 is never written: folds to false.
+              {
+                kind: "record-has",
+                id: 5,
+                object: 4,
+                record: 0,
+                field: 1,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 5,
+              consequent: 3,
+              alternate: 4,
+              ...span,
+            },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "constant", id: 6, value: 99, ...span }],
+            terminator: { kind: "return", value: 6, ...span },
+          },
+          {
+            id: 4,
+            instructions: [{ kind: "constant", id: 7, value: 1, ...span }],
+            terminator: { kind: "return", value: 7, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const pruned = pruneUnallocatedRecords(input, 100000);
+  assert.ok(pruned !== undefined && pruned.rewritten > 0);
+  assert.ok(verify(pruned.module).ok, JSON.stringify(verify(pruned.module)));
+  const fn = pruned.module.functions[0]!;
+  assert.equal(fn.blocks[0]?.terminator.kind, "jump");
+  assert.ok(
+    !fn.blocks
+      .flatMap((b) => b.instructions)
+      .some((op) => op.kind === "record-has"),
+  );
+});
+
+test("scalarizeLoopRecords hoists loop-carried allocations to conditional exit materialization", () => {
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [
+          { type: "number", mutable: false, offset: 8 },
+          { type: "number", mutable: false, offset: 16 },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "stepLoop",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "reference", "number", "number", "number"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 1, ...span },
+              { kind: "constant", id: 1, value: 2, ...span },
+              {
+                kind: "record-new",
+                id: 2,
+                record: 0,
+                arguments: [0, 1],
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 2, ...span },
+              { kind: "constant", id: 3, value: 0, ...span },
+              { kind: "store", slot: 2, value: 3, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 4, slot: 2, ...span },
+              { kind: "load", id: 5, slot: 0, ...span },
+              {
+                kind: "binary",
+                id: 6,
+                operator: "<",
+                left: 4,
+                right: 5,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 6,
+              consequent: 2,
+              alternate: 5,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 7, slot: 1, ...span }],
+            terminator: {
+              kind: "record",
+              object: 7,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 3,
+              consequent: 3,
+              alternate: 6,
+              ...span,
+            },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "load", id: 8, slot: 1, ...span }],
+            terminator: {
+              kind: "record",
+              object: 8,
+              record: 0,
+              field: 1,
+              operation: "read",
+              slot: 4,
+              consequent: 4,
+              alternate: 6,
+              ...span,
+            },
+          },
+          {
+            id: 4,
+            instructions: [
+              { kind: "load", id: 9, slot: 3, ...span },
+              { kind: "constant", id: 10, value: 1, ...span },
+              {
+                kind: "binary",
+                id: 11,
+                operator: "+",
+                left: 9,
+                right: 10,
+                ...span,
+              },
+              { kind: "load", id: 12, slot: 4, ...span },
+              {
+                kind: "binary",
+                id: 13,
+                operator: "+",
+                left: 12,
+                right: 10,
+                ...span,
+              },
+              {
+                kind: "record-new",
+                id: 14,
+                record: 0,
+                arguments: [11, 13],
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 14, ...span },
+              { kind: "load", id: 15, slot: 2, ...span },
+              {
+                kind: "binary",
+                id: 16,
+                operator: "+",
+                left: 15,
+                right: 10,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 16, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 5,
+            instructions: [{ kind: "load", id: 17, slot: 1, ...span }],
+            terminator: { kind: "return", value: 17, ...span },
+          },
+          { id: 6, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const res = scalarizeLoopRecords(input.functions[0]!, input, 100000);
+  assert.ok(res !== undefined && res.scalarized === 1);
+  const outMod: ModuleIR = { ...input, functions: [res.fn] };
+  assert.ok(verify(outMod).ok, JSON.stringify(verify(outMod)));
+  const fn = res.fn;
+  // Loop body block 4 has zero record-new instructions; materialization moved to exit.
+  assert.ok(!fn.blocks[4]!.instructions.some((op) => op.kind === "record-new"));
+  // Preheader block 0 still has initial record-new, plus exit materialization has one.
+  assert.equal(
+    fn.blocks
+      .flatMap((b) => b.instructions)
+      .filter((op) => op.kind === "record-new").length,
+    2,
   );
 });

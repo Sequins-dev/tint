@@ -301,9 +301,12 @@ testNativeLaunch(
         snapshot.strings.includes("p2") &&
           snapshot.strings.includes("(Stack roots)"),
       );
-      // Root frames by source name: inspect's and run's frames.
+      // Root frames by source name: inspect's and run's frames (including when
+      // inspect is inlined into run and formatted as `inspect (...) ← run (...)`).
       assert.ok(
-        snapshot.strings.some((text) => /^inspect \(fixture:\d+\)$/.test(text)),
+        snapshot.strings.some((text) =>
+          /^inspect \(fixture:\d+\)(?: ←|$)/.test(text),
+        ),
         snapshot.strings.filter((text) => /fixture/.test(text)).join("\n"),
       );
 

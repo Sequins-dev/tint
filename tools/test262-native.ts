@@ -905,8 +905,8 @@ export function nativeTestRuntimeSource(
   atomics: boolean = false,
   spinHint?: string,
   sharedAtomics: boolean = false,
-  storageProvider: string = engineStorageModule,
-  dynamicProvider: string = engineDynamicModule,
+  storageProvider: string | null = engineStorageModule,
+  dynamicProvider: string | null = engineDynamicModule,
   weakProvider?: string,
   weakRef: boolean = false,
   finalizationRegistry: boolean = false,
@@ -937,6 +937,10 @@ export function nativeTestRuntimeSource(
   if (topLevelAwait && !moduleExecution)
     throw Error("top-level await host requires module execution");
   const shared = scriptEvaluation?.literalTables === true;
+  const hasDynamicFunction = dynamicProvider !== null;
+  const hasExecutableStorage =
+    scriptEvaluation !== undefined ||
+    (hasDynamicFunction && storageProvider !== null);
   const evaluationHost =
     "{domain:():number=>currentContextDomain(),storage:executableStorage,table:():unknown=>scriptState.table," +
     (shared
@@ -1190,10 +1194,19 @@ import type {SourceModule} from "module-model";`
 ${weakProvider === undefined ? "" : 'import {createWeakSlot,weakSlotKey,weakSlotValue,setWeakSlotValue,clearWeakSlot} from "weak-storage";'}
 ${spinHint === undefined ? "" : 'import {cpuPause} from "spin-hint";'}
 ${sharedBuffers ? `import {createNativeSharedBlockService,nativeSharedMemoryHost,${sharedAtomics ? "nativeSharedAtomicMemoryHost," : ""}type NativeSharedBlockService} from "shared-service";` : ""}
-import {createGlobalEnvironment,type GlobalEnvironment} from "global";
-import {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";
-import {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";
-import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,registerStackMaps,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}${scriptEvaluation?.stackGuard ? ",isStackOverflow" : ""}} from "memory";
+import {createGlobalEnvironment,type GlobalEnvironment} from "global";${
+    hasExecutableStorage
+      ? '\nimport {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";'
+      : ""
+  }${
+    hasDynamicFunction
+      ? '\nimport {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";'
+      : ""
+  }${
+    hasExecutableStorage || hasDynamicFunction
+      ? `\nimport {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}${hasExecutableStorage ? "mapExecutableMemory,writeExecutableMemory," : ""}${hasDynamicFunction ? "callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex," : ""}readMemoryWord,registerExternalMemory,registerStackMaps,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}${scriptEvaluation?.stackGuard ? ",isStackOverflow" : ""}} from "memory";`
+      : ""
+  }
 import {randomNumber} from "random";
 import {wallClockMilliseconds} from "clock";${benchmarkHost && agentProvider === undefined ? '\nimport {monotonicMilliseconds} from "clock";' : ""}${benchmarkHost ? '\nimport {writeSync} from "native-fs";' : ""}
 import {createNativeFileHost,readlinkSync} from "native-fs";
@@ -1217,14 +1230,18 @@ function nativeSharedBlocks(realm:ErrorRealm):NativeSharedBlockService {
 ${agentProvider === undefined ? "" : nativeAgentHostSource(nativeTestResources.timeoutMs, nativeTestResources.agentLimits.maxAgents) + "\n"}interface NativeScriptResult {readonly error:string;readonly value:unknown;}
 type NativeScript=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:ScriptRecord)=>NativeScriptResult;
 // ${agentProvider === undefined ? "Process" : "Agent"}-owned bounded arena: never recycle code while a returned function can
-// refer to it. General code ownership/GC is a separate loader integration step.
+// refer to it. General code ownership/GC is a separate loader integration step.${
+    hasExecutableStorage
+      ? `
 const executableStorage=createEngineCodeStorage({
  ${nativeTestTarget.arch === "x86_64" ? 'architecture:"x86_64",\n ' : ""}domain:():number=>currentContextDomain(),
  map:(bytes:number):number=>mapExecutableMemory(bytes),
  register:(address:number,bytes:number):number=>registerExternalMemory(address,bytes),
  stackMaps:(code:number,bytes:number,table:number):number=>registerStackMaps(code,bytes,table),
  write:(address:number,capacity:number,offset:number,bytes:Uint8Array):number=>writeExecutableMemory(address,capacity,offset,bytes),
-},${nativeTestResources.executableMemoryBytes});
+},${nativeTestResources.executableMemoryBytes});`
+      : ""
+  }
 ${
   scriptEvaluation === undefined
     ? ""
@@ -1341,7 +1358,9 @@ function createRealmHost(parent:ErrorRealm|undefined,realms:ErrorRealm[],canSusp
      ? `const service:ScriptEvaluationHost=${evaluationHost};
  `
      : ""
- }realm.dynamicFunctionCompiler=createDynamicFunctionCompiler({realm,global,object,hooks},{
+ }${
+   hasDynamicFunction
+     ? `realm.dynamicFunctionCompiler=createDynamicFunctionCompiler({realm,global,object,hooks},{
   domain:():number=>currentContextDomain(),
   storage:executableStorage,
   invokeBorrowed:(address:number,value:unknown):unknown=>callExecutableValue(address,value),
@@ -1349,7 +1368,9 @@ function createRealmHost(parent:ErrorRealm|undefined,realms:ErrorRealm[],canSusp
   descriptor:(reader:(base:unknown,step:number)=>unknown):number=>nativeFunctionDescriptorWithIndex(reader),
   signature:(reader:(base:unknown,step:number)=>unknown):number=>nativeFunctionSignatureWithIndex(reader),
   readWord:(address:number,byteLength:number,offset:number):number=>readMemoryWord(address,byteLength,offset),
- },{maxDynamicCodeBytes:${nativeTestResources.maxDynamicCodeBytes}}${scriptEvaluation?.functionFallback ? ",createDynamicFunctionBodyCompiler({realm,global},service)" : ""});
+ },{maxDynamicCodeBytes:${nativeTestResources.maxDynamicCodeBytes}}${scriptEvaluation?.functionFallback ? ",createDynamicFunctionBodyCompiler({realm,global},service)" : ""});`
+     : ""
+ }
  realm.wallClockMilliseconds=():number=>wallClockMilliseconds();
  realm.namedTimeZones=lazyNamedTimeZones;
  realm.availableTimeZoneIdentifiers=():readonly string[]=>availableTimeZoneIdentifiers(realm);
@@ -1455,8 +1476,8 @@ function nativeTestRuntime(
   atomics: boolean = false,
   spinHint?: string,
   sharedAtomics: boolean = false,
-  storageProvider: string = engineStorageModule,
-  dynamicProvider: string = engineDynamicModule,
+  storageProvider: string | null = engineStorageModule,
+  dynamicProvider: string | null = engineDynamicModule,
   weakProvider?: string,
   weakRef: boolean = false,
   finalizationRegistry: boolean = false,
@@ -1543,8 +1564,12 @@ function nativeTestRuntime(
         ? []
         : [["weak-storage", weakProvider] as [string, string]]),
 
-      [engineStorageSpecifier, storageProvider],
-      [engineDynamicSpecifier, dynamicProvider],
+      ...(storageProvider === null
+        ? []
+        : [[engineStorageSpecifier, storageProvider] as [string, string]]),
+      ...(dynamicProvider === null
+        ? []
+        : [[engineDynamicSpecifier, dynamicProvider] as [string, string]]),
       ["object", objectModule],
       ...(spinHint === undefined
         ? []
@@ -1654,8 +1679,8 @@ function prepareNativeBatchInputs(
   atomics: boolean = false,
   spinHint?: string,
   sharedAtomics: boolean = false,
-  storageProvider: string = engineStorageModule,
-  dynamicProvider: string = engineDynamicModule,
+  storageProvider: string | null = engineStorageModule,
+  dynamicProvider: string | null = engineDynamicModule,
   weakProvider?: string,
   weakRef: boolean = false,
   finalizationRegistry: boolean = false,
@@ -1813,8 +1838,8 @@ function prepareNativeUnitHostInputs(
   atomics: boolean = false,
   spinHint?: string,
   sharedAtomics: boolean = false,
-  storageProvider: string = engineStorageModule,
-  dynamicProvider: string = engineDynamicModule,
+  storageProvider: string | null = engineStorageModule,
+  dynamicProvider: string | null = engineDynamicModule,
   weakProvider?: string,
   weakRef: boolean = false,
   finalizationRegistry: boolean = false,
@@ -2570,10 +2595,13 @@ export function createNativeTestBuilder() {
 export function nativeBatchConfiguration(
   snapshot: WorkspaceSourceSnapshot,
   moduleExecution: boolean,
+  dynamicEvaluation: boolean = true,
 ) {
   if (moduleExecution && !nativeModuleCapability(snapshot))
     throw Error("captured module host capability is unavailable");
-  const scriptEvaluation = capturedScriptEvaluation(snapshot);
+  const scriptEvaluation = dynamicEvaluation
+    ? capturedScriptEvaluation(snapshot)
+    : undefined;
   const dynamicImport =
     moduleExecution && nativeDynamicImportCapability(snapshot);
   const topLevelAwait =
@@ -2596,16 +2624,20 @@ export function nativeBatchConfiguration(
   const capabilities = capturedNativeRuntimeCapabilities(snapshot);
   const agentProvider =
     scriptEvaluation === undefined ? undefined : capabilities.agentHost;
-  const storageProvider = capturedEngineProvider(
-    snapshot,
-    engineStorageSpecifier,
-    "createEngineCodeStorage",
-  );
-  const dynamicProvider = capturedEngineProvider(
-    snapshot,
-    engineDynamicSpecifier,
-    "createDynamicFunctionCompiler",
-  );
+  const storageProvider = dynamicEvaluation
+    ? capturedEngineProvider(
+        snapshot,
+        engineStorageSpecifier,
+        "createEngineCodeStorage",
+      )
+    : null;
+  const dynamicProvider = dynamicEvaluation
+    ? capturedEngineProvider(
+        snapshot,
+        engineDynamicSpecifier,
+        "createDynamicFunctionCompiler",
+      )
+    : null;
   return {
     scriptEvaluation,
     dynamicImport,
@@ -2694,8 +2726,13 @@ export function createNativeBatchBuilder(
   moduleExecution: boolean = false,
   serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
   benchmarkHost: boolean = false,
+  dynamicEvaluation: boolean = true,
 ) {
-  const config = nativeBatchConfiguration(snapshot, moduleExecution);
+  const config = nativeBatchConfiguration(
+    snapshot,
+    moduleExecution,
+    dynamicEvaluation,
+  );
   const request = nativeBatchImageRequest(
     snapshot,
     moduleExecution,
@@ -3119,8 +3156,8 @@ function createNativeImageRequest(
   sharedBuffers: boolean = false,
   spinHint?: string,
   sharedAtomics: boolean = false,
-  storageProvider: string = engineStorageModule,
-  dynamicProvider: string = engineDynamicModule,
+  storageProvider: string | null = engineStorageModule,
+  dynamicProvider: string | null = engineDynamicModule,
   weakProvider?: string,
   weakRef: boolean = false,
   finalizationRegistry: boolean = false,
@@ -3156,11 +3193,12 @@ function createNativeImageRequest(
         ...(moduleExecution
           ? ["packages/js-runtime/src/modules/index.ts"]
           : []),
-        syntaxModule,
-        nativeCompilerModule,
+        ...(scriptEvaluation === undefined && dynamicProvider === null
+          ? []
+          : [syntaxModule, nativeCompilerModule]),
         nativeMemoryModule,
-        storageProvider,
-        dynamicProvider,
+        ...(storageProvider === null ? [] : [storageProvider]),
+        ...(dynamicProvider === null ? [] : [dynamicProvider]),
         ...(scriptEvaluation === undefined
           ? []
           : [

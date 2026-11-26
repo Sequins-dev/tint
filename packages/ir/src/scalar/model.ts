@@ -1,6 +1,7 @@
 import type { HostOperation } from "./host.ts";
 import type { ForeignCall, ForeignMemoryAccess } from "./foreign.ts";
-export type NativeErrorKind = "Error" | "TypeError" | "RangeError";
+export type NativeErrorKind =
+  "Error" | "TypeError" | "RangeError" | "ReferenceError";
 
 export type ScalarType =
   | "general"
@@ -12,10 +13,7 @@ export type ScalarType =
   | "optional-string"
   | "number"
   | "boolean"
-  | "Uint8Array"
-  | "Uint16Array"
-  | "Uint32Array"
-  | "Float64Array"
+  | NativeTypedArray
   | "optional-number";
 export type ReturnType = ScalarType | "void";
 /** Fields of IR activation-read. */
@@ -34,9 +32,17 @@ export interface Span {
 export interface DebugOrigin {
   readonly inline?: number | undefined;
 }
-/** Categories general-is tests. */
+/** Typed-array kinds with a native representation (./typed-arrays.ts). */
 export type NativeTypedArray =
-  "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+  | "Uint8Array"
+  | "Int8Array"
+  | "Uint8ClampedArray"
+  | "Uint16Array"
+  | "Int16Array"
+  | "Uint32Array"
+  | "Int32Array"
+  | "Float32Array"
+  | "Float64Array";
 /** The Atomics operations on a native integer array (see `array-atomic`). */
 export type ArrayAtomicOperation =
   | "load"
@@ -48,6 +54,7 @@ export type ArrayAtomicOperation =
   | "xor"
   | "exchange"
   | "compare-exchange";
+/** Categories general-is tests. */
 export type GeneralTest =
   | "undefined"
   | "number"
@@ -430,12 +437,7 @@ export type Instruction = Span &
         readonly kind: "reference-value";
         readonly id: number;
         readonly value: number;
-        readonly type?:
-          | "reference"
-          | "Uint8Array"
-          | "Uint16Array"
-          | "Uint32Array"
-          | "Float64Array";
+        readonly type?: "reference" | NativeTypedArray;
       }
     | {
         readonly kind: "string-literal";
@@ -760,8 +762,7 @@ export type Instruction = Span &
          * element width and the view lies within the buffer's bytes. */
         readonly kind: "array-view";
         readonly id: number;
-        readonly type:
-          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly type: NativeTypedArray;
         readonly buffer: number;
         readonly byteOffset: number;
         readonly length: number;
@@ -848,8 +849,7 @@ export type Instruction = Span &
     | {
         readonly kind: "array-new";
         readonly id: number;
-        readonly type:
-          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly type: NativeTypedArray;
         readonly length: number;
       }
     | {
@@ -890,6 +890,16 @@ export type Instruction = Span &
         readonly array: number;
         readonly index: number;
         readonly value: number;
+      }
+    | {
+        /** Stores `value`, converted once to the element encoding, into
+         * elements [from, to) of `array`. from and to are integers in
+         * [0, length]; to <= from fills nothing. */
+        readonly kind: "array-fill";
+        readonly array: number;
+        readonly value: number;
+        readonly from: number;
+        readonly to: number;
       }
     | {
         /** The write selected for a proven in-bounds integer index (no check). */
@@ -944,7 +954,9 @@ export type Terminator = Span &
         readonly object: number;
         readonly record: number;
         readonly field: number;
-        readonly operation: "read" | "write";
+        /** `delete` stores the transfer slot (the field's absent value) and
+         * clears the presence byte of an optional field. */
+        readonly operation: "read" | "write" | "delete";
         readonly slot: number;
         readonly consequent: number;
         readonly alternate: number;
@@ -1091,6 +1103,10 @@ export interface RecordField {
   /** Cell initialization byte; guarded record-cell access is required. */
   readonly stateOffset?: number;
   readonly presenceOffset?: number;
+  /** Zero-filled when construction omits it, with no state byte: the
+   * producer proves a write precedes every read (class instance fields
+   * assigned during construction). */
+  readonly deferred?: boolean;
   readonly offset: number;
   readonly type: ScalarType;
   readonly mutable: boolean;

@@ -7,10 +7,13 @@ import {
 import {
   nativeHeaderClaimed,
   nativeHeaderForwarded,
+  nativeHeaderFlagUnit,
   nativeArrayLengthOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
+  nativeTypedArrayMarker,
+  nativeBuiltinMarkerLimit,
   nativeStringSlicedFlag,
   nativeStringParentOffset,
 } from "@tint/abi/host";
@@ -312,18 +315,18 @@ function waitForWork(w: Worker): boolean {
   }
   let spins = 0;
   while (true) {
-    if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, 1);
+    if (spins >= 1024) fetchAddMemoryWord(record + recordParked, 8, 0, 1);
     const sequence = loadAcquireMemoryWord(record + recordWake, 8, 0);
     if (loadAcquireMemoryWord(record + recordActive, 8, 0) === 0) {
-      if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+      if (spins >= 1024) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
       return false;
     }
     if (read(record + recordCount) > 0) {
-      if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+      if (spins >= 1024) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
       fetchAddMemoryWord(record + recordActive, 8, 0, 1);
       return true;
     }
-    if (spins < 64) {
+    if (spins < 1024) {
       spins++;
       spin(w);
       continue;
@@ -369,10 +372,21 @@ function evacuate(w: Worker, starts: Uint32Array, address: number): number {
       header
     )
       continue;
-    const marker = headerMarker(header),
-      flags = headerFlags(header),
-      size = cheneyExtent(address, marker, flags),
-      destination = reserve(w, size),
+    const plain = header < nativeHeaderFlagUnit,
+      marker = plain ? header : header % nativeHeaderFlagUnit,
+      flags = plain ? 0 : Math.floor(header / nativeHeaderFlagUnit),
+      size =
+        plain && marker >= nativeBuiltinMarkerLimit && (marker & 7) === 0
+          ? ((read(marker) + 7) >>> 3) << 3
+          : plain && marker === 5
+            ? nativeArrayInlineOffset +
+              read(address + nativeArrayLengthOffset) * 8
+            : cheneyExtent(address, marker, flags),
+      free = w.free,
+      destination =
+        free + size <= w.limit
+          ? ((w.free = free + size), free)
+          : reserve(w, size),
       managedBase = w.managedBase;
     if (
       moveMemory(
@@ -386,41 +400,54 @@ function evacuate(w: Worker, starts: Uint32Array, address: number): number {
       fail(w, 3);
     // The copy took the claimed header.
     write(destination, header);
-    markStart(w, starts, destination, size <= largeBytes);
-    if (marker >= 2 && marker <= 5) {
-      if (flags === 0)
+    if (size <= largeBytes) {
+      const delta = destination - w.startBase,
+        word = delta >>> 8;
+      if (word > (w.firstWord | 0) && word < (w.lastWord | 0))
+        starts[word] = (starts[word] ?? 0) | (1 << ((delta >>> 3) & 31));
+      else markStart(w, starts, destination, true);
+    } else markStart(w, starts, destination, false);
+    if (marker < nativeBuiltinMarkerLimit) {
+      if (plain && marker === 5)
         write(
           destination + nativeArrayDataOffset,
           destination + nativeArrayInlineOffset,
         );
-      else if (flags === 2) {
-        // The source still holds the original data and owner words.
-        const owner = read(address + nativeArrayOwnerOffset),
-          moved =
-            owner >= w.fromBase && owner < w.fromEnd
-              ? evacuate(w, starts, owner)
-              : owner,
-          data = read(address + nativeArrayDataOffset);
-        write(
-          destination + nativeArrayDataOffset,
-          moved === owner
-            ? data
-            : data +
-                read(moved + nativeArrayDataOffset) -
-                read(owner + nativeArrayDataOffset),
-        );
-        write(destination + nativeArrayOwnerOffset, moved);
-      }
-    } else if (marker === nativeWeakSlotMarker) {
-      // The source's payload is dead once copied: it links the slot into
-      // this worker's lists (no other thread reads past a source header).
-      if (flags === nativeWeakSlotEphemeron) {
-        write(address + nativeWeakSlotKeyOffset, w.weakPending);
-        w.weakPending = address;
-        w.weakPendingCount += 1;
-      } else {
-        write(address + nativeWeakSlotKeyOffset, w.weakDone);
-        w.weakDone = address;
+      else if (nativeTypedArrayMarker(marker)) {
+        if (flags === 0)
+          write(
+            destination + nativeArrayDataOffset,
+            destination + nativeArrayInlineOffset,
+          );
+        else if (flags === 2) {
+          // The source still holds the original data and owner words.
+          const owner = read(address + nativeArrayOwnerOffset),
+            moved =
+              owner >= w.fromBase && owner < w.fromEnd
+                ? evacuate(w, starts, owner)
+                : owner,
+            data = read(address + nativeArrayDataOffset);
+          write(
+            destination + nativeArrayDataOffset,
+            moved === owner
+              ? data
+              : data +
+                  read(moved + nativeArrayDataOffset) -
+                  read(owner + nativeArrayDataOffset),
+          );
+          write(destination + nativeArrayOwnerOffset, moved);
+        }
+      } else if (marker === nativeWeakSlotMarker) {
+        // The source's payload is dead once copied: it links the slot into
+        // this worker's lists (no other thread reads past a source header).
+        if (flags === nativeWeakSlotEphemeron) {
+          write(address + nativeWeakSlotKeyOffset, w.weakPending);
+          w.weakPending = address;
+          w.weakPendingCount += 1;
+        } else {
+          write(address + nativeWeakSlotKeyOffset, w.weakDone);
+          w.weakDone = address;
+        }
       }
     }
     storeReleaseMemoryWord(address, 8, 0, destination + nativeHeaderForwarded);
@@ -458,7 +485,7 @@ function scanFields(
   for (let index = 0; index < count; index++) {
     const slot = base + read(descriptor + 8 + index * 8),
       value = read(slot);
-    if (value >= fromBase && value < fromEnd && value !== 0)
+    if (value >= fromBase && value < fromEnd)
       write(slot, evacuate(w, starts, value));
     else if (value >= w.sharedBase && value < w.sharedEnd) markShared(w, value);
   }
@@ -469,9 +496,21 @@ function scanFields(
 }
 /** Updates the fields of one object and returns its extent. */
 function scanObject(w: Worker, starts: Uint32Array, address: number): number {
-  const header = read(address),
-    marker = headerMarker(header),
-    flags = headerFlags(header);
+  const header = read(address);
+  if (header < nativeHeaderFlagUnit) {
+    if (header >= nativeBuiltinMarkerLimit && (header & 7) === 0) {
+      scanFields(w, starts, header + 8, address);
+      return ((read(header) + 7) >>> 3) << 3;
+    }
+    if (header === 5)
+      return (
+        nativeArrayInlineOffset + read(address + nativeArrayLengthOffset) * 8
+      );
+    scanHeaded(w, starts, address, header, 0);
+    return cheneyExtent(address, header, 0);
+  }
+  const marker = header % nativeHeaderFlagUnit,
+    flags = Math.floor(header / nativeHeaderFlagUnit);
   scanHeaded(w, starts, address, marker, flags);
   return cheneyExtent(address, marker, flags);
 }
@@ -485,9 +524,9 @@ function scanHeaded(
   marker: number,
   flags: number,
 ): void {
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) return;
-    if (marker % 8 !== 0 || flags !== 0) fail(w, 5);
+    if ((marker & 7) !== 0 || flags !== 0) fail(w, 5);
     scanFields(w, starts, marker + 8, address);
     return;
   }
@@ -498,12 +537,12 @@ function scanHeaded(
     for (let index = 0; index < capacity; index++) {
       const slot = address + nativeArrayInlineOffset + index * 8,
         value = read(slot);
-      if (value >= fromBase && value < fromEnd && value !== 0)
+      if (value >= fromBase && value < fromEnd)
         write(slot, evacuate(w, starts, value));
       else if (value >= w.sharedBase && value < w.sharedEnd)
         markShared(w, value);
     }
-  } else if (marker >= 2 && marker <= 5 && flags === 2)
+  } else if (nativeTypedArrayMarker(marker) && flags === 2)
     referenceSlot(w, starts, address + nativeArrayOwnerOffset);
   else if (marker === 1 && flags >= nativeStringSlicedFlag)
     // A slice holds its parent like any reference field.
@@ -522,11 +561,26 @@ function drain(w: Worker, starts: Uint32Array): void {
     if (scan < w.free) {
       // Advance first: a LAB retired while this object is scanned exports
       // only the objects after it.
-      const header = read(scan),
-        marker = headerMarker(header),
-        flags = headerFlags(header);
-      w.scan = scan + cheneyExtent(scan, marker, flags);
-      scanHeaded(w, starts, scan, marker, flags);
+      const header = read(scan);
+      if (header < nativeHeaderFlagUnit) {
+        if (header >= nativeBuiltinMarkerLimit && (header & 7) === 0) {
+          w.scan = scan + (((read(header) + 7) >>> 3) << 3);
+          scanFields(w, starts, header + 8, scan);
+        } else if (header === 5) {
+          w.scan =
+            scan +
+            nativeArrayInlineOffset +
+            read(scan + nativeArrayLengthOffset) * 8;
+        } else {
+          w.scan = scan + cheneyExtent(scan, header, 0);
+          scanHeaded(w, starts, scan, header, 0);
+        }
+      } else {
+        const marker = header % nativeHeaderFlagUnit,
+          flags = Math.floor(header / nativeHeaderFlagUnit);
+        w.scan = scan + cheneyExtent(scan, marker, flags);
+        scanHeaded(w, starts, scan, marker, flags);
+      }
       if (++sinceShare >= 32) {
         sinceShare = 0;
         if (
@@ -834,7 +888,7 @@ function traceMarkedEphemerons(
 function markChildren(w: Worker, region: CompactRegion, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) recordMarkedWeak(w, address, header);
     else markFields(w, region, marker + 8, address);
   } else if (marker === 6) {
@@ -845,7 +899,7 @@ function markChildren(w: Worker, region: CompactRegion, address: number): void {
         region,
         read(address + nativeArrayInlineOffset + index * 8),
       );
-  } else if (marker >= 2 && headerFlags(header) === 2) {
+  } else if (nativeTypedArrayMarker(marker) && headerFlags(header) === 2) {
     write(w.record + recordSawView, 1);
     markReference(w, region, read(address + nativeArrayOwnerOffset));
   } else if (marker === 1 && headerFlags(header) >= nativeStringSlicedFlag)
@@ -1234,9 +1288,15 @@ export function createParallelEvacuator(
       failed = true;
       fetchAddMemoryWord(record + recordActive, 8, 0, -1);
     }
+    let waitSpins = 0;
     while (true) {
       const finished = loadAcquireMemoryWord(record + recordFinished, 8, 0);
       if (finished >= workers - 1) break;
+      if (waitSpins < 512) {
+        waitSpins++;
+        spinPause();
+        continue;
+      }
       parkNativeWord(record + recordFinished, finished, 0);
     }
     if (failed || read(record + recordFailure) !== 0)

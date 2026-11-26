@@ -705,7 +705,7 @@ function hostedFixtureImage(module: ModuleIR): Uint8Array {
   const image = appendHostedEntry({
     native: compiled.value,
     host: target.hostABI,
-    invocation: 0,
+    invocation: compiled.value.functions[0]!.offset,
     returnType: "number",
     managedBytes: 4096,
     stackBytes: 1048576,
