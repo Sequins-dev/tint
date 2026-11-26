@@ -1,5 +1,15 @@
 import { forwardSingleUseTemporaries } from "./forward-temporaries.ts";
 import { specializeNumericForLoop } from "./numeric-loop-spec.ts";
+import {
+  collectInlineCandidates,
+  countInlineAstNodes,
+  emitInlineCandidates,
+  emitInlineConstructCandidates,
+  isForwardingInitializeConstructor,
+  selectMethodCandidates,
+  type InlineCandidatePlan,
+  type InlineEmitterContext,
+} from "./inline-methods.ts";
 import { collectTailCalls } from "./tail-position.ts";
 import { argumentsForwardingSites } from "./arguments-forwarding.ts";
 import { sourceModuleShape } from "./module-shape.ts";
@@ -1041,7 +1051,30 @@ function lowerScriptEntry(
   const globalIdentifierCaches = new Map<string, number>();
   const globalCacheInitializers: Expression[] = [];
   const propertyCacheInitializers: Expression[] = [];
+  const sharedPropertyCaches = new Map<string, number>();
+  const generated: Span = { start: script.start, end: script.start };
   const objectLiteralSiteInitializers: Expression[] = [];
+  const sharedObjectLiteralSites = new Map<string, number>();
+  const constructSiteInitializers: Expression[] = [];
+  const sharedConstructSites = new Map<string, number>();
+  const inlineCandidatePlan: InlineCandidatePlan | undefined =
+    nativeScriptCalls &&
+    !compactResults &&
+    !dynamicBindings &&
+    !checkContracts &&
+    !checkMethodCalls &&
+    (entryKind === "script" || entryKind === "module")
+      ? collectInlineCandidates(script.statements, script.strict ?? false)
+      : undefined;
+  const functionCandidateInitializers: Expression[] = [];
+  if (inlineCandidatePlan !== undefined) {
+    for (let i: number = 0; i < inlineCandidatePlan.slotCount; i++)
+      functionCandidateInitializers.push(id("undefined", generated));
+  }
+  const activeInlineSpans = new Set<number>();
+  let currentInlineCount: number = 0;
+  let currentInlineNodes: number = 0;
+  let currentFunctionStart: number = -1;
   // Fixed record fields work in AOT and managed entries. Each closure
   // captures the groups it uses, and one large host harness cannot exceed a
   // native record's field limit.
@@ -1104,10 +1137,71 @@ function lowerScriptEntry(
     const tables = slotTable("$gc", globalCacheInitializers);
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
     appendStatements(tables, slotTable("$oc", objectLiteralSiteInitializers));
+    if (constructSiteInitializers.length > 0)
+      appendStatements(tables, slotTable("$cs", constructSiteInitializers));
+    if (functionCandidateInitializers.length > 0)
+      appendStatements(
+        tables,
+        slotTable("$fc", functionCandidateInitializers, {
+          ...generated,
+          kind: "union",
+          members: [
+            {
+              ...generated,
+              kind: "named",
+              name: "OrdinaryObject",
+              arguments: instantiation("OrdinaryObject"),
+            },
+            named("undefined"),
+          ],
+        }),
+      );
     return tables;
+  }
+  /** A site record for an inlined constructor's final-shape allocation. */
+  function constructSite(
+    keys: readonly string[],
+    span: Span,
+    candidateSlot: number,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const sharedKey =
+      span.start >= 0 && span.end > span.start
+        ? String(span.start) +
+          ":" +
+          String(span.end) +
+          ":" +
+          String(candidateSlot) +
+          ":" +
+          keys.join(",")
+        : undefined;
+    if (sharedKey !== undefined) {
+      const existing = sharedConstructSites.get(sharedKey);
+      if (existing !== undefined) return slotField("$cs", existing, span);
+    }
+    const index = constructSiteInitializers.length;
+    const names: Expression[] = [];
+    for (const key of keys) names.push(text(key, generated));
+    constructSiteInitializers.push(
+      runtimeCall(
+        "createConstructSite",
+        [{ ...generated, kind: "array", elements: names }],
+        generated,
+      ),
+    );
+    if (sharedKey !== undefined) sharedConstructSites.set(sharedKey, index);
+    return slotField("$cs", index, span);
   }
   /** A site record for an object literal of static-key data definitions. */
   function objectLiteralSite(keys: readonly string[], span: Span): Expression {
+    const sharedKey =
+      span.start >= 0 && span.end > span.start
+        ? String(span.start) + ":" + String(span.end) + ":" + keys.join(",")
+        : undefined;
+    if (sharedKey !== undefined) {
+      const existing = sharedObjectLiteralSites.get(sharedKey);
+      if (existing !== undefined) return slotField("$oc", existing, span);
+    }
     const index = objectLiteralSiteInitializers.length;
     const names: Expression[] = [];
     for (const key of keys) names.push(text(key, generated));
@@ -1118,6 +1212,7 @@ function lowerScriptEntry(
         generated,
       ),
     );
+    if (sharedKey !== undefined) sharedObjectLiteralSites.set(sharedKey, index);
     return slotField("$oc", index, span);
   }
   /** A site's property cache; a method site (`o.m()`) caches the
@@ -1126,7 +1221,24 @@ function lowerScriptEntry(
     name: string,
     span: Span,
     method: boolean = false,
+    isStore: boolean = false,
   ): Expression {
+    const sharedKey =
+      span.start >= 0 && span.end > span.start
+        ? String(span.start) +
+          ":" +
+          String(span.end) +
+          ":" +
+          name +
+          ":" +
+          (method ? "1" : "0") +
+          ":" +
+          (isStore ? "1" : "0")
+        : undefined;
+    if (sharedKey !== undefined) {
+      const existing = sharedPropertyCaches.get(sharedKey);
+      if (existing !== undefined) return slotField("$pc", existing, span);
+    }
     const index = propertyCacheInitializers.length;
     propertyCacheInitializers.push(
       runtimeCall(
@@ -1135,6 +1247,7 @@ function lowerScriptEntry(
         generated,
       ),
     );
+    if (sharedKey !== undefined) sharedPropertyCaches.set(sharedKey, index);
     return slotField("$pc", index, span);
   }
   function withGlobalIdentifierCache(
@@ -1221,7 +1334,6 @@ function lowerScriptEntry(
       target.push(statement);
     }
   }
-  const generated: Span = { start: script.start, end: script.start };
   let serial = 0;
   // Names of const temporaries, and those declared `unknown` (general).
   const immutableTemporaries: Set<string> = new Set<string>(),
@@ -1317,11 +1429,11 @@ function lowerScriptEntry(
   let usesTailCalls = false;
   let usesRegisterCalls = false;
   let usesWideRegisterCalls = false;
-  let usesNativeScriptCalls = false;
-  let usesIndexedWrites = false;
-  let usesElementAccess = false;
-  let usesIntrinsicCalls = false;
-  let usesObjectLiterals = false;
+  let usesNativeScriptCalls: boolean = false;
+  let usesIndexedWrites: boolean = false;
+  let usesElementAccess: boolean = false;
+  let usesIntrinsicCalls: boolean = false;
+  let usesObjectLiterals: boolean = false;
   let usesSmallArrays = false;
   let usesNullishEquality = false;
   let excludesHTMLDDAObjects = false;
@@ -3402,8 +3514,7 @@ function lowerScriptEntry(
   ): void {
     usesElementAccess = true;
     usesIndexedWrites = true;
-    // A packed general element is a writable data property below the count.
-    const general = nestedStatements(() => {
+    const generalWrite = nestedStatements(() => {
       const cell = packedGeneralCell(base, key, span).cell;
       statements.push({
         ...at(span),
@@ -3415,7 +3526,7 @@ function lowerScriptEntry(
           expression: {
             ...at(span),
             kind: "assignment",
-            target: member(cell, "value", span),
+            target: member(cell, "elementValue", span),
             value: { ...value },
           },
         },
@@ -3448,7 +3559,7 @@ function lowerScriptEntry(
         span,
       ),
       consequent: block([], span),
-      alternate: block(general, span),
+      alternate: block(generalWrite, span),
     });
   }
   function readComputedProperty(
@@ -3483,35 +3594,35 @@ function lowerScriptEntry(
         const index = general.index,
           valid = general.valid,
           cell = general.cell;
-        const element = scalarBranch(
-          scalarBinary("!==", cell, id("undefined", span), span),
-          member(cell, "value", span),
+        const text = base.kind === "identifier" ? base : temporary(base, true);
+        const nonPacked = scalarBranch(
+          scalarBinary(
+            "&&",
+            categoryOperand(text, "string", span),
+            scalarBinary(
+              "&&",
+              { ...valid },
+              scalarBinary("<", index, member(text, "length", span), span),
+              span,
+            ),
+            span,
+          ),
+          {
+            ...at(span),
+            kind: "call",
+            callee: member({ ...text }, "charAt", span),
+            arguments: [{ ...index }],
+          },
           slow(),
           span,
         );
-        const text = base.kind === "identifier" ? base : temporary(base, true);
         statements.push(
           assignTo(
             name,
             scalarBranch(
-              scalarBinary(
-                "&&",
-                categoryOperand(text, "string", span),
-                scalarBinary(
-                  "&&",
-                  { ...valid },
-                  scalarBinary("<", index, member(text, "length", span), span),
-                  span,
-                ),
-                span,
-              ),
-              {
-                ...at(span),
-                kind: "call",
-                callee: member({ ...text }, "charAt", span),
-                arguments: [{ ...index }],
-              },
-              element,
+              scalarBinary("!==", cell, id("undefined", span), span),
+              member(cell, "elementValue", span),
+              nonPacked,
               span,
             ),
             span,
@@ -4025,7 +4136,7 @@ function lowerScriptEntry(
       key.kind === "string" &&
       !compactResults
     ) {
-      const cache = propertyCache(key.value, target);
+      const cache = propertyCache(key.value, target, false, true);
       const value = temporary(assigned, true);
       args[2] = value;
       args.push(cache);
@@ -4356,12 +4467,16 @@ function lowerScriptEntry(
     target: Expression,
     args: readonly Expression[],
     span: Span,
+    evaluatedActuals?: readonly Expression[],
   ): Expression {
     usesNativeScriptCalls = true;
-    const actuals = args.map((argument) => {
-      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-      return temporary(value(argument), true);
-    });
+    const actuals =
+      evaluatedActuals !== undefined
+        ? evaluatedActuals
+        : args.map((argument) => {
+            if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+            return temporary(value(argument), true);
+          });
     const { entry, accepts } = scriptEntryGuard(target, true, span);
     const result = uninitializedGeneralTemporary(span);
     const general = statements.length;
@@ -4445,6 +4560,172 @@ function lowerScriptEntry(
       alternate,
     });
     return result;
+  }
+  /** Shared callbacks for inline method and constructor emitters. */
+  function makeInlineEmitterContext(): InlineEmitterContext {
+    return {
+      htmlDDAObjects,
+      freshName: (prefix: string): string => prefix + serial++,
+      slotField: (index: number, s: Span): Expression =>
+        slotField("$fc", index, s),
+      sharedPropertyCache: (
+        name: string,
+        s: Span,
+        method: boolean,
+        isStore: boolean,
+      ): Expression => propertyCache(name, s, method, isStore),
+      sharedObjectLiteralSite: (keys: readonly string[], s: Span): Expression =>
+        objectLiteralSite(keys, s),
+      sharedConstructSite: (
+        keys: readonly string[],
+        s: Span,
+        candidateSlot: number,
+      ): Expression => constructSite(keys, s, candidateSlot),
+      isFreeIdentifierShadowed: (_name: string): boolean => false,
+      emitFreeIdentifier: (
+        out: Statement[],
+        _name: string,
+        s: Span,
+        bailLabel: string,
+      ): Expression | undefined => {
+        const fixedBinding = fixedCellReferences.get(s.start);
+        if (fixedBinding !== undefined) {
+          const fixedIndex = fixedCellIndices.get(fixedBinding);
+          if (fixedIndex === undefined) return undefined;
+          const cellName = "$ifc" + serial++;
+          const valName = "$ifv" + serial++;
+          out.push({
+            ...at(s),
+            kind: "variable",
+            mode: "const",
+            exported: false,
+            declarations: [
+              {
+                ...at(s),
+                name: cellName,
+                type: undefined,
+                initializer: slotField("$fixedCells", fixedIndex, s),
+              },
+            ],
+          });
+          out.push({
+            ...at(s),
+            kind: "variable",
+            mode: "let",
+            exported: false,
+            declarations: [
+              {
+                ...at(s),
+                name: valName,
+                type: named("unknown"),
+                initializer: id("undefined", s),
+              },
+            ],
+          });
+          const cellId = id(cellName, s);
+          out.push({
+            ...at(s),
+            kind: "if",
+            test: {
+              ...at(s),
+              kind: "binary",
+              operator: "&&",
+              left: scalarBinary("!==", cellId, id("undefined", s), s),
+              right: member(cellId, "initialized", s),
+            },
+            consequent: {
+              ...at(s),
+              kind: "expression",
+              expression: {
+                ...at(s),
+                kind: "assignment",
+                target: id(valName, s),
+                value: member(cellId, "value", s),
+              },
+            },
+            alternate: { ...at(s), kind: "break", label: bailLabel },
+          });
+          return id(valName, s);
+        }
+        const gKey = String(s.start) + ":" + String(s.end);
+        if (globalIdentifierSites.has(gKey) && !dynamicBindings) {
+          let gIndex = globalIdentifierCaches.get(gKey);
+          if (gIndex === undefined) {
+            gIndex = globalCacheInitializers.length;
+            globalIdentifierCaches.set(gKey, gIndex);
+            globalCacheInitializers.push(
+              call("createGlobalIdentifierCache", [], generated),
+            );
+          }
+          const root =
+            entryKind === "module" ? id("$globalScope") : id("$scope");
+          const cellName = "$igc" + serial++;
+          const valName = "$igv" + serial++;
+          out.push({
+            ...at(s),
+            kind: "variable",
+            mode: "const",
+            exported: false,
+            declarations: [
+              {
+                ...at(s),
+                name: cellName,
+                type: undefined,
+                initializer: call(
+                  "cachedGlobalIdentifierCell",
+                  [root, slotField("$gc", gIndex, s)],
+                  s,
+                ),
+              },
+            ],
+          });
+          out.push({
+            ...at(s),
+            kind: "variable",
+            mode: "let",
+            exported: false,
+            declarations: [
+              {
+                ...at(s),
+                name: valName,
+                type: named("unknown"),
+                initializer: id("undefined", s),
+              },
+            ],
+          });
+          out.push({
+            ...at(s),
+            kind: "if",
+            test: scalarBinary("!==", id(cellName, s), id("undefined", s), s),
+            consequent: {
+              ...at(s),
+              kind: "expression",
+              expression: {
+                ...at(s),
+                kind: "assignment",
+                target: id(valName, s),
+                value: member(id(cellName, s), "value", s),
+              },
+            },
+            alternate: { ...at(s), kind: "break", label: bailLabel },
+          });
+          return id(valName, s);
+        }
+        return undefined;
+      },
+      markElementAccess: (): void => {
+        usesElementAccess = true;
+      },
+      markObjectLiterals: (): void => {
+        usesObjectLiterals = true;
+      },
+      markSmallArrays: (): void => {
+        usesSmallArrays = true;
+      },
+      markIntrinsicField: (_field: string): void => {
+        usesIntrinsicCalls = true;
+      },
+    };
   }
   /** `f.apply(thisArg, arguments)` in a forwarding entry. When `apply` is
    * the intrinsic and `f` a native entry in the caller's context, the call
@@ -4943,6 +5224,7 @@ function lowerScriptEntry(
     receiver: Expression,
     args: readonly Expression[],
     span: Span,
+    preEvaluated?: readonly Expression[],
   ): Expression | undefined {
     if (
       compactResults ||
@@ -5007,6 +5289,10 @@ function lowerScriptEntry(
       field = "mathImul";
       shape = "math";
       arity = 2;
+    } else if (name === "pow" && count === 2) {
+      field = "mathPow";
+      shape = "math";
+      arity = 2;
     } else if (name === "charCodeAt" || name === "charAt") {
       field = name === "charAt" ? "stringCharAt" : "stringCharCodeAt";
       shape = "string";
@@ -5027,7 +5313,7 @@ function lowerScriptEntry(
       field = "atomicsAdd";
       shape = "atomics-add";
       arity = 3;
-    } else if (name === "add") {
+    } else if (name === "add" && count === 1) {
       field = "setAdd";
       shape = "set";
     } else if (name === "load" && count === 2) {
@@ -5047,9 +5333,16 @@ function lowerScriptEntry(
       return undefined;
     usesIntrinsicCalls = true;
     const evaluated: Expression[] = [];
-    for (const arg of args) {
-      if (arg === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-      evaluated.push(temporary(value(arg), true));
+    if (preEvaluated !== undefined) {
+      for (const item of preEvaluated) {
+        if (item === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+        evaluated.push(item);
+      }
+    } else {
+      for (const arg of args) {
+        if (arg === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+        evaluated.push(temporary(value(arg), true));
+      }
     }
     const intrinsics =
       loopIntrinsics !== undefined
@@ -5096,12 +5389,15 @@ function lowerScriptEntry(
       const operands: Expression[] = [];
       for (let index = 0; index < arity; index++)
         operands.push(copyIdentifier(operand(index), span));
-      inline = {
-        ...at(span),
-        kind: "call",
-        callee: member(id("Math", span), name, span),
-        arguments: operands,
-      };
+      inline =
+        name === "pow"
+          ? runtimeCall("numberPower", operands, span)
+          : {
+              ...at(span),
+              kind: "call",
+              callee: member(id("Math", span), name, span),
+              arguments: operands,
+            };
     } else if (shape === "push") {
       // A packed append's new length, or -1 for the ordinary call.
       // Try the zero-capture inlineable fast path first, falling back to
@@ -6846,6 +7142,14 @@ function lowerScriptEntry(
       functionName = options.functionName,
       homeObject = options.homeObject;
     const outerTailEnds = tailEnds;
+    const outerInlineCount = currentInlineCount;
+    const outerInlineNodes = currentInlineNodes;
+    const outerFunctionStart = currentFunctionStart;
+    currentInlineCount = 0;
+    currentInlineNodes = 0;
+    currentFunctionStart = span.start;
+    const addedInlineSpan = !activeInlineSpans.has(span.start);
+    if (addedInlineSpan) activeInlineSpans.add(span.start);
     const localTailEnds = new Map<number, number>();
     if (!raw && !suspending && resultContract === 0)
       for (const candidate of collectTailCalls(body, { strict: codeStrict })) {
@@ -8361,6 +8665,10 @@ function lowerScriptEntry(
     newTarget = outerNewTarget;
     strict = outerStrict;
     tailEnds = outerTailEnds;
+    currentInlineCount = outerInlineCount;
+    currentInlineNodes = outerInlineNodes;
+    currentFunctionStart = outerFunctionStart;
+    if (addedInlineSpan) activeInlineSpans.delete(span.start);
     nativeListName = outerNativeListName;
     argumentsForwarding = outerArgumentsForwarding;
     loopIntrinsics = outerLoopIntrinsics;
@@ -8570,7 +8878,7 @@ function lowerScriptEntry(
           arguments: bridgeArguments,
         },
       };
-      return retainSource(
+      let createdNative = retainSource(
         runtimeCall(
           "createNativeSourceFunction",
           [
@@ -8589,6 +8897,38 @@ function lowerScriptEntry(
         ),
         retainedSpan,
       );
+      if (
+        !arrow &&
+        !method &&
+        !suspending &&
+        body.kind === "block" &&
+        isForwardingInitializeConstructor(parameters, body)
+      ) {
+        createdNative = runtimeCall(
+          "markForwardingConstructor",
+          [createdNative, scalarNumber(1, span)],
+          span,
+        );
+      }
+      const inlineCand = inlineCandidatePlan?.bySpan.get(span.start);
+      const inlineCtor = inlineCandidatePlan?.ctorBySpan.get(span.start);
+      const inlineSlot =
+        inlineCand !== undefined && inlineCand.slotIndex >= 0
+          ? inlineCand.slotIndex
+          : inlineCtor !== undefined && inlineCtor.slotIndex >= 0
+            ? inlineCtor.slotIndex
+            : -1;
+      if (inlineSlot >= 0) {
+        const fnTemp = temporary(createdNative, false);
+        expression({
+          ...at(span),
+          kind: "assignment",
+          target: slotField("$fc", inlineSlot, span),
+          value: fnTemp,
+        });
+        return fnTemp;
+      }
+      return createdNative;
     }
     // One call names, creates and retains the source of each function.
     if (
@@ -10037,8 +10377,200 @@ function lowerScriptEntry(
           nativeScriptCalls &&
           !compactResults &&
           !node.arguments.some((argument) => argument?.kind === "spread")
-        )
+        ) {
+          let newCallee = node.callee;
+          while (newCallee.kind === "group") newCallee = newCallee.expression;
+          if (
+            newCallee.kind === "identifier" &&
+            newCallee.name === "Array" &&
+            node.arguments.length === 0
+          ) {
+            usesSmallArrays = true;
+            const intrinsics =
+              loopIntrinsics !== undefined
+                ? copyIdentifier(loopIntrinsics, node)
+                : member(id("$errors"), "intrinsicFunctions", node);
+            const hoisted = loopIntrinsicFields.get("array");
+            const arrayCtor =
+              hoisted !== undefined
+                ? copyIdentifier(hoisted, node)
+                : temporary(member(intrinsics, "array", node));
+            const fastRes = "$newArr" + serial++;
+            statements.push({
+              ...at(node),
+              kind: "variable",
+              mode: "let",
+              exported: false,
+              declarations: [
+                {
+                  ...at(node),
+                  name: fastRes,
+                  type: named("unknown"),
+                  initializer: id("undefined", node),
+                },
+              ],
+            });
+            const fallbackStart = statements.length;
+            const slow = constructNative(target, node.arguments, node);
+            expression({
+              ...at(node),
+              kind: "assignment",
+              target: id(fastRes, node),
+              value: slow,
+            });
+            const fallbackBlock: BlockStatement = {
+              ...at(node),
+              kind: "block",
+              statements: statements.splice(fallbackStart),
+            };
+            statements.push({
+              ...at(node),
+              kind: "if",
+              test: scalarBinary(
+                "&&",
+                scalarBinary("!==", arrayCtor, id("undefined", node), node),
+                scalarBinary("===", target, arrayCtor, node),
+                node,
+              ),
+              consequent: {
+                ...at(node),
+                kind: "expression",
+                expression: {
+                  ...at(node),
+                  kind: "assignment",
+                  target: id(fastRes, node),
+                  value: runtimeCall(
+                    "createArray0",
+                    [id("$errors", node)],
+                    node,
+                  ),
+                },
+              },
+              alternate: fallbackBlock,
+            });
+            return id(fastRes, node);
+          }
+          if (
+            inlineCandidatePlan !== undefined &&
+            currentInlineCount < 32 &&
+            currentInlineNodes < 3600
+          ) {
+            const directCtors =
+              newCallee.kind === "identifier"
+                ? inlineCandidatePlan.ctorByIdentifier.get(newCallee.name)
+                : undefined;
+            const fwKey =
+              newCallee.kind === "member" &&
+              !newCallee.optional &&
+              !newCallee.private
+                ? newCallee.property
+                : newCallee.kind === "identifier"
+                  ? newCallee.name
+                  : undefined;
+            const fwCtors =
+              fwKey !== undefined
+                ? inlineCandidatePlan.forwardingInitsByName.get(fwKey)
+                : undefined;
+            if (
+              (directCtors !== undefined && directCtors.length > 0) ||
+              (fwCtors !== undefined && fwCtors.length > 0)
+            ) {
+              const actuals = node.arguments.map((argument) => {
+                if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+                return temporary(value(argument), true);
+              });
+              const inlResName = "$inlNew" + serial++;
+              const inlDoneName = "$inlNewDone" + serial++;
+              const inlStmts = emitInlineConstructCandidates(
+                inlineCandidatePlan,
+                directCtors,
+                fwCtors,
+                target,
+                actuals,
+                inlResName,
+                inlDoneName,
+                node,
+                0,
+                activeInlineSpans,
+                makeInlineEmitterContext(),
+              );
+              const emittedNodes =
+                inlStmts !== undefined && inlStmts.length > 0
+                  ? countInlineAstNodes(inlStmts)
+                  : 0;
+              if (
+                inlStmts !== undefined &&
+                inlStmts.length > 0 &&
+                emittedNodes <= 1500 &&
+                currentInlineNodes + emittedNodes <= 4200
+              ) {
+                currentInlineCount++;
+                currentInlineNodes += emittedNodes;
+                statements.push({
+                  ...at(node),
+                  kind: "variable",
+                  mode: "let",
+                  exported: false,
+                  declarations: [
+                    {
+                      ...at(node),
+                      name: inlResName,
+                      type: named("unknown"),
+                      initializer: id("undefined", node),
+                    },
+                  ],
+                });
+                statements.push({
+                  ...at(node),
+                  kind: "variable",
+                  mode: "let",
+                  exported: false,
+                  declarations: [
+                    {
+                      ...at(node),
+                      name: inlDoneName,
+                      type: named("boolean"),
+                      initializer: {
+                        ...at(node),
+                        kind: "boolean",
+                        value: false,
+                      },
+                    },
+                  ],
+                });
+                for (const s of inlStmts) statements.push(s);
+                const fallbackStart = statements.length;
+                const slow = constructNative(
+                  target,
+                  node.arguments,
+                  node,
+                  actuals,
+                );
+                expression({
+                  ...at(node),
+                  kind: "assignment",
+                  target: id(inlResName, node),
+                  value: slow,
+                });
+                const fallbackBlock: BlockStatement = {
+                  ...at(node),
+                  kind: "block",
+                  statements: statements.splice(fallbackStart),
+                };
+                statements.push({
+                  ...at(node),
+                  kind: "if",
+                  test: negate(id(inlDoneName, node), node),
+                  consequent: fallbackBlock,
+                  alternate: undefined,
+                });
+                return id(inlResName, node);
+              }
+              return constructNative(target, node.arguments, node, actuals);
+            }
+          }
           return constructNative(target, node.arguments, node);
+        }
         const args = argumentList(node.arguments, node);
         return checkedRuntimeValue(
           "constructObjectValue",
@@ -10150,6 +10682,136 @@ function lowerScriptEntry(
             node,
           );
           if (direct !== undefined) return direct;
+        }
+        if (
+          inlineCandidatePlan !== undefined &&
+          !isTailCall(node) &&
+          currentInlineCount < 32 &&
+          currentInlineNodes < 3600 &&
+          !node.arguments.some((argument) => argument?.kind === "spread")
+        ) {
+          const candidates = selectMethodCandidates(
+            inlineCandidatePlan,
+            target,
+            currentFunctionStart,
+          );
+          if (candidates !== undefined && candidates.length > 0) {
+            const actuals = node.arguments.map((argument) => {
+              if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+              return temporary(value(argument), true);
+            });
+            const inlResName = "$inlRes" + serial++;
+            const inlDoneName = "$inlDone" + serial++;
+            const inlStmts = emitInlineCandidates(
+              inlineCandidatePlan,
+              candidates,
+              callee,
+              evaluated.receiver,
+              actuals,
+              inlResName,
+              inlDoneName,
+              node,
+              0,
+              activeInlineSpans,
+              makeInlineEmitterContext(),
+            );
+            const emittedNodes =
+              inlStmts !== undefined && inlStmts.length > 0
+                ? countInlineAstNodes(inlStmts)
+                : 0;
+            if (
+              inlStmts !== undefined &&
+              inlStmts.length > 0 &&
+              emittedNodes <= 1500 &&
+              currentInlineNodes + emittedNodes <= 4200
+            ) {
+              currentInlineCount++;
+              currentInlineNodes += emittedNodes;
+              statements.push({
+                ...at(node),
+                kind: "variable",
+                mode: "let",
+                exported: false,
+                declarations: [
+                  {
+                    ...at(node),
+                    name: inlResName,
+                    type: named("unknown"),
+                    initializer: id("undefined", node),
+                  },
+                ],
+              });
+              statements.push({
+                ...at(node),
+                kind: "variable",
+                mode: "let",
+                exported: false,
+                declarations: [
+                  {
+                    ...at(node),
+                    name: inlDoneName,
+                    type: named("boolean"),
+                    initializer: { ...at(node), kind: "boolean", value: false },
+                  },
+                ],
+              });
+              for (const s of inlStmts) statements.push(s);
+              const fallbackStart = statements.length;
+              const slowIntrinsic = invokeIntrinsic(
+                target,
+                callee,
+                evaluated.receiver,
+                node.arguments,
+                node,
+                actuals,
+              );
+              const slow =
+                slowIntrinsic !== undefined
+                  ? slowIntrinsic
+                  : invoke(
+                      callee,
+                      evaluated.receiver,
+                      node.arguments,
+                      node,
+                      actuals,
+                    );
+              expression({
+                ...at(node),
+                kind: "assignment",
+                target: id(inlResName, node),
+                value: slow,
+              });
+              const fallbackBlock: BlockStatement = {
+                ...at(node),
+                kind: "block",
+                statements: statements.splice(fallbackStart),
+              };
+              statements.push({
+                ...at(node),
+                kind: "if",
+                test: negate(id(inlDoneName, node), node),
+                consequent: fallbackBlock,
+                alternate: undefined,
+              });
+              return id(inlResName, node);
+            }
+            const missedIntrinsic = invokeIntrinsic(
+              target,
+              callee,
+              evaluated.receiver,
+              node.arguments,
+              node,
+              actuals,
+            );
+            if (missedIntrinsic !== undefined) return missedIntrinsic;
+            return invoke(
+              callee,
+              evaluated.receiver,
+              node.arguments,
+              node,
+              actuals,
+            );
+          }
         }
         const intrinsic = invokeIntrinsic(
           target,
@@ -11890,6 +12552,7 @@ function lowerScriptEntry(
                 else if (prop === "min") neededIntrinsicFields.add("mathMin");
                 else if (prop === "max") neededIntrinsicFields.add("mathMax");
                 else if (prop === "imul") neededIntrinsicFields.add("mathImul");
+                else if (prop === "pow") neededIntrinsicFields.add("mathPow");
                 else if (prop === "charCodeAt")
                   neededIntrinsicFields.add("stringCharCodeAt");
                 else if (prop === "charAt")
@@ -12038,10 +12701,18 @@ function lowerScriptEntry(
               scanExpr(expr.object);
               scanExpr(expr.index);
               return;
-            case "new":
+            case "new": {
+              const callee = expr.callee;
+              if (
+                callee.kind === "identifier" &&
+                callee.name === "Array" &&
+                expr.arguments.length === 0
+              )
+                neededIntrinsicFields.add("array");
               scanExpr(expr.callee);
               for (const arg of expr.arguments) scanExpr(arg);
               return;
+            }
             case "array":
               for (const item of expr.elements)
                 if (item !== undefined) scanExpr(item);

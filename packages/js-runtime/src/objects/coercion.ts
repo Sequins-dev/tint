@@ -70,7 +70,7 @@ export function readObjectValuePropertyKey(
         if (values !== undefined) {
           if (key < values.length) {
             const cell = values[key];
-            if (cell !== undefined) return cell.value;
+            if (cell !== undefined) return cell.elementValue;
           }
         } else if (key < elements.numberCount) {
           return elements.numbers[key];

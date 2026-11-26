@@ -102,6 +102,7 @@ export function installArrayIntrinsics(
   );
   builtinProperty(constructor, "isArray", isArray, true, true, hooks);
   builtinProperty(global, "Array", constructor, true, true, hooks);
+  realm.intrinsicFunctions.array = constructor;
   installArrayPrototype(realm, hooks);
   installArrayFactories(constructor, realm, hooks);
 }

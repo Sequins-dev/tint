@@ -61,6 +61,7 @@ function crossingType(
     case "reference-wrap":
     case "reference-none":
     case "string-reference":
+    case "function-environment":
       return "optional-reference";
     case "reference-string":
       return "optional-string";
@@ -91,6 +92,12 @@ function crossingType(
       )
         ? "boolean"
         : "number";
+    case "general-none":
+    case "general-null":
+    case "general-wrap":
+      return "general";
+    case "general-equal":
+      return "boolean";
     default:
       return undefined;
   }
@@ -119,7 +126,11 @@ function nonTrapBlocks(fn: FunctionIR): number {
       count++;
   return count;
 }
-function supported(op: Instruction, references: boolean = true): boolean {
+function supported(
+  op: Instruction,
+  references: boolean = true,
+  allowGeneral: boolean = false,
+): boolean {
   switch (op.kind) {
     case "constant":
     case "load":
@@ -177,6 +188,9 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "string-index-cached":
     case "string-index-cache":
       return true;
+    case "general-null":
+    case "general-equal":
+      return allowGeneral;
     case "reference-none":
     case "reference-wrap":
     case "reference-value":
@@ -185,10 +199,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "record-read":
     case "record-new":
     case "reference-vector-new":
-    // General values: a method's receiver conversion (general-is and
-    // general-value of its receiver parameter) and wrapped results.
-    case "general-is":
-    case "general-value":
+    // General values: wrapped results and uninitialized general sentinels.
     case "general-wrap":
     case "general-none":
     // A function value's own environment (a class constructor's state):
@@ -264,6 +275,44 @@ function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
     last.kind === "global-cell" ||
     last.kind === "general-record-is"
   );
+}
+/** Fixed-arity JS object literal and constructor fast-path allocators
+ * (`createLiteralObject1..4`, `createConstructedObject1..8`): recognized by
+ * their IR shape (returns an object reference, takes at least one `general`
+ * field value parameter, allocates one wide `OrdinaryObject` record with at
+ * least 20 fields, and has at most one fallback `call`). Exempt from the small
+ * `maxExpansion`/`referenceAllowance` caps so hot allocation sites expand
+ * directly to bump-pointer allocation. */
+function isScriptObjectAllocator(fn: FunctionIR, module: ModuleIR): boolean {
+  if (fn.returnType !== "reference" && fn.returnType !== "optional-reference")
+    return false;
+  let hasGeneralParam = false;
+  for (const param of fn.parameters) {
+    if (param !== undefined && fn.slots[param] === "general") {
+      hasGeneralParam = true;
+      break;
+    }
+  }
+  if (!hasGeneralParam) return false;
+  const records = module.records;
+  if (records === undefined) return false;
+  let wideRecordNew = 0,
+    otherRecordNew = 0,
+    calls = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined) return false;
+    for (const op of block.instructions) {
+      if (op === undefined) return false;
+      if (op.kind === "record-new") {
+        const fields = records[op.record]?.fields;
+        if (fields !== undefined && fields.length >= 20) wideRecordNew++;
+        else otherRecordNew++;
+      } else if (op.kind === "call") {
+        calls++;
+      }
+    }
+  }
+  return wideRecordNew === 1 && otherRecordNew === 0 && calls <= 1;
 }
 /** Most non-trap blocks of an inlined scalar or void callee. */
 function maxCalleeBlocks(guarded: boolean): number {
@@ -389,7 +438,15 @@ export function inlineSmallFunctions(
     effectful = new Uint8Array(module.functions.length),
     directCallers = new Uint32Array(module.functions.length),
     intrinsic = new Uint8Array(module.functions.length),
+    allocator = new Uint8Array(module.functions.length),
     costs: number[] = [];
+  let hasScriptEntries = false;
+  for (const fn of module.functions) {
+    if (fn !== undefined && fn.scriptEntry === true) {
+      hasScriptEntries = true;
+      break;
+    }
+  }
   let visited = 0,
     inlined = 0,
     committed = 0;
@@ -436,6 +493,11 @@ export function inlineSmallFunctions(
       overhead = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
     if (incremental && !good) continue;
+    const isAllocator =
+      hasScriptEntries &&
+      fn.scriptEntry !== true &&
+      isScriptObjectAllocator(fn, module);
+    const limit = isAllocator ? 256 : maxExpansion;
     for (let slot = 0; slot < fn.slots.length; slot++) {
       if (incremental) {
         if (visited >= budget) return exhausted();
@@ -498,12 +560,12 @@ export function inlineSmallFunctions(
         // more level).
         if (op.kind === "call" && op.target === fn.id) good = false;
         if (
-          !supported(op, false) ||
+          !supported(op, false, false) ||
           (op.kind === "store" && fn.parameters.includes(op.slot))
         )
           original = false;
         if (
-          !supported(op) ||
+          !supported(op, true, isAllocator) ||
           (op.kind === "store" &&
             fn.blocks.length === 1 &&
             fn.parameters.includes(op.slot))
@@ -511,9 +573,7 @@ export function inlineSmallFunctions(
           good = false;
         if (
           incremental &&
-          (!good ||
-            cost > maxExpansion ||
-            (!original && cost + overhead > maxExpansion))
+          (!good || cost > limit || (!original && cost + overhead > limit))
         ) {
           good = false;
           break;
@@ -522,9 +582,11 @@ export function inlineSmallFunctions(
     }
     const expansion = original ? cost : cost + overhead;
     eligible[fn.id] =
-      good && expansion <= maxExpansion && returns > 0 ? (original ? 1 : 2) : 0;
-    if (eligible[fn.id] !== 0 && isScriptInlineIntrinsic(fn))
-      intrinsic[fn.id] = 1;
+      good && expansion <= limit && returns > 0 ? (original ? 1 : 2) : 0;
+    if (eligible[fn.id] !== 0) {
+      if (isAllocator) allocator[fn.id] = 1;
+      else if (isScriptInlineIntrinsic(fn)) intrinsic[fn.id] = 1;
+    }
     costs[fn.id] = expansion;
   }
   const functions: FunctionIR[] = [];
@@ -605,6 +667,7 @@ export function inlineSmallFunctions(
           ? Math.min(originalCount + 128, Math.max(0, maxExpansion - selfCost))
           : originalCount + 128,
       referenceAllowance = 384,
+      allocatorInlines = 0,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),
       blocks: Block[] = [],
@@ -638,11 +701,21 @@ export function inlineSmallFunctions(
         const callee =
             op.kind === "call" ? module.functions[op.target] : undefined,
           cost = callee === undefined ? 0 : (costs[callee.id] ?? 0),
-          isIntrinsic = callee !== undefined && intrinsic[callee.id] === 1;
+          isAllocatorCallee =
+            callee !== undefined && allocator[callee.id] === 1,
+          allowAllocator =
+            isAllocatorCallee &&
+            fn.scriptEntry === true &&
+            fn.blocks.length <= 1000 &&
+            allocatorInlines < 8,
+          isIntrinsic =
+            (callee !== undefined && intrinsic[callee.id] === 1) ||
+            allowAllocator;
         if (
           op.kind !== "call" ||
           callee === undefined ||
           !eligible[callee.id] ||
+          (isAllocatorCallee && !allowAllocator) ||
           callee.id === fn.id ||
           op.environment !== undefined ||
           separated(fn, callee.id) ||
@@ -1004,6 +1077,7 @@ export function inlineSmallFunctions(
               case "boolean-none":
               case "reference-none":
               case "general-none":
+              case "general-null":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -1043,6 +1117,7 @@ export function inlineSmallFunctions(
                 });
                 break;
               case "binary":
+              case "general-equal":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -1632,6 +1707,7 @@ export function inlineSmallFunctions(
             end: op.end,
             inline: callInline,
           });
+        if (allowAllocator) allocatorInlines++;
         if (!isIntrinsic) {
           allowance -= cost;
           if (eligible[callee.id] === 2) referenceAllowance -= cost;

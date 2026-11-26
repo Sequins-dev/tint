@@ -30,7 +30,10 @@ import { hoistNumberListLoops } from "./number-list-loops.ts";
 export { hoistNumberListLoops } from "./number-list-loops.ts";
 import { cacheElementStorage } from "./element-cache.ts";
 export { cacheElementStorage } from "./element-cache.ts";
-import { cacheLoopProperties } from "./property-cache.ts";
+import {
+  analyzeModulePropertySites,
+  cacheLoopProperties,
+} from "./property-cache.ts";
 export { cacheLoopProperties } from "./property-cache.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
@@ -2149,13 +2152,29 @@ export function optimizeModuleVersion(
   // in the loop preheader and refresh after cold invalidating calls/writes.
   // Running before thread-branches, cleanup, sink-environment-loads and
   // compact-slots lets those passes remove dead IC operands and compact slots.
+  const propertySites = analyzeModulePropertySites(
+    version.module,
+    maxInstructions - used - accessVisited,
+  );
+  if (propertySites === undefined)
+    return exhausted(
+      "cache-loop-properties",
+      maxInstructions - used - accessVisited,
+    );
+  used += propertySites.visited;
   const cachedProperties = rewriteFunctions(
     version,
     maxInstructions - used - accessVisited,
     undefined,
     sweepChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
-      const result = cacheLoopProperties(fn, version.module, budget, remarks);
+      const result = cacheLoopProperties(
+        fn,
+        version.module,
+        budget,
+        remarks,
+        propertySites,
+      );
       return result === undefined
         ? undefined
         : {
@@ -2182,7 +2201,7 @@ export function optimizeModuleVersion(
     undefined,
     sweepChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
-      const result = threadBranches(fn, budget, remarks);
+      const result = threadBranches(fn, budget, remarks, copyLayouts);
       return result === undefined
         ? undefined
         : {

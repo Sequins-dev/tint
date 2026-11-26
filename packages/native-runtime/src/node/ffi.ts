@@ -1018,6 +1018,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       scriptInvoke,
       invoke,
       invokeWide,
+      forwardingTag: 0,
     };
   }
   function wrapper(
