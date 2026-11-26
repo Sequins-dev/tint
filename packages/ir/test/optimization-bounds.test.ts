@@ -685,6 +685,702 @@ test("code units stay checked without the length relation", () => {
   );
 });
 
+/** `stencil(a)` over a parameter array of unknown length: for (i = start;
+ * i + indexDelta OP a.length - lengthOffset; i++) total += a[i + d] ?? 0
+ * for each read delta d, then a[i + write] = total. With `hoisted`, the bound
+ * a.length - lengthOffset is computed once into slot 2 before the loop.
+ * Slots: 0 a, 1 i, 2 bound, 3 total. */
+function stencil(options: {
+  readonly start: number;
+  readonly operator: "<" | "<=" | ">" | ">=";
+  readonly lengthOffset: number;
+  readonly indexDelta?: number;
+  readonly reads: readonly number[];
+  readonly write?: number;
+  readonly hoisted?: boolean;
+  readonly reassign?: boolean;
+}): FunctionIR {
+  let next = 100;
+  const id = (): number => next++;
+  function lengthMinus(into: Instruction[]): number {
+    const array = id(),
+      length = id(),
+      offset = id(),
+      bound = id();
+    into.push(
+      { kind: "load", id: array, slot: 0, ...span },
+      { kind: "array-length", id: length, array, ...span },
+      { kind: "constant", id: offset, value: options.lengthOffset, ...span },
+      {
+        kind: "binary",
+        id: bound,
+        operator: "-",
+        left: length,
+        right: offset,
+        ...span,
+      },
+    );
+    return bound;
+  }
+  function indexPlus(into: Instruction[], delta: number): number {
+    const index = id(),
+      amount = id(),
+      sum = id();
+    into.push(
+      { kind: "load", id: index, slot: 1, ...span },
+      { kind: "constant", id: amount, value: Math.abs(delta), ...span },
+      {
+        kind: "binary",
+        id: sum,
+        operator: delta < 0 ? "-" : "+",
+        left: index,
+        right: amount,
+        ...span,
+      },
+    );
+    return sum;
+  }
+  const entry: Instruction[] = [
+    { kind: "constant", id: 0, value: options.start, ...span },
+    { kind: "store", slot: 1, value: 0, ...span },
+    { kind: "constant", id: 1, value: 0, ...span },
+    { kind: "store", slot: 3, value: 1, ...span },
+  ];
+  if (options.hoisted === true)
+    entry.push({ kind: "store", slot: 2, value: lengthMinus(entry), ...span });
+  const header: Instruction[] = [];
+  const index = indexPlus(header, options.indexDelta ?? 0);
+  let bound: number;
+  if (options.hoisted === true) {
+    bound = id();
+    header.push({ kind: "load", id: bound, slot: 2, ...span });
+  } else bound = lengthMinus(header);
+  const condition = id();
+  // `>`/`>=` compare with the bound on the left: `bound > index`.
+  const boundLeft = options.operator === ">" || options.operator === ">=";
+  header.push({
+    kind: "binary",
+    id: condition,
+    operator: options.operator,
+    left: boundLeft ? bound : index,
+    right: boundLeft ? index : bound,
+    ...span,
+  });
+  const body: Instruction[] = [];
+  for (const delta of options.reads) {
+    const array = id(),
+      read = id(),
+      fallback = id(),
+      value = id(),
+      total = id(),
+      sum = id();
+    body.push({ kind: "load", id: array, slot: 0, ...span });
+    const at = indexPlus(body, delta);
+    body.push(
+      { kind: "array-read", id: read, array, index: at, ...span },
+      { kind: "constant", id: fallback, value: 0, ...span },
+      { kind: "optional-value-or", id: value, value: read, fallback, ...span },
+      { kind: "load", id: total, slot: 3, ...span },
+      {
+        kind: "binary",
+        id: sum,
+        operator: "+",
+        left: total,
+        right: value,
+        ...span,
+      },
+      { kind: "store", slot: 3, value: sum, ...span },
+    );
+  }
+  if (options.reassign === true) {
+    const length = id(),
+      fresh = id();
+    body.push(
+      { kind: "constant", id: length, value: 2, ...span },
+      { kind: "array-new", id: fresh, type: "Float64Array", length, ...span },
+      { kind: "store", slot: 0, value: fresh, ...span },
+    );
+  }
+  if (options.write !== undefined) {
+    const array = id(),
+      total = id();
+    body.push({ kind: "load", id: array, slot: 0, ...span });
+    const at = indexPlus(body, options.write);
+    body.push(
+      { kind: "load", id: total, slot: 3, ...span },
+      { kind: "array-write", array, index: at, value: total, ...span },
+    );
+  }
+  const step = indexPlus(body, 1);
+  body.push({ kind: "store", slot: 1, value: step, ...span });
+  const result = id();
+  return {
+    id: 0,
+    name: "stencil",
+    exported: true,
+    parameters: [0],
+    slots: ["Float64Array", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: entry,
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: header,
+        terminator: {
+          kind: "branch",
+          condition,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: body,
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: result, slot: 3, ...span }],
+        terminator: { kind: "return", value: result, ...span },
+      },
+    ],
+  };
+}
+function checked(fn: FunctionIR): number {
+  return kinds(select(fn)).filter(
+    (kind) => kind === "array-read" || kind === "array-write",
+  ).length;
+}
+
+test("an index below an array's length minus c proves offsets up to c", () => {
+  for (const hoisted of [false, true]) {
+    const fn = select(
+      stencil({
+        start: 1,
+        operator: "<",
+        lengthOffset: 1,
+        reads: [-1, 0, 1],
+        write: 0,
+        hoisted,
+      }),
+    );
+    assert.equal(
+      kinds(fn).filter((kind) => kind === "array-element").length,
+      3,
+    );
+    assert.equal(kinds(fn).filter((kind) => kind === "array-store").length, 1);
+    assert.ok(!kinds(fn).includes("array-read"));
+    assert.ok(!kinds(fn).includes("array-write"));
+  }
+  // `i + 1 < a.length` and `a.length - 1 > i` prove the same.
+  assert.equal(
+    checked(
+      stencil({
+        start: 0,
+        operator: "<",
+        lengthOffset: 0,
+        indexDelta: 1,
+        reads: [0, 1],
+      }),
+    ),
+    0,
+  );
+  assert.equal(
+    checked(
+      stencil({ start: 0, operator: ">", lengthOffset: 1, reads: [0, 1] }),
+    ),
+    0,
+  );
+  // `i <= a.length - 2` is `i < a.length - 1`.
+  assert.equal(
+    checked(stencil({ start: 0, operator: "<=", lengthOffset: 2, reads: [1] })),
+    0,
+  );
+});
+
+test("offsets beyond the proven margin, negative indexes and reassignment stay checked", () => {
+  // a[i + 2] may be a[a.length] when i < a.length - 1.
+  assert.equal(
+    checked(stencil({ start: 1, operator: "<", lengthOffset: 1, reads: [2] })),
+    1,
+  );
+  // `i <= a.length - 1` admits i = a.length - 1, so a[i + 1] may be past
+  // the end; `i <= a.length` proves nothing.
+  assert.equal(
+    checked(
+      stencil({ start: 0, operator: "<=", lengthOffset: 1, reads: [0, 1] }),
+    ),
+    1,
+  );
+  assert.equal(
+    checked(stencil({ start: 0, operator: "<=", lengthOffset: 0, reads: [0] })),
+    1,
+  );
+  // From i = 0, a[i - 1] reads index -1.
+  assert.equal(
+    checked(stencil({ start: 0, operator: "<", lengthOffset: 1, reads: [-1] })),
+    1,
+  );
+  // A new array in the slot ends the relation for later accesses.
+  assert.equal(
+    checked(
+      stencil({
+        start: 0,
+        operator: "<",
+        lengthOffset: 0,
+        reads: [0],
+        write: 0,
+        reassign: true,
+      }),
+    ),
+    1,
+  );
+  // `>=` with the bound on the left is `i <= a.length - c`.
+  assert.equal(
+    checked(stencil({ start: 0, operator: ">=", lengthOffset: 1, reads: [1] })),
+    1,
+  );
+});
+
+test("bitwise AND with a non-negative length-1 mask selects unchecked reads and integer probe slots", () => {
+  // Slots: 0 slots (optional-reference -> Uint32Array), 1 hash, 2 cap, 3 mask, 4 at, 5 probe.
+  function probe(guardUpperBound: boolean): FunctionIR {
+    return {
+      id: 0,
+      name: "probe",
+      exported: true,
+      parameters: [0, 1],
+      slots: [
+        "optional-reference",
+        "number",
+        "number",
+        "number",
+        "number",
+        "number",
+      ],
+      returnType: "number",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "load", id: 0, slot: 0, ...span },
+            {
+              kind: "reference-value",
+              id: 1,
+              value: 0,
+              type: "Uint32Array",
+              ...span,
+            },
+            { kind: "array-length", id: 2, array: 1, ...span },
+            { kind: "constant", id: 3, value: 1, ...span },
+            {
+              kind: "binary",
+              id: 4,
+              operator: "<",
+              left: 2,
+              right: 3,
+              ...span,
+            },
+            { kind: "store", slot: 2, value: 2, ...span },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 4,
+            consequent: 5,
+            alternate: 1,
+            ...span,
+          },
+        },
+        {
+          id: 1,
+          instructions: [
+            { kind: "load", id: 5, slot: 2, ...span },
+            {
+              kind: "constant",
+              id: 6,
+              value: guardUpperBound ? 0x40000000 : 0xffffffff,
+              ...span,
+            },
+            {
+              kind: "binary",
+              id: 7,
+              operator: ">",
+              left: 5,
+              right: 6,
+              ...span,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 7,
+            consequent: 5,
+            alternate: 2,
+            ...span,
+          },
+        },
+        {
+          id: 2,
+          instructions: [
+            { kind: "load", id: 8, slot: 2, ...span },
+            { kind: "constant", id: 9, value: 1, ...span },
+            {
+              kind: "binary",
+              id: 10,
+              operator: "-",
+              left: 8,
+              right: 9,
+              ...span,
+            },
+            { kind: "store", slot: 3, value: 10, ...span },
+            { kind: "load", id: 11, slot: 1, ...span },
+            {
+              kind: "binary",
+              id: 12,
+              operator: "&",
+              left: 11,
+              right: 10,
+              ...span,
+            },
+            { kind: "store", slot: 4, value: 12, ...span },
+          ],
+          terminator: { kind: "jump", target: 3, ...span },
+        },
+        {
+          id: 3,
+          instructions: [
+            { kind: "load", id: 13, slot: 0, ...span },
+            {
+              kind: "reference-value",
+              id: 14,
+              value: 13,
+              type: "Uint32Array",
+              ...span,
+            },
+            { kind: "load", id: 15, slot: 4, ...span },
+            { kind: "array-read", id: 16, array: 14, index: 15, ...span },
+            { kind: "constant", id: 17, value: 0, ...span },
+            {
+              kind: "optional-value-or",
+              id: 18,
+              value: 16,
+              fallback: 17,
+              ...span,
+            },
+            { kind: "store", slot: 5, value: 18, ...span },
+            { kind: "load", id: 26, slot: 5, ...span },
+            {
+              kind: "binary",
+              id: 19,
+              operator: "<=",
+              left: 26,
+              right: 17,
+              ...span,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 19,
+            consequent: 5,
+            alternate: 4,
+            ...span,
+          },
+        },
+        {
+          id: 4,
+          instructions: [
+            { kind: "load", id: 20, slot: 4, ...span },
+            { kind: "constant", id: 21, value: 1, ...span },
+            {
+              kind: "binary",
+              id: 22,
+              operator: "+",
+              left: 20,
+              right: 21,
+              ...span,
+            },
+            { kind: "load", id: 23, slot: 3, ...span },
+            {
+              kind: "binary",
+              id: 24,
+              operator: "&",
+              left: 22,
+              right: 23,
+              ...span,
+            },
+            { kind: "store", slot: 4, value: 24, ...span },
+          ],
+          terminator: { kind: "jump", target: 3, ...span },
+        },
+        {
+          id: 5,
+          instructions: [{ kind: "constant", id: 25, value: 0, ...span }],
+          terminator: { kind: "return", value: 25, ...span },
+        },
+      ],
+    };
+  }
+  const guarded = select(probe(true));
+  assert.ok(kinds(guarded).includes("array-element"));
+  assert.ok(!kinds(guarded).includes("array-read"));
+  assert.ok(guarded.integerSlots?.includes(4));
+  assert.ok(guarded.integerSlots?.includes(5));
+
+  // Without bounding `cap <= 2^31`, `cap - 1` may have bit 31 set, so `&`
+  // can produce negative int32 results and the read stays checked.
+  const unguarded = select(probe(false));
+  assert.ok(kinds(unguarded).includes("array-read"));
+});
+
+test("nonzero equality refinement proves probe - 1 >= 0 for guarded array reads", () => {
+  // Slots: 0 hashes (Uint32Array), 1 probe (number), 2 entry (number)
+  const fn: FunctionIR = {
+    id: 0,
+    name: "nonzeroProbe",
+    exported: true,
+    parameters: [0],
+    slots: ["Uint32Array", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "array-length", id: 1, array: 0, ...span },
+          { kind: "store", slot: 1, value: 1, ...span },
+          { kind: "constant", id: 2, value: 0, ...span },
+          {
+            kind: "binary",
+            id: 3,
+            operator: "===",
+            left: 1,
+            right: 2,
+            ...span,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 3,
+          alternate: 1,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 4, slot: 1, ...span },
+          { kind: "constant", id: 5, value: 1, ...span },
+          {
+            kind: "binary",
+            id: 6,
+            operator: "-",
+            left: 4,
+            right: 5,
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 6, ...span },
+          { kind: "load", id: 7, slot: 0, ...span },
+          { kind: "array-length", id: 8, array: 7, ...span },
+          {
+            kind: "binary",
+            id: 9,
+            operator: "<",
+            left: 6,
+            right: 8,
+            ...span,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 9,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 10, slot: 0, ...span },
+          { kind: "load", id: 11, slot: 2, ...span },
+          { kind: "array-read", id: 12, array: 10, index: 11, ...span },
+          { kind: "constant", id: 13, value: 0, ...span },
+          {
+            kind: "optional-value-or",
+            id: 14,
+            value: 12,
+            fallback: 13,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 14, ...span },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "constant", id: 15, value: 0, ...span }],
+        terminator: { kind: "return", value: 15, ...span },
+      },
+    ],
+  };
+  const selected = select(fn);
+  assert.ok(kinds(selected).includes("array-element"));
+  assert.ok(!kinds(selected).includes("array-read"));
+  assert.ok(selected.integerSlots?.includes(2));
+});
+
+test("safe-integer multiplication feeding only bitwise ops lowers to imul", () => {
+  // Slots: 0 arr (Uint32Array), 1 round (number = arr.length in [0, 2^32-1]), 2 i (number in [0, 511])
+  const fn: FunctionIR = {
+    id: 0,
+    name: "mulMask",
+    exported: true,
+    parameters: [0],
+    slots: ["Uint32Array", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "array-length", id: 1, array: 0, ...span },
+          { kind: "store", slot: 1, value: 1, ...span },
+          { kind: "constant", id: 2, value: 511, ...span },
+          { kind: "store", slot: 2, value: 2, ...span },
+          { kind: "load", id: 3, slot: 1, ...span },
+          { kind: "load", id: 4, slot: 2, ...span },
+          {
+            kind: "binary",
+            id: 5,
+            operator: "*",
+            left: 3,
+            right: 4,
+            ...span,
+          },
+          { kind: "constant", id: 6, value: 1023, ...span },
+          {
+            kind: "binary",
+            id: 7,
+            operator: "&",
+            left: 5,
+            right: 6,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 7, ...span },
+      },
+    ],
+  };
+  const selected = select(fn);
+  const ops = selected.blocks[0]!.instructions.filter(
+    (op) => op.kind === "binary",
+  );
+  assert.ok(ops.some((op) => op.kind === "binary" && op.operator === "imul"));
+  assert.ok(!ops.some((op) => op.kind === "binary" && op.operator === "*"));
+});
+
+test("uint32 threshold widening keeps 0-or-array-length cap and incremented len in integerSlots", () => {
+  // Slots: 0 cond, 1 arr (Float64Array), 2 len, 3 cap
+  const fn: FunctionIR = {
+    id: 0,
+    name: "pushCapWiden",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["boolean", "Float64Array", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...span },
+          { kind: "store", slot: 2, value: 0, ...span },
+          { kind: "load", id: 1, slot: 0, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 1,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 2, slot: 1, ...span },
+          { kind: "array-length", id: 3, array: 2, ...span },
+          { kind: "store", slot: 3, value: 3, ...span },
+        ],
+        terminator: { kind: "jump", target: 3, ...span },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "constant", id: 4, value: 0, ...span },
+          { kind: "store", slot: 3, value: 4, ...span },
+        ],
+        terminator: { kind: "jump", target: 3, ...span },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 5, slot: 2, ...span },
+          { kind: "load", id: 6, slot: 3, ...span },
+          {
+            kind: "binary",
+            id: 7,
+            operator: "<",
+            left: 5,
+            right: 6,
+            ...span,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 7,
+          consequent: 4,
+          alternate: 5,
+          ...span,
+        },
+      },
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 8, slot: 2, ...span },
+          { kind: "constant", id: 9, value: 1, ...span },
+          {
+            kind: "binary",
+            id: 10,
+            operator: "+",
+            left: 8,
+            right: 9,
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 10, ...span },
+        ],
+        terminator: { kind: "jump", target: 3, ...span },
+      },
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 11, slot: 2, ...span }],
+        terminator: { kind: "return", value: 11, ...span },
+      },
+    ],
+  };
+  const selected = select(fn);
+  assert.ok(selected.integerSlots?.includes(2));
+  assert.ok(selected.integerSlots?.includes(3));
+});
+
 test("slice bound slots stay tracked as integer slots", () => {
   const fn: FunctionIR = {
     id: 0,

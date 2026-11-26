@@ -1413,15 +1413,31 @@ function parseSource(
     strict = true;
     try {
       const className =
-        !at("{") && !at("<") && !at("extends")
+        !at("{") &&
+        !at("<") &&
+        !at("extends") &&
+        !(language !== "javascript" && at("implements"))
           ? bindingName().value
           : undefined;
       if (declaration && className === undefined)
         fail("class declaration requires a name", "SYNTAX_ERROR");
       const generics = typeParameters();
       const heritage = eat("extends") ? expression(15) : undefined;
+      const heritageTypeArguments: TypeNode[] = [];
+      if (heritage !== undefined && language !== "javascript" && eat("<")) {
+        do {
+          heritageTypeArguments.push(type());
+        } while (eat(",") && !at(">"));
+        typeClose();
+      }
+      const implementsTypes: TypeNode[] = [];
+      if (language !== "javascript" && eat("implements"))
+        do {
+          implementsTypes.push(type());
+        } while (eat(","));
       expect("{");
       const elements: ClassElement[] = [];
+      const typeOnlyMembers: Span[] = [];
       let constructorSeen = false;
       while (!at("}")) {
         if (eat(";")) continue;
@@ -1429,7 +1445,8 @@ function parseSource(
         const elementDecorators = decorators();
         // TypeScript member modifiers have no runtime meaning, except that
         // `declare` and `abstract` members do not exist at runtime.
-        let ambient = false;
+        let ambient = false,
+          readonlyField = false;
         const memberModifiers = (): void => {
           while (
             language !== "javascript" &&
@@ -1446,6 +1463,7 @@ function parseSource(
             !current(1).lineBreakBefore
           ) {
             if (at("declare") || at("abstract")) ambient = true;
+            if (at("readonly")) readonlyField = true;
             take();
           }
         };
@@ -1459,6 +1477,24 @@ function parseSource(
           isStatic = true;
         }
         memberModifiers();
+        // A TypeScript index signature declares types only.
+        if (
+          language !== "javascript" &&
+          at("[") &&
+          current(1).kind === "identifier" &&
+          at(":", 2)
+        ) {
+          expect("[");
+          name();
+          expect(":");
+          type();
+          expect("]");
+          expect(":");
+          type();
+          semi();
+          typeOnlyMembers.push({ start, end: end() });
+          continue;
+        }
         if (at("{") && isStatic) {
           if (elementDecorators.length !== 0)
             fail("static blocks cannot be decorated");
@@ -1572,6 +1608,13 @@ function parseSource(
             "SYNTAX_ERROR",
             key,
           );
+        // `m?()`: a TypeScript optional method.
+        const optionalMethod =
+          language !== "javascript" &&
+          at("?") &&
+          (at("(", 1) || at("<", 1)) &&
+          (take(), true);
+        if (optionalMethod) typeOnlyMembers.push({ start, end: key.end });
         if (at("(") || (language === "typescript" && at("<"))) {
           const generics = typeParameters();
           if (
@@ -1646,6 +1689,23 @@ function parseSource(
               "UNSUPPORTED_SYNTAX",
             );
           const returnType = eat(":") ? type() : undefined;
+          // An overload signature or a bodiless optional method declares
+          // types only.
+          if (language !== "javascript" && !at("{")) {
+            semi();
+            awaitContext = previousAwaitContext;
+            yieldContext = previousYieldContext;
+            yieldAllowed = previousYieldAllowed;
+            superProperty = previousSuper;
+            superCall = previousSuperCall;
+            newTargetAllowed = previousNewTarget;
+            staticAwait = previousStaticAwait;
+            if (!optionalMethod) typeOnlyMembers.push({ start, end: end() });
+            // A constructor overload precedes the implementation.
+            if (!isStatic && property === "constructor")
+              constructorSeen = false;
+            continue;
+          }
           const previousLoops = loops,
             previousLabels = labels,
             previousSwitches = switches;
@@ -1708,7 +1768,11 @@ function parseSource(
               "SYNTAX_ERROR",
               key,
             );
-          if (language !== "javascript" && (at("?") || at("!"))) take();
+          // `x?: T` is an optional property; `x!: T` only skips TypeScript's
+          // definite assignment check.
+          const optional = language !== "javascript" && at("?"),
+            definite = language !== "javascript" && at("!");
+          if (optional || definite) take();
           const annotation = eat(":") ? type() : undefined;
           const previousSuper = superProperty;
           const previousSuperCall = superCall;
@@ -1740,6 +1804,9 @@ function parseSource(
             accessor,
             key,
             ...(privateName ? { private: true } : {}),
+            ...(readonlyField ? { readonly: true } : {}),
+            ...(optional ? { optional: true } : {}),
+            ...(definite ? { definite: true } : {}),
             computed,
             static: isStatic,
             type: annotation,
@@ -1756,6 +1823,13 @@ function parseSource(
         decorators: classDecorators,
         typeParameters: generics,
         heritage,
+        ...(heritageTypeArguments.length === 0
+          ? {}
+          : { heritageTypeArguments }),
+        ...(implementsTypes.length === 0
+          ? {}
+          : { implements: implementsTypes }),
+        ...(typeOnlyMembers.length === 0 ? {} : { typeOnlyMembers }),
         elements,
         start: begin,
         end: end(),

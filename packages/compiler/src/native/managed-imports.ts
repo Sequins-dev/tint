@@ -14,7 +14,12 @@ import {
   type NativeModule,
 } from "@tint/codegen/aarch64/scalar";
 import type { X64Module } from "@tint/codegen/x86_64/scalar";
-import { verify, type ScalarType, type RecordLayout } from "@tint/ir/scalar";
+import {
+  isNativeTypedArray,
+  verify,
+  type ScalarType,
+  type RecordLayout,
+} from "@tint/ir/scalar";
 
 /** Trusted loader-owned capability, never derived from JavaScript input or
  * matching descriptor bytes. The owner guarantees a permanent, readable window
@@ -133,11 +138,8 @@ export function managedIdentityDescriptorWords(
           "optional-reference",
           "optional-string",
           "string",
-          "Uint8Array",
-          "Uint16Array",
-          "Uint32Array",
-          "Float64Array",
-        ].includes(field.type)
+        ].includes(field.type) ||
+        isNativeTypedArray(field.type)
       )
         references.push(field.offset);
       if (field.type === "general") general.push(field.offset);

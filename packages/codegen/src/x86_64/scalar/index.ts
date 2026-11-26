@@ -23,6 +23,7 @@ import {
   nativeArrayLengthOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeBuiltinMarkerLimit,
   nativeHeaderFlagsShift,
   nativeHeaderFlagUnit,
   nativeStringDataOffset,
@@ -64,6 +65,11 @@ import {
   instructionResult,
   naturalLoops,
   optionalNumberAbsentHigh,
+  isNativeTypedArray,
+  nativeTypedArray,
+  typedArrayLayout,
+  typedArrayMarker,
+  typedArrayScale,
   optionalNumberAbsentLow,
   scalarByteLength,
   trackedManagedWrites,
@@ -77,6 +83,7 @@ import {
   type RecordField,
   type RecordLayout,
   type ScalarType,
+  type NativeTypedArray,
   type Span,
   type Terminator,
   executableHostOperation,
@@ -160,8 +167,14 @@ import {
   type CallbackThunk,
   type TransitionPlan,
 } from "./callbacks.ts";
-import { createNumberEmission, floatBits } from "./numbers.ts";
+import {
+  bitsFloat,
+  createNumberEmission,
+  float32Bits,
+  floatBits,
+} from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
+import { shareFrameSlots } from "../../scalar/slot-sharing.ts";
 import { isOneByteText, stringTextBytes } from "../../scalar/string-text.ts";
 import { emitExecutableMemory, serializeCode } from "./executable-memory.ts";
 import {
@@ -170,9 +183,8 @@ import {
   type NativeManagedPointerImport,
 } from "../../scalar/managed-abi.ts";
 import {
-  planWideStackMapTable,
+  createWideStackMapBuilder,
   rootHeadBinding,
-  type SafepointEntry,
   type WideStackMapPlan,
 } from "../../scalar/stack-maps.ts";
 import { frameStackMaps, isRootType } from "./stack-maps.ts";
@@ -305,25 +317,9 @@ const rememberLabel = "remember-old-object";
 
 type ElementBytes = 1 | 2 | 4 | 8;
 function arrayWidth(type: ScalarType): ElementBytes {
-  if (type === "Uint8Array") return 1;
-  if (type === "Uint16Array") return 2;
-  if (type === "Uint32Array") return 4;
-  if (type === "Float64Array") return 8;
-  throw "typed array width invariant";
-}
-function arrayMarker(width: ElementBytes): number {
-  return width === 8 ? 5 : width === 4 ? 4 : width === 2 ? 3 : 2;
-}
-function typedArrayMarker(type: ScalarType | GeneralTest): number {
-  return type === "Uint8Array"
-    ? 2
-    : type === "Uint16Array"
-      ? 3
-      : type === "Uint32Array"
-        ? 4
-        : type === "Float64Array"
-          ? 5
-          : 0;
+  const array = nativeTypedArray(type);
+  if (array === undefined) throw "typed array width invariant";
+  return typedArrayLayout(array).elementBytes;
 }
 function generalTag(type: string): number {
   return type === "number"
@@ -385,6 +381,10 @@ export function emitModule(
   workerFunctions?: ReadonlySet<string>,
   /** See trustedExecutableCode in the arm64 emitter's options. */
   trustedExecutableCode: boolean = false,
+  /** Optional hook called once a function's body has been emitted so callers
+   * with a bounded managed heap can drop its IR blocks before assembler
+   * finalization allocates the contiguous output buffer. */
+  releaseFunction?: (id: number) => void,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -432,7 +432,8 @@ export function emitModule(
   const resolvedUnwind: UnwindRange[] = [];
   const sourceLabels: { readonly name: string; readonly span: Span }[] = [];
   const debugFrames = new Map<number, readonly X64DebugParameter[]>();
-  const resolvedMaps: SafepointEntry[] = [];
+  const stackMapBuilder =
+    host === undefined ? undefined : createWideStackMapBuilder();
   const emit: Emit = (insn) => {
     assembler.instruction(insn);
     instructionCount++;
@@ -742,21 +743,65 @@ export function emitModule(
     let transitionCapacity = 0;
     const transitions = new Map<Instruction, TransitionPlan>();
     const plans = new Map<Instruction, CCallLayout>();
+    // Slots of one type whose live ranges never meet share an offset
+    // (shareFrameSlots), as on AArch64: frames of large functions such as
+    // the compiler's recursive checker stay small. Parameters, the receiver
+    // and exception slots keep their own words. Stack maps list only live
+    // slots, so a shared word always holds the occupying slot's value.
+    let slotBytes = 0;
     for (const type of fn.slots) {
       if (type === undefined) throw "slot layout invariant";
-      depth += scalarByteLength(type);
-      slots.push(-depth);
+      slotBytes += scalarByteLength(type);
+    }
+    const privateSlots = new Uint8Array(fn.slots.length);
+    if (fn.receiverSlot !== undefined) privateSlots[fn.receiverSlot] = 1;
+    for (const parameter of fn.parameters) {
+      if (parameter === undefined) throw "parameter slot invariant";
+      privateSlots[parameter] = 1;
     }
     for (const block of fn.blocks) {
       if (block === undefined) throw "block invariant";
+      const handler = block.exception;
+      if (handler !== undefined) privateSlots[handler.slot] = 1;
+    }
+    const sharing =
+      slotBytes > 64
+        ? shareFrameSlots(
+            fn,
+            (slot) => privateSlots[slot] !== 1,
+            Number.MAX_SAFE_INTEGER,
+          )
+        : undefined;
+    const groupOffsets: number[] = [];
+    for (let slot = 0; slot < fn.slots.length; slot++) {
+      const type = fn.slots[slot];
+      if (type === undefined) throw "slot layout invariant";
+      const group = sharing === undefined ? -1 : (sharing.color[slot] ?? 0) - 1;
+      const shared = group < 0 ? undefined : groupOffsets[group];
+      if (shared !== undefined) {
+        slots.push(shared);
+        continue;
+      }
+      depth += scalarByteLength(type);
+      slots.push(-depth);
+      if (group >= 0) groupOffsets[group] = -depth;
+    }
+    // Values are local to their block (the verifier requires it), and stack
+    // maps include a value's home only while it is live within its block,
+    // so blocks share one area of value homes, sized by the largest block.
+    const homesBase = depth;
+    let homesDepth = depth;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "block invariant";
+      depth = homesBase;
       for (const op of block.instructions) {
         if (op === undefined) throw "instruction invariant";
         const id = instructionResult(op);
         if (id !== undefined) {
-          // Every home can hold a complete two-word scalar. Compact layout
-          // and reuse across liveness ranges are later optimizations.
+          // Every home can hold a complete two-word scalar.
           depth += 16;
           homes.set(id, -depth);
+          if (depth > homesDepth) homesDepth = depth;
         }
         if (op.kind === "c-call") {
           if (op.call.mayCallback === true) {
@@ -797,6 +842,7 @@ export function emitModule(
         }
       }
     }
+    depth = homesDepth;
     if (transitionCapacity !== 0) depth = align16(depth) + transitionCapacity;
     const transitionOffset = -depth;
     if (signpost !== undefined && signpost.metrics === true)
@@ -1339,7 +1385,10 @@ export function emitModule(
       emit({
         op: "mov",
         dst: scratch,
-        src: bits(arrayMarker(width), 2 * (nativeHeaderFlagUnit / 4294967296)),
+        src: bits(
+          typedArrayMarker(type),
+          2 * (nativeHeaderFlagUnit / 4294967296),
+        ),
       });
       emit({ op: "mov", dst: mem(0, 0), src: scratch });
       emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: length });
@@ -1364,11 +1413,15 @@ export function emitModule(
     }
 
     /** The byte length of typed ArrayBuffer `buffer` (an owning or borrowed
-     * array: marker 2-5 for 1-, 2-, 4- and 8-byte elements) into `output`;
-     * rcx keeps the element width's shift. */
+     * array: marker < nativeBuiltinMarkerLimit with low three bits 2-5 for
+     * 1-, 2-, 4- and 8-byte elements) into `output`; rcx keeps the element
+     * width's shift. */
     function bufferByteLength(buffer: Gpr<64>, output: Gpr<64>): void {
       const shift = gpr(1);
       marker(buffer, shift);
+      emit({ op: "cmp", dst: shift, src: imm(nativeBuiltinMarkerLimit) });
+      branch(emit, "ae", trapLabel);
+      emit({ op: "and", dst: shift, src: imm(7) });
       emit({ op: "sub", dst: shift, src: imm(2) });
       emit({ op: "cmp", dst: shift, src: imm(3) });
       branch(emit, "a", trapLabel);
@@ -1385,8 +1438,7 @@ export function emitModule(
     function bufferView(
       op: {
         readonly id: number;
-        readonly type:
-          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly type: NativeTypedArray;
         readonly buffer: number;
         readonly byteOffset: number;
         readonly length: number;
@@ -1434,7 +1486,10 @@ export function emitModule(
       emit({
         op: "mov",
         dst: scratch,
-        src: bits(arrayMarker(width), 2 * (nativeHeaderFlagUnit / 4294967296)),
+        src: bits(
+          typedArrayMarker(op.type),
+          2 * (nativeHeaderFlagUnit / 4294967296),
+        ),
       });
       emit({ op: "mov", dst: mem(0, 0), src: scratch });
       emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: length });
@@ -1522,6 +1577,31 @@ export function emitModule(
       emit({ op: "label", name: done });
     }
 
+    function typedArrayElements(type: ScalarType): NativeTypedArray {
+      const array = nativeTypedArray(type);
+      if (array === undefined) throw "typed array element invariant";
+      return array;
+    }
+    /** ToUint8Clamp of a number into EAX: NaN and anything below 0.5 give
+     * 0, anything from 254.5 gives 255, and the rest round to nearest, ties
+     * to even (CVTSD2SI under the default MXCSR). Preserves R9. */
+    function clampedByte(value: number, site: string): void {
+      const done = site + ":clamped";
+      const x1 = xmm(1);
+      emit({ op: "movsd", dst: x0, src: frame(home(value)) });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "xorpd", dst: x1, src: x1 });
+      emit({ op: "comisd", dst: x0, src: x1 });
+      // Unordered (NaN) or not above zero.
+      branch(emit, "be", done);
+      emit({ op: "mov", dst: eax, src: imm(255) });
+      emit({ op: "mov", dst: r10, src: bits(0, 0x406fe000) });
+      bitsFloat(emit, x1, r10);
+      emit({ op: "comisd", dst: x0, src: x1 });
+      branch(emit, "ae", done);
+      emit({ op: "cvtsd2si", dst: eax, src: x0 });
+      emit({ op: "label", name: done });
+    }
     /** An Atomics operation on a native integer array (the IR's
      * `array-atomic`). Locked instructions (and xchg, which is locked with
      * a memory operand) order every access sequentially consistently under
@@ -1636,11 +1716,18 @@ export function emitModule(
         emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
         branch(emit, "ae", invalid);
       }
-      const width = arrayWidth(typeOf(op.array));
+      const type = typeOf(op.array),
+        width = arrayWidth(type),
+        element = typedArrayLayout(typedArrayElements(type)).element;
       const store = op.kind === "array-write" || op.kind === "array-store";
       if (op.kind === "array-write" || op.kind === "array-store") {
         if (width === 8)
           emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+        else if (element === "float") {
+          // Float32 conversion rounds to nearest, ties to even (MXCSR).
+          emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
+          float32Bits(emit, eax, x0);
+        } else if (element === "clamped") clampedByte(op.value, invalid);
         else {
           // ToUint32 preserves R9 but clobbers the array register.
           numbers.toWord(frame(home(op.value)));
@@ -1695,8 +1782,27 @@ export function emitModule(
             branch(emit, "np", done);
             emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
           }
+        } else if (element === "float") {
+          // Widening gives a quiet NaN, never optional-number absence.
+          emit({
+            op: "cvtss2sd",
+            dst: x0,
+            src: { kind: "mem", width: 32, address },
+          });
+          floatBits(emit, rax, x0);
         } else {
-          if (width === 1)
+          // Sign extension fills RAX; zero extension clears its top half.
+          if (element === "signed")
+            emit({
+              op: "movsx",
+              dst: rax,
+              src: {
+                kind: "mem",
+                width: width === 1 ? 8 : width === 2 ? 16 : 32,
+                address,
+              },
+            });
+          else if (width === 1)
             emit({
               op: "movzx",
               dst: eax,
@@ -1740,6 +1846,95 @@ export function emitModule(
         );
     }
 
+    /** Stores the element pattern (converted once, replicated to 64
+     * bits) over elements [from, to), 8 bytes per step, then 4/2/1-byte
+     * tails; chunks stay in phase because each starts at a multiple of the
+     * element size. */
+    function arrayFill(op: {
+      readonly array: number;
+      readonly value: number;
+      readonly from: number;
+      readonly to: number;
+    }): void {
+      const site = fnLabel + ":fill:" + String(instructionCount);
+      const type = typeOf(op.array),
+        width = arrayWidth(type),
+        element = typedArrayLayout(typedArrayElements(type)).element;
+      if (width === 8)
+        emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+      else if (element === "float") {
+        emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
+        float32Bits(emit, eax, x0);
+      } else if (element === "clamped") clampedByte(op.value, site);
+      else numbers.toWord(frame(home(op.value)));
+      if (width !== 8) {
+        if (width === 1) emit({ op: "movzx", dst: eax, src: byte(0) });
+        else if (width === 2)
+          emit({
+            op: "movzx",
+            dst: eax,
+            src: { kind: "gpr", width: 16, index: 0 },
+          });
+        else emit({ op: "mov", dst: eax, src: eax });
+        const repeat = width === 1 ? 0x01010101 : width === 2 ? 0x00010001 : 1;
+        emit({ op: "mov", dst: r10, src: bits(repeat, repeat) });
+        emit({ op: "imul", dst: rax, src: r10 });
+      }
+      const done = site + ":done";
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.from)) });
+      emit({ op: "cvttsd2si", dst: r10, src: frame(home(op.to)) });
+      emit({ op: "sub", dst: r10, src: r9 });
+      branch(emit, "le", done);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "lea",
+        dst: scratch,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: width, disp: 0 },
+        },
+      });
+      if (width > 1)
+        emit({
+          op: "shl",
+          dst: r10,
+          count: width === 2 ? 1 : width === 4 ? 2 : 3,
+        });
+      const words = site + ":words",
+        half = site + ":half",
+        short = site + ":short",
+        single = site + ":byte";
+      emit({ op: "label", name: words });
+      emit({ op: "cmp", dst: r10, src: imm(8) });
+      branch(emit, "b", half);
+      emit({ op: "mov", dst: mem(11, 0), src: rax });
+      emit({ op: "add", dst: scratch, src: imm(8) });
+      emit({ op: "sub", dst: r10, src: imm(8) });
+      emit({ op: "jmp", target: label(words) });
+      emit({ op: "label", name: half });
+      emit({ op: "cmp", dst: r10, src: imm(4) });
+      branch(emit, "b", short);
+      emit({ op: "mov", dst: { ...mem(11, 0), width: 32 }, src: eax });
+      emit({ op: "add", dst: scratch, src: imm(4) });
+      emit({ op: "sub", dst: r10, src: imm(4) });
+      emit({ op: "label", name: short });
+      emit({ op: "cmp", dst: r10, src: imm(2) });
+      branch(emit, "b", single);
+      emit({
+        op: "mov",
+        dst: { ...mem(11, 0), width: 16 },
+        src: { kind: "gpr", width: 16, index: 0 },
+      });
+      emit({ op: "add", dst: scratch, src: imm(2) });
+      emit({ op: "sub", dst: r10, src: imm(2) });
+      emit({ op: "label", name: single });
+      emit({ op: "cmp", dst: r10, src: imm(1) });
+      branch(emit, "b", done);
+      emit({ op: "mov", dst: { ...mem(11, 0), width: 8 }, src: byte(0) });
+      emit({ op: "label", name: done });
+    }
     function arrayCopy(
       op: {
         readonly id: number;
@@ -3233,7 +3428,7 @@ export function emitModule(
             op.length,
             op.type,
             width,
-            arrayMarker(width),
+            typedArrayMarker(op.type),
             block,
             index,
           );
@@ -3405,6 +3600,10 @@ export function emitModule(
         case "array-copy":
           if (host === undefined) break;
           arrayCopy(op, host.symbolPrefix + "memmove");
+          return;
+        case "array-fill":
+          if (host === undefined) break;
+          arrayFill(op);
           return;
         case "string-none":
           emit({ op: "xor", dst: eax, src: eax });
@@ -5252,7 +5451,13 @@ export function emitModule(
           const site = fnLabel + ":error:" + String(op.id);
           const record =
             errorRecord +
-            (op.error === "TypeError" ? 0 : op.error === "RangeError" ? 1 : 2);
+            (op.error === "TypeError"
+              ? 0
+              : op.error === "RangeError"
+                ? 1
+                : op.error === "ReferenceError"
+                  ? 3
+                  : 2);
           emit({ op: "mov", dst: r10, src: imm(errorLayout.byteLength) });
           allocate(block, index, site, site + ":denied");
           address(scratch, descriptor(record));
@@ -5478,8 +5683,14 @@ export function emitModule(
           emit({ op: "mov", dst: r9, src: frame(home(op.value) + 8) });
           emit({ op: "test", dst: r9, src: r9 });
           branch(emit, "e", done);
-          const first = op.error === "RangeError" ? 1 : 0;
-          const last = op.error === "Error" ? 2 : first;
+          const first =
+            op.error === "RangeError"
+              ? 1
+              : op.error === "ReferenceError"
+                ? 3
+                : 0;
+          // Error covers every native brand (ReferenceError is kind 3).
+          const last = op.error === "Error" ? 3 : first;
           for (let kind: number = first; kind <= last; kind++) {
             address(scratch, descriptor(errorRecord + kind));
             emit({ op: "cmp", dst: mem(9, 0), src: scratch });
@@ -5600,10 +5811,7 @@ export function emitModule(
             );
           } else if (
             (type === "boolean" ||
-              type === "Uint8Array" ||
-              type === "Uint16Array" ||
-              type === "Uint32Array" ||
-              type === "Float64Array" ||
+              isNativeTypedArray(type) ||
               type === "reference" ||
               type === "optional-reference") &&
             (equal || unequal)
@@ -5702,7 +5910,11 @@ export function emitModule(
             emit({
               op: "mov",
               dst: { ...mem(9, publishState), width: 8 },
-              src: { kind: "imm8", value: 1 },
+              src: {
+                kind: "imm8",
+                value:
+                  op.kind === "record" && op.operation === "delete" ? 0 : 1,
+              },
             });
           if (
             op.kind !== "cell" &&
@@ -5909,9 +6121,7 @@ export function emitModule(
       ))
         if (range !== undefined) resolvedUnwind.push(range);
     }
-    if (callSites.length > 0) {
-      const fnStart = assembler.labels.get(fnLabel);
-      if (fnStart === undefined) throw "x86-64 safepoint label invariant";
+    if (callSites.length > 0 && stackMapBuilder !== undefined) {
       for (const map of frameStackMaps(
         fn,
         fnLabel,
@@ -5925,7 +6135,7 @@ export function emitModule(
         if (map === undefined) continue;
         const offset = assembler.labels.get(map.label);
         if (offset === undefined) throw "x86-64 safepoint label invariant";
-        resolvedMaps.push({ offset, start: fnStart, map: map.map });
+        stackMapBuilder.add(offset, map.map);
       }
     }
     const debugBody = fnLabel + ":debug-body";
@@ -6075,7 +6285,39 @@ export function emitModule(
         }
       }
     }
-    for (const fn of module.functions) {
+    // Emit the trap target and collector leaves before function bodies so each
+    // function's endScope resolves and drops those high-frequency fixups
+    // immediately instead of retaining millions of fixup records until finish.
+    const leafPrologueStart = "tint:leaf-prologue";
+    const leafPrologueEnd = leafPrologueStart + ":end";
+    assembler.beginScope();
+    emit({ op: "label", name: leafPrologueStart });
+    emit({ op: "label", name: trapLabel });
+    emit({ op: "ud2" });
+    if (generational) collectorLeaves();
+    emit({ op: "label", name: leafPrologueEnd });
+    if (host !== undefined) {
+      for (const range of resolveUnwind(
+        [
+          {
+            start: leafPrologueStart,
+            end: leafPrologueEnd,
+            rule: "leaf",
+            rows: [],
+          },
+        ],
+        assembler.labels,
+      ))
+        if (range !== undefined) resolvedUnwind.push(range);
+    }
+    assembler.endScope(
+      (name) =>
+        name === trapLabel ||
+        name === clearAllocationLabel ||
+        name === rememberLabel,
+    );
+    for (let index = 0; index < module.functions.length; index++) {
+      const fn = module.functions[index];
       if (fn === undefined) throw "function invariant";
       functionId = fn.id;
       blockId = undefined;
@@ -6090,6 +6332,7 @@ export function emitModule(
             );
         }
       if (fn.import !== true) body(fn);
+      releaseFunction?.(fn.id);
     }
     // A declaration by itself also needs a linker binding.
     for (const fn of module.functions) {
@@ -6107,7 +6350,6 @@ export function emitModule(
     const leafEnd = leafStart + ":end";
     emit({ op: "label", name: leafStart });
     numbers.helpers();
-    if (generational) collectorLeaves();
     probes.emitStubs();
     if (jitDebug) {
       emit({ op: "label", name: debugRegister });
@@ -6209,8 +6451,6 @@ export function emitModule(
       }
       emit({ op: "label", name: callbackThunksLabel + ":end" });
     }
-    emit({ op: "label", name: trapLabel });
-    emit({ op: "ud2" });
     const callbackKeyOffset = needsCallbackKey
       ? constants.length * 8
       : undefined;
@@ -6233,9 +6473,8 @@ export function emitModule(
     const tableOffset = Math.ceil(withPool / 8) * 8;
     const stackMaps: X64Module["stackMaps"][number][] = [];
     let stackMapPlan: WideStackMapPlan | undefined;
-    if (host !== undefined) {
-      stackMapPlan = planWideStackMapTable(resolvedMaps);
-      resolvedMaps.length = 0;
+    if (stackMapBuilder !== undefined) {
+      stackMapPlan = stackMapBuilder.finish();
       const thunkStart = assembler.labels.get(callbackThunksLabel);
       stackMaps.push({
         codeOffset: 0,
@@ -6532,7 +6771,7 @@ export function emitModule(
         message:
           typeof caught === "string"
             ? caught
-            : "x86-64 scalar: encoding failed",
+            : "x86-64 scalar: encoding failed (" + typeof caught + ")",
         function: functionId,
         block: blockId,
         span,

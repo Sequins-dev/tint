@@ -187,6 +187,9 @@ export interface BuildRequest extends ModuleRequest {
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
+  /** Emit function names in the executable's symbol table without full DWARF
+   * debug info or heap introspection. */
+  readonly symbols?: boolean;
   /** Opt-in: an uncaught throw prints its value and a symbolicated trace of
    * its throw origin (frame pointers plus an embedded symbol/line table).
    * See docs/runtime-diagnostics.md. */
@@ -584,7 +587,7 @@ export function compileX64Program(
         ],
         hostBindings,
         closedProgram: true,
-        optimization: "basic",
+        optimization: request.optimization ?? "basic",
         debugSymbols: request.debugSymbols === true,
         maxSpecializations: request.maxSpecializations ?? 4096,
       },
@@ -1281,6 +1284,7 @@ export function compileMacOSProgram(
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,
       stackTraces: request.stackTraces === true,
+      symbols: request.symbols === true,
       operationRanges: request.onOperationRanges !== undefined,
       ...(request.onScalarIR === undefined
         ? {}
@@ -1454,7 +1458,7 @@ function compileRuntimeUnits(
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,
       stackTraces: request.stackTraces === true,
-      symbols: request.signposts === true,
+      symbols: request.signposts === true || request.symbols === true,
       maxSpecializations: request.maxSpecializations ?? 4096,
       modules: runtimeModules(request),
       entry: request.runtimeModule,
@@ -1778,7 +1782,11 @@ function linkHostedImage(
   const symbols: FunctionRange[] = [];
   const lines: SourceLineRange[] = [];
   const debugTypes = createDebugTypeTable();
-  if (request.debugSymbols === true || request.stackTraces === true) {
+  if (
+    request.debugSymbols === true ||
+    request.stackTraces === true ||
+    request.symbols === true
+  ) {
     const modulesStart =
         hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset,
       processStart = hosted.value.processStartOffset;
@@ -2049,7 +2057,7 @@ function linkHostedImage(
   }
   const relocations = aarch64ImageRelocations(references);
   const imageSymbols: ImageSymbol[] = [];
-  if (request.debugSymbols === true)
+  if (request.debugSymbols === true || request.symbols === true)
     for (const symbol of symbols) {
       if (symbol === undefined) throw "image symbol invariant";
       imageSymbols.push({ name: symbol.name, offset: symbol.offset });

@@ -54,9 +54,6 @@ test("required instance fields must be initialized on every returning path", () 
     "class C{x:number;}",
     "class C{x:number;constructor(flag:boolean){if(flag)this.x=1;}}",
     "class C{x:number;constructor(){return;}}",
-    "class C{x:number;constructor(){this.x=this.x+1;}}",
-    "class C{x:number=this.y;y:number=1;}",
-    "class C{x:number;constructor(){this.m();this.x=1;}m():void{}}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
@@ -71,8 +68,6 @@ test("defaults, short circuits and later field definitions cannot fake definite 
     "class C{x:number;constructor(flag:boolean){flag||(this.x=1);}}",
     "class C{y:number=(this.x=1);x:number;}",
     "class C{static x:number=C.y;static y:number=1;}",
-    "class C{x:number;constructor(){const escape=()=>this.x;this.x=1;}}",
-    "function expose(value:{x:number}):void{}class C{x:number;constructor(){expose(this);this.x=1;}}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
@@ -98,4 +93,271 @@ test("class prototypes do not masquerade as initialized instances", () => {
     "class C{x:number=1;m():number{return this.x;}}function run(c:C):number{return C.prototype.m.call(c);}",
   );
   assert.ok(result.ok, JSON.stringify(result));
+});
+test("classes declared directly in a non-generic module-level function resolve there", () => {
+  // Module instances evaluate module classes in their initializer function.
+  const local = check(
+    "function init():number{class C{x:number=1;m():number{return this.x;}}return new C().m();}",
+  );
+  assert.ok(local.ok, JSON.stringify(local));
+  assert.equal(local.value.classes.length, 1);
+  for (const [source, message] of [
+    // A generic function's type parameters are not in module scope.
+    [
+      "function init<T>(value:T):number{class C{x:number=1;}return new C().x;}",
+      /generic functions require specialization/,
+    ],
+    // Nested classes need scoped contract resolution, and a body class may
+    // not shadow another declaration.
+    [
+      "function init():number{if(true){class C{x:number=1;}return new C().x;}return 0;}",
+      /local classes require scoped contract resolution/,
+    ],
+    [
+      "function init():number{const f=():number=>{class C{x:number=1;}return new C().x;};return f();}",
+      /local classes require scoped contract resolution/,
+    ],
+    [
+      "class C{x:number=2;}function init():number{class C{x:number=1;}return new C().x;}",
+      /local classes require scoped contract resolution/,
+    ],
+  ] as const) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.match(result.error.message, message, source);
+  }
+});
+test("delete follows TypeScript's strict checks (TS2704, TS2790) and fails the build", () => {
+  const prefix =
+    "class P{readonly a:number=1;readonly b?:number;c:number=1;d:unknown=1;e!:number;f?:number;constructor(){this.e=1;}}" +
+    "interface R{g:number;h?:number;}export function run(r:R):boolean{const p=new P();return ";
+  for (const [operand, code] of [
+    ["p.a", "TS2704"],
+    ["p.b", "TS2704"],
+    ['p["c"]', "TS2790"],
+    ["p.e", "TS2790"],
+    ["r.g", "TS2790"],
+  ] as const) {
+    const text = prefix + "delete " + operand + ";}";
+    const result = check(text);
+    assert.ok(!result.ok, operand);
+    assert.equal(result.error.code, code, operand);
+    assert.equal(text.slice(result.error.start, result.error.end), operand);
+    assert.equal(result.error.preventsFallback, true, operand);
+  }
+  // Operands that admit undefined (optional, `unknown`) are valid TypeScript
+  // and are deleted on the typed path.
+  for (const operand of ["p.d", "p.f", "r.h"]) {
+    const result = check(prefix + "delete " + operand + ";}");
+    assert.ok(result.ok, JSON.stringify({ operand, result }));
+  }
+});
+test("optional class fields admit undefined and need no constructor assignment", () => {
+  const result = check(
+    "class P{x?:number;y:number=1;}export function run():number{const p=new P();const x=p.x;return x===undefined?p.y:x;}",
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+});
+test("own methods called during construction are analyzed in place", () => {
+  for (const source of [
+    "class C{x:number=1;y:number=this.read();read():number{return this.x;}}",
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{this.y=this.x*2;}}",
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{if(this.x>0){this.y=1;}else{this.y=2;}}}",
+    "class C{x:number;items:number[];constructor(n:number){this.x=n;this.items=[];this.fill(n);}fill(n:number):void{for(let i=0;i<n;i++)this.items.push(i*this.x);}}",
+    "class C{x:number;constructor(){this.a();this.x=1;}a():void{this.b();}b():void{}}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // An early return or a loop does not definitely assign: the field is
+  // unassigned when construction completes.
+  for (const source of [
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{if(this.x>0)return;this.y=2;}}",
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{for(let i=0;i<3;i++){this.y=i;}}}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNINITIALIZED", source);
+  }
+});
+/** Field names the checker records as possibly read before assignment. */
+function unproven(source: string): string[] {
+  const result = check(source);
+  assert.ok(result.ok, JSON.stringify({ source, result }));
+  const names: string[] = [];
+  for (const contract of result.value.classes)
+    for (const member of contract.members) {
+      const element = member.node;
+      if (
+        element.kind === "field" &&
+        element.key.kind === "string" &&
+        result.value.uninitializedFields?.get(element) === true
+      )
+        names.push(element.key.value);
+    }
+  return names;
+}
+test("fields code may read before assignment stay typed and are recorded", () => {
+  for (const [source, names] of [
+    // A method reads the field before its assignment.
+    [
+      "class C{x:number;constructor(){this.x=this.twice();}twice():number{return this.x*2;}}",
+      ["x"],
+    ],
+    [
+      "class C{x:number;constructor(){this.m();this.x=1;}m():number{return this.x;}}",
+      ["x"],
+    ],
+
+    // Recursion, an own override, a written prototype and an escape of
+    // `this` are not followed: unassigned fields may be observed.
+    [
+      "class C{x:number;constructor(){this.a();this.x=1;}a():void{this.a();}}",
+      ["x"],
+    ],
+    [
+      "class C{x:number;m():number{return 1;}constructor(){this.m=():number=>2;this.m();this.x=1;}}",
+      ["x"],
+    ],
+    [
+      "class C{x:number;constructor(){this.m();this.x=1;}m():void{}}function patch():void{C.prototype.m=function(this:C):void{};}",
+      ["x"],
+    ],
+    [
+      'function see(c:C):number{return c.y;}class C{x:number;y:number;s:string;constructor(){this.x=1;see(this);this.y=2;this.s="";}}',
+      ["y", "s"],
+    ],
+    // Assigned before every observation: nothing is recorded.
+    [
+      "function see(c:C):number{return c.y;}class C{y:number;constructor(){this.y=2;see(this);}}",
+      [],
+    ],
+  ] as const)
+    assert.deepEqual(unproven(source), names, source);
+  // Speculative reads are typed for one primitive category; other storage,
+  // static fields and non-numeric updates are not lowered yet.
+  for (const [source, code] of [
+    [
+      "class D{}class C{d:D;constructor(){this.read();this.d=new D();}read():D{return this.d;}}",
+      "UNINITIALIZED",
+    ],
+    // A direct static early read is TypeScript's TS2729.
+    ["class C{static a:number=C.b;static b:number=1;}", "TS2729"],
+    [
+      "class C{b:boolean;constructor(){this.add();this.b=false;}add():void{this.b||=true;}}",
+      "UNSUPPORTED",
+    ],
+    [
+      "class C{n:number;constructor(){this.add();this.n=1;}add():void{this.n??=2;}}",
+      "UNSUPPORTED",
+    ],
+  ] as const) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, code, source);
+  }
+});
+test("implements clauses are checked; type-only members are not typed yet", () => {
+  for (const source of [
+    "interface R{x:number}class P implements R{x:number=1;}function run():number{const r:R=new P();return r.x;}",
+    'interface R{x:number}interface S{}class P implements R,S{x:number=1;y:string="";}',
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // Interfaces with methods: member calls pass the object as receiver.
+  for (const source of [
+    "interface R{m():number}class P implements R{m():number{return 1;}}",
+    'interface R{x:number;m():number}class P{x:number=1;y:string="";m():number{return this.x;}}function run():number{const r:R=new P();return r.m();}',
+    "interface R{m(n:number):number}function run():number{let r:R={m:(n:number):number=>n+1};r.m=(n:number):number=>n*2;return r.m(3);}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // A missing member: the class takes the general path (Tint's relation is
+  // stricter than TypeScript's for method parameters, so a mismatch is not
+  // reported as TS2420).
+  for (const source of [
+    "interface R{x:number;y:number}class P implements R{x:number=1;}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.notEqual(result.error.preventsFallback, true, source);
+  }
+  for (const source of [
+    "class P{[key:string]:unknown;}",
+    "class P{m(x:number):number;m(x:unknown):unknown{return x;}}",
+    "class P{constructor(x:number);constructor(x:unknown){}}",
+    "class P{m?():void;}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.match(result.error.message, /overload|index|optional/, source);
+  }
+});
+test("class accessors are one property backed by prototype closures", () => {
+  for (const source of [
+    "class P{x:number=1;get double():number{return this.x*2;}set double(v:number){this.x=v/2;}}function run():number{const p=new P();p.double=10;p.double+=2;return p.double;}",
+    "class P{static n:number=1;static get twice():number{return P.n*2;}}function run():number{return P.twice;}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // A getter-only accessor is read-only.
+  const readonly = check(
+    "class P{get v():number{return 1;}}function run():void{new P().v=2;}",
+  );
+  assert.ok(!readonly.ok);
+  assert.equal(readonly.error.code, "IMMUTABLE");
+  for (const source of [
+    "class P{set v(x:number){}}",
+    "class P{get v():number{return 1;}set v(x:string){}}",
+    "class P{get v(){return 1;}}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+  }
+  // A getter called during construction may read the fields not assigned
+  // yet (`s` is assigned only after it returns).
+  assert.deepEqual(
+    unproven(
+      "class P{x:number;s:string;constructor(){this.s=this.show;this.x=1;}get show():string{return String(this.x);}}",
+    ),
+    ["x", "s"],
+  );
+});
+test("class values reaching general code take the general path", () => {
+  // Erased to `unknown` but only read by typed code (a typed class's native
+  // `instanceof`, typed lists): stays typed, also when the program uses
+  // dynamic objects for other values.
+  for (const source of [
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():boolean{return f(new P());}",
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():number{const u:unknown=new P();f(u);const bag:Record<string,unknown>={};bag.k=1;return 1;}",
+    "class P{x:number=1;}export function run():number{const xs:P[]=[];xs.push(new P());return xs.length;}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // Thrown, stored in a dynamic object (also through an `unknown` result),
+  // tested by the realm, or returned from an exported `unknown` function:
+  // an explicit fallback, never a build error.
+  for (const source of [
+    "class P{x:number=1;}export function run():void{throw new P();}",
+    "class P{x:number=1;}export function run():void{const bag:Record<string,unknown>={};bag.p=new P();}",
+    "class P{x:number=1;}function keep(u:unknown):unknown{return u;}export function run():void{const bag:Record<string,unknown>={};bag.p=keep(new P());}",
+    "class P{x:number=1;}export function run():unknown{const u:unknown=new P();return u;}",
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof RangeError;}export function run():boolean{return f(new P());}",
+    // An interface a class instance was converted to holds class values.
+    "interface R{x:number}class P{x:number=1;m():number{return 1;}}function wrap(p:P):R{return p;}export function run():unknown{const r:R=wrap(new P());return r;}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.equal(result.error.fallback?.capability, "class-erasure", source);
+    assert.notEqual(result.error.preventsFallback, true, source);
+  }
 });

@@ -3,11 +3,13 @@ import {
   instructionResult,
   naturalLoops,
   provenInductionWords,
-  provenRecordReads,
-  verifierRecordWork,
+  recordReadsKept,
+  retainDebugValues,
   substituteInstructionValues,
   substituteTerminatorValues,
   renumberInstructionResult,
+  visitInstructionOperands,
+  visitTerminatorOperands,
   type Block,
   type FunctionIR,
   type Instruction,
@@ -224,7 +226,18 @@ export function boundCountedLoops(
     current = compacted.fn;
     visited += compacted.visited;
   }
-  return { fn: current, visited, bounded };
+  const promoted = promoteBitwiseAccumulators(
+    current,
+    nextValue,
+    budget - visited,
+  );
+  if (promoted === undefined) return undefined;
+  visited += promoted.visited;
+  return {
+    fn: promoted.fn,
+    visited,
+    bounded: bounded + promoted.promoted,
+  };
 }
 
 export interface DivisorVersions {
@@ -598,25 +611,7 @@ function loopLocalCandidates(
   return local;
 }
 
-/** Whether every record read `before` proves (as the verifier does, with
- * or without module-stable layouts) is still proven in `after`, where
- * existing record reads keep their result IDs. */
-export function recordReadsKept(
-  before: FunctionIR,
-  after: FunctionIR,
-): boolean {
-  for (let pass = 0; pass < 2; pass++) {
-    const stable = pass === 1;
-    const kept = provenRecordReads(before, verifierRecordWork, stable);
-    if (kept === undefined) return false;
-    const now = provenRecordReads(after, verifierRecordWork, stable);
-    if (now === undefined) return false;
-    for (let id = 0; id < kept.length; id++)
-      if (kept[id] === 1 && now[id] !== 1) return false;
-  }
-  return true;
-}
-
+export { recordReadsKept } from "../scalar/index.ts";
 interface CountedLoop {
   readonly preheader: number;
   readonly counter: number;
@@ -1236,4 +1231,823 @@ function retarget(term: Terminator, route: (id: number) => number): Terminator {
       alternate: route(term.alternate),
     };
   return term;
+}
+
+function isInt32Bitwise(operator: string): boolean {
+  return (
+    operator === "^" ||
+    operator === "|" ||
+    operator === "&" ||
+    operator === "<<" ||
+    operator === ">>"
+  );
+}
+
+function isPureHeaderBlock(block: Block): boolean {
+  if (block.exception !== undefined || block.instructions.length > 16)
+    return false;
+  for (const op of block.instructions) {
+    if (op === undefined) return false;
+    if (
+      op.kind !== "load" &&
+      op.kind !== "constant" &&
+      op.kind !== "binary" &&
+      op.kind !== "unary" &&
+      op.kind !== "array-length" &&
+      op.kind !== "string-length"
+    )
+      return false;
+  }
+  return block.terminator.kind === "branch";
+}
+
+/** Checks whether `slot` is definitely initialized at the end of `targetBlock`
+ * on every path from `fn.entry` (conservative on exception edges). */
+function isDefinitelyInitializedAt(
+  fn: FunctionIR,
+  targetBlock: number,
+  slot: number,
+): boolean {
+  if (slot < fn.parameters.length) return true;
+  const count = fn.blocks.length;
+  // 0 = unvisited, 1 = definitely initialized at block entry, 2 = maybe uninit
+  const state = new Uint8Array(count);
+  const worklist: number[] = [fn.entry];
+  state[fn.entry] = 2;
+  const meet = (target: number, value: number): void => {
+    const before = state[target] ?? 0;
+    if (before === 2) return;
+    if (before === value) return;
+    state[target] = before === 0 ? value : 2;
+    worklist.push(target);
+  };
+  let targetOut = 0;
+  while (worklist.length > 0) {
+    const id = worklist.pop();
+    if (id === undefined) break;
+    const block = fn.blocks[id];
+    if (block === undefined) return false;
+    const entryVal = state[id] ?? 2;
+    let outVal = entryVal;
+    for (const op of block.instructions) {
+      if (op !== undefined && op.kind === "store" && op.slot === slot)
+        outVal = 1;
+    }
+    if (id === targetBlock) targetOut = outVal;
+    const t = block.terminator;
+    if (t.kind === "jump") {
+      meet(t.target, outVal);
+    } else if (t.kind === "branch") {
+      meet(t.consequent, outVal);
+      meet(t.alternate, outVal);
+    } else if (
+      t.kind === "record" ||
+      t.kind === "record-cell" ||
+      t.kind === "cell"
+    ) {
+      const consVal = t.operation === "read" && t.slot === slot ? 1 : outVal;
+      meet(t.consequent, consVal);
+      meet(t.alternate, outVal);
+    }
+    const exc = block.exception;
+    if (exc !== undefined) meet(exc.target, entryVal);
+  }
+  return targetOut === 1;
+}
+
+/** True when every path from `start` inside `body` to `header` or `exitTarget`
+ * passes through a `store` to `slot`. */
+function isAlwaysWrittenPerIteration(
+  blocks: readonly Block[],
+  body: ReadonlySet<number>,
+  header: number,
+  start: number,
+  exitTarget: number,
+  slot: number,
+): boolean {
+  const seen = new Set<number>();
+  seen.add(start);
+  const queue: number[] = [start];
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id === undefined) break;
+    const block = blocks[id];
+    if (block === undefined) return false;
+    let writes = false;
+    for (const op of block.instructions) {
+      if (op !== undefined && op.kind === "store" && op.slot === slot) {
+        writes = true;
+        break;
+      }
+    }
+    if (writes) continue;
+    for (const succ of successors(block.terminator)) {
+      if (succ === header || succ === exitTarget || !body.has(succ))
+        return false;
+      if (!seen.has(succ)) {
+        seen.add(succ);
+        queue.push(succ);
+      }
+    }
+  }
+  return true;
+}
+
+/** Checks whether `slot` is proven to hold an exact signed 32-bit integer
+ * (and never `-0`) at the end of `targetBlock` on every path from `fn.entry`.
+ * Tracks all number slots jointly so sequential promoted loops preserve the
+ * proof across writebacks. */
+function isInt32AtEntry(
+  fn: FunctionIR,
+  targetBlock: number,
+  slot: number,
+  budget: number,
+): boolean {
+  const blockCount = fn.blocks.length,
+    slotCount = fn.slots.length;
+  if (blockCount === 0 || slotCount === 0) return false;
+  if (blockCount * slotCount > 262144) return false;
+  // 0 = unreachable, 1 = definitely signed int32 (not -0), 2 = unknown
+  const entry = new Uint8Array(blockCount * slotCount);
+  const entryBase = fn.entry * slotCount;
+  for (let s = 0; s < slotCount; s++) entry[entryBase + s] = 2;
+  const worklist: number[] = [fn.entry],
+    inQueue = new Uint8Array(blockCount);
+  inQueue[fn.entry] = 1;
+  let targetOut = 0,
+    work = 0;
+  const cur = new Uint8Array(slotCount),
+    int32Ids = new Set<number>();
+
+  const propagate = (
+    target: number,
+    source: Uint8Array,
+    excSlot: number,
+  ): void => {
+    const base = target * slotCount;
+    let changed = false;
+    for (let s = 0; s < slotCount; s++) {
+      const incoming = s === excSlot ? 2 : (source[s] ?? 2),
+        before = entry[base + s] ?? 0;
+      if (before === 2 || before === incoming) continue;
+      entry[base + s] = before === 0 ? incoming : 2;
+      changed = true;
+    }
+    if (changed && inQueue[target] === 0) {
+      inQueue[target] = 1;
+      worklist.push(target);
+    }
+  };
+
+  while (worklist.length > 0) {
+    const id = worklist.pop();
+    if (id === undefined) break;
+    inQueue[id] = 0;
+    const block = fn.blocks[id];
+    if (block === undefined) return false;
+    work += block.instructions.length + slotCount;
+    if (work > budget) return false;
+    const base = id * slotCount;
+    for (let s = 0; s < slotCount; s++) cur[s] = entry[base + s] ?? 2;
+    if (block.exception !== undefined)
+      propagate(block.exception.target, cur, block.exception.slot);
+    int32Ids.clear();
+    for (const op of block.instructions) {
+      if (op === undefined) continue;
+      if (op.kind === "constant") {
+        const v = op.value;
+        if (
+          typeof v === "number" &&
+          Number.isInteger(v) &&
+          v >= -2147483648 &&
+          v <= 2147483647 &&
+          !(v === 0 && 1 / v < 0)
+        )
+          int32Ids.add(op.id);
+      } else if (op.kind === "load") {
+        if (cur[op.slot] === 1) int32Ids.add(op.id);
+      } else if (op.kind === "unary") {
+        if (op.operator === "~") int32Ids.add(op.id);
+      } else if (op.kind === "binary") {
+        if (isInt32Bitwise(op.operator) || op.operator === "imul")
+          int32Ids.add(op.id);
+      } else if (op.kind === "store") {
+        cur[op.slot] = int32Ids.has(op.value) ? 1 : 2;
+      }
+    }
+    if (id === targetBlock) targetOut = cur[slot] ?? 2;
+    const t = block.terminator;
+    if (t.kind === "jump") {
+      propagate(t.target, cur, -1);
+    } else if (t.kind === "branch") {
+      propagate(t.consequent, cur, -1);
+      propagate(t.alternate, cur, -1);
+    } else if (
+      t.kind === "record" ||
+      t.kind === "record-cell" ||
+      t.kind === "cell"
+    ) {
+      propagate(t.alternate, cur, -1);
+      if (t.operation !== "write") {
+        const saved = cur[t.slot] ?? 2;
+        cur[t.slot] = 2;
+        propagate(t.consequent, cur, -1);
+        cur[t.slot] = saved;
+      } else {
+        propagate(t.consequent, cur, -1);
+      }
+    }
+  }
+  return targetOut === 1;
+}
+
+/** Promotes loop-carried `number` slots whose every write stores a 32-bit
+ * signed bitwise result to a fresh integer slot across the loop (`intAcc =
+ * acc | 0` on non-empty entry, written back on exit). Pure bitwise loops work
+ * for any initialized entry value; conditional updates or `(acc +/- x) | 0`
+ * patterns require `acc` to already be an exact signed int32 at loop entry so
+ * `intAcc` is bit-identical to `acc` on every iteration and on 0-iteration
+ * exits. */
+function promoteBitwiseAccumulators(
+  fn: FunctionIR,
+  startValueId: number,
+  budget: number,
+):
+  | {
+      readonly fn: FunctionIR;
+      readonly visited: number;
+      readonly promoted: number;
+    }
+  | undefined {
+  if (budget < 0) return undefined;
+  const forest = naturalLoops(fn, budget);
+  if (forest === undefined) return undefined;
+  let visited = forest.visited;
+  if (forest.loops.length === 0) return { fn, visited, promoted: 0 };
+
+  const predecessors: number[][] = [];
+  for (let i = 0; i < fn.blocks.length; i++) predecessors.push([]);
+  for (const block of fn.blocks) {
+    if (block === undefined) return undefined;
+    for (const succ of successors(block.terminator))
+      predecessors[succ]?.push(block.id);
+    const exc = block.exception;
+    if (exc !== undefined) predecessors[exc.target]?.push(block.id);
+  }
+
+  const loops: NaturalLoop[] = [];
+  for (const loop of forest.loops) {
+    if (loop === undefined) continue;
+    let at = loops.length;
+    while (at > 0 && (loops[at - 1]?.body.size ?? 0) > loop.body.size) at--;
+    loops.splice(at, 0, loop);
+  }
+
+  let fnHasHandlers = false;
+  for (const block of fn.blocks)
+    if (block?.exception !== undefined) {
+      fnHasHandlers = true;
+      break;
+    }
+
+  let current = fn,
+    nextValue = startValueId,
+    promoted = 0;
+  const touched = new Set<number>();
+
+  for (const loop of loops) {
+    if (loop === undefined) continue;
+    let overlap = false;
+    for (const id of loop.body) if (touched.has(id)) overlap = true;
+    if (overlap) continue;
+    const outside = (predecessors[loop.header] ?? []).filter(
+      (id) => !loop.body.has(id),
+    );
+    const preheaderId = outside[0];
+    if (
+      outside.length !== 1 ||
+      preheaderId === undefined ||
+      touched.has(preheaderId)
+    )
+      continue;
+    const preheader = current.blocks[preheaderId],
+      headerBlock = current.blocks[loop.header];
+    if (
+      preheader === undefined ||
+      headerBlock === undefined ||
+      preheader.exception !== undefined ||
+      !isPureHeaderBlock(headerBlock)
+    )
+      continue;
+    const preTerm = preheader.terminator;
+    if (preTerm.kind !== "jump" || preTerm.target !== loop.header) continue;
+    let condBlock = headerBlock,
+      condBlockId = loop.header;
+    const hdrTerm = headerBlock.terminator;
+    if (
+      headerBlock.instructions.length === 0 &&
+      hdrTerm.kind === "jump" &&
+      loop.body.has(hdrTerm.target) &&
+      hdrTerm.target !== loop.header
+    ) {
+      const targetId = hdrTerm.target,
+        targetBlock = current.blocks[targetId],
+        targetPreds = predecessors[targetId] ?? [];
+      if (
+        targetBlock !== undefined &&
+        targetBlock.exception === undefined &&
+        isPureHeaderBlock(targetBlock) &&
+        targetPreds.length === 1 &&
+        targetPreds[0] === loop.header
+      ) {
+        condBlock = targetBlock;
+        condBlockId = targetId;
+      }
+    }
+    const hTerm = condBlock.terminator;
+    if (
+      hTerm.kind !== "branch" ||
+      !loop.body.has(hTerm.consequent) ||
+      loop.body.has(hTerm.alternate)
+    )
+      continue;
+    let irreducible = false;
+    for (const id of loop.body) {
+      if (id === loop.header) continue;
+      if ((predecessors[id] ?? []).some((p) => !loop.body.has(p))) {
+        irreducible = true;
+        break;
+      }
+    }
+    if (irreducible) continue;
+
+    const exitTarget = hTerm.alternate;
+    const readInLoop = new Set<number>(),
+      writtenInLoop = new Set<number>(),
+      disqualified = new Set<number>(),
+      needsEntryInt32 = new Set<number>(),
+      addSubReadCount = new Map<number, number>(),
+      writeCount = new Map<number, number>();
+    let valid = true;
+    for (const id of loop.body) {
+      const block = current.blocks[id];
+      if (block === undefined || block.exception !== undefined) {
+        valid = false;
+        break;
+      }
+      visited += block.instructions.length + 1;
+      if (visited > budget) return undefined;
+      const t = block.terminator;
+      if (
+        t.kind === "return" ||
+        (fnHasHandlers && (t.kind === "throw" || t.kind === "throw-literal"))
+      ) {
+        valid = false;
+        break;
+      }
+      const isPureAbort = (bid: number): boolean => {
+        const tb = current.blocks[bid];
+        if (tb === undefined || tb.exception !== undefined) return false;
+        const tk = tb.terminator.kind;
+        if (tk === "trap") return tb.instructions.length === 0;
+        if (tk === "throw" || tk === "throw-literal") {
+          for (const op of tb.instructions)
+            if (op !== undefined && op.kind === "load") return false;
+          return true;
+        }
+        return false;
+      };
+      for (const succ of successors(t))
+        if (!loop.body.has(succ) && succ !== exitTarget) {
+          if (!fnHasHandlers && isPureAbort(succ)) continue;
+          valid = false;
+          break;
+        }
+      if (!valid) break;
+      if (
+        (t.kind === "record" ||
+          t.kind === "record-cell" ||
+          t.kind === "cell") &&
+        t.operation !== "write"
+      )
+        disqualified.add(t.slot);
+      const loadSlots = new Map<number, number>(),
+        bitwiseIds = new Set<number>(),
+        usedByBitwise = new Set<number>(),
+        usedByAddSub = new Set<number>(),
+        usedByOther = new Set<number>();
+      for (const op of block.instructions) {
+        if (op === undefined) continue;
+        if (op.kind === "load") {
+          loadSlots.set(op.id, op.slot);
+          readInLoop.add(op.slot);
+          if (id === loop.header || id === condBlockId)
+            disqualified.add(op.slot);
+        } else if (op.kind === "store") {
+          writtenInLoop.add(op.slot);
+          writeCount.set(op.slot, (writeCount.get(op.slot) ?? 0) + 1);
+          if (
+            id === loop.header ||
+            id === condBlockId ||
+            !bitwiseIds.has(op.value)
+          )
+            disqualified.add(op.slot);
+          if (loadSlots.has(op.value)) usedByOther.add(op.value);
+        } else if (
+          (op.kind === "binary" &&
+            (isInt32Bitwise(op.operator) || op.operator === "imul")) ||
+          (op.kind === "unary" && op.operator === "~")
+        ) {
+          bitwiseIds.add(op.id);
+          if (op.kind === "binary") {
+            usedByBitwise.add(op.left);
+            usedByBitwise.add(op.right);
+          } else usedByBitwise.add(op.operand);
+        } else if (op.kind === "binary" && op.operator === ">>>") {
+          // `>>>` only reads the low 32 bits of its operands (like `>>`),
+          // though its output is uint32 so it is not added to `bitwiseIds`.
+          usedByBitwise.add(op.left);
+          usedByBitwise.add(op.right);
+        } else if (
+          op.kind === "binary" &&
+          (op.operator === "+" || op.operator === "-")
+        ) {
+          usedByAddSub.add(op.left);
+          usedByAddSub.add(op.right);
+        } else {
+          visitInstructionOperands(op, (v) => usedByOther.add(v));
+        }
+      }
+      visitTerminatorOperands(t, (v) => usedByOther.add(v));
+      for (const [valId, slot] of loadSlots) {
+        if (usedByOther.has(valId)) {
+          disqualified.add(slot);
+        } else if (usedByAddSub.has(valId)) {
+          needsEntryInt32.add(slot);
+          addSubReadCount.set(slot, (addSubReadCount.get(slot) ?? 0) + 1);
+        } else if (!usedByBitwise.has(valId)) {
+          disqualified.add(slot);
+        }
+      }
+    }
+    if (!valid) continue;
+
+    const accs: number[] = [],
+      guardedAccs: { readonly slot: number; readonly checkNegZero: boolean }[] =
+        [];
+    let bodyInsts = 0;
+    for (const id of loop.body)
+      bodyInsts += current.blocks[id]?.instructions.length ?? 0;
+    for (const slot of writtenInLoop) {
+      if (
+        !readInLoop.has(slot) ||
+        disqualified.has(slot) ||
+        current.slots[slot] !== "number"
+      )
+        continue;
+      const alwaysWritten = isAlwaysWrittenPerIteration(
+        current.blocks,
+        loop.body,
+        loop.header,
+        hTerm.consequent,
+        exitTarget,
+        slot,
+      );
+      const requireInt32 = needsEntryInt32.has(slot) || !alwaysWritten;
+      if (requireInt32) {
+        if ((addSubReadCount.get(slot) ?? 0) > (writeCount.get(slot) ?? 0))
+          continue;
+        if (
+          isInt32AtEntry(
+            current,
+            preheaderId,
+            slot,
+            Math.max(1, budget - visited),
+          )
+        ) {
+          accs.push(slot);
+        } else if (
+          bodyInsts <= 2000 &&
+          isDefinitelyInitializedAt(current, preheaderId, slot)
+        ) {
+          accs.push(slot);
+          guardedAccs.push({ slot, checkNegZero: !alwaysWritten });
+        }
+      } else if (isDefinitelyInitializedAt(current, preheaderId, slot)) {
+        accs.push(slot);
+      }
+    }
+    if (accs.length === 0) continue;
+
+    const candSlots = current.slots.slice(),
+      candBlocks = current.blocks.slice(),
+      accToInt = new Map<number, number>();
+    let candNextValue = nextValue;
+    for (const acc of accs) {
+      const intSlot = candSlots.length;
+      candSlots.push("number");
+      accToInt.set(acc, intSlot);
+    }
+
+    // If any accumulator requires a dynamic int32 entry guard (e.g. after a
+    // call that isn't statically proven int32), clone `loop.body` as a cold
+    // fallback for non-int32 / -0 entry values.
+    let coldHeader = -1;
+    if (guardedAccs.length > 0) {
+      const copies = new Map<number, number>();
+      for (const id of loop.body) {
+        copies.set(id, candBlocks.length);
+        candBlocks.push({
+          id: candBlocks.length,
+          instructions: [],
+          terminator: { kind: "trap", start: 0, end: 0 },
+        });
+      }
+      const route = (t: number): number => copies.get(t) ?? t,
+        copySub = new Uint32Array(candNextValue);
+      for (const id of loop.body) {
+        const orig = current.blocks[id],
+          copyId = copies.get(id);
+        if (orig === undefined || copyId === undefined) continue;
+        copySub.fill(0);
+        const insts: Instruction[] = [];
+        for (const op of orig.instructions) {
+          if (op === undefined) continue;
+          const s = substituteInstructionValues(op, copySub),
+            r = instructionResult(op);
+          if (r !== undefined) {
+            const renamed = candNextValue++;
+            copySub[r] = renamed + 1;
+            insts.push(renumberInstructionResult(s, renamed));
+          } else insts.push(s);
+        }
+        candBlocks[copyId] = {
+          id: copyId,
+          instructions: insts,
+          terminator: retarget(
+            substituteTerminatorValues(orig.terminator, copySub),
+            route,
+          ),
+        };
+      }
+      coldHeader = copies.get(loop.header) ?? -1;
+      if (coldHeader < 0) continue;
+    }
+
+    // Clone the pure header check once in preheader: 0-iteration loops skip
+    // initialization and exit untouched; >=1-iteration loops check any dynamic
+    // int32 entry guards, then initialize `intAcc = acc | 0`.
+    const entryCheckId = candBlocks.length,
+      initId = entryCheckId + 1,
+      wbId = entryCheckId + 2;
+
+    const subst = new Uint32Array(candNextValue),
+      checkInsts: Instruction[] = [];
+    for (const op of condBlock.instructions) {
+      if (op === undefined) continue;
+      const s = substituteInstructionValues(op, subst),
+        r = instructionResult(op);
+      if (r !== undefined) {
+        const renamed = candNextValue++;
+        subst[r] = renamed + 1;
+        checkInsts.push(renumberInstructionResult(s, renamed));
+      } else checkInsts.push(s);
+    }
+    const checkTerm = substituteTerminatorValues(hTerm, subst);
+    if (checkTerm.kind !== "branch") continue;
+    candBlocks[preheaderId] = {
+      ...preheader,
+      terminator: { kind: "jump", target: entryCheckId, start: 0, end: 0 },
+    };
+    const firstAfterEntry = guardedAccs.length > 0 ? wbId + 1 : initId;
+    candBlocks.push({
+      id: entryCheckId,
+      instructions: checkInsts,
+      terminator: {
+        ...checkTerm,
+        consequent: firstAfterEntry,
+        alternate: exitTarget,
+      },
+    });
+
+    const initInsts: Instruction[] = [];
+    for (const [acc, intSlot] of accToInt) {
+      const vOld = candNextValue++,
+        vZero = candNextValue++,
+        vInt = candNextValue++;
+      initInsts.push(
+        { kind: "load", id: vOld, slot: acc, start: 0, end: 0 },
+        { kind: "constant", id: vZero, value: 0, start: 0, end: 0 },
+        {
+          kind: "binary",
+          id: vInt,
+          operator: "|",
+          left: vOld,
+          right: vZero,
+          start: 0,
+          end: 0,
+        },
+        { kind: "store", slot: intSlot, value: vInt, start: 0, end: 0 },
+      );
+    }
+    candBlocks.push({
+      id: initId,
+      instructions: initInsts,
+      terminator: { kind: "jump", target: loop.header, start: 0, end: 0 },
+    });
+
+    const wbInsts: Instruction[] = [];
+    for (const [acc, intSlot] of accToInt) {
+      const v = candNextValue++;
+      if (!needsEntryInt32.has(acc)) {
+        const vZero = candNextValue++,
+          vExt = candNextValue++;
+        wbInsts.push(
+          { kind: "load", id: v, slot: intSlot, start: 0, end: 0 },
+          { kind: "constant", id: vZero, value: 0, start: 0, end: 0 },
+          {
+            kind: "binary",
+            id: vExt,
+            operator: "|",
+            left: v,
+            right: vZero,
+            start: 0,
+            end: 0,
+          },
+          { kind: "store", slot: acc, value: vExt, start: 0, end: 0 },
+        );
+      } else {
+        wbInsts.push(
+          { kind: "load", id: v, slot: intSlot, start: 0, end: 0 },
+          { kind: "store", slot: acc, value: v, start: 0, end: 0 },
+        );
+      }
+    }
+    candBlocks.push({
+      id: wbId,
+      instructions: wbInsts,
+      terminator: { kind: "jump", target: exitTarget, start: 0, end: 0 },
+    });
+
+    // Emit chained dynamic int32 entry guards (each checks `acc === (acc | 0)`,
+    // and when `checkNegZero` is set, also rejects `-0` via `acc !== 0 || 1 / acc > 0`).
+    for (let gi = 0; gi < guardedAccs.length; gi++) {
+      const g = guardedAccs[gi];
+      if (g === undefined) continue;
+      const eqBlockId = candBlocks.length,
+        isLast = gi === guardedAccs.length - 1;
+      const vAcc = candNextValue++,
+        vZero = candNextValue++,
+        vInt = candNextValue++,
+        vEq = candNextValue++;
+      const eqTarget = g.checkNegZero
+        ? eqBlockId + 1
+        : isLast
+          ? initId
+          : eqBlockId + 1;
+      candBlocks.push({
+        id: eqBlockId,
+        instructions: [
+          { kind: "load", id: vAcc, slot: g.slot, start: 0, end: 0 },
+          { kind: "constant", id: vZero, value: 0, start: 0, end: 0 },
+          {
+            kind: "binary",
+            id: vInt,
+            operator: "|",
+            left: vAcc,
+            right: vZero,
+            start: 0,
+            end: 0,
+          },
+          {
+            kind: "binary",
+            id: vEq,
+            operator: "===",
+            left: vAcc,
+            right: vInt,
+            start: 0,
+            end: 0,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: vEq,
+          consequent: eqTarget,
+          alternate: coldHeader,
+          start: 0,
+          end: 0,
+        },
+      });
+      if (g.checkNegZero) {
+        const nzBlockId = candBlocks.length,
+          invBlockId = nzBlockId + 1,
+          nextTarget = isLast ? initId : invBlockId + 1;
+        const vAcc2 = candNextValue++,
+          vZero2 = candNextValue++,
+          vNz = candNextValue++;
+        candBlocks.push({
+          id: nzBlockId,
+          instructions: [
+            { kind: "load", id: vAcc2, slot: g.slot, start: 0, end: 0 },
+            { kind: "constant", id: vZero2, value: 0, start: 0, end: 0 },
+            {
+              kind: "binary",
+              id: vNz,
+              operator: "!==",
+              left: vAcc2,
+              right: vZero2,
+              start: 0,
+              end: 0,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: vNz,
+            consequent: nextTarget,
+            alternate: invBlockId,
+            start: 0,
+            end: 0,
+          },
+        });
+        const vAcc3 = candNextValue++,
+          vOne = candNextValue++,
+          vInv = candNextValue++,
+          vZero3 = candNextValue++,
+          vPos = candNextValue++;
+        candBlocks.push({
+          id: invBlockId,
+          instructions: [
+            { kind: "load", id: vAcc3, slot: g.slot, start: 0, end: 0 },
+            { kind: "constant", id: vOne, value: 1, start: 0, end: 0 },
+            {
+              kind: "binary",
+              id: vInv,
+              operator: "/",
+              left: vOne,
+              right: vAcc3,
+              start: 0,
+              end: 0,
+            },
+            { kind: "constant", id: vZero3, value: 0, start: 0, end: 0 },
+            {
+              kind: "binary",
+              id: vPos,
+              operator: ">",
+              left: vInv,
+              right: vZero3,
+              start: 0,
+              end: 0,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: vPos,
+            consequent: nextTarget,
+            alternate: coldHeader,
+            start: 0,
+            end: 0,
+          },
+        });
+      }
+    }
+
+    for (const id of loop.body) {
+      const b = candBlocks[id];
+      if (b === undefined) continue;
+      const rewritten: Instruction[] = [];
+      for (const op of b.instructions) {
+        if (op === undefined) continue;
+        if (op.kind === "load") {
+          const mapped = accToInt.get(op.slot);
+          rewritten.push(mapped === undefined ? op : { ...op, slot: mapped });
+        } else if (op.kind === "store") {
+          const mapped = accToInt.get(op.slot);
+          rewritten.push(mapped === undefined ? op : { ...op, slot: mapped });
+        } else rewritten.push(op);
+      }
+      candBlocks[id] = {
+        ...b,
+        instructions: rewritten,
+        terminator: retarget(b.terminator, (t) =>
+          t === exitTarget ? wbId : t,
+        ),
+      };
+    }
+
+    const debug =
+      current.debug === undefined
+        ? undefined
+        : retainDebugValues(current, candBlocks);
+    const candidate: FunctionIR =
+      debug === undefined
+        ? { ...current, slots: candSlots, blocks: candBlocks }
+        : { ...current, slots: candSlots, blocks: candBlocks, debug };
+    if (!recordReadsKept(current, candidate)) continue;
+    current = candidate;
+    nextValue = candNextValue;
+    promoted += accs.length;
+    for (const id of loop.body) touched.add(id);
+    touched.add(preheaderId);
+  }
+  return { fn: current, visited, promoted };
 }

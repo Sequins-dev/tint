@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FunctionIR, Instruction, Terminator } from "@tint/ir/scalar";
-import { shareFrameSlots } from "../src/aarch64/scalar/slot-sharing.ts";
+import { shareFrameSlots } from "../src/scalar/slot-sharing.ts";
 
 const at = { start: 0, end: 0 };
 let nextId = 1000;

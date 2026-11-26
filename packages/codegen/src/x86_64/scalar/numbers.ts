@@ -33,7 +33,16 @@ export function floatBits(emit: Emit, dst: Gpr<64>, src: Xmm): void {
   } = { op: "movq", dst, src };
   emit(insn);
 }
-function bitsFloat(emit: Emit, dst: Xmm, src: Gpr<64>): void {
+/** MOVD: the low 32 bits of an XMM register (a binary32's bits). */
+export function float32Bits(emit: Emit, dst: Gpr<32>, src: Xmm): void {
+  const insn: {
+    readonly op: "movd";
+    readonly dst: Gpr<32>;
+    readonly src: Xmm;
+  } = { op: "movd", dst, src };
+  emit(insn);
+}
+export function bitsFloat(emit: Emit, dst: Xmm, src: Gpr<64>): void {
   const insn: {
     readonly op: "movq";
     readonly dst: Xmm;

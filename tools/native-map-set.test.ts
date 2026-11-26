@@ -194,6 +194,43 @@ function numberMaps(): void {
   }
   mix(steps);
 }
+function numberNumberMaps(): void {
+  const map = new Map<number, number>();
+  for (let i = 0; i < 400; i++) map.set((i * 17) % 311, i * 3 + 1);
+  mix(map.size);
+  map.set(NaN, 777);
+  map.set(NaN, 888);
+  map.set(-0, 123);
+  mix(map.size);
+  mix(map.get(0) ?? -1);
+  mix(map.get(-0) ?? -1);
+  mix(map.get(NaN) ?? -1);
+  mix(map.get(0.25) ?? -1);
+  let visits = 0;
+  for (const [k, v] of map) {
+    visits++;
+    mix(k !== k ? 4242 : k);
+    mix(v);
+    if (visits % 3 === 0) map.delete(k);
+    if (visits % 5 === 0) map.set((k * 17) % 311, v + 10);
+    if (visits < 250 && visits % 2 === 0) map.set(6000 + visits, visits * 7);
+    if (visits % 64 === 0) churn(300);
+  }
+  mix(visits);
+  mix(map.size);
+  let steps = 0;
+  for (const [k, v] of map) {
+    steps++;
+    mix(k !== k ? 33 : k);
+    mix(v);
+    if (steps === 1) {
+      map.clear();
+      map.set(1, 101);
+      map.set(2, 202);
+    }
+  }
+  mix(steps);
+}
 function stringMaps(): void {
   const counts = new Map<string, number>();
   for (let i = 0; i < 2000; i++) {
@@ -293,6 +330,7 @@ export function checksum(): number {
   objectSets();
   optionalSets();
   numberMaps();
+  numberNumberMaps();
   stringMaps();
   objectMaps();
   return total;

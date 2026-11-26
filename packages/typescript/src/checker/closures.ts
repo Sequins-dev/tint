@@ -5,7 +5,11 @@ import {
   type LocalRealmPlan,
 } from "./local-realm.ts";
 import { numericConstant } from "./numeric-constants.ts";
-import { checkClassInitialization } from "./class-initialization.ts";
+import {
+  checkClassInitialization,
+  constructorReadBeforeAssignment,
+  initializerReadBeforeInitialization,
+} from "./class-initialization.ts";
 import {
   typeParameterCount,
   syntaxHash,
@@ -64,6 +68,9 @@ import {
   unsupportedDynamicPayload,
   type CheckedCellOperation,
   type CellOperation,
+  isNativeTypedArrayKind,
+  nativeTypedArrayKind,
+  type NativeTypedArrayKind,
 } from "../types/index.ts";
 import {
   installedNonConstructorGlobals,
@@ -201,6 +208,7 @@ export type ClosureIntrinsic =
   | "list-has"
   | "flow-property-read"
   | "flow-property-read-boxed"
+  | "uninitialized-field-read"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -222,6 +230,7 @@ export type ClosureIntrinsic =
   | "dynamic-object-compound"
   | "dynamic-object-has"
   | "dynamic-object-delete"
+  | "property-delete"
   | "array-length"
   | "string-from-code-units"
   | "string-from-code-points"
@@ -303,6 +312,16 @@ interface ArrayBindingRead {
   readonly inBounds: boolean;
   readonly realm?: boolean;
 }
+/** Where a value checked against an `unknown` position or passed as an
+ * argument goes (class value flows, see closeClassErasures). */
+type ValueDestination =
+  | { readonly kind: "binding"; readonly id: number }
+  | { readonly kind: "result"; readonly owner: number }
+  | {
+      readonly kind: "argument";
+      readonly call: Expression & { readonly kind: "call" | "new" };
+      readonly index: number;
+    };
 export interface CheckedClosures {
   readonly bindingRealm?: ReadonlyKeyIndex<Span, boolean>;
   readonly needsBindingRealm?: boolean;
@@ -357,6 +376,10 @@ export interface CheckedClosures {
     readonly NativeRecordViewField[]
   >;
   readonly finitePropertyKeys?: ReadonlyKeyIndex<Expression, readonly string[]>;
+  /** Required instance fields code may read before their first assignment
+   * (class-initialization.ts): their storage admits `undefined`, and their
+   * reads ("uninitialized-field-read") are speculative general values. */
+  readonly uninitializedFields?: ReadonlyKeyIndex<Span, boolean>;
   readonly operations: readonly BindingOperation[];
 }
 export interface NativeCallbackView {
@@ -409,7 +432,9 @@ export interface ClosureFallback {
     | "union-field-write"
     | "realm-aggregate-update"
     | "general-result-projection"
-    | "operator-layout";
+    | "operator-layout"
+    | "class-erasure"
+    | "class-heritage";
   readonly ownerKind: "function" | "class" | "module";
   readonly owner: Span;
 }
@@ -461,8 +486,13 @@ function checkClosureModuleLayout(
     "Math",
     "Atomics",
     "Uint8Array",
+    "Int8Array",
+    "Uint8ClampedArray",
     "Uint16Array",
+    "Int16Array",
     "Uint32Array",
+    "Int32Array",
+    "Float32Array",
     "Float64Array",
     "ArrayBuffer",
     "SharedArrayBuffer",
@@ -1242,6 +1272,38 @@ function checkClosureModuleLayout(
     };
   }
   const contracts = resolved.value;
+  // Whether any code writes through a `.prototype` member: then a class's
+  // methods may be replaced before construction calls them.
+  let prototypesWritten = false;
+  function writesPrototype(target: Expression): boolean {
+    let current = ungroup(target);
+    while (current.kind === "member" || current.kind === "index") {
+      if (current.kind === "member" && current.property === "prototype")
+        return true;
+      if (
+        current.kind === "index" &&
+        literalPropertyName(ungroup(current.index)) === "prototype"
+      )
+        return true;
+      current = ungroup(current.object);
+    }
+    return false;
+  }
+  rewriteModule(module, {
+    expression: (mapped, node) => {
+      if (
+        ((node.kind === "assignment" ||
+          node.kind === "compound" ||
+          node.kind === "update") &&
+          writesPrototype(node.target)) ||
+        (node.kind === "unary" &&
+          node.operator === "delete" &&
+          writesPrototype(node.operand))
+      )
+        prototypesWritten = true;
+      return mapped;
+    },
+  });
   const classContracts = createKeyIndex<ClassDefinition, ClassContract>(
     syntaxHash,
   );
@@ -1358,6 +1420,87 @@ function checkClosureModuleLayout(
     );
   }
   const intrinsics = createKeyIndex<Expression, ClosureIntrinsic>(syntaxHash);
+  // Unproven class fields (see checkClass) and the object property reads and
+  // updates that may reach them, resolved once every class is checked.
+  const uninitializedFields = createKeyIndex<Span, boolean>(syntaxHash);
+  const unprovenClassFields: {
+    readonly contract: ClassContract;
+    readonly names: ReadonlySet<string>;
+  }[] = [];
+  const propertyReads: {
+    readonly node: Expression;
+    readonly receiver: number;
+    readonly property: string;
+    /** An update, and whether reading `undefined` as NaN is exact for it
+     * (not for `??=`). */
+    readonly update: boolean;
+    readonly numeric: boolean;
+  }[] = [];
+  // Typed class values reaching general code (closeClassErasures): values
+  // flowing into `unknown` positions or call arguments with their
+  // destination, operands general code receives directly, and conversions
+  // of object types (which types class values flow into).
+  let flowDestination:
+    | {
+        readonly site: ReadonlySet<Expression>;
+        readonly target: ValueDestination;
+      }
+    | undefined;
+  // `erased`: checked against `unknown`; otherwise an argument recorded in
+  // case its callee is general code.
+  const valueFlows: {
+    readonly node: Expression;
+    readonly target: ValueDestination | undefined;
+    readonly erased: boolean;
+  }[] = [];
+  const valueSinks: Expression[] = [];
+
+  const objectConversions: { readonly from: number; readonly to: number }[] =
+    [];
+  /** The expressions whose value is the value of `node`: groups, branches
+   * of conditionals and logical operators, assigned values. */
+  function valueSites(node: Expression): Set<Expression> {
+    const sites = new Set<Expression>();
+    function add(value: Expression): void {
+      sites.add(value);
+      if (value.kind === "group" || value.kind === "satisfies")
+        add(value.expression);
+      else if (value.kind === "conditional") {
+        add(value.consequent);
+        add(value.alternate);
+      } else if (value.kind === "binary") {
+        if (
+          value.operator === "&&" ||
+          value.operator === "||" ||
+          value.operator === "??"
+        ) {
+          add(value.left);
+          add(value.right);
+        } else if (value.operator === ",") add(value.right);
+      } else if (value.kind === "assignment") add(value.value);
+    }
+    add(node);
+    return sites;
+  }
+  /** Checks `node` while recording that its value flows to `target`. */
+  function flowInto(
+    node: Expression,
+    target: ValueDestination,
+    check: () => number,
+  ): number {
+    if (contracts.classes.length === 0) return check();
+    const saved = flowDestination;
+    flowDestination = { site: valueSites(node), target };
+    try {
+      return check();
+    } finally {
+      flowDestination = saved;
+    }
+  }
+  /** A thrown value, a dynamic payload or an operand general code tests. */
+  function generalOperand(node: Expression): void {
+    if (contracts.classes.length > 0) valueSinks.push(node);
+  }
   // Validation witnesses for fresh contextual literals are separate from their
   // retained inferred types. They never authorize a runtime reference conversion.
   const contextualProofs = createKeyIndex<Expression, number>(syntaxHash);
@@ -1490,7 +1633,289 @@ function checkClosureModuleLayout(
       if (b === undefined) throw "reference invariant";
       references.set(r.node, b);
     }
+  } /** A typed class value reaching general code needs the record views of
+   * step 4 (docs/design-typed-classes.md). Until they exist the module takes
+   * the general path, which runs it with JavaScript semantics. Class values
+   * are values of a class's own types and of the object types they are
+   * converted to; they propagate through `unknown` bindings, parameters and
+   * results. One reaching general code (a general or realm library call, a
+   * dynamic object, a thrown value, a realm test, an exported result or
+   * constant, or a destination not tracked here) sends the module to the
+   * general path; values only typed code reads stay typed. */
+  function closeClassErasures(): void {
+    if (valueFlows.length === 0 && valueSinks.length === 0) return;
+    const exact: (boolean | undefined)[] = [];
+    function classType(id: number): boolean {
+      const known = exact[id];
+      if (known !== undefined) return known;
+      let result = false;
+      for (const contract of contracts.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        for (const candidate of [
+          contract.instance,
+          contract.prototype,
+          contract.constructor,
+        ]) {
+          if (candidate === undefined) throw "class contract type invariant";
+          if (
+            candidate === id ||
+            (system.assignable(candidate, id) &&
+              system.assignable(id, candidate))
+          )
+            result = true;
+        }
+      }
+      exact[id] = result;
+      return result;
+    }
+    // Object types class values are converted to, transitively.
+    const capable = new Set<number>();
+    let grown = true;
+    while (grown) {
+      grown = false;
+      for (const conversion of objectConversions) {
+        if (conversion === undefined) throw "object conversion invariant";
+        if (
+          !capable.has(conversion.to) &&
+          (capable.has(conversion.from) || classType(conversion.from))
+        ) {
+          capable.add(conversion.to);
+          grown = true;
+        }
+      }
+    }
+    const holds: (boolean | undefined)[] = [];
+    function holdsClassValues(id: number): boolean {
+      const known = holds[id];
+      if (known !== undefined) return known;
+      holds[id] = false;
+      const type = types[id];
+      let result = false;
+      if (type?.kind === "union")
+        for (const member of type.members) {
+          if (member === undefined) throw "class value member invariant";
+          if (holdsClassValues(member)) result = true;
+        }
+      else if (type?.kind === "array") result = holdsClassValues(type.element);
+      else if (type?.kind === "object") {
+        result = classType(id) || capable.has(id);
+        for (const property of type.properties) {
+          if (property === undefined) throw "class value property invariant";
+          if (!result && holdsClassValues(property.type)) result = true;
+        }
+      }
+      holds[id] = result;
+      return result;
+    }
+    const taintedBindings = new Set<number>(),
+      taintedResults = new Set<number>();
+    const declaredFunctions = new Map<
+      number,
+      Statement & { readonly kind: "function" }
+    >();
+    rewriteModule(module, {
+      statement: (mapped, original) => {
+        if (original.kind === "function") {
+          const declared = declarations.get(original);
+          if (declared !== undefined)
+            declaredFunctions.set(declared.id, original);
+        }
+        return mapped;
+      },
+    });
+    function calledFunction(call: Expression): number | undefined {
+      if (call.kind !== "call") return undefined;
+      const callee = ungroup(call.callee);
+      if (callee.kind !== "identifier") return undefined;
+      const target = references.get(callee);
+      const declaration =
+        target === undefined ? undefined : declaredFunctions.get(target.id);
+      return declaration === undefined ? undefined : functions.get(declaration);
+    }
+    function tainted(node: Expression): boolean {
+      const type = expressions.get(node);
+      if (type !== undefined && holdsClassValues(type)) return true;
+      const value = ungroup(node);
+      switch (value.kind) {
+        case "identifier": {
+          const target = references.get(value);
+          return target !== undefined && taintedBindings.has(target.id);
+        }
+        case "member":
+        case "index":
+          return tainted(value.object);
+        case "call": {
+          const id = calledFunction(value);
+          return id !== undefined && taintedResults.has(id);
+        }
+        case "conditional":
+          return tainted(value.consequent) || tainted(value.alternate);
+        case "binary":
+          return value.operator === ","
+            ? tainted(value.right)
+            : (value.operator === "&&" ||
+                value.operator === "||" ||
+                value.operator === "??") &&
+                (tainted(value.left) || tainted(value.right));
+        case "assignment":
+          return tainted(value.value);
+        default:
+          return false;
+      }
+    }
+    /** The binding of the parameter an argument initializes, when the
+     * callee is a declared function or a typed class's constructor or
+     * method; undefined for general code. */
+    function argumentBinding(
+      call: Expression & { readonly kind: "call" | "new" },
+      index: number,
+    ): number | undefined {
+      let parameters: readonly Parameter[] | undefined;
+      const callee = ungroup(call.callee);
+      if (call.kind === "call" && callee.kind === "identifier") {
+        const target = references.get(callee);
+        parameters =
+          target === undefined
+            ? undefined
+            : declaredFunctions.get(target.id)?.parameters;
+      } else {
+        const receiver =
+          call.kind === "new"
+            ? expressions.get(callee)
+            : callee.kind === "member"
+              ? expressions.get(callee.object)
+              : undefined;
+        const name =
+          call.kind === "new"
+            ? "constructor"
+            : callee.kind === "member"
+              ? callee.property
+              : undefined;
+        for (const contract of contracts.classes) {
+          if (contract === undefined) throw "class contract invariant";
+          const side =
+            call.kind === "new" ? contract.constructor : contract.instance;
+          if (
+            receiver === undefined ||
+            name === undefined ||
+            !(
+              receiver === side ||
+              (system.assignable(receiver, side) &&
+                system.assignable(side, receiver))
+            )
+          )
+            continue;
+          for (const member of contract.members) {
+            if (member === undefined) throw "class member contract invariant";
+            const element = member.node;
+            if (
+              element.kind === "method" &&
+              element.static === false &&
+              literalPropertyName(element.key) === name
+            )
+              parameters = element.parameters;
+          }
+        }
+      }
+      const parameter = parameters?.[index];
+      if (parameter === undefined || parameter.kind === "pattern-parameter")
+        return undefined;
+      return declarations.get(parameter)?.id;
+    }
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const flow of valueFlows) {
+        if (flow === undefined) throw "class value flow invariant";
+        if (!tainted(flow.node)) continue;
+        const target = flow.target;
+        let tracked: number | undefined;
+        let result: number | undefined;
+        if (target?.kind === "binding") tracked = target.id;
+        else if (target?.kind === "result") result = target.owner;
+        else if (target?.kind === "argument") {
+          const intrinsic = intrinsics.get(target.call);
+          if (
+            intrinsic === "general-call" ||
+            intrinsic === "realm-library-call"
+          )
+            rejectClassErasure(flow.node);
+          // Typed builtins keep typed arguments typed; an `unknown` one is
+          // general storage this analysis does not follow.
+          if (intrinsic === undefined)
+            tracked = argumentBinding(target.call, target.index);
+          if (tracked === undefined && !flow.erased) continue;
+        }
+        if (tracked === undefined && result === undefined)
+          rejectClassErasure(flow.node);
+        if (tracked !== undefined && !taintedBindings.has(tracked)) {
+          taintedBindings.add(tracked);
+          changed = true;
+        }
+        if (result !== undefined && !taintedResults.has(result)) {
+          taintedResults.add(result);
+          changed = true;
+        }
+      }
+    }
+    for (const sink of valueSinks) {
+      if (sink === undefined) throw "class value sink invariant";
+      if (tainted(sink)) rejectClassErasure(sink);
+    }
+    // Realm tests receive their operand: `instanceof` other than a typed
+    // class's native test, error tests, and `in` on a general receiver.
+    intrinsics.forEach((intrinsic, node) => {
+      if (node.kind !== "binary") return;
+      let operand: Expression | undefined;
+      if (
+        intrinsic === "error-is" ||
+        intrinsic === "type-error-is" ||
+        intrinsic === "range-error-is"
+      )
+        operand = node.left;
+      else if (intrinsic === "realm-instanceof") {
+        const constructor = expressions.get(node.right);
+        if (constructor === undefined || !classType(constructor))
+          operand = node.left;
+      } else if (intrinsic === "literal-property-has") {
+        const receiver = expressions.get(node.right);
+        if (receiver === undefined || types[receiver]?.kind !== "object")
+          operand = node.right;
+      }
+      if (operand !== undefined && tainted(operand))
+        rejectClassErasure(operand);
+    });
+    // Exported results and constants cross into general modules.
+    for (const statement of module.statements) {
+      if (statement === undefined) throw "class erasure statement invariant";
+      if (statement.kind === "function" && statement.exported) {
+        const id = functions.get(statement);
+        if (id !== undefined && taintedResults.has(id))
+          rejectClassErasure(statement);
+      }
+      if (statement.kind === "variable" && statement.exported)
+        for (const declaration of statement.declarations) {
+          if (declaration === undefined)
+            throw "class erasure binding invariant";
+          for (const identifier of bindingIdentifiers(declaration)) {
+            if (identifier === undefined) throw "class erasure name invariant";
+            if (taintedBindings.has(binding(identifier).id))
+              rejectClassErasure(identifier);
+          }
+          const initializer = declaration.initializer;
+          if (initializer !== undefined && tainted(initializer))
+            rejectClassErasure(initializer);
+        }
+    }
   }
+  function rejectClassErasure(node: Span): never {
+    return unsupported(
+      node,
+      "class-erasure",
+      "typed class values reaching general code require class record views",
+    );
+  }
+
   function typeOf(node: TypeNode): number {
     const id = contracts.annotations.get(node);
     if (id === undefined) throw "annotation invariant";
@@ -1536,14 +1961,33 @@ function checkClosureModuleLayout(
     const b = declarations.get(node);
     if (b !== undefined) bindingTypes[b.id] = typeOf(type);
   });
-  for (const node of module.statements) {
-    if (node === undefined || node.kind !== "class") continue;
+  // Class bindings take their constructor types before any body is checked,
+  // so functions hoisted above a class may reference it: module classes, and
+  // classes declared directly in a module-level function body whose
+  // contracts resolved there.
+  function declareClassBinding(
+    node: Statement & { readonly kind: "class" },
+    required: boolean,
+  ): void {
     const contract = classContracts.get(node.definition);
-    if (contract === undefined) throw "class contract invariant";
+    if (contract === undefined) {
+      if (required) throw "class contract invariant";
+      return;
+    }
     const outer = declarations.get(node),
       inner = declarations.get(node.definition);
     if (outer !== undefined) bindingTypes[outer.id] = contract.constructor;
     if (inner !== undefined) bindingTypes[inner.id] = contract.constructor;
+  }
+  for (const node of module.statements) {
+    if (node === undefined) continue;
+    if (node.kind === "class") declareClassBinding(node, true);
+    if (node.kind !== "function") continue;
+    const body = node.body;
+    if (body === undefined || body.kind !== "block") continue;
+    for (const statement of body.statements)
+      if (statement !== undefined && statement.kind === "class")
+        declareClassBinding(statement, false);
   }
   const assignedVars = new Set<number>();
   for (const node of varAssignments) {
@@ -1646,11 +2090,7 @@ function checkClosureModuleLayout(
     if (t.kind === "object" && t.realmTypedArray !== undefined) return true;
     // C views are byte arrays with members only.
     if (t.kind === "Uint8Array") return t.view === undefined;
-    return (
-      t.kind === "Uint16Array" ||
-      t.kind === "Uint32Array" ||
-      t.kind === "Float64Array"
-    );
+    return isNativeTypedArrayKind(t.kind);
   }
   function arrayElementType(type: number): number {
     const array = types[type];
@@ -2628,14 +3068,12 @@ function checkClosureModuleLayout(
       declared !== instance &&
       (isArray(instance) || types[instance]?.kind === "SharedArrayBuffer")
     ) {
-      const kind = types[instance]?.kind;
-      if (
-        kind === "Uint8Array" ||
-        kind === "Uint16Array" ||
-        kind === "Uint32Array" ||
-        kind === "Float64Array" ||
-        kind === "SharedArrayBuffer"
-      ) {
+      const instanceKind = types[instance]?.kind;
+      const kind: NativeTypedArrayKind | "SharedArrayBuffer" | undefined =
+        instanceKind === "SharedArrayBuffer"
+          ? "SharedArrayBuffer"
+          : nativeTypedArrayKind(instanceKind);
+      if (kind !== undefined) {
         const known = arrayFlowTypes.get(kind);
         const flow =
           known ??
@@ -2914,10 +3352,7 @@ function checkClosureModuleLayout(
       type?.kind === "set" ||
       type?.kind === "ArrayBuffer" ||
       type?.kind === "SharedArrayBuffer" ||
-      type?.kind === "Uint8Array" ||
-      type?.kind === "Uint16Array" ||
-      type?.kind === "Uint32Array" ||
-      type?.kind === "Float64Array" ||
+      isNativeTypedArrayKind(type?.kind) ||
       isErrorKind(type?.kind)
     );
   }
@@ -3010,10 +3445,7 @@ function checkClosureModuleLayout(
                 type?.kind === "map" ||
                 type?.kind === "ArrayBuffer" ||
                 type?.kind === "SharedArrayBuffer" ||
-                type?.kind === "Uint8Array" ||
-                type?.kind === "Uint16Array" ||
-                type?.kind === "Uint32Array" ||
-                type?.kind === "Float64Array" ||
+                isNativeTypedArrayKind(type?.kind) ||
                 isErrorKind(type?.kind)
               ? "object"
               : type?.kind === "realm-callable"
@@ -3926,34 +4358,154 @@ function checkClosureModuleLayout(
         "void result cannot be tested for truthiness",
       );
   }
+  /** A delete of a property whose storage has a presence byte: an optional
+   * record property, or a class instance field that may hold undefined (the
+   * class storage gives those presence). Other valid deletes take the
+   * general path. */
+  function presenceDelete(operand: Expression): boolean {
+    const target = ungroup(operand);
+    if (target.kind !== "member" || target.optional === true) return false;
+    const receiver = expressions.get(target.object);
+    const type = receiver === undefined ? undefined : types[receiver];
+    if (type?.kind !== "object" || receiver === undefined) return false;
+    const property = type.properties.find(
+      (candidate) =>
+        candidate !== undefined && candidate.name === target.property,
+    );
+    if (property === undefined) return false;
+    if (property.optional === true) return true;
+    for (const contract of contracts.classes) {
+      if (contract === undefined) throw "class contract invariant";
+      if (
+        contract.instance === receiver ||
+        (system.assignable(receiver, contract.instance) &&
+          system.assignable(contract.instance, receiver))
+      )
+        return system.assignable(undefinedType, property.type);
+    }
+    return false;
+  }
+  /** TypeScript's delete checks under strictNullChecks (the pinned
+   * compiler's TS2704 and TS2790): a readonly property, or a property that
+   * is neither optional nor admits undefined, is not a delete operand. These
+   * are type errors, so they fail the build. */
+  function requireDeletable(operand: Expression): void {
+    const target = ungroup(operand);
+    if (target.kind !== "member" && target.kind !== "index") return;
+    const name =
+      target.kind === "member"
+        ? target.property
+        : literalPropertyName(ungroup(target.index));
+    if (name === undefined) return;
+    const receiver = expressions.get(target.object);
+    const type = receiver === undefined ? undefined : types[receiver];
+    if (type?.kind !== "object") return;
+    const property = type.properties.find(
+      (candidate) => candidate !== undefined && candidate.name === name,
+    );
+    if (property === undefined) return;
+    let readonly = property.readonly;
+    if (receiver !== undefined)
+      for (const contract of contracts.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        if (
+          contract.instance !== receiver &&
+          !(
+            system.assignable(receiver, contract.instance) &&
+            system.assignable(contract.instance, receiver)
+          )
+        )
+          continue;
+        for (const member of contract.members) {
+          if (member === undefined) throw "class member contract invariant";
+          const element = member.node;
+          if (
+            element.kind === "field" &&
+            !element.static &&
+            element.readonly === true &&
+            literalPropertyName(element.key) === name
+          )
+            readonly = true;
+        }
+      }
+    if (readonly)
+      fail(
+        target,
+        "TS2704",
+        "The operand of a 'delete' operator cannot be a read-only property.",
+        true,
+      );
+    const kind = types[property.type]?.kind;
+    if (
+      property.optional === true ||
+      kind === "unknown" ||
+      kind === "never" ||
+      system.assignable(undefinedType, property.type)
+    )
+      return;
+    fail(
+      target,
+      "TS2790",
+      "The operand of a 'delete' operator must be optional.",
+      true,
+    );
+  }
   function checkClass(
     node: Statement & { readonly kind: "class" },
     owner: number | undefined,
   ): void {
-    if (owner !== undefined)
+    const contract = classContracts.get(node.definition);
+    // A class in a function body has a contract only when it is declared
+    // directly in a module-level function (a module instance's initializer
+    // holds the module's classes); other local classes need scoped contract
+    // resolution.
+    if (owner !== undefined && contract === undefined)
       fail(
         node,
         "UNSUPPORTED",
         "local classes require scoped contract resolution",
       );
-    const contract = classContracts.get(node.definition);
     if (contract === undefined)
       fail(node, "UNSUPPORTED", "class contract is unavailable");
+    if (contract.base !== undefined)
+      unsupported(
+        node,
+        "class-heritage",
+        "typed derived classes require prefix layouts and super construction",
+      );
     const required = new Set<ClassElement>(),
-      receiverOwners = new Set<number>();
+      receiverOwners = new Set<number>(),
+      methods = new Map<string, ClassElement>(),
+      accessors = new Set<string>();
     for (const member of contract.members) {
       if (member === undefined) throw "class member contract invariant";
       const element = member.node;
+      const name =
+        element.kind === "static-block"
+          ? undefined
+          : literalPropertyName(element.key);
       const constructor =
-        element.kind === "method" &&
-        !element.static &&
-        literalPropertyName(element.key) === "constructor";
+        element.kind === "method" && !element.static && name === "constructor";
       if (
         element.kind === "field" &&
         !system.assignable(undefinedType, member.type)
       )
         required.add(element);
-      if (element.kind === "field" || constructor) {
+      // Own instance methods called on `this` during construction are
+      // analyzed in place, unless some code may replace them.
+      const method =
+        element.kind === "method" &&
+        !element.static &&
+        !constructor &&
+        name !== undefined &&
+        !prototypesWritten;
+      if (method && name !== undefined) methods.set(name, element);
+      if (
+        (element.kind === "get" || element.kind === "set") &&
+        name !== undefined
+      )
+        accessors.add((element.static ? "static " : "") + name);
+      if (element.kind === "field" || constructor || method) {
         const id = functions.get(element);
         if (id !== undefined) receiverOwners.add(id);
       }
@@ -3976,19 +4528,90 @@ function checkClosureModuleLayout(
       )
         constructors.add(reference.node);
     }
+    // TypeScript's own definite assignment diagnostic (TS2565) is a type
+    // error, reported as tsc does before Tint's initialization analysis.
+    const tracked = new Set<string>();
+    for (const member of contract.members) {
+      if (member === undefined) throw "class member contract invariant";
+      const element = member.node;
+      if (
+        element.kind !== "field" ||
+        element.static ||
+        element.initializer !== undefined ||
+        element.definite === true ||
+        element.optional === true ||
+        system.assignable(undefinedType, member.type)
+      )
+        continue;
+      const name = literalPropertyName(element.key);
+      if (name !== undefined) tracked.add(name);
+    }
+    // TypeScript ends flow after a call statement whose callee is declared
+    // to return `never`: a function, or one of this class's methods.
+    const classContract = contract;
+    function neverCall(call: Expression): boolean {
+      if (call.kind !== "call") return false;
+      const callee = ungroup(call.callee);
+      let declared: number | undefined;
+      if (callee.kind === "identifier") {
+        const target = references.get(callee);
+        declared = target === undefined ? undefined : bindingTypes[target.id];
+      } else if (callee.kind === "member" && callee.object.kind === "this")
+        for (const member of classContract.members) {
+          if (member === undefined) throw "class member contract invariant";
+          const element = member.node;
+          if (
+            element.kind === "method" &&
+            !element.static &&
+            literalPropertyName(element.key) === callee.property
+          )
+            declared = member.type;
+        }
+      const signature = declared === undefined ? undefined : types[declared];
+      return (
+        signature?.kind === "function" &&
+        types[signature.result]?.kind === "never"
+      );
+    }
+    const misordered = initializerReadBeforeInitialization(
+      node.definition,
+      constructors,
+    );
+    if (misordered !== undefined)
+      fail(
+        misordered,
+        "TS2729",
+        "Property '" + misordered.name + "' is used before its initialization.",
+        true,
+      );
+    const early = constructorReadBeforeAssignment(
+      node.definition,
+      tracked,
+      neverCall,
+    );
+    if (early !== undefined)
+      fail(
+        early,
+        "TS2565",
+        "Property '" + early.name + "' is used before being assigned.",
+        true,
+      );
     const initialization = checkClassInitialization(
       node.definition,
       required,
       receivers,
       constructors,
+      methods,
+      accessors,
     );
-    if (initialization !== undefined)
+    const initializationError = initialization.error;
+    if (initializationError !== undefined)
       fail(
-        initialization,
-        initialization.code,
-        initialization.message,
+        initializationError,
+        initializationError.code,
+        initializationError.message,
         undefined,
-        initialization.code === "UNSUPPORTED"
+        initializationError.code === "UNSUPPORTED"
           ? {
               capability: "class-initialization",
               ownerKind: "class",
@@ -3996,6 +4619,32 @@ function checkClosureModuleLayout(
             }
           : undefined,
       );
+    if (initialization.unproven.size > 0) {
+      const names = new Set<string>();
+      for (const member of contract.members) {
+        if (member === undefined) throw "class member contract invariant";
+        const element = member.node;
+        if (element.kind !== "field" || element.static) continue;
+        const name = literalPropertyName(element.key);
+        const site =
+          name === undefined ? undefined : initialization.unproven.get(name);
+        if (name === undefined || site === undefined) continue;
+        // Speculative reads have contracts for one primitive category.
+        if (
+          !system.assignable(member.type, number) &&
+          !system.assignable(member.type, string) &&
+          !system.assignable(member.type, boolean)
+        )
+          fail(
+            site,
+            "UNINITIALIZED",
+            "class field read before initialization: " + name,
+          );
+        uninitializedFields.set(element, true);
+        names.add(name);
+      }
+      unprovenClassFields.push({ contract, names });
+    }
     cell(
       outer,
       { kind: "initialize", value: contract.constructor },
@@ -4146,18 +4795,28 @@ function checkClosureModuleLayout(
       const position = i - offset;
       if (node.kind === "call" && node.scriptCall === true && position >= 4) {
         expression(argument, owner);
+        generalOperand(argument);
         continue;
       }
       const trailing = element !== undefined && position >= start;
       if (argument.kind !== "spread") {
+        const target: ValueDestination = {
+          kind: "argument",
+          call: node,
+          index: trailing ? start : position,
+        };
         args.push(
-          expression(
-            argument,
-            owner,
-            trailing ? element : signature.parameters[position],
-            general,
+          flowInto(argument, target, () =>
+            expression(
+              argument,
+              owner,
+              trailing ? element : signature.parameters[position],
+              general,
+            ),
           ),
         );
+        if (contracts.classes.length > 0)
+          valueFlows.push({ node: argument, target, erased: false });
         continue;
       }
       if (!trailing || element === undefined)
@@ -4547,6 +5206,7 @@ function checkClosureModuleLayout(
     erased?: number,
     callbackView: boolean = false,
   ): void {
+    generalOperand(node);
     const carrier = types[value];
     if (
       (carrier?.kind === "Uint8Array" ||
@@ -5489,7 +6149,8 @@ function checkClosureModuleLayout(
             break;
           }
           result = choose(expected, "object", node);
-          const context = types[result];
+          const literalContext = result;
+          const context = types[literalContext];
           if (context?.kind !== "object") throw "object context invariant";
           const values = node.properties.map((inputProperty): ObjectValue => {
             if (inputProperty === undefined) throw "missing object property";
@@ -5505,9 +6166,25 @@ function checkClosureModuleLayout(
             );
             if (field === undefined)
               fail(p, "PROPERTY", "unknown object property");
+            // A method of a literal contextually typed by an interface whose
+            // member is a method signature has the interface as `this`
+            // (TypeScript's noImplicitThis); calls through the signature
+            // pass the object as the receiver.
+            const declared = types[field.type];
+            const contextual =
+              p.method === true &&
+              declared?.kind === "function" &&
+              declared.method === true &&
+              declared.receiver === undefined
+                ? appendType(
+                    { ...declared, receiver: literalContext },
+                    p,
+                    "invalid object method receiver signature",
+                  )
+                : field.type;
             return {
               name: p.name,
-              type: expression(p.value, owner, field.type),
+              type: expression(p.value, owner, contextual),
             };
           });
           const checked = system.object(result, values);
@@ -5697,7 +6374,17 @@ function checkClosureModuleLayout(
                 : "flow-property-read",
             );
             result = fact;
-          } else result = fact ?? literal ?? p.value;
+          } else {
+            result = fact ?? literal ?? p.value;
+            if (types[obj]?.kind === "object" && contracts.classes.length > 0)
+              propertyReads.push({
+                node,
+                receiver: obj,
+                property: node.property,
+                update: false,
+                numeric: false,
+              });
+          }
           if (dynamicObject(obj)) result = readDynamicPayload(result, node);
           break;
         }
@@ -6007,12 +6694,7 @@ function checkClosureModuleLayout(
           if (
             target.kind !== "identifier" ||
             references.has(target) ||
-            ![
-              "Uint8Array",
-              "Uint16Array",
-              "Uint32Array",
-              "Float64Array",
-            ].includes(target.name)
+            !isNativeTypedArrayKind(target.name)
           ) {
             if (node.typeArguments.length !== 0)
               fail(
@@ -7686,6 +8368,18 @@ function checkClosureModuleLayout(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (
+              propertyName !== undefined &&
+              types[object]?.kind === "object" &&
+              contracts.classes.length > 0
+            )
+              propertyReads.push({
+                node: target,
+                receiver: object,
+                property: propertyName,
+                update: true,
+                numeric: node.kind === "update" || node.operator !== "??",
+              });
             if (dynamicObject(object) || realmAggregate(object)) {
               const shape = types[object];
               const fields: Property[] = [];
@@ -8114,7 +8808,10 @@ function checkClosureModuleLayout(
             if (b === undefined)
               fail(target, "UNSUPPORTED", "global assignment is unsupported");
             const targetType = bindingTypes[b.id];
-            result = expression(node.value, owner, targetType);
+            const value = node.value;
+            result = flowInto(value, { kind: "binding", id: b.id }, () =>
+              expression(value, owner, targetType),
+            );
             cell(b, { kind: "write", value: result }, target, owner);
             // Assignment narrows, as in TypeScript: the binding is present
             // exactly when the assigned value cannot be undefined.
@@ -8651,6 +9348,14 @@ function checkClosureModuleLayout(
             false,
             node.operator === "void",
           );
+          if (node.operator === "delete") {
+            requireDeletable(node.operand);
+            if (presenceDelete(node.operand)) {
+              intrinsics.set(node, "property-delete");
+              result = boolean;
+              break;
+            }
+          }
           if (
             isVoidExpression(value) &&
             node.operator !== "typeof" &&
@@ -8757,6 +9462,28 @@ function checkClosureModuleLayout(
         if (result !== voidType && !system.assignable(undefinedType, result))
           result = unionSubset([result, undefinedType], node);
       } else chainValues.delete(node);
+      // Values flowing into `unknown` (where `expected` is cleared), and
+      // object conversions, for closeClassErasures.
+      if (contracts.classes.length > 0 && inputExpected !== undefined) {
+        if (types[inputExpected]?.kind === "unknown") {
+          const site = flowDestination;
+          valueFlows.push({
+            node,
+            target:
+              site !== undefined && site.site.has(node)
+                ? site.target
+                : undefined,
+            erased: true,
+          });
+        }
+        const to = types[inputExpected]?.kind;
+        if (
+          result !== inputExpected &&
+          types[result]?.kind === "object" &&
+          (to === "object" || to === "union")
+        )
+          objectConversions.push({ from: result, to: inputExpected });
+      }
       if (
         expected !== undefined &&
         types[result]?.kind === "dynamic-result" &&
@@ -9415,10 +10142,13 @@ function checkClosureModuleLayout(
                 (node.mode === "const" && d.initializer !== undefined
                   ? constPrimitiveType(d.initializer)
                   : undefined),
+              initializer = d.initializer,
               actual =
-                d.initializer === undefined
+                initializer === undefined
                   ? undefinedType
-                  : expression(d.initializer, owner, expected);
+                  : flowInto(initializer, { kind: "binding", id: b.id }, () =>
+                      expression(initializer, owner, expected),
+                    );
             if (bindingTypes[b.id] === undefined) bindingTypes[b.id] = actual;
             if (
               expected !== undefined &&
@@ -9537,14 +10267,23 @@ function checkClosureModuleLayout(
             realmReturnOwners.set(node, owner);
           const inferred =
             owner === undefined ? undefined : inferredReturns.get(owner);
+          const returned = node.expression;
           const actual =
-            node.expression === undefined
+            returned === undefined
               ? undefinedType
-              : expression(
-                  node.expression,
-                  owner,
-                  inferred === undefined ? result : undefined,
-                );
+              : owner === undefined
+                ? expression(
+                    returned,
+                    owner,
+                    inferred === undefined ? result : undefined,
+                  )
+                : flowInto(returned, { kind: "result", owner }, () =>
+                    expression(
+                      returned,
+                      owner,
+                      inferred === undefined ? result : undefined,
+                    ),
+                  );
           if (inferred === undefined) {
             if (
               owner !== undefined &&
@@ -9574,6 +10313,7 @@ function checkClosureModuleLayout(
         case "throw": {
           const value = node.expression;
           const type = expression(value, owner);
+          generalOperand(value);
           if (patternedThrow && patternedThrowOwner === owner)
             checkDynamicPayload(type, value);
           return throwCompletion;
@@ -9933,6 +10673,63 @@ function checkClosureModuleLayout(
       depth--;
     }
   }
+  /** Reads of an unproven field, through any type whose layout is its
+   * class's, yield `undefined` before the field's first assignment: they
+   * become speculative general values. A numeric update is exact on the
+   * storage directly (`undefined` reads as NaN); other updates are not
+   * lowered yet. */
+  function markUninitializedReads(): void {
+    if (unprovenClassFields.length === 0) return;
+    const matches = new Map<number, ReadonlySet<string>[]>();
+    function unproven(receiver: number): ReadonlySet<string>[] {
+      const known = matches.get(receiver);
+      if (known !== undefined) return known;
+      const found: ReadonlySet<string>[] = [];
+      for (const entry of unprovenClassFields) {
+        const instance = entry.contract.instance;
+        if (
+          instance === receiver ||
+          (system.assignable(receiver, instance) &&
+            system.assignable(instance, receiver))
+        )
+          found.push(entry.names);
+      }
+      matches.set(receiver, found);
+      return found;
+    }
+    for (const read of propertyReads) {
+      if (!unproven(read.receiver).some((names) => names.has(read.property)))
+        continue;
+      if (read.update) {
+        const property = types[read.receiver];
+        const field =
+          property?.kind === "object"
+            ? property.properties.find(
+                (candidate) =>
+                  candidate !== undefined && candidate.name === read.property,
+              )
+            : undefined;
+        if (
+          field === undefined ||
+          !read.numeric ||
+          !system.assignable(field.type, number)
+        )
+          fail(
+            read.node,
+            "UNSUPPORTED",
+            "update of a field that may be read before initialization",
+          );
+        continue;
+      }
+      if (intrinsics.get(read.node) !== undefined)
+        fail(
+          read.node,
+          "UNSUPPORTED",
+          "special read of a field that may be read before initialization",
+        );
+      intrinsics.set(read.node, "uninitialized-field-read");
+    }
+  }
   try {
     const plan = realmPlan;
     if (plan !== undefined)
@@ -9983,6 +10780,8 @@ function checkClosureModuleLayout(
         );
       statement(node, undefined, undefinedType);
     }
+    markUninitializedReads();
+    closeClassErasures();
   } catch (e) {
     if (e !== abort) throw e;
   }
@@ -10039,6 +10838,7 @@ function checkClosureModuleLayout(
       nativeListViews,
       nativeRecordViews,
       finitePropertyKeys,
+      uninitializedFields,
       operations,
       intrinsics,
       cViewUses,

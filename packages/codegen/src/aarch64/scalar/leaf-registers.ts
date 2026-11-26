@@ -1,6 +1,7 @@
 import type { SignatureLayout } from "./abi.ts";
 import {
   scalarByteLength,
+  isNativeTypedArray,
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
@@ -84,10 +85,7 @@ function referenceWord(type: ScalarType): boolean {
     type === "optional-reference" ||
     type === "string" ||
     type === "optional-string" ||
-    type === "Uint8Array" ||
-    type === "Uint16Array" ||
-    type === "Uint32Array" ||
-    type === "Float64Array"
+    isNativeTypedArray(type)
   );
 }
 /** Plan the same private leaf storage bank before emission, so typed copies can
@@ -151,7 +149,8 @@ export function leafStorageRegisters(
     for (const op of block.instructions) {
       if (op === undefined) throw "leaf storage instruction invariant";
       if (++work > maxWork) return undefined;
-      if (op.kind === "array-copy") integerSafe = false;
+      if (op.kind === "array-copy" || op.kind === "array-fill")
+        integerSafe = false;
       visitInstructionOperands(op, operand);
       const result = instructionResult(op);
       if (result !== undefined) operand(result);

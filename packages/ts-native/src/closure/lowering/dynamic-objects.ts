@@ -134,8 +134,13 @@ export function arrayFlowReceiver(
   if (receiver === undefined) return undefined;
   switch (receiver.kind) {
     case "Uint8Array":
+    case "Int8Array":
+    case "Uint8ClampedArray":
     case "Uint16Array":
+    case "Int16Array":
     case "Uint32Array":
+    case "Int32Array":
+    case "Float32Array":
     case "Float64Array":
       return receiver.arrayFlow === true ? receiver.kind : undefined;
     default:
@@ -209,21 +214,30 @@ export function hasDynamicObject(
   );
 }
 
+/** Reads that produce a speculative general value under a checked type: a
+ * refined dynamic property (an accessor can change its result), and a class
+ * field read before its first assignment would give `undefined`. */
 function flowRead(checked: CheckedClosures, node: Expression): boolean {
   const intrinsic = checked.intrinsics.get(node);
   return (
     intrinsic === "flow-property-read" ||
-    intrinsic === "flow-property-read-boxed"
+    intrinsic === "flow-property-read-boxed" ||
+    intrinsic === "uninitialized-field-read"
   );
 }
 function hasFlowReads(checked: CheckedClosures): boolean {
   let found = false;
+  checked.intrinsics.forEach((_intrinsic, node) => {
+    if (flowRead(checked, node)) found = true;
+  });
+  return found;
+}
+/** Uninitialized field reads need the speculative helpers in every build,
+ * not only in partitioned ones. */
+export function hasUninitializedReads(checked: CheckedClosures): boolean {
+  let found = false;
   checked.intrinsics.forEach((intrinsic, _node) => {
-    if (
-      intrinsic === "flow-property-read" ||
-      intrinsic === "flow-property-read-boxed"
-    )
-      found = true;
+    if (intrinsic === "uninitialized-field-read") found = true;
   });
   return found;
 }
@@ -357,6 +371,7 @@ export function usesDynamicObjectRuntime(
   speculativeFlow?: boolean,
 ): boolean {
   if (speculativeFlow === true && hasFlowReads(checked)) return true;
+  if (hasUninitializedReads(checked)) return true;
   if (checked.needsBindingRealm === true) return true;
   // In mixed programs the program realm is already linked, so String() of an
   // unknown value aliases stringConstructor for realm objects and Symbols.
@@ -657,7 +672,9 @@ export function insertDynamicObjectRuntime(
       uses.push(node);
   });
   const flow =
-    speculativeFlow === true ? planFlowPropertyStorage(checked) : undefined;
+    speculativeFlow === true || hasUninitializedReads(checked)
+      ? planFlowPropertyStorage(checked)
+      : undefined;
   const flowUses: Span[] = [];
   if (flow !== undefined)
     for (const use of flow.values) {
@@ -869,10 +886,32 @@ export function insertDynamicObjectRuntime(
     return { ...node, body: bodyWithRuntime(returned, node.parameters) };
   }
   const rewritten = rewriteModule(module, {
-    statement: (node, original) =>
-      node.kind === "function" && usesRuntime(original)
-        ? { ...node, body: bodyWithRuntime(node.body, node.parameters) }
-        : node,
+    statement: (node, original) => {
+      if (node.kind === "function" && usesRuntime(original))
+        return { ...node, body: bodyWithRuntime(node.body, node.parameters) };
+      // Methods and constructors get their own aliases like functions; field
+      // initializers see the enclosing scope's.
+      if (node.kind === "class" && usesRuntime(original))
+        return {
+          ...node,
+          definition: {
+            ...node.definition,
+            elements: node.definition.elements.map((element) =>
+              element !== undefined &&
+              (element.kind === "method" ||
+                element.kind === "get" ||
+                element.kind === "set") &&
+              usesRuntime(element.body)
+                ? {
+                    ...element,
+                    body: bodyWithRuntime(element.body, element.parameters),
+                  }
+                : element,
+            ),
+          },
+        };
+      return node;
+    },
     expression: (node, original) => {
       const site =
         callableSites.size +
@@ -946,7 +985,7 @@ export function insertDynamicObjectRuntime(
   const first = module.statements.findIndex(
     (statement) =>
       statement !== undefined &&
-      statement.kind === "variable" &&
+      (statement.kind === "variable" || statement.kind === "class") &&
       usesRuntime(statement),
   );
   if (first >= 0) {

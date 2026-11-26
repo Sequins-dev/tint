@@ -2156,6 +2156,56 @@ export function run() { return total === 42 ? 42 : 1; }`,
   return (list[0] ?? 0) + (list[1] ?? 0) === 42 ? 42 : 1;
 }`,
   },
+  // Class fields TypeScript proves assigned where Tint's initialization
+  // analysis is stricter (assignments in both try and catch, in every
+  // switch path, and a `!` field assigned after construction): the typed
+  // form takes the general path until the analysis follows tsc's flow.
+  {
+    name: "class-initialization-try",
+    typed: `function parse(text: string): number { return text.length * 21; }
+class Parsed {
+  value: number;
+  constructor(text: string) {
+    try { this.value = parse(text); } catch { this.value = 0; }
+  }
+}
+export function run(): number { return new Parsed("ab").value === 42 ? 42 : 1; }`,
+    untyped: `function parse(text) { return text.length * 21; }
+class Parsed {
+  constructor(text) {
+    try { this.value = parse(text); } catch { this.value = 0; }
+  }
+}
+export function run() { return new Parsed("ab").value === 42 ? 42 : 1; }`,
+  },
+  {
+    name: "class-initialization-switch",
+    typed: `class Mode {
+  size: number;
+  constructor(kind: number) {
+    switch (kind) { case 1: this.size = 42; break; default: this.size = 0; }
+  }
+}
+export function run(): number { return new Mode(1).size === 42 ? 42 : 1; }`,
+    untyped: `class Mode {
+  constructor(kind) {
+    switch (kind) { case 1: this.size = 42; break; default: this.size = 0; }
+  }
+}
+export function run() { return new Mode(1).size === 42 ? 42 : 1; }`,
+  },
+  {
+    name: "class-definite-field",
+    typed: `class Lazy {
+  value!: number;
+  init(): void { this.value = 42; }
+}
+export function run(): number { const lazy = new Lazy(); lazy.init(); return lazy.value === 42 ? 42 : 1; }`,
+    untyped: `class Lazy {
+  init() { this.value = 42; }
+}
+export function run() { const lazy = new Lazy(); lazy.init(); return lazy.value === 42 ? 42 : 1; }`,
+  },
   {
     name: "discriminant-narrowing",
     typed: `type Shape = { kind: "square"; size: number } | { kind: "rect"; w: number; h: number };

@@ -417,7 +417,8 @@ class VectorProvider(object):
 
 def _field(value, name):
     """A named member of a record value or record pointer."""
-    target = value.Dereference() if value.GetType().IsPointerType() else value
+    raw = value.GetNonSyntheticValue()
+    target = raw.Dereference().GetNonSyntheticValue() if raw.GetType().IsPointerType() else raw
     member = target.GetChildMemberWithName(name)
     return member if member.IsValid() else None
 
@@ -573,6 +574,102 @@ class EntryChainProvider(object):
         return True
 
 
+class DenseMapProvider(object):
+    """Open-addressed insertion-ordered StringKeyMap / NumberKeyMap: one child
+    per live entry, named by its key."""
+
+    def __init__(self, value, internal_dict):
+        self.value = value
+        self.items = []
+
+    def update(self):
+        self.items = []
+        try:
+            length = int(_number(_field(self.value, "length")) or 0)
+            keys = _field(self.value, "keys")
+            values = _field(self.value, "values")
+            hashes = _field(self.value, "hashes")
+            deleted = _field(self.value, "deleted")
+            if keys is None or values is None:
+                return False
+            keys_addr = keys.GetNonSyntheticValue().GetValueAsUnsigned()
+            values_addr = values.GetNonSyntheticValue().GetValueAsUnsigned()
+            if keys_addr == 0 or values_addr == 0 or length <= 0:
+                return False
+            inferior = _value_inferior(self.value)
+            hashes_addr = hashes.GetNonSyntheticValue().GetValueAsUnsigned() if hashes is not None else 0
+            deleted_addr = deleted.GetNonSyntheticValue().GetValueAsUnsigned() if deleted is not None else 0
+            live = core.dense_map_live_indices(inferior, hashes_addr, deleted_addr, length)
+            if not live:
+                return False
+            # Optional fields (`keys`, `values`) have DWARF type `object *`;
+            # retype them from their heap header so list/number-list fields are visible.
+            val_real = values.GetNonSyntheticValue()
+            if val_real.GetType().GetName().startswith("object"):
+                sbtype, _ = _marker_type(self.value, values_addr)
+                if sbtype is not None:
+                    val_real = self.value.CreateValueFromAddress("*", values_addr, sbtype).GetNonSyntheticValue()
+            val_fields = _fields_of(val_real.GetType())
+            val_children = {}
+            if core.is_number_list_fields(val_fields):
+                vp = NumberListProvider(val_real, None)
+                vp.update()
+                for child in vp.items:
+                    val_children[child.GetName()] = child
+            elif core.is_list_fields(val_fields):
+                vp = ListProvider(val_real, None)
+                vp.update()
+                if vp.inner is not None:
+                    for child in vp.inner.slots:
+                        val_children[child.GetName()] = child
+            if hashes is not None:
+                # StringKeyMap: keys is string[] ({length, root}).
+                keys_real = keys.GetNonSyntheticValue()
+                if keys_real.GetType().GetName().startswith("object"):
+                    sbtype, _ = _marker_type(self.value, keys_addr)
+                    if sbtype is not None:
+                        keys_real = self.value.CreateValueFromAddress("*", keys_addr, sbtype).GetNonSyntheticValue()
+                key_root = _field(keys_real, "root")
+                key_words = {}
+                if key_root is not None and key_root.GetNonSyntheticValue().GetValueAsUnsigned() != 0:
+                    root_addr = key_root.GetNonSyntheticValue().GetValueAsUnsigned()
+                    if core.is_dense_root(inferior, root_addr):
+                        for idx, word in core.vector_slots(inferior, root_addr, length):
+                            key_words[idx] = word
+                for idx in live:
+                    word = key_words.get(idx, 0)
+                    label = (core.string_text(inferior, word) if word else None) or str(idx)
+                    child = val_children.get("[%d]" % idx)
+                    if child is not None:
+                        self.items.append(child.Clone("[%s]" % label))
+            else:
+                # NumberKeyMap: keys is Float64Array.
+                nums = core.float64_array_values(inferior, keys_addr, length)
+                for idx in live:
+                    label = repr(nums[idx]) if idx < len(nums) else str(idx)
+                    child = val_children.get("[%d]" % idx)
+                    if child is not None:
+                        self.items.append(child.Clone("[%s]" % label))
+        except TintError:
+            pass
+        return False
+
+    def num_children(self):
+        return len(self.items)
+
+    def get_child_index(self, name):
+        for index, child in enumerate(self.items):
+            if child.GetName() == name:
+                return index
+        return -1
+
+    def get_child_at_index(self, index):
+        return self.items[index] if 0 <= index < len(self.items) else None
+
+    def has_children(self):
+        return True
+
+
 def map_summary(value, internal_dict):
     size = _field(value, "size") or _field(value, "count")
     return "size=%d" % int(_number(size) or 0)
@@ -652,6 +749,10 @@ def is_entry_chain_type(sbtype, internal_dict):
     return core.is_entry_chain_fields(_fields_of(sbtype))
 
 
+def is_dense_map_type(sbtype, internal_dict):
+    return core.is_dense_map_fields(_fields_of(sbtype))
+
+
 def register_formatters(debugger):
     module = __name__
     commands = [
@@ -670,6 +771,9 @@ def register_formatters(debugger):
         % (module, module),
         "type summary add -w tint -F %s.map_summary --recognizer-function %s.is_entry_chain_type" % (module, module),
         "type synthetic add -w tint -l %s.EntryChainProvider --recognizer-function %s.is_entry_chain_type"
+        % (module, module),
+        "type summary add -w tint -F %s.map_summary --recognizer-function %s.is_dense_map_type" % (module, module),
+        "type synthetic add -w tint -l %s.DenseMapProvider --recognizer-function %s.is_dense_map_type"
         % (module, module),
     ]
     for command in commands:

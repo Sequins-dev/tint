@@ -25,14 +25,17 @@ export interface RecordDispatchPlan {
 }
 /** Verified IR only. Union field reads lower to a chain of `record` guards:
  * a failed layout test falls through to a block that only reloads the same
- * object slot and tests the next layout for the same read. When every
+ * object slot (unwrapping it when the slot holds an optional reference) and
+ * tests the next layout for the same read. When every
  * continuation reads an equally typed field into the same transfer slot,
  * continues to the same block and is reachable only from the previous
  * candidate, the chain fuses: candidates whose field has one offset share
  * one membership test and one read, so a union whose members place the
  * field differently costs one test per offset, not per layout.
  * Continuations hold no safepoint, so skipping them preserves every
- * collecting block's root state. `guarded(block)` reports whether the
+ * collecting block's root state; a continuation's unwrap cannot fail, since
+ * the slot still holds the head's object, which the head already unwrapped
+ * or loaded as a reference. `guarded(block)` reports whether the
  * head emits a descriptor guard at all; proven layouts keep their fast path. */
 export function recordDispatchChains(
   fn: FunctionIR,
@@ -113,10 +116,11 @@ export function recordDispatchChains(
         predecessors[next.id] !== 1 ||
         next.exception?.target !== block.exception?.target ||
         next.exception?.slot !== block.exception?.slot ||
-        next.instructions.length !== 1
+        next.instructions.length > 2
       )
         break;
       const load = next.instructions[0],
+        unwrap = next.instructions[1],
         guard = next.terminator;
       if (
         load === undefined ||
@@ -124,7 +128,12 @@ export function recordDispatchChains(
         !sources.includes(load.slot) ||
         guard.kind !== "record" ||
         guard.operation !== "read" ||
-        guard.object !== load.id ||
+        guard.object !==
+          (unwrap === undefined
+            ? load.id
+            : unwrap.kind === "reference-value" && unwrap.value === load.id
+              ? unwrap.id
+              : -1) ||
         guard.slot !== term.slot ||
         guard.consequent !== term.consequent
       )
@@ -159,21 +168,28 @@ export function recordDispatchChains(
   }
   return { chains, fused };
 }
-/** Slots whose current contents equal `object` at the terminator: the slot
- * it was loaded from and slots it was stored into, minus any overwritten
- * afterwards (lowering copies a union receiver before reading its field). */
+/** Slots whose current contents are `object` at the terminator, or the
+ * optional reference it unwraps: the slot it was loaded from and slots it
+ * was stored into, minus any overwritten afterwards (lowering copies a union
+ * receiver before reading its field). */
 function reloadedSlots(block: Block, object: number): readonly number[] {
+  let unwrapped = -1;
+  for (const op of block.instructions) {
+    if (op === undefined) throw "dispatch instruction invariant";
+    if (op.kind === "reference-value" && op.id === object) unwrapped = op.value;
+  }
   const slots: number[] = [];
   for (const op of block.instructions) {
     if (op === undefined) throw "dispatch instruction invariant";
-    if (op.kind === "load" && op.id === object) {
+    if (op.kind === "load" && (op.id === object || op.id === unwrapped)) {
       if (!slots.includes(op.slot)) slots.push(op.slot);
     } else if (op.kind === "store") {
       // Any store into a tracked slot drops it (conservatively, even of the
       // same value); a copy of the object into another slot adds that slot.
       const at = slots.indexOf(op.slot);
       if (at >= 0) slots.splice(at, 1);
-      else if (op.value === object) slots.push(op.slot);
+      else if (op.value === object || op.value === unwrapped)
+        slots.push(op.slot);
     }
   }
   return slots;

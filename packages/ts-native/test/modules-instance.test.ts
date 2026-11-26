@@ -156,16 +156,32 @@ test("retained dependency validation visits references in a bounded number of pa
   );
 });
 
-test("module instance rejects classes until scoped contract and construction lowering are available", () => {
+test("module instance evaluates classes in its initializer, where their contracts resolve", () => {
   const result = prepare(
     "let count=1;class Counter{value:number=0;constructor(){this.value=count++;}read():number{return this.value;}}export function next():number{return new Counter().read();}",
     ["next"],
   );
-  assert.ok(!result.ok);
-  assert.match(
-    result.error,
-    /classes require scoped contract and construction lowering/,
+  assert.ok(result.ok, JSON.stringify(result));
+  const initializer = result.value.module.statements.find(
+    (statement) =>
+      statement?.kind === "function" &&
+      statement.name === result.value.initializer.name,
   );
+  assert.ok(initializer?.kind === "function");
+  const body = initializer.body;
+  assert.ok(body?.kind === "block");
+  // The class follows the binding it reads, at its source position.
+  const kinds = body.statements.map((statement) => statement?.kind);
+  assert.ok(kinds.indexOf("class") > kinds.indexOf("variable"), kinds.join());
+  assert.ok(!result.value.module.statements.some((s) => s?.kind === "class"));
+  const checked = checkClosureModule(result.value.module);
+  assert.ok(checked.ok, JSON.stringify(checked));
+  const generic = prepare(
+    "class Box<T>{value:T;constructor(value:T){this.value=value;}}export function make():number{return new Box<number>(1).value;}",
+    ["make"],
+  );
+  assert.ok(!generic.ok);
+  assert.match(generic.error, /requires specialized classes/);
 });
 
 function prepareGenerated(

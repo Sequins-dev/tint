@@ -202,3 +202,183 @@ test("optimized proven reads leave neither their success branch nor its conditio
       assert.ok(op?.kind !== "constant" || op.value !== true, op?.kind);
   }
 });
+test("reads stay checked where the verifier's budget would not prove them", () => {
+  // `receivers` objects checked up front, read again (checked) after 100 000
+  // straight-line instructions. Lowering proves the reads with its own
+  // budget; past the verifier's, it keeps them checked and counts the
+  // fallback, so the module stays verifiable.
+  function build(receivers: number): ModuleIR {
+    const fillerBlocks = 100,
+      fillerSize = 1000,
+      blocks: ModuleIR["functions"][number]["blocks"][number][] = [],
+      slots: ModuleIR["functions"][number]["slots"][number][] = ["number"],
+      parameters: number[] = [];
+    for (let r = 0; r < receivers; r++) {
+      slots.push("reference");
+      parameters.push(r + 1);
+    }
+    const reads = receivers + fillerBlocks,
+      done = reads + receivers,
+      trap = done + 1;
+    for (let r = 0; r < receivers; r++)
+      blocks.push({
+        id: r,
+        instructions: [{ kind: "load", id: r, slot: r + 1, ...s }],
+        terminator: {
+          kind: "record",
+          object: r,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 0,
+          consequent: r + 1,
+          alternate: trap,
+          ...s,
+        },
+      });
+    let id = receivers;
+    for (let b = 0; b < fillerBlocks; b++) {
+      const instructions: ModuleIR["functions"][number]["blocks"][number]["instructions"][number][] =
+        [];
+      for (let i = 0; i < fillerSize; i++)
+        instructions.push({ kind: "constant", id: id++, value: i, ...s });
+      blocks.push({
+        id: receivers + b,
+        instructions,
+        terminator: { kind: "jump", target: receivers + b + 1, ...s },
+      });
+    }
+    for (let r = 0; r < receivers; r++) {
+      const loaded = id++;
+      blocks.push({
+        id: reads + r,
+        instructions: [{ kind: "load", id: loaded, slot: r + 1, ...s }],
+        terminator: {
+          kind: "record",
+          object: loaded,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 0,
+          consequent: reads + r + 1,
+          alternate: trap,
+          ...s,
+        },
+      });
+    }
+    blocks.push({
+      id: done,
+      instructions: [{ kind: "load", id: id++, slot: 0, ...s }],
+      terminator: { kind: "return", value: id - 1, ...s },
+    });
+    blocks.push({
+      id: trap,
+      instructions: [],
+      terminator: { kind: "trap", ...s },
+    });
+    return {
+      records: [
+        {
+          byteLength: 32,
+          fields: [{ offset: 16, type: "number", mutable: true }],
+        },
+      ],
+      functions: [
+        {
+          id: 0,
+          name: "large",
+          exported: true,
+          parameters,
+          slots,
+          returnType: "number",
+          entry: 0,
+          blocks,
+        },
+      ],
+    };
+  }
+  // Two receivers fit the verifier's budget: every read lowers.
+  const small = lowerProvenRecordReads(build(2), 1e9);
+  assert.ok(small);
+  assert.equal(small.fallbacks, 0);
+  assert.ok(small.rewritten >= 2);
+  assert.ok(verify(small.module).ok);
+  // Twenty do not: the function keeps its checked reads.
+  const input = build(20),
+    large = lowerProvenRecordReads(input, 1e9);
+  assert.ok(large);
+  assert.equal(large.fallbacks, 1);
+  assert.equal(large.rewritten, 0);
+  assert.equal(large.module, input);
+  assert.ok(verify(large.module).ok);
+});
+
+test("proven fixed record writes redirect unreachable slow alternates to a trap block", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "writeProven",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "record-new", id: 1, record: 0, arguments: [0], ...s },
+              { kind: "store", slot: 1, value: 1, ...s },
+            ],
+            terminator: {
+              kind: "record",
+              object: 1,
+              record: 0,
+              field: 0,
+              operation: "write",
+              slot: 0,
+              consequent: 1,
+              alternate: 2,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 2, slot: 1, ...s }],
+            terminator: { kind: "return", value: 2, ...s },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "constant", id: 3, value: 99, ...s },
+              { kind: "record-new", id: 4, record: 0, arguments: [3], ...s },
+            ],
+            terminator: { kind: "return", value: 4, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  const optimized = optimizeModule(module, 1000000).module;
+  assert.deepEqual(verify(optimized), { ok: true });
+  const fn = optimized.functions[0];
+  assert.ok(fn);
+  for (const block of fn.blocks) {
+    assert.ok(block);
+    for (const op of block.instructions)
+      assert.ok(op === undefined || op.kind !== "constant" || op.value !== 99);
+  }
+  const writeBlock = fn.blocks.find((b) => b?.terminator.kind === "record");
+  assert.ok(writeBlock && writeBlock.terminator.kind === "record");
+  const alt = fn.blocks[writeBlock.terminator.alternate];
+  assert.equal(alt?.terminator.kind, "trap");
+  assert.equal(alt?.instructions.length, 0);
+});

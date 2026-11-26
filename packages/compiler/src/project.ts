@@ -39,8 +39,16 @@ export function runtimeSources(): RuntimeSource[] {
       namespace: "number-key-map",
     },
     {
+      module: "packages/foundation/src/collections/number-number-map.ts",
+      namespace: "number-number-map",
+    },
+    {
       module: "packages/foundation/src/collections/string-key-map.ts",
       namespace: "string-key-map",
+    },
+    {
+      module: "packages/foundation/src/collections/string-number-map.ts",
+      namespace: "string-number-map",
     },
     {
       module: "packages/foundation/src/collections/sparse-list.ts",
@@ -49,6 +57,10 @@ export function runtimeSources(): RuntimeSource[] {
     {
       module: "packages/foundation/src/collections/linked-set.ts",
       namespace: "linked-set",
+    },
+    {
+      module: "packages/foundation/src/collections/number-key-set.ts",
+      namespace: "number-key-set",
     },
     {
       module: "packages/native-runtime/src/values/index.ts",

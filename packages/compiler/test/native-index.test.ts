@@ -410,7 +410,26 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "remove-dead-scalars",
       "coalesce-defaults",
       "scalar-replace-records",
+      "hoist-number-list-loops",
+      // The entry wrapper's closure call inlines; the second round finds
+      // nothing more.
       "inline-small-functions",
+      "inline-small-functions",
+      // Cleanup of the inlined function, record replacement and its folds.
+      "fold-constants",
+      "forward-local-loads",
+      "propagate-slot-copies",
+      "remove-unread-stores",
+      "remove-dead-scalars",
+      "scalar-replace-records",
+      "simplify-control-flow",
+      "ssa-constants",
+      "coalesce-defaults",
+      "forward-local-loads",
+      "propagate-slot-copies",
+      "remove-unread-stores",
+      "remove-dead-scalars",
+      "scalarize-loop-records",
       "reuse-union-reads",
       "prove-cell-states",
       "promote-loop-cells",
@@ -421,12 +440,16 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "hoist-loop-invariants",
       "build-loop-strings",
       "select-array-access",
+      "scalarize-stencil-loops",
       "split-optional-numbers",
       "shadow-general-numbers",
       "cache-loop-properties",
       "thread-branches",
-      // Before the late sweep (folded read guards), then after it.
+      // Before the late sweep (folded read guards), the sweep of the lowered
+      // read's function, then after it.
       "simplify-control-flow",
+      "fold-constants",
+      "function-local-cleanup",
       "simplify-control-flow",
       "sink-environment-loads",
       "compact-slots",
@@ -438,18 +461,19 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "layout-blocks",
     ],
   );
-  assert.ok(
-    optimized.value.optimization
-      .filter((p) =>
-        [
-          "fold-constants",
-          "forward-local-loads",
-          "remove-unread-stores",
-          "remove-dead-scalars",
-        ].includes(p.pass),
-      )
-      .every((p) => p.rewritten > 0),
-  );
+  // The first run of each scalar cleanup pass rewrites the arithmetic
+  // (later runs only clean up after inlining).
+  for (const pass of [
+    "fold-constants",
+    "forward-local-loads",
+    "remove-unread-stores",
+    "remove-dead-scalars",
+  ])
+    assert.ok(
+      (optimized.value.optimization.find((p) => p.pass === pass)?.rewritten ??
+        0) > 0,
+      pass,
+    );
   assert.equal(
     optimized.value.optimization.find(
       (p) => p.pass === "scalar-replace-records",

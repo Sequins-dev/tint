@@ -203,12 +203,16 @@ export function foldSSAConstants(
       if (param === undefined) throw "SSA rewrite parameter invariant";
       const value = values[param.id];
       if (states[param.id] === 1 && value !== undefined) {
+        const entrySpan = block.instructions[0] ?? block.terminator;
         instructions.push({
           kind: "constant",
           id: param.id,
           value,
-          start: block.terminator.start,
-          end: block.terminator.end,
+          start: entrySpan.start,
+          end: entrySpan.end,
+          ...(entrySpan.inline === undefined
+            ? {}
+            : { inline: entrySpan.inline }),
         });
         rewritten++;
       } else parameters.push(param);
@@ -229,6 +233,7 @@ export function foldSSAConstants(
           value,
           start: op.start,
           end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
         rewritten++;
       } else instructions.push(op);

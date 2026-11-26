@@ -62,8 +62,17 @@ export const collectionFixtureLocations: ReadonlyMap<string, string> = new Map([
   ["key-index", "packages/foundation/src/collections/key-index.ts"],
   ["linked-map", "packages/foundation/src/collections/linked-map.ts"],
   ["number-key-map", "packages/foundation/src/collections/number-key-map.ts"],
+  [
+    "number-number-map",
+    "packages/foundation/src/collections/number-number-map.ts",
+  ],
   ["string-key-map", "packages/foundation/src/collections/string-key-map.ts"],
+  [
+    "string-number-map",
+    "packages/foundation/src/collections/string-number-map.ts",
+  ],
   ["linked-set", "packages/foundation/src/collections/linked-set.ts"],
+  ["number-key-set", "packages/foundation/src/collections/number-key-set.ts"],
   ["sparse-list", "packages/foundation/src/collections/sparse-list.ts"],
   ["number-list", "packages/foundation/src/collections/number-list.ts"],
   ["indexed-sort", "packages/foundation/src/collections/indexed-sort.ts"],

@@ -1,18 +1,24 @@
 import { representationFor, type TypeKnowledge } from "../semantic/index.ts";
 import {
   analyzeRecordAccesses,
+  provenRecordReads,
   stableDescriptors,
   instructionResult,
+  verifierRecordBudget,
   type ModuleIR,
   type FunctionIR,
   type Block,
   type Instruction,
 } from "../scalar/index.ts";
+import { compactReachableBlocks } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 export interface RecordAccessLowering {
   readonly module: ModuleIR;
   readonly visited: number;
   readonly rewritten: number;
+  /** Functions kept checked because the verifier's budget would not prove
+   * their lowered reads (PassStatistics.fallbacks). */
+  readonly fallbacks: number;
 }
 /** Move statically proven reads into the ordinary value stream. Checked reads
  * remain when proof is unavailable. Retain the failure CFG edge with a constant
@@ -26,15 +32,20 @@ export function lowerProvenRecordReads(
   const stable = stableDescriptors(module),
     functions: FunctionIR[] = [];
   let visited = 0,
-    rewritten = 0;
+    rewritten = 0,
+    fallbacks = 0;
   for (const fn of module.functions) {
     if (fn === undefined) throw "record lowering function invariant";
     let maximum = -1,
       candidates = 0;
+    const rewrittenBefore = rewritten;
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
       const terminator = block.terminator;
-      if (terminator.kind === "record" && terminator.operation === "read")
+      if (
+        terminator.kind === "record" &&
+        (terminator.operation === "read" || terminator.operation === "write")
+      )
         candidates++;
       for (const op of block.instructions) {
         if (op === undefined || ++visited > budget) return undefined;
@@ -51,12 +62,62 @@ export function lowerProvenRecordReads(
     visited += proof.work;
     const blocks: Block[] = [];
     let changed = false,
-      next = maximum + 1;
+      next = maximum + 1,
+      deadTrapId = -1;
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
       const term = block.terminator;
-      if (term.kind !== "record" || term.operation !== "read") {
+      if (
+        term.kind !== "record" ||
+        (term.operation !== "read" && term.operation !== "write")
+      ) {
         blocks.push(block);
+        continue;
+      }
+      if (term.operation === "write") {
+        const altBlock = fn.blocks[term.alternate];
+        if (
+          proof.guards[block.id] !== 1 ||
+          term.alternate === term.consequent ||
+          (altBlock !== undefined &&
+            altBlock.instructions.length === 0 &&
+            altBlock.exception === undefined &&
+            altBlock.terminator.kind === "trap")
+        ) {
+          blocks.push(block);
+          continue;
+        }
+        const writeKnowledge: TypeKnowledge = {
+          declared: undefined,
+          variants: [term.record],
+          origin: "analysis",
+          guard: undefined,
+        };
+        if (representationFor(writeKnowledge, []) !== "fixed") {
+          blocks.push(block);
+          continue;
+        }
+        if (deadTrapId < 0) deadTrapId = fn.blocks.length;
+        blocks.push({
+          ...block,
+          terminator: { ...term, alternate: deadTrapId },
+        });
+        rewritten++;
+        changed = true;
+        if (remarks !== undefined)
+          remarks({
+            pass: "lower-proven-record-reads",
+            outcome: "applied",
+            function: fn.name,
+            start: term.start,
+            end: term.end,
+            message:
+              "write r" +
+              String(term.record) +
+              ".f" +
+              String(term.field) +
+              " proven: unreachable slow path pruned",
+          });
         continue;
       }
       if (proof.guards[block.id] !== 1) {
@@ -102,7 +163,8 @@ export function lowerProvenRecordReads(
         continue;
       }
       const id = next++,
-        condition = next++;
+        condition = next++,
+        inline = term.inline;
       const instructions: Instruction[] = block.instructions.slice();
       instructions.push({
         kind: "record-read",
@@ -112,6 +174,7 @@ export function lowerProvenRecordReads(
         field: term.field,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       });
       instructions.push({
         kind: "store",
@@ -119,6 +182,7 @@ export function lowerProvenRecordReads(
         value: id,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       });
       instructions.push({
         kind: "constant",
@@ -126,6 +190,7 @@ export function lowerProvenRecordReads(
         value: true,
         start: term.start,
         end: term.end,
+        ...(inline === undefined ? {} : { inline }),
       });
       blocks.push({
         ...block,
@@ -137,6 +202,7 @@ export function lowerProvenRecordReads(
           alternate: term.alternate,
           start: term.start,
           end: term.end,
+          ...(inline === undefined ? {} : { inline }),
         },
       });
       rewritten++;
@@ -156,11 +222,66 @@ export function lowerProvenRecordReads(
             " proven: unchecked field load",
         });
     }
-    functions.push(changed ? { ...fn, blocks } : fn);
+    if (!changed) {
+      functions.push(fn);
+      continue;
+    }
+    if (deadTrapId >= 0)
+      blocks.push({
+        id: deadTrapId,
+        instructions: [],
+        terminator: { kind: "trap", start: 0, end: 0 },
+      });
+    // The proof above spends this pass's budget; the verifier re-proves the
+    // direct reads under its own (verifierRecordBudget). Keep the checked
+    // reads of a function it would not prove.
+    let lowered: FunctionIR = { ...fn, blocks };
+    if (deadTrapId >= 0) {
+      const compacted = compactReachableBlocks(fn, blocks, budget - visited);
+      if (compacted === undefined) return undefined;
+      visited += compacted.visited;
+      lowered = compacted.fn;
+    }
+    const proofs = provenRecordReads(
+      lowered,
+      verifierRecordBudget(lowered),
+      stable,
+    );
+    let verified = proofs !== undefined;
+    for (const block of lowered.blocks) {
+      if (!verified) break;
+      if (block === undefined || ++visited > budget) return undefined;
+      for (const op of block.instructions)
+        if (
+          op !== undefined &&
+          op.kind === "record-read" &&
+          proofs !== undefined &&
+          proofs[op.id] !== 1
+        )
+          verified = false;
+    }
+    if (verified) {
+      functions.push(lowered);
+      continue;
+    }
+    fallbacks++;
+    rewritten = rewrittenBefore;
+    functions.push(fn);
+    if (remarks !== undefined)
+      remarks({
+        pass: "lower-proven-record-reads",
+        outcome: "missed",
+        function: fn.name,
+        start: 0,
+        end: 0,
+        message:
+          "reads stay checked: the verifier's work budget does not prove the lowered function",
+      });
   }
   return {
     module: rewritten === 0 ? module : { ...module, functions },
     visited,
     rewritten,
+    fallbacks,
   };
 }

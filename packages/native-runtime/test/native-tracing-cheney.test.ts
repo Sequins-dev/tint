@@ -17,6 +17,7 @@ registerHooks({
 const { createCheneyCollector } = await import("../src/tracing/cheney.ts");
 const { nativeHeaderForwarded, nativeHeaderFlagUnit } =
   await import("@tint/abi/host");
+const { nativeTypedArrayKinds } = await import("@tint/abi/typed-array");
 const { simulate } = await import("./fixtures/simulated-memory.ts");
 const { writeStackRoots } = await import("./fixtures/stack-roots.ts");
 
@@ -217,24 +218,29 @@ test("strings and reference vectors size and trace correctly", () => {
 });
 
 test("array data pointers follow inline backing, borrowed backing, and views", () => {
-  const h = heap();
-  // Uint8Array (marker 2) with 16 inline bytes: data = self + 24.
-  const backing = h.allocate(40, [2, 16, 0]);
-  h.words.set(backing + 16, backing + 24);
-  // A view over bytes 4..11 of backing, and a view of that view (flag 2).
-  const viewHeader = 2 + 2 * nativeHeaderFlagUnit;
-  const view = h.allocate(40, [viewHeader, 8, backing + 28, backing]);
-  const inner = h.allocate(40, [viewHeader, 4, backing + 30, view]);
-  const borrowed = h.allocate(24, [2 + nativeHeaderFlagUnit, 8, 0x9000]);
-  h.collect(h.roots([inner, borrowed]));
-  const movedInner = h.root(0),
-    movedView = h.read(movedInner + 24),
-    movedBacking = h.read(movedView + 24);
-  assert.equal(h.read(movedBacking + 16), movedBacking + 24);
-  assert.equal(h.read(movedView + 16), movedBacking + 28);
-  assert.equal(h.read(movedInner + 16), movedBacking + 30);
-  assert.equal(h.read(movedInner), viewHeader, "view header is restored");
-  assert.equal(h.read(h.root(1) + 16), 0x9000, "borrowed data stays");
+  // Every typed-array kind is pointer-free; only its data pointer and a
+  // view's owner move.
+  for (const { marker, elementBytes } of nativeTypedArrayKinds) {
+    const h = heap();
+    // 16 inline bytes: data = self + 24.
+    const backing = h.allocate(40, [marker, 16 / elementBytes, 0]);
+    h.words.set(backing + 16, backing + 24);
+    // A view over bytes 4.. of backing, and a view of that view (flag 2).
+    const viewHeader = marker + 2 * nativeHeaderFlagUnit;
+    const view = h.allocate(40, [viewHeader, 1, backing + 28, backing]);
+    const inner = h.allocate(40, [viewHeader, 1, backing + 30, view]);
+    const borrowed = h.allocate(24, [marker + nativeHeaderFlagUnit, 8, 0x9000]);
+    h.collect(h.roots([inner, borrowed]));
+    const movedInner = h.root(0),
+      movedView = h.read(movedInner + 24),
+      movedBacking = h.read(movedView + 24);
+    assert.equal(h.read(movedBacking), marker);
+    assert.equal(h.read(movedBacking + 16), movedBacking + 24);
+    assert.equal(h.read(movedView + 16), movedBacking + 28);
+    assert.equal(h.read(movedInner + 16), movedBacking + 30);
+    assert.equal(h.read(movedInner), viewHeader, "view header is restored");
+    assert.equal(h.read(h.root(1) + 16), 0x9000, "borrowed data stays");
+  }
 });
 
 test("sliced strings keep their flat parents through their parent slots", () => {

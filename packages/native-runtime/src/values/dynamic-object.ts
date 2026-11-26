@@ -382,6 +382,8 @@ export function realmInstanceOf(
     prototype = core.realm.prototypes.get("type");
   else if (nativeKind === "RangeError")
     prototype = core.realm.prototypes.get("range");
+  else if (nativeKind === "ReferenceError")
+    prototype = core.realm.prototypes.get("reference");
   else if (nativeKind === "SharedArrayBuffer")
     prototype = core.realm.sharedArrayBufferPrototype;
   else if (nativeKind !== "") {

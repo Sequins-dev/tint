@@ -13,7 +13,10 @@ test("scalar IR entry stays independent of semantic handles and optimization", (
         module.id.startsWith(root + "scalar/") ||
         module.id.startsWith("packages/foundation/src/") ||
         // c-call prototypes: the dependency-free C model.
-        module.id.startsWith("packages/abi/src/c/"),
+        module.id.startsWith("packages/abi/src/c/") ||
+        // Typed-array element kinds: the dependency-free kind table the
+        // collectors share.
+        module.id === "packages/abi/src/typed-array.ts",
     ),
   );
 });
@@ -26,7 +29,7 @@ test("semantic IR handles do not load scalar verification or optimization", () =
   );
 });
 
-test("optimization and its direct tooling entries depend only on IR, foundation and the C model", () => {
+test("optimization and its direct tooling entries depend only on IR, foundation, the C model and the typed-array kinds", () => {
   for (const entry of ["index", "slots", "reference-lists"]) {
     const modules = workspaceModules([root + "optimization/" + entry + ".ts"]);
     assert.ok(
@@ -34,7 +37,8 @@ test("optimization and its direct tooling entries depend only on IR, foundation 
         (module) =>
           module.id.startsWith(root) ||
           module.id.startsWith("packages/foundation/src/") ||
-          module.id.startsWith("packages/abi/src/c/"),
+          module.id.startsWith("packages/abi/src/c/") ||
+          module.id === "packages/abi/src/typed-array.ts",
       ),
     );
   }

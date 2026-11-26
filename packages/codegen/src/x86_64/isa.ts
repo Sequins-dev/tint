@@ -1230,7 +1230,12 @@ export interface Assembler {
   readonly labels: ReadonlyMap<string, number>;
   readonly byteLength: () => number;
   readonly instruction: (insn: Instruction) => void;
+  /** Starts a scope (one function): labels defined until endScope are
+   * local to it. */
   readonly beginScope: () => void;
+  /** Patches every fixup recorded in the scope whose label is already
+   * defined, and forgets local labels unless `keep` names them, so a large
+   * module does not hold every local label and relocation until finish. */
   readonly endScope: (keep: (name: string) => boolean) => void;
   readonly finish: (
     isExternal?: (label: string) => boolean,

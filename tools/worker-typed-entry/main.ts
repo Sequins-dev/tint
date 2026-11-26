@@ -39,7 +39,12 @@ export function run(peer: string, thrower: string): number {
       order += "e";
     });
     failing.once("exit", (status: unknown): void => {
-      check(status === 1 && order === "me", "abrupt exit " + order);
+      // MessagePort delivery ("m") and worker exception delivery ("e") use
+      // separate channels under Node and may arrive in either order before exit.
+      check(
+        status === 1 && (order === "me" || order === "em"),
+        "abrupt exit " + order,
+      );
     });
   });
   return 42;

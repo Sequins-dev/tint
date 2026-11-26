@@ -105,3 +105,61 @@ test("allocation and proven direct calls preserve unexposed local snapshots", ()
     2,
   );
 });
+test("record write forwards the written slot value to a subsequent record read across unique predecessors", () => {
+  const fn: FunctionIR = {
+    id: 0,
+    name: "writeRead",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["optional-reference", "number", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "reference-value", id: 1, value: 0, ...s },
+          { kind: "store", slot: 2, value: 1, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 2, slot: 2, ...s }],
+        terminator: {
+          kind: "record",
+          object: 2,
+          record: 0,
+          field: 0,
+          operation: "write",
+          slot: 1,
+          consequent: 2,
+          alternate: 3,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 3, slot: 0, ...s },
+          { kind: "reference-value", id: 4, value: 3, ...s },
+          { kind: "record-read", id: 5, object: 4, record: 0, field: 0, ...s },
+        ],
+        terminator: { kind: "return", value: 5, ...s },
+      },
+      { id: 3, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  const result = forwardLocalLoads(fn, 1000);
+  assert.ok(result);
+  assert.equal(result.forwarded, 1);
+  assert.ok(
+    result.fn.blocks[2]?.instructions.some(
+      (op) => op.kind === "load" && op.slot === 1,
+    ),
+  );
+  assert.ok(
+    !result.fn.blocks[2]?.instructions.some((op) => op.kind === "record-read"),
+  );
+});

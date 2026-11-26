@@ -17,6 +17,12 @@ test("integer prefixes retain radix, whitespace, signs and rounded integer value
     "xyz",
     "9007199254740993",
     "0x1000000000000081",
+    "9007199254740991",
+    "9007199254740992",
+    "-9007199254740991",
+    "1fffffffffffff",
+    "20000000000000",
+    "zzzzzzzzzz",
   ]) {
     for (const radix of [0, 2, 8, 10, 16, 36, 37, -1]) {
       if (radix === 36 && text.length > 12) continue;

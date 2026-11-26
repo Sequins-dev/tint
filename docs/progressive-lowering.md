@@ -82,9 +82,12 @@ Implemented (each measured on `tools/feature-bench`):
   stream into a count, then a fusion phase builds one `pipeline.loop`, which
   lowers to a single MIR loop.
 - **MIR facts selecting LIR forms** (`ir/optimization/bounds.ts`): interval
-  facts over loops prove typed-array indexes in bounds and select
-  `array-element`/`array-store`, which the emitter lowers to one load or
-  store; `devirtualize-closures` makes callbacks ordinary inlining
+  facts over loops, and relational facts against a string's or typed
+  array's own length (`i + k < a.length - c`, through hoisted length slots,
+  proving `a[i ± d]` for d up to the margin), prove indexes in bounds and
+  select `array-element`/`array-store` and inline code units, which the
+  emitter lowers to one load or store (integer elements stay int64 when
+  their uses take integers); `devirtualize-closures` makes callbacks ordinary inlining
   candidates; `hoist-loop-invariants` moves invariant arithmetic and
   checked immutable reads to loop preheaders. Loop structure
   (`naturalLoops`: headers, bodies, latches, written slots) is shared

@@ -1123,6 +1123,7 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     ["Error", "error"],
     ["TypeError", "type"],
     ["RangeError", "range"],
+    ["ReferenceError", "reference"],
   ]) {
     if (kind === undefined || intrinsic === undefined)
       throw "native error adapter invariant";

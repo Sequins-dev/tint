@@ -1,0 +1,132 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "typed-classes-initialization-v1",
+  "recorded": "2026-11-23T12:13:23.093Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+  "summary": {
+    "typed": {
+      "general": 3
+    },
+    "untyped": {
+      "general": 3
+    }
+  },
+  "entries": [
+    {
+      "construct": "class-initialization-try",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": ["fixture"],
+      "reason": "check: fixture:66:197: class fields must be initialized before exposing this or returning",
+      "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+      "seconds": 47.4
+    },
+    {
+      "construct": "class-initialization-try",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": ["fixture"],
+      "reason": "check: fixture:0:49: named functions require parameter and return annotations",
+      "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 0,
+            "end": 49
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 0,
+            "end": 49
+          }
+        }
+      ],
+      "seconds": 47.4
+    },
+    {
+      "construct": "class-initialization-switch",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": ["fixture"],
+      "reason": "check: fixture:0:141: class fields must be initialized before exposing this or returning",
+      "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+      "seconds": 49.7
+    },
+    {
+      "construct": "class-initialization-switch",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": ["fixture"],
+      "reason": "check: fixture:118:184: named functions require parameter and return annotations",
+      "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 118,
+            "end": 184
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 118,
+            "end": 184
+          }
+        }
+      ],
+      "seconds": 49.7
+    },
+    {
+      "construct": "class-definite-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": ["fixture"],
+      "reason": "check: fixture:0:68: class fields must be initialized before exposing this or returning",
+      "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+      "seconds": 100.8
+    },
+    {
+      "construct": "class-definite-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": ["fixture"],
+      "reason": "check: fixture:45:143: named functions require parameter and return annotations",
+      "sourceSnapshot": "460424e21ea8c747b15cef1722e5dafe3082934516699980ccec13e34d275e79",
+      "fallbackTriggers": [
+        {
+          "phase": "check",
+          "code": "UNSUPPORTED",
+          "capability": "function-signature-inference",
+          "location": {
+            "module": "fixture",
+            "start": 45,
+            "end": 143
+          },
+          "owner": {
+            "kind": "function",
+            "module": "fixture",
+            "start": 45,
+            "end": 143
+          }
+        }
+      ],
+      "seconds": 100.8
+    }
+  ]
+}

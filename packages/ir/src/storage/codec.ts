@@ -7,6 +7,7 @@ import type {
   FunctionDebug,
   FunctionIR,
   GeneralTest,
+  NativeTypedArray,
   InlineSite,
   Instruction,
   ReturnType,
@@ -138,6 +139,16 @@ function scalarCode(type: ReturnType): number {
       return 13;
     case "void":
       return 14;
+    case "Int8Array":
+      return 15;
+    case "Uint8ClampedArray":
+      return 16;
+    case "Int16Array":
+      return 17;
+    case "Int32Array":
+      return 18;
+    case "Float32Array":
+      return 19;
   }
 }
 function scalarType(code: number): ScalarType {
@@ -171,14 +182,12 @@ function scalarType(code: number): ScalarType {
     case 13:
       return "optional-number";
   }
-  throw "packed IR scalar type";
+  return arrayType(code);
 }
 function returnType(code: number): ReturnType {
   return code === 14 ? "void" : scalarType(code);
 }
-function arrayType(
-  code: number,
-): "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array" {
+function arrayType(code: number): NativeTypedArray {
   switch (code) {
     case 9:
       return "Uint8Array";
@@ -188,25 +197,25 @@ function arrayType(
       return "Uint32Array";
     case 12:
       return "Float64Array";
+    case 15:
+      return "Int8Array";
+    case 16:
+      return "Uint8ClampedArray";
+    case 17:
+      return "Int16Array";
+    case 18:
+      return "Int32Array";
+    case 19:
+      return "Float32Array";
   }
   throw "packed IR array type";
 }
-function referenceValueType(
-  code: number,
-): "reference" | "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array" {
+function referenceValueType(code: number): "reference" | NativeTypedArray {
   return code === 4 ? "reference" : arrayType(code);
 }
 function generalValueType(
   code: number,
-):
-  | "number"
-  | "boolean"
-  | "string"
-  | "reference"
-  | "Uint8Array"
-  | "Uint16Array"
-  | "Uint32Array"
-  | "Float64Array" {
+): "number" | "boolean" | "string" | "reference" | NativeTypedArray {
   switch (code) {
     case 7:
       return "number";
@@ -234,9 +243,10 @@ function cellOperation(code: number): "initialize" | "read" | "write" {
 function cellCode(operation: "initialize" | "read" | "write"): number {
   return operation === "initialize" ? 0 : operation === "read" ? 1 : 2;
 }
-function recordOperation(code: number): "read" | "write" {
+function recordOperation(code: number): "read" | "write" | "delete" {
   if (code === 1) return "read";
   if (code === 2) return "write";
+  if (code === 3) return "delete";
   throw "packed IR record operation";
 }
 const atomicOperations: readonly ArrayAtomicOperation[] = [
@@ -323,6 +333,11 @@ const generalTests: readonly GeneralTest[] = [
   "Uint32Array",
   "Float64Array",
   "object",
+  "Int8Array",
+  "Uint8ClampedArray",
+  "Int16Array",
+  "Int32Array",
+  "Float32Array",
   "nullish",
   "absent",
 ];
@@ -1022,6 +1037,13 @@ export function encodeInstruction(
       writeSigned(writer, op.source);
       writeSigned(writer, op.offset);
       return true;
+    case "array-fill":
+      writePrefix(writer, 106, op, 0);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.from);
+      writeSigned(writer, op.to);
+      return true;
     case "array-write":
     case "array-store":
       writePrefix(writer, op.kind === "array-write" ? 68 : 69, op, 0);
@@ -1124,16 +1146,6 @@ function flagged(flags: number, value: number): boolean {
 }
 /** The span and, when present, the inline site, spread into each decoded
  * instruction after its kind-specific fields. */
-function origin(
-  prefix: Prefix,
-):
-  | { readonly start: number; readonly end: number }
-  | { readonly start: number; readonly end: number; readonly inline: number } {
-  const inline = prefix.inline;
-  return inline === undefined
-    ? { start: prefix.start, end: prefix.end }
-    : { start: prefix.start, end: prefix.end, inline };
-}
 export function decodeInstruction(
   reader: ByteReader,
   vocabulary: PackedVocabulary,
@@ -1141,7 +1153,9 @@ export function decodeInstruction(
   const opcode = readByte(reader),
     prefix = readPrefix(reader),
     flags = prefix.flags,
-    span = origin(prefix);
+    start = prefix.start,
+    end = prefix.end,
+    inline = prefix.inline;
   switch (opcode) {
     case 0:
     case 1: {
@@ -1149,8 +1163,24 @@ export function decodeInstruction(
         value = readSigned(reader),
         record = readSigned(reader);
       return opcode === 0
-        ? { kind: "general-record-is", id, value, record, ...span }
-        : { kind: "general-record-descriptor", id, value, record, ...span };
+        ? {
+            kind: "general-record-is",
+            id,
+            value,
+            record,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "general-record-descriptor",
+            id,
+            value,
+            record,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 2: {
       const id = readSigned(reader),
@@ -1161,41 +1191,101 @@ export function decodeInstruction(
         id,
         target,
         part: part === 0 ? "entry" : "signature",
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 3: {
       const id = readSigned(reader),
         record = readSigned(reader);
-      return { kind: "record-descriptor-address", id, record, ...span };
+      return {
+        kind: "record-descriptor-address",
+        id,
+        record,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 4: {
       const id = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "general-kind", id, value, ...span };
+      return {
+        kind: "general-kind",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 5: {
       const id = readSigned(reader),
         left = readSigned(reader),
         right = readSigned(reader);
-      return { kind: "general-equal", id, left, right, ...span };
+      return {
+        kind: "general-equal",
+        id,
+        left,
+        right,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 6:
-      return { kind: "general-none", id: readSigned(reader), ...span };
+      return {
+        kind: "general-none",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 7:
-      return { kind: "general-null", id: readSigned(reader), ...span };
+      return {
+        kind: "general-null",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 8: {
       const id = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "general-wrap", id, value, ...span };
+      return {
+        kind: "general-wrap",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 9: {
       const id = readSigned(reader),
         value = readSigned(reader),
         type = generalValueType(readByte(reader));
       return flagged(flags, 2)
-        ? { kind: "general-value", id, value, type, unchecked: true, ...span }
-        : { kind: "general-value", id, value, type, ...span };
+        ? {
+            kind: "general-value",
+            id,
+            value,
+            type,
+            unchecked: true,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "general-value",
+            id,
+            value,
+            type,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 10:
     case 11: {
@@ -1204,42 +1294,123 @@ export function decodeInstruction(
         record = readSigned(reader),
         field = readSigned(reader);
       return opcode === 10
-        ? { kind: "record-has", id, object, record, field, ...span }
-        : { kind: "record-read", id, object, record, field, ...span };
+        ? {
+            kind: "record-has",
+            id,
+            object,
+            record,
+            field,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "record-read",
+            id,
+            object,
+            record,
+            field,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 12:
-      return { kind: "boolean-none", id: readSigned(reader), ...span };
+      return {
+        kind: "boolean-none",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 13:
     case 14:
     case 15: {
       const id = readSigned(reader),
         value = readSigned(reader);
       return opcode === 13
-        ? { kind: "boolean-wrap", id, value, ...span }
+        ? {
+            kind: "boolean-wrap",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
         : opcode === 14
-          ? { kind: "boolean-value", id, value, ...span }
-          : { kind: "boolean-present", id, value, ...span };
+          ? {
+              kind: "boolean-value",
+              id,
+              value,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            }
+          : {
+              kind: "boolean-present",
+              id,
+              value,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            };
     }
     case 16:
     case 17: {
       const id = readSigned(reader),
         value = readSigned(reader);
       return opcode === 16
-        ? { kind: "primitive-wrap", id, value, ...span }
-        : { kind: "primitive-reference", id, value, ...span };
+        ? {
+            kind: "primitive-wrap",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "primitive-reference",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 18: {
       const id = readSigned(reader),
         callee = readSigned(reader);
-      return { kind: "function-environment", id, callee, ...span };
+      return {
+        kind: "function-environment",
+        id,
+        callee,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 19: {
       const id = readSigned(reader),
         target = readSigned(reader);
       if (!flagged(flags, 2))
-        return { kind: "function-new", id, target, ...span };
+        return {
+          kind: "function-new",
+          id,
+          target,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       const environment = readSigned(reader);
-      return { kind: "function-new", id, target, environment, ...span };
+      return {
+        kind: "function-new",
+        id,
+        target,
+        environment,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 20: {
       const receiver = flagged(flags, 2) ? readSigned(reader) : undefined,
@@ -1259,7 +1430,9 @@ export function decodeInstruction(
           arguments: args,
           scriptArguments,
           tail: true,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
       }
       return {
@@ -1271,56 +1444,147 @@ export function decodeInstruction(
         callee,
         arguments: args,
         ...(scriptArguments === undefined ? {} : { scriptArguments }),
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 21:
-      return { kind: "closure-environment", id: readSigned(reader), ...span };
+      return {
+        kind: "closure-environment",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 22:
-      return { kind: "string-none", id: readSigned(reader), ...span };
+      return {
+        kind: "string-none",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 23:
     case 24:
     case 25: {
       const id = readSigned(reader),
         value = readSigned(reader);
       return opcode === 23
-        ? { kind: "string-wrap", id, value, ...span }
+        ? {
+            kind: "string-wrap",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
         : opcode === 24
-          ? { kind: "string-value", id, value, ...span }
-          : { kind: "string-present", id, value, ...span };
+          ? {
+              kind: "string-value",
+              id,
+              value,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            }
+          : {
+              kind: "string-present",
+              id,
+              value,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            };
     }
     case 26:
-      return { kind: "reference-none", id: readSigned(reader), ...span };
+      return {
+        kind: "reference-none",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 27:
     case 28: {
       const id = readSigned(reader),
         value = readSigned(reader);
       return opcode === 27
-        ? { kind: "string-reference", id, value, ...span }
-        : { kind: "reference-string", id, value, ...span };
+        ? {
+            kind: "string-reference",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "reference-string",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 29: {
       const id = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "reference-wrap", id, value, ...span };
+      return {
+        kind: "reference-wrap",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 30: {
       const id = readSigned(reader),
         value = readSigned(reader);
       if (!flagged(flags, 2))
-        return { kind: "reference-value", id, value, ...span };
+        return {
+          kind: "reference-value",
+          id,
+          value,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       const type = referenceValueType(readByte(reader));
-      return { kind: "reference-value", id, value, type, ...span };
+      return {
+        kind: "reference-value",
+        id,
+        value,
+        type,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 31: {
       const id = readSigned(reader),
         value = readString(reader);
-      return { kind: "string-literal", id, value, ...span };
+      return {
+        kind: "string-literal",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 32: {
       const id = readSigned(reader),
         string = readSigned(reader);
-      return { kind: "string-length", id, string, ...span };
+      return {
+        kind: "string-length",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 33: {
       const id = readSigned(reader),
@@ -1337,9 +1601,19 @@ export function decodeInstruction(
             string,
             index,
             unitKind,
-            ...span,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
           };
-        return { kind: "string-code-unit", id, string, index, ...span };
+        return {
+          kind: "string-code-unit",
+          id,
+          string,
+          index,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       }
       const inBounds = flagged(flags, 4);
       if (flagged(flags, 8))
@@ -1350,9 +1624,20 @@ export function decodeInstruction(
           index,
           inBounds,
           unitKind,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
-      return { kind: "string-code-unit", id, string, index, inBounds, ...span };
+      return {
+        kind: "string-code-unit",
+        id,
+        string,
+        index,
+        inBounds,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 34: {
       const id = readSigned(reader),
@@ -1365,7 +1650,9 @@ export function decodeInstruction(
         string,
         search,
         position,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 35: {
@@ -1373,37 +1660,85 @@ export function decodeInstruction(
         string = readSigned(reader),
         begin = readSigned(reader),
         limit = readSigned(reader);
-      return { kind: "string-slice", id, string, begin, limit, ...span };
+      return {
+        kind: "string-slice",
+        id,
+        string,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 36: {
       const id = readSigned(reader),
         values = readList(reader);
-      return { kind: "string-from-code-units", id, values, ...span };
+      return {
+        kind: "string-from-code-units",
+        id,
+        values,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 37: {
       const id = readSigned(reader),
         left = readSigned(reader),
         right = readSigned(reader);
-      return { kind: "string-concat", id, left, right, ...span };
+      return {
+        kind: "string-concat",
+        id,
+        left,
+        right,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 38: {
       const id = readSigned(reader),
         length = readSigned(reader),
         twoByte = readSigned(reader);
-      return { kind: "string-allocate", id, length, twoByte, ...span };
+      return {
+        kind: "string-allocate",
+        id,
+        length,
+        twoByte,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 39: {
       const target = readSigned(reader),
         offset = readSigned(reader),
         source = readSigned(reader);
-      return { kind: "string-write", target, offset, source, ...span };
+      return {
+        kind: "string-write",
+        target,
+        offset,
+        source,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 40: {
       const id = readSigned(reader),
         record = readSigned(reader),
         args = readOptionalList(reader);
       if (!flagged(flags, 2))
-        return { kind: "record-new", id, record, arguments: args, ...span };
+        return {
+          kind: "record-new",
+          id,
+          record,
+          arguments: args,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       const presence = readOptionalList(reader);
       return {
         kind: "record-new",
@@ -1411,7 +1746,9 @@ export function decodeInstruction(
         record,
         arguments: args,
         presence,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 41: {
@@ -1419,10 +1756,24 @@ export function decodeInstruction(
         tag = reader.bytes[reader.offset] ?? 0;
       if (tag === 2 || tag === 3) {
         reader.offset++;
-        return { kind: "constant", id, value: tag === 3, ...span };
+        return {
+          kind: "constant",
+          id,
+          value: tag === 3,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       }
       const value = readNumber(reader);
-      return { kind: "constant", id, value, ...span };
+      return {
+        kind: "constant",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 42:
     case 43: {
@@ -1430,36 +1781,85 @@ export function decodeInstruction(
         id = readSigned(reader),
         operand = readSigned(reader);
       return opcode === 42
-        ? { kind: "error-new", error, id, message: operand, ...span }
-        : { kind: "error-is", error, id, value: operand, ...span };
+        ? {
+            kind: "error-new",
+            error,
+            id,
+            message: operand,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "error-is",
+            error,
+            id,
+            value: operand,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 44: {
       const operation = vocabulary.hostOperations[readUnsigned(reader)];
       if (operation === undefined) throw "packed IR host operation";
       const id = flagged(flags, 2) ? readSigned(reader) : undefined,
         args = readList(reader);
-      return { kind: "host-call", operation, id, arguments: args, ...span };
+      return {
+        kind: "host-call",
+        operation,
+        id,
+        arguments: args,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 45: {
       const call = vocabulary.foreignCalls[readUnsigned(reader)];
       if (call === undefined) throw "packed IR foreign call";
       const id = flagged(flags, 2) ? readSigned(reader) : undefined,
         args = readList(reader);
-      return { kind: "c-call", call, id, arguments: args, ...span };
+      return {
+        kind: "c-call",
+        call,
+        id,
+        arguments: args,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 46: {
       const access = vocabulary.foreignAccesses[readUnsigned(reader)];
       if (access === undefined) throw "packed IR foreign access";
       const id = flagged(flags, 2) ? readSigned(reader) : undefined,
         args = readList(reader);
-      return { kind: "c-memory", access, id, arguments: args, ...span };
+      return {
+        kind: "c-memory",
+        access,
+        id,
+        arguments: args,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 47: {
       const id = readSigned(reader),
         array = readSigned(reader),
         begin = readSigned(reader),
         length = readSigned(reader);
-      return { kind: "array-subarray", id, array, begin, length, ...span };
+      return {
+        kind: "array-subarray",
+        id,
+        array,
+        begin,
+        length,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 103: {
       const id = readSigned(reader),
@@ -1474,13 +1874,22 @@ export function decodeInstruction(
         buffer,
         byteOffset,
         length,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 104: {
       const id = readSigned(reader),
         buffer = readSigned(reader);
-      return { kind: "array-buffer-byte-length", id, buffer, ...span };
+      return {
+        kind: "array-buffer-byte-length",
+        id,
+        buffer,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 105: {
       const operation = atomicOperations[readByte(reader)];
@@ -1496,7 +1905,9 @@ export function decodeInstruction(
         array,
         index,
         operands,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 48: {
@@ -1504,47 +1915,120 @@ export function decodeInstruction(
         key = readSigned(reader),
         value = readSigned(reader),
         ephemeron = readSigned(reader);
-      return { kind: "weak-slot-new", id, key, value, ephemeron, ...span };
+      return {
+        kind: "weak-slot-new",
+        id,
+        key,
+        value,
+        ephemeron,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 49:
     case 50: {
       const id = readSigned(reader),
         cell = readSigned(reader);
       return opcode === 49
-        ? { kind: "weak-slot-key", id, cell, ...span }
-        : { kind: "weak-slot-value", id, cell, ...span };
+        ? {
+            kind: "weak-slot-key",
+            id,
+            cell,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "weak-slot-value",
+            id,
+            cell,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 51: {
       const cell = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "weak-slot-set-value", cell, value, ...span };
+      return {
+        kind: "weak-slot-set-value",
+        cell,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 52:
-      return { kind: "weak-slot-clear", cell: readSigned(reader), ...span };
+      return {
+        kind: "weak-slot-clear",
+        cell: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 53: {
       const id = readSigned(reader),
         length = readSigned(reader);
-      return { kind: "reference-vector-new", id, length, ...span };
+      return {
+        kind: "reference-vector-new",
+        id,
+        length,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 54:
     case 55: {
       const id = readSigned(reader),
         vector = readSigned(reader);
       return opcode === 54
-        ? { kind: "reference-vector-length", id, vector, ...span }
-        : { kind: "reference-vector-is", id, vector, ...span };
+        ? {
+            kind: "reference-vector-length",
+            id,
+            vector,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "reference-vector-is",
+            id,
+            vector,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 56: {
       const id = readSigned(reader),
         vector = readSigned(reader),
         index = readSigned(reader);
-      return { kind: "reference-vector-read", id, vector, index, ...span };
+      return {
+        kind: "reference-vector-read",
+        id,
+        vector,
+        index,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 57: {
       const vector = readSigned(reader),
         index = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "reference-vector-write", vector, index, value, ...span };
+      return {
+        kind: "reference-vector-write",
+        vector,
+        index,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 58: {
       const source = readSigned(reader),
@@ -1556,14 +2040,24 @@ export function decodeInstruction(
         target,
         count,
         rebase: flagged(flags, 2),
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 59: {
       const id = readSigned(reader),
         type = arrayType(readByte(reader)),
         length = readSigned(reader);
-      return { kind: "array-new", id, type, length, ...span };
+      return {
+        kind: "array-new",
+        id,
+        type,
+        length,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 60:
     case 61:
@@ -1572,12 +2066,40 @@ export function decodeInstruction(
       const id = readSigned(reader),
         array = readSigned(reader);
       return opcode === 60
-        ? { kind: "array-length", id, array, ...span }
+        ? {
+            kind: "array-length",
+            id,
+            array,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
         : opcode === 61
-          ? { kind: "array-buffer", id, array, ...span }
+          ? {
+              kind: "array-buffer",
+              id,
+              array,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            }
           : opcode === 62
-            ? { kind: "array-byte-offset", id, array, ...span }
-            : { kind: "array-byte-length", id, array, ...span };
+            ? {
+                kind: "array-byte-offset",
+                id,
+                array,
+                start,
+                end,
+                ...(inline === undefined ? {} : { inline }),
+              }
+            : {
+                kind: "array-byte-length",
+                id,
+                array,
+                start,
+                end,
+                ...(inline === undefined ? {} : { inline }),
+              };
     }
     case 64:
     case 65:
@@ -1586,17 +2108,66 @@ export function decodeInstruction(
         array = readSigned(reader),
         index = readSigned(reader);
       return opcode === 64
-        ? { kind: "array-valid", id, array, index, ...span }
+        ? {
+            kind: "array-valid",
+            id,
+            array,
+            index,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
         : opcode === 65
-          ? { kind: "array-read", id, array, index, ...span }
-          : { kind: "array-element", id, array, index, ...span };
+          ? {
+              kind: "array-read",
+              id,
+              array,
+              index,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            }
+          : {
+              kind: "array-element",
+              id,
+              array,
+              index,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            };
     }
     case 67: {
       const id = readSigned(reader),
         array = readSigned(reader),
         source = readSigned(reader),
         offset = readSigned(reader);
-      return { kind: "array-copy", id, array, source, offset, ...span };
+      return {
+        kind: "array-copy",
+        id,
+        array,
+        source,
+        offset,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 106: {
+      const array = readSigned(reader),
+        value = readSigned(reader),
+        from = readSigned(reader),
+        to = readSigned(reader);
+      return {
+        kind: "array-fill",
+        array,
+        value,
+        from,
+        to,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 68:
     case 69: {
@@ -1604,44 +2175,117 @@ export function decodeInstruction(
         index = readSigned(reader),
         value = readSigned(reader);
       return opcode === 68
-        ? { kind: "array-write", array, index, value, ...span }
-        : { kind: "array-store", array, index, value, ...span };
+        ? {
+            kind: "array-write",
+            array,
+            index,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "array-store",
+            array,
+            index,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 70:
-      return { kind: "undefined", id: readSigned(reader), ...span };
+      return {
+        kind: "undefined",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 71:
     case 72:
     case 73: {
       const id = readSigned(reader),
         value = readSigned(reader);
       return opcode === 71
-        ? { kind: "optional-wrap", id, value, ...span }
+        ? {
+            kind: "optional-wrap",
+            id,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
         : opcode === 72
-          ? { kind: "optional-present", id, value, ...span }
-          : { kind: "optional-value", id, value, ...span };
+          ? {
+              kind: "optional-present",
+              id,
+              value,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            }
+          : {
+              kind: "optional-value",
+              id,
+              value,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            };
     }
     case 74: {
       const id = readSigned(reader),
         value = readSigned(reader),
         fallback = readSigned(reader);
-      return { kind: "optional-value-or", id, value, fallback, ...span };
+      return {
+        kind: "optional-value-or",
+        id,
+        value,
+        fallback,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 75: {
       const id = readSigned(reader),
         slot = readSigned(reader);
-      return { kind: "load", id, slot, ...span };
+      return {
+        kind: "load",
+        id,
+        slot,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 76: {
       const slot = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "store", slot, value, ...span };
+      return {
+        kind: "store",
+        slot,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 77: {
       const id = readSigned(reader),
         operator = vocabulary.operators[readUnsigned(reader)],
         operand = readSigned(reader);
       if (operator === undefined) throw "packed IR operator";
-      return { kind: "unary", id, operator, operand, ...span };
+      return {
+        kind: "unary",
+        id,
+        operator,
+        operand,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 78: {
       const id = readSigned(reader),
@@ -1649,17 +2293,34 @@ export function decodeInstruction(
         left = readSigned(reader),
         right = readSigned(reader);
       if (operator === undefined) throw "packed IR operator";
-      return { kind: "binary", id, operator, left, right, ...span };
+      return {
+        kind: "binary",
+        id,
+        operator,
+        left,
+        right,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 82:
       return {
         kind: "script-argument",
         id: readSigned(reader),
         index: readSigned(reader),
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     case 83:
-      return { kind: "script-argument-count", id: readSigned(reader), ...span };
+      return {
+        kind: "script-argument-count",
+        id: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 117: {
       const id = readSigned(reader),
         field = activationFields[readByte(reader)];
@@ -1667,10 +2328,34 @@ export function decodeInstruction(
       const record = flagged(flags, 2) ? readSigned(reader) : undefined,
         index = flagged(flags, 4) ? readSigned(reader) : undefined;
       if (record === undefined)
-        return { kind: "activation-read", id, field, ...span };
+        return {
+          kind: "activation-read",
+          id,
+          field,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
       if (index === undefined)
-        return { kind: "activation-read", id, field, record, ...span };
-      return { kind: "activation-read", id, field, record, index, ...span };
+        return {
+          kind: "activation-read",
+          id,
+          field,
+          record,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
+        };
+      return {
+        kind: "activation-read",
+        id,
+        field,
+        record,
+        index,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 114: {
       const id = readSigned(reader),
@@ -1687,7 +2372,9 @@ export function decodeInstruction(
         field,
         count,
         index,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 115: {
@@ -1722,7 +2409,9 @@ export function decodeInstruction(
         ...(spillRecord !== undefined && spillField !== undefined
           ? { spillRecord, spillField }
           : {}),
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 116: {
@@ -1750,7 +2439,9 @@ export function decodeInstruction(
         siteField,
         epochRecord,
         epochField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 118: {
@@ -1789,7 +2480,9 @@ export function decodeInstruction(
         contextRecord,
         realmField,
         scriptOrModuleField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 119: {
@@ -1829,7 +2522,9 @@ export function decodeInstruction(
         cacheLexicalEpochField,
         cacheObjectEpochField,
         cacheCellField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 120: {
@@ -1856,7 +2551,9 @@ export function decodeInstruction(
           storageField,
           cachedStorage,
           cachedCount,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
       }
       return {
@@ -1869,7 +2566,9 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 121: {
@@ -1898,7 +2597,9 @@ export function decodeInstruction(
           storageField,
           cachedStorage,
           cachedCount,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
       }
       return {
@@ -1912,13 +2613,22 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 85: {
       const id = readSigned(reader),
         string = readSigned(reader);
-      return { kind: "string-two-byte", id, string, ...span };
+      return {
+        kind: "string-two-byte",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 87:
     case 90: {
@@ -1927,8 +2637,26 @@ export function decodeInstruction(
         begin = readSigned(reader),
         limit = readSigned(reader);
       return opcode === 87
-        ? { kind: "string-from-latin1", id, bytes, begin, limit, ...span }
-        : { kind: "bytes-ascii-prefix", id, bytes, begin, limit, ...span };
+        ? {
+            kind: "string-from-latin1",
+            id,
+            bytes,
+            begin,
+            limit,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "bytes-ascii-prefix",
+            id,
+            bytes,
+            begin,
+            limit,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 88: {
       const id = readSigned(reader),
@@ -1945,28 +2673,58 @@ export function decodeInstruction(
         limit,
         bytes,
         offset,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 97: {
       const id = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "number-string-cached", id, value, ...span };
+      return {
+        kind: "number-string-cached",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 98: {
       const value = readSigned(reader),
         string = readSigned(reader);
-      return { kind: "number-string-cache", value, string, ...span };
+      return {
+        kind: "number-string-cache",
+        value,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 99: {
       const id = readSigned(reader),
         string = readSigned(reader);
-      return { kind: "string-index-cached", id, string, ...span };
+      return {
+        kind: "string-index-cached",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 100: {
       const string = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "string-index-cache", string, value, ...span };
+      return {
+        kind: "string-index-cache",
+        string,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 101: {
       const id = readSigned(reader),
@@ -1979,21 +2737,40 @@ export function decodeInstruction(
         string,
         separator,
         template,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 102: {
       const string = readSigned(reader),
         separator = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "string-split-cache", string, separator, value, ...span };
+      return {
+        kind: "string-split-cache",
+        string,
+        separator,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 94: {
       const id = readSigned(reader),
         string = readSigned(reader),
         begin = readSigned(reader),
         limit = readSigned(reader);
-      return { kind: "string-utf8-length", id, string, begin, limit, ...span };
+      return {
+        kind: "string-utf8-length",
+        id,
+        string,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 95: {
       const id = readSigned(reader),
@@ -2012,7 +2789,9 @@ export function decodeInstruction(
           bytes,
           offset,
           written: true,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
       return {
         kind: "string-write-utf8",
@@ -2022,7 +2801,9 @@ export function decodeInstruction(
         limit,
         bytes,
         offset,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 96: {
@@ -2038,14 +2819,32 @@ export function decodeInstruction(
           begin,
           limit,
           whole: true,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
-      return { kind: "string-from-utf8", id, bytes, begin, limit, ...span };
+      return {
+        kind: "string-from-utf8",
+        id,
+        bytes,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 92: {
       const id = readSigned(reader),
         string = readSigned(reader);
-      return { kind: "string-flat", id, string, ...span };
+      return {
+        kind: "string-flat",
+        id,
+        string,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 93: {
       const id = readSigned(reader),
@@ -2058,7 +2857,9 @@ export function decodeInstruction(
         address,
         byteLength,
         string,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 91: {
@@ -2069,7 +2870,9 @@ export function decodeInstruction(
         id,
         string,
         upper: flagged(flags, 2),
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 89: {
@@ -2077,7 +2880,16 @@ export function decodeInstruction(
         string = readSigned(reader),
         begin = readSigned(reader),
         limit = readSigned(reader);
-      return { kind: "string-ascii-prefix", id, string, begin, limit, ...span };
+      return {
+        kind: "string-ascii-prefix",
+        id,
+        string,
+        begin,
+        limit,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 86: {
       const id = readSigned(reader),
@@ -2091,7 +2903,9 @@ export function decodeInstruction(
         search,
         position,
         reverse: flagged(flags, 2),
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 122: {
@@ -2109,7 +2923,9 @@ export function decodeInstruction(
         field,
         elementsRecord,
         lengthField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 123: {
@@ -2129,7 +2945,9 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 124: {
@@ -2149,13 +2967,22 @@ export function decodeInstruction(
         elementsRecord,
         countField,
         storageField,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 81: {
       const id = readSigned(reader),
         value = readSigned(reader);
-      return { kind: "error-message", id, value, ...span };
+      return {
+        kind: "error-message",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 80: {
       const id = readSigned(reader),
@@ -2163,8 +2990,25 @@ export function decodeInstruction(
         type = generalTests[readByte(reader)];
       if (type === undefined) throw "packed general test invariant";
       return flagged(flags, 2)
-        ? { kind: "general-is", id, value, type, branch: true, ...span }
-        : { kind: "general-is", id, value, type, ...span };
+        ? {
+            kind: "general-is",
+            id,
+            value,
+            type,
+            branch: true,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "general-is",
+            id,
+            value,
+            type,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 79: {
       const receiver = flagged(flags, 2) ? readSigned(reader) : undefined,
@@ -2180,9 +3024,19 @@ export function decodeInstruction(
               target,
               environment: "inherit",
               arguments: args,
-              ...span,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
             }
-          : { kind: "call", id, target, arguments: args, ...span };
+          : {
+              kind: "call",
+              id,
+              target,
+              arguments: args,
+              start,
+              end,
+              ...(inline === undefined ? {} : { inline }),
+            };
       return inherit
         ? {
             kind: "call",
@@ -2191,9 +3045,20 @@ export function decodeInstruction(
             target,
             environment: "inherit",
             arguments: args,
-            ...span,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
           }
-        : { kind: "call", receiver, id, target, arguments: args, ...span };
+        : {
+            kind: "call",
+            receiver,
+            id,
+            target,
+            arguments: args,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
   }
   throw "packed IR opcode " + String(opcode);
@@ -2208,7 +3073,14 @@ export function encodeTerminator(
       writeSigned(writer, terminator.object);
       writeSigned(writer, terminator.record);
       writeSigned(writer, terminator.field);
-      writeByte(writer, terminator.operation === "read" ? 1 : 2);
+      writeByte(
+        writer,
+        terminator.operation === "read"
+          ? 1
+          : terminator.operation === "write"
+            ? 2
+            : 3,
+      );
       writeSigned(writer, terminator.slot);
       writeSigned(writer, terminator.consequent);
       writeSigned(writer, terminator.alternate);
@@ -2270,7 +3142,9 @@ export function decodeTerminator(reader: ByteReader): Terminator {
   const opcode = readByte(reader),
     prefix = readPrefix(reader),
     flags = prefix.flags,
-    span = origin(prefix);
+    start = prefix.start,
+    end = prefix.end,
+    inline = prefix.inline;
   switch (opcode) {
     case 0: {
       const object = readSigned(reader),
@@ -2289,7 +3163,9 @@ export function decodeTerminator(reader: ByteReader): Terminator {
         slot,
         consequent,
         alternate,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 1: {
@@ -2311,7 +3187,9 @@ export function decodeTerminator(reader: ByteReader): Terminator {
           consequent,
           alternate,
           initialized: true,
-          ...span,
+          start,
+          end,
+          ...(inline === undefined ? {} : { inline }),
         };
       return {
         kind: "record-cell",
@@ -2322,17 +3200,42 @@ export function decodeTerminator(reader: ByteReader): Terminator {
         slot,
         consequent,
         alternate,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 2:
-      return { kind: "trap", ...span };
+      return {
+        kind: "trap",
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 3:
-      return { kind: "throw-literal", value: readString(reader), ...span };
+      return {
+        kind: "throw-literal",
+        value: readString(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 4:
-      return { kind: "throw", value: readSigned(reader), ...span };
+      return {
+        kind: "throw",
+        value: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 5:
-      return { kind: "jump", target: readSigned(reader), ...span };
+      return {
+        kind: "jump",
+        target: readSigned(reader),
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     case 6: {
       const cell = readSigned(reader),
         operation = cellOperation(readByte(reader)),
@@ -2346,20 +3249,36 @@ export function decodeTerminator(reader: ByteReader): Terminator {
         slot,
         consequent,
         alternate,
-        ...span,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
       };
     }
     case 7: {
       const condition = readSigned(reader),
         consequent = readSigned(reader),
         alternate = readSigned(reader);
-      return { kind: "branch", condition, consequent, alternate, ...span };
+      return {
+        kind: "branch",
+        condition,
+        consequent,
+        alternate,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
     case 8: {
       const value: number | undefined = flagged(flags, 2)
         ? readSigned(reader)
         : undefined;
-      return { kind: "return", value, ...span };
+      return {
+        kind: "return",
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
     }
   }
   throw "packed IR terminator opcode " + String(opcode);

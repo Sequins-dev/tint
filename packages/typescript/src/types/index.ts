@@ -17,6 +17,62 @@ export interface StringIndex {
   readonly readonly: boolean;
   readonly origin: "signature" | "record";
 }
+/** Typed-array kinds with a native representation; the BigInt kinds are
+ * realm objects (their elements need a BigInt representation). */
+export type NativeTypedArrayKind =
+  | "Uint8Array"
+  | "Int8Array"
+  | "Uint8ClampedArray"
+  | "Uint16Array"
+  | "Int16Array"
+  | "Uint32Array"
+  | "Int32Array"
+  | "Float32Array"
+  | "Float64Array";
+export const nativeTypedArrayKinds: readonly NativeTypedArrayKind[] = [
+  "Uint8Array",
+  "Int8Array",
+  "Uint8ClampedArray",
+  "Uint16Array",
+  "Int16Array",
+  "Uint32Array",
+  "Int32Array",
+  "Float32Array",
+  "Float64Array",
+];
+/** The native typed-array kind a type kind or constructor name denotes. */
+export function nativeTypedArrayKind(
+  kind: string | undefined,
+): NativeTypedArrayKind | undefined {
+  // Optional strings cannot be switched on natively.
+  if (kind === undefined) return undefined;
+  switch (kind) {
+    case "Uint8Array":
+      return "Uint8Array";
+    case "Int8Array":
+      return "Int8Array";
+    case "Uint8ClampedArray":
+      return "Uint8ClampedArray";
+    case "Uint16Array":
+      return "Uint16Array";
+    case "Int16Array":
+      return "Int16Array";
+    case "Uint32Array":
+      return "Uint32Array";
+    case "Int32Array":
+      return "Int32Array";
+    case "Float32Array":
+      return "Float32Array";
+    case "Float64Array":
+      return "Float64Array";
+    default:
+      return undefined;
+  }
+}
+/** Whether a type kind or name is a native typed-array kind. */
+export function isNativeTypedArrayKind(kind: string | undefined): boolean {
+  return nativeTypedArrayKind(kind) !== undefined;
+}
 export type Type =
   | {
       readonly kind:
@@ -31,10 +87,7 @@ export type Type =
         | "Error"
         | "ArrayBuffer"
         | "SharedArrayBuffer"
-        | "Uint8Array"
-        | "Uint16Array"
-        | "Uint32Array"
-        | "Float64Array"
+        | NativeTypedArrayKind
         | "void"
         | "unknown"
         | "realm-callable"
@@ -89,6 +142,11 @@ export type Type =
       readonly receiver?: number;
       readonly result: number;
       readonly instancePredicate?: number;
+      /** Declared with method syntax (`m(): T`) in an interface or object
+       * type: a member call passes its object as the receiver, so a function
+       * requiring a receiver relates to it, and method properties relate
+       * covariantly (TypeScript's method bivariance). */
+      readonly method?: boolean;
     };
 export type ErrorCode =
   | "INVALID_TYPE"
@@ -343,6 +401,12 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
   }
   function assignable(actual: number, expected: number): boolean {
     return valid(actual) && valid(expected) && relates(actual, expected);
+  }
+  /** A property declared with method syntax (see the function type's
+   * `method`): it relates covariantly even when writable. */
+  function methodProperty(type: number): boolean {
+    const declared = types[canonicalIds[type] ?? type];
+    return declared?.kind === "function" && declared.method === true;
   }
   // Private callers use validated IDs from the immutable graph or validate their
   // public arguments first. Recursive edges cannot introduce an invalid ID.
@@ -878,7 +942,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
           if (q !== undefined)
             dependency(
               beginClause(i),
-              pair(q.type, p.type, exact || (!indexed && !p.readonly)),
+              pair(
+                q.type,
+                p.type,
+                exact || (!indexed && !p.readonly && !methodProperty(p.type)),
+              ),
             );
         }
       } else if (source.kind === "function" && target.kind === "object") {
@@ -922,7 +990,9 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         }
         const sourceReceiver = source.receiver,
           targetReceiver = target.receiver;
-        if (sourceReceiver !== undefined) {
+        if (sourceReceiver !== undefined && target.method === true) {
+          // A member call supplies the object as the receiver.
+        } else if (sourceReceiver !== undefined) {
           if (targetReceiver === undefined) {
             nodeValues[i] = 0;
             continue;
@@ -1704,6 +1774,7 @@ function copyType(
         ...(t.instancePredicate === undefined
           ? {}
           : { instancePredicate: t.instancePredicate }),
+        ...(t.method === true ? { method: true } : {}),
       };
       break;
     }

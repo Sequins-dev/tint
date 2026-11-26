@@ -848,6 +848,25 @@ export function linkModules(
           if (parameter === undefined) throw "class type parameter invariant";
           noParameters.add(parameter.name);
         }
+        // TypeScript-only heritage types and type-only member spans.
+        const heritageTypes: TypeNode[] = [],
+          implementedTypes: TypeNode[] = [],
+          typeOnlySpans: Span[] = [];
+        for (const argument of node.heritageTypeArguments ?? []) {
+          if (argument === undefined) throw "heritage type invariant";
+          heritageTypes.push(type(argument, noParameters));
+        }
+        for (const target of node.implements ?? []) {
+          if (target === undefined) throw "implements type invariant";
+          implementedTypes.push(type(target, noParameters));
+        }
+        for (const member of node.typeOnlyMembers ?? []) {
+          if (member === undefined) throw "type-only member invariant";
+          typeOnlySpans.push({
+            start: member.start + offset,
+            end: member.end + offset,
+          });
+        }
         try {
           return mark<ClassDefinition>(
             {
@@ -863,6 +882,14 @@ export function linkModules(
                 node.heritage === undefined
                   ? undefined
                   : expression(node.heritage),
+              heritageTypeArguments:
+                node.heritageTypeArguments === undefined
+                  ? undefined
+                  : heritageTypes,
+              implements:
+                node.implements === undefined ? undefined : implementedTypes,
+              typeOnlyMembers:
+                node.typeOnlyMembers === undefined ? undefined : typeOnlySpans,
               elements: node.elements.map((element): ClassElement => {
                 if (element.kind === "static-block")
                   return mark<ClassElement>(

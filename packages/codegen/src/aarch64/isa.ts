@@ -95,6 +95,9 @@ export type Instruction =
       readonly rd: DataRegister;
       readonly rn: DataRegister;
       readonly rm: DataRegister;
+      /** Optional shifted Rm for and-reg, orr-reg, eor-reg, orn-reg. */
+      readonly shift?: "lsl" | "lsr" | "asr" | "ror";
+      readonly amount?: number;
     }
   | {
       /** madd: rd = ra + rn * rm (MUL is MADD with the zero register as
@@ -237,14 +240,24 @@ export type Instruction =
       readonly condition: Condition;
     }
   | {
-      readonly op: "fcvtzs-w-d" | "fcvtzs-x-d" | "fcvtzu-w-d" | "fcvtzu-x-d";
-      readonly rd: DataRegister;
+      /** Double-precision floating-point conditional select: Dd = cond ? Dn : Dm. */
+      readonly op: "fcsel";
+      readonly rd: number;
       readonly rn: number;
+      readonly rm: number;
+      readonly condition: Condition;
     }
   | {
-      /** FEAT_JSCVT: Wd = ToInt32(Dn) (truncation modulo 2^32, NaN and
-       * infinities to 0), zero-extended. */
-      readonly op: "fjcvtzs";
+      /** fcvtnu-w-d rounds to nearest, ties to even, and saturates to
+       * [0, 2^32 - 1] (NaN gives 0); fjcvtzs (FEAT_JSCVT) computes
+       * Wd = ToInt32(Dn) zero-extended. */
+      readonly op:
+        | "fcvtzs-w-d"
+        | "fcvtzs-x-d"
+        | "fcvtzu-w-d"
+        | "fcvtzu-x-d"
+        | "fcvtnu-w-d"
+        | "fjcvtzs";
       readonly rd: DataRegister;
       readonly rn: number;
     }
@@ -320,7 +333,7 @@ export type Instruction =
   | {
       /** LDR/STR (register offset): [rn, rm, LSL #size] when scaled, else
        * [rn, rm]. size: 0 byte, 1 halfword, 2 word, 3 doubleword; fp selects
-       * the SIMD&FP register file (size 3 only). */
+       * the SIMD&FP register file (S for size 2, D for size 3). */
       readonly op: "ldr-indexed" | "str-indexed";
       readonly size: 0 | 1 | 2 | 3;
       readonly fp: boolean;
@@ -328,6 +341,9 @@ export type Instruction =
       readonly rn: BaseRegister;
       readonly rm: DataRegister;
       readonly scaled: boolean;
+      /** LDRSB/LDRSH/LDRSW: sign-extend a byte, halfword or word load to
+       * 64 bits (general registers, sizes 0-2). */
+      readonly signed?: boolean;
     }
   | {
       readonly op: "ldp" | "stp";
@@ -580,8 +596,39 @@ export function encode(instruction: Instruction): EncodingResult<number> {
                     : i.op === "asrv"
                       ? 0x1ac02800
                       : 0x1ac00c00;
+      const logical =
+        i.op === "and-reg" ||
+        i.op === "orr-reg" ||
+        i.op === "eor-reg" ||
+        i.op === "orn-reg";
+      let shiftField = 0,
+        amount = 0;
+      if (i.shift !== undefined || i.amount !== undefined) {
+        if (!logical) return fail("INVALID_SHIFT");
+        const s =
+          i.shift === undefined || i.shift === "lsl"
+            ? 0
+            : i.shift === "lsr"
+              ? 1
+              : i.shift === "asr"
+                ? 2
+                : i.shift === "ror"
+                  ? 3
+                  : -1;
+        const amt = i.amount ?? 0;
+        if (s < 0 || !integer(amt, 0, i.width - 1))
+          return fail("INVALID_SHIFT");
+        shiftField = s * 0x400000;
+        amount = amt * 1024;
+      }
       return word(
-        base + (i.width === 64 ? 0x80000000 : 0) + rm * 65536 + rn * 32 + rd,
+        base +
+          (i.width === 64 ? 0x80000000 : 0) +
+          shiftField +
+          rm * 65536 +
+          amount +
+          rn * 32 +
+          rd,
       );
     }
     case "and-imm":
@@ -871,7 +918,9 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "fcvtzs-w-d":
     case "fcvtzs-x-d":
     case "fcvtzu-w-d":
-    case "fcvtzu-x-d": {
+    case "fcvtzu-x-d":
+    case "fcvtnu-w-d":
+    case "fjcvtzs": {
       const rd = register(i.rd, "zr");
       if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
       return word(
@@ -881,15 +930,14 @@ export function encode(instruction: Instruction): EncodingResult<number> {
             ? 0x9e790000
             : i.op === "fcvtzu-w-d"
               ? 0x1e790000
-              : 0x1e780000) +
+              : i.op === "fcvtnu-w-d"
+                ? 0x1e610000
+                : i.op === "fjcvtzs"
+                  ? 0x1e7e0000
+                  : 0x1e780000) +
           i.rn * 32 +
           rd,
       );
-    }
-    case "fjcvtzs": {
-      const rd = register(i.rd, "zr");
-      if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
-      return word(0x1e7e0000 + i.rn * 32 + rd);
     }
     case "ldr-d":
     case "str-d": {
@@ -946,6 +994,17 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           rn * 32 +
           rd,
       );
+    }
+    case "fcsel": {
+      const cond = condition(i.condition);
+      if (
+        !integer(i.rd, 0, 31) ||
+        !integer(i.rn, 0, 31) ||
+        !integer(i.rm, 0, 31)
+      )
+        return fail("INVALID_REGISTER");
+      if (cond < 0 || cond >= 14) return fail("INVALID_CONDITION");
+      return word(0x1e600c00 + i.rm * 65536 + cond * 4096 + i.rn * 32 + i.rd);
     }
     case "mrs-thread": {
       const rt = register(i.rt, "zr");
@@ -1146,7 +1205,9 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (rn < 0 || rm < 0) return fail("INVALID_REGISTER");
       if (i.size !== 0 && i.size !== 1 && i.size !== 2 && i.size !== 3)
         return fail("INVALID_WIDTH");
-      if (i.fp ? i.size !== 3 || !integer(i.rt, 0, 31) : false)
+      if (i.fp ? i.size < 2 || !integer(i.rt, 0, 31) : false)
+        return fail("INVALID_WIDTH");
+      if (i.signed === true && (i.op !== "ldr-indexed" || i.fp || i.size === 3))
         return fail("INVALID_WIDTH");
       const rt = i.fp ? i.rt : register(i.rt, "zr");
       if (rt < 0) return fail("INVALID_REGISTER");
@@ -1154,7 +1215,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
         i.size * 0x40000000 +
           0x38200800 +
           (i.fp ? 0x04000000 : 0) +
-          (i.op === "ldr-indexed" ? 0x400000 : 0) +
+          (i.signed === true
+            ? 0x800000
+            : i.op === "ldr-indexed"
+              ? 0x400000
+              : 0) +
           rm * 65536 +
           0x6000 +
           (i.scaled ? 0x1000 : 0) +
