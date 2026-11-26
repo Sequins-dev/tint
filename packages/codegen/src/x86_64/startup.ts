@@ -136,7 +136,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const runtimeCode = runtime?.native;
   const far = native.far || runtimeCode?.far === true;
   const appPlan = request.programCodePlan;
-  const appLength = appPlan?.byteLength ?? app.code.length;
+  const appLength =
+    appPlan?.byteLength ?? app.codePlan?.byteLength ?? app.code.length;
   const appEnd = appLength + (request.programPaddingBytes ?? 0);
   if (!Number.isSafeInteger(appEnd) || appEnd < appLength)
     throw "invalid program padding";
@@ -146,7 +147,9 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     runtimeCode === undefined
       ? app.data.length
       : Math.ceil(app.data.length / 8) * 8;
-  const imageLength = codeOffset + (runtimeCode?.code.length ?? 0);
+  const imageLength =
+    codeOffset +
+    (runtimeCode?.codePlan?.byteLength ?? runtimeCode?.code.length ?? 0);
   const stackMaps = app.stackMaps.slice();
   if (runtimeCode !== undefined)
     for (const table of runtimeCode.stackMaps) {
@@ -786,6 +789,9 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   ): string | undefined {
     if (offset === 0 && appPlan !== undefined) {
       const error = appPlan.write(output, origin);
+      if (error !== undefined) return error;
+    } else if (unit.codePlan !== undefined) {
+      const error = unit.codePlan.write(output, origin + offset);
       if (error !== undefined) return error;
     } else output.write(unit.code, origin + offset);
     for (const fixup of unit.hostedThreadFixups) {

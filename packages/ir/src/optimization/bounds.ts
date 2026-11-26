@@ -1,5 +1,7 @@
 import {
+  analyzeLiveSlotRows,
   analyzeLiveSlots,
+  fitsLiveRows,
   naturalLoops,
   instructionResult,
   substituteInstructionValues,
@@ -10,9 +12,74 @@ import {
   type FunctionIR,
   type Instruction,
   type ScalarType,
+  type SlotLiveRows,
   type Terminator,
 } from "../scalar/index.ts";
 import type { RemarkSink } from "./observer.ts";
+
+function isBoundsRelevantOperator(operator: string): boolean {
+  switch (operator) {
+    case "<":
+    case "<=":
+    case ">":
+    case ">=":
+    case "===":
+    case "!==":
+    case "%":
+    case "&":
+    case "|":
+    case "^":
+    case "<<":
+    case ">>":
+    case ">>>":
+    case "imul":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isSignedBitwiseOperator(operator: string): boolean {
+  switch (operator) {
+    case "|":
+    case "^":
+    case "<<":
+    case ">>":
+    case "imul":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isBitwiseOperator(operator: string): boolean {
+  switch (operator) {
+    case "&":
+    case "|":
+    case "^":
+    case "<<":
+    case ">>":
+    case ">>>":
+    case "imul":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isComparisonOperator(operator: string): boolean {
+  switch (operator) {
+    case "<":
+    case "<=":
+    case ">":
+    case ">=":
+    case "===":
+    case "!==":
+      return true;
+    default:
+      return false;
+  }
+}
 
 /** Interval facts over number slots and values: `integer` intervals hold
  * only finite integral numbers (never NaN) within [lo, hi], and -0 only when
@@ -755,87 +822,102 @@ export function selectArrayAccesses(
   // Track only number slots whose values reach typed-array indices, array
   // lengths, comparisons or remainders (directly, through arithmetic, or
   // through stores into other tracked slots); states are dense over them.
-  const relevant = new Uint8Array(slotCount);
-  for (let changed = true; changed;) {
-    changed = false;
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "bounds block invariant";
-      const dependencies = new Map<number, number[]>();
-      const mark = (value: number): void => {
-        for (const slot of dependencies.get(value) ?? [])
-          if (slot !== undefined && relevant[slot] === 0) {
-            relevant[slot] = 1;
-            changed = true;
-          }
-      };
-      const combine = (left: number, right: number): number[] => {
-        const result: number[] = [];
-        for (const slot of dependencies.get(left) ?? [])
-          if (slot !== undefined) result.push(slot);
-        for (const slot of dependencies.get(right) ?? [])
+  // Collect slot-to-slot store edges in one CFG scan, then propagate backward
+  // along those edges instead of re-scanning all blocks on every round.
+  const relevant = new Uint8Array(slotCount),
+    relevantQueue: number[] = [],
+    reverseDeps = new Map<number, number[]>();
+  const markSlot = (slot: number): void => {
+    if (relevant[slot] === 0) {
+      relevant[slot] = 1;
+      relevantQueue.push(slot);
+    }
+  };
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "bounds block invariant";
+    const dependencies = new Map<number, number[]>();
+    const mark = (value: number): void => {
+      for (const slot of dependencies.get(value) ?? [])
+        if (slot !== undefined) markSlot(slot);
+    };
+    const combine = (left: number, right: number): number[] => {
+      const leftDeps = dependencies.get(left),
+        rightDeps = dependencies.get(right);
+      if (leftDeps === undefined && rightDeps === undefined) return [];
+      const result: number[] = [];
+      if (leftDeps !== undefined)
+        for (const slot of leftDeps) if (slot !== undefined) result.push(slot);
+      if (rightDeps !== undefined && right !== left)
+        for (const slot of rightDeps)
           if (slot !== undefined && !result.includes(slot)) result.push(slot);
-        return result;
-      };
-      for (const op of block.instructions) {
-        if (op === undefined) throw "bounds instruction invariant";
-        if (visited >= budget) return undefined;
-        visited++;
-        if (op.kind === "load" && fn.slots[op.slot] === "number")
-          dependencies.set(op.id, [op.slot]);
-        else if (op.kind === "binary") {
-          dependencies.set(op.id, combine(op.left, op.right));
-          // Comparisons, remainders and bitwise ops consume integer/range facts.
-          if (
-            [
-              "<",
-              "<=",
-              ">",
-              ">=",
-              "===",
-              "!==",
-              "%",
-              "&",
-              "|",
-              "^",
-              "<<",
-              ">>",
-              ">>>",
-              "imul",
-            ].includes(op.operator)
-          ) {
-            mark(op.left);
-            mark(op.right);
+      return result;
+    };
+    for (const op of block.instructions) {
+      if (op === undefined) throw "bounds instruction invariant";
+      if (visited >= budget) return undefined;
+      visited++;
+      if (op.kind === "load" && fn.slots[op.slot] === "number")
+        dependencies.set(op.id, [op.slot]);
+      else if (op.kind === "binary") {
+        const combined = combine(op.left, op.right);
+        if (combined.length > 0) dependencies.set(op.id, combined);
+        // Comparisons, remainders and bitwise ops consume integer/range facts.
+        if (isBoundsRelevantOperator(op.operator)) {
+          mark(op.left);
+          mark(op.right);
+        }
+      } else if (op.kind === "unary") {
+        const deps = dependencies.get(op.operand);
+        if (deps !== undefined) dependencies.set(op.id, deps);
+      } else if (op.kind === "optional-wrap") {
+        const deps = dependencies.get(op.value);
+        if (deps !== undefined) dependencies.set(op.id, deps);
+      } else if (
+        op.kind === "array-read" ||
+        op.kind === "array-write" ||
+        op.kind === "array-element" ||
+        op.kind === "array-store" ||
+        op.kind === "array-valid" ||
+        op.kind === "string-code-unit" ||
+        op.kind === "reference-vector-read" ||
+        op.kind === "reference-vector-write" ||
+        op.kind === "general-element-load" ||
+        op.kind === "general-element-store" ||
+        op.kind === "general-slot-load" ||
+        op.kind === "general-slot-store"
+      )
+        mark(op.index);
+      else if (op.kind === "element-load" || op.kind === "element-store") {
+        mark(op.index);
+        if (op.cachedCount !== undefined) mark(op.cachedCount);
+      } else if (op.kind === "array-new") mark(op.length);
+      else if (op.kind === "string-slice") {
+        mark(op.begin);
+        mark(op.limit);
+      } else if (op.kind === "store") {
+        const deps = dependencies.get(op.value);
+        if (deps !== undefined && deps.length > 0) {
+          if (relevant[op.slot] === 1) {
+            for (const slot of deps) if (slot !== undefined) markSlot(slot);
+          } else {
+            let list = reverseDeps.get(op.slot);
+            if (list === undefined) {
+              list = [];
+              reverseDeps.set(op.slot, list);
+            }
+            for (const slot of deps)
+              if (slot !== undefined && slot !== op.slot) list.push(slot);
           }
-        } else if (op.kind === "unary")
-          dependencies.set(op.id, combine(op.operand, op.operand));
-        else if (op.kind === "optional-wrap")
-          dependencies.set(op.id, combine(op.value, op.value));
-        else if (
-          op.kind === "array-read" ||
-          op.kind === "array-write" ||
-          op.kind === "array-element" ||
-          op.kind === "array-store" ||
-          op.kind === "array-valid" ||
-          op.kind === "string-code-unit" ||
-          op.kind === "reference-vector-read" ||
-          op.kind === "reference-vector-write" ||
-          op.kind === "general-element-load" ||
-          op.kind === "general-element-store" ||
-          op.kind === "general-slot-load" ||
-          op.kind === "general-slot-store"
-        )
-          mark(op.index);
-        else if (op.kind === "element-load" || op.kind === "element-store") {
-          mark(op.index);
-          if (op.cachedCount !== undefined) mark(op.cachedCount);
-        } else if (op.kind === "array-new") mark(op.length);
-        else if (op.kind === "string-slice") {
-          mark(op.begin);
-          mark(op.limit);
-        } else if (op.kind === "store" && relevant[op.slot] === 1)
-          mark(op.value);
+        }
       }
     }
+  }
+  while (relevantQueue.length > 0) {
+    const dst = relevantQueue.pop();
+    if (dst === undefined) break;
+    const sources = reverseDeps.get(dst);
+    if (sources === undefined) continue;
+    for (const src of sources) if (src !== undefined) markSlot(src);
   }
   // Dense index + 1 per tracked slot (0: untracked).
   const dense = new Uint32Array(slotCount);
@@ -867,10 +949,23 @@ export function selectArrayAccesses(
   const trackedSlots: number[] = [];
   for (let slot = 0; slot < slotCount; slot++)
     if (relevant[slot] === 1) trackedSlots.push(slot);
-  const liveness = analyzeLiveSlots(fn, budget - visited, trackedSlots);
-  if (liveness === undefined) return undefined;
-  visited += liveness.work;
-  const liveSlots = liveness.slots;
+  let liveRows: SlotLiveRows | undefined,
+    liveSlots: readonly (readonly number[])[] | undefined;
+  if (fitsLiveRows(fn, trackedSlots.length)) {
+    const denseLiveness = analyzeLiveSlotRows(
+      fn,
+      budget - visited,
+      trackedSlots,
+    );
+    if (denseLiveness === undefined) return undefined;
+    visited += denseLiveness.work;
+    liveRows = denseLiveness;
+  } else {
+    const sparseLiveness = analyzeLiveSlots(fn, budget - visited, trackedSlots);
+    if (sparseLiveness === undefined) return undefined;
+    visited += sparseLiveness.work;
+    liveSlots = sparseLiveness.slots;
+  }
   // Dense scratch states (top outside the slots a block touches), reset
   // after each use, and generation stamps for membership tests.
   const scratch: Interval[] = [],
@@ -881,7 +976,7 @@ export function selectArrayAccesses(
     hullScratch.push(top);
     incomingScratch.push(top);
   }
-  const liveStamps = new Uint32Array(trackedCount),
+  const liveStamps = new Uint32Array(liveRows === undefined ? trackedCount : 0),
     touchedStamps = new Uint32Array(trackedCount);
   let liveGeneration = 0,
     touchedGeneration = 0;
@@ -929,15 +1024,28 @@ export function selectArrayAccesses(
   }
   /** `state` restricted to the slots live into `target`. */
   function pruned(target: number, state: SparseState): SparseState {
+    const indices: number[] = [],
+      intervals: Interval[] = [];
+    if (liveRows !== undefined) {
+      const rowBase = target * liveRows.rowWords,
+        rows = liveRows.rows;
+      for (let at = 0; at < state.slots.length; at++) {
+        const index = state.slots[at] ?? 0;
+        if (((rows[rowBase + (index >>> 5)] ?? 0) & (1 << (index & 31))) === 0)
+          continue;
+        indices.push(index);
+        intervals.push(state.intervals[at] ?? top);
+      }
+      visited += state.slots.length;
+      return { slots: indices, intervals };
+    }
     liveGeneration++;
-    const live = liveSlots[target] ?? [];
+    const live = liveSlots?.[target] ?? [];
     for (const slot of live)
       if (slot !== undefined) {
         const index = tracked(slot);
         if (index >= 0) liveStamps[index] = liveGeneration;
       }
-    const indices: number[] = [],
-      intervals: Interval[] = [];
     for (let at = 0; at < state.slots.length; at++) {
       const index = state.slots[at] ?? 0;
       if (liveStamps[index] !== liveGeneration) continue;
@@ -1178,7 +1286,7 @@ export function selectArrayAccesses(
             );
             break;
           }
-          if (["|", "^", "<<", ">>", "imul"].includes(op.operator)) {
+          if (isSignedBitwiseOperator(op.operator)) {
             values.set(op.id, integerInterval(-2147483648, 2147483647, false));
             break;
           }
@@ -1302,7 +1410,7 @@ export function selectArrayAccesses(
       if (
         condition !== undefined &&
         condition.kind === "binary" &&
-        ["<", "<=", ">", ">=", "===", "!=="].includes(condition.operator)
+        isComparisonOperator(condition.operator)
       ) {
         const leftSlot = loads.get(condition.left),
           rightSlot = loads.get(condition.right),
@@ -1313,18 +1421,20 @@ export function selectArrayAccesses(
             leftSlot === undefined ? top : (state[leftSlot] ?? top),
           rightBefore =
             rightSlot === undefined ? top : (state[rightSlot] ?? top);
-        for (const taken of [true, false]) {
-          if (taken === undefined) throw "bounds edge invariant";
-          if (leftSlot !== undefined)
-            refine(state, leftSlot, right, condition.operator, taken, true);
-          if (rightSlot !== undefined)
-            refine(state, rightSlot, left, condition.operator, taken, false);
-          const edge = collect(state, touched);
-          if (taken) yes = edge;
-          else no = edge;
-          if (rightSlot !== undefined) state[rightSlot] = rightBefore;
-          if (leftSlot !== undefined) state[leftSlot] = leftBefore;
-        }
+        if (leftSlot !== undefined)
+          refine(state, leftSlot, right, condition.operator, true, true);
+        if (rightSlot !== undefined)
+          refine(state, rightSlot, left, condition.operator, true, false);
+        yes = collect(state, touched);
+        if (rightSlot !== undefined) state[rightSlot] = rightBefore;
+        if (leftSlot !== undefined) state[leftSlot] = leftBefore;
+        if (leftSlot !== undefined)
+          refine(state, leftSlot, right, condition.operator, false, true);
+        if (rightSlot !== undefined)
+          refine(state, rightSlot, left, condition.operator, false, false);
+        no = collect(state, touched);
+        if (rightSlot !== undefined) state[rightSlot] = rightBefore;
+        if (leftSlot !== undefined) state[leftSlot] = leftBefore;
       }
       const unrefined =
         yes === undefined || no === undefined
@@ -1548,10 +1658,7 @@ export function selectArrayAccesses(
         op.kind === "optional-present"
       )
         foldable.set(op.value, (foldable.get(op.value) ?? 0) + 1);
-      if (
-        op.kind === "binary" &&
-        ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(op.operator)
-      ) {
+      if (op.kind === "binary" && isBitwiseOperator(op.operator)) {
         bitwiseUses.set(op.left, (bitwiseUses.get(op.left) ?? 0) + 1);
         bitwiseUses.set(op.right, (bitwiseUses.get(op.right) ?? 0) + 1);
       } else if (op.kind === "unary" && op.operator === "~") {

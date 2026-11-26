@@ -244,6 +244,18 @@ export function scalarizeStencilLoops(
   remarks?: RemarkSink,
 ): StencilLoopResult | undefined {
   if (budget < 0) return undefined;
+  let hasArrayStore = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) return undefined;
+    for (const op of block.instructions) {
+      if (op !== undefined && op.kind === "array-store") {
+        hasArrayStore = true;
+        break;
+      }
+    }
+    if (hasArrayStore) break;
+  }
+  if (!hasArrayStore) return { fn, visited: 0, rewritten: 0 };
   const forest = naturalLoops(fn, budget);
   if (forest === undefined) return undefined;
   let visited = forest.visited;
@@ -271,6 +283,7 @@ export function scalarizeStencilLoops(
   let current = fn,
     rewritten = 0;
   const touched = new Set<number>();
+  let predecessors: number[][] | undefined;
 
   for (const loop of loops) {
     if (loop === undefined) continue;
@@ -278,15 +291,17 @@ export function scalarizeStencilLoops(
     for (const id of loop.body) if (touched.has(id)) overlap = true;
     if (overlap) continue;
 
-    // Build predecessors on `current` for this loop's check.
-    const predecessors: number[][] = [];
-    for (let i = 0; i < current.blocks.length; i++) predecessors.push([]);
-    for (const block of current.blocks) {
-      if (block === undefined) return undefined;
-      for (const succ of blockSuccessors(block))
-        predecessors[succ]?.push(block.id);
-      if (block.exception !== undefined)
-        predecessors[block.exception.target]?.push(block.id);
+    // Build predecessors on `current` lazily and rebuild only after a rewrite.
+    if (predecessors === undefined) {
+      predecessors = [];
+      for (let i = 0; i < current.blocks.length; i++) predecessors.push([]);
+      for (const block of current.blocks) {
+        if (block === undefined) return undefined;
+        for (const succ of blockSuccessors(block))
+          predecessors[succ]?.push(block.id);
+        if (block.exception !== undefined)
+          predecessors[block.exception.target]?.push(block.id);
+      }
     }
 
     const outside = (predecessors[loop.header] ?? []).filter(
@@ -708,6 +723,7 @@ export function scalarizeStencilLoops(
         : { ...current, slots: candSlots, blocks: candBlocks, debug };
     if (!recordReadsKept(current, candidate)) continue;
     current = candidate;
+    predecessors = undefined;
     nextValue = candNextValue;
     rewritten++;
     for (const id of loop.body) touched.add(id);

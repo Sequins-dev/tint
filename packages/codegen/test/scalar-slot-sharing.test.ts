@@ -281,4 +281,18 @@ test("shared owners match per-slot liveness across many groups and blocks", () =
     }
   assert.ok(owned > 100, `exercise many owners (${owned})`);
   assert.ok(sharing.colors > 8);
+  const withoutOwners = shareFrameSlots(
+    ir,
+    () => true,
+    10_000_000,
+    undefined,
+    false,
+  );
+  assert.ok(withoutOwners !== undefined);
+  assert.equal(withoutOwners.colors, sharing.colors);
+  assert.deepEqual(withoutOwners.color, sharing.color);
+  assert.throws(
+    () => withoutOwners.otherLiveIn(0, 0),
+    /owner tracking disabled/,
+  );
 });
