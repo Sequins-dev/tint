@@ -30,9 +30,11 @@ import {
 } from "./native-target-runner.ts";
 import {
   callbackLibrarySource,
+  prepareCallbackTrapSuite,
   verifyCallbackFixture,
-  verifyCallbackTrap,
+  verifyCallbackTrapCase,
 } from "./native-callback-fixtures.ts";
+import { cleanupNativeBinary } from "./native-suite-runner.ts";
 
 const x64 = nativeFixtureTarget().name === "linux-x86_64";
 
@@ -609,14 +611,21 @@ double call_mixed(double (*f)(signed char, long, int, int, int, int, int)) {
 }
 `;
     withOracle((library) => {
-      for (const scenario of [
-        "ok",
-        "leaf-later",
-        "leaf-inside",
-        "thread",
-        "view-escape",
-      ] as const)
-        console.log(scenario, verifyCallbackTrap(library, scenario));
+      const trapSuite = prepareCallbackTrapSuite(library);
+      try {
+        for (const scenario of [
+          "ok",
+          "leaf-later",
+          "leaf-inside",
+          "thread",
+          "view-escape",
+        ] as const) {
+          verifyCallbackTrapCase(trapSuite, scenario);
+          console.log(scenario, trapSuite);
+        }
+      } finally {
+        cleanupNativeBinary(trapSuite);
+      }
       verifyHostedFixture(
         `import { Remembered, remember_address, call_saved_may, call_mixed } from "callbacks";
        import { releaseCallback } from "tint:ffi";

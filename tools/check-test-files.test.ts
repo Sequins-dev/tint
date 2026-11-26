@@ -87,6 +87,27 @@ test("shards balance measured costs, heaviest files first", () => {
   );
 });
 
+test("shards keep shared-image general realm suites on the same shard", () => {
+  const { native } = classifiedCheckTests();
+  const group = [
+    "tools/native-general-elements.test.ts",
+    "tools/native-general-intrinsics.test.ts",
+    "tools/native-general-numbers.test.ts",
+    "tools/native-general-property-caches.test.ts",
+    "tools/node-buffer-codecs.test.ts",
+  ];
+  for (let count = 1; count <= 4; count++) {
+    const shards = Array.from({ length: count }, (_, index) =>
+      shardCheckTests(native, { index: index + 1, count }),
+    );
+    const containing = shards.filter((shard) =>
+      group.some((file) => shard.includes(file)),
+    );
+    assert.equal(containing.length, 1);
+    for (const file of group) assert.ok(containing[0]!.includes(file));
+  }
+});
+
 test("shard arguments are INDEX/COUNT with 1 <= INDEX <= COUNT", () => {
   assert.deepEqual(parseCheckTestShard("2/3"), { index: 2, count: 3 });
   for (const value of ["0/3", "4/3", "1", "1/0", "a/b", "1/3/2", " 1/3"])

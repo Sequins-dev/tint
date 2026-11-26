@@ -3043,6 +3043,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/process-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/process.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/type-error.ts",
       packageId: "native-runtime",
     },

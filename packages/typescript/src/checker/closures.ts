@@ -10770,6 +10770,7 @@ function checkClosureModuleLayout(
         node.kind !== "interface" &&
         node.kind !== "type-alias" &&
         node.kind !== "class" &&
+        node.kind !== "expression" &&
         node.kind !== "empty" &&
         node.kind !== "debugger"
       )

@@ -71,6 +71,7 @@ function packageShape(specifier: string): "bare" | "deep" | "invalid" {
     specifier === "node:crypto" ||
     specifier === "node:fs" ||
     specifier === "node:ffi" ||
+    specifier === "node:process" ||
     specifier === "node:worker_threads" ||
     specifier === "tint:ffi" ||
     specifier === "tint:ffi/unsafe"

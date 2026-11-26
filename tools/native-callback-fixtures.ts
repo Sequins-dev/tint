@@ -10,6 +10,7 @@ import { spawnSync } from "node:child_process";
 import { rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  prepareHostedFixture,
   verifyHostedFixture,
   type FixtureForeignDeclaration,
 } from "./hosted-fixture.ts";
@@ -17,6 +18,11 @@ import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import { lldbStartCommands } from "./lldb-launch.ts";
 import { stableScratchDirectory } from "./fixture-scratch.ts";
+import {
+  nodeProcessModule,
+  runNativeSuiteCase,
+  runNativeSuiteTrap,
+} from "./native-suite-runner.ts";
 
 export const callbackDeclarations: FixtureForeignDeclaration = {
   id: "fixture/callbacks.d.ts",
@@ -327,6 +333,96 @@ export function run(): number {
 }
 `;
 }
+/** Single binary dispatching all five callback contract scenarios via
+ * `node:process` `argv[1]`. */
+export function callbackTrapSuiteSource(): string {
+  return `import { argv } from "node:process";
+import type { View } from "tint:ffi";
+import { remember, call_saved, call_now, call_on_thread, call_with_record, call_with_null, type Cell } from "traps";
+export function run(): number {
+  const scenario = argv[1] ?? "";
+  if (scenario === "ok") {
+    // A null record pointer is a TypeError, rethrown after the call.
+    let threw = false;
+    try {
+      call_with_null((p: View<Cell>): number => p.v);
+    } catch (error) {
+      threw = error instanceof TypeError;
+    }
+    if (!threw) return 1;
+    return call_now((x: number): number => x + 22, 20);
+  }
+  if (scenario === "leaf-later") {
+    remember((x: number): number => x);
+    return call_saved(1);
+  }
+  if (scenario === "leaf-inside") {
+    remember((x: number): number => x);
+    return call_now((x: number): number => call_saved(x), 1);
+  }
+  if (scenario === "thread") {
+    return call_on_thread((x: number): number => x);
+  }
+  if (scenario === "view-escape") {
+    const kept: View<Cell>[] = [];
+    const seen = call_with_record((p: View<Cell>): number => {
+      kept.push(p);
+      return p.v;
+    }, 5);
+    const view = kept[0];
+    if (seen !== 5 || view === undefined) return 1;
+    return view.v;
+  }
+  return 99;
+}
+`;
+}
+
+/** Build one `argv`-dispatched binary for all five callback contract
+ * scenarios against `library`. Caller cleans up via `cleanupNativeBinary`. */
+export function prepareCallbackTrapSuite(library: string): string {
+  const declarations = callbackTrapDeclarations(library);
+  return prepareHostedFixture(
+    callbackTrapSuiteSource(),
+    "ffi-callback-traps",
+    [
+      ["node:process", nodeProcessModule],
+      ["traps", declarations.id],
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+    ],
+    [],
+    [],
+    [],
+    {
+      requireTyped: true,
+      ...(nativeFixtureTarget().arch === "x86_64"
+        ? { runtimeEntry: "initializeGenerationalRuntime" as const }
+        : {}),
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [declarations],
+    },
+  );
+}
+
+/** Execute one scenario of a prepared callback trap suite binary under LLDB. */
+export function verifyCallbackTrapCase(
+  binary: string,
+  scenario: CallbackTrapScenario,
+): void {
+  if (scenario === "ok") {
+    runNativeSuiteCase(binary, ["ok"]);
+    return;
+  }
+  runNativeSuiteTrap(binary, [scenario], {
+    x64Signal: scenario === "view-escape" ? "SIGSEGV" : "SIGILL",
+    darwinPattern:
+      scenario === "view-escape"
+        ? /stop reason = (EXC_BAD_ACCESS|signal SIGSEGV|signal SIGBUS)/
+        : /stop reason = (EXC_BREAKPOINT|signal SIGTRAP)/,
+  });
+}
+
 /** Build scenario `scenario` against `library` and run it under LLDB:
  * `ok` must exit 42; the others must stop on the thunk's trap (brk). */
 export function verifyCallbackTrap(
