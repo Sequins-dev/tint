@@ -114,6 +114,13 @@ separate full-emission fixture still needs validation before the
 newer pool can be measured through image placement.
 [Generational Worker shared preparation](results/parallel-bounded-compile-generational-shared-preparation-v1.md)
 
+Importing Worker bindings from the shared fragment engine sent the
+native replay through general guest lowering. The checker spent 95.6%
+of sampled CPU merging and refining facts in the resulting emitter.
+Passing the lane ID as data restored typed Worker preparation. The
+profile and remaining stage budget guide the next replay.
+[Worker composition and checker profile](results/parallel-bounded-compile-worker-checker-cliff-v1.md)
+
 ## Compiler actor candidates
 
 Native Worker microbenchmarks isolated two substrate costs. One mapped
