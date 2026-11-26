@@ -4,8 +4,10 @@ import {
 } from "./dynamic-boundaries.ts";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
+  rewriteModule,
   typeParameterCount,
   typeOnlyDeclarations,
+  type Expression,
   type Parameter,
   type Statement,
   type TypeNode,
@@ -473,6 +475,23 @@ export function closeGeneralPartition(
   for (const module of typeSources)
     if (module !== undefined) typeModules.set(module.id, module);
   const records = createBoundaryRecords(typeModules);
+  const dynamicSpecifiers = new Map<string, readonly string[]>();
+  function importCallSpecifiers(module: SourceModule): readonly string[] {
+    const cached = dynamicSpecifiers.get(module.id);
+    if (cached !== undefined) return cached;
+    const found: string[] = [];
+    rewriteModule(module.module, {
+      expression: (mapped: Expression, original: Expression): Expression => {
+        if (original.kind === "import-call") {
+          const specifier = original.specifier;
+          if (specifier.kind === "string") found.push(specifier.value);
+        }
+        return mapped;
+      },
+    });
+    dynamicSpecifiers.set(module.id, found);
+    return found;
+  }
   const general = new Set<string>(seed);
   for (let changed = true; changed;) {
     changed = false;
@@ -490,6 +509,19 @@ export function closeGeneralPartition(
     }
     for (const module of application) {
       if (module === undefined || !general.has(module.id)) continue;
+      for (const specifier of importCallSpecifiers(module)) {
+        if (specifier === undefined) continue;
+        const target = module.dependencies.get(specifier);
+        if (
+          target !== undefined &&
+          !general.has(target) &&
+          byId.has(target) &&
+          !trustedIds.has(target)
+        ) {
+          general.add(target);
+          changed = true;
+        }
+      }
       for (const statement of module.module.statements) {
         if (statement === undefined) continue;
         const declaration =

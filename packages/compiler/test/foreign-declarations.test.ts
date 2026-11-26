@@ -44,13 +44,14 @@ test("the application resolver grants native Node FFI only on supported targets"
   const entry = "application/main.ts";
   const ffi = "packages/native-runtime/src/node/ffi.ts";
   const buffer = "packages/native-runtime/src/node/buffer.ts";
+  const nodeProcess = "packages/native-runtime/src/node/process.ts";
   const encoder = new TextEncoder();
   const inputs = [
     {
       id: entry,
       packageId: "application",
       bytes: encoder.encode(
-        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer";',
+        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer"; import { argv } from "node:process";',
       ),
     },
     {
@@ -62,6 +63,11 @@ test("the application resolver grants native Node FFI only on supported targets"
       id: buffer,
       packageId: "native-runtime",
       bytes: encoder.encode("export const Buffer = 1;"),
+    },
+    {
+      id: nodeProcess,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export const argv: string[] = [];"),
     },
   ];
   for (const target of [
@@ -82,6 +88,7 @@ test("the application resolver grants native Node FFI only on supported targets"
       new Map([
         ["node:ffi", ffi],
         ["node:buffer", buffer],
+        ["node:process", nodeProcess],
       ]),
     );
   }

@@ -67,12 +67,26 @@ export function parseCheckTestShard(value: string): CheckTestShard {
   return { index, count };
 }
 
+/** Test files that share a single cached multi-case native binary via
+ * `sharedFixtureImage`. Co-locating them in the same CI shard avoids
+ * rebuilding the same full-realm image independently on every shard runner. */
+const sharedFixtureGroups: readonly (readonly string[])[] = [
+  [
+    "tools/native-general-elements.test.ts",
+    "tools/native-general-intrinsics.test.ts",
+    "tools/native-general-numbers.test.ts",
+    "tools/native-general-property-caches.test.ts",
+    "tools/node-buffer-codecs.test.ts",
+  ],
+];
+
 /**
  * Splits a group into `count` shards of similar measured cost: longest files
  * first, each to the currently lightest shard (ties to the lower shard). A
  * file without a recorded cost weighs the median recorded cost. Every file
  * lands in exactly one shard; each shard lists its heaviest files first so
- * they start before the light ones.
+ * they start before the light ones. Files belonging to a shared-image group
+ * are scheduled together on one shard so the cached image builds once.
  */
 export function shardCheckTests(
   files: readonly string[],
@@ -84,15 +98,38 @@ export function shardCheckTests(
     .filter((cost) => cost !== undefined)
     .sort((a, b) => a - b);
   const fallback = known.length ? known[Math.floor(known.length / 2)]! : 1;
-  const weighted = files
-    .map((file) => ({ file, cost: costs[file] ?? fallback }))
-    .sort((a, b) => b.cost - a.cost || a.file.localeCompare(b.file));
+  const fileSet = new Set(files);
+  const grouped = new Set<string>();
+  const units: { readonly files: readonly string[]; readonly cost: number }[] =
+    [];
+  for (const group of sharedFixtureGroups) {
+    const present = group.filter((file) => fileSet.has(file));
+    if (present.length > 1) {
+      for (const file of present) grouped.add(file);
+      const sorted = [...present].sort(
+        (a, b) =>
+          (costs[b] ?? fallback) - (costs[a] ?? fallback) || a.localeCompare(b),
+      );
+      const cost = sorted.reduce(
+        (total, file) => total + (costs[file] ?? fallback),
+        0,
+      );
+      units.push({ files: sorted, cost });
+    }
+  }
+  for (const file of files) {
+    if (grouped.has(file)) continue;
+    units.push({ files: [file], cost: costs[file] ?? fallback });
+  }
+  units.sort(
+    (a, b) => b.cost - a.cost || a.files[0]!.localeCompare(b.files[0]!),
+  );
   const loads = Array.from({ length: shard.count }, () => 0);
   const selected: string[] = [];
-  for (const { file, cost } of weighted) {
+  for (const unit of units) {
     const lightest = loads.indexOf(Math.min(...loads));
-    loads[lightest]! += cost;
-    if (lightest === shard.index - 1) selected.push(file);
+    loads[lightest]! += unit.cost;
+    if (lightest === shard.index - 1) selected.push(...unit.files);
   }
   return selected;
 }

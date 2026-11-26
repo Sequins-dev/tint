@@ -100,8 +100,12 @@ export function buildDynamicLibrary(
   return library;
 }
 
-export function dynamicFixtureSource(library: string): string {
-  return `import { allocate, release } from "tint:ffi";
+export function dynamicFixtureSource(library?: string): string {
+  const processImport =
+    library === undefined ? 'import { argv } from "node:process";\n' : "";
+  const libraryExpr =
+    library === undefined ? 'argv[2] ?? ""' : JSON.stringify(library);
+  return `${processImport}import { allocate, release } from "tint:ffi";
 import {
   openLibrary,
   openProgram,
@@ -203,7 +207,7 @@ function readI64(bytes: Uint8Array, offset: number): number {
   return negative ? -value - 1 : value;
 }
 export function run(): number {
-  const library = openLibrary(${JSON.stringify(library)});
+  const library = openLibrary(${libraryExpr});
   // Records by value: indirect (24 bytes), HFAs, a small composite.
   const bigSum = fn(library, "big_sum", [big], i64);
   const image = new Uint8Array(24);
@@ -393,7 +397,11 @@ export function verifyDynamicFixture(library: string): string {
   );
 }
 
-export function verifyDynamicSymbolWords(library: string): string {
+export function dynamicSymbolWordsSource(library?: string): string {
+  const processImport =
+    library === undefined ? 'import { argv } from "node:process";\n' : "";
+  const libraryExpr =
+    library === undefined ? 'argv[2] ?? ""' : JSON.stringify(library);
   const absoluteSymbols =
     nativeFixtureTarget().os === "linux"
       ? `
@@ -402,8 +410,7 @@ export function verifyDynamicSymbolWords(library: string): string {
   const zero = findSymbolWords(library, "tint_absolute_zero");
   if (zero.low !== 0 || zero.high !== 0) return 3;`
       : "";
-  return verifyHostedFixture(
-    `import {
+  return `${processImport}import {
   closeLibrary, findSymbol, findSymbolWords, foreignFunction, invoke,
   openLibrary, resultHigh, resultLow, type ForeignSignature,
 } from "tint:ffi/unsafe";
@@ -412,7 +419,7 @@ const addressSignature: ForeignSignature = {
   fixedParameters: 0, callClass: "leaf", errno: "none",
 };
 export function run(): number {
-  const library = openLibrary(${JSON.stringify(library)});
+  const library = openLibrary(${libraryExpr});
   try {
     const expected = foreignFunction(findSymbol(library, "tint_pointer_address"), addressSignature);
     invoke(expected);
@@ -431,7 +438,12 @@ export function run(): number {
     closeLibrary(library);
   }
 }
-`,
+`;
+}
+
+export function verifyDynamicSymbolWords(library: string): string {
+  return verifyHostedFixture(
+    dynamicSymbolWordsSource(library),
     "ffi-dynamic-symbol-words",
     [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
   );

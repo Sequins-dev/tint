@@ -100,6 +100,41 @@ test("general modules close over importers and unsafe typed imports", () => {
   ]);
 });
 
+test("general modules pull literal dynamic import targets into the general partition", () => {
+  const helper = module(
+    "helper",
+    "export function answer(n: number): number { return n; }",
+  );
+  const leaf = module(
+    "leaf",
+    'import { answer } from "./helper";\nexport function run() { return answer(42); }',
+    [["./helper", "helper"]],
+  );
+  const main = module(
+    "main",
+    'export async function run() { return (await import("./leaf")).run(); }',
+    [["./leaf", "leaf"]],
+  );
+  const partition = closeGeneralPartition(
+    [helper, leaf, main],
+    new Set(["main"]),
+  );
+  assert.deepEqual(partition.general.map((m) => m.id).sort(), ["leaf", "main"]);
+  assert.deepEqual(partition.boundaries, [
+    {
+      id: "helper",
+      exports: [
+        {
+          kind: "function",
+          name: "answer",
+          local: "answer",
+          parameters: [boundaryNumber],
+        },
+      ],
+    },
+  ]);
+});
+
 test("unknown parameters and results cross with their identity", () => {
   const lib = module(
     "lib",

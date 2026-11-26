@@ -268,9 +268,9 @@ function stackProbes(darwin: boolean): {
         ],
       };
 }
-export function verifyAbiProbeFixture(): string {
+export function abiProbeFixtureSource(): string {
   const probes = stackProbes(nativeFixtureTarget().os === "darwin");
-  const source = `import {
+  return `import {
   getpid, abs, labs, strlen, strlen$bytes, atof, fabsf, toupper, div, ldiv,
   memcpy$indirect, memset$narrow, snprintf$variadic, snprintf$packed, snprintf$composite, snprintf$hfa,
 } from "probe";
@@ -325,8 +325,10 @@ export function run(): number {
   return 42;
 }
 `;
+}
+export function verifyAbiProbeFixture(): string {
   return verifyHostedFixture(
-    source,
+    abiProbeFixtureSource(),
     "ffi-abi-probes",
     [
       ["probe", probeDeclarations.id],
@@ -362,8 +364,8 @@ export const storageDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyStorageFixture(): string {
-  const source = `import { allocate, release, address, external } from "tint:ffi";
+export function storageFixtureSource(): string {
+  return `import { allocate, release, address, external } from "tint:ffi";
 import { cStringAt } from "tint:ffi/unsafe";
 import { externalBytes } from "ffi-internal";
 import { Natural, Probe, getpagesize, strchr, strlen, memchr } from "storage";
@@ -459,8 +461,10 @@ export function run(): number {
   return 42;
 }
 `;
+}
+export function verifyStorageFixture(): string {
   return verifyHostedFixture(
-    source,
+    storageFixtureSource(),
     "ffi-storage",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
@@ -509,8 +513,8 @@ export const viewDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyViewFixture(): string {
-  const source = `import { type View } from "tint:ffi";
+export function viewFixtureSource(): string {
+  return `import { type View } from "tint:ffi";
 import { Outer, Point, memcpy$outer, memset$point } from "views";
 let sink: number[][] = [];
 function churn(): void {
@@ -641,8 +645,10 @@ export function run(): number {
   return 42;
 }
 `;
+}
+export function verifyViewFixture(): string {
   return verifyHostedFixture(
-    source,
+    viewFixtureSource(),
     "ffi-views",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
@@ -678,8 +684,8 @@ export const foreignDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyForeignFixture(): string {
-  const source = `import { allocate, release, address, type View } from "tint:ffi";
+export function foreignFixtureSource(): string {
+  return `import { allocate, release, address, type View } from "tint:ffi";
 import { viewAt, arrayAt, bytesAt, cStringAt } from "tint:ffi/unsafe";
 import { Node, Pair, strerror, strchr, memcpy$node } from "foreign";
 let sink: number[][] = [];
@@ -779,8 +785,10 @@ export function run(): number {
   return 42;
 }
 `;
+}
+export function verifyForeignFixture(): string {
   return verifyHostedFixture(
-    source,
+    foreignFixtureSource(),
     "ffi-foreign",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],

@@ -1676,16 +1676,12 @@ export function $tintCallUnit(${signature}):number {
  if(failed)return 1;
  const value=result.value;
  if(typeof value==="number")return value;
- ${
-   !supportsAsyncEntry
-     ? ""
-     : `const promise=viewObjectValue(value,object)?.internalExoticSlots?.internalPromiseData;
+ const promise=viewObjectValue(value,object)?.internalExoticSlots?.internalPromiseData;
  if(promise!==undefined){
   if(promise.state==="rejected"){report(promise.result);return 1;}
   if(promise.state==="pending"){emit(2,"entry promise did not settle\\n");return 1;}
   const status=promise.result;
   if(typeof status==="number")return status;
- }`
  }
  return 0;
 `

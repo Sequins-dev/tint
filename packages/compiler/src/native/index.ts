@@ -698,10 +698,12 @@ function withForeignRuntimes(
       if (module !== undefined) ids.add(module.id);
   }
   let nodeFfi = false,
-    nodeBuffer = false;
+    nodeBuffer = false,
+    nodeProcess = false;
   if (
     ids.has(foreignRuntimeModules.nodeFfi) ||
-    ids.has(foreignRuntimeModules.nodeBuffer)
+    ids.has(foreignRuntimeModules.nodeBuffer) ||
+    ids.has(foreignRuntimeModules.nodeProcess)
   ) {
     // The standalone collector can receive the application's source table
     // too. Authority follows the entry's imports, not source availability.
@@ -717,8 +719,10 @@ function withForeignRuntimes(
     const reachable = sourceDependencyClosure([request.entry], resolve);
     nodeFfi = reachable.includes(foreignRuntimeModules.nodeFfi);
     nodeBuffer = reachable.includes(foreignRuntimeModules.nodeBuffer);
+    nodeProcess = reachable.includes(foreignRuntimeModules.nodeProcess);
   }
-  if (libraries.length === 0 && !nodeFfi && !nodeBuffer) return request;
+  if (libraries.length === 0 && !nodeFfi && !nodeBuffer && !nodeProcess)
+    return request;
   const runtimes: RuntimeSource[] = request.runtimes.slice();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
@@ -752,13 +756,14 @@ function withForeignRuntimes(
       retainedExports: retained,
     });
   }
-  if (!nodeFfi && !nodeBuffer) return { ...request, runtimes };
+  if (!nodeFfi && !nodeBuffer && !nodeProcess) return { ...request, runtimes };
   const included = withNodeRuntimes(
     request,
     ids,
     runtimes,
     nodeFfi,
     nodeBuffer,
+    nodeProcess,
   );
   return nodeFfi ? withStaticFfiRuntimes(included, signedChar) : included;
 }
@@ -897,11 +902,47 @@ function withNodeRuntimes(
   runtimes: RuntimeSource[],
   nodeFfi: boolean,
   nodeBuffer: boolean,
+  nodeProcess: boolean,
 ): CompileRequest {
   function retain(runtime: RuntimeSource): void {
     if (!runtimes.some((existing) => existing?.module === runtime.module))
       runtimes.push(runtime);
   }
+  const hostBindings = (request.hostBindings ?? []).slice();
+  if (nodeProcess) {
+    const processModule = foreignRuntimeModules.processIntrinsics;
+    retain({
+      module: processModule,
+      namespace: "native-process",
+    });
+    const processBindings: readonly NativeHostBinding[] = [
+      {
+        module: processModule,
+        name: "argumentCount",
+        operation: "argument-count",
+      },
+      {
+        module: processModule,
+        name: "argumentByteLength",
+        operation: "argument-length",
+      },
+      {
+        module: processModule,
+        name: "copyArgument",
+        operation: "argument-copy",
+      },
+    ];
+    for (const binding of processBindings) {
+      if (
+        !hostBindings.some(
+          (entry) =>
+            entry?.module === binding.module && entry.name === binding.name,
+        )
+      )
+        hostBindings.push(binding);
+    }
+  }
+  if (!nodeFfi && !nodeBuffer) return { ...request, runtimes, hostBindings };
   if (nodeFfi)
     retain({
       module: foreignRuntimeModules.nodeFfi,
@@ -935,7 +976,7 @@ function withNodeRuntimes(
         recordBindings.push({ module: objects, name, operation: "view" });
     }
   }
-  if (!nodeFfi) return { ...request, runtimes, recordBindings };
+  if (!nodeFfi) return { ...request, runtimes, recordBindings, hostBindings };
   const unaryView = "viewUnaryNumberClosure";
   retain({
     module: nativeValueViewsModule,
@@ -974,7 +1015,6 @@ function withNodeRuntimes(
     if (runtime === undefined) throw "node FFI runtime invariant";
     retain(runtime);
   }
-  const hostBindings = (request.hostBindings ?? []).slice();
   for (const binding of ffi.hostBindings) {
     if (binding === undefined) throw "node FFI host binding invariant";
     if (
@@ -1968,6 +2008,18 @@ function generalApplicationModules(
       const dependency = module.dependencies.get(declaration.specifier);
       if (dependency !== undefined) queue.push(dependency);
     }
+    rewriteModule(module.module, {
+      expression: (mapped, original) => {
+        if (original.kind === "import-call") {
+          const specifier = original.specifier;
+          if (specifier.kind === "string") {
+            const dependency = module.dependencies.get(specifier.value);
+            if (dependency !== undefined) queue.push(dependency);
+          }
+        }
+        return mapped;
+      },
+    });
   }
   return { ok: true, value: result, trusted: imported };
 }
