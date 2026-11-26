@@ -1104,6 +1104,8 @@ function prepareCollectionPass(
           fromNumber: bigIntHelper("bigIntFromNumber"),
           fromBoolean: bigIntHelper("bigIntFromBoolean"),
           asWidth: bigIntHelper("bigIntAsWidth"),
+          toWord64: bigIntHelper("bigIntToWord64"),
+          fromWord64: bigIntHelper("bigIntFromWord64"),
         }
       : undefined;
     return {
@@ -1138,6 +1140,20 @@ function prepareCollectionPass(
             ? {
                 sharedBlockCheck: functionId(
                   helper("native-shared-buffer", "isNativeSharedArrayBuffer"),
+                ),
+              }
+            : {}),
+          ...(helpers.has("native-shared-buffer:nativeAtomicsWait")
+            ? {
+                atomicsWait: functionId(
+                  helper("native-shared-buffer", "nativeAtomicsWait"),
+                ),
+              }
+            : {}),
+          ...(helpers.has("native-shared-buffer:nativeAtomicsNotify")
+            ? {
+                atomicsNotify: functionId(
+                  helper("native-shared-buffer", "nativeAtomicsNotify"),
                 ),
               }
             : {}),

@@ -39,10 +39,13 @@ export type NativeTypedArray =
   | "Uint8ClampedArray"
   | "Uint16Array"
   | "Int16Array"
+  | "Float16Array"
   | "Uint32Array"
   | "Int32Array"
   | "Float32Array"
-  | "Float64Array";
+  | "Float64Array"
+  | "BigInt64Array"
+  | "BigUint64Array";
 /** The Atomics operations on a native integer array (see `array-atomic`). */
 export type ArrayAtomicOperation =
   | "load"
@@ -851,6 +854,49 @@ export type Instruction = Span &
         readonly array: number;
         readonly index: number;
         readonly operands: readonly number[];
+      }
+    | {
+        /** Tear-free 64-bit element read from a BigInt64Array or BigUint64Array.
+         * When `index` is a valid uint32 below `array.length`, loads the 64-bit
+         * element with one 64-bit access, writes its little-endian halves to
+         * `scratch[0..1]` (a Uint32Array of length >= 2), and yields true;
+         * otherwise yields false without touching `scratch`. */
+        readonly kind: "array-word64-read";
+        readonly id: number;
+        readonly array: number;
+        readonly index: number;
+        readonly scratch: number;
+      }
+    | {
+        /** Tear-free 64-bit element write to a BigInt64Array or BigUint64Array.
+         * When `index` is a valid uint32 below `array.length`, loads the 64-bit
+         * word from `scratch[0..1]` and stores it with one 64-bit access. */
+        readonly kind: "array-word64-write";
+        readonly array: number;
+        readonly index: number;
+        readonly scratch: number;
+      }
+    | {
+        /** Fill elements `[from, to)` of a BigInt64Array or BigUint64Array with
+         * the 64-bit word stored in `scratch[0..1]`. */
+        readonly kind: "array-word64-fill";
+        readonly array: number;
+        readonly scratch: number;
+        readonly from: number;
+        readonly to: number;
+      }
+    | {
+        /** Sequentially consistent 64-bit Atomics operation on element `index`
+         * of a BigInt64Array or BigUint64Array. Operand 0 sits in `scratch[0..1]`
+         * (expected for compare-exchange); operand 1 (replacement for
+         * compare-exchange) sits in `scratch[2..3]`. Every operation except
+         * "store" writes the observed 64-bit value back into `scratch[0..1]`.
+         * Traps unless `index` is an integer below `array.length`. */
+        readonly kind: "array-atomic-word64";
+        readonly operation: ArrayAtomicOperation;
+        readonly array: number;
+        readonly index: number;
+        readonly scratch: number;
       }
     | {
         /** Trusted opaque cell: general handles must never be viewed as records. */

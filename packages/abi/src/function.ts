@@ -36,3 +36,6 @@ export const nativeSignatureUint8ClampedArrayCode = 16;
 export const nativeSignatureInt16ArrayCode = 17;
 export const nativeSignatureInt32ArrayCode = 18;
 export const nativeSignatureFloat32ArrayCode = 19;
+export const nativeSignatureFloat16ArrayCode = 20;
+export const nativeSignatureBigInt64ArrayCode = 21;
+export const nativeSignatureBigUint64ArrayCode = 22;

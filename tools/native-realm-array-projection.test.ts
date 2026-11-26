@@ -119,6 +119,38 @@ export function total(value: unknown): number {
   if (value instanceof Float64Array) return sum(value);
   return -1;
 }
+export function bumpHalf(value: unknown): number {
+  if (!(value instanceof Float16Array)) return -1;
+  const prev = value[0] ?? 0;
+  value[0] = prev + 1.5;
+  return prev;
+}
+export function bumpBig(value: unknown): string {
+  if (value instanceof BigInt64Array) return String(Atomics.add(value, 0, 5n));
+  if (value instanceof BigUint64Array) return String(Atomics.add(value, 0, 7n));
+  return "none";
+}
+let keptBig: BigInt64Array | undefined = undefined;
+function takeBig(value: BigInt64Array): BigInt64Array {
+  return value;
+}
+export function keepBig(value: unknown): number {
+  if (!(value instanceof BigInt64Array)) return -1;
+  const view = takeBig(value);
+  keptBig = view;
+  return view.length;
+}
+export function keptBigRead(): string {
+  const view = keptBig;
+  if (view === undefined) throw new TypeError("nothing kept");
+  const item = view[0];
+  return item === undefined ? "absent" : String(item);
+}
+export function keptBigLength(): number {
+  const view = keptBig;
+  if (view === undefined) throw new TypeError("nothing kept");
+  return view.length;
+}
 `;
 
 const sharedTrustedSource = `
@@ -215,7 +247,7 @@ export function checkNativeSelf(): number {
 
 const typedArraysCaseSource = `
 import process from "node:process";
-import { add, bytes, bump, total, keep, keptLength, keptRead, keptWrite, keptOffset, keptAtomics, keptFill } from "./trusted.ts";
+import { add, bytes, bump, bumpHalf, bumpBig, keepBig, keptBigRead, keptBigLength, total, keep, keptLength, keptRead, keptWrite, keptOffset, keptAtomics, keptFill } from "./trusted.ts";
 function rejects(make) {
   try { make(); } catch (e) {
     return e instanceof TypeError && e.message === ${JSON.stringify(unsupported)};
@@ -259,6 +291,20 @@ function checkTypedArrays(): number {
   if (!rejects(() => bytes(new Uint8Array(resizable)))) return 10;
   // Another kind is not an instance.
   if (bytes(new Uint16Array(2)) !== -1) return 11;
+  // Float16Array, BigInt64Array and BigUint64Array project natively too.
+  const f16 = new Float16Array([2.5, 4.0]);
+  if (bumpHalf(f16) !== 2.5 || f16[0] !== 4.0) return 40;
+  const bi64 = new BigInt64Array([-10n, 20n]);
+  if (bumpBig(bi64) !== "-10" || bi64[0] !== -5n) return 41;
+  const bu64 = new BigUint64Array([18446744073709551610n]);
+  if (bumpBig(bu64) !== "18446744073709551610" || bu64[0] !== 1n) return 43;
+  // Detachment propagates to projected BigInt64Array views.
+  const bigBuf = new ArrayBuffer(16);
+  const bigView = new BigInt64Array(bigBuf, 8, 1);
+  bigView[0] = 1234567890123n;
+  if (keepBig(bigView) !== 1 || keptBigRead() !== "1234567890123") return 44;
+  bigBuf.transfer();
+  if (keptBigLength() !== 0 || keptBigRead() !== "absent") return 45;
   return 42;
 }
 process.exitCode = checkTypedArrays();

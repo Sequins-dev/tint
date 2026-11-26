@@ -1,6 +1,7 @@
 import type { NativeHostBinding } from "@tint/compiler/native";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+const clock = "packages/native-runtime/src/intrinsics/clock.ts";
 const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
 const strings = "packages/native-runtime/src/intrinsics/shared-strings.ts";
@@ -104,6 +105,11 @@ const sharedStringRuntime = {
     .filter((binding) => binding.module === strings)
     .map((binding) => binding.name),
 };
+const clockRuntime = {
+  module: clock,
+  namespace: "native-clock",
+  retainedExports: ["monotonicMilliseconds"],
+};
 export const workerFixtureRuntimes = [
   sharedMemoryRuntime,
   sharedBufferRuntime,
@@ -117,20 +123,31 @@ export const workerFixtureRuntimes = [
 export const sharedBufferFixtureRuntimes = [
   sharedMemoryRuntime,
   sharedBufferRuntime,
+  clockRuntime,
   {
     module: memory,
     namespace: "native-shared-buffer-memory",
-    retainedExports: ["mapMemory", "unmapMemory", "currentContextDomain"],
+    retainedExports: [
+      "mapMemory",
+      "unmapMemory",
+      "parkNativeWord",
+      "wakeNativeWord",
+      "currentContextDomain",
+    ],
   },
 ];
-export const sharedBufferHostBindings: readonly NativeHostBinding[] =
-  bindings.filter(
+export const sharedBufferHostBindings: readonly NativeHostBinding[] = [
+  ...bindings.filter(
     (binding) =>
       binding.module === shared ||
       binding.operation === "memory-map" ||
       binding.operation === "memory-unmap" ||
+      binding.operation === "word-park" ||
+      binding.operation === "word-wake" ||
       binding.operation === "context-domain",
-  );
+  ),
+  { module: clock, name: "monotonicMilliseconds", operation: "monotonic-time" },
+];
 
 export function workerFixtureOptions(
   workerModules: readonly string[],

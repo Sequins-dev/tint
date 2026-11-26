@@ -2932,6 +2932,7 @@ export function cacheLoopProperties(
       case "boolean-wrap":
         return "optional-boolean";
       case "boolean-value":
+      case "array-word64-read":
         return "boolean";
       case "string-none":
       case "string-wrap":
@@ -2947,6 +2948,9 @@ export function cacheLoopProperties(
       case "array-write":
       case "array-store":
       case "array-fill":
+      case "array-word64-write":
+      case "array-word64-fill":
+      case "array-atomic-word64":
       case "string-write":
       case "number-string-cache":
       case "string-index-cache":

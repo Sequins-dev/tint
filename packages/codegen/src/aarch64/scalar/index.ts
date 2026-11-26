@@ -254,6 +254,7 @@ import {
   isNativeTypedArray,
   nativeTypedArray,
   typedArrayIntegerElements,
+  typedArrayNumericAtomics,
   typedArrayLayout,
   typedArrayMarker,
   typedArrayScale,
@@ -6729,6 +6730,10 @@ function emitModuleForms(
                 // Atomic operands convert like element writes (wordValue)
                 // and the index like an element read (arrayIndex).
                 op.kind === "array-atomic" ||
+                op.kind === "array-word64-read" ||
+                op.kind === "array-word64-write" ||
+                op.kind === "array-word64-fill" ||
+                op.kind === "array-atomic-word64" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
                 // Packed element accesses compare integer indices and cached
@@ -8457,6 +8462,10 @@ function emitModuleForms(
                   id = op.id;
                   type = "number";
                 }
+                break;
+              case "array-word64-read":
+                id = op.id;
+                type = "boolean";
                 break;
               case "error-message":
               case "general-kind":
@@ -13213,7 +13222,9 @@ function emitModuleForms(
               rm: index,
               scaled: true,
             });
-            if (scale === 2) emit({ op: "fcvt-d-s", rd: float, rn: float });
+            if (scale === 1) emit({ op: "fcvt-d-h", rd: float, rn: float });
+            else if (scale === 2)
+              emit({ op: "fcvt-d-s", rd: float, rn: float });
             return true;
           }
           // LDRSB/LDRSH/LDRSW sign-extend to 64 bits in the load itself.
@@ -13372,13 +13383,11 @@ function emitModuleForms(
           readonly operands: readonly number[];
         }): void {
           const type = value(op.array).type,
-            scale = type === "Uint8Array" ? 0 : type === "Uint16Array" ? 1 : 2,
+            array = typedArrayType(type),
+            layout = typedArrayLayout(array),
+            scale = typedArrayScale(type),
             width: MemoryAccessWidth = scale === 0 ? 8 : scale === 1 ? 16 : 32;
-          if (
-            type !== "Uint8Array" &&
-            type !== "Uint16Array" &&
-            type !== "Uint32Array"
-          )
+          if (!typedArrayNumericAtomics(array))
             throw "atomic array type invariant";
           // Operands convert first (possibly through a helper, which
           // clobbers scratch registers) and are staged in the result area.
@@ -13494,14 +13503,272 @@ function emitModuleForms(
           }
           const id = op.id;
           if (id === undefined) return;
-          // The previous element, zero-extended in x11.
+          // The previous element, zero-extended in x11; sign-extend for signed kinds.
+          const signed = layout.element === "signed";
+          if (signed)
+            emit({
+              op: "sbfm",
+              width: 64,
+              rd: 11,
+              rn: 11,
+              immr: 0,
+              imms: width - 1,
+            });
           if (wantsInteger(id)) {
             saveRaw(11, id);
             markInteger(id);
           } else {
             const target = floatTarget(id, 0);
-            emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+            if (signed) emit({ op: "scvtf-d-x", rd: target, rn: 11 });
+            else emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
             floatStore(target, id);
+          }
+        }
+        function arrayWord64Read(op: {
+          readonly id: number;
+          readonly array: number;
+          readonly index: number;
+          readonly scratch: number;
+        }): void {
+          const readIndex = arrayIndex(op.array, op.index);
+          const invalid = instructions.length;
+          emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+          emit({
+            op: "ldr-indexed",
+            size: 3,
+            fp: false,
+            rt: 11,
+            rn: 10,
+            rm: readIndex,
+            scaled: true,
+          });
+          rawValue(12, op.scratch);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 12,
+            rn: 12,
+            offset: nativeArrayDataOffset,
+          });
+          emit({ op: "str", width: 64, rt: 11, rn: 12, offset: 0 });
+          patchInstruction(invalid, {
+            op: "cbz",
+            width: 32,
+            rt: 13,
+            displacement: (instructions.length - invalid) * 4,
+          });
+          saveRaw(13, op.id);
+        }
+        function arrayWord64Write(op: {
+          readonly array: number;
+          readonly index: number;
+          readonly scratch: number;
+        }): void {
+          const storeIndex = arrayIndex(op.array, op.index);
+          const invalid = instructions.length;
+          emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+          rawValue(12, op.scratch);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 12,
+            rn: 12,
+            offset: nativeArrayDataOffset,
+          });
+          emit({ op: "ldr", width: 64, rt: 11, rn: 12, offset: 0 });
+          emit({
+            op: "str-indexed",
+            size: 3,
+            fp: false,
+            rt: 11,
+            rn: 10,
+            rm: storeIndex,
+            scaled: true,
+          });
+          patchInstruction(invalid, {
+            op: "cbz",
+            width: 32,
+            rt: 13,
+            displacement: (instructions.length - invalid) * 4,
+          });
+        }
+        function arrayWord64Fill(op: {
+          readonly array: number;
+          readonly scratch: number;
+          readonly from: number;
+          readonly to: number;
+        }): void {
+          rawValue(9, op.scratch);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 9,
+            rn: 9,
+            offset: nativeArrayDataOffset,
+          });
+          emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
+          rawStore(9, resultOffset + 24);
+          intOperand(op.from, 10);
+          intOperand(op.to, 11);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 1,
+            rn: 11,
+            rm: 10,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          const empty = instructions.length;
+          emit({ op: "b.cond", condition: "le", displacement: 0 });
+          rawValue(12, op.array);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 12,
+            rn: 12,
+            offset: nativeArrayDataOffset,
+          });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 0,
+            rn: 12,
+            rm: 10,
+            shift: "lsl",
+            amount: 3,
+            setFlags: false,
+          });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 1,
+            rn: "zr",
+            rm: 1,
+            shift: "lsl",
+            amount: 3,
+            setFlags: false,
+          });
+          rawLoad(2, resultOffset + 24);
+          callHelper("array-fill");
+          patchInstruction(empty, {
+            op: "b.cond",
+            condition: "le",
+            displacement: (instructions.length - empty) * 4,
+          });
+        }
+        function arrayAtomicWord64(op: {
+          readonly operation: ArrayAtomicOperation;
+          readonly array: number;
+          readonly index: number;
+          readonly scratch: number;
+        }): void {
+          const index = arrayIndex(op.array, op.index);
+          emit({ op: "cbnz", width: 32, rt: 13, displacement: 8 });
+          emit({ op: "brk", immediate: 3 });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            rm: index,
+            shift: "lsl",
+            amount: 3,
+            setFlags: false,
+          });
+          rawValue(13, op.scratch);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 13,
+            rn: 13,
+            offset: nativeArrayDataOffset,
+          });
+          rawStore(13, resultOffset + 16);
+          if (op.operation !== "load") {
+            emit({ op: "ldr", width: 64, rt: 14, rn: 13, offset: 0 });
+            if (op.operation === "compare-exchange")
+              emit({ op: "ldr", width: 64, rt: 15, rn: 13, offset: 8 });
+          }
+          if (op.operation === "add" && options.hostABI?.os === "darwin") {
+            emit({ op: "ldaddal", width: 64, rs: 14, rt: 11, rn: 10 });
+          } else {
+            emit({ op: "dmb", domain: "ish" });
+            if (op.operation === "load")
+              emit({ op: "ldar", width: 64, rt: 11, rn: 10 });
+            else if (op.operation === "store")
+              emit({ op: "stlr", width: 64, rt: 14, rn: 10 });
+            else {
+              const exchange = op.operation === "compare-exchange";
+              const loop = instructions.length;
+              emit({ op: "ldaxr", width: 64, rt: 11, rn: 10 });
+              let mismatch = -1;
+              if (exchange) {
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 11,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                mismatch = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+              } else if (op.operation === "add" || op.operation === "sub")
+                emit({
+                  op: op.operation === "add" ? "add-reg" : "sub-reg",
+                  width: 64,
+                  rd: 12,
+                  rn: 11,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+              else if (op.operation !== "exchange") {
+                const combine: "and-reg" | "orr-reg" | "eor-reg" =
+                  op.operation === "and"
+                    ? "and-reg"
+                    : op.operation === "or"
+                      ? "orr-reg"
+                      : "eor-reg";
+                emit({ op: combine, width: 64, rd: 12, rn: 11, rm: 14 });
+              }
+              const written: number = exchange
+                ? 15
+                : op.operation === "exchange"
+                  ? 14
+                  : 12;
+              emit({ op: "stlxr", width: 64, rs: 13, rt: written, rn: 10 });
+              emit({
+                op: "cbnz",
+                width: 32,
+                rt: 13,
+                displacement: (loop - instructions.length) * 4,
+              });
+              if (exchange) {
+                const over = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchInstruction(mismatch, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - mismatch) * 4,
+                });
+                emit({ op: "clrex" });
+                patchInstruction(over, {
+                  op: "b",
+                  displacement: (instructions.length - over) * 4,
+                });
+              }
+            }
+            emit({ op: "dmb", domain: "ish" });
+          }
+          if (op.operation !== "store") {
+            rawLoad(13, resultOffset + 16);
+            emit({ op: "str", width: 64, rt: 11, rn: 13, offset: 0 });
           }
         }
         function arrayView(op: {
@@ -15018,7 +15285,8 @@ function emitModuleForms(
                           later.value === sOp.value &&
                           later.index !== sOp.value &&
                           (value(later.array).type === "Float64Array" ||
-                            value(later.array).type === "Float32Array")) ||
+                            value(later.array).type === "Float32Array" ||
+                            value(later.array).type === "Float16Array")) ||
                         (later.kind === "binary" &&
                           ["+", "-", "*", "/", "min", "max"].includes(
                             later.operator,
@@ -16880,6 +17148,18 @@ function emitModuleForms(
                 break;
               case "array-atomic":
                 arrayAtomic(op);
+                break;
+              case "array-word64-read":
+                arrayWord64Read(op);
+                break;
+              case "array-word64-write":
+                arrayWord64Write(op);
+                break;
+              case "array-word64-fill":
+                arrayWord64Fill(op);
+                break;
+              case "array-atomic-word64":
+                arrayAtomicWord64(op);
                 break;
               case "array-buffer-byte-length":
                 rawValue(10, op.buffer);
@@ -24309,8 +24589,9 @@ function emitModuleForms(
                   // its owner's.
                   const input = op.arguments[0];
                   if (input === undefined) throw "array detach invariant";
-                  const skips: { at: number; condition: "ne" | "hi" }[] = [];
-                  function skip(condition: "ne" | "hi"): void {
+                  const skips: { at: number; condition: "ne" | "hi" | "cs" }[] =
+                    [];
+                  function skip(condition: "ne" | "hi" | "cs"): void {
                     skips.push({ at: instructions.length, condition });
                     emit({ op: "b.cond", condition, displacement: 0 });
                   }
@@ -24336,6 +24617,24 @@ function emitModuleForms(
                     rn: 10,
                     immr: 0,
                     imms: 47,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: nativeBuiltinMarkerLimit,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  skip("cs");
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    immr: 0,
+                    imms: 2,
                   });
                   emit({
                     op: "sub-imm",
@@ -28188,7 +28487,12 @@ function emitModuleForms(
                   let value = 0;
                   if (storedAsInteger(storeVal)) floatLoad(0, storeVal);
                   else value = floatOperand(storeVal, 0);
-                  if (scale === 2) {
+                  if (scale === 1) {
+                    // ECMAScript's Float16 conversion rounds to nearest,
+                    // ties to even, as FCVT does.
+                    emit({ op: "fcvt-h-d", rd: 0, rn: value });
+                    value = 0;
+                  } else if (scale === 2) {
                     // ECMAScript's Float32 conversion rounds to nearest,
                     // ties to even, as FCVT does.
                     emit({ op: "fcvt-s-d", rd: 0, rn: value });
@@ -28283,7 +28587,8 @@ function emitModuleForms(
                   } else rawValue(9, op.value);
                 } else if (element === "float") {
                   floatLoad(0, op.value);
-                  emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                  if (scale === 1) emit({ op: "fcvt-h-d", rd: 0, rn: 0 });
+                  else emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
                   emit({ op: "fmov-w-s", rd: 9, rn: 0 });
                 } else if (element === "clamped") clampedValue(op.value);
                 else wordValue(op.value);
@@ -28374,7 +28679,8 @@ function emitModuleForms(
                   } else rawValue(9, op.value);
                 } else if (element === "float") {
                   floatLoad(0, op.value);
-                  emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                  if (scale === 1) emit({ op: "fcvt-h-d", rd: 0, rn: 0 });
+                  else emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
                   emit({ op: "fmov-w-s", rd: 9, rn: 0 });
                 } else if (element === "clamped") clampedValue(op.value);
                 else wordValue(op.value);

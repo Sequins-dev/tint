@@ -37,13 +37,9 @@ import {
   isNativeTypedArrayKind,
   type DynamicPayloadRejection,
 } from "../types/index.ts";
-/** Typed arrays without a native representation (see
- * nativeTypedArrayKinds): realm objects on the typed path. */
-export const realmOnlyTypedArrays: readonly string[] = [
-  "Float16Array",
-  "BigInt64Array",
-  "BigUint64Array",
-];
+/** Typed arrays without a native representation (currently none; every
+ * ECMAScript typed-array kind has a native representation). */
+export const realmOnlyTypedArrays: readonly string[] = [];
 export function withRealmGlobals(globals: readonly string[]): string[] {
   const result = globals.slice();
   for (const entry of realmLibrary) {
@@ -227,8 +223,11 @@ export function resolveInterfaceTypes(
     { kind: "Int8Array" },
     { kind: "Uint8ClampedArray" },
     { kind: "Int16Array" },
+    { kind: "Float16Array" },
     { kind: "Int32Array" },
     { kind: "Float32Array" },
+    { kind: "BigInt64Array" },
+    { kind: "BigUint64Array" },
     { kind: "SharedArrayBuffer" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(

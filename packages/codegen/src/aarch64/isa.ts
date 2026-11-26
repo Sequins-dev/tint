@@ -148,9 +148,9 @@ export type Instruction =
       readonly rd: number;
       readonly rn: DataRegister;
     }
-  /** FCVT between double and single precision (C float arguments). */
+  /** FCVT between double, single and half precision. */
   | {
-      readonly op: "fcvt-s-d" | "fcvt-d-s";
+      readonly op: "fcvt-s-d" | "fcvt-d-s" | "fcvt-h-d" | "fcvt-d-h";
       readonly rd: number;
       readonly rn: number;
     }
@@ -760,11 +760,21 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       return word(0x1e260000 + i.rn * 32 + rd);
     }
     case "fcvt-s-d":
-    case "fcvt-d-s": {
+    case "fcvt-d-s":
+    case "fcvt-h-d":
+    case "fcvt-d-h": {
       if (!integer(i.rd, 0, 31) || !integer(i.rn, 0, 31))
         return fail("INVALID_REGISTER");
       return word(
-        (i.op === "fcvt-s-d" ? 0x1e624000 : 0x1e22c000) + i.rn * 32 + i.rd,
+        (i.op === "fcvt-s-d"
+          ? 0x1e624000
+          : i.op === "fcvt-d-s"
+            ? 0x1e22c000
+            : i.op === "fcvt-h-d"
+              ? 0x1e63c000
+              : 0x1ee2c000) +
+          i.rn * 32 +
+          i.rd,
       );
     }
     case "ldr-q":
@@ -1205,7 +1215,7 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (rn < 0 || rm < 0) return fail("INVALID_REGISTER");
       if (i.size !== 0 && i.size !== 1 && i.size !== 2 && i.size !== 3)
         return fail("INVALID_WIDTH");
-      if (i.fp ? i.size < 2 || !integer(i.rt, 0, 31) : false)
+      if (i.fp ? i.size < 1 || !integer(i.rt, 0, 31) : false)
         return fail("INVALID_WIDTH");
       if (i.signed === true && (i.op !== "ldr-indexed" || i.fp || i.size === 3))
         return fail("INVALID_WIDTH");

@@ -742,14 +742,46 @@ test("LDR/STR register offset encodes scaled and unscaled index forms", () => {
       },
       0xb86c7beb,
     ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 1,
+        fp: true,
+        rt: 0,
+        rn: 1,
+        rm: 2,
+        scaled: true,
+      },
+      0x7c627820,
+    ],
+    [
+      {
+        op: "str-indexed",
+        size: 1,
+        fp: true,
+        rt: 0,
+        rn: 1,
+        rm: 2,
+        scaled: true,
+      },
+      0x7c227820,
+    ],
   ];
   for (const [instruction, value] of cases)
     assert.deepEqual(encode(instruction), { ok: true, value });
-  // FP transfers are words or doublewords only; the index cannot be SP.
+  assert.deepEqual(encode({ op: "fcvt-h-d", rd: 0, rn: 1 }), {
+    ok: true,
+    value: 0x1e63c020,
+  });
+  assert.deepEqual(encode({ op: "fcvt-d-h", rd: 2, rn: 3 }), {
+    ok: true,
+    value: 0x1ee2c062,
+  });
+  // FP transfers are halfwords, words or doublewords only; the index cannot be SP.
   assert.equal(
     encode({
       op: "ldr-indexed",
-      size: 1,
+      size: 0,
       fp: true,
       rt: 0,
       rn: 1,

@@ -95,14 +95,20 @@ export {
 } from "./word-facts.ts";
 export { functionHeader, activationFieldType } from "./model.ts";
 import { activationFieldType } from "./model.ts";
-import { isNativeTypedArray } from "./typed-arrays.ts";
+import {
+  isNativeTypedArray,
+  typedArrayBigIntElements,
+  typedArrayNumericAtomics,
+} from "./typed-arrays.ts";
 export {
   isNativeTypedArray,
   nativeTypedArray,
   nativeTypedArrays,
+  typedArrayBigIntElements,
   typedArrayIntegerElements,
   typedArrayLayout,
   typedArrayMarker,
+  typedArrayNumericAtomics,
   typedArrayScale,
 } from "./typed-arrays.ts";
 import { instructionResult } from "./operands.ts";
@@ -1486,7 +1492,7 @@ export function verify(
               break;
             case "array-atomic": {
               const type = use(op.array);
-              if (!["Uint8Array", "Uint16Array", "Uint32Array"].includes(type))
+              if (!typedArrayNumericAtomics(type))
                 fail("TYPE", "atomics require a native integer array");
               equal(use(op.index), "number");
               for (const operand of op.operands) equal(use(operand), "number");
@@ -1502,6 +1508,26 @@ export function verify(
               if ((op.id === undefined) !== (op.operation === "store"))
                 fail("VALUE", "only an atomic store has no result");
               if (op.id !== undefined) define(op.id, "number");
+              break;
+            }
+            case "array-word64-read":
+            case "array-word64-write":
+            case "array-atomic-word64": {
+              const type = use(op.array);
+              if (!typedArrayBigIntElements(type))
+                fail("TYPE", "word64 array op requires a BigInt typed array");
+              equal(use(op.index), "number");
+              equal(use(op.scratch), "Uint32Array");
+              if (op.kind === "array-word64-read") define(op.id, "boolean");
+              break;
+            }
+            case "array-word64-fill": {
+              const type = use(op.array);
+              if (!typedArrayBigIntElements(type))
+                fail("TYPE", "word64 fill requires a BigInt typed array");
+              equal(use(op.scratch), "Uint32Array");
+              equal(use(op.from), "number");
+              equal(use(op.to), "number");
               break;
             }
             case "weak-slot-new":
@@ -1895,22 +1921,32 @@ export function verify(
               define(op.id, "boolean");
               break;
             }
-            case "array-fill":
-              if (!isNativeTypedArray(use(op.array)))
-                fail("TYPE", "bulk fill requires a typed array");
+            case "array-fill": {
+              const arrayType = use(op.array);
+              if (
+                !isNativeTypedArray(arrayType) ||
+                typedArrayBigIntElements(arrayType)
+              )
+                fail("TYPE", "bulk fill requires a numeric typed array");
               equal(use(op.value), "number");
               equal(use(op.from), "number");
               equal(use(op.to), "number");
               break;
+            }
             case "array-valid":
             case "array-read":
             case "array-element":
             case "array-write":
-            case "array-store":
-              if (!isNativeTypedArray(use(op.array)))
+            case "array-store": {
+              const arrayType = use(op.array);
+              if (
+                !isNativeTypedArray(arrayType) ||
+                (op.kind !== "array-valid" &&
+                  typedArrayBigIntElements(arrayType))
+              )
                 fail(
                   "TYPE",
-                  "array operand must be an unsigned integer typed array",
+                  "array operand must be a supported numeric typed array",
                 );
               equal(use(op.index), "number");
               if (op.kind === "array-write" || op.kind === "array-store")
@@ -1925,6 +1961,7 @@ export function verify(
                       : "optional-number",
                 );
               break;
+            }
             case "undefined":
               define(op.id, "optional-number");
               break;

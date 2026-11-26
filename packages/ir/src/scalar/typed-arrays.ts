@@ -4,18 +4,20 @@ import {
 } from "@tint/abi/typed-array";
 import type { NativeTypedArray } from "./model.ts";
 
-/** Every typed-array kind with a native scalar representation. The BigInt
- * kinds are not among them: their elements need a BigInt representation. */
+/** Every typed-array kind with a native scalar representation. */
 export const nativeTypedArrays: readonly NativeTypedArray[] = [
   "Uint8Array",
   "Int8Array",
   "Uint8ClampedArray",
   "Uint16Array",
   "Int16Array",
+  "Float16Array",
   "Uint32Array",
   "Int32Array",
   "Float32Array",
   "Float64Array",
+  "BigInt64Array",
+  "BigUint64Array",
 ];
 
 /** The native typed-array kind a scalar type names, if it names one. */
@@ -35,6 +37,8 @@ export function nativeTypedArray(
       return "Uint16Array";
     case "Int16Array":
       return "Int16Array";
+    case "Float16Array":
+      return "Float16Array";
     case "Uint32Array":
       return "Uint32Array";
     case "Int32Array":
@@ -43,6 +47,10 @@ export function nativeTypedArray(
       return "Float32Array";
     case "Float64Array":
       return "Float64Array";
+    case "BigInt64Array":
+      return "BigInt64Array";
+    case "BigUint64Array":
+      return "BigUint64Array";
     default:
       return undefined;
   }
@@ -61,10 +69,33 @@ export function typedArrayLayout(type: NativeTypedArray): NativeTypedArrayKind {
   return entry;
 }
 
-/** Whether a typed array's elements are 32-bit integers (signed or
- * unsigned, never -0) rather than floating-point numbers. */
+/** Whether a typed array's elements are 8/16/32-bit numeric integers (signed
+ * or unsigned, never -0) rather than floating-point or 64-bit BigInt. */
 export function typedArrayIntegerElements(type: NativeTypedArray): boolean {
-  return type !== "Float32Array" && type !== "Float64Array";
+  return (
+    type !== "Float16Array" &&
+    type !== "Float32Array" &&
+    type !== "Float64Array" &&
+    type !== "BigInt64Array" &&
+    type !== "BigUint64Array"
+  );
+}
+
+/** Whether a typed array's elements are 64-bit BigInts. */
+export function typedArrayBigIntElements(type: string | undefined): boolean {
+  return type === "BigInt64Array" || type === "BigUint64Array";
+}
+
+/** Whether a typed array supports 8/16/32-bit numeric Atomics (array-atomic). */
+export function typedArrayNumericAtomics(type: string | undefined): boolean {
+  return (
+    type === "Uint8Array" ||
+    type === "Int8Array" ||
+    type === "Uint16Array" ||
+    type === "Int16Array" ||
+    type === "Uint32Array" ||
+    type === "Int32Array"
+  );
 }
 
 /** log2 of a typed array's element bytes (an address scale). */

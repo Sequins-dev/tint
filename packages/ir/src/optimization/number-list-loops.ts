@@ -167,7 +167,12 @@ function matchReadHelper(
         op.kind === "host-call" ||
         op.kind === "array-write" ||
         op.kind === "array-store" ||
-        op.kind === "array-fill"
+        op.kind === "array-fill" ||
+        op.kind === "array-atomic" ||
+        op.kind === "array-word64-read" ||
+        op.kind === "array-word64-write" ||
+        op.kind === "array-word64-fill" ||
+        op.kind === "array-atomic-word64"
       )
         return undefined;
     }
@@ -316,7 +321,12 @@ function matchHasHelper(
         op.kind === "host-call" ||
         op.kind === "array-write" ||
         op.kind === "array-store" ||
-        op.kind === "array-fill"
+        op.kind === "array-fill" ||
+        op.kind === "array-atomic" ||
+        op.kind === "array-word64-read" ||
+        op.kind === "array-word64-write" ||
+        op.kind === "array-word64-fill" ||
+        op.kind === "array-atomic-word64"
       )
         return undefined;
     }

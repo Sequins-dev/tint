@@ -1707,10 +1707,176 @@ export function emitModule(
       if (id === undefined) return;
       // A compare-exchange that stored leaves its comparand in eax, whose
       // ToUint32 conversion may have left bits above it in rax.
-      if (bits === 32) emit({ op: "mov", dst: eax, src: eax });
+      const elementKind = typedArrayLayout(
+        typedArrayElements(typeOf(op.array)),
+      ).element;
+      if (elementKind === "signed")
+        emit({ op: "movsx", dst: rax, src: sized(0) });
+      else if (bits === 32) emit({ op: "mov", dst: eax, src: eax });
       else emit({ op: "movzx", dst: eax, src: sized(0) });
       numberBits();
       define(id, "number");
+    }
+    /** Tear-free 64-bit element read into a Uint32Array scratch buffer's low
+     * two words; returns whether the index was valid. */
+    function arrayWord64Read(op: {
+      readonly id: number;
+      readonly array: number;
+      readonly index: number;
+      readonly scratch: number;
+    }): void {
+      const invalid = fnLabel + ":word64-read:" + String(instructionCount);
+      const done = invalid + ":done";
+      exactInteger(emit, frame(home(op.index)), r9, invalid);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
+      branch(emit, "ae", invalid);
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "mov",
+        dst: rax,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+        },
+      });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.scratch)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({ op: "mov", dst: mem(11, 0), src: rax });
+      emit({ op: "mov", dst: eax, src: imm(1) });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "label", name: done });
+      define(op.id, "boolean");
+    }
+    /** Tear-free 64-bit element write from a Uint32Array scratch buffer's low
+     * two words. */
+    function arrayWord64Write(op: {
+      readonly array: number;
+      readonly index: number;
+      readonly scratch: number;
+    }): void {
+      const done = fnLabel + ":word64-write:" + String(instructionCount);
+      exactInteger(emit, frame(home(op.index)), r9, done);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
+      branch(emit, "ae", done);
+      emit({ op: "mov", dst: r10, src: frame(home(op.scratch)) });
+      emit({ op: "mov", dst: r10, src: mem(10, nativeArrayDataOffset) });
+      emit({ op: "mov", dst: rax, src: mem(10, 0) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "mov",
+        dst: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+        },
+        src: rax,
+      });
+      emit({ op: "label", name: done });
+    }
+    /** Fill [from, to) of an 8-byte typed array with the 64-bit word staged in
+     * `op.scratch`. */
+    function arrayWord64Fill(op: {
+      readonly array: number;
+      readonly scratch: number;
+      readonly from: number;
+      readonly to: number;
+    }): void {
+      const site = fnLabel + ":word64-fill:" + String(instructionCount);
+      const done = site + ":done";
+      const loop = site + ":loop";
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.from)) });
+      emit({ op: "cvttsd2si", dst: r10, src: frame(home(op.to)) });
+      emit({ op: "sub", dst: r10, src: r9 });
+      branch(emit, "le", done);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.scratch)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({ op: "mov", dst: rax, src: mem(11, 0) });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "lea",
+        dst: scratch,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+        },
+      });
+      emit({ op: "label", name: loop });
+      emit({ op: "mov", dst: mem(11, 0), src: rax });
+      emit({ op: "add", dst: scratch, src: imm(8) });
+      emit({ op: "dec", dst: r10 });
+      branch(emit, "ne", loop);
+      emit({ op: "label", name: done });
+    }
+    /** Sequentially consistent 64-bit Atomics operation on BigInt64Array /
+     * BigUint64Array using `op.scratch` words [0..1] (and [2..3] for
+     * compare-exchange replacement) for operand/result exchange. */
+    function arrayAtomicWord64(op: {
+      readonly operation: ArrayAtomicOperation;
+      readonly array: number;
+      readonly index: number;
+      readonly scratch: number;
+    }): void {
+      const rcx = gpr(1);
+      exactInteger(emit, frame(home(op.index)), r9, trapLabel);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
+      branch(emit, "ae", trapLabel);
+      if (op.operation !== "load") {
+        emit({ op: "mov", dst: r10, src: frame(home(op.scratch)) });
+        emit({ op: "mov", dst: r10, src: mem(10, nativeArrayDataOffset) });
+        emit({ op: "mov", dst: rax, src: mem(10, 0) });
+        if (op.operation === "compare-exchange")
+          emit({ op: "mov", dst: r10, src: mem(10, 8) });
+      }
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      const element: Memory<64> = {
+        kind: "mem",
+        width: 64,
+        address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+      };
+      switch (op.operation) {
+        case "load":
+          emit({ op: "mov", dst: rax, src: element });
+          break;
+        case "store":
+        case "exchange":
+          emit({ op: "xchg", dst: element, src: rax });
+          break;
+        case "add":
+        case "sub":
+          if (op.operation === "sub") emit({ op: "neg", dst: rax });
+          emit({ op: "lock-xadd", dst: element, src: rax });
+          break;
+        case "compare-exchange":
+          emit({ op: "lock-cmpxchg", dst: element, src: r10 });
+          break;
+        default: {
+          const retry =
+            fnLabel + ":atomic64:" + String(instructionCount) + ":retry";
+          emit({ op: "mov", dst: r10, src: rax });
+          emit({ op: "mov", dst: rax, src: element });
+          emit({ op: "label", name: retry });
+          emit({ op: "mov", dst: rcx, src: rax });
+          if (op.operation === "and") emit({ op: "and", dst: rcx, src: r10 });
+          else if (op.operation === "or")
+            emit({ op: "or", dst: rcx, src: r10 });
+          else emit({ op: "xor", dst: rcx, src: r10 });
+          emit({ op: "lock-cmpxchg", dst: element, src: rcx });
+          branch(emit, "ne", retry);
+        }
+      }
+      if (op.operation !== "store") {
+        emit({ op: "mov", dst: scratch, src: frame(home(op.scratch)) });
+        emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+        emit({ op: "mov", dst: mem(11, 0), src: rax });
+      }
     }
     function arrayElement(
       op:
@@ -1744,7 +1910,10 @@ export function emitModule(
       if (op.kind === "array-write" || op.kind === "array-store") {
         if (width === 8)
           emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
-        else if (element === "float") {
+        else if (element === "float" && width === 2) {
+          numbers.toFloat16(frame(home(op.value)));
+          emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+        } else if (element === "float") {
           // Float32 conversion rounds to nearest, ties to even (MXCSR).
           emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
           float32Bits(emit, eax, x0);
@@ -1803,6 +1972,14 @@ export function emitModule(
             branch(emit, "np", done);
             emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
           }
+        } else if (element === "float" && width === 2) {
+          // Widening gives a quiet NaN, never optional-number absence.
+          emit({
+            op: "movzx",
+            dst: eax,
+            src: { kind: "mem", width: 16, address },
+          });
+          numbers.fromFloat16();
         } else if (element === "float") {
           // Widening gives a quiet NaN, never optional-number absence.
           emit({
@@ -1883,6 +2060,8 @@ export function emitModule(
         element = typedArrayLayout(typedArrayElements(type)).element;
       if (width === 8)
         emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+      else if (element === "float" && width === 2)
+        numbers.toFloat16(frame(home(op.value)));
       else if (element === "float") {
         emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
         float32Bits(emit, eax, x0);
@@ -3277,6 +3456,9 @@ export function emitModule(
             emit({ op: "mov", dst: rdx, src: rax });
             emit({ op: "shl", dst: rdx, count: 16 });
             emit({ op: "shr", dst: rdx, count: 16 });
+            emit({ op: "cmp", dst: rdx, src: imm(nativeBuiltinMarkerLimit) });
+            branch(emit, "ae", done);
+            emit({ op: "and", dst: rdx, src: imm(7) });
             emit({ op: "sub", dst: rdx, src: imm(2) });
             emit({ op: "cmp", dst: rdx, src: imm(3) });
             branch(emit, "a", done);
@@ -3572,6 +3754,10 @@ export function emitModule(
           if (host === undefined) break;
           arrayAtomic(op);
           return;
+        case "array-atomic-word64":
+          if (host === undefined) break;
+          arrayAtomicWord64(op);
+          return;
         case "array-buffer-byte-length":
           if (host === undefined) break;
           emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
@@ -3625,6 +3811,18 @@ export function emitModule(
         case "array-fill":
           if (host === undefined) break;
           arrayFill(op);
+          return;
+        case "array-word64-read":
+          if (host === undefined) break;
+          arrayWord64Read(op);
+          return;
+        case "array-word64-write":
+          if (host === undefined) break;
+          arrayWord64Write(op);
+          return;
+        case "array-word64-fill":
+          if (host === undefined) break;
+          arrayWord64Fill(op);
           return;
         case "string-none":
           emit({ op: "xor", dst: eax, src: eax });

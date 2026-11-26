@@ -4,6 +4,7 @@ import {
   nativeWorkerStopObserved,
   nativeWorkerStopRequested,
   nativeWorkerStopStateOffset,
+  nativeWorkerWaitTicketOffset,
   nativeWorkerStackBytesOffset,
   nativeWorkerHeapBytesOffset,
 } from "@tint/abi/host";
@@ -75,6 +76,8 @@ export interface NativeWorkerLifecycle {
 export interface NativeWorkerTurnControl {
   /** Borrowed descriptor. Register and unref it to wake the worker's poll. */
   readonly input: number;
+  /** Raw address of this worker's lifecycle record (stop state + wait ticket). */
+  readonly recordBase: number;
   stopRequested(): boolean;
   readonly waiters: NativeWaitRegistry | undefined;
   readonly engine: NativeWorkerEngineGrant | undefined;
@@ -118,7 +121,7 @@ const CONTROL_INPUT = 64;
 const WAIT_REGISTRY = 80;
 const WAIT_REGISTRY_BYTES = 88;
 const WAIT_ENGINE = 96;
-const WAIT_TICKET = 104;
+const WAIT_TICKET = nativeWorkerWaitTicketOffset;
 const PARENT_PORT = 112;
 const PORT_SIDE = 120;
 const PORT_GENERATION = 128;
@@ -432,6 +435,7 @@ export function runNativeWorker(
         };
   const control: NativeWorkerTurnControl = {
     input: readNumber(memory, record, CONTROL_INPUT, scratch),
+    recordBase: record.base,
     stopRequested,
     waiters,
     engine,

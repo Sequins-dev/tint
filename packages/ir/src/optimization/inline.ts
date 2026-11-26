@@ -154,6 +154,10 @@ function supported(
     case "array-store":
     case "array-fill":
     case "array-atomic":
+    case "array-word64-read":
+    case "array-word64-write":
+    case "array-word64-fill":
+    case "array-atomic-word64":
     // Tag tests and payload views of general values are pure inline
     // sequences (a mismatched checked view traps).
     case "general-is":
@@ -1552,6 +1556,42 @@ export function inlineSmallFunctions(
                   array: value(instruction.array),
                   index: value(instruction.index),
                   operands: instruction.operands.map(value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-word64-read":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  scratch: value(instruction.scratch),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-word64-write":
+              case "array-atomic-word64":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  scratch: value(instruction.scratch),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-word64-fill":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  scratch: value(instruction.scratch),
+                  from: value(instruction.from),
+                  to: value(instruction.to),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

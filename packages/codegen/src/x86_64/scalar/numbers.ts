@@ -14,7 +14,9 @@ import {
 const eax = word(0);
 const ecx = word(1);
 const edx = word(2);
+const r11d = word(11);
 const rax = gpr(0);
+const rcx = gpr(1);
 const rdx = gpr(2);
 const r10 = gpr(10);
 const r11 = gpr(11);
@@ -24,6 +26,8 @@ const x2 = xmm(2);
 const x3 = xmm(3);
 const toWordLabel = "number-to-word";
 const remainderLabel = "number-remainder";
+const toFloat16Label = "number-to-float16";
+const fromFloat16Label = "float16-to-number";
 
 export function floatBits(emit: Emit, dst: Gpr<64>, src: Xmm): void {
   const insn: {
@@ -79,18 +83,33 @@ interface NumberEmission {
     right: Memory<64>,
   ) => boolean;
   readonly toWord: (src: Memory<64>) => void;
+  readonly toFloat16: (src: Memory<64>) => void;
+  readonly fromFloat16: () => void;
   readonly helpers: () => void;
 }
 
 export function createNumberEmission(emit: Emit): NumberEmission {
   let needsWord = false,
     needsRemainder = false,
+    needsToFloat16 = false,
+    needsFromFloat16 = false,
     nextLabel = 0;
 
   function toWord(src: Memory<64>): void {
     needsWord = true;
     emit({ op: "mov", dst: rax, src });
     emit({ op: "call", target: label(toWordLabel) });
+  }
+
+  function toFloat16(src: Memory<64>): void {
+    needsToFloat16 = true;
+    emit({ op: "mov", dst: rax, src });
+    emit({ op: "call", target: label(toFloat16Label) });
+  }
+
+  function fromFloat16(): void {
+    needsFromFloat16 = true;
+    emit({ op: "call", target: label(fromFloat16Label) });
   }
 
   function unary(operator: string, src: Memory<64>): boolean {
@@ -307,8 +326,10 @@ export function createNumberEmission(emit: Emit): NumberEmission {
   function helpers(): void {
     if (needsWord) emitToWord(emit);
     if (needsRemainder) emitRemainder(emit);
+    if (needsToFloat16) emitToFloat16(emit);
+    if (needsFromFloat16) emitFromFloat16(emit);
   }
-  return { unary, binary, toWord, helpers };
+  return { unary, binary, toWord, toFloat16, fromFloat16, helpers };
 }
 
 /** Truncate binary64 and return the low 32 bits, without a trapping conversion.
@@ -410,5 +431,132 @@ function emitRemainder(emit: Emit): void {
   emit({ op: "label", name: invalid });
   emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
   bitsFloat(emit, x0, rax);
+  emit({ op: "ret" });
+}
+
+/** Convert IEEE-754 binary64 bits in RAX to IEEE-754 binary16 bits in EAX
+ * using exact round-to-nearest, ties-to-even (no double rounding). Preserves
+ * R9 and R10. */
+function emitToFloat16(emit: Emit): void {
+  const subnormal = toFloat16Label + ":subnormal";
+  const underflow = toFloat16Label + ":underflow";
+  const overflow = toFloat16Label + ":overflow";
+  const special = toFloat16Label + ":special";
+  emit({ op: "label", name: toFloat16Label });
+  emit({ op: "mov", dst: r11, src: rax });
+  emit({ op: "shr", dst: r11, count: 48 });
+  emit({ op: "and", dst: r11d, src: imm(0x8000) });
+  emit({ op: "shl", dst: rax, count: 1 });
+  emit({ op: "shr", dst: rax, count: 1 });
+  emit({ op: "mov", dst: rdx, src: rax });
+  emit({ op: "shr", dst: rdx, count: 52 });
+  emit({ op: "shl", dst: rax, count: 12 });
+  emit({ op: "shr", dst: rax, count: 12 });
+  emit({ op: "cmp", dst: edx, src: imm(2047) });
+  emit({ op: "jcc", cc: "e", target: label(special) });
+  emit({ op: "cmp", dst: edx, src: imm(1039) });
+  emit({ op: "jcc", cc: "ae", target: label(overflow) });
+  emit({ op: "cmp", dst: edx, src: imm(1009) });
+  emit({ op: "jcc", cc: "b", target: label(subnormal) });
+  // Normal binary16: biased exponent 1..30. Adding (2^41 - 1) + lsb rounds
+  // to nearest ties-to-even and carries naturally into exponent (and Infinity).
+  emit({ op: "sub", dst: edx, src: imm(1008) });
+  emit({ op: "shl", dst: edx, count: 10 });
+  emit({ op: "mov", dst: rcx, src: rax });
+  emit({ op: "shr", dst: rcx, count: 42 });
+  emit({ op: "and", dst: ecx, src: imm(1) });
+  emit({ op: "add", dst: rax, src: rcx });
+  emit({ op: "mov", dst: rcx, src: bits(0xffffffff, 0x000001ff) });
+  emit({ op: "add", dst: rax, src: rcx });
+  emit({ op: "shr", dst: rax, count: 42 });
+  emit({ op: "add", dst: eax, src: edx });
+  emit({ op: "or", dst: eax, src: r11d });
+  emit({ op: "ret" });
+  emit({ op: "label", name: subnormal });
+  emit({ op: "cmp", dst: edx, src: imm(998) });
+  emit({ op: "jcc", cc: "b", target: label(underflow) });
+  emit({ op: "mov", dst: ecx, src: imm(1051) });
+  emit({ op: "sub", dst: ecx, src: edx });
+  emit({ op: "mov", dst: rdx, src: bits(0, 0x00100000) });
+  emit({ op: "or", dst: rax, src: rdx });
+  emit({ op: "mov", dst: rdx, src: rax });
+  emit({ op: "shr", dst: rdx, count: "cl" });
+  emit({ op: "and", dst: edx, src: imm(1) });
+  emit({ op: "add", dst: rax, src: rdx });
+  emit({ op: "dec", dst: ecx });
+  emit({ op: "mov", dst: edx, src: imm(1) });
+  emit({ op: "shl", dst: rdx, count: "cl" });
+  emit({ op: "dec", dst: rdx });
+  emit({ op: "add", dst: rax, src: rdx });
+  emit({ op: "inc", dst: ecx });
+  emit({ op: "shr", dst: rax, count: "cl" });
+  emit({ op: "or", dst: eax, src: r11d });
+  emit({ op: "ret" });
+  emit({ op: "label", name: underflow });
+  emit({ op: "mov", dst: eax, src: r11d });
+  emit({ op: "ret" });
+  emit({ op: "label", name: overflow });
+  emit({ op: "mov", dst: eax, src: imm(0x7c00) });
+  emit({ op: "or", dst: eax, src: r11d });
+  emit({ op: "ret" });
+  emit({ op: "label", name: special });
+  emit({ op: "test", dst: rax, src: rax });
+  emit({ op: "jcc", cc: "e", target: label(overflow) });
+  emit({ op: "mov", dst: eax, src: imm(0x7e00) });
+  emit({ op: "or", dst: eax, src: r11d });
+  emit({ op: "ret" });
+}
+
+/** Widen IEEE-754 binary16 bits in EAX (zero-extended) to binary64 bits in
+ * RAX. Any binary16 NaN produces the canonical quiet NaN 0x7ff80000_00000000,
+ * never optional-number absence. Preserves R9 and R10. */
+function emitFromFloat16(emit: Emit): void {
+  const assemble = fromFloat16Label + ":assemble";
+  const zeroOrSub = fromFloat16Label + ":zero-or-sub";
+  const subnormal = fromFloat16Label + ":subnormal";
+  const norm = fromFloat16Label + ":norm";
+  const special = fromFloat16Label + ":special";
+  const nan = fromFloat16Label + ":nan";
+  emit({ op: "label", name: fromFloat16Label });
+  emit({ op: "mov", dst: r11d, src: eax });
+  emit({ op: "and", dst: r11d, src: imm(0x8000) });
+  emit({ op: "shl", dst: r11, count: 48 });
+  emit({ op: "mov", dst: edx, src: eax });
+  emit({ op: "shr", dst: edx, count: 10 });
+  emit({ op: "and", dst: edx, src: imm(31) });
+  emit({ op: "and", dst: eax, src: imm(0x3ff) });
+  emit({ op: "test", dst: edx, src: edx });
+  emit({ op: "jcc", cc: "e", target: label(zeroOrSub) });
+  emit({ op: "cmp", dst: edx, src: imm(31) });
+  emit({ op: "jcc", cc: "e", target: label(special) });
+  emit({ op: "add", dst: edx, src: imm(1008) });
+  emit({ op: "label", name: assemble });
+  emit({ op: "shl", dst: rdx, count: 52 });
+  emit({ op: "shl", dst: rax, count: 42 });
+  emit({ op: "or", dst: rax, src: rdx });
+  emit({ op: "or", dst: rax, src: r11 });
+  emit({ op: "ret" });
+  emit({ op: "label", name: zeroOrSub });
+  emit({ op: "test", dst: eax, src: eax });
+  emit({ op: "jcc", cc: "ne", target: label(subnormal) });
+  emit({ op: "mov", dst: rax, src: r11 });
+  emit({ op: "ret" });
+  emit({ op: "label", name: subnormal });
+  emit({ op: "mov", dst: edx, src: imm(1009) });
+  emit({ op: "label", name: norm });
+  emit({ op: "shl", dst: eax, count: 1 });
+  emit({ op: "dec", dst: edx });
+  emit({ op: "test", dst: eax, src: imm(0x400) });
+  emit({ op: "jcc", cc: "e", target: label(norm) });
+  emit({ op: "and", dst: eax, src: imm(0x3ff) });
+  emit({ op: "jmp", target: label(assemble) });
+  emit({ op: "label", name: special });
+  emit({ op: "test", dst: eax, src: eax });
+  emit({ op: "jcc", cc: "ne", target: label(nan) });
+  emit({ op: "mov", dst: rax, src: bits(0, 0x7ff00000) });
+  emit({ op: "or", dst: rax, src: r11 });
+  emit({ op: "ret" });
+  emit({ op: "label", name: nan });
+  emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
   emit({ op: "ret" });
 }

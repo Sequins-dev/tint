@@ -17,28 +17,33 @@ export interface StringIndex {
   readonly readonly: boolean;
   readonly origin: "signature" | "record";
 }
-/** Typed-array kinds with a native representation; the BigInt kinds are
- * realm objects (their elements need a BigInt representation). */
+/** Typed-array kinds with a native representation. */
 export type NativeTypedArrayKind =
   | "Uint8Array"
   | "Int8Array"
   | "Uint8ClampedArray"
   | "Uint16Array"
   | "Int16Array"
+  | "Float16Array"
   | "Uint32Array"
   | "Int32Array"
   | "Float32Array"
-  | "Float64Array";
+  | "Float64Array"
+  | "BigInt64Array"
+  | "BigUint64Array";
 export const nativeTypedArrayKinds: readonly NativeTypedArrayKind[] = [
   "Uint8Array",
   "Int8Array",
   "Uint8ClampedArray",
   "Uint16Array",
   "Int16Array",
+  "Float16Array",
   "Uint32Array",
   "Int32Array",
   "Float32Array",
   "Float64Array",
+  "BigInt64Array",
+  "BigUint64Array",
 ];
 /** The native typed-array kind a type kind or constructor name denotes. */
 export function nativeTypedArrayKind(
@@ -57,6 +62,8 @@ export function nativeTypedArrayKind(
       return "Uint16Array";
     case "Int16Array":
       return "Int16Array";
+    case "Float16Array":
+      return "Float16Array";
     case "Uint32Array":
       return "Uint32Array";
     case "Int32Array":
@@ -65,6 +72,10 @@ export function nativeTypedArrayKind(
       return "Float32Array";
     case "Float64Array":
       return "Float64Array";
+    case "BigInt64Array":
+      return "BigInt64Array";
+    case "BigUint64Array":
+      return "BigUint64Array";
     default:
       return undefined;
   }

@@ -149,6 +149,12 @@ function scalarCode(type: ReturnType): number {
       return 18;
     case "Float32Array":
       return 19;
+    case "Float16Array":
+      return 20;
+    case "BigInt64Array":
+      return 21;
+    case "BigUint64Array":
+      return 22;
   }
 }
 function scalarType(code: number): ScalarType {
@@ -207,6 +213,12 @@ function arrayType(code: number): NativeTypedArray {
       return "Int32Array";
     case 19:
       return "Float32Array";
+    case 20:
+      return "Float16Array";
+    case 21:
+      return "BigInt64Array";
+    case 22:
+      return "BigUint64Array";
   }
   throw "packed IR array type";
 }
@@ -340,6 +352,9 @@ const generalTests: readonly GeneralTest[] = [
   "Float32Array",
   "nullish",
   "absent",
+  "Float16Array",
+  "BigInt64Array",
+  "BigUint64Array",
 ];
 /** Activation fields by their packed index; append only. */
 const activationFields: readonly ActivationField[] = [
@@ -969,6 +984,33 @@ export function encodeInstruction(
       writeList(writer, op.operands);
       return true;
     }
+    case "array-word64-read":
+      writePrefix(writer, 129, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.index);
+      writeSigned(writer, op.scratch);
+      return true;
+    case "array-word64-write":
+      writePrefix(writer, 130, op, 0);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.index);
+      writeSigned(writer, op.scratch);
+      return true;
+    case "array-word64-fill":
+      writePrefix(writer, 131, op, 0);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.scratch);
+      writeSigned(writer, op.from);
+      writeSigned(writer, op.to);
+      return true;
+    case "array-atomic-word64":
+      writePrefix(writer, 132, op, 0);
+      writeByte(writer, atomicOperations.indexOf(op.operation));
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.index);
+      writeSigned(writer, op.scratch);
+      return true;
     case "weak-slot-new":
       writePrefix(writer, 48, op, 0);
       writeSigned(writer, op.id);
@@ -1938,6 +1980,69 @@ export function decodeInstruction(
         array,
         index,
         operands,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 129: {
+      const id = readSigned(reader),
+        array = readSigned(reader),
+        index = readSigned(reader),
+        scratch = readSigned(reader);
+      return {
+        kind: "array-word64-read",
+        id,
+        array,
+        index,
+        scratch,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 130: {
+      const array = readSigned(reader),
+        index = readSigned(reader),
+        scratch = readSigned(reader);
+      return {
+        kind: "array-word64-write",
+        array,
+        index,
+        scratch,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 131: {
+      const array = readSigned(reader),
+        scratch = readSigned(reader),
+        from = readSigned(reader),
+        to = readSigned(reader);
+      return {
+        kind: "array-word64-fill",
+        array,
+        scratch,
+        from,
+        to,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 132: {
+      const operation = atomicOperations[readByte(reader)];
+      if (operation === undefined) throw "packed IR atomic operation";
+      const array = readSigned(reader),
+        index = readSigned(reader),
+        scratch = readSigned(reader);
+      return {
+        kind: "array-atomic-word64",
+        operation,
+        array,
+        index,
+        scratch,
         start,
         end,
         ...(inline === undefined ? {} : { inline }),

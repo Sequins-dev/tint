@@ -76,12 +76,13 @@ change the project's overall specification baseline.
 
 ## Typed-path representation
 
-Typed code holds `Uint8Array`, `Int8Array`, `Uint8ClampedArray`, `Uint16Array`,
-`Int16Array`, `Uint32Array`, `Int32Array`, `Float32Array` and `Float64Array`
-natively: one header word, the length, a data pointer and inline, borrowed or
-viewed elements. The [kind table](../packages/abi/src/typed-array.ts) gives
-each kind a marker `(kind index << 3) | width class` (width classes 2-5 for
-1, 2, 4 and 8 bytes), so the original four kinds keep markers 2-5 and every
+Typed code holds all 12 standard typed-array kinds (`Uint8Array`, `Int8Array`,
+`Uint8ClampedArray`, `Uint16Array`, `Int16Array`, `Float16Array`, `Uint32Array`,
+`Int32Array`, `Float32Array`, `Float64Array`, `BigInt64Array` and
+`BigUint64Array`) natively: one header word, the length, a data pointer and
+inline, borrowed or viewed elements. The [kind table](../packages/abi/src/typed-array.ts)
+gives each kind a marker `(kind index << 3) | width class` (width classes 2-5
+for 1, 2, 4 and 8 bytes), so the original four kinds keep markers 2-5 and every
 built-in marker stays below 32, under any record descriptor address. The
 header has no spare bits for a separate kind byte: the marker field holds
 descriptor addresses, the three flag bits distinguish owned, borrowed and
@@ -95,12 +96,19 @@ Element writes convert as the specification requires: the integer kinds
 store the low bits of ToInt32 (ToInt8 and ToInt16 equal ToUint8 and
 ToUint16 bit for bit), `Uint8ClampedArray` stores ToUint8Clamp (AArch64
 FCVTNU then a clamp to 255; x86-64 CVTSD2SI under round-to-nearest after
-range checks; int64 values clamp directly), and `Float32Array` rounds to
-nearest, ties to even (FCVT or CVTSD2SS), overflowing to infinity. Reads
-zero- or sign-extend to an exact integer, or widen a float to a double; a
-widened Float32 NaN is always quiet, so it is never optional-number
-absence. Typed `instanceof` compares header markers, and realm-capable code
-passes the kind name to the realm, which selects that kind's prototype.
+range checks; int64 values clamp directly), `Float16Array` and `Float32Array`
+round to nearest, ties to even (AArch64 `FCVT H, D` / `FCVT S, D`; x86-64
+exact bit-level binary64-to-binary16 helper / `CVTSD2SS`), overflowing to
+infinity, and `BigInt64Array`/`BigUint64Array` store tear-free 64-bit two's
+complement words converted via `ToBigInt64`/`ToBigUint64`. Reads zero- or
+sign-extend to an exact integer, widen floats to double (widened Float16 and
+Float32 NaNs are always quiet, never optional-number absence), or decode
+signed/unsigned 64-bit words into `bigint`. Typed `Atomics` covers all 8
+integer kinds (8/16/32-bit signed and unsigned plus 64-bit BigInt), including
+`Atomics.wait` and `Atomics.notify` on shared `Int32Array` and `BigInt64Array`
+with worker-stop interruption. Typed `instanceof` compares header markers, and
+realm-capable code passes the kind name to the realm, which selects that kind's
+prototype.
 
 The general path's per-kind Test262 selections pass after the marker change
 (TZ=UTC): `built-ins/TypedArrayConstructors/`
@@ -113,10 +121,6 @@ The general path's per-kind Test262 selections pass after the marker change
 and [BigUint64Array](results/test262-typedarrayconstructors-biguint64array-native-v1.json)
 24/24 each. These are focused selections that overlap the complete
 TypedArrayConstructors report; they do not add to its denominator.
-
-`BigInt64Array`, `BigUint64Array` and `Float16Array` stay realm objects on
-the typed path until BigInt (and binary16) elements have a typed
-representation; their kind-table entries already reserve markers.
 
 ## Strict compiler construction
 

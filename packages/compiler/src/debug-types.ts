@@ -439,10 +439,13 @@ function storageType(
     case "Uint8ClampedArray":
     case "Uint16Array":
     case "Int16Array":
+    case "Float16Array":
     case "Uint32Array":
     case "Int32Array":
     case "Float32Array":
     case "Float64Array":
+    case "BigInt64Array":
+    case "BigUint64Array":
       return pointer(table, bufferStructure(table, scalar));
     case "general":
       return generalType(table);
