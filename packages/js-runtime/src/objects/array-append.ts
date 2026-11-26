@@ -264,8 +264,7 @@ export function scriptArrayPushFast(
 ): number {
   if (
     object !== undefined &&
-    (object.internalFlags & objectFlagExtensible) !== 0 &&
-    object.prototype === realm.arrayPrototype &&
+    object.internalShape === realm.arrayChildShape &&
     realm.propertyEpoch.value === realm.cleanArrayPushEpoch
   ) {
     const elements = object.internalArrayElements;

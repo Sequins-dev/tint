@@ -444,10 +444,31 @@ export function emitPolymorphicPropertyStore(
     mode: "offset",
   });
   if (generationalBarriers) {
-    // An old object (x10) may now refer to a young value or shape:
-    // remember it unless no transition was stored (x11) and the
-    // value is no reference.
+    // Fast skip when no shape transition occurred (x11 === 0) and the stored
+    // general value's tag (x14) carries no managed reference (reference tags:
+    // 3=string, 5=object, 6=symbol, 7=bigint -> bitmask 0xe8). This avoids
+    // 3 dependent context/heap/nursery loads and taken cold-stub jumps on
+    // every primitive write to an old-generation object.
+    const hasTransition = instructionCount();
+    emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+    imm(12, 0xe8);
+    emit({ op: "lsrv", width: 64, rd: 12, rn: 12, rm: 14 });
+    const skipBarrier = instructionCount();
+    emit({ op: "tbz", rt: 12, bit: 0, displacement: 0 });
+    patchInstruction(hasTransition, {
+      op: "cbnz",
+      width: 64,
+      rt: 11,
+      displacement: (instructionCount() - hasTransition) * 4,
+    });
     rememberTransitionOrValue(valueOffset(op.value));
+    patchInstruction(skipBarrier, {
+      op: "tbz",
+      rt: 12,
+      bit: 0,
+      displacement: (instructionCount() - skipBarrier) * 4,
+    });
+    clearStackWords();
   }
   let storeMissAt = -1;
   if (fusedMiss === undefined) {
@@ -1224,4 +1245,186 @@ export function emitGeneralElementAccess(
     displacement: (instructionCount() - stored) * 4,
   });
   saveRaw(target, op.id);
+}
+
+export interface GeneralEqualSpecializedContext {
+  readonly instructionCount: () => number;
+  readonly emit: (instruction: MachineInstruction) => void;
+  readonly patchInstruction: (
+    index: number,
+    instruction: MachineInstruction,
+  ) => void;
+  readonly imm: (rd: number, value: number) => void;
+  readonly generalPair: (first: number, offset: number, load: boolean) => void;
+  readonly valueOffset: (id: number) => number;
+  readonly rawValue: (target: number, id: number) => void;
+  readonly rawLoad: (target: number, offset: number) => void;
+  readonly floatLoad: (target: number, id: number, delta: number) => void;
+  readonly stringEqual: () => void;
+  readonly saveRaw: (source: number, id: number) => void;
+  readonly clearStackWords: () => void;
+}
+
+/** Emits specialized AArch64 code for `general-equal` when at least one
+ * operand has a statically known general tag (`0`=undefined, `1`=number,
+ * `2`=boolean, `3`=string, `4`=null, `5`=reference), avoiding the full
+ * polymorphic tag dispatch and `string-equal` machinery. */
+export function emitSpecializedGeneralEqual(
+  ctx: GeneralEqualSpecializedContext,
+  opId: number,
+  leftId: number,
+  rightId: number,
+  leftTag: number | undefined,
+  rightTag: number | undefined,
+): void {
+  const {
+    instructionCount,
+    emit,
+    patchInstruction,
+    imm,
+    generalPair,
+    valueOffset,
+    rawValue,
+    rawLoad,
+    floatLoad,
+    stringEqual,
+    saveRaw,
+    clearStackWords,
+  } = ctx;
+  if (leftTag !== undefined && rightTag !== undefined) {
+    if (leftTag !== rightTag) {
+      imm(9, 0);
+      saveRaw(9, opId);
+      return;
+    }
+    if (leftTag === 0 || leftTag === 4) {
+      imm(9, 1);
+      saveRaw(9, opId);
+      return;
+    }
+    if (leftTag === 1) {
+      floatLoad(0, leftId, 8);
+      floatLoad(1, rightId, 8);
+      emit({ op: "fcmp", rn: 0, rm: 1 });
+      emit({ op: "cset", rd: 9, condition: "eq" });
+      saveRaw(9, opId);
+      return;
+    }
+    rawLoad(9, valueOffset(leftId) + 8);
+    rawLoad(10, valueOffset(rightId) + 8);
+    if (leftTag === 3) {
+      stringEqual();
+      saveRaw(9, opId);
+      return;
+    }
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 9,
+      rm: 10,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    emit({ op: "cset", rd: 9, condition: "eq" });
+    saveRaw(9, opId);
+    return;
+  }
+  const knownLeft = leftTag !== undefined;
+  const knownTag = knownLeft ? leftTag : rightTag;
+  const knownId = knownLeft ? leftId : rightId;
+  const otherId = knownLeft ? rightId : leftId;
+  if (knownTag === undefined) throw "specialized general-equal tag invariant";
+  if (knownTag === 0 || knownTag === 4) {
+    rawValue(9, otherId);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 9,
+      immediate: knownTag,
+      shift: 0,
+      setFlags: true,
+    });
+    emit({ op: "cset", rd: 9, condition: "eq" });
+    saveRaw(9, opId);
+    return;
+  }
+  if (knownTag === 2 || knownTag === 5) {
+    generalPair(9, valueOffset(otherId), true);
+    rawLoad(11, valueOffset(knownId) + 8);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 9,
+      immediate: knownTag,
+      shift: 0,
+      setFlags: true,
+    });
+    const mismatch = instructionCount();
+    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 10,
+      rm: 11,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    emit({ op: "cset", rd: 9, condition: "eq" });
+    const done = instructionCount();
+    emit({ op: "b", displacement: 0 });
+    patchInstruction(mismatch, {
+      op: "b.cond",
+      condition: "ne",
+      displacement: (instructionCount() - mismatch) * 4,
+    });
+    imm(9, 0);
+    patchInstruction(done, {
+      op: "b",
+      displacement: (instructionCount() - done) * 4,
+    });
+    saveRaw(9, opId);
+    return;
+  }
+  rawValue(9, otherId);
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 9,
+    immediate: knownTag,
+    shift: 0,
+    setFlags: true,
+  });
+  const mismatch = instructionCount();
+  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+  if (knownTag === 1) {
+    floatLoad(0, otherId, 8);
+    floatLoad(1, knownId, 8);
+    emit({ op: "fcmp", rn: 0, rm: 1 });
+    emit({ op: "cset", rd: 9, condition: "eq" });
+  } else {
+    rawLoad(9, valueOffset(otherId) + 8);
+    rawLoad(10, valueOffset(knownId) + 8);
+    stringEqual();
+  }
+  const done = instructionCount();
+  emit({ op: "b", displacement: 0 });
+  patchInstruction(mismatch, {
+    op: "b.cond",
+    condition: "ne",
+    displacement: (instructionCount() - mismatch) * 4,
+  });
+  imm(9, 0);
+  patchInstruction(done, {
+    op: "b",
+    displacement: (instructionCount() - done) * 4,
+  });
+  clearStackWords();
+  saveRaw(9, opId);
 }

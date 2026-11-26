@@ -920,8 +920,14 @@ export function verify(
               };
               const entries =
                 op.kind === "property-load" ? op.entries : (op.entries ?? 1);
-              if (!natural(entries) || entries < 1 || entries > 4)
-                fail("TYPE", "property load requires one to four entries");
+              const maxEntries = op.kind === "property-load" ? 8 : 4;
+              if (!natural(entries) || entries < 1 || entries > maxEntries)
+                fail(
+                  "TYPE",
+                  op.kind === "property-load"
+                    ? "property load requires one to eight entries"
+                    : "property store requires one to four entries",
+                );
               const epoch =
                 module.records?.[op.epochRecord]?.fields[op.epochField];
               const epochFields = (

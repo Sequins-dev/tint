@@ -912,6 +912,18 @@ export function cachedInheritedPropertyValue(
   } else if (shape === site.inheritedShape3) {
     slot = site.inheritedSlot3;
     direct = site.inheritedValue3;
+  } else if (shape === site.inheritedShape4) {
+    slot = site.inheritedSlot4;
+    direct = site.inheritedValue4;
+  } else if (shape === site.inheritedShape5) {
+    slot = site.inheritedSlot5;
+    direct = site.inheritedValue5;
+  } else if (shape === site.inheritedShape6) {
+    slot = site.inheritedSlot6;
+    direct = site.inheritedValue6;
+  } else if (shape === site.inheritedShape7) {
+    slot = site.inheritedSlot7;
+    direct = site.inheritedValue7;
   } else return site;
   if (slot === 0) return direct;
   if (object === undefined) return site;

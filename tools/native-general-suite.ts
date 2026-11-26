@@ -795,6 +795,78 @@ function milestone4PushFastSplit() {
   );
   return out.join(",");
 }
+function milestone5ScalarArraysAndPushFast() {
+  const out = [];
+  // 1. Non-escaping fresh array literal .length and [idx] with side-effect order.
+  const log = [];
+  let sum = 0;
+  const item = { x: 11 };
+  for (let i = 0; i < 8; i++) {
+    const a = [item, item, item, item];
+    sum += a.length;
+    const b = [i, i + 10, i + 20, i + 30];
+    sum += b[i % 4];
+  }
+  out.push(sum);
+  // -0, out-of-range, string key, ToPropertyKey side effect, and evaluation order.
+  let seq = 0;
+  function step(label) {
+    log.push(label);
+    return ++seq;
+  }
+  const c = [step("a"), step("b"), step("c"), step("d")];
+  out.push(
+    c[-0],
+    c[3],
+    String(c[-1]),
+    String(c[4]),
+    String(c[1.5]),
+    String(c[NaN]),
+    c["1"],
+    c[{ toString() { log.push("key"); return "2"; } }],
+    typeof c["toString"],
+    log.join(":"),
+  );
+  // Abrupt completion during element evaluation aborts before indexing.
+  let idxRan = false;
+  try {
+    const d = [1, (() => { throw new Error("boom"); })(), 3];
+    out.push(d[(idxRan = true, 0)]);
+  } catch (e) {
+    out.push(e.message, String(idxRan));
+  }
+  // Hostile Array.prototype getter on index 0 & 4: own 0 shadows, out-of-bounds 4 inherits!
+  Object.defineProperty(Array.prototype, "0", {
+    configurable: true,
+    get() { return 999; },
+  });
+  Object.defineProperty(Array.prototype, "4", {
+    configurable: true,
+    get() { return 777; },
+  });
+  try {
+    const e = [10, 20, 30, 40];
+    out.push(e.length, e[0], e[3], e[4]);
+  } finally {
+    delete Array.prototype[0];
+    delete Array.prototype[4];
+  }
+  // 2. scriptArrayPushFast across clean, expando, and non-extensible arrays.
+  const clean = [];
+  for (let i = 0; i < 20; i++) clean.push(i);
+  const expando = [1, 2];
+  expando.extra = 99;
+  expando.push(3, 4);
+  const frozen = Object.freeze([5, 6]);
+  let freezeErr = "none";
+  try {
+    frozen.push(7);
+  } catch (e) {
+    freezeErr = e.name;
+  }
+  out.push(clean.length, clean[19], expando.length, expando[3], expando.extra, freezeErr);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -810,6 +882,7 @@ export function sections() {
     cachedLoops(),
     flatGeneralArrays(),
     milestone4PushFastSplit(),
+    milestone5ScalarArraysAndPushFast(),
   ];
 }
 `;
@@ -1954,6 +2027,98 @@ function milestone4DirectTargetsAndCaches() {
   out.push(listSum, callRes.doubled);
   return out.join("|");
 }
+function milestone5InlineMethodsAndCaches() {
+  const out = [];
+  // 1. 8-shape polymorphic method dispatch + 9th megamorphic + getter override.
+  const receivers = [
+    { offset: 1, add(v) { return this.offset + v; } },
+    { a: 0, offset: 2, add(v) { return v + this.offset; } },
+    { offset: 3, b: true, add(v) { return this.offset + v; } },
+    { add(v) { return v + this.offset; }, offset: 4 },
+    { offset: 5, add(v) { return this.offset + v; }, c: 0 },
+    { d: 0, add(v) { return v + this.offset; }, offset: 6 },
+    { offset: 7, e: 0, add(v) { return this.offset + v; } },
+    { f: 0, offset: 8, add(v) { return v + this.offset; } },
+  ];
+  let polySum = 0;
+  for (let i = 0; i < 64; i++) polySum += receivers[i & 7].add(i & 3);
+  const ninth = { g: 0, h: 0, offset: 9, add(v) { return this.offset + v; } };
+  polySum += ninth.add(10);
+  // Prototype getter invalidation on a shared prototype method site.
+  function PolyProto(x) { this.x = x; }
+  PolyProto.prototype.getVal = function () { return this.x; };
+  const p0 = new PolyProto(10);
+  const p1 = new PolyProto(20);
+  p1.k1 = 1;
+  let protoSum = 0;
+  for (let i = 0; i < 6; i++) protoSum += (i & 1 ? p1 : p0).getVal();
+  Object.defineProperty(PolyProto.prototype, "getVal", {
+    configurable: true,
+    get() { return function () { return this.x * 10; }; },
+  });
+  protoSum += p0.getVal() + p1.getVal();
+  out.push(polySum, protoSum);
+
+  // 2. Bail-free tail direct stores & setter/frozen rejection.
+  function updateLeft(rec, val) {
+    rec.left = val;
+    return rec;
+  }
+  const rec = { left: 0, right: 5 };
+  let rtSum = 0;
+  for (let i = 0; i < 10; i++) {
+    const ret = updateLeft(rec, i);
+    if (ret !== rec) throw new Error("identity");
+    rtSum += ret.left + ret.right;
+  }
+  let setterLog = 0;
+  const withSetter = {
+    right: 1,
+    set left(v) { setterLog += v; },
+  };
+  updateLeft(withSetter, 7);
+  out.push(rtSum, setterLog);
+
+  // 3. Exact-inlined methods with loops, throws, and sloppy this boxing.
+  const helper = {
+    sumTo(n) {
+      let total = 0;
+      for (let i = 1; i <= n; i++) {
+        if (i === 99) throw new Error("never");
+        total += i;
+      }
+      return total;
+    },
+    sloppyType() {
+      return typeof this;
+    },
+  };
+  let loopTotal = 0;
+  for (let i = 0; i < 4; i++) loopTotal += helper.sumTo(5 + i);
+  const boxType = helper.sloppyType.call(42);
+  let threw = "no";
+  try {
+    helper.sumTo(100);
+  } catch (e) {
+    threw = e.message;
+  }
+  out.push(loopTotal, boxType, threw);
+
+  // 4. Known-tag general-equal edge cases (NaN, -0/+0, null/undefined, objects).
+  const aObj = {};
+  const bObj = {};
+  const vals = [NaN, -0, 0, null, undefined, "hi", "hi", true, false, aObj, bObj];
+  out.push(
+    vals[0] === vals[0],
+    vals[1] === vals[2],
+    vals[3] == vals[4],
+    vals[3] === vals[4],
+    vals[5] === vals[6],
+    vals[9] === vals[9],
+    vals[9] === vals[10],
+  );
+  return out.join("|");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -1975,6 +2140,7 @@ export function sections() {
     milestone2ArraysMathLoops(),
     milestone3PolymorphicStoreAndForwarding(),
     milestone4DirectTargetsAndCaches(),
+    milestone5InlineMethodsAndCaches(),
   ];
 }
 `;
@@ -2070,10 +2236,10 @@ async function allNodeExpectations() {
     computeNodeSections(numbersSource, "tint-general-numbers-"),
     computeNodeSections(propertyCachesSource, "tint-property-caches-"),
   ]);
-  assert.equal(elements.length, 13);
+  assert.equal(elements.length, 14);
   assert.equal(intrinsics.length, 5);
   assert.equal(numbers.length, 12);
-  assert.equal(propertyCaches.length, 19);
+  assert.equal(propertyCaches.length, 20);
   cachedExpected = { elements, intrinsics, numbers, propertyCaches };
   return cachedExpected;
 }

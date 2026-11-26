@@ -54,7 +54,7 @@ export function forwardLocalLoads(
         op.kind === "record-read" ||
         op.kind === "reference-value" ||
         op.kind === "general-value" ||
-        (isScript && op.kind === "general-is")
+        (isScript && (op.kind === "general-is" || op.kind === "general-equal"))
       )
         candidates++;
       if (
@@ -535,9 +535,101 @@ export function forwardLocalLoads(
             ? {}
             : { inline: rewritten.inline }),
         });
+        if (hasWrap) valueTypes.set(rewritten.id, "boolean");
         forwarded++;
         changed = true;
         continue;
+      }
+      if (foldGeneralIs && rewritten.kind === "general-equal") {
+        const leftTag = knownGeneralTag.get(rewritten.left);
+        const rightTag = knownGeneralTag.get(rewritten.right);
+        if (leftTag !== undefined && rightTag !== undefined) {
+          if (leftTag !== rightTag) {
+            instructions.push({
+              kind: "constant",
+              id: rewritten.id,
+              value: false,
+              start: rewritten.start,
+              end: rewritten.end,
+              ...(rewritten.inline === undefined
+                ? {}
+                : { inline: rewritten.inline }),
+            });
+            valueTypes.set(rewritten.id, "boolean");
+            forwarded++;
+            changed = true;
+            continue;
+          }
+          if (leftTag === "undefined" || leftTag === "null") {
+            instructions.push({
+              kind: "constant",
+              id: rewritten.id,
+              value: true,
+              start: rewritten.start,
+              end: rewritten.end,
+              ...(rewritten.inline === undefined
+                ? {}
+                : { inline: rewritten.inline }),
+            });
+            valueTypes.set(rewritten.id, "boolean");
+            forwarded++;
+            changed = true;
+            continue;
+          }
+          const lw = wrappedGeneral.get(rewritten.left);
+          const rw = wrappedGeneral.get(rewritten.right);
+          if (
+            lw !== undefined &&
+            rw !== undefined &&
+            lw.type === rw.type &&
+            (lw.type === "boolean" ||
+              lw.type === "number" ||
+              lw.type === "reference")
+          ) {
+            instructions.push({
+              kind: "binary",
+              id: rewritten.id,
+              operator: "===",
+              left: lw.value,
+              right: rw.value,
+              start: rewritten.start,
+              end: rewritten.end,
+              ...(rewritten.inline === undefined
+                ? {}
+                : { inline: rewritten.inline }),
+            });
+            valueTypes.set(rewritten.id, "boolean");
+            forwarded++;
+            changed = true;
+            continue;
+          }
+        } else if (
+          leftTag === "undefined" ||
+          leftTag === "null" ||
+          rightTag === "undefined" ||
+          rightTag === "null"
+        ) {
+          const isLeft = leftTag === "undefined" || leftTag === "null";
+          const tag = isLeft ? leftTag : rightTag;
+          const other = isLeft ? rewritten.right : rewritten.left;
+          if (tag === "undefined" || tag === "null") {
+            instructions.push({
+              kind: "general-is",
+              id: rewritten.id,
+              value: other,
+              type: tag,
+              start: rewritten.start,
+              end: rewritten.end,
+              ...(rewritten.inline === undefined
+                ? {}
+                : { inline: rewritten.inline }),
+            });
+            valueTypes.set(rewritten.id, "boolean");
+            forwarded++;
+            changed = true;
+            continue;
+          }
+        }
       }
       instructions.push(rewritten);
       if (rewritten !== op) changed = true;

@@ -58,7 +58,7 @@ test("module lowering preserves its caller-policy shape through nested async bod
   const cases = [
     [
       "export let x=1; export function f(){return x;}",
-      "934066e74f876c38ce26b4fc5615aca77a60328fba5ddc11ab9dd381cfc226fc",
+      "f4033a712727fac9e21163f98a3b9c04f795c37865ec9cee7088565fd8834c9e",
     ],
     [
       "export async function f(){return await 1;}",
@@ -70,7 +70,7 @@ test("module lowering preserves its caller-policy shape through nested async bod
     ],
     [
       "using resource=x; export let y=2;",
-      "3edb417c3979258ad601e2a2e9a47dcf3f7b748a1f03fb594b0b266c3995d8d4",
+      "8abb38b64508fc76626d6efe478d8842ce6884eb214c54617296b9d7d6856ddb",
     ],
     [
       'export function f(){return import("./m.js");}',

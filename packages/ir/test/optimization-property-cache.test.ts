@@ -1911,3 +1911,506 @@ test("forwardDominatingProperties forwards dominating global-cell probes and ref
     true,
   );
 });
+
+test("cacheLoopProperties uses a single dirty-flag latch refresh when a loop has >12 cold invalidation sites", () => {
+  // Build a script-entry loop that reads a loop-invariant global-cell and has
+  // 14 cold invalidating branches before the backedge: dirty-flag latch mode
+  // must emit 1 preheader probe + 1 shared latch refresh (2 total global-cells)
+  // rather than duplicating the probe into all 14 cold branches.
+  const invalidator: FunctionIR = {
+    id: 1,
+    name: "invalidateGlobal",
+    exported: false,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "constant", id: 1, value: 9, ...s },
+          { kind: "store", slot: 1, value: 1, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 4,
+          field: 0,
+          operation: "write",
+          slot: 1,
+          consequent: 1,
+          alternate: 1,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+
+  // Slots: 0=scope, 1=cache, 2=epoch, 3=counter, 4=flag, 5=cellOut
+  const blocks: FunctionIR["blocks"][number][] = [];
+  let nextId = 0;
+  // b0: preheader -> b1 (header); includes a property-load so hasScriptOperations holds.
+  const b0Gen = nextId++;
+  const b0Site = nextId++;
+  const b0Prop = nextId++;
+  const b0Zero = nextId++;
+  blocks.push({
+    id: 0,
+    instructions: [
+      { kind: "general-none", id: b0Gen, ...s },
+      { kind: "load", id: b0Site, slot: 7, ...s },
+      {
+        kind: "property-load",
+        id: b0Prop,
+        object: b0Gen,
+        site: b0Site,
+        ...propLayout,
+        ...s,
+      },
+      { kind: "store", slot: 6, value: b0Prop, ...s },
+      { kind: "constant", id: b0Zero, value: 0, ...s },
+      { kind: "store", slot: 3, value: b0Zero, ...s },
+    ],
+    terminator: { kind: "jump", target: 1, ...s },
+  });
+  // b1: loop header (if counter < 10 -> b2 else -> exit block 32)
+  const latchId = 31;
+  const exitId = 32;
+  const loadC = nextId++;
+  const ten = nextId++;
+  const cmp = nextId++;
+  blocks.push({
+    id: 1,
+    instructions: [
+      { kind: "load", id: loadC, slot: 3, ...s },
+      { kind: "constant", id: ten, value: 10, ...s },
+      { kind: "binary", id: cmp, operator: "<", left: loadC, right: ten, ...s },
+    ],
+    terminator: {
+      kind: "branch",
+      condition: cmp,
+      consequent: 2,
+      alternate: exitId,
+      ...s,
+    },
+  });
+  // b2: loop-invariant global-cell lookup -> b3
+  const lScope = nextId++;
+  const lCache = nextId++;
+  const gc = nextId++;
+  blocks.push({
+    id: 2,
+    instructions: [
+      { kind: "load", id: lScope, slot: 0, ...s },
+      { kind: "load", id: lCache, slot: 1, ...s },
+      {
+        kind: "global-cell",
+        id: gc,
+        scope: lScope,
+        cache: lCache,
+        ...globalLayout,
+        ...s,
+      },
+      { kind: "store", slot: 5, value: gc, ...s },
+    ],
+    terminator: { kind: "jump", target: 3, ...s },
+  });
+  // 14 sequential cold invalidation branches:
+  // test block (3 + 2*k): if (flag) -> call block (4 + 2*k) else -> next (5 + 2*k)
+  // For k = 0..13: blocks 3..30; k = 13 merges to latch block 31 -> header 1.
+  for (let k = 0; k < 14; k++) {
+    const testId = 3 + k * 2;
+    const coldId = 4 + k * 2;
+    const nextTarget = k === 13 ? latchId : 5 + k * 2;
+    const lFlag = nextId++;
+    blocks.push({
+      id: testId,
+      instructions: [{ kind: "load", id: lFlag, slot: 4, ...s }],
+      terminator: {
+        kind: "branch",
+        condition: lFlag,
+        consequent: coldId,
+        alternate: nextTarget,
+        ...s,
+      },
+    });
+    const lEpoch = nextId++;
+    blocks.push({
+      id: coldId,
+      instructions: [
+        { kind: "load", id: lEpoch, slot: 2, ...s },
+        { kind: "call", id: undefined, target: 1, arguments: [lEpoch], ...s },
+      ],
+      terminator: { kind: "jump", target: nextTarget, ...s },
+    });
+  }
+  // b31: latch (counter = counter + 1 -> b1)
+  const lCur = nextId++;
+  const one = nextId++;
+  const inc = nextId++;
+  blocks.push({
+    id: latchId,
+    instructions: [
+      { kind: "load", id: lCur, slot: 3, ...s },
+      { kind: "constant", id: one, value: 1, ...s },
+      { kind: "binary", id: inc, operator: "+", left: lCur, right: one, ...s },
+      { kind: "store", slot: 3, value: inc, ...s },
+    ],
+    terminator: { kind: "jump", target: 1, ...s },
+  });
+  // b32: exit
+  const retVal = nextId++;
+  blocks.push({
+    id: exitId,
+    instructions: [{ kind: "load", id: retVal, slot: 3, ...s }],
+    terminator: { kind: "return", value: retVal, ...s },
+  });
+
+  const fn: FunctionIR = {
+    id: 0,
+    name: "dirty_latch_loop",
+    exported: true,
+    parameters: [0, 1, 2, 4, 7],
+    slots: [
+      "reference",
+      "reference",
+      "reference",
+      "number",
+      "boolean",
+      "optional-reference",
+      "general",
+      "reference",
+    ],
+    returnType: "number",
+    entry: 0,
+    blocks,
+  };
+  const module: ModuleIR = { records, functions: [fn, invalidator] };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const shared = analyzeModulePropertySites(module, 100000);
+  assert.ok(shared !== undefined);
+  const remarks: string[] = [];
+  const result = cacheLoopProperties(
+    fn,
+    module,
+    100000,
+    (r) => remarks.push(r.outcome + ":" + r.message),
+    shared,
+  );
+  assert.ok(result !== undefined);
+  assert.ok(result.rewritten >= 1, remarks.join("; "));
+  const outModule: ModuleIR = { records, functions: [result.fn, invalidator] };
+  assert.ok(verify(outModule).ok, JSON.stringify(verify(outModule)));
+  // With dirty-flag loop-latch refresh, preheader and latch emit 2 global-cells
+  // total (1 preheader probe + 1 shared latch refresh instead of 1 + 14 = 15)
+  // and block count stays compact.
+  let globalCells = 0;
+  for (const blk of result.fn.blocks) {
+    if (blk === undefined) continue;
+    for (const op of blk.instructions) {
+      if (op?.kind === "global-cell") globalCells++;
+    }
+  }
+  assert.equal(globalCells, 2);
+  assert.ok(result.fn.blocks.length <= fn.blocks.length + 6);
+});
+
+test("analyzeModulePropertySites resolves indirect createScriptPropertyCache calls through immutable module records", () => {
+  // Simulates `closedRecords = false` (dynamic-eval host): factory closure is
+  // stored via `function-new` into an immutable module-export record (rec 8),
+  // copied to a script env record (rec 9), and invoked via `call-indirect` to
+  // populate `$pc` table (rec 10).
+  const indirectRecords: readonly RecordLayout[] = [
+    ...records,
+    // rec 8: module export record holding factory closure at field 0
+    {
+      byteLength: 16,
+      fields: [{ offset: 8, type: "reference", mutable: false }],
+    },
+    // rec 9: script env record holding copied factory closure at field 0
+    {
+      byteLength: 16,
+      fields: [{ offset: 8, type: "reference", mutable: false }],
+    },
+    // rec 10: $pc table holding two ScriptPropertyCache sites
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "reference", mutable: false },
+        { offset: 16, type: "reference", mutable: false },
+      ],
+    },
+    // rec 11: empty closure env for factory
+    { byteLength: 8, fields: [] },
+  ];
+  const mangledFactory: FunctionIR = {
+    id: 0,
+    name: "@44:value:24$906",
+    exported: false,
+    parameters: [0, 1],
+    slots: ["optional-string", "reference"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 1, ...s },
+          { kind: "constant", id: 1, value: 0, ...s },
+          { kind: "constant", id: 2, value: 0, ...s },
+          {
+            kind: "record-new",
+            id: 3,
+            record: 1,
+            arguments: [0, 1, 2, 0, 0],
+            ...s,
+          },
+        ],
+        terminator: { kind: "return", value: 3, ...s },
+      },
+    ],
+  };
+  const initExports: FunctionIR = {
+    id: 1,
+    name: "initExports",
+    exported: false,
+    parameters: [],
+    slots: ["reference"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "function-new", id: 1, target: 0, ...s },
+          { kind: "store", slot: 0, value: 1, ...s },
+          { kind: "load", id: 2, slot: 0, ...s },
+          { kind: "record-new", id: 3, record: 8, arguments: [2], ...s },
+        ],
+        terminator: { kind: "return", value: 3, ...s },
+      },
+    ],
+  };
+  const buildScriptEnv: FunctionIR = {
+    id: 2,
+    name: "buildScriptEnv",
+    exported: false,
+    parameters: [0],
+    slots: ["reference", "reference"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 0,
+          record: 8,
+          field: 0,
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "record-new", id: 2, record: 9, arguments: [1], ...s },
+        ],
+        terminator: { kind: "return", value: 2, ...s },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  const initSitesIndirect: FunctionIR = {
+    id: 3,
+    name: "initSitesIndirect",
+    exported: false,
+    parameters: [0],
+    slots: ["reference", "reference", "reference", "reference"],
+    returnType: "reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 0,
+          record: 9,
+          field: 0,
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "string-literal", id: 1, value: "strength", ...s },
+          { kind: "string-wrap", id: 2, value: 1, ...s },
+          { kind: "load", id: 3, slot: 1, ...s },
+          { kind: "load", id: 12, slot: 0, ...s },
+          {
+            kind: "call-indirect",
+            id: 4,
+            target: 0,
+            callee: 3,
+            arguments: [2, 12],
+            ...s,
+          },
+          { kind: "store", slot: 2, value: 4, ...s },
+          { kind: "string-literal", id: 5, value: "direction", ...s },
+          { kind: "string-wrap", id: 6, value: 5, ...s },
+          { kind: "load", id: 7, slot: 1, ...s },
+          { kind: "load", id: 13, slot: 0, ...s },
+          {
+            kind: "call-indirect",
+            id: 8,
+            target: 0,
+            callee: 7,
+            arguments: [6, 13],
+            ...s,
+          },
+          { kind: "store", slot: 3, value: 8, ...s },
+          { kind: "load", id: 9, slot: 2, ...s },
+          { kind: "load", id: 10, slot: 3, ...s },
+          { kind: "record-new", id: 11, record: 10, arguments: [9, 10], ...s },
+        ],
+        terminator: { kind: "return", value: 11, ...s },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  // Consumer with one property-load so `hasScriptOperations` and `siteRecords` detect record 1.
+  const consumer: FunctionIR = {
+    id: 4,
+    name: "consumer",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["general", "reference", "reference"],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "read",
+          object: 0,
+          record: 10,
+          field: 0,
+          slot: 2,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 1, slot: 0, ...s },
+          { kind: "load", id: 2, slot: 2, ...s },
+          {
+            kind: "property-load",
+            id: 3,
+            object: 1,
+            site: 2,
+            ...propLayout,
+            ...s,
+          },
+        ],
+        terminator: { kind: "return", value: 3, ...s },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  const module: ModuleIR = {
+    records: indirectRecords,
+    functions: [
+      mangledFactory,
+      initExports,
+      buildScriptEnv,
+      initSitesIndirect,
+      consumer,
+    ],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const shared = analyzeModulePropertySites(module, 100000);
+  assert.ok(shared !== undefined);
+  assert.equal(shared.siteFieldName.get("10:0"), "strength");
+  assert.equal(shared.siteFieldName.get("10:1"), "direction");
+
+  // Negative check: if any function mutates record 8 field 0, the indirect
+  // factory field is disqualified and siteFieldName stays empty.
+  const mutableRecords: readonly RecordLayout[] = indirectRecords.map((r, i) =>
+    i === 8
+      ? {
+          byteLength: 16,
+          fields: [{ offset: 8, type: "reference", mutable: true }],
+        }
+      : r,
+  );
+  const mutator: FunctionIR = {
+    id: 5,
+    name: "mutateExport",
+    exported: false,
+    parameters: [0, 1],
+    slots: ["reference", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          operation: "write",
+          object: 0,
+          record: 8,
+          field: 0,
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "constant", id: 1, value: 0, ...s }],
+        terminator: { kind: "return", value: 1, ...s },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  const mutatedModule: ModuleIR = {
+    records: mutableRecords,
+    functions: [
+      mangledFactory,
+      initExports,
+      buildScriptEnv,
+      initSitesIndirect,
+      consumer,
+      mutator,
+    ],
+  };
+  assert.ok(verify(mutatedModule).ok, JSON.stringify(verify(mutatedModule)));
+  const mutatedShared = analyzeModulePropertySites(mutatedModule, 100000);
+  assert.ok(mutatedShared !== undefined);
+  assert.equal(mutatedShared.siteFieldName.get("10:0"), undefined);
+  assert.equal(mutatedShared.siteFieldName.get("10:1"), undefined);
+});

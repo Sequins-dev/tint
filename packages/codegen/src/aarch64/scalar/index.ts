@@ -129,6 +129,7 @@ import {
 } from "./block-entries.ts";
 import {
   fusedPropertyAccesses,
+  knownGeneralEqualTags,
   knownObjectTagAccesses,
   scriptEntryCalleeValues,
 } from "../../scalar/property-fusion.ts";
@@ -196,6 +197,7 @@ import { allocationHelper, type AllocationHelper } from "./allocation.ts";
 import {
   emitGeneralElementAccess,
   emitPolymorphicPropertyStore,
+  emitSpecializedGeneralEqual,
   planDirectGeneralTargets,
 } from "./general-elements.ts";
 export type LeafHelperKind =
@@ -7960,8 +7962,8 @@ function emitModuleForms(
             (hasScriptOps
               ? !forms.islands.has(fn.id) &&
                 !forms.longBranches.has(fn.id) &&
-                fn.blocks.length <= 2048 &&
-                functionIrInstructions <= 8192
+                fn.blocks.length <= 3584 &&
+                functionIrInstructions <= 16384
               : fn.blocks.length <= 512 && functionIrInstructions <= 4096),
           functionFixups = fixups.length;
         edgeWords.clear();
@@ -14488,6 +14490,12 @@ function emitModuleForms(
         // Cached property misses use `fusedAccesses` computed before block ordering.
         const knownObjectTag = knownObjectTagAccesses(fn, fusedAccesses);
         const scriptEntryCallees = scriptEntryCalleeValues(fn);
+        const generalEqualTags = hasScriptOps
+          ? knownGeneralEqualTags(
+              fn,
+              (id: number): ScalarType => value(id).type,
+            )
+          : undefined;
         // For pure-leaf outlined numeric loop kernels (`__tint_spec_loop_*`),
         // hoist up to two immutable Float64Array parameter data pointers into
         // scratch registers x14 and x15 once at function entry so inner
@@ -16254,7 +16262,10 @@ function emitModuleForms(
                   });
                 const marker = typedArrayMarker(op.type);
                 if (marker === 0) {
-                  if (op.branch === true && op.id === comparisonValue)
+                  if (
+                    (op.branch === true || fn.scriptEntry === true) &&
+                    op.id === comparisonValue
+                  )
                     comparisonBranch = "eq";
                   else {
                     const target = rawTarget(op.id, 12);
@@ -16386,6 +16397,42 @@ function emitModuleForms(
                 break;
               }
               case "general-equal": {
+                const leftTag = generalEqualTags?.get(op.left);
+                const rightTag = generalEqualTags?.get(op.right);
+                if (leftTag !== undefined || rightTag !== undefined) {
+                  emitSpecializedGeneralEqual(
+                    {
+                      instructionCount: (): number => instructions.length,
+                      emit,
+                      patchInstruction,
+                      imm,
+                      generalPair,
+                      valueOffset: (id: number): number => value(id).offset,
+                      rawValue,
+                      rawLoad,
+                      floatLoad: (
+                        target: number,
+                        id: number,
+                        delta: number,
+                      ): void => {
+                        floatLoad(target, id, delta);
+                      },
+                      stringEqual: (): void => {
+                        stringEqual();
+                      },
+                      saveRaw,
+                      clearStackWords: (): void => {
+                        stackWords.clear();
+                      },
+                    },
+                    op.id,
+                    op.left,
+                    op.right,
+                    leftTag,
+                    rightTag,
+                  );
+                  break;
+                }
                 rawValue(9, op.left);
                 rawValue(10, op.right);
                 emit({
@@ -21741,29 +21788,9 @@ function emitModuleForms(
                     valueOffset: (id: number): number => value(id).offset,
                     rawTarget,
                     saveRaw,
-                    rememberTransitionOrValue: (valueOffset: number): void => {
-                      rememberObject(
-                        deferRememberSlow(),
-                        10,
-                        (): void => rawLoad(10, contextOffset),
-                        (): readonly number[] => {
-                          const transition = instructions.length;
-                          emit({
-                            op: "cbnz",
-                            width: 64,
-                            rt: 11,
-                            displacement: 0,
-                          });
-                          const skips = nonReferenceTag(valueOffset);
-                          patchInstruction(transition, {
-                            op: "cbnz",
-                            width: 64,
-                            rt: 11,
-                            displacement:
-                              (instructions.length - transition) * 4,
-                          });
-                          return skips;
-                        },
+                    rememberTransitionOrValue: (_valueOffset: number): void => {
+                      rememberObject(deferRememberSlow(), 10, (): void =>
+                        rawLoad(10, contextOffset),
                       );
                     },
                     clearStackWords: (): void => {

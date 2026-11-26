@@ -466,27 +466,20 @@ export interface PropertyEpoch {
   value: number;
 }
 export const propertyEpoch: PropertyEpoch = { value: 1 };
-/** Inline entries per site for reads (IR property-load `entries`): own and
- * inherited entries each, filled in order and then kept. */
+/** Inline entries per site for own reads and stores (IR property-load /
+ * property-store `entries`). */
 export const propertyCacheEntries = 4;
+/** Inline entries per site for inherited/method reads (IR inherited
+ * property-load `entries`). Entry 0 is checked inline on AArch64 and entries
+ * 1..7 live in a cold stub, so monomorphic sites keep their offset-8/offset-72
+ * cache lines while 5..8-shape polymorphic method sites hit inline. */
+export const propertyInheritedCacheEntries = 8;
 export interface ScriptPropertyCache {
-  /** The own entries as generated code reads them (IR property-load), each
-   * the receiver shape and the value's raw-bit word index (inlineSlotBits, or
-   * negative inlineSpillSlotBits for spilled slots past propertySlots).
-   * The inherited entries follow, read by method sites (`method`), each the
-   * receiver shape, the word index (0 for a directly cached inherited value,
-   * or non-zero for an own property of the receiver), and the cached value
-   * itself (`unknown`, 16 bytes), then the propertyEpoch value they were found
-   * under, the epoch record itself, and the sentinel string-primitive shape.
-   * A receiver shape implies its prototype (prototypes have private shapes,
-   * and changing an object's prototype reshapes it), and every structural
-   * change or value write of a prototype advances the epoch, so an unchanged
-   * epoch keeps every directly cached inherited value valid across arbitrary
-   * prototype depths and dictionary-mode prototypes. Then the newest store:
-   * the receiver shape, the value's word index, the shape a transition reaches
-   * (undefined for a store to an existing property) and the propertyEpoch
-   * value the transition was found under. The fields are first and
-   * consecutive; an empty shape is unusedPropertyShape. */
+  /** Own entries first (offsets 8..71, cache line 0), followed by 4 store
+   * entries (72..199, entry 0 on cache line 0, last entry+16 at 184 <= 504)
+   * and `epoch` (200), then 8 inherited entries (208..463, last entry at
+   * offset 432 <= AArch64 ldp max 496) and `inheritedEpoch`/`inheritedEpochs`/
+   * `stringShape` (464..487). */
   ownShape: ScriptShape;
   ownSlot: number;
   ownShape1: ScriptShape;
@@ -495,21 +488,6 @@ export interface ScriptPropertyCache {
   ownSlot2: number;
   ownShape3: ScriptShape;
   ownSlot3: number;
-  inheritedShape: ScriptShape;
-  inheritedSlot: number;
-  inheritedValue: unknown;
-  inheritedShape1: ScriptShape;
-  inheritedSlot1: number;
-  inheritedValue1: unknown;
-  inheritedShape2: ScriptShape;
-  inheritedSlot2: number;
-  inheritedValue2: unknown;
-  inheritedShape3: ScriptShape;
-  inheritedSlot3: number;
-  inheritedValue3: unknown;
-  inheritedEpoch: number;
-  readonly inheritedEpochs: PropertyEpoch;
-  readonly stringShape: ScriptShape;
   storeShape: ScriptShape;
   storeSlot: number;
   storeTransition: ScriptShape | undefined;
@@ -527,6 +505,33 @@ export interface ScriptPropertyCache {
   storeTransition3: ScriptShape | undefined;
   storeEpoch3: number;
   readonly epoch: PropertyEpoch;
+  inheritedShape: ScriptShape;
+  inheritedSlot: number;
+  inheritedValue: unknown;
+  inheritedShape1: ScriptShape;
+  inheritedSlot1: number;
+  inheritedValue1: unknown;
+  inheritedShape2: ScriptShape;
+  inheritedSlot2: number;
+  inheritedValue2: unknown;
+  inheritedShape3: ScriptShape;
+  inheritedSlot3: number;
+  inheritedValue3: unknown;
+  inheritedShape4: ScriptShape;
+  inheritedSlot4: number;
+  inheritedValue4: unknown;
+  inheritedShape5: ScriptShape;
+  inheritedSlot5: number;
+  inheritedValue5: unknown;
+  inheritedShape6: ScriptShape;
+  inheritedSlot6: number;
+  inheritedValue6: unknown;
+  inheritedShape7: ScriptShape;
+  inheritedSlot7: number;
+  inheritedValue7: unknown;
+  inheritedEpoch: number;
+  readonly inheritedEpochs: PropertyEpoch;
+  readonly stringShape: ScriptShape;
   /** Carries the OrdinaryObject record layout for ts-native property-load/store bindings. */
   readonly witnessObject: ScriptObject | undefined;
   /** The shape index of the property the last lookup found (-1 for direct value). */
@@ -566,21 +571,6 @@ export function createScriptPropertyCache(
     ownSlot2: 0,
     ownShape3: unusedPropertyShape,
     ownSlot3: 0,
-    inheritedShape: unusedPropertyShape,
-    inheritedSlot: 0,
-    inheritedValue: undefined,
-    inheritedShape1: unusedPropertyShape,
-    inheritedSlot1: 0,
-    inheritedValue1: undefined,
-    inheritedShape2: unusedPropertyShape,
-    inheritedSlot2: 0,
-    inheritedValue2: undefined,
-    inheritedShape3: unusedPropertyShape,
-    inheritedSlot3: 0,
-    inheritedValue3: undefined,
-    inheritedEpoch: 0,
-    inheritedEpochs: propertyEpoch,
-    stringShape: stringPrimitiveShape,
     storeShape: unusedPropertyShape,
     storeSlot: 0,
     storeTransition: undefined,
@@ -598,12 +588,43 @@ export function createScriptPropertyCache(
     storeTransition3: undefined,
     storeEpoch3: 0,
     epoch: propertyEpoch,
+    inheritedShape: unusedPropertyShape,
+    inheritedSlot: 0,
+    inheritedValue: undefined,
+    inheritedShape1: unusedPropertyShape,
+    inheritedSlot1: 0,
+    inheritedValue1: undefined,
+    inheritedShape2: unusedPropertyShape,
+    inheritedSlot2: 0,
+    inheritedValue2: undefined,
+    inheritedShape3: unusedPropertyShape,
+    inheritedSlot3: 0,
+    inheritedValue3: undefined,
+    inheritedShape4: unusedPropertyShape,
+    inheritedSlot4: 0,
+    inheritedValue4: undefined,
+    inheritedShape5: unusedPropertyShape,
+    inheritedSlot5: 0,
+    inheritedValue5: undefined,
+    inheritedShape6: unusedPropertyShape,
+    inheritedSlot6: 0,
+    inheritedValue6: undefined,
+    inheritedShape7: unusedPropertyShape,
+    inheritedSlot7: 0,
+    inheritedValue7: undefined,
+    inheritedEpoch: 0,
+    inheritedEpochs: propertyEpoch,
+    stringShape: stringPrimitiveShape,
     witnessObject: undefined,
     foundIndex: -1,
     foundValue: undefined,
     first,
     entries: [
       first,
+      propertyCacheEntry(),
+      propertyCacheEntry(),
+      propertyCacheEntry(),
+      propertyCacheEntry(),
       propertyCacheEntry(),
       propertyCacheEntry(),
       propertyCacheEntry(),
@@ -2650,6 +2671,18 @@ export function inlineEntryShape(
       return inherited ? cache.inheritedShape2 : cache.ownShape2;
     case 3:
       return inherited ? cache.inheritedShape3 : cache.ownShape3;
+    case 4:
+      if (inherited) return cache.inheritedShape4;
+      break;
+    case 5:
+      if (inherited) return cache.inheritedShape5;
+      break;
+    case 6:
+      if (inherited) return cache.inheritedShape6;
+      break;
+    case 7:
+      if (inherited) return cache.inheritedShape7;
+      break;
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
@@ -2668,6 +2701,18 @@ export function inlineEntrySlot(
       return inherited ? cache.inheritedSlot2 : cache.ownSlot2;
     case 3:
       return inherited ? cache.inheritedSlot3 : cache.ownSlot3;
+    case 4:
+      if (inherited) return cache.inheritedSlot4;
+      break;
+    case 5:
+      if (inherited) return cache.inheritedSlot5;
+      break;
+    case 6:
+      if (inherited) return cache.inheritedSlot6;
+      break;
+    case 7:
+      if (inherited) return cache.inheritedSlot7;
+      break;
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
@@ -2685,6 +2730,14 @@ export function inlineEntryValue(
       return cache.inheritedValue2;
     case 3:
       return cache.inheritedValue3;
+    case 4:
+      return cache.inheritedValue4;
+    case 5:
+      return cache.inheritedValue5;
+    case 6:
+      return cache.inheritedValue6;
+    case 7:
+      return cache.inheritedValue7;
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
@@ -2742,6 +2795,26 @@ function setInheritedEntry(
       cache.inheritedSlot3 = slot;
       cache.inheritedValue3 = value;
       return;
+    case 4:
+      cache.inheritedShape4 = shape;
+      cache.inheritedSlot4 = slot;
+      cache.inheritedValue4 = value;
+      return;
+    case 5:
+      cache.inheritedShape5 = shape;
+      cache.inheritedSlot5 = slot;
+      cache.inheritedValue5 = value;
+      return;
+    case 6:
+      cache.inheritedShape6 = shape;
+      cache.inheritedSlot6 = slot;
+      cache.inheritedValue6 = value;
+      return;
+    case 7:
+      cache.inheritedShape7 = shape;
+      cache.inheritedSlot7 = slot;
+      cache.inheritedValue7 = value;
+      return;
   }
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
@@ -2755,8 +2828,11 @@ function inlineEntryIndex(
   inherited: boolean,
   shape: ScriptShape,
 ): number {
+  const limit = inherited
+    ? propertyInheritedCacheEntries
+    : propertyCacheEntries;
   let empty = -1;
-  for (let index = 0; index < propertyCacheEntries; index++) {
+  for (let index = 0; index < limit; index++) {
     const current = inlineEntryShape(cache, inherited, index);
     if (current === shape) return index;
     if (empty < 0 && current === unusedPropertyShape) empty = index;
@@ -2778,12 +2854,12 @@ function ownSlotBits(offset: number, slotWord: number): number {
 function prepareInheritedEpoch(cache: ScriptPropertyCache): boolean {
   const epoch = propertyEpoch.value;
   if (cache.inheritedEpoch !== epoch) {
-    for (let index = 0; index < propertyCacheEntries; index++)
+    for (let index = 0; index < propertyInheritedCacheEntries; index++)
       setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
     cache.inheritedEpoch = epoch;
     return true;
   }
-  return cache.inheritedShape3 === unusedPropertyShape;
+  return cache.inheritedShape7 === unusedPropertyShape;
 }
 /** Sampled eviction clock for full megamorphic inline caches (1-in-64 misses):
  * lets hot shapes replace cold startup shapes (e.g. shared Class.create
@@ -2801,21 +2877,23 @@ function sampleEvictInlineEntry(
   const tick = (megamorphicEvictClock.value + 1) | 0;
   megamorphicEvictClock.value = tick;
   if ((tick & 63) !== 0) return;
-  const slotIndex = (tick >>> 6) & (propertyCacheEntries - 1);
   if (holder === object) {
     const bits = ownSlotBits(offset, slotWord);
     if (!cache.method) {
       if (inlineEntryIndex(cache, false, shape) >= 0) return;
+      const slotIndex = (tick >>> 6) & (propertyCacheEntries - 1);
       setOwnEntry(cache, slotIndex, shape, bits);
     } else {
       if (cache.inheritedEpoch !== propertyEpoch.value) return;
       if (inlineEntryIndex(cache, true, shape) >= 0) return;
+      const slotIndex = (tick >>> 6) & (propertyInheritedCacheEntries - 1);
       setInheritedEntry(cache, slotIndex, shape, bits, undefined);
     }
     return;
   }
   if (cache.inheritedEpoch !== propertyEpoch.value) return;
   if (inlineEntryIndex(cache, true, shape) >= 0) return;
+  const slotIndex = (tick >>> 6) & (propertyInheritedCacheEntries - 1);
   setInheritedEntry(cache, slotIndex, shape, 0, directValue);
 }
 /** Make a found property an inline entry: own when the object holds it,
@@ -2920,7 +2998,7 @@ export function lookupCachedScriptProperty(
           (!cache.method && cache.ownShape3 === unusedPropertyShape) ||
           (cache.method &&
             (cache.inheritedEpoch !== propertyEpoch.value ||
-              cache.inheritedShape3 === unusedPropertyShape))
+              cache.inheritedShape7 === unusedPropertyShape))
         )
           addInlineEntry(
             cache,
@@ -2946,7 +3024,7 @@ export function lookupCachedScriptProperty(
         cache.foundValue = stub.directValue;
         if (
           cache.inheritedEpoch !== propertyEpoch.value ||
-          cache.inheritedShape3 === unusedPropertyShape
+          cache.inheritedShape7 === unusedPropertyShape
         )
           addInlineEntry(
             cache,
@@ -3075,7 +3153,11 @@ export function lookupCachedScriptProperty(
     }
   }
   if (holder === undefined) return undefined;
-  let entry = cache.entries[cache.used];
+  const maxEntries =
+    cache.method || holder !== object
+      ? propertyInheritedCacheEntries
+      : propertyCacheEntries;
+  let entry = cache.used < maxEntries ? cache.entries[cache.used] : undefined;
   if (entry === undefined) {
     cache.megamorphic = true;
     stub.name = key;

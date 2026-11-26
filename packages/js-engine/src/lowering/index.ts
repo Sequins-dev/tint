@@ -116,9 +116,12 @@ interface ArgumentsForwarding {
 const scriptRegisterActuals = 7;
 /** In-place value slots of an ordinary object (js-runtime propertySlots). */
 export const propertySlots = 8;
-/** Inline own and inherited read entries per site (js-runtime
+/** Inline own read and store entries per site (js-runtime
  * propertyCacheEntries). */
 export const propertyCacheEntries = 4;
+/** Inline inherited/method read entries per site (js-runtime
+ * propertyInheritedCacheEntries). */
+export const propertyInheritedCacheEntries = 8;
 /** The runtime functions generated property caches read and store values
  * with, and the slot accessors their portable bodies share. */
 export const propertyCacheNames: readonly string[] = [
@@ -214,7 +217,7 @@ export function propertyCacheBindings(
       field: "internalValue0",
       count: propertySlots,
       siteField: "inheritedShape",
-      entries: propertyCacheEntries,
+      entries: propertyInheritedCacheEntries,
     },
     { module, name: "absentPropertyValue", operation: "absent-test" },
     {
@@ -982,8 +985,332 @@ function lowerScriptEntry(
       }
     }
   const localSlots = new Map<number, Expression>();
+  const scalarArraySlots = new Map<number, readonly Expression[]>();
   const frameLexicals = new Set<number>();
   const sloppySelfBindings = new Set<number>();
+
+  // Non-escaping fresh dense array literals (`const a = [e0..ek]`, 1 <= k <= 4)
+  // whose only references are pure R-value `a.length` or `a[idx]` reads after
+  // the declaration. Scalar-replacing `a` into `k` local element temporaries
+  // avoids heap allocation while remaining ECMAScript-exact (own data elements
+  // 0..k-1 and own non-configurable `length` cannot be shadowed by
+  // Array.prototype; out-of-range or non-number keys materialize on the cold
+  // fallback path).
+  const scalarArrayCandidates = new Set<number>();
+  if (
+    !dynamicBindings &&
+    !compactResults &&
+    localBindingDeclarations.size > 0
+  ) {
+    const candidateDecls = new Map<number, number>();
+    const allowedRefs = new Set<number>();
+    const pendingStmts: Statement[] = [];
+    const pendingExprs: Expression[] = [];
+    for (const stmt of script.statements) {
+      if (stmt !== undefined) pendingStmts.push(stmt);
+    }
+    while (pendingStmts.length > 0 || pendingExprs.length > 0) {
+      while (pendingExprs.length > 0) {
+        const expr = pendingExprs.pop();
+        if (expr === undefined) continue;
+        switch (expr.kind) {
+          case "group":
+          case "satisfies":
+          case "await":
+          case "yield": {
+            const innerExpr = expr.expression;
+            if (innerExpr !== undefined) pendingExprs.push(innerExpr);
+            break;
+          }
+          case "unary":
+            if (expr.operator === "delete") {
+              const inner = expr.operand;
+              if (inner.kind === "member") {
+                pendingExprs.push(inner.object);
+                break;
+              }
+              if (inner.kind === "index") {
+                pendingExprs.push(inner.object);
+                pendingExprs.push(inner.index);
+                break;
+              }
+            }
+            pendingExprs.push(expr.operand);
+            break;
+          case "update": {
+            const inner = expr.target;
+            if (inner.kind === "member") {
+              pendingExprs.push(inner.object);
+              break;
+            }
+            if (inner.kind === "index") {
+              pendingExprs.push(inner.object);
+              pendingExprs.push(inner.index);
+              break;
+            }
+            pendingExprs.push(inner);
+            break;
+          }
+          case "binary":
+            pendingExprs.push(expr.left);
+            pendingExprs.push(expr.right);
+            break;
+          case "conditional":
+            pendingExprs.push(expr.test);
+            pendingExprs.push(expr.consequent);
+            pendingExprs.push(expr.alternate);
+            break;
+          case "assignment":
+          case "compound": {
+            const t = expr.target;
+            if (t.kind === "member") pendingExprs.push(t.object);
+            else if (t.kind === "index") {
+              pendingExprs.push(t.object);
+              pendingExprs.push(t.index);
+            }
+            pendingExprs.push(expr.value);
+            break;
+          }
+          case "member":
+            if (
+              !expr.optional &&
+              !expr.private &&
+              expr.property === "length" &&
+              expr.object.kind === "identifier"
+            ) {
+              allowedRefs.add(expr.object.start);
+            } else {
+              pendingExprs.push(expr.object);
+            }
+            break;
+          case "index":
+            if (!expr.optional && expr.object.kind === "identifier") {
+              allowedRefs.add(expr.object.start);
+            } else {
+              pendingExprs.push(expr.object);
+            }
+            pendingExprs.push(expr.index);
+            break;
+          case "call":
+          case "new": {
+            const c = expr.callee;
+            if (c.kind === "member") pendingExprs.push(c.object);
+            else if (c.kind === "index") {
+              pendingExprs.push(c.object);
+              pendingExprs.push(c.index);
+            } else pendingExprs.push(c);
+            for (const arg of expr.arguments) {
+              if (arg === undefined) continue;
+              pendingExprs.push(arg.kind === "spread" ? arg.value : arg);
+            }
+            break;
+          }
+          case "array":
+            for (const el of expr.elements) {
+              if (el === undefined || el.kind === "elision") continue;
+              pendingExprs.push(el.kind === "spread" ? el.value : el);
+            }
+            break;
+          case "object":
+            for (const prop of expr.properties) {
+              if (prop === undefined) continue;
+              if (prop.kind === "spread") pendingExprs.push(prop.value);
+              else {
+                const keyExpr = prop.keyExpression;
+                if (keyExpr !== undefined) pendingExprs.push(keyExpr);
+                pendingExprs.push(prop.value);
+              }
+            }
+            break;
+          case "template-expression":
+            for (const item of expr.substitutions) {
+              if (item !== undefined) pendingExprs.push(item);
+            }
+            break;
+          case "tagged-template": {
+            const t = expr.tag;
+            if (t.kind === "member") pendingExprs.push(t.object);
+            else if (t.kind === "index") {
+              pendingExprs.push(t.object);
+              pendingExprs.push(t.index);
+            } else pendingExprs.push(t);
+            for (const item of expr.template.substitutions) {
+              if (item !== undefined) pendingExprs.push(item);
+            }
+            break;
+          }
+          case "private-in":
+            pendingExprs.push(expr.object);
+            break;
+          case "function-expression":
+            pendingStmts.push(expr.body);
+            break;
+          case "arrow": {
+            const arrowBody = expr.body;
+            if (arrowBody.kind === "block") pendingStmts.push(arrowBody);
+            else pendingExprs.push(arrowBody);
+            break;
+          }
+          default:
+            break;
+        }
+      }
+      if (pendingStmts.length === 0) break;
+      const stmt = pendingStmts.pop();
+      if (stmt === undefined) continue;
+      switch (stmt.kind) {
+        case "block":
+          for (const child of stmt.statements) {
+            if (child !== undefined) pendingStmts.push(child);
+          }
+          break;
+        case "expression":
+          pendingExprs.push(stmt.expression);
+          break;
+        case "variable":
+          for (const decl of stmt.declarations) {
+            if (decl === undefined) continue;
+            const declInit = decl.initializer;
+            if (
+              stmt.mode === "const" &&
+              stmt.disposal === undefined &&
+              decl.kind !== "object-binding" &&
+              decl.kind !== "array-binding" &&
+              decl.type === undefined &&
+              !hasBindingContract(decl) &&
+              declInit !== undefined &&
+              declInit.kind === "array" &&
+              declInit.elements.length >= 1 &&
+              declInit.elements.length <= 4
+            ) {
+              const elems = declInit.elements;
+              let dense = true;
+              for (const el of elems) {
+                if (
+                  el === undefined ||
+                  el.kind === "spread" ||
+                  el.kind === "elision"
+                ) {
+                  dense = false;
+                  break;
+                }
+              }
+              const binding = localBindingDeclarations.get(decl.start);
+              if (
+                dense &&
+                binding !== undefined &&
+                !capturedBindings.has(binding) &&
+                !writtenSlots.has(binding)
+              ) {
+                candidateDecls.set(binding, decl.end);
+              }
+            }
+            if (declInit !== undefined) pendingExprs.push(declInit);
+          }
+          break;
+        case "function":
+          pendingStmts.push(stmt.body);
+          break;
+        case "if": {
+          pendingExprs.push(stmt.test);
+          pendingStmts.push(stmt.consequent);
+          const alt = stmt.alternate;
+          if (alt !== undefined) pendingStmts.push(alt);
+          break;
+        }
+        case "for": {
+          const forInit = stmt.initializer;
+          if (forInit !== undefined) {
+            if (forInit.kind === "variable") pendingStmts.push(forInit);
+            else if (forInit.kind === "expression")
+              pendingExprs.push(forInit.expression);
+          }
+          const forTest = stmt.test;
+          if (forTest !== undefined) pendingExprs.push(forTest);
+          const forUpdate = stmt.update;
+          if (forUpdate !== undefined) pendingExprs.push(forUpdate);
+          pendingStmts.push(stmt.body);
+          break;
+        }
+        case "while":
+        case "do-while":
+          pendingExprs.push(stmt.test);
+          pendingStmts.push(stmt.body);
+          break;
+        case "for-in":
+        case "for-of":
+          pendingExprs.push(stmt.iterable);
+          pendingStmts.push(stmt.body);
+          break;
+        case "for-in-assignment":
+        case "for-of-assignment":
+          pendingExprs.push(stmt.iterable);
+          pendingStmts.push(stmt.body);
+          break;
+        case "switch":
+          pendingExprs.push(stmt.expression);
+          for (const clause of stmt.clauses) {
+            if (clause === undefined) continue;
+            const clauseTest = clause.test;
+            if (clauseTest !== undefined) pendingExprs.push(clauseTest);
+            for (const child of clause.statements) {
+              if (child !== undefined) pendingStmts.push(child);
+            }
+          }
+          break;
+        case "try": {
+          pendingStmts.push(stmt.body);
+          const handler = stmt.handler;
+          if (handler !== undefined) pendingStmts.push(handler.body);
+          const finalizer = stmt.finalizer;
+          if (finalizer !== undefined) pendingStmts.push(finalizer);
+          break;
+        }
+        case "label":
+          pendingStmts.push(stmt.body);
+          break;
+        case "with":
+          pendingExprs.push(stmt.object);
+          pendingStmts.push(stmt.body);
+          break;
+        case "return":
+        case "throw": {
+          const stmtExpr = stmt.expression;
+          if (stmtExpr !== undefined) pendingExprs.push(stmtExpr);
+          break;
+        }
+        case "export-default":
+          pendingExprs.push(stmt.value);
+          break;
+        default:
+          break;
+      }
+    }
+    if (candidateDecls.size > 0) {
+      const refCounts = new Map<number, number>();
+      const rejected = new Set<number>();
+      for (const reference of bound.value.references) {
+        if (reference === undefined) continue;
+        const refBinding = reference.binding;
+        if (refBinding === undefined) continue;
+        const declEnd = candidateDecls.get(refBinding);
+        if (declEnd === undefined) continue;
+        if (
+          reference.access !== "read" ||
+          reference.node.start <= declEnd ||
+          !allowedRefs.has(reference.node.start)
+        ) {
+          rejected.add(refBinding);
+        } else {
+          refCounts.set(refBinding, (refCounts.get(refBinding) ?? 0) + 1);
+        }
+      }
+      for (const [binding] of candidateDecls) {
+        if (!rejected.has(binding) && (refCounts.get(binding) ?? 0) > 0)
+          scalarArrayCandidates.add(binding);
+      }
+    }
+  }
   const slotInitialization = new Map<number, Expression>();
   const numericLeaves = new Map<number, NumericLeaf>();
   if (checkContracts) {
@@ -1111,18 +1438,39 @@ function lowerScriptEntry(
   let currentFunctionStart: number = -1;
   // Fixed record fields work in AOT and managed entries. Each closure
   // captures the groups it uses, and one large host harness cannot exceed a
-  // native record's field limit.
+  // native record's field limit. Give every slot entry a table-, structure-,
+  // and index-unique deterministic field name so separate chunks and distinct
+  // scripts never collide on structural record layouts (which would otherwise
+  // turn every cache lookup into a multi-way union record dispatch and block
+  // LICM/hoisting), while structurally identical scripts differing only in
+  // binding names or literals still share one compiled entry.
   const slotGroupWidth = 24;
+  let structHash = 2166136261 ^ script.statements.length;
+  for (let i = 0; i < script.statements.length; i++) {
+    const st = script.statements[i];
+    if (st === undefined) continue;
+    const k = st.kind;
+    for (let j = 0; j < k.length; j++) {
+      structHash = Math.imul(structHash ^ k.charCodeAt(j), 16777619) >>> 0;
+    }
+    if (st.kind === "function") {
+      structHash = Math.imul(structHash ^ st.parameters.length, 16777619) >>> 0;
+    } else if (st.kind === "variable") {
+      structHash =
+        Math.imul(structHash ^ st.declarations.length, 16777619) >>> 0;
+    }
+  }
+  const slotTableTag = String(structHash);
   function slotGroupName(prefix: string, index: number): string {
     return prefix + Math.floor(index / slotGroupWidth);
   }
-  function slotFieldName(index: number): string {
-    return "cell" + (index % slotGroupWidth);
+  function slotFieldName(prefix: string, index: number): string {
+    return prefix + "_" + slotTableTag + "_" + index;
   }
   function slotField(prefix: string, index: number, span: Span): Expression {
     return member(
       id(slotGroupName(prefix, index), span),
-      slotFieldName(index),
+      slotFieldName(prefix, index),
       span,
     );
   }
@@ -1134,7 +1482,9 @@ function lowerScriptEntry(
     const result: Statement[] = [];
     for (let start = 0; start < values.length; start += slotGroupWidth) {
       const entries = values.slice(start, start + slotGroupWidth);
-      const names = entries.map((_entry, i) => slotFieldName(i));
+      const names = entries.map((_entry, i) =>
+        slotFieldName(prefix, start + i),
+      );
       let layout: TypeNode | undefined = undefined;
       if (type !== undefined) {
         const fieldType: TypeNode = type;
@@ -2227,6 +2577,7 @@ function lowerScriptEntry(
     for (const binding of initialized) {
       if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
       localSlots.delete(binding);
+      scalarArraySlots.delete(binding);
       frameLexicals.delete(binding);
       slotInitialization.delete(binding);
       numericLeaves.delete(binding);
@@ -10369,6 +10720,105 @@ function lowerScriptEntry(
         return value(node.expression, inferredName);
       case "member":
       case "index": {
+        if (
+          node.kind === "member" &&
+          !node.optional &&
+          !node.private &&
+          node.property === "length" &&
+          node.object.kind === "identifier"
+        ) {
+          const arrBinding = localBindingReferences.get(node.object.start);
+          const elems =
+            arrBinding !== undefined
+              ? scalarArraySlots.get(arrBinding)
+              : undefined;
+          if (elems !== undefined) return scalarNumber(elems.length, node);
+        } else if (
+          node.kind === "index" &&
+          !node.optional &&
+          node.object.kind === "identifier"
+        ) {
+          const arrBinding = localBindingReferences.get(node.object.start);
+          const elems =
+            arrBinding !== undefined
+              ? scalarArraySlots.get(arrBinding)
+              : undefined;
+          if (elems !== undefined) {
+            const idxVal = temporary(value(node.index), true);
+            const res = temporary(id("undefined", node), true, true);
+            if (res.kind !== "identifier")
+              throw "SCALAR_ARRAY_RESULT_INVARIANT";
+            const hit = temporary(
+              { ...at(node), kind: "boolean", value: false },
+              false,
+              true,
+            );
+            if (hit.kind !== "identifier") throw "SCALAR_ARRAY_HIT_INVARIANT";
+            let selectChain: Statement | undefined = undefined;
+            for (let i = elems.length - 1; i >= 0; i--) {
+              const el = elems[i];
+              if (el === undefined) continue;
+              selectChain = {
+                ...at(node),
+                kind: "if",
+                test: scalarBinary("===", idxVal, scalarNumber(i, node), node),
+                consequent: block(
+                  [
+                    assignTo(res.name, copyIdentifier(el, node), node),
+                    assignTo(
+                      hit.name,
+                      { ...at(node), kind: "boolean", value: true },
+                      node,
+                    ),
+                  ],
+                  node,
+                ),
+                alternate: selectChain,
+              };
+            }
+            if (selectChain !== undefined) {
+              statements.push({
+                ...at(node),
+                kind: "if",
+                test: numberOperand(idxVal, node),
+                consequent: block([selectChain], node),
+                alternate: undefined,
+              });
+            }
+            const indexSpan: Span = node;
+            const fallbackStmts = nestedStatements(() => {
+              usesSmallArrays = true;
+              const args: Expression[] = [];
+              for (const el of elems) {
+                if (el !== undefined) args.push(copyIdentifier(el, indexSpan));
+              }
+              args.push(id("$errors", indexSpan));
+              const mat = temporary(
+                runtimeCall(`createArray${elems.length}`, args, indexSpan),
+              );
+              statements.push(
+                assignTo(
+                  res.name,
+                  propertyValue(mat, idxVal, indexSpan),
+                  indexSpan,
+                ),
+              );
+            });
+            statements.push({
+              ...at(node),
+              kind: "if",
+              test: {
+                ...at(node),
+                kind: "unary",
+                operator: "!",
+                operand: copyIdentifier(hit, node),
+              },
+              consequent: block(fallbackStmts, node),
+              alternate: undefined,
+            });
+            return id(res.name, node);
+          }
+        }
         return readAssignment(captureAssignment(node));
       }
       case "new": {
@@ -13558,12 +14008,11 @@ function lowerScriptEntry(
     // No source-level debugging facility is enabled in this execution profile.
     if (node.kind === "empty" || node.kind === "debugger") return;
     if (node.kind === "expression") {
-      const result = value(node.expression);
       expression({
         ...at(node),
         kind: "assignment",
         target: id("$completion"),
-        value: result,
+        value: value(node.expression),
       });
     } else if (node.kind === "variable") {
       if (node.disposal !== undefined && disposalScope === undefined)
@@ -13594,6 +14043,35 @@ function lowerScriptEntry(
             );
           }
         } else {
+          if (
+            node.mode === "const" &&
+            node.disposal === undefined &&
+            withDepth === 0 &&
+            !functionHasDirectEval &&
+            initializer !== undefined &&
+            initializer.kind === "array"
+          ) {
+            const arrBinding = localBindingDeclarations.get(declaration.start);
+            if (
+              arrBinding !== undefined &&
+              scalarArrayCandidates.has(arrBinding) &&
+              frameLexicals.has(arrBinding)
+            ) {
+              const elemTemps: Expression[] = [];
+              for (const el of initializer.elements) {
+                if (
+                  el === undefined ||
+                  el.kind === "spread" ||
+                  el.kind === "elision"
+                )
+                  throw "SCALAR_ARRAY_ELEMENT_INVARIANT";
+                elemTemps.push(temporary(value(el), true));
+              }
+              scalarArraySlots.set(arrBinding, elemTemps);
+              initializeKnownLexical(arrBinding, id("undefined"), declaration);
+              continue;
+            }
+          }
           let initialized =
             initializer === undefined
               ? id("undefined")

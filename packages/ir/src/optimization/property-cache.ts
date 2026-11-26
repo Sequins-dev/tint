@@ -44,6 +44,63 @@ const maxCachedGlobalsPerLoop = 12;
 const maxCachedPropertiesPerLoop = 16;
 const maxInvariantChainDepth = 8;
 
+/** Build reverse-postorder reachable block order and per-block predecessor lists. */
+function buildRpoAndPreds(fn: FunctionIR): {
+  readonly order: readonly number[];
+  readonly predsOf: readonly (readonly number[])[];
+} {
+  const nBlocks = fn.blocks.length;
+  const seenBlk = new Uint8Array(nBlocks);
+  const post: number[] = [];
+  const sBlk: number[] = [fn.entry];
+  const sIdx: number[] = [0];
+  seenBlk[fn.entry] = 1;
+  while (sBlk.length > 0) {
+    const top = sBlk.length - 1;
+    const bid = sBlk[top];
+    const ni = sIdx[top];
+    if (bid === undefined || ni === undefined) break;
+    const blk = fn.blocks[bid];
+    if (blk === undefined) {
+      sBlk.pop();
+      sIdx.pop();
+      continue;
+    }
+    const succs = blockSuccessors(blk);
+    if (ni < succs.length) {
+      sIdx[top] = ni + 1;
+      const s = succs[ni];
+      if (s !== undefined && seenBlk[s] === 0) {
+        seenBlk[s] = 1;
+        sBlk.push(s);
+        sIdx.push(0);
+      }
+    } else {
+      sBlk.pop();
+      sIdx.pop();
+      post.push(bid);
+    }
+  }
+  const order: number[] = [];
+  const predsOf: number[][] = [];
+  for (let i = 0; i < nBlocks; i++) predsOf.push([]);
+  for (let i = post.length - 1; i >= 0; i--) {
+    const bid = post[i];
+    if (bid !== undefined) order.push(bid);
+  }
+  for (const bid of order) {
+    const blk = fn.blocks[bid];
+    if (blk === undefined) continue;
+    for (const s of blockSuccessors(blk)) {
+      if (s !== undefined && seenBlk[s] === 1) {
+        const list = predsOf[s];
+        if (list !== undefined && list.indexOf(bid) < 0) list.push(bid);
+      }
+    }
+  }
+  return { order, predsOf };
+}
+
 /** Scan the module once to collect mutated record fields and map immutable
  * `$pc` record fields initialized from `createScriptPropertyCache` calls to
  * their static property names for `property-store` disambiguation. */
@@ -137,10 +194,11 @@ export function analyzeModulePropertySites(
 
   const siteFieldAmbiguous = new Set<string>();
   const writtenRecordFields = new Set<string>();
+  const fnsWithFactoryNew: FunctionIR[] = [];
   let visited = 0;
   for (const other of module.functions) {
     if (other === undefined || other.import === true) continue;
-    let hasSiteFactoryCall = false;
+    let hasFactoryNew = false;
     for (const block of other.blocks) {
       if (block === undefined) continue;
       if (++visited > budget) return undefined;
@@ -153,17 +211,280 @@ export function analyzeModulePropertySites(
         mutatedRecordFields.add(fk);
         if (term.operation === "write") writtenRecordFields.add(fk);
       }
-      if (!hasSiteFactoryCall) {
+      if (!hasFactoryNew && siteFactoryFunctions.size > 0) {
         for (const op of block.instructions) {
           if (
             op !== undefined &&
-            op.kind === "call" &&
+            op.kind === "function-new" &&
             siteFactoryFunctions.has(op.target)
           ) {
-            hasSiteFactoryCall = true;
+            hasFactoryNew = true;
             break;
           }
         }
+      }
+    }
+    if (hasFactoryNew) fnsWithFactoryNew.push(other);
+  }
+
+  // When `closedRecords` is disabled (e.g. dynamic-eval hosts with runtime
+  // surfaces), `createScriptPropertyCache` stays a `call-indirect` loaded from
+  // immutable module-export / closure-environment record fields. Track record
+  // fields whose every initializer/write across the module is a proven
+  // `siteFactoryFunctions` closure so `siteFieldName` stays populated.
+  const siteFactoryFields = new Set<string>();
+  if (siteFactoryFunctions.size > 0 && fnsWithFactoryNew.length > 0) {
+    const ambiguousFactoryFields = new Set<string>();
+    const recordLayouts = module.records ?? [];
+    for (let round = 0; round < 4; round++) {
+      const candidates: FunctionIR[] = [];
+      if (round === 0) {
+        for (const fn of fnsWithFactoryNew) candidates.push(fn);
+      } else {
+        for (const other of module.functions) {
+          if (other === undefined || other.import === true) continue;
+          let readsFactory = false;
+          for (const block of other.blocks) {
+            if (block === undefined) continue;
+            const term = block.terminator;
+            if (
+              (term.kind === "record" || term.kind === "record-cell") &&
+              term.operation === "read" &&
+              siteFactoryFields.has(
+                String(term.record) + ":" + String(term.field),
+              )
+            ) {
+              readsFactory = true;
+              break;
+            }
+            for (const op of block.instructions) {
+              if (
+                op !== undefined &&
+                op.kind === "record-read" &&
+                siteFactoryFields.has(
+                  String(op.record) + ":" + String(op.field),
+                )
+              ) {
+                readsFactory = true;
+                break;
+              }
+            }
+            if (readsFactory) break;
+          }
+          if (readsFactory) candidates.push(other);
+        }
+      }
+      if (candidates.length === 0) break;
+      const checkedInRound = new Set<number>();
+      const newlyFound = new Set<string>();
+      const newlyRecords = new Set<number>();
+      const newlyNonFactory = new Set<string>();
+      for (const other of candidates) {
+        checkedInRound.add(other.id);
+        const cfg = buildRpoAndPreds(other);
+        const outFactory = new Map<number, Set<number>>();
+        for (const bid of cfg.order) {
+          const blk = other.blocks[bid];
+          if (blk === undefined) continue;
+          if (++visited > budget) return undefined;
+          const curSlotFactory = new Set<number>();
+          const ps = cfg.predsOf[bid];
+          if (bid !== other.entry && ps !== undefined && ps.length > 0) {
+            const ready: number[] = [];
+            for (const p of ps)
+              if (p !== undefined && outFactory.has(p)) ready.push(p);
+            const first = ready[0];
+            if (first !== undefined) {
+              const fSet = outFactory.get(first);
+              if (fSet !== undefined) {
+                for (const s of fSet) {
+                  let ok = true;
+                  for (let j = 1; j < ready.length; j++) {
+                    const p = ready[j];
+                    if (p === undefined || !outFactory.get(p)?.has(s)) {
+                      ok = false;
+                      break;
+                    }
+                  }
+                  if (ok) curSlotFactory.add(s);
+                }
+              }
+            }
+          }
+          const valIsFactory = new Set<number>();
+          for (const op of blk.instructions) {
+            if (op === undefined) continue;
+            if (
+              op.kind === "function-new" &&
+              siteFactoryFunctions.has(op.target)
+            ) {
+              valIsFactory.add(op.id);
+            } else if (
+              op.kind === "record-read" &&
+              siteFactoryFields.has(String(op.record) + ":" + String(op.field))
+            ) {
+              valIsFactory.add(op.id);
+            } else if (op.kind === "load") {
+              if (curSlotFactory.has(op.slot)) valIsFactory.add(op.id);
+            } else if (op.kind === "store") {
+              if (valIsFactory.has(op.value)) curSlotFactory.add(op.slot);
+              else curSlotFactory.delete(op.slot);
+            } else if (op.kind === "record-new") {
+              const fields = recordLayouts[op.record]?.fields;
+              for (let f = 0; f < op.arguments.length; f++) {
+                const argId = op.arguments[f];
+                if (
+                  argId === undefined &&
+                  fields?.[f]?.stateOffset !== undefined
+                )
+                  continue;
+                const fk = String(op.record) + ":" + String(f);
+                if (argId !== undefined && valIsFactory.has(argId)) {
+                  if (
+                    !writtenRecordFields.has(fk) &&
+                    !ambiguousFactoryFields.has(fk) &&
+                    !siteFactoryFields.has(fk)
+                  ) {
+                    newlyFound.add(fk);
+                    newlyRecords.add(op.record);
+                  }
+                } else {
+                  newlyNonFactory.add(fk);
+                }
+              }
+            }
+          }
+          const term = blk.terminator;
+          if (
+            (term.kind === "record" ||
+              term.kind === "record-cell" ||
+              term.kind === "cell") &&
+            term.operation === "read"
+          ) {
+            if (
+              (term.kind === "record" || term.kind === "record-cell") &&
+              siteFactoryFields.has(
+                String(term.record) + ":" + String(term.field),
+              )
+            )
+              curSlotFactory.add(term.slot);
+            else curSlotFactory.delete(term.slot);
+          } else if (
+            (term.kind === "record" || term.kind === "record-cell") &&
+            term.operation === "initialize"
+          ) {
+            const fk = String(term.record) + ":" + String(term.field);
+            if (curSlotFactory.has(term.slot)) {
+              if (
+                !writtenRecordFields.has(fk) &&
+                !ambiguousFactoryFields.has(fk) &&
+                !siteFactoryFields.has(fk)
+              ) {
+                newlyFound.add(fk);
+                newlyRecords.add(term.record);
+              }
+            } else {
+              newlyNonFactory.add(fk);
+            }
+          }
+          outFactory.set(bid, curSlotFactory);
+        }
+      }
+      for (const fk of newlyNonFactory) {
+        newlyFound.delete(fk);
+        siteFactoryFields.delete(fk);
+        ambiguousFactoryFields.add(fk);
+      }
+      if (newlyFound.size === 0) break;
+      // Reject any newly discovered field written/initialized outside the
+      // functions verified in this round.
+      for (const other of module.functions) {
+        if (
+          other === undefined ||
+          other.import === true ||
+          checkedInRound.has(other.id)
+        )
+          continue;
+        for (const block of other.blocks) {
+          if (block === undefined) continue;
+          const term = block.terminator;
+          if (
+            (term.kind === "record" || term.kind === "record-cell") &&
+            term.operation !== "read" &&
+            newlyRecords.has(term.record)
+          ) {
+            const fk = String(term.record) + ":" + String(term.field);
+            if (newlyFound.has(fk)) {
+              newlyFound.delete(fk);
+              ambiguousFactoryFields.add(fk);
+            }
+          }
+          for (const op of block.instructions) {
+            if (
+              op === undefined ||
+              op.kind !== "record-new" ||
+              !newlyRecords.has(op.record)
+            )
+              continue;
+            const fields = recordLayouts[op.record]?.fields;
+            for (let f = 0; f < op.arguments.length; f++) {
+              if (
+                op.arguments[f] === undefined &&
+                fields?.[f]?.stateOffset !== undefined
+              )
+                continue;
+              const fk = String(op.record) + ":" + String(f);
+              if (newlyFound.has(fk)) {
+                newlyFound.delete(fk);
+                ambiguousFactoryFields.add(fk);
+              }
+            }
+          }
+        }
+      }
+      if (newlyFound.size === 0) break;
+      for (const fk of newlyFound) siteFactoryFields.add(fk);
+    }
+  }
+
+  for (const other of module.functions) {
+    if (other === undefined || other.import === true) continue;
+    let hasSiteFactoryCall = false;
+    let hasIndirectCall = false;
+    let hasFactorySource = false;
+    for (const block of other.blocks) {
+      if (block === undefined) continue;
+      if (siteFactoryFields.size > 0 && !hasFactorySource) {
+        const term = block.terminator;
+        if (
+          (term.kind === "record" || term.kind === "record-cell") &&
+          term.operation === "read" &&
+          siteFactoryFields.has(String(term.record) + ":" + String(term.field))
+        )
+          hasFactorySource = true;
+      }
+      for (const op of block.instructions) {
+        if (op === undefined) continue;
+        if (op.kind === "call" && siteFactoryFunctions.has(op.target)) {
+          hasSiteFactoryCall = true;
+          break;
+        }
+        if (op.kind === "call-indirect" && op.scriptArguments === undefined)
+          hasIndirectCall = true;
+        else if (
+          op.kind === "function-new" &&
+          siteFactoryFunctions.has(op.target)
+        )
+          hasFactorySource = true;
+        else if (
+          op.kind === "record-read" &&
+          siteFactoryFields.has(String(op.record) + ":" + String(op.field))
+        )
+          hasFactorySource = true;
+      }
+      if (hasSiteFactoryCall || (hasIndirectCall && hasFactorySource)) {
+        hasSiteFactoryCall = true;
+        break;
       }
     }
     if (!hasSiteFactoryCall) continue;
@@ -202,66 +523,20 @@ export function analyzeModulePropertySites(
         recordSiteField(prefix + String(f), table.names[f]);
       }
     }
-    const nBlocks = other.blocks.length;
-    const seenBlk = new Uint8Array(nBlocks);
-    const post: number[] = [];
-    const sBlk: number[] = [other.entry];
-    const sIdx: number[] = [0];
-    seenBlk[other.entry] = 1;
-    while (sBlk.length > 0) {
-      const top = sBlk.length - 1;
-      const bid = sBlk[top];
-      const ni = sIdx[top];
-      if (bid === undefined || ni === undefined) break;
-      const blk = other.blocks[bid];
-      if (blk === undefined) {
-        sBlk.pop();
-        sIdx.pop();
-        continue;
-      }
-      const succs = blockSuccessors(blk);
-      if (ni < succs.length) {
-        sIdx[top] = ni + 1;
-        const s = succs[ni];
-        if (s !== undefined && seenBlk[s] === 0) {
-          seenBlk[s] = 1;
-          sBlk.push(s);
-          sIdx.push(0);
-        }
-      } else {
-        sBlk.pop();
-        sIdx.pop();
-        post.push(bid);
-      }
-    }
-    const order: number[] = [];
-    const predsOf: number[][] = [];
-    for (let i = 0; i < nBlocks; i++) predsOf.push([]);
-    for (let i = post.length - 1; i >= 0; i--) {
-      const bid = post[i];
-      if (bid !== undefined) order.push(bid);
-    }
-    for (const bid of order) {
-      const blk = other.blocks[bid];
-      if (blk === undefined) continue;
-      for (const s of blockSuccessors(blk)) {
-        if (s !== undefined && seenBlk[s] === 1) {
-          const list = predsOf[s];
-          if (list !== undefined && list.indexOf(bid) < 0) list.push(bid);
-        }
-      }
-    }
+    const cfg = buildRpoAndPreds(other);
     const outStr = new Map<number, Map<number, string>>();
     const outSite = new Map<number, Map<number, string>>();
     const outTable = new Map<number, Map<number, SiteTableInfo>>();
-    for (const bid of order) {
+    const outFactory = new Map<number, Set<number>>();
+    for (const bid of cfg.order) {
       const blk = other.blocks[bid];
       if (blk === undefined) continue;
       if (++visited > budget) return undefined;
       const curSlotStr = new Map<number, string>();
       const curSlotSite = new Map<number, string>();
       const curSlotTable = new Map<number, SiteTableInfo>();
-      const ps = predsOf[bid];
+      const curSlotFactory = new Set<number>();
+      const ps = cfg.predsOf[bid];
       if (bid !== other.entry && ps !== undefined && ps.length > 0) {
         const ready: number[] = [];
         for (const p of ps)
@@ -271,6 +546,7 @@ export function analyzeModulePropertySites(
           const fStr = outStr.get(first);
           const fSite = outSite.get(first);
           const fTable = outTable.get(first);
+          const fFactory = outFactory.get(first);
           if (fStr !== undefined) {
             for (const [k, v] of fStr) {
               let ok = true;
@@ -310,11 +586,25 @@ export function analyzeModulePropertySites(
               if (ok) curSlotTable.set(k, v);
             }
           }
+          if (fFactory !== undefined) {
+            for (const s of fFactory) {
+              let ok = true;
+              for (let j = 1; j < ready.length; j++) {
+                const p = ready[j];
+                if (p === undefined || !outFactory.get(p)?.has(s)) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) curSlotFactory.add(s);
+            }
+          }
         }
       }
       const strLits = new Map<number, string>();
       const valSiteName = new Map<number, string>();
       const valSiteTable = new Map<number, SiteTableInfo>();
+      const valIsFactory = new Set<number>();
       for (const op of blk.instructions) {
         if (op === undefined) continue;
         if (op.kind === "string-literal") {
@@ -322,6 +612,16 @@ export function analyzeModulePropertySites(
         } else if (op.kind === "string-wrap") {
           const s = strLits.get(op.value);
           if (s !== undefined) strLits.set(op.id, s);
+        } else if (
+          op.kind === "function-new" &&
+          siteFactoryFunctions.has(op.target)
+        ) {
+          valIsFactory.add(op.id);
+        } else if (
+          op.kind === "record-read" &&
+          siteFactoryFields.has(String(op.record) + ":" + String(op.field))
+        ) {
+          valIsFactory.add(op.id);
         } else if (op.kind === "load") {
           const s = curSlotStr.get(op.slot);
           if (s !== undefined) strLits.set(op.id, s);
@@ -329,9 +629,21 @@ export function analyzeModulePropertySites(
           if (sn !== undefined) valSiteName.set(op.id, sn);
           const tbl = curSlotTable.get(op.slot);
           if (tbl !== undefined) valSiteTable.set(op.id, tbl);
+          if (curSlotFactory.has(op.slot)) valIsFactory.add(op.id);
         } else if (op.kind === "call") {
           const callId = op.id;
           if (siteFactoryFunctions.has(op.target) && callId !== undefined) {
+            const arg0 = op.arguments[0];
+            const lit = arg0 === undefined ? undefined : strLits.get(arg0);
+            if (lit !== undefined) valSiteName.set(callId, lit);
+          }
+        } else if (op.kind === "call-indirect") {
+          const callId = op.id;
+          if (
+            op.scriptArguments === undefined &&
+            callId !== undefined &&
+            valIsFactory.has(op.callee)
+          ) {
             const arg0 = op.arguments[0];
             const lit = arg0 === undefined ? undefined : strLits.get(arg0);
             if (lit !== undefined) valSiteName.set(callId, lit);
@@ -346,6 +658,8 @@ export function analyzeModulePropertySites(
           const tbl = valSiteTable.get(op.value);
           if (tbl !== undefined) curSlotTable.set(op.slot, tbl);
           else curSlotTable.delete(op.slot);
+          if (valIsFactory.has(op.value)) curSlotFactory.add(op.slot);
+          else curSlotFactory.delete(op.slot);
         } else if (op.kind === "record-new") {
           const names: (string | undefined)[] = [];
           let hasSiteArg = false;
@@ -373,6 +687,12 @@ export function analyzeModulePropertySites(
         curSlotStr.delete(term.slot);
         curSlotSite.delete(term.slot);
         curSlotTable.delete(term.slot);
+        if (
+          (term.kind === "record" || term.kind === "record-cell") &&
+          siteFactoryFields.has(String(term.record) + ":" + String(term.field))
+        )
+          curSlotFactory.add(term.slot);
+        else curSlotFactory.delete(term.slot);
       } else if (
         (term.kind === "record" || term.kind === "record-cell") &&
         term.operation !== "read"
@@ -383,6 +703,7 @@ export function analyzeModulePropertySites(
       outStr.set(bid, curSlotStr);
       outSite.set(bid, curSlotSite);
       outTable.set(bid, curSlotTable);
+      outFactory.set(bid, curSlotFactory);
     }
   }
   for (const fk of mutatedRecordFields) siteFieldName.delete(fk);
@@ -1498,7 +1819,28 @@ export function cacheLoopProperties(
   // Track `record-read` instructions reading GlobalCell.value we can bypass.
   const bypassedGlobalReadOps = new Map<Instruction, CachedGlobal>();
 
+  // Loops with many cold invalidating sites (>12) would multiply refresh chains
+  // across every cold block, inflating function size past codegen cold-stub and
+  // register-allocation budgets. Give such loops a single boolean `dirtySlot`:
+  // cold sites invalidate slots in-place with zero extra blocks (`none`/`absent`
+  // + `dirty = true`), and a single shared latch check re-warms before the next
+  // iteration. Skip `GlobalCell.value` bypasses on dirty loops so mid-iteration
+  // invalidation falls cleanly back to the slow path on any remaining read.
+  const dirtyLoopSlots = new Map<NaturalLoop, number>();
+  for (const [loop] of selectedGlobals) {
+    const info = loopInfo.get(loop);
+    if (info === undefined) continue;
+    const invalSites =
+      info.invalidatingOps.size + info.invalidatingTerminators.size;
+    if (invalSites > 12 && !dirtyLoopSlots.has(loop)) {
+      const dirtySlot = slots.length;
+      slots.push("boolean");
+      dirtyLoopSlots.set(loop, dirtySlot);
+    }
+  }
+
   for (const [loop, globals] of selectedGlobals) {
+    if (dirtyLoopSlots.has(loop)) continue;
     const info = loopInfo.get(loop);
     if (info === undefined) continue;
     // Map each SSA value / slot inside the loop to the CachedGlobal it holds
@@ -3307,6 +3649,41 @@ export function cacheLoopProperties(
     }
   }
 
+  const dirtyGlobalSlot = new Map<CachedGlobal, number>();
+  for (const [loop, dirtySlot] of dirtyLoopSlots) {
+    const gMap = selectedGlobals.get(loop);
+    if (gMap !== undefined) {
+      for (const [_k, g] of gMap) dirtyGlobalSlot.set(g, dirtySlot);
+    }
+  }
+
+  function emitDirtyInvalidation(
+    globals: readonly CachedGlobal[],
+    into: Instruction[],
+  ): void {
+    const dirtySet = new Set<number>();
+    for (const cg of globals) {
+      if (cg === undefined) continue;
+      const ds = dirtyGlobalSlot.get(cg);
+      if (ds !== undefined) dirtySet.add(ds);
+    }
+    for (const ds of dirtySet) {
+      const t = nextValue++;
+      into.push(
+        { kind: "constant", id: t, value: true, start: 0, end: 0 },
+        { kind: "store", slot: ds, value: t, start: 0, end: 0 },
+      );
+    }
+    for (const cg of globals) {
+      if (cg === undefined) continue;
+      const none = nextValue++;
+      into.push(
+        { kind: "reference-none", id: none, start: 0, end: 0 },
+        { kind: "store", slot: cg.cellSlot, value: none, start: 0, end: 0 },
+      );
+    }
+  }
+
   // Insert refreshes after each cold invalidating instruction. When a refresh
   // has no GlobalCell.value diamond, emit it inline in the same block (zero
   // block split). When it needs a diamond, split the block and spill any
@@ -3333,10 +3710,30 @@ export function cacheLoopProperties(
       expanded.push(op);
       const refresh = opRefreshes.get(op);
       if (refresh === undefined) continue;
-      if (!refreshNeedsBranch(refresh.globals, refresh.props)) {
-        emitStraightLineRefresh(refresh.globals, refresh.props, expanded);
+      const invalG: CachedGlobal[] = [];
+      const eagerG: CachedGlobal[] = [];
+      for (const cg of refresh.globals) {
+        if (cg === undefined) continue;
+        if (dirtyGlobalSlot.has(cg)) invalG.push(cg);
+        else eagerG.push(cg);
+      }
+      const eagerP: CachedProperty[] = refresh.props;
+      if (invalG.length > 0) {
+        emitDirtyInvalidation(invalG, expanded);
+      }
+      if (eagerG.length === 0 && eagerP.length === 0) continue;
+      if (!refreshNeedsBranch(eagerG, eagerP)) {
+        emitStraightLineRefresh(eagerG, eagerP, expanded);
       } else {
-        splitPoints.push({ index: expanded.length - 1, refresh });
+        splitPoints.push({
+          index: expanded.length - 1,
+          refresh: {
+            globals: eagerG,
+            props: eagerP,
+            seenGlobals: new Set<CachedGlobal>(),
+            seenProps: new Set<CachedProperty>(),
+          },
+        });
       }
     }
 
@@ -3512,20 +3909,38 @@ export function cacheLoopProperties(
       term.kind !== "cell"
     )
       continue;
+    const invalTermG: CachedGlobal[] = [];
+    const eagerTermG: CachedGlobal[] = [];
+    for (const cg of refresh.globals) {
+      if (cg === undefined) continue;
+      if (dirtyGlobalSlot.has(cg)) invalTermG.push(cg);
+      else eagerTermG.push(cg);
+    }
+    const eagerTermP: CachedProperty[] = refresh.props;
+    function buildTermEdgeTarget(continuation: number): number {
+      let target =
+        eagerTermG.length > 0 || eagerTermP.length > 0
+          ? buildRefreshChain(eagerTermG, eagerTermP, continuation)
+          : continuation;
+      if (invalTermG.length > 0) {
+        const invId = nextBlock++;
+        const invOps: Instruction[] = [];
+        emitDirtyInvalidation(invalTermG, invOps);
+        added.push({
+          id: invId,
+          instructions: invOps,
+          terminator: { kind: "jump", target, start: 0, end: 0 },
+        });
+        target = invId;
+      }
+      return target;
+    }
     const updated: Block = {
       ...targetBlock,
       terminator: {
         ...term,
-        consequent: buildRefreshChain(
-          refresh.globals,
-          refresh.props,
-          term.consequent,
-        ),
-        alternate: buildRefreshChain(
-          refresh.globals,
-          refresh.props,
-          term.alternate,
-        ),
+        consequent: buildTermEdgeTarget(term.consequent),
+        alternate: buildTermEdgeTarget(term.alternate),
       },
     };
     if (inAddedIndex >= 0) added[inAddedIndex] = updated;
@@ -3560,7 +3975,101 @@ export function cacheLoopProperties(
     if (gMap !== undefined) for (const [_k, g] of gMap) gList.push(g);
     const pList: CachedProperty[] = [];
     if (pMap !== undefined) for (const [_k, p] of pMap) pList.push(p);
-    const refreshEntry = buildRefreshChain(gList, pList, entryTerm.target);
+    const dirtySlot = dirtyLoopSlots.get(loop);
+    let refreshEntry = buildRefreshChain(gList, pList, entryTerm.target);
+    if (dirtySlot !== undefined) {
+      const initCleanId = nextBlock++;
+      const fVal = nextValue++;
+      added.push({
+        id: initCleanId,
+        instructions: [
+          { kind: "constant", id: fVal, value: false, start: 0, end: 0 },
+          { kind: "store", slot: dirtySlot, value: fVal, start: 0, end: 0 },
+        ],
+        terminator: { kind: "jump", target: refreshEntry, start: 0, end: 0 },
+      });
+      refreshEntry = initCleanId;
+
+      // Wire one shared dirty-check block across all latch back-edges to loop.header.
+      const latchRefreshEntry = buildRefreshChain(gList, [], loop.header);
+      const latchClearId = nextBlock++;
+      const clearVal = nextValue++;
+      added.push({
+        id: latchClearId,
+        instructions: [
+          { kind: "constant", id: clearVal, value: false, start: 0, end: 0 },
+          { kind: "store", slot: dirtySlot, value: clearVal, start: 0, end: 0 },
+        ],
+        terminator: {
+          kind: "jump",
+          target: latchRefreshEntry,
+          start: 0,
+          end: 0,
+        },
+      });
+      const latchCheckId = nextBlock++;
+      const isDirtyVal = nextValue++;
+      added.push({
+        id: latchCheckId,
+        instructions: [
+          { kind: "load", id: isDirtyVal, slot: dirtySlot, start: 0, end: 0 },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: isDirtyVal,
+          consequent: latchClearId,
+          alternate: loop.header,
+          start: 0,
+          end: 0,
+        },
+      });
+      const redirectToLatchCheck = (
+        term: Block["terminator"],
+      ): Block["terminator"] => {
+        if (term.kind === "jump" && term.target === loop.header)
+          return { ...term, target: latchCheckId };
+        if (
+          term.kind === "branch" ||
+          term.kind === "record" ||
+          term.kind === "record-cell" ||
+          term.kind === "cell"
+        ) {
+          const cons =
+            term.consequent === loop.header ? latchCheckId : term.consequent;
+          const alt =
+            term.alternate === loop.header ? latchCheckId : term.alternate;
+          if (cons !== term.consequent || alt !== term.alternate)
+            return { ...term, consequent: cons, alternate: alt };
+        }
+        return term;
+      };
+      for (const latchId of loop.latches) {
+        if (latchId === undefined) continue;
+        const origLatch = fn.blocks[latchId];
+        if (origLatch === undefined) continue;
+        let curLatch = replaced.get(latchId) ?? origLatch;
+        let latchInAdded = -1;
+        if (curLatch.terminator !== origLatch.terminator) {
+          for (let i = added.length - 1; i >= 0; i--) {
+            const cand = added[i];
+            if (
+              cand !== undefined &&
+              cand.terminator === origLatch.terminator
+            ) {
+              curLatch = cand;
+              latchInAdded = i;
+              break;
+            }
+          }
+        }
+        const nextTerm = redirectToLatchCheck(curLatch.terminator);
+        if (nextTerm !== curLatch.terminator) {
+          const updatedLatch: Block = { ...curLatch, terminator: nextTerm };
+          if (latchInAdded >= 0) added[latchInAdded] = updatedLatch;
+          else replaced.set(latchId, updatedLatch);
+        }
+      }
+    }
     const updated: Block = {
       ...entry,
       terminator: { ...entryTerm, target: refreshEntry },
