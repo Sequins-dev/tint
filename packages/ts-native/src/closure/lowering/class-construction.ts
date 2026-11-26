@@ -27,7 +27,7 @@ export interface ClassConstructionPlan extends Span {
   readonly instancePrototypeField: number;
   /** Source order; required fields assigned by the body may remain uninitialized. */
   readonly fields: readonly ClassFieldInitialization[];
-  readonly body?: ClassConstructionEntry;
+  readonly body?: ClassConstructionEntry | undefined;
 }
 
 export interface ClassStaticInitializationPlan extends Span {
@@ -117,8 +117,8 @@ function buildInitialization(
   const trap = b.block(),
     env = b.slot("reference"),
     object = b.slot("reference"),
-    receiver = b.slot("general"),
-    proto = b.slot("reference");
+    proto = b.slot("reference"),
+    receiverObject = b.slot("reference");
   const envValue = b.next();
   b.emit({
     kind: "closure-environment",
@@ -177,13 +177,23 @@ function buildInitialization(
       throw "class construction entry signature invariant";
     const callee = b.slot("reference");
     read(entry.field, callee, source);
+    // The receiver is wrapped at each call rather than held in a general
+    // slot, which would keep this entry from being inlined.
+    const receiver = b.next();
+    b.emit({
+      kind: "general-wrap",
+      id: receiver,
+      value: b.load(receiverObject),
+      start: source.start,
+      end: source.end,
+    });
     const id = result === undefined ? undefined : b.next();
     b.emit({
       kind: "call-indirect",
       id,
       target: entry.target,
       callee: b.load(callee),
-      receiver: b.load(receiver),
+      receiver,
       arguments: arguments_.map(b.load),
       start: source.start,
       end: source.end,
@@ -193,7 +203,6 @@ function buildInitialization(
     b.save(slot, id);
     return slot;
   }
-  const receiverObject = b.slot("reference");
   if (construction !== undefined) {
     const prototypeField = construction.instancePrototypeField;
     read(construction.prototypeField, proto, span);
@@ -207,7 +216,8 @@ function buildInitialization(
         if (index === prototypeField) return b.load(proto);
         if (
           field.stateOffset === undefined &&
-          field.presenceOffset === undefined
+          field.presenceOffset === undefined &&
+          field.deferred !== true
         )
           throw "class field requires initialization state";
         return undefined;
@@ -260,22 +270,15 @@ function buildInitialization(
     });
     b.save(object, unwrapped);
   }
-  const wrapped = b.next();
-  b.emit({
-    kind: "general-wrap",
-    id: wrapped,
-    value: b.load(receiverObject),
-    start: span.start,
-    end: span.end,
-  });
-  b.save(receiver, wrapped);
   const initialized = new Uint8Array(instance.fields.length);
   for (const field of plan.fields) {
     if (field === undefined) throw "class field initializer invariant";
     const storage = instance.fields[field.field];
     if (
       storage === undefined ||
-      storage.stateOffset === undefined ||
+      (storage.stateOffset === undefined &&
+        storage.presenceOffset === undefined &&
+        storage.deferred !== true) ||
       initialized[field.field] === 1
     )
       throw "class field initialization invariant";
@@ -335,18 +338,35 @@ function buildInitialization(
     }
     if (value === undefined) throw "class field initializer result invariant";
     const next = b.block();
-    b.end({
-      kind: "record-cell",
-      object: b.load(object),
-      record,
-      field: field.field,
-      operation: "initialize",
-      slot: value,
-      consequent: next,
-      alternate: trap,
-      start: field.start,
-      end: field.end,
-    });
+    // A deferred or deletable instance field is written (the write also
+    // marks a deletable field present); a static field's state is
+    // initialized.
+    if (storage.stateOffset === undefined)
+      b.end({
+        kind: "record",
+        object: b.load(object),
+        record,
+        field: field.field,
+        operation: "write",
+        slot: value,
+        consequent: next,
+        alternate: trap,
+        start: field.start,
+        end: field.end,
+      });
+    else
+      b.end({
+        kind: "record-cell",
+        object: b.load(object),
+        record,
+        field: field.field,
+        operation: "initialize",
+        slot: value,
+        consequent: next,
+        alternate: trap,
+        start: field.start,
+        end: field.end,
+      });
     b.at(next);
   }
   const body = construction === undefined ? undefined : construction.body;

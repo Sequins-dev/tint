@@ -34,15 +34,13 @@ import {
   type Property,
   type StringIndex,
   unsupportedDynamicContract,
+  isNativeTypedArrayKind,
   type DynamicPayloadRejection,
 } from "../types/index.ts";
+/** Typed arrays without a native representation (see
+ * nativeTypedArrayKinds): realm objects on the typed path. */
 export const realmOnlyTypedArrays: readonly string[] = [
-  "Int8Array",
-  "Uint8ClampedArray",
-  "Int16Array",
-  "Int32Array",
   "Float16Array",
-  "Float32Array",
   "BigInt64Array",
   "BigUint64Array",
 ];
@@ -62,13 +60,11 @@ export function realmConstructorInstance(name: string): string | undefined {
     case "RangeError":
     case "ArrayBuffer":
     case "SharedArrayBuffer":
-    case "Uint8Array":
-    case "Uint16Array":
-    case "Uint32Array":
-    case "Float64Array":
       return name;
     default:
-      return realmOnlyTypedArrays.includes(name) ? name : undefined;
+      return isNativeTypedArrayKind(name) || realmOnlyTypedArrays.includes(name)
+        ? name
+        : undefined;
   }
 }
 
@@ -108,6 +104,16 @@ export interface ClassContract {
   readonly constructor: number;
   readonly prototype: number;
   readonly members: readonly ClassMemberContract[];
+  /** The base class's instance type (C2: single inheritance from a typed
+   * class). The instance type lists the base's properties first, so a
+   * derived layout is a prefix extension; prototype and constructor types
+   * hold only the class's own members. */
+  readonly base?: number | undefined;
+}
+/** The hidden prototype (or constructor) property holding an accessor's
+ * getter or setter closure. Source names cannot spell it as an identifier. */
+export function classAccessorSlot(kind: "get" | "set", name: string): string {
+  return "@@" + kind + ":" + name;
 }
 export interface ClassMemberContract {
   readonly node: ClassElement;
@@ -147,6 +153,8 @@ export interface InterfaceFallback {
     | "class-field-inference"
     | "class-method-inference"
     | "class-accessor-contract"
+    | "class-type-only-member"
+    | "class-implements"
     | "class-initialization"
     | "index-key-layout"
     | "intersection-layout"
@@ -216,6 +224,11 @@ export function resolveInterfaceTypes(
     { kind: "RangeError" },
     { kind: "bigint" },
     { kind: "Error" },
+    { kind: "Int8Array" },
+    { kind: "Uint8ClampedArray" },
+    { kind: "Int16Array" },
+    { kind: "Int32Array" },
+    { kind: "Float32Array" },
     { kind: "SharedArrayBuffer" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
@@ -237,6 +250,16 @@ export function resolveInterfaceTypes(
     redirects: number[] = [],
     pending = new Set<number>(),
     heritage: { derived: number; base: number; node: Span }[] = [],
+    classBases: {
+      pairs: readonly { derived: number; base: number }[];
+      owner: Span;
+    }[] = [],
+    implementations: {
+      instance: number;
+      target: number;
+      node: Span;
+      owner: Span;
+    }[] = [],
     constraints: {
       argument: number;
       bound: number;
@@ -303,12 +326,44 @@ export function resolveInterfaceTypes(
     }
     return collections.get(key) ?? -1;
   }
+  // Type declarations by index: the module's statements, then classes
+  // declared directly in the body of a non-generic module-level function,
+  // where only module types are in scope. Module instances move top-level
+  // classes into their initializer; a body class whose name is not otherwise
+  // declared resolves like a module class (scoped resolution of other local
+  // classes is not implemented).
+  const declarationStatements: Statement[] = [];
+  for (const node of module.statements) {
+    if (node === undefined) throw "missing module statement";
+    declarationStatements.push(node);
+  }
+  for (const node of module.statements) {
+    if (
+      node === undefined ||
+      node.kind !== "function" ||
+      typeParameterCount(node.typeParameters) !== 0
+    )
+      continue;
+    const body = node.body;
+    if (body === undefined || body.kind !== "block") continue;
+    for (const statement of body.statements)
+      if (statement !== undefined && statement.kind === "class")
+        declarationStatements.push(statement);
+  }
   const instances = createStringIndex<number>();
   let parameters = createStringIndex<number>();
+  /** Whether a body class's statement or inner name is already declared. */
+  function bodyClassCollides(node: TypeDeclaration): boolean {
+    if (names.has(node.name) || declarations.has(node.name)) return true;
+    if (node.kind !== "class") return false;
+    const inner = node.definition.name;
+    if (inner === undefined || inner === node.name) return false;
+    return (inner !== "Error" && names.has(inner)) || declarations.has(inner);
+  }
   function lookupDeclaration(name: string): TypeDeclaration | undefined {
     const index = declarations.get(name);
     if (index === undefined) return undefined;
-    const node = module.statements[index];
+    const node = declarationStatements[index];
     if (node === undefined) throw "type declaration invariant";
     if (
       node.kind === "interface" ||
@@ -613,12 +668,24 @@ export function resolveInterfaceTypes(
         "class-decorators",
         "typed decorators require dynamic class replacement contracts",
       );
-    if (definition.heritage !== undefined)
+    const base =
+      definition.heritage === undefined ? undefined : baseClass(definition);
+    const typeOnly = definition.typeOnlyMembers?.[0];
+    if (typeOnly !== undefined)
       unsupportedClass(
-        definition,
-        "class-heritage",
-        "class inheritance contracts require heritage checking",
+        typeOnly,
+        "class-type-only-member",
+        "class overload signatures, index signatures and optional methods are not typed yet",
       );
+    for (const target of definition.implements ?? []) {
+      if (target === undefined) throw "class implements invariant";
+      implementations.push({
+        instance,
+        target: resolve(target),
+        node: target,
+        owner: definition,
+      });
+    }
     const constructor = add({ kind: "object", properties: [] }, definition);
     const prototype = add({ kind: "object", properties: [] }, definition);
     const constructorProperty: Property = {
@@ -629,12 +696,54 @@ export function resolveInterfaceTypes(
     // An instance's structural contract must not acquire the class's static side
     // through constructor. The general inherited Function surface is separate.
     const fields: Property[] = [],
+      // Base instance properties not yet overridden, by name.
+      inherited = new Set<string>(),
       prototypeFields: Property[] = [constructorProperty],
       statics: Property[] = [
         { name: "prototype", type: prototype, readonly: true },
       ],
       members: ClassMemberContract[] = [];
+    // Accessor names with a getter and with a setter (prefixed "static "
+    // for the constructor side).
+    const getters = new Set<string>(),
+      setters = new Set<string>();
     let construct: number | undefined;
+    // Base prototype methods, which own methods may override.
+    const baseMethods = new Set<string>();
+    if (base !== undefined) {
+      const baseInstance = types[canonical(base.instance)],
+        basePrototype = types[canonical(base.prototype)],
+        baseConstructor = types[canonical(base.constructor)];
+      if (
+        baseInstance?.kind !== "object" ||
+        basePrototype?.kind !== "object" ||
+        baseConstructor?.kind !== "object"
+      )
+        throw "base class contract invariant";
+      // Inherited statics and accessors live on the base constructor and
+      // prototype; typed lookups do not follow those chains yet.
+      if (baseConstructor.properties.length > 1)
+        unsupportedClass(
+          definition,
+          "class-heritage",
+          "typed derived classes do not inherit static members yet",
+        );
+      for (const property of basePrototype.properties) {
+        if (property === undefined) throw "base prototype invariant";
+        if (property.name.startsWith("@@"))
+          unsupportedClass(
+            definition,
+            "class-heritage",
+            "typed derived classes do not inherit accessors yet",
+          );
+        if (property.name !== "constructor") baseMethods.add(property.name);
+      }
+      for (const property of baseInstance.properties) {
+        if (property === undefined) throw "base instance invariant";
+        fields.push(property);
+        inherited.add(property.name);
+      }
+    }
     for (const member of definition.elements) {
       if (member === undefined) throw "class member invariant";
       if (member.kind === "static-block")
@@ -692,6 +801,10 @@ export function resolveInterfaceTypes(
             "class field requires annotation until initializer inference is available",
           );
         type = resolve(annotation);
+        // `x?: T` is defined as undefined at construction: always present,
+        // with a value that may be undefined.
+        if (member.optional === true && canonical(type) !== 2)
+          type = add({ kind: "union", members: [type, 2] }, member);
       } else if (member.kind === "method") {
         if (!isStatic && name === "constructor") {
           if (construct !== undefined)
@@ -709,22 +822,106 @@ export function resolveInterfaceTypes(
             "class method return requires annotation until body inference is available",
           );
         type = signature(member.parameters, resolve(result), receiver, member);
-      } else
-        unsupportedClass(
-          member,
-          "class-accessor-contract",
-          "class accessor contracts require separate read and write checking",
-        );
+      } else {
+        // An accessor pair is one property of the instance (or constructor),
+        // whose getter and setter agree on its type, plus hidden slots on
+        // the prototype (or constructor) holding the two closures.
+        const getter = member.kind === "get";
+        const annotation = getter
+          ? member.returnType
+          : member.parameters[0]?.type;
+        if (annotation === undefined)
+          unsupportedClass(
+            member,
+            "class-accessor-contract",
+            "class accessors require a value type annotation",
+          );
+        const value = resolve(annotation);
+        type = getter
+          ? signature([], value, receiver, member)
+          : signature(member.parameters, 5, receiver, member);
+        parameters = outer;
+        let index = -1;
+        for (let position = 0; position < properties.length; position++)
+          if (properties[position]?.name === name) index = position;
+        const key = (isStatic ? "static " : "") + name,
+          same = getter ? getters : setters,
+          other = getter ? setters : getters;
+        if (index >= 0) {
+          const existing = properties[index];
+          if (existing === undefined) throw "class accessor invariant";
+          if (same.has(key) || !other.has(key))
+            fail(member, "INVALID_TYPE", "duplicate class property: " + name);
+          if (canonical(existing.type) !== canonical(value))
+            unsupportedClass(
+              member,
+              "class-accessor-contract",
+              "class getters and setters of different types are not typed yet",
+            );
+          properties[index] = { name, type: existing.type, readonly: false };
+        } else properties.push({ name, type: value, readonly: getter });
+        same.add(key);
+        const slot: Property = {
+          name: classAccessorSlot(getter ? "get" : "set", name),
+          type,
+          readonly: false,
+        };
+        if (isStatic) statics.push(slot);
+        else prototypeFields.push(slot);
+        members.push({ node: member, type, receiver });
+        continue;
+      }
       parameters = outer;
+      const property: Property = { name, type, readonly: false };
+      if (!isStatic && inherited.has(name)) {
+        // An override keeps the base's position (the derived layout is a
+        // prefix extension); it must replace a member of the same kind.
+        if ((member.kind === "method") !== baseMethods.has(name))
+          unsupportedClass(
+            member,
+            "class-heritage",
+            "a typed class member must override a base member of the same kind: " +
+              name,
+          );
+        // A redeclared field keeps the base's storage, so it keeps its type.
+        if (member.kind === "field")
+          for (const field of fields)
+            if (
+              field !== undefined &&
+              field.name === name &&
+              canonical(field.type) !== canonical(type)
+            )
+              unsupportedClass(
+                member,
+                "class-heritage",
+                "a typed class may redeclare a base field only with its type: " +
+                  name,
+              );
+        inherited.delete(name);
+        for (let index = 0; index < fields.length; index++)
+          if (fields[index]?.name === name) fields[index] = property;
+        if (member.kind === "method") prototypeFields.push(property);
+        members.push({ node: member, type, receiver });
+        continue;
+      }
       if (properties.some((property) => property.name === name))
         fail(member, "INVALID_TYPE", "duplicate class property: " + name);
-      const property: Property = { name, type, readonly: false };
       properties.push(property);
       if (!isStatic && member.kind === "method") prototypeFields.push(property);
       members.push({ node: member, type, receiver });
     }
+    for (const key of setters)
+      if (!getters.has(key))
+        unsupportedClass(
+          definition,
+          "class-accessor-contract",
+          "class setters without a getter are not typed yet: " + key,
+        );
     if (construct === undefined)
-      construct = signature([], instance, undefined, definition);
+      construct =
+        base === undefined
+          ? signature([], instance, undefined, definition)
+          : inheritedConstruct(base, instance, definition);
     types[constructor] = { kind: "object", properties: statics, construct };
     types[prototype] = { kind: "object", properties: prototypeFields };
     classes.push({
@@ -734,8 +931,141 @@ export function resolveInterfaceTypes(
       constructor,
       prototype,
       members,
+      base: base === undefined ? undefined : base.instance,
     });
-    return add({ kind: "object", properties: fields }, definition);
+    const id = add({ kind: "object", properties: fields }, definition);
+    if (base !== undefined) {
+      // Overrides must relate to the members they replace (TypeScript's
+      // TS2415/TS2416). Methods relate bivariantly, as method syntax does,
+      // without their receivers (each requires its own class's instance).
+      const baseInstance = types[canonical(base.instance)];
+      if (baseInstance?.kind !== "object")
+        throw "base class contract invariant";
+      const pairs: { derived: number; base: number }[] = [];
+      for (const inheritedProperty of baseInstance.properties) {
+        if (inheritedProperty === undefined) throw "base instance invariant";
+        for (const property of fields) {
+          if (property === undefined) throw "class property invariant";
+          if (
+            property.name !== inheritedProperty.name ||
+            property.type === inheritedProperty.type
+          )
+            continue;
+          const method = baseMethods.has(property.name);
+          pairs.push({
+            derived: method
+              ? receiverFree(property.type, definition)
+              : property.type,
+            base: method
+              ? receiverFree(inheritedProperty.type, definition)
+              : inheritedProperty.type,
+          });
+        }
+      }
+      classBases.push({ pairs, owner: definition });
+    }
+    return id;
+  }
+  /** A method type as method syntax relates it: without its receiver. */
+  function receiverFree(id: number, node: Span): number {
+    const declared = types[canonical(id)];
+    if (
+      declared?.kind !== "function" ||
+      declared.instancePredicate !== undefined
+    )
+      return id;
+    const parameters = declared.parameters,
+      result = declared.result,
+      minimum = declared.minimumArguments;
+    let copy: Type = { kind: "function", parameters, result, method: true };
+    if (minimum !== undefined && declared.rest === true)
+      copy = {
+        kind: "function",
+        parameters,
+        minimumArguments: minimum,
+        rest: true,
+        result,
+        method: true,
+      };
+    else if (minimum !== undefined)
+      copy = {
+        kind: "function",
+        parameters,
+        minimumArguments: minimum,
+        result,
+        method: true,
+      };
+    else if (declared.rest === true)
+      copy = { kind: "function", parameters, rest: true, result, method: true };
+    return add(copy, node);
+  }
+  /** The base class a class definition extends: a non-generic typed class
+   * named by its heritage clause. */
+  function baseClass(definition: ClassDefinition): ClassContract {
+    let target = definition.heritage;
+    while (target !== undefined && target.kind === "group")
+      target = target.expression;
+    const declaration =
+      target !== undefined && target.kind === "identifier"
+        ? lookupDeclaration(target.name)
+        : undefined;
+    if (
+      target === undefined ||
+      target.kind !== "identifier" ||
+      declaration?.kind !== "class" ||
+      declaration.definition.typeParameters.length !== 0 ||
+      definition.typeParameters.length !== 0 ||
+      (definition.heritageTypeArguments?.length ?? 0) !== 0
+    )
+      return fail(
+        definition,
+        "UNSUPPORTED",
+        "typed classes extend a non-generic typed class by name",
+        {
+          capability: "class-heritage",
+          ownerKind: "class",
+          owner: { start: definition.start, end: definition.end },
+        },
+      );
+    const instance = canonical(named(target.name, target));
+    for (const contract of classes) {
+      if (contract === undefined) throw "class contract invariant";
+      if (canonical(contract.instance) === instance) return contract;
+    }
+    return fail(
+      definition,
+      "UNSUPPORTED",
+      "a class cannot extend itself or a class that extends it",
+      {
+        capability: "class-heritage",
+        ownerKind: "class",
+        owner: { start: definition.start, end: definition.end },
+      },
+    );
+  }
+  /** A derived class without a constructor constructs through its base's
+   * signature (an implicit \`constructor(...args) { super(...args); }\`). */
+  function inheritedConstruct(
+    base: ClassContract,
+    instance: number,
+    node: Span,
+  ): number {
+    const constructorType = types[canonical(base.constructor)];
+    const construct =
+      constructorType?.kind === "object"
+        ? constructorType.construct
+        : undefined;
+    const declared =
+      construct === undefined ? undefined : types[canonical(construct)];
+    if (declared?.kind !== "function") throw "base construct invariant";
+    return add({ ...declared, result: instance }, node);
+  }
+  /** A method-syntax member's function type (see the function type's
+   * `method`). */
+  function methodSignature(id: number, node: Span): number {
+    const declared = types[canonical(id)];
+    if (declared?.kind !== "function" || declared.method === true) return id;
+    return add({ ...declared, method: true }, node);
   }
   function signature(
     parameters: readonly Parameter[],
@@ -905,7 +1235,10 @@ export function resolveInterfaceTypes(
       const field: Property = {
           name: p.hasInstanceSymbol === true ? "@@hasInstance" : p.name,
           ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
-          type: resolve(p.type),
+          type:
+            p.method === true
+              ? methodSignature(resolve(p.type), p)
+              : resolve(p.type),
           readonly: p.readonly,
           ...(p.optional ? { optional: true } : {}),
         },
@@ -1378,14 +1711,18 @@ export function resolveInterfaceTypes(
     }
   }
   try {
-    for (let index = 0; index < module.statements.length; index++) {
-      const node = module.statements[index];
+    for (let index = 0; index < declarationStatements.length; index++) {
+      const node = declarationStatements[index];
       if (node === undefined) throw "missing module statement";
       if (
         node.kind === "interface" ||
         node.kind === "type-alias" ||
         node.kind === "class"
       ) {
+        // A body class colliding with another declaration stays unresolved
+        // (the checker then reports it as an unsupported local class).
+        if (index >= module.statements.length && bodyClassCollides(node))
+          continue;
         if (
           (node.name !== "Error" && names.has(node.name)) ||
           declarations.has(node.name)
@@ -1444,7 +1781,7 @@ export function resolveInterfaceTypes(
     // their definition nodes, so modules with classes resolve afresh.
     const typeStatements: Statement[] = [];
     let classes = false;
-    for (const node of module.statements) {
+    for (const node of declarationStatements) {
       if (node === undefined) throw "missing module statement";
       if (node.kind === "class") classes = true;
       else if (node.kind === "interface" || node.kind === "type-alias")
@@ -1676,6 +2013,62 @@ export function resolveInterfaceTypes(
         },
       };
   }
+  // TypeScript requires the instance type to be assignable to every
+  // `implements` type (TS2420). Methods relate here only through their
+  // receivers, which is stricter than TypeScript, so a mismatch is not yet
+  // reported as a type error: the class takes the general path.
+  for (const implementation of implementations) {
+    if (implementation === undefined) throw "class implements invariant";
+    if (
+      !system.value.assignable(
+        canonical(implementation.instance),
+        canonical(implementation.target),
+      )
+    )
+      return {
+        ok: false,
+        error: {
+          start: implementation.node.start,
+          end: implementation.node.end,
+          code: "UNSUPPORTED",
+          message: "class implements clause is not proven",
+          fallback: {
+            capability: "class-implements",
+            ownerKind: "class",
+            owner: implementation.owner,
+          },
+        },
+      };
+  }
+  // A derived instance must relate to its base instance (TypeScript's
+  // TS2415); until override checks match tsc's, an unproven relation takes
+  // the general path rather than failing.
+  for (const derived of classBases) {
+    if (derived === undefined) throw "class heritage invariant";
+    let proven = true;
+    for (const pair of derived.pairs) {
+      if (pair === undefined) throw "class override invariant";
+      if (
+        !system.value.assignable(canonical(pair.derived), canonical(pair.base))
+      )
+        proven = false;
+    }
+    if (!proven)
+      return {
+        ok: false,
+        error: {
+          start: derived.owner.start,
+          end: derived.owner.end,
+          code: "UNSUPPORTED",
+          message: "derived class contract is not proven against its base",
+          fallback: {
+            capability: "class-heritage",
+            ownerKind: "class",
+            owner: derived.owner,
+          },
+        },
+      };
+  }
   for (const h of heritage) {
     if (h === undefined) throw "missing heritage constraint";
     if (!system.value.assignable(canonical(h.derived), canonical(h.base)))
@@ -1702,6 +2095,8 @@ export function resolveInterfaceTypes(
         constructor: canonical(contract.constructor),
         prototype: canonical(contract.prototype),
         arguments: contract.arguments.map(canonical),
+        base:
+          contract.base === undefined ? undefined : canonical(contract.base),
         members: contract.members.map((member) => ({
           ...member,
           type: canonical(member.type),

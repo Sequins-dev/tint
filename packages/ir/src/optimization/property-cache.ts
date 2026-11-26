@@ -2937,6 +2937,7 @@ export function cacheLoopProperties(
       case "store":
       case "array-write":
       case "array-store":
+      case "array-fill":
       case "string-write":
       case "number-string-cache":
       case "string-index-cache":

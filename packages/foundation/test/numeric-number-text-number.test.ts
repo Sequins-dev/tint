@@ -63,6 +63,44 @@ test("decimal and radix conversions agree with the host on deterministic inputs"
       check((radix === 2 ? "0b" : radix === 8 ? "0o" : "0x") + digits);
     }
 });
+test("short decimals convert exactly at the fast path's digit and exponent bounds", () => {
+  for (const text of [
+    "123456789012345",
+    "1234567890123456",
+    "9007199254740991",
+    "9007199254740992",
+    "000000000000000000123",
+    "1.230000000000000",
+    "1.2300000000000000",
+    "0.1",
+    "0.3",
+    "-4.35",
+    "123.456e-7",
+    "1e22",
+    "1e23",
+    "1e-22",
+    "1e-23",
+    "999999999999999e22",
+    "999999999999999e-22",
+    "9999999999999999e22",
+    "123456789012345e-37",
+    "0.000000000000000000000001",
+    "-0.0e5",
+    "0x1fffffffffffff",
+    "0x20000000000000",
+    "0b" + "1".repeat(53),
+    "0o777777777777777777",
+  ])
+    check(text);
+  let state = 77;
+  for (let i = 0; i < 4000; i++) {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    const digits = String(state * 1000 + (i % 1000)).slice(0, 1 + (i % 16));
+    const point = state % (digits.length + 1);
+    const exponent = ((state >>> 8) % 61) - 30;
+    check(`${digits.slice(0, point)}.${digits.slice(point)}e${exponent}`);
+  }
+});
 test("long significands and exponents cancel without premature overflow", () => {
   check("1" + "0".repeat(1000) + "e-1000");
   check("0." + "0".repeat(1000) + "1e1001");

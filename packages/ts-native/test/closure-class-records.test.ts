@@ -48,7 +48,10 @@ test("class storage separates shared methods, own overrides and field initializa
     prototype = records.records[storage.prototype]!;
   assert.notEqual(records.forType(storage.contract.instance), storage.instance);
   assert.equal(instance.fields[0]!.type, "number");
-  assert.notEqual(instance.fields[0]!.stateOffset, undefined);
+  // Own data fields are assigned during construction before any read (the
+  // checker proves it), so they carry no initialization state.
+  assert.equal(instance.fields[0]!.stateOffset, undefined);
+  assert.equal(instance.fields[0]!.deferred, true);
   assert.equal(instance.fields[1]!.type, "optional-reference");
   assert.notEqual(instance.fields[1]!.presenceOffset, undefined);
   assert.equal(instance.fields[storage.prototypeField]!.type, "reference");
@@ -59,7 +62,7 @@ test("class storage separates shared methods, own overrides and field initializa
   assert.ok(verify({ functions: [], records: records.records }).ok);
 });
 
-test("class member access retains physical dispatch and prototype fallback", () => {
+test("class member access dispatches on the class layout with prototype fallback", () => {
   const { checked, records } = fixture();
   const members: (Expression & { kind: "member" })[] = [];
   checked.expressions.forEach((_, node) => {
@@ -98,13 +101,10 @@ test("class member access retains physical dispatch and prototype fallback", () 
             (choice) => choice.record === records.classes[0]!.instance,
           ),
       );
-    } else assert.equal(inherited.initialized, true);
-    assert.ok(
-      choices.some(
-        (choice) =>
-          choice.record === records.forType(checked.classes[0]!.instance),
-      ),
-    );
+    } else assert.equal(inherited.initialized, false);
+    // Values of a class type are its instances: no plain record layout is
+    // dispatched on, so record facts can prove the class layout.
+    assert.equal(choices.length, 1);
   }
 });
 
@@ -174,4 +174,25 @@ test("new contracts select hidden construction entries through compatible constr
     assert.equal(choice.field, storage.constructionField);
     assert.equal(choice.initialized, true);
   }
+});
+
+test("object literals typed as a class instance are plain records accesses also dispatch on", () => {
+  const { checked, records } = fixture(`
+    class Box {value:number=1; read():number{return this.value;}}
+    function literal():Box{return {value:2, read():number{return 2;}};}
+    function field(box:Box):number{return box.value;}
+  `);
+  let literal: (Expression & { kind: "object" }) | undefined;
+  let member: (Expression & { kind: "member" }) | undefined;
+  checked.expressions.forEach((_, node) => {
+    if (node.kind === "object") literal = node;
+    if (node.kind === "member" && node.property === "value") member = node;
+  });
+  assert.ok(literal !== undefined && member !== undefined);
+  records.construct(literal);
+  const plain = records.constructions.get(literal)?.record;
+  assert.ok(plain !== undefined);
+  records.access(member, member.object, "value", "number", false);
+  const choices = records.accesses.get(member)!.choices.map((c) => c.record);
+  assert.deepEqual(choices, [records.classes[0]!.instance, plain]);
 });

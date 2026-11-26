@@ -21,7 +21,7 @@ import {
   type Region,
   type Rewrite,
 } from "@tint/ir/structured";
-import type { Expression } from "@tint/typescript/syntax";
+import type { Expression, Statement } from "@tint/typescript/syntax";
 
 export type PipelineStageKind = "filter" | "map";
 export type PipelineSinkKind =
@@ -528,4 +528,209 @@ export function planPipeline(
   }
   if (source === undefined || sink === undefined) return undefined;
   return { source, stages, sink };
+}
+
+/** Collects every identifier name referenced inside `node` (conservatively
+ * returning false on unsupported expression forms). */
+function collectExpressionNames(node: Expression, names: Set<string>): boolean {
+  switch (node.kind) {
+    case "identifier":
+      names.add(node.name);
+      return true;
+    case "number":
+    case "string":
+    case "boolean":
+    case "null":
+    case "this":
+      return true;
+    case "group":
+      return collectExpressionNames(node.expression, names);
+    case "member":
+      return collectExpressionNames(node.object, names);
+    case "index":
+      return (
+        collectExpressionNames(node.object, names) &&
+        collectExpressionNames(node.index, names)
+      );
+    case "unary":
+      return collectExpressionNames(node.operand, names);
+    case "binary":
+      return (
+        collectExpressionNames(node.left, names) &&
+        collectExpressionNames(node.right, names)
+      );
+    case "conditional":
+      return (
+        collectExpressionNames(node.test, names) &&
+        collectExpressionNames(node.consequent, names) &&
+        collectExpressionNames(node.alternate, names)
+      );
+    case "template-expression":
+      for (const part of node.substitutions)
+        if (part === undefined || !collectExpressionNames(part, names))
+          return false;
+      return true;
+    case "call":
+      if (!collectExpressionNames(node.callee, names)) return false;
+      for (const arg of node.arguments)
+        if (arg === undefined || !collectExpressionNames(arg, names))
+          return false;
+      return true;
+    case "arrow": {
+      const body = node.body;
+      if (body.kind !== "block") return collectExpressionNames(body, names);
+      if (body.statements.length !== 1) return false;
+      const only = body.statements[0];
+      return (
+        only !== undefined &&
+        only.kind === "return" &&
+        only.expression !== undefined &&
+        collectExpressionNames(only.expression, names)
+      );
+    }
+    default:
+      return false;
+  }
+}
+
+function expressionSafeForForOfSink(
+  node: Expression,
+  forbidden: ReadonlySet<string>,
+): boolean {
+  switch (node.kind) {
+    case "identifier":
+    case "number":
+    case "string":
+    case "boolean":
+    case "null":
+    case "this":
+      return true;
+    case "group":
+      return expressionSafeForForOfSink(node.expression, forbidden);
+    case "member":
+      return expressionSafeForForOfSink(node.object, forbidden);
+    case "index":
+      return (
+        expressionSafeForForOfSink(node.object, forbidden) &&
+        expressionSafeForForOfSink(node.index, forbidden)
+      );
+    case "unary":
+      return (
+        node.operator !== "delete" &&
+        expressionSafeForForOfSink(node.operand, forbidden)
+      );
+    case "binary":
+      return (
+        node.operator !== "in" &&
+        node.operator !== "instanceof" &&
+        expressionSafeForForOfSink(node.left, forbidden) &&
+        expressionSafeForForOfSink(node.right, forbidden)
+      );
+    case "conditional":
+      return (
+        expressionSafeForForOfSink(node.test, forbidden) &&
+        expressionSafeForForOfSink(node.consequent, forbidden) &&
+        expressionSafeForForOfSink(node.alternate, forbidden)
+      );
+    case "assignment": {
+      const target = ungroup(node.target);
+      if (target.kind !== "identifier" || forbidden.has(target.name))
+        return false;
+      return expressionSafeForForOfSink(node.value, forbidden);
+    }
+    case "update": {
+      const target = ungroup(node.target);
+      return target.kind === "identifier" && !forbidden.has(target.name);
+    }
+    case "template-expression":
+      for (const part of node.substitutions)
+        if (part === undefined || !expressionSafeForForOfSink(part, forbidden))
+          return false;
+      return true;
+    case "call": {
+      const callee = ungroup(node.callee);
+      if (node.optional === true || callee.kind !== "member") return false;
+      if (callee.optional === true || !pureMath.includes(callee.property))
+        return false;
+      const object = callee.object;
+      if (object.kind !== "identifier" || object.name !== "Math") return false;
+      for (const arg of node.arguments)
+        if (arg === undefined || !expressionSafeForForOfSink(arg, forbidden))
+          return false;
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+function statementSafeForForOfSink(
+  stmt: Statement,
+  forbidden: ReadonlySet<string>,
+): boolean {
+  switch (stmt.kind) {
+    case "empty":
+    case "break":
+    case "continue":
+      return true;
+    case "expression":
+      return expressionSafeForForOfSink(stmt.expression, forbidden);
+    case "block":
+      for (const child of stmt.statements)
+        if (child === undefined || !statementSafeForForOfSink(child, forbidden))
+          return false;
+      return true;
+    case "if":
+      return (
+        expressionSafeForForOfSink(stmt.test, forbidden) &&
+        statementSafeForForOfSink(stmt.consequent, forbidden) &&
+        (stmt.alternate === undefined ||
+          statementSafeForForOfSink(stmt.alternate, forbidden))
+      );
+    case "variable":
+      for (const d of stmt.declarations) {
+        if (
+          d === undefined ||
+          d.kind === "object-binding" ||
+          d.kind === "array-binding"
+        )
+          return false;
+        if (
+          d.initializer !== undefined &&
+          !expressionSafeForForOfSink(d.initializer, forbidden)
+        )
+          return false;
+      }
+      return true;
+    case "return":
+      return (
+        stmt.expression === undefined ||
+        expressionSafeForForOfSink(stmt.expression, forbidden)
+      );
+    case "throw":
+      return expressionSafeForForOfSink(stmt.expression, forbidden);
+    case "label":
+      return statementSafeForForOfSink(stmt.body, forbidden);
+    default:
+      return false;
+  }
+}
+
+/** True when a fused `collect` pipeline can stream directly into a `for-of`
+ * body without materializing the output list: every stage callback is pure
+ * (so early exit or throws in `body` cannot observe skipped evaluations) and
+ * `body` does not mutate the source list or any binding read by the source or
+ * stage callbacks. */
+export function forOfPipelineCompatible(
+  plan: PipelinePlan,
+  body: Statement,
+): boolean {
+  if (plan.sink.kind !== "collect" || plan.stages.length === 0) return false;
+  const forbidden = new Set<string>();
+  if (!collectExpressionNames(plan.source, forbidden)) return false;
+  for (const stage of plan.stages) {
+    if (stage === undefined || !pureCallback(stage.callback)) return false;
+    if (!collectExpressionNames(stage.callback, forbidden)) return false;
+  }
+  return statementSafeForForOfSink(body, forbidden);
 }

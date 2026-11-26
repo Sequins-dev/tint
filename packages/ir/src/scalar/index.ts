@@ -14,18 +14,37 @@ export {
 } from "./function-builder.ts";
 /** Flat UTF-16 result limit: align8(16 + 2 * length) fits uint32 allocation sizes. */
 export const maximumStringLength = 0x7fffffec;
-/** Work limit of the verifier's direct record read proofs. Verification fails
- * loudly past it; passes that must keep IR verifiable check against it. */
-export const verifierRecordWork = 1000000;
 /** Name prefix of the cached-vector dense list readers that
  * cacheListVectors creates: (vector, list, index), where the vector is the
  * list's current root vector or none. Codegen inlines them on that trust. */
 export const cachedListReadPrefix = "__tint_reference_list_readv$";
+/** Name prefix of the preheader-bounds-proven dense list readers that
+ * cacheListVectors creates: (vector, list, index), where a dominating guard
+ * proved `vector` is a non-null reference vector of length >= the loop bound
+ * and `index` is an integer in `[0, bound)`. Codegen inlines them without
+ * null or bounds checks on that trust. */
+export const uncheckedListReadPrefix = "__tint_reference_list_readu$";
+/** Name prefix of the bounds-proven dense list writers that cacheListVectors
+ * creates for hoisted push loops: (vector, list, index, element), where a
+ * dominating guard proved `vector` is the list's current non-null reference
+ * vector and `index` is an integer in `[0, vector.length)`. Codegen inlines
+ * them as a direct vector store plus write barrier without length updates. */
+export const uncheckedListWritePrefix = "__tint_reference_list_writeu$";
 /** Name prefix of cacheListVectors' vector accessors: (list or none) to the
  * list's root when it is a reference vector, else none. */
 export const listVectorPrefix = "__tint_reference_list_vector$";
-export { analyzeRecordAccesses, provenRecordReads } from "./record-facts.ts";
-import { provenRecordReads, stableDescriptors } from "./record-facts.ts";
+export {
+  analyzeRecordAccesses,
+  provenRecordReads,
+  recordReadsKept,
+  verifierRecordBudget,
+  verifierRecordWork,
+} from "./record-facts.ts";
+import {
+  provenRecordReads,
+  stableDescriptors,
+  verifierRecordBudget,
+} from "./record-facts.ts";
 export {
   promoteSlots,
   lowerSSA,
@@ -76,6 +95,16 @@ export {
 } from "./word-facts.ts";
 export { functionHeader, activationFieldType } from "./model.ts";
 import { activationFieldType } from "./model.ts";
+import { isNativeTypedArray } from "./typed-arrays.ts";
+export {
+  isNativeTypedArray,
+  nativeTypedArray,
+  nativeTypedArrays,
+  typedArrayIntegerElements,
+  typedArrayLayout,
+  typedArrayMarker,
+  typedArrayScale,
+} from "./typed-arrays.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";
 export {
@@ -231,6 +260,8 @@ export interface RecordFieldShape {
   readonly optional: boolean;
   /** Carries a cell initialization state byte. */
   readonly initialized?: boolean;
+  /** May be omitted at construction (see RecordField.deferred). */
+  readonly deferred?: boolean;
 }
 /** The shared physical record layout. Payload words (all 8-byte multiples
  * with 8-byte alignment) follow the header in field order, so they need no
@@ -247,6 +278,11 @@ export function placeRecordFields(
     if (field === undefined) throw "record shape invariant";
     if (field.optional && field.initialized === true)
       throw "record presence and initialization require separate fields";
+    if (
+      field.deferred === true &&
+      (field.optional || field.initialized === true)
+    )
+      throw "deferred record fields carry no tag";
     offsets.push(cursor);
     cursor += scalarByteLength(field.type);
   }
@@ -263,12 +299,34 @@ export function placeRecordFields(
       offset,
       ...(field.optional ? { presenceOffset: tag } : {}),
       ...(field.initialized === true ? { stateOffset: tag } : {}),
+      ...(field.deferred === true ? { deferred: true } : {}),
     });
   }
   return {
     byteLength: Math.ceil(cursor / alignment) * alignment,
     fields: placed,
   };
+}
+/** A layout that begins with `base` unchanged (every field, presence and
+ * state byte at its offset) and places `fields` after it, with their own
+ * tags after them: a derived class's instance layout extends its base's
+ * this way, so code reading the base layout reads either. */
+export function extendRecordLayout(
+  base: RecordLayout,
+  fields: readonly RecordFieldShape[],
+  alignment: number = recordAllocationAlignment,
+): RecordLayout {
+  const extension = placeRecordFields(fields, base.byteLength, alignment);
+  const placed: RecordField[] = [];
+  for (const field of base.fields) {
+    if (field === undefined) throw "record shape invariant";
+    placed.push(field);
+  }
+  for (const field of extension.fields) {
+    if (field === undefined) throw "record shape invariant";
+    placed.push(field);
+  }
+  return { byteLength: extension.byteLength, fields: placed };
 }
 /** `optional-number` is one NaN-boxed binary64 word: a present number is its
  * own IEEE-754 bits and `undefined` is the reserved signalling NaN
@@ -298,10 +356,7 @@ function scalar(value: string): boolean {
     value === "string" ||
     value === "number" ||
     value === "boolean" ||
-    value === "Uint32Array" ||
-    value === "Float64Array" ||
-    value === "Uint8Array" ||
-    value === "Uint16Array" ||
+    isNativeTypedArray(value) ||
     value === "optional-number"
   );
 }
@@ -536,13 +591,7 @@ export function verify(
             !scalar(cell.type) ||
             cell.type === "reference" ||
             cell.type === "string" ||
-            [
-              "Uint8Array",
-              "Uint16Array",
-              "Uint32Array",
-              "Float64Array",
-            ].includes(cell.type) !==
-              (cell.borrowed === true)
+            isNativeTypedArray(cell.type) !== (cell.borrowed === true)
           )
             fail(
               "TYPE",
@@ -1236,10 +1285,7 @@ export function verify(
                 op.type !== "string" &&
                 op.type !== "null" &&
                 op.type !== "nullish" &&
-                op.type !== "Uint8Array" &&
-                op.type !== "Uint16Array" &&
-                op.type !== "Uint32Array" &&
-                op.type !== "Float64Array" &&
+                !isNativeTypedArray(op.type) &&
                 op.type !== "object" &&
                 op.type !== "absent"
               )
@@ -1257,10 +1303,7 @@ export function verify(
                 t !== "boolean" &&
                 t !== "string" &&
                 t !== "reference" &&
-                t !== "Uint8Array" &&
-                t !== "Uint16Array" &&
-                t !== "Uint32Array" &&
-                t !== "Float64Array"
+                !isNativeTypedArray(t)
               )
                 fail("TYPE", "general packing requires a concrete category");
               define(op.id, "general");
@@ -1273,10 +1316,7 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "reference" &&
-                op.type !== "Uint8Array" &&
-                op.type !== "Uint16Array" &&
-                op.type !== "Uint32Array" &&
-                op.type !== "Float64Array"
+                !isNativeTypedArray(op.type)
               )
                 fail("TYPE", "unsupported general extraction category");
               if (
@@ -1333,31 +1373,21 @@ export function verify(
               equal(use(op.value), "optional-reference");
               define(op.id, "optional-string");
               break;
-            case "reference-wrap":
-              if (
-                ![
-                  "reference",
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(use(op.value))
-              )
+            case "reference-wrap": {
+              const wrapped = use(op.value);
+              if (wrapped !== "reference" && !isNativeTypedArray(wrapped))
                 fail(
                   "TYPE",
                   "reference wrapping requires a reference or typed array",
                 );
               define(op.id, "optional-reference");
               break;
+            }
             case "reference-value":
               if (
-                ![
-                  "reference",
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(op.type ?? "reference")
+                op.type !== undefined &&
+                op.type !== "reference" &&
+                !isNativeTypedArray(op.type)
               )
                 fail("TYPE", "invalid reference extraction type");
               equal(use(op.value), "optional-reference");
@@ -1365,15 +1395,8 @@ export function verify(
               break;
             case "array-subarray": {
               const type = use(op.array);
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(type)
-              )
-                fail("TYPE", "subarray requires unsigned typed array");
+              if (!isNativeTypedArray(type))
+                fail("TYPE", "subarray requires a typed array");
               equal(use(op.begin), "number");
               equal(use(op.length), "number");
               define(op.id, type);
@@ -1455,14 +1478,7 @@ export function verify(
               equal(use(op.count), "number");
               break;
             case "array-new":
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(op.type)
-              )
+              if (!isNativeTypedArray(op.type))
                 fail("TYPE", "invalid allocated array kind");
               equal(use(op.length), "number");
               define(op.id, op.type);
@@ -1660,7 +1676,8 @@ export function verify(
                 if (arg === undefined) {
                   if (
                     field.presenceOffset === undefined &&
-                    field.stateOffset === undefined
+                    field.stateOffset === undefined &&
+                    field.deferred !== true
                   )
                     fail("TYPE", "required record field cannot be omitted");
                 } else equal(use(arg), field.type);
@@ -1672,6 +1689,7 @@ export function verify(
               if (
                 op.error !== "TypeError" &&
                 op.error !== "RangeError" &&
+                op.error !== "ReferenceError" &&
                 op.error !== "Error"
               )
                 fail("TYPE", "invalid error brand");
@@ -1682,6 +1700,7 @@ export function verify(
               if (
                 op.error !== "TypeError" &&
                 op.error !== "RangeError" &&
+                op.error !== "ReferenceError" &&
                 op.error !== "Error"
               )
                 fail("TYPE", "invalid error brand");
@@ -1785,14 +1804,7 @@ export function verify(
             case "array-byte-offset":
             case "array-byte-length":
             case "array-length":
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(use(op.array))
-              )
+              if (!isNativeTypedArray(use(op.array)))
                 fail(
                   "TYPE",
                   "array operand must be an unsigned integer typed array",
@@ -1804,33 +1816,26 @@ export function verify(
               break;
             case "array-copy": {
               const destination = use(op.array);
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(destination)
-              )
+              if (!isNativeTypedArray(destination))
                 fail("TYPE", "bulk copy requires typed arrays");
               equal(use(op.source), destination);
               equal(use(op.offset), "number");
               define(op.id, "boolean");
               break;
             }
+            case "array-fill":
+              if (!isNativeTypedArray(use(op.array)))
+                fail("TYPE", "bulk fill requires a typed array");
+              equal(use(op.value), "number");
+              equal(use(op.from), "number");
+              equal(use(op.to), "number");
+              break;
             case "array-valid":
             case "array-read":
             case "array-element":
             case "array-write":
             case "array-store":
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(use(op.array))
-              )
+              if (!isNativeTypedArray(use(op.array)))
                 fail(
                   "TYPE",
                   "array operand must be an unsigned integer typed array",
@@ -2141,10 +2146,16 @@ export function verify(
               "TYPE",
               "initialized cell fields require guarded record-cell access",
             );
-          if (t.operation !== "read" && t.operation !== "write")
+          if (
+            t.operation !== "read" &&
+            t.operation !== "write" &&
+            t.operation !== "delete"
+          )
             fail("GRAPH", "unknown record operation");
-          if (t.operation === "write" && !field.mutable)
+          if (t.operation !== "read" && !field.mutable)
             fail("TYPE", "record field is immutable");
+          if (t.operation === "delete" && field.presenceOffset === undefined)
+            fail("TYPE", "deleted record fields require presence");
           equal(slot(t.slot), field.type);
         }
         if (t.kind === "return") {
@@ -2334,7 +2345,11 @@ export function verify(
           if (op.kind !== "record-read") continue;
           instruction = index;
           if (proofs === undefined) {
-            proofs = provenRecordReads(fn, verifierRecordWork, stableLayouts);
+            proofs = provenRecordReads(
+              fn,
+              verifierRecordBudget(fn),
+              stableLayouts,
+            );
           }
           if (proofs === undefined || proofs[op.id] !== 1)
             fail("TYPE", "record read lacks a proven layout");

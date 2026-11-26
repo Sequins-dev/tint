@@ -144,6 +144,19 @@ export function tintRemoteObject(
       ...id,
     };
   }
+  if (
+    /\bkeys, values\b/.test(kind) &&
+    /\bslots\b/.test(kind) &&
+    /\bsize\b/.test(kind) &&
+    (/\bhashes\b/.test(kind) || /\bdeleted\b/.test(kind))
+  )
+    return {
+      type: "object",
+      subtype: "map",
+      className: "Map",
+      description: "Map",
+      ...id,
+    };
   if (/^(Uint8|Uint16|Uint32|Float64)Array/.test(kind))
     return {
       type: "object",

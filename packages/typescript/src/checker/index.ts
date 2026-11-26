@@ -7,6 +7,11 @@ import {
   createKeyIndex,
   type ReadonlyKeyIndex,
 } from "@tint/foundation/collections/key-index";
+import {
+  isNativeTypedArrayKind,
+  nativeTypedArrayKind,
+  type NativeTypedArrayKind,
+} from "../types/index.ts";
 import type {
   Module,
   Statement,
@@ -27,10 +32,7 @@ export type ScalarType =
   | "optional-string"
   | "number"
   | "boolean"
-  | "Uint8Array"
-  | "Uint16Array"
-  | "Uint32Array"
-  | "Float64Array"
+  | NativeTypedArray
   | "optional-number";
 export type ReturnType = ScalarType | "void";
 export type FunctionDeclaration = Statement & { readonly kind: "function" };
@@ -38,6 +40,8 @@ export interface Local {
   readonly hoisted?: boolean;
   readonly id: number;
   readonly name: string;
+  /** The source name of a linked (renamed) binding. */
+  readonly displayName?: string;
   readonly type: ScalarType;
   readonly mutable: boolean;
   readonly parameter: boolean;
@@ -48,8 +52,7 @@ export type DowncastTest =
   "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export { realmLibraryConstructor } from "../binding/realm-library.ts";
 export { withRealmGlobals } from "./interfaces.ts";
-export type NativeTypedArray =
-  "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+export type NativeTypedArray = NativeTypedArrayKind;
 export interface CheckedDowncast {
   readonly tests: readonly DowncastTest[];
   readonly records: readonly number[];
@@ -103,6 +106,9 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  /** An indirect call through a method-syntax signature (`r.m()` for
+   * `m(): T`): the object is passed as the receiver. */
+  readonly methodReceiver?: boolean | undefined;
   readonly voidValueCall?: boolean | undefined;
   readonly voidCallResults?: readonly number[] | undefined;
   readonly discardCallResult?: boolean | undefined;
@@ -197,6 +203,7 @@ export interface ExpressionInfo {
     | "error-is"
     | "error-property"
     | "literal-property-has"
+    | "property-delete"
     | "flow-property-read"
     | "flow-property-read-boxed"
     | "speculative-property-read"
@@ -256,6 +263,9 @@ export interface CheckedFunction {
   readonly receiver?: boolean;
   /** Typed local used to initialize an owned lexical receiver cell. */
   readonly receiverLocal?: number;
+  /** The receiver's type has a managed reference representation (class
+   * methods): the entry converts it once, and `this` reads that conversion. */
+  readonly receiverReference?: boolean;
   readonly exhaustiveSwitches?: ReadonlySet<Statement>;
   readonly id: number;
   readonly node: FunctionDeclaration;
@@ -390,15 +400,9 @@ export function checkModule(module: Module): CheckResult {
         "scalar-annotation",
         "explicit scalar annotation required",
       );
-    if (
-      node.name === "number" ||
-      node.name === "boolean" ||
-      node.name === "Uint32Array" ||
-      node.name === "Float64Array" ||
-      node.name === "Uint8Array" ||
-      node.name === "Uint16Array"
-    )
-      return node.name;
+    const array = nativeTypedArrayKind(node.name);
+    if (array !== undefined) return array;
+    if (node.name === "number" || node.name === "boolean") return node.name;
     if (allowVoid && node.name === "void") return "void";
     return unsupported(
       node,
@@ -412,14 +416,10 @@ export function checkModule(module: Module): CheckResult {
     return t;
   }
   function array(type: ReturnType, node: Span): ScalarType {
-    if (
-      type !== "Uint8Array" &&
-      type !== "Uint16Array" &&
-      type !== "Uint32Array" &&
-      type !== "Float64Array"
-    )
+    const array = nativeTypedArrayKind(type);
+    if (array === undefined)
       fail(node, "TYPE_MISMATCH", "expected an supported numeric typed array");
-    return type;
+    return array;
   }
   function same(actual: ReturnType, expected: ReturnType, node: Span): void {
     if (
@@ -1003,10 +1003,7 @@ export function checkModule(module: Module): CheckResult {
                 target.kind !== "identifier" ||
                 lookup(target.name) !== undefined ||
                 signatures.has(target.name) ||
-                (target.name !== "Uint8Array" &&
-                  target.name !== "Uint16Array" &&
-                  target.name !== "Uint32Array" &&
-                  target.name !== "Float64Array")
+                !isNativeTypedArrayKind(target.name)
               )
                 unsupported(
                   node,
@@ -1025,10 +1022,7 @@ export function checkModule(module: Module): CheckResult {
                 if (
                   t !== "number" &&
                   t !== "optional-number" &&
-                  t !== "Uint8Array" &&
-                  t !== "Uint16Array" &&
-                  t !== "Uint32Array" &&
-                  t !== "Float64Array"
+                  !isNativeTypedArrayKind(t)
                 )
                   fail(
                     arg,
@@ -1036,14 +1030,13 @@ export function checkModule(module: Module): CheckResult {
                     "array input must be numeric, undefined or a supported typed array",
                   );
               }
-              type =
-                target.name === "Uint8Array"
-                  ? "Uint8Array"
-                  : target.name === "Uint16Array"
-                    ? "Uint16Array"
-                    : target.name === "Uint32Array"
-                      ? "Uint32Array"
-                      : "Float64Array";
+              const constructed =
+                target.kind === "identifier"
+                  ? nativeTypedArrayKind(target.name)
+                  : undefined;
+              if (constructed === undefined)
+                throw "typed array construction invariant";
+              type = constructed;
               builtin = "array-new";
               break;
             }
@@ -1393,14 +1386,7 @@ export function checkModule(module: Module): CheckResult {
               try {
                 reserve(loopBinding.name, loopBinding);
                 const iterable = expression(node.iterable);
-                if (
-                  ![
-                    "Uint8Array",
-                    "Uint16Array",
-                    "Uint32Array",
-                    "Float64Array",
-                  ].includes(iterable)
-                )
+                if (!isNativeTypedArrayKind(iterable))
                   unsupported(
                     node.iterable,
                     "scalar-iteration",
@@ -1601,6 +1587,7 @@ export type {
   ClassMemberContract,
 } from "./interfaces.ts";
 
+export { classAccessorSlot } from "./interfaces.ts";
 export { cViewMember } from "./c-views.ts";
 export type {
   CViewMember,

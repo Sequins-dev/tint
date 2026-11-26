@@ -5,6 +5,7 @@ import {
   type Span,
 } from "@tint/ir/scalar";
 import type { FunctionSignature } from "../../scalar.ts";
+import { throwNativeError } from "./error-entries.ts";
 
 /** Copy an already-created method/initializer closure from the definition environment. */
 export interface ClassDefinitionEntry {
@@ -31,6 +32,9 @@ export interface ClassDefinitionPlan extends Span {
     readonly record: number;
     readonly constructorField: number;
     readonly methods: readonly ClassDefinitionEntry[];
+    /** A derived class's hidden link to the base prototype, which the
+     * definition receives as its one parameter (C2). */
+    readonly link?: number | undefined;
   };
   readonly state: {
     readonly record: number;
@@ -53,7 +57,16 @@ export function buildClassDefinition(
   records: readonly RecordLayout[],
   signatures: readonly FunctionSignature[],
 ): FunctionIR {
-  const b = createFunctionBuilder(plan.id, plan.name, [], "reference", plan);
+  const link = plan.prototype.link;
+  // A derived definition receives the base prototype (evaluated with the
+  // heritage clause) as parameter slot 0.
+  const b = createFunctionBuilder(
+    plan.id,
+    plan.name,
+    link === undefined ? [] : ["reference"],
+    "reference",
+    plan,
+  );
   const trap = b.block(),
     env = b.slot("reference");
   const environment = records[plan.environment];
@@ -114,6 +127,7 @@ export function buildClassDefinition(
     specialField: number,
     specialValue: number | undefined,
     entries: readonly ClassDefinitionEntry[],
+    linkField: number | undefined = undefined,
   ): number {
     const layout = records[record];
     if (layout === undefined) throw "class definition record invariant";
@@ -126,6 +140,8 @@ export function buildClassDefinition(
       values[field] = value;
     }
     if (specialValue !== undefined) put(specialField, specialValue);
+    // Parameter slot 0 holds the base prototype.
+    if (linkField !== undefined) put(linkField, 0);
     for (const entry of entries) {
       if (entry === undefined) throw "class definition entry invariant";
       if (entry.field === specialField)
@@ -212,6 +228,7 @@ export function buildClassDefinition(
     plan.prototype.constructorField,
     undefined,
     plan.prototype.methods,
+    link,
   );
   const state = allocate(
     plan.state.record,
@@ -263,4 +280,34 @@ export function buildClassDefinition(
   b.at(trap);
   b.end({ kind: "trap", start: source.start, end: source.end });
   return { ...b.finish(), closureEnvironment: plan.environment };
+}
+
+export interface ClassCallTargetPlan extends Span {
+  readonly id: number;
+  readonly name: string;
+  readonly className: string;
+  /** Constructor state record: the [[Call]] entry's closure environment. */
+  readonly state: number;
+  /** The realm's TypeError record, when the program's errors are realm objects. */
+  readonly typeError?: number | undefined;
+}
+
+/** A class constructor's [[Call]]: calling it without `new` throws a
+ * TypeError (ECMA-262 10.2.1 step 2). */
+export function buildClassCallTarget(plan: ClassCallTargetPlan): FunctionIR {
+  const b = createFunctionBuilder(plan.id, plan.name, [], "void", plan);
+  const source = { start: plan.start, end: plan.end };
+  const message = b.next();
+  b.emit({
+    kind: "string-literal",
+    id: message,
+    value:
+      "Class constructor " +
+      plan.className +
+      " cannot be invoked without 'new'",
+    start: source.start,
+    end: source.end,
+  });
+  throwNativeError(b, "TypeError", message, plan.typeError, source);
+  return { ...b.finish(), closureEnvironment: plan.state };
 }

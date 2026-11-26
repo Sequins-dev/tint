@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createSourceText } from "@tint/source/text";
+import { checkClosureModule } from "@tint/typescript/checker";
+import { parseModule } from "@tint/typescript/syntax";
 import { createHostedSourceValidator } from "./source-validation.ts";
 
 test("checks a typed sibling and a generator's return at original UTF-16 offsets", () => {
@@ -192,4 +195,129 @@ const fromFixed = fixed.value as { n: number };
     ),
     [["TS2352", "fixed.value as { n: number }"]],
   );
+});
+
+test("reports TypeScript's delete diagnostics for required and readonly class fields", () => {
+  const text = `class P {
+  readonly a: number = 1;
+  b: number = 1;
+  c?: number;
+}
+export function run(): number {
+  const p = new P();
+  delete p.a;
+  delete p.b;
+  delete p.c;
+  return 1;
+}`;
+  const diagnostics = createHostedSourceValidator([{ id: "main", text }])(
+    "main",
+  );
+  assert.deepEqual(
+    diagnostics.map(({ code, start, end }) => [code, text.slice(start, end)]),
+    [
+      ["TS2704", "p.a"],
+      ["TS2790", "p.b"],
+    ],
+  );
+});
+
+test("Tint's checker reports TS2565 and TS2729 exactly where pinned tsc does", () => {
+  const prelude =
+    "function use(n: unknown): void {}\n" +
+    'function fail(): never { throw new RangeError("x"); }\n';
+  for (const body of [
+    // TS2565: direct constructor reads; method calls do not assign.
+    "class A { x: number; constructor() { use(this.x); this.x = 1; } }",
+    "class A { x: number; constructor(c: boolean) { if (c) this.x = 1; use(this.x); this.x = 2; } }",
+    "class A { x: number; constructor() { this.init(); use(this.x); this.x = 1; } init(): void { this.x = 3; } }",
+    'class A { x: number; constructor() { use(this["x"]); this.x = 1; } }',
+    "class A { x: number; constructor() { for (let i = 0; i < 2; i++) { this.x = i; } use(this.x); this.x = 0; } }",
+    "class A { x: number; constructor() { this.x = this.x + 1; } }",
+    // No TS2565: definite assignment, undefined admitted, arrows, both
+    // branches, try and catch, a never call.
+    "class A { x!: number; constructor() { use(this.x); this.x = 1; } }",
+    "class A { x: number | undefined; constructor() { use(this.x); this.x = 1; } }",
+    "class A { x: number; constructor() { const f = (): number => this.x; this.x = 1; use(f); } }",
+    "class A { x: number; constructor(c: boolean) { if (c) { this.x = 1; } else { this.x = 2; } use(this.x); } }",
+    "class A { x: number; constructor() { try { this.x = 1; } catch { this.x = 2; } use(this.x); } }",
+    "class A { x: number; constructor(c: boolean) { if (!c) fail(); this.x = 1; use(this.x); } }",
+    // TS2729: later fields, uninitialized earlier fields, statics, self.
+    "class B { a: number = this.b; b: number = 1; }",
+    "class B { x: number; s: string = String(this.x); constructor() { this.x = 1; } }",
+    "class B { static a: number = B.b; static b: number = 1; }",
+    "class B { a: number = this.a; }",
+    "class B { a: number = this.b; b!: number; }",
+    // No TS2729: optional or `!` earlier fields, earlier initialized
+    // fields, arrows.
+    "class B { x!: number; s: string = String(this.x); }",
+    "class B { b: number = 1; a: number = this.b; }",
+    "class B { f: () => number = (): number => this.b; b: number = 1; }",
+  ]) {
+    const text =
+      prelude + body + "\nexport function run(): number { return 1; }\n";
+    const expected = createHostedSourceValidator([{ id: "main", text }])("main")
+      .filter(({ code }) => code === "TS2565" || code === "TS2729")
+      .map(({ code, start, end }) => [code, text.slice(start, end)]);
+    const bytes = new TextEncoder().encode(text);
+    const source = createSourceText(bytes, bytes.length);
+    assert.ok(source.ok);
+    const parsed = parseModule(source.value);
+    assert.ok(parsed.ok, body);
+    const result = checkClosureModule(parsed.value);
+    const actual =
+      !result.ok &&
+      (result.error.code === "TS2565" || result.error.code === "TS2729")
+        ? [
+            [
+              result.error.code,
+              text.slice(result.error.start, result.error.end),
+            ],
+          ]
+        : [];
+    assert.deepEqual(actual, expected, body);
+    if (!result.ok && actual.length !== 0)
+      assert.equal(result.error.preventsFallback, true, body);
+  }
+});
+
+test("object-literal methods reading `this` never fail a build tsc accepts", () => {
+  for (const [body, typed] of [
+    // An interface method signature types `this` as the interface.
+    [
+      "interface R { x: number; m(): number }\nexport function run(): number { const r: R = { x: 1, m() { return this.x; } }; return r.m(); }",
+      true,
+    ],
+    [
+      "interface R { x: number; m(n: number): number }\nexport function run(): number { const r: R = { x: 2, m(n: number): number { return this.x * n; } }; return r.m(3); }",
+      true,
+    ],
+    // A property signature or no context: tsc still types `this`; Tint
+    // takes the general path for these.
+    [
+      "interface R { x: number; m: () => number }\nexport function run(): number { const r: R = { x: 1, m() { return this.x; } }; return r.m(); }",
+      false,
+    ],
+    [
+      "export function run(): number { const o = { x: 1, m() { return this.x; } }; return o.m(); }",
+      false,
+    ],
+  ] as const) {
+    const text = body + "\n";
+    assert.deepEqual(
+      createHostedSourceValidator([{ id: "main", text }])("main").map(
+        ({ code }) => code,
+      ),
+      [],
+      body,
+    );
+    const bytes = new TextEncoder().encode(text);
+    const source = createSourceText(bytes, bytes.length);
+    assert.ok(source.ok);
+    const parsed = parseModule(source.value);
+    assert.ok(parsed.ok, body);
+    const result = checkClosureModule(parsed.value);
+    assert.equal(result.ok, typed, body);
+    if (!result.ok) assert.notEqual(result.error.preventsFallback, true, body);
+  }
 });

@@ -17,6 +17,7 @@ test("ABI entries are data-only contracts with no compiler, runtime or host depe
     "./relocation",
     "./unwind",
     "./weak-slot",
+    "./typed-array",
   ]);
   assert.deepEqual(manifest.dependencies, {});
   assert.equal(manifest.exports["."], undefined);

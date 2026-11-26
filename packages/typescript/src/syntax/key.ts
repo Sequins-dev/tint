@@ -447,6 +447,10 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     optionalText(node.name);
     generics(node.typeParameters);
     optionalExpression(node.heritage);
+    types(node.heritageTypeArguments);
+    types(node.implements);
+    const typeOnly = node.typeOnlyMembers;
+    sink.count(typeOnly === undefined ? 0 : typeOnly.length);
     sink.put("[");
     sink.count(node.elements.length);
     for (const element of node.elements) {
@@ -470,6 +474,9 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     flag(node.static);
     if (node.kind === "field") {
       flag(node.accessor);
+      flag(node.readonly);
+      flag(node.optional);
+      flag(node.definite);
       optionalType(node.type);
       optionalExpression(node.initializer);
       return;

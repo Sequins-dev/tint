@@ -75,6 +75,7 @@ export function instructionEffects(op: Instruction): number {
       return effectReadHeap | effectWriteHeap;
     case "array-write":
     case "array-store":
+    case "array-fill":
       return effectWriteHeap;
     // An atomic access synchronizes with other agents, so even a load must
     // not be merged with or moved across another heap access.

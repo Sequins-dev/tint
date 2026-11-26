@@ -361,6 +361,13 @@ export interface ClassDefinition extends Span {
   readonly name: string | undefined;
   readonly typeParameters: TypeParameters;
   readonly heritage: Expression | undefined;
+  /** TypeScript: `extends Base<T>` type arguments and `implements` types. */
+  readonly heritageTypeArguments?: readonly TypeNode[] | undefined;
+  readonly implements?: readonly TypeNode[] | undefined;
+  /** TypeScript members that declare types only: overload signatures,
+   * index signatures and optional methods. Erasure ignores them (an optional
+   * method with a body is also an element); typed checking rejects them. */
+  readonly typeOnlyMembers?: readonly Span[] | undefined;
   readonly elements: readonly ClassElement[];
 }
 export type ClassElement =
@@ -375,6 +382,11 @@ export type ClassElement =
         | {
             readonly kind: "field";
             readonly accessor?: boolean | undefined;
+            /** TypeScript modifiers with checking meaning only. */
+            readonly readonly?: boolean | undefined;
+            readonly optional?: boolean | undefined;
+            /** `x!: T`: TypeScript skips definite assignment checks. */
+            readonly definite?: boolean | undefined;
             readonly type: TypeNode | undefined;
             readonly initializer: Expression | undefined;
           }

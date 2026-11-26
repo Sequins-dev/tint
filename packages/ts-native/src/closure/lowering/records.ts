@@ -1,13 +1,19 @@
 import { planRecordLayout, type RecordFieldStorage } from "./record-layout.ts";
-import { planClassRecords, type ClassRecordStorage } from "./class-records.ts";
+import {
+  planClassRecords,
+  type ClassAccessorStorage,
+  type ClassRecordStorage,
+  type PlannedClassRecords,
+} from "./class-records.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
   createKeyIndex,
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
-import type { CheckedClosures } from "@tint/typescript/checker";
+import type { CheckedClosures, ClassContract } from "@tint/typescript/checker";
 import type { Expression } from "@tint/typescript/syntax";
 import {
+  isNativeTypedArray,
   type ScalarType,
   type RecordLayout,
   type RecordDebugInfo,
@@ -21,6 +27,7 @@ import type {
   RecordConstructionShape,
   ConstructionField,
   ConstructorCall,
+  ClassInstanceTest,
   CollectionElement,
 } from "../../scalar.ts";
 import {
@@ -116,9 +123,7 @@ function collectionElement(
 ): CollectionElement | undefined {
   return (
     primitiveEncoding(checked, id) ??
-    (["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-      checked.types[id]?.kind ?? "",
-    ) ||
+    (isNativeTypedArray(checked.types[id]?.kind ?? "") ||
     checked.types[id]?.kind === "function" ||
     checked.types[id]?.kind === "array" ||
     checked.types[id]?.kind === "set" ||
@@ -157,13 +162,12 @@ function generalType(checked: CheckedClosures, id: number): boolean {
   )
     return true;
   if (
-    type?.kind === "Uint8Array" ||
-    type?.kind === "Uint16Array" ||
-    type?.kind === "Uint32Array" ||
-    type?.kind === "Float64Array" ||
-    type?.kind === "SharedArrayBuffer"
+    type !== undefined &&
+    type.kind !== "object" &&
+    type.kind !== "literal" &&
+    (isNativeTypedArray(type.kind) || type.kind === "SharedArrayBuffer")
   )
-    return type.arrayFlow === true;
+    return "arrayFlow" in type && type.arrayFlow === true;
   if (type?.kind !== "union") return false;
   const visited = new Set<number>(),
     primitiveKinds = new Set<string>();
@@ -214,19 +218,15 @@ function generalType(checked: CheckedClosures, id: number): boolean {
       current?.kind === "array" ||
       current?.kind === "map" ||
       current?.kind === "set" ||
-      current?.kind === "Uint8Array" ||
-      current?.kind === "Uint16Array" ||
-      current?.kind === "Uint32Array" ||
-      current?.kind === "Float64Array" ||
+      isNativeTypedArray(current?.kind) ||
       current?.kind === "ArrayBuffer" ||
       current?.kind === "SharedArrayBuffer"
     ) {
       if (
-        (current.kind === "Uint8Array" ||
-          current.kind === "Uint16Array" ||
-          current.kind === "Uint32Array" ||
-          current.kind === "Float64Array" ||
+        current !== undefined &&
+        (isNativeTypedArray(current.kind) ||
           current.kind === "SharedArrayBuffer") &&
+        "arrayFlow" in current &&
         current.arrayFlow === true
       )
         unknown = true;
@@ -381,8 +381,18 @@ function encodeScalarType(type: ScalarType | undefined): number {
       return 13;
     case "Float64Array":
       return 14;
-    default:
+    case "optional-number":
       return 15;
+    case "Int8Array":
+      return 16;
+    case "Uint8ClampedArray":
+      return 17;
+    case "Int16Array":
+      return 18;
+    case "Int32Array":
+      return 19;
+    case "Float32Array":
+      return 20;
   }
 }
 function decodeScalarType(encoded: number): ScalarType | undefined {
@@ -415,6 +425,16 @@ function decodeScalarType(encoded: number): ScalarType | undefined {
       return "Float64Array";
     case 15:
       return "optional-number";
+    case 16:
+      return "Int8Array";
+    case 17:
+      return "Uint8ClampedArray";
+    case 18:
+      return "Int16Array";
+    case 19:
+      return "Int32Array";
+    case 20:
+      return "Float32Array";
     default:
       return undefined;
   }
@@ -592,9 +612,7 @@ export function entryType(
     if (
       present.length === 1 &&
       first !== undefined &&
-      ["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-        checked.types[first]?.kind ?? "",
-      )
+      isNativeTypedArray(checked.types[first]?.kind ?? "")
     )
       return "optional-reference";
   }
@@ -617,6 +635,13 @@ export function entryType(
     if (t.members.length > 0 && t.members.every(primitive)) return "primitive";
   }
   if (t?.kind === "function") return "reference";
+  // A class's constructor is a managed function value, like other functions
+  // (its static side lives in the constructor-state environment).
+  if (
+    t?.kind === "object" &&
+    checked.classes.some((contract) => contract?.constructor === id)
+  )
+    return "reference";
   if (
     t?.kind === "object" &&
     t.call === undefined &&
@@ -629,9 +654,7 @@ export function entryType(
         ) ||
         referenceType(checked, p.type) !== undefined ||
         referenceType(checked, p.type, "string") !== undefined ||
-        ["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-          checked.types[p.type]?.kind ?? "",
-        ) ||
+        isNativeTypedArray(checked.types[p.type]?.kind ?? "") ||
         (checked.types[p.type]?.kind === "union" &&
           ["primitive", "general", "optional-reference"].includes(
             entryType(checked, p.type, listElements, setElements, mapTypes) ??
@@ -741,6 +764,11 @@ export interface RecordContracts extends RecordOperations {
     node: Expression & { readonly kind: "new" },
     target: number,
   ) => void;
+  /** Plan `x instanceof C` for the typed class stored as `storage`. */
+  readonly testClassInstance: (
+    node: Expression,
+    storage: ClassRecordStorage,
+  ) => void;
   readonly construct: (node: Expression & { readonly kind: "object" }) => void;
   readonly addFiniteAccess: (
     node: Expression,
@@ -780,6 +808,8 @@ export function createRecordContracts(
    * layouts are unchanged. */
   viewed: ReadonlySet<number> = new Set<number>(),
   distinct?: ReadonlySet<number>,
+  /** The signature witness of a checked function type, for accessor calls. */
+  callableWitness?: (type: number) => number,
 ): RecordContracts {
   if (target.pointerSize !== 8 || target.wordSize !== 8)
     fail("record IR currently requires a 64-bit target");
@@ -1075,6 +1105,99 @@ export function createRecordContracts(
       | { field: number; record: number; inherited: readonly number[] }
       | undefined
     )[] = [];
+  /** A method slot of a prototype record, falling through a derived
+   * prototype's hidden link to the base prototype's slot while absent. */
+  function prototypeAccess(
+    record: number,
+    field: number,
+    type: ScalarType,
+  ): RecordAccess {
+    const link = prototypes[record],
+      through = link?.inherited[field];
+    const choice: RecordAccessChoice = { record, field, type: "reference" };
+    if (link === undefined || through === undefined || through < 0)
+      return { type, choices: [choice] };
+    return {
+      type,
+      choices: [
+        {
+          ...choice,
+          prototype: {
+            field: link.field,
+            access: prototypeAccess(link.record, through, type),
+          },
+        },
+      ],
+    };
+  }
+  // Class instance fields ("record:field") that code may read before their
+  // first assignment: only speculative reads and numeric updates are exact.
+  const unprovenFields = new Set<string>();
+  // Accessor properties of class layouts ("record:name"): where the getter
+  // and setter closures live, and their checked function types.
+  const accessorProperties = new Map<
+    string,
+    {
+      readonly pointer: number;
+      readonly closures: number;
+      readonly getter: number;
+      readonly getType: number;
+      readonly setter: number | undefined;
+      readonly setType: number | undefined;
+    }
+  >();
+  /** The checked function type of a class accessor's getter or setter. */
+  function classAccessorType(
+    contract: ClassContract,
+    name: string,
+    kind: "get" | "set",
+    isStatic: boolean,
+  ): number | undefined {
+    for (const member of contract.members) {
+      if (member === undefined) throw "class member invariant";
+      const element = member.node;
+      if (element.kind === "static-block" || element.kind !== kind) continue;
+      if (element.static !== isStatic) continue;
+      const key = element.key;
+      if (key.kind === "string" && key.value === name) return member.type;
+    }
+    return undefined;
+  }
+  function accessorChoice(
+    shape: number,
+    name: string,
+    write: boolean,
+    type: ScalarType,
+  ): RecordAccessChoice | undefined {
+    const accessor = accessorProperties.get(String(shape) + ":" + name);
+    if (accessor === undefined) return undefined;
+    const witness = callableWitness;
+    if (witness === undefined)
+      fail("class accessors require callable signature witnesses");
+    if (write && accessor.setter === undefined) return undefined;
+    const closures = accessor.closures;
+    function closure(field: number): RecordAccess {
+      const info = records[closures]?.fields[field];
+      if (info === undefined) throw "class accessor closure invariant";
+      return {
+        type: info.type,
+        choices: [{ record: closures, field, type: info.type }],
+      };
+    }
+    const setter = accessor.setter,
+      setType = accessor.setType;
+    return {
+      record: shape,
+      field: accessor.pointer,
+      type,
+      accessor: {
+        get: closure(accessor.getter),
+        getTarget: witness(accessor.getType),
+        set: setter === undefined ? undefined : closure(setter),
+        setTarget: setType === undefined ? undefined : witness(setType),
+      },
+    };
+  }
   function constructorReceiver(id: number): boolean {
     const known = constructorReceivers[id];
     if (known !== undefined) return known;
@@ -1100,8 +1223,17 @@ export function createRecordContracts(
         if (layout !== undefined) exact.push(layout);
       }
     else {
-      const layout = record(receiver);
-      if (layout !== undefined) exact.push(layout);
+      // A class type's values are usually its instances.
+      const classes = classLayouts(receiver);
+      if (classes !== undefined)
+        for (const layout of classes) {
+          if (layout === undefined) throw "class shape invariant";
+          exact.push(layout);
+        }
+      else {
+        const layout = record(receiver);
+        if (layout !== undefined) exact.push(layout);
+      }
     }
     if (exact.length === 0) return choices;
     const first: RecordAccessChoice[] = [],
@@ -1117,14 +1249,68 @@ export function createRecordContracts(
     }
     return first;
   }
+  const equivalentClassShapes: (readonly number[] | undefined)[] = [],
+    equivalenceSearched: (boolean | undefined)[] = [];
+  /** The class layouts of a class instance or prototype type, or of a type
+   * equivalent to one (checking may intern the same object type more than
+   * once), else undefined. */
+  function classLayouts(id: number): readonly number[] | undefined {
+    const own = classShapes[id];
+    if (own !== undefined) return own;
+    if (equivalenceSearched[id] === true) return equivalentClassShapes[id];
+    let found: readonly number[] | undefined;
+    if (checked.types[id]?.kind === "object")
+      for (const contract of checked.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        for (const type of [contract.instance, contract.prototype]) {
+          if (type === undefined) throw "class contract type invariant";
+          const shapes = classShapes[type];
+          if (
+            found === undefined &&
+            shapes !== undefined &&
+            relations.assignable(id, type) &&
+            relations.assignable(type, id)
+          )
+            found = shapes;
+        }
+      }
+    equivalenceSearched[id] = true;
+    equivalentClassShapes[id] = found;
+    return found;
+  }
+  /** Class layouts some object literal's type shares: TypeScript lets an
+   * object literal be typed as a class instance, so such values are plain
+   * records too. Found once, from every checked object literal. */
+  let literalClassLayouts: Set<readonly number[]> | undefined;
+  function literalClass(layouts: readonly number[]): boolean {
+    let found = literalClassLayouts;
+    if (found === undefined) {
+      const literals = new Set<readonly number[]>();
+      checked.expressions.forEach((type, node) => {
+        if (node.kind !== "object") return;
+        const shared = classLayouts(type);
+        if (shared !== undefined) literals.add(shared);
+      });
+      found = literals;
+      literalClassLayouts = literals;
+    }
+    return found.has(layouts);
+  }
   function shapesForType(id: number): readonly number[] {
-    const ordinary = record(id),
-      shapes: number[] = [];
-    if (ordinary !== undefined) shapes.push(ordinary);
-    for (const shape of classShapes[id] ?? []) {
+    // Values of a class instance or prototype type have the class layouts,
+    // plus the plain record layout only when an object literal has that
+    // type, so accesses usually check one layout and record facts can prove
+    // it for later accesses.
+    const layouts = classLayouts(id);
+    if (layouts !== undefined && !literalClass(layouts)) return layouts;
+    const ordinary = record(id);
+    if (layouts === undefined) return ordinary === undefined ? [] : [ordinary];
+    const shapes: number[] = [];
+    for (const shape of layouts) {
       if (shape === undefined) throw "class shape invariant";
       shapes.push(shape);
     }
+    if (ordinary !== undefined) shapes.push(ordinary);
     return shapes;
   }
   const constructions = createKeyIndex<Expression, RecordConstruction>(
@@ -1134,7 +1320,10 @@ export function createRecordContracts(
     finiteAccesses = createKeyIndex<Expression, readonly FiniteRecordAccess[]>(
       syntaxHash,
     ),
-    constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash);
+    constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash),
+    classInstanceTests = createKeyIndex<Expression, ClassInstanceTest>(
+      syntaxHash,
+    );
   const spreads = new Map<
     Expression,
     { name: string; access: RecordAccess; alwaysPresent: boolean }[]
@@ -1198,12 +1387,7 @@ export function createRecordContracts(
                   ? "optional-number"
                   : type === "reference" ||
                       type === "optional-reference" ||
-                      [
-                        "Uint8Array",
-                        "Uint16Array",
-                        "Uint32Array",
-                        "Float64Array",
-                      ].includes(type ?? "")
+                      isNativeTypedArray(type ?? "")
                     ? "optional-reference"
                     : type === "string" || type === "optional-string"
                       ? "optional-string"
@@ -1450,14 +1634,32 @@ export function createRecordContracts(
     }
     return properties;
   }
+  // Planned classes by instance type: a base precedes its derived classes
+  // in checked.classes, so its plan is available when they are planned.
+  const plannedClasses = new Map<
+    number,
+    {
+      planned: PlannedClassRecords;
+      instance: number;
+      prototype: number;
+      base: number | undefined;
+    }
+  >();
   for (const contract of checked.classes) {
     if (contract === undefined) throw "class storage contract invariant";
+    const baseType = contract.base,
+      baseClass =
+        baseType === undefined ? undefined : plannedClasses.get(baseType);
+    if (baseType !== undefined && baseClass === undefined)
+      fail("base class storage must be planned before derived classes");
     const planned = planClassRecords(
         contract,
         checked.types,
         layout,
         fieldEncoding,
         fail,
+        (element) => checked.uninitializedFields?.get(element) === true,
+        baseClass?.planned,
       ),
       prototype = records.length;
     records.push(planned.prototype);
@@ -1474,6 +1676,41 @@ export function createRecordContracts(
       record: prototype,
       inherited: planned.inherited,
     };
+    // A derived prototype falls through its hidden link to the base's.
+    const link = planned.prototypeLink;
+    if (baseClass !== undefined && link !== undefined)
+      prototypes[prototype] = {
+        field: link,
+        record: baseClass.prototype,
+        inherited: planned.prototypeInherited,
+      };
+    plannedClasses.set(contract.instance, {
+      planned,
+      instance,
+      prototype,
+      base: baseType,
+    });
+    for (const field of planned.unproven)
+      unprovenFields.add(String(instance) + ":" + String(field));
+    const staticAccessors: ClassAccessorStorage[] = [];
+    for (const accessor of planned.accessors) {
+      if (accessor === undefined) throw "class accessor invariant";
+      if (accessor.static) {
+        staticAccessors.push(accessor);
+        continue;
+      }
+      const getType = classAccessorType(contract, accessor.name, "get", false);
+      if (getType === undefined || accessor.getter < 0)
+        fail("class accessor getter invariant");
+      accessorProperties.set(String(instance) + ":" + accessor.name, {
+        pointer: planned.prototypeField,
+        closures: prototype,
+        getter: accessor.getter,
+        getType,
+        setter: accessor.setter,
+        setType: classAccessorType(contract, accessor.name, "set", false),
+      });
+    }
     for (const type of [contract.instance, contract.prototype]) {
       if (type === undefined) throw "class storage type invariant";
       let shapes = classShapes[type];
@@ -1482,6 +1719,14 @@ export function createRecordContracts(
         classShapes[type] = shapes;
       }
       shapes.push(type === contract.instance ? instance : prototype);
+    }
+    // A base-typed value may hold any instance of its family.
+    let ancestor = baseType;
+    while (ancestor !== undefined) {
+      const shapes = classShapes[ancestor];
+      if (shapes === undefined) throw "base class shape invariant";
+      shapes.push(instance);
+      ancestor = plannedClasses.get(ancestor)?.base;
     }
     const constructorState = records.length;
     constructionFields[constructorState] = planned.constructionField;
@@ -1494,13 +1739,65 @@ export function createRecordContracts(
       constructorStates[contract.constructor] = states;
     }
     states.push(constructorState);
+    for (const accessor of staticAccessors) {
+      if (accessor === undefined) throw "class accessor invariant";
+      const getType = classAccessorType(contract, accessor.name, "get", true);
+      if (getType === undefined || accessor.getter < 0)
+        fail("class accessor getter invariant");
+      accessorProperties.set(String(constructorState) + ":" + accessor.name, {
+        pointer: -1,
+        closures: constructorState,
+        getter: accessor.getter,
+        getType,
+        setter: accessor.setter,
+        setType: classAccessorType(contract, accessor.name, "set", true),
+      });
+    }
+    const definitionEnvironment = records.length;
+    records.push(planned.members.definitionEnvironment);
+    names.push(
+      planned.members.definitionEnvironment.fields.map(
+        (_, index) => "$member" + String(index),
+      ),
+    );
+    classNames[definitionEnvironment] = className + ".definition";
+    const constructionEnvironment = records.length;
+    records.push(planned.members.constructionEnvironment);
+    names.push(
+      planned.members.constructionEnvironment.fields.map(
+        (_, index) => "$entry" + String(index),
+      ),
+    );
+    classNames[constructionEnvironment] = className + ".construction";
+    const staticsLayout = planned.members.staticsEnvironment;
+    let staticsEnvironment: number | undefined;
+    if (staticsLayout !== undefined) {
+      staticsEnvironment = records.length;
+      records.push(staticsLayout);
+      names.push(
+        staticsLayout.fields.map((_, index) => "$static" + String(index)),
+      );
+      classNames[staticsEnvironment] = className + ".statics";
+    }
+    const prototypeConstructorField =
+        planned.prototypeNames.indexOf("constructor"),
+      statePrototypeField = planned.constructorNames.indexOf("prototype");
+    if (prototypeConstructorField < 0 || statePrototypeField < 0)
+      fail("class prototype and constructor storage require their links");
     classes.push({
       constructorState,
       constructionField: planned.constructionField,
+      prototypeConstructorField,
+      statePrototypeField,
       contract,
       instance,
       prototype,
       prototypeField: planned.prototypeField,
+      prototypeLink: planned.prototypeLink,
+      definitionEnvironment,
+      constructionEnvironment,
+      staticsEnvironment,
+      members: planned.members,
     });
   }
   let structuralErrors: readonly number[] | undefined;
@@ -1546,7 +1843,8 @@ export function createRecordContracts(
       function property(record: number): RecordAccessChoice | undefined {
         const field = names[record]?.indexOf(name) ?? -1;
         const info = records[record]?.fields[field];
-        if (info === undefined) return undefined;
+        if (info === undefined)
+          return accessorChoice(record, name, false, type);
         const prototype = prototypes[record];
         const inherited =
           prototype === undefined ? undefined : property(prototype.record);
@@ -1612,11 +1910,30 @@ export function createRecordContracts(
     },
     constructions,
     constructors,
+    classInstanceTests,
     clearFunctionOperations: () => {
       constructions.clear();
       constructors.clear();
+      classInstanceTests.clear();
       accesses.clear();
       spreads.clear();
+    },
+    testClassInstance: (node, storage) => {
+      classInstanceTests.set(node, {
+        prototype: {
+          type: "reference",
+          functionEnvironment: true,
+          choices: [
+            {
+              record: storage.constructorState,
+              field: storage.statePrototypeField,
+              type: "reference",
+            },
+          ],
+        },
+        instance: storage.instance,
+        prototypeField: storage.prototypeField,
+      });
     },
     constructClass: (node, target) => {
       const receiver = checked.expressions.get(node.callee);
@@ -1826,6 +2143,15 @@ export function createRecordContracts(
               fieldNames === undefined ? undefined : fieldNames.indexOf(name),
             info =
               field === undefined ? undefined : records[shape]?.fields[field];
+          if (info === undefined) {
+            const accessor = accessorChoice(shape, name, write, type);
+            const key = String(shape) + ":@" + name;
+            if (accessor !== undefined && !seen.has(key)) {
+              seen.add(key);
+              choices.push(accessor);
+            }
+            continue;
+          }
           const primitive = optionalPrimitiveField(id, name);
           if (
             field === undefined ||
@@ -1833,8 +2159,12 @@ export function createRecordContracts(
             (info.type !== type &&
               !(
                 write &&
-                info.type === "optional-reference" &&
-                type === "reference"
+                ((info.type === "optional-reference" && type === "reference") ||
+                  (unprovenFields.has(String(shape) + ":" + String(field)) &&
+                    ((info.type === "optional-number" && type === "number") ||
+                      (info.type === "optional-string" && type === "string") ||
+                      (info.type === "optional-boolean" &&
+                        type === "boolean"))))
               ) &&
               !primitive &&
               !(
@@ -1874,6 +2204,15 @@ export function createRecordContracts(
           const key = shape + ":" + field;
           if (seen.has(key)) continue;
           seen.add(key);
+          if (!write && type !== "general" && unprovenFields.has(key))
+            fail(
+              "a field read before its first assignment requires a speculative read: " +
+                name +
+                " at " +
+                node.start +
+                ":" +
+                node.end,
+            );
           const prototype = prototypes[shape],
             inherited = prototype?.inherited[field];
           const choice: RecordAccessChoice = {
@@ -1889,22 +2228,14 @@ export function createRecordContracts(
             inherited < 0
           )
             choices.push(choice);
-          else {
-            const fallback: RecordAccess = {
-              type,
-              choices: [
-                {
-                  record: prototype.record,
-                  field: inherited,
-                  type: "reference",
-                },
-              ],
-            };
+          else
             choices.push({
               ...choice,
-              prototype: { field: prototype.field, access: fallback },
+              prototype: {
+                field: prototype.field,
+                access: prototypeAccess(prototype.record, inherited, type),
+              },
             });
-          }
         }
       }
       if (choices.length === 0)

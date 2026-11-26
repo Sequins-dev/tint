@@ -154,12 +154,52 @@ test("static class members cannot capture instance type parameters or their oute
   assert.ok(resolved.ok, JSON.stringify(resolved));
 });
 
+test("derived class contracts list base properties first and inherit construction", () => {
+  const resolved = resolveInterfaceTypes(
+    parse(
+      'class B{x:number;constructor(x:number){this.x=x;}m():number{return this.x;}} class D extends B{y:string="";override m():number{return 2;}} type I=D;',
+    ),
+  );
+  assert.ok(resolved.ok, JSON.stringify(resolved));
+  const derived = resolved.value.classes.find(
+    (contract) => contract.base !== undefined,
+  );
+  assert.ok(derived !== undefined);
+  const instance = resolved.value.types[derived.instance];
+  assert.equal(instance?.kind, "object");
+  assert.deepEqual(
+    instance?.kind === "object"
+      ? instance.properties.map((property) => property.name)
+      : [],
+    ["x", "m", "y"],
+  );
+  const constructor = resolved.value.types[derived.constructor];
+  const construct =
+    constructor?.kind === "object" && constructor.construct !== undefined
+      ? resolved.value.types[constructor.construct]
+      : undefined;
+  assert.equal(construct?.kind, "function");
+  assert.equal(
+    construct?.kind === "function" ? construct.parameters.length : -1,
+    1,
+  );
+});
+
 test("class contract extraction rejects unavailable inference and inheritance explicitly", () => {
   for (const [source, pattern] of [
     ["class C{x=1;}", /field.*annotation/],
     ["class C{m(){return 1;}}", /return.*annotation/],
-    ["class C extends Base{}", /inheritance/],
-    ["class C{get x():number{return 1;}}", /accessor/],
+    ["class C extends Base{}", /extend a non-generic typed class/],
+    [
+      "class B<T>{} class C extends B<number>{}",
+      /extend a non-generic typed class/,
+    ],
+    ["class B{static s:number=1;} class C extends B{}", /static members/],
+    [
+      "class B{m():number{return 1;}} class C extends B{m:number=2;}",
+      /same kind/,
+    ],
+    ["class C{set x(v:number){}}", /setters without a getter/],
     ["class C{[name]:number;}", /computed/],
   ] as const) {
     const resolved = resolveInterfaceTypes(parse(source));

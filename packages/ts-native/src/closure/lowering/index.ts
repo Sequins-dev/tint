@@ -26,11 +26,19 @@ export {
 } from "./class-construction.ts";
 export type { RecordOperation } from "./record-bindings.ts";
 import {
+  buildClassEntries,
+  classConstructionTarget,
+  classStorage,
+  ownedClassDefinitions,
+  reserveClassEntries,
+} from "./class-statements.ts";
+import {
   arrayFlowReceiver,
   encodeDynamicContract,
   hasDynamicObject,
   dynamicObjectRuntime,
   planFlowPropertyStorage,
+  hasUninitializedReads,
   dynamicRuntimeAliasPrefix,
   type DynamicObjectRuntime,
 } from "./dynamic-objects.ts";
@@ -136,6 +144,8 @@ import {
   scalarByteLength,
   recordHeaderBytes,
   recordAllocationAlignment,
+  isNativeTypedArray,
+  nativeTypedArray,
 } from "@tint/ir/scalar";
 export type Result =
   | {
@@ -182,6 +192,7 @@ interface RealmErrorSources {
   readonly error: number;
   readonly typeError: number;
   readonly rangeError: number;
+  readonly referenceError: number;
   readonly applies: (span: IRSpan) => boolean;
 }
 
@@ -234,6 +245,8 @@ export interface ModuleEntryOptions {
   readonly maps?: readonly MapRuntimeBinding[];
   /** Attach source-debugging metadata (slot names, record names) to the IR. */
   readonly debug?: boolean;
+  /** Linked binding names to source names (runtime messages). */
+  readonly sourceNames?: ReadonlyMap<string, string> | undefined;
 }
 export interface RecordBinding {
   readonly function: number;
@@ -361,6 +374,7 @@ export function lowerModuleEntries(
     importedFunctions: options?.importedFunctions,
     functionAddressBindings: options?.functionAddressBindings,
     debug: options?.debug,
+    sourceNames: options?.sourceNames,
     ...(numberToString === undefined ? {} : { numberToString }),
     ...(numberFromString === undefined ? {} : { numberFromString }),
     ...(sharedBlock === undefined ? {} : { sharedBlock }),
@@ -403,6 +417,7 @@ function lowerEntries(
     importedFunctions?: readonly number[] | undefined;
     functionAddressBindings?: readonly FunctionAddressBinding[] | undefined;
     debug?: boolean | undefined;
+    sourceNames?: ReadonlyMap<string, string> | undefined;
   },
 ): Result {
   const recordTarget = recordOptions,
@@ -437,14 +452,9 @@ function lowerEntries(
     if (type === "string" || type === "optional-string")
       return "optional-string";
     if (
-      [
-        "reference",
-        "optional-reference",
-        "Uint8Array",
-        "Uint16Array",
-        "Uint32Array",
-        "Float64Array",
-      ].includes(type)
+      type === "reference" ||
+      type === "optional-reference" ||
+      isNativeTypedArray(type)
     )
       return "optional-reference";
     return fail(
@@ -542,6 +552,9 @@ function lowerEntries(
       owned !== undefined && owned.types === checked.types
         ? { ok: true, value: owned.system }
         : createTypeSystem(checked.types);
+    // Typed classes lower where their statement is evaluated (module
+    // instances move them into the initializer); a module-scope class has
+    // no evaluation site here.
     if (checked.module.statements.some((node) => node.kind === "class"))
       fail("typed class declarations require class construction lowering");
     if (!validatedTypes.ok) fail("invalid checked type graph");
@@ -595,6 +608,19 @@ function lowerEntries(
             recordTarget.recordIdentity,
             viewed,
             branded,
+            (type) => {
+              const signature = checked.types[type];
+              if (signature?.kind !== "function")
+                fail("class accessor witness requires a function type");
+              const result = checked.types[signature.result]?.kind;
+              return callbackSignature(
+                signature.parameters.map(scalar),
+                result === "void" || result === "never"
+                  ? "void"
+                  : scalar(signature.result),
+                type,
+              );
+            },
           );
     const constants = new Map<number, number | boolean | string>();
     if (layout === undefined) {
@@ -704,6 +730,16 @@ function lowerEntries(
         signatureKey(signature.parameters, signature.returnType);
       if (!signatureIds.has(key)) signatureIds.set(key, index);
     }
+    const classEntries = reserveClassEntries(
+      checked,
+      recordContracts?.classes ?? [],
+      entries,
+      bodyByFunction,
+      targetIds,
+      signatures,
+      fail,
+    );
+
     const semanticWitnesses =
       recordOptions?.signatureTypes === true
         ? new Uint32Array(checked.types.length)
@@ -1113,6 +1149,7 @@ function lowerEntries(
             error: errorRecord(realmErrorSources.error),
             typeError: errorRecord(realmErrorSources.typeError),
             rangeError: errorRecord(realmErrorSources.rangeError),
+            referenceError: errorRecord(realmErrorSources.referenceError),
             applies: realmErrorSources.applies,
           };
     function nodeErrorRecord(type: number | undefined): number | undefined {
@@ -1129,7 +1166,9 @@ function lowerEntries(
             info: nodeErrorRecord(nodeErrorTypes.info),
           };
     const flowStorage =
-      realmErrors === undefined ? undefined : planFlowPropertyStorage(checked);
+      realmErrors === undefined && !hasUninitializedReads(checked)
+        ? undefined
+        : planFlowPropertyStorage(checked);
     function bindingScalar(binding: number): SourceScalarType {
       return flowStorage?.bindings.has(binding) === true
         ? "general"
@@ -1347,29 +1386,28 @@ function lowerEntries(
       if (typeof element !== "number") return;
       const objectType = element;
       const system = validatedTypes;
+      const encoding =
+        entryType(
+          checked,
+          element,
+          listElements,
+          setElements,
+          recordTarget?.maps ?? [],
+        ) ?? "";
       if (
         !system.ok ||
-        ![
-          "Uint8Array",
-          "Uint16Array",
-          "Uint32Array",
-          "Float64Array",
-          "reference",
-          "optional-reference",
-          "primitive",
-          "general",
-          "optional-number",
-          "optional-string",
-          "boolean",
-          "optional-boolean",
-        ].includes(
-          entryType(
-            checked,
-            element,
-            listElements,
-            setElements,
-            recordTarget?.maps ?? [],
-          ) ?? "",
+        !(
+          isNativeTypedArray(encoding) ||
+          [
+            "reference",
+            "optional-reference",
+            "primitive",
+            "general",
+            "optional-number",
+            "optional-string",
+            "boolean",
+            "optional-boolean",
+          ].includes(encoding)
         )
       )
         fail(
@@ -1443,9 +1481,11 @@ function lowerEntries(
       const sort = source.sort,
         has = source.has,
         remove = source.delete,
-        resize = source.resize;
+        resize = source.resize,
+        pop = source.pop,
+        wrap = source.wrap;
       const receivers = [source.read, source.write, source.push, source.length];
-      for (const receiver of [sort, has, remove, resize]) {
+      for (const receiver of [sort, has, remove, resize, pop]) {
         if (receiver !== undefined) receivers.push(receiver);
       }
       const helper = runtimeHelpers(
@@ -1453,6 +1493,13 @@ function lowerEntries(
         source.create,
         receivers,
       );
+      let wrapId: number | undefined;
+      if (wrap !== undefined) {
+        const wrapContract = runtimeHelpers(encoding + " list wrap", wrap, [
+          source.length,
+        ]);
+        wrapId = wrapContract(wrap, ["Float64Array"], "reference");
+      }
       if (sort !== undefined) {
         const system = validatedTypes;
         if (!system.ok) fail("sort type system invariant");
@@ -1522,6 +1569,10 @@ function lowerEntries(
             : {
                 resize: helper(resize, ["reference", "number"], "void"),
               }),
+          ...(pop === undefined
+            ? {}
+            : { pop: helper(pop, ["reference"], optionalEncoding) }),
+          ...(wrapId === undefined ? {} : { wrap: wrapId }),
         },
       });
     }
@@ -1713,12 +1764,9 @@ function lowerEntries(
                 c.storage.alignment !== 8
               )
                 fail("layout does not use scalar cell encodings");
-              const borrowed: { readonly borrowed?: true } = [
-                "Uint8Array",
-                "Uint16Array",
-                "Uint32Array",
-                "Float64Array",
-              ].includes(type)
+              const borrowed: { readonly borrowed?: true } = isNativeTypedArray(
+                type,
+              )
                 ? { borrowed: true }
                 : {};
               return {
@@ -1928,9 +1976,11 @@ function lowerEntries(
       }
       for (const b of selected) {
         if (b === undefined) fail("b array invariant");
+        const sourceName = recordTarget?.sourceNames?.get(b.name);
         const local: Local = {
           id: locals.length,
           name: b.name,
+          ...(sourceName === undefined ? {} : { displayName: sourceName }),
           type: bindingScalar(b.id),
           mutable: b.mutable,
           parameter: b.kind === "parameter" || b.owner !== sourceId,
@@ -2039,6 +2089,12 @@ function lowerEntries(
       function nativeCallableType(id: number): boolean {
         const type = checked.types[id];
         if (type?.kind === "function") return true;
+        // Callable and constructible objects (class constructors) are functions.
+        if (
+          type?.kind === "object" &&
+          (type.call !== undefined || type.construct !== undefined)
+        )
+          return true;
         if (type?.kind !== "union") return false;
         let callable = false;
         for (const member of type.members) {
@@ -2111,7 +2167,8 @@ function lowerEntries(
                 : scalar(checkedType);
         let callee: number | undefined;
         let functionTarget: number | undefined;
-        let indirect = false;
+        let indirect = false,
+          methodReceiver = false;
         const referenceBinding = referenceBindings.get(node);
         let constant = constants.get(referenceBinding ?? -1);
         let local = localByBinding.get(referenceBinding ?? -1)?.id,
@@ -2545,6 +2602,29 @@ function lowerEntries(
               expr(node.expression);
               break;
             case "unary":
+              if (dynamicIntrinsic === "property-delete") {
+                let target = node.operand;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                const fieldType = checked.expressions.get(target);
+                if (
+                  target.kind !== "member" ||
+                  recordContracts === undefined ||
+                  fieldType === undefined
+                )
+                  fail("property delete invariant");
+                const representation = scalar(fieldType);
+                recordContracts.access(
+                  target,
+                  target.object,
+                  target.property,
+                  representation,
+                  true,
+                );
+                builtin = "property-delete";
+                expr(target.object);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-delete") {
                 if (dynamicObjects === undefined)
                   fail("dynamic-key object delete requires the program realm");
@@ -2561,6 +2641,21 @@ function lowerEntries(
               expr(node.operand);
               break;
             case "binary": {
+              if (node.operator === "instanceof") {
+                const constructor = checked.expressions.get(node.right);
+                const tested =
+                  constructor === undefined
+                    ? undefined
+                    : classStorage(classEntries, constructor);
+                if (tested !== undefined) {
+                  if (recordContracts === undefined)
+                    fail("class instance tests require record contracts");
+                  recordContracts.testClassInstance(node, tested);
+                  expr(node.left);
+                  expr(node.right);
+                  break;
+                }
+              }
               if (dynamicIntrinsic === "list-has") {
                 const element = representations.arrayElement(
                   checked.expressions.get(node.right) ?? -1,
@@ -2612,15 +2707,9 @@ function lowerEntries(
                 while (target.kind === "group") target = target.expression;
                 if (target.kind !== "identifier")
                   fail("typed-array constructor invariant");
-                const name = target.name;
-                if (
-                  name !== "Uint8Array" &&
-                  name !== "Uint16Array" &&
-                  name !== "Uint32Array" &&
-                  name !== "Float64Array"
-                )
-                  fail("typed-array kind invariant");
-                arrayInstance = name;
+                const kind = nativeTypedArray(target.name);
+                if (kind === undefined) fail("typed-array kind invariant");
+                arrayInstance = kind;
                 realmGlobal = dynamicAliases.get("realmGlobal");
                 realmInstanceOf = dynamicAliases.get("realmInstanceOf");
                 expr(node.left);
@@ -2919,6 +3008,19 @@ function lowerEntries(
                 }
                 break;
               }
+              const calleeType = checked.expressions.get(node.callee);
+              const classTarget =
+                calleeType === undefined
+                  ? undefined
+                  : classConstructionTarget(classEntries, calleeType);
+              if (classTarget !== undefined) {
+                if (recordContracts === undefined)
+                  fail("class construction requires record contracts");
+                expr(node.callee);
+                exprArguments(node.arguments);
+                recordContracts.constructClass(node, classTarget);
+                break;
+              }
               const construction = checked.intrinsics.get(node);
               if (construction === "shared-array-buffer-new") {
                 builtin = construction;
@@ -3144,11 +3246,7 @@ function lowerEntries(
                       checked.expressions.get(target.object) ??
                       -1
                   ]?.kind;
-                const typed =
-                  receiverType === "Uint8Array" ||
-                  receiverType === "Uint16Array" ||
-                  receiverType === "Uint32Array" ||
-                  receiverType === "Float64Array";
+                const typed = isNativeTypedArray(receiverType);
                 const inputElement = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
@@ -3460,6 +3558,8 @@ function lowerEntries(
                     node.scriptCall,
                   );
                   indirect = true;
+                  methodReceiver =
+                    signature.method === true && target.kind === "member";
                   expr(node.callee);
                 } else {
                   if (source !== undefined && ownedFunctions.has(source))
@@ -3531,13 +3631,7 @@ function lowerEntries(
         const sourceType =
           source === undefined ? undefined : checked.expressions.get(source);
         const sourceKind = checked.types[sourceType ?? -1]?.kind;
-        const arraySetSource =
-          sourceKind === "Uint8Array" ||
-          sourceKind === "Uint16Array" ||
-          sourceKind === "Uint32Array" ||
-          sourceKind === "Float64Array"
-            ? sourceKind
-            : undefined;
+        const arraySetSource = nativeTypedArray(sourceKind);
         const generalTypeof =
           node.kind === "unary" &&
           node.operator === "typeof" &&
@@ -3594,6 +3688,7 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          methodReceiver,
           voidValueCall: checked.voidValueCalls?.has(node),
           voidCallResults:
             indirect &&
@@ -4059,6 +4154,16 @@ function lowerEntries(
             if (node.update !== undefined) expr(node.update);
             stmt(node.body);
             break;
+          case "class":
+            if (
+              !classEntries.some(
+                (item) => item !== undefined && item.statement === node,
+              )
+            )
+              fail(
+                "class statements are lowered where their contract resolves",
+              );
+            break;
           case "break":
           case "continue":
           case "debugger":
@@ -4144,10 +4249,16 @@ function lowerEntries(
         receiverBinding === undefined
           ? undefined
           : localByBinding.get(receiverBinding)?.id;
+      const receiverType =
+        fn.receiver === sourceId
+          ? checked.receiverTypes.get(sourceId)
+          : undefined;
       const adapted: CheckedFunction = {
         ...(receiverLocal === undefined ? {} : { receiverLocal }),
-        receiver:
-          fn.receiver === sourceId && checked.receiverTypes.has(sourceId),
+        receiver: receiverType !== undefined,
+        ...(receiverType !== undefined && scalar(receiverType) === "reference"
+          ? { receiverReference: true }
+          : {}),
         exhaustiveSwitches: checked.exhaustiveSwitches,
         id: functions.length,
         node: {
@@ -4261,6 +4372,12 @@ function lowerEntries(
           record: incoming?.record,
           cells: ownedLocalCells,
           constructors,
+          classes: ownedClassDefinitions(
+            classEntries,
+            sourceId,
+            (node) => localByNode.get(node)?.id,
+            fail,
+          ),
         };
       }
       const lowered = lowerFunction(
@@ -4340,9 +4457,27 @@ function lowerEntries(
             ),
       );
     }
+    const classFunctions: (FunctionIR | undefined)[] = [];
+    for (const item of classEntries) {
+      if (item === undefined) throw "class entry invariant";
+      if (recordContracts === undefined) throw "class records invariant";
+      for (const generated of buildClassEntries(
+        item,
+        recordContracts.records,
+        signatures,
+        realmErrors?.typeError,
+      ))
+        classFunctions[generated.id] = generated;
+    }
+
     for (let id = entries.length; id < signatures.length; id++) {
       const signature = signatures[id];
       if (signature === undefined) throw "callback signature invariant";
+      const generated = classFunctions[id];
+      if (generated !== undefined) {
+        functions.push(generated);
+        continue;
+      }
       functions.push({
         id,
         name: "$callback$" + String(id),
@@ -5714,6 +5849,15 @@ function cells(
             array: reload(op.array, op),
             index: reload(op.index, op),
             value: reload(op.value, op),
+          };
+          break;
+        case "array-fill":
+          transformed = {
+            ...op,
+            array: reload(op.array, op),
+            value: reload(op.value, op),
+            from: reload(op.from, op),
+            to: reload(op.to, op),
           };
           break;
         case "call-indirect":

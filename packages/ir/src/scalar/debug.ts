@@ -15,7 +15,8 @@ export function slotVariables(fn: FunctionIR): Uint32Array | undefined {
   const variables = new Uint32Array(fn.slots.length);
   for (const binding of debug.slots) {
     if (binding === undefined) throw "debug slot binding invariant";
-    variables[binding.slot] = binding.variable + 1;
+    if (variables[binding.slot] === 0)
+      variables[binding.slot] = binding.variable + 1;
   }
   return variables;
 }

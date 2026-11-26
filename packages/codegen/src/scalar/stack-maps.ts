@@ -1,5 +1,8 @@
 import type { FunctionIR } from "@tint/ir/scalar";
-import { createKeyIndex } from "@tint/foundation/collections/key-index";
+import {
+  createKeyIndex,
+  type KeyIndex,
+} from "@tint/foundation/collections/key-index";
 import {
   nativeStackMapMagic,
   nativeStackMapVersion,
@@ -558,49 +561,91 @@ export interface WideStackMapPlan {
   readonly forEachWord: (write: (value: number) => void) => void;
 }
 
+export interface WideStackMapBuilder {
+  readonly add: (offset: number, map: readonly number[]) => void;
+  readonly finish: () => WideStackMapPlan;
+}
+
+const directoryChunkEntries = 32768;
+
+/** Incrementally deduplicate safepoint maps as functions are emitted so large
+ * modules do not retain un-deduplicated per-safepoint map arrays until finish. */
+export function createWideStackMapBuilder(): WideStackMapBuilder {
+  let mapIndices: KeyIndex<readonly number[], number> | undefined =
+    createKeyIndex<readonly number[], number>(mapHash, sameMap);
+  const maps: (readonly number[])[] = [];
+  const chunks: Float64Array[] = [];
+  let chunk = new Float64Array(0);
+  let used = directoryChunkEntries * 2;
+  let count = 0;
+  let mapWords = 0;
+  return {
+    add(offset: number, map: readonly number[]): void {
+      const indices = mapIndices;
+      if (indices === undefined) throw "safepoint builder finalized";
+      let relative = indices.get(map);
+      if (relative === undefined) {
+        relative = mapWords;
+        mapWords += map.length;
+        indices.set(map, relative);
+        maps.push(map);
+      }
+      if (used === directoryChunkEntries * 2) {
+        chunk = new Float64Array(directoryChunkEntries * 2);
+        chunks.push(chunk);
+        used = 0;
+      }
+      chunk[used++] = offset;
+      chunk[used++] = relative;
+      count++;
+    },
+    finish(): WideStackMapPlan {
+      // Drop the deduplication index before the caller allocates the final code buffer.
+      mapIndices = undefined;
+      const first = nativeStackMapTableHeaderBytes / 8 + count * 2;
+      const entryCount = count;
+      const totalWords = first + mapWords;
+      return {
+        wordLength: totalWords,
+        forEachWord(write: (value: number) => void): void {
+          write(nativeStackMapMagic);
+          write(nativeStackMapWideVersion);
+          write(entryCount);
+          let written = 0;
+          for (const part of chunks) {
+            if (part === undefined) throw "safepoint directory invariant";
+            const limit = Math.min(directoryChunkEntries, entryCount - written);
+            for (let i = 0; i < limit; i++) {
+              write(part[i * 2] ?? 0);
+              write(first + (part[i * 2 + 1] ?? 0));
+            }
+            written += limit;
+          }
+          for (const map of maps) {
+            if (map === undefined) throw "safepoint table invariant";
+            for (const word of map) {
+              if (word === undefined) throw "safepoint map invariant";
+              write(word);
+            }
+          }
+        },
+      };
+    },
+  };
+}
+
 /** Retain one numeric map per distinct frame shape and write the table into
  * its final image storage. Planning needs neither decimal keys nor a second
  * copy of the flattened maps. */
 export function planWideStackMapTable(
   sorted: readonly SafepointEntry[],
 ): WideStackMapPlan {
-  const mapIndices = createKeyIndex<readonly number[], number>(
-    mapHash,
-    sameMap,
-  );
-  const maps: (readonly number[])[] = [];
-  const directory = new Float64Array(sorted.length * 2);
-  const first = nativeStackMapTableHeaderBytes / 8 + directory.length;
-  let end = first;
-  let offset = 0;
+  const builder = createWideStackMapBuilder();
   for (const entry of sorted) {
     if (entry === undefined) throw "safepoint entry invariant";
-    let at = mapIndices.get(entry.map);
-    if (at === undefined) {
-      at = end;
-      end += entry.map.length;
-      mapIndices.set(entry.map, at);
-      maps.push(entry.map);
-    }
-    directory[offset++] = entry.offset;
-    directory[offset++] = at;
+    builder.add(entry.offset, entry.map);
   }
-  return {
-    wordLength: end,
-    forEachWord(write) {
-      write(nativeStackMapMagic);
-      write(nativeStackMapWideVersion);
-      write(directory.length / 2);
-      for (const word of directory) write(word);
-      for (const map of maps) {
-        if (map === undefined) throw "safepoint table invariant";
-        for (const word of map) {
-          if (word === undefined) throw "safepoint map invariant";
-          write(word);
-        }
-      }
-    },
-  };
+  return builder.finish();
 }
 
 /** A decoded safepoint (tests and tools): its return offset in the module,

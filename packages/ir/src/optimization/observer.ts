@@ -8,6 +8,10 @@ import type { ModuleIR } from "../scalar/index.ts";
 export interface PassStatistics {
   /** Functions retained unchanged by a phase-local analysis limit. */
   readonly skipped?: number;
+  /** Rounds the pass redid in a conservative mode because a safety check
+   * rejected its first result (such as LICM keeping a checked read that a
+   * direct read's layout proof relies on). Visible fallbacks; normally 0. */
+  readonly fallbacks?: number;
   readonly phase: "scalar" | "codegen";
   readonly pass:
     | "simplify-control-flow"
@@ -29,13 +33,17 @@ export interface PassStatistics {
     | "forward-local-loads"
     | "propagate-slot-copies"
     | "cache-list-vectors"
+    | "hoist-number-list-loops"
     | "cache-element-storage"
     | "cache-loop-properties"
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"
+    | "prune-unallocated-records"
+    | "scalarize-loop-records"
     | "devirtualize-closures"
     | "select-array-access"
+    | "scalarize-stencil-loops"
     | "hoist-loop-invariants"
     | "build-loop-strings"
     | "bound-counted-loops"
@@ -157,6 +165,7 @@ export function formatPassTable(reports: readonly PassReport[]): string {
   let visited = 0,
     rewritten = 0,
     skipped = 0,
+    fallbacks = 0,
     milliseconds = 0,
     exhausted = false;
   for (let index = 0; index < reports.length; index++) {
@@ -164,10 +173,12 @@ export function formatPassTable(reports: readonly PassReport[]): string {
     if (report === undefined) throw "pass report invariant";
     const statistics = report.statistics,
       passSkipped = statistics.skipped ?? 0,
+      passFallbacks = statistics.fallbacks ?? 0,
       time = report.milliseconds ?? 0;
     visited += statistics.visited;
     rewritten += statistics.rewritten;
     skipped += passSkipped;
+    fallbacks += passFallbacks;
     milliseconds += time;
     if (report.budgetExhausted) exhausted = true;
     text =
@@ -180,6 +191,7 @@ export function formatPassTable(reports: readonly PassReport[]): string {
       padStart(String(passSkipped), 9) +
       (timed ? padStart(fixed(time, 1), 10) : "") +
       (report.budgetExhausted ? "  exhausted" : "") +
+      (passFallbacks > 0 ? "  fallbacks " + String(passFallbacks) : "") +
       "\n";
   }
   return (
@@ -191,6 +203,7 @@ export function formatPassTable(reports: readonly PassReport[]): string {
     padStart(String(skipped), 9) +
     (timed ? padStart(fixed(milliseconds, 1), 10) : "") +
     (exhausted ? "  exhausted" : "") +
+    (fallbacks > 0 ? "  fallbacks " + String(fallbacks) : "") +
     "\n"
   );
 }
@@ -204,6 +217,7 @@ export function formatPassJSON(reports: readonly PassReport[]): string {
     if (report === undefined) throw "pass report invariant";
     const statistics = report.statistics,
       passSkipped = statistics.skipped,
+      passFallbacks = statistics.fallbacks,
       time = report.milliseconds;
     if (report.budgetExhausted) exhausted = true;
     passes =
@@ -220,6 +234,9 @@ export function formatPassJSON(reports: readonly PassReport[]): string {
       ',"rewritten":' +
       String(statistics.rewritten) +
       (passSkipped === undefined ? "" : ',"skipped":' + String(passSkipped)) +
+      (passFallbacks === undefined
+        ? ""
+        : ',"fallbacks":' + String(passFallbacks)) +
       ',"budgetExhausted":' +
       (report.budgetExhausted ? "true" : "false") +
       (time === undefined ? "" : ',"milliseconds":' + fixed(time, 3)) +

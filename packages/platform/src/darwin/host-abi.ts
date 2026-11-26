@@ -24,8 +24,9 @@ export function darwinHostABI(): PosixHostABI {
     pageSize: { kind: "fixed", bytes: 16384 },
     // sysconf(_SC_NPROCESSORS_ONLN).
     processors: { kind: "sysconf", symbol: "_sysconf", name: 58 },
-    // Every Apple silicon core implements FEAT_SHA256.
+    // Every Apple silicon core implements FEAT_SHA256 and FEAT_JSCVT.
     sha256Instructions: { kind: "baseline" },
+    javascriptConversion: { kind: "baseline" },
     c: darwinArm64CTarget,
     symbolPrefix: "_",
     errnoSymbol: "___error",

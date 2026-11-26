@@ -1,5 +1,6 @@
 import { createNumberIndex } from "@tint/foundation/collections/key-index";
 import { instructionResult } from "./operands.ts";
+import { nativeTypedArray, typedArrayIntegerElements } from "./typed-arrays.ts";
 import type {
   Block,
   FunctionBodySource,
@@ -198,12 +199,8 @@ export function provenWordFacts(
       if (id === undefined) continue;
       if (op.kind === "load") {
         edge(op.slot, n);
-        const type = fn.slots[op.slot];
-        if (
-          type === "Uint8Array" ||
-          type === "Uint16Array" ||
-          type === "Uint32Array"
-        )
+        const array = nativeTypedArray(fn.slots[op.slot]);
+        if (array !== undefined && typedArrayIntegerElements(array))
           arrayWords[n] = 1;
       } else if (op.kind === "constant") {
         const x = op.value;
@@ -267,7 +264,7 @@ export function provenWordFacts(
         add(n, 15);
         if (
           (op.kind === "array-new" || op.kind === "array-view") &&
-          op.type !== "Float64Array"
+          typedArrayIntegerElements(op.type)
         )
           arrayWords[n] = 1;
         if (op.kind === "array-subarray")
