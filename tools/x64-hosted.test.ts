@@ -3,7 +3,12 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { buildMacOSProgram, type BuildRequest } from "@tint/compiler/build";
+import {
+  buildMacOSProgram,
+  compileX64Program,
+  linkX64Program,
+  type BuildRequest,
+} from "@tint/compiler/build";
 import { linuxX86_64Target } from "@tint/platform/target";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
@@ -1032,3 +1037,54 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test("x86-64 streamed CodePlan matches contiguous emission byte-for-byte and pools float constants", () => {
+  const source = `export function run(): number {
+    let sum = 1.5;
+    for (let i = 0; i < 4; i++) sum += i * 2.25;
+    return sum > 10 ? 42 : 1;
+  }`;
+  const request: BuildRequest = {
+    target: linuxX86_64Target,
+    modules: [
+      {
+        id: "smoke",
+        module: parse(source),
+        sourcePosition: sourcePosition(source),
+        dependencies: new Map(),
+      },
+    ],
+    entry: "smoke",
+    start: "run",
+    runtimes: [],
+    hostBindings: [],
+    allocatorModule: "allocator",
+    runtimeModule: "runtime",
+    memoryModule: "memory",
+    identifier: "tint.x64.streamed",
+    managedBytes: 4096,
+    controlBytes: 4096,
+    allocationCapacity: 16,
+    rootCapacity: 16,
+    stackBytes: 1048576,
+    report: () => {},
+  };
+  const contiguous = compileX64Program(request, false);
+  const streamed = compileX64Program(request, true);
+  assert.ok(contiguous.ok, JSON.stringify(contiguous));
+  assert.ok(streamed.ok, JSON.stringify(streamed));
+  assert.equal(streamed.value.program.native.code.length, 0);
+  assert.ok(streamed.value.program.native.codePlan !== undefined);
+  assert.equal(
+    streamed.value.program.native.addressFixups.filter(
+      (fixup) => fixup.target.kind === "data",
+    ).length,
+    0,
+    "immutable float64 constants must resolve in the code pool, not data relocations",
+  );
+  const linkedContiguous = linkX64Program(contiguous.value, request);
+  const linkedStreamed = linkX64Program(streamed.value, request);
+  assert.ok(linkedContiguous.ok, JSON.stringify(linkedContiguous));
+  assert.ok(linkedStreamed.ok, JSON.stringify(linkedStreamed));
+  assert.deepEqual(linkedStreamed.value, linkedContiguous.value);
+});

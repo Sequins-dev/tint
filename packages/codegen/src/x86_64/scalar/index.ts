@@ -53,7 +53,7 @@ import {
   nativeWeakSlotMarker,
   nativeWeakSlotValueOffset,
 } from "@tint/abi/weak-slot";
-import type { ImageAddressTarget } from "@tint/abi/relocation";
+import type { CodePlan, ImageAddressTarget } from "@tint/abi/relocation";
 import {
   encodeFloat64,
   writeUnsigned,
@@ -221,6 +221,9 @@ interface X64SourceRange extends Span {
 }
 export interface X64Module extends ImageRelocations {
   readonly code: Uint8Array;
+  /** Optional chunked code writer (when present, `code` is empty and callers
+   * stream instructions, pool data and stack maps directly into the image). */
+  readonly codePlan?: CodePlan;
   readonly data: Uint8Array;
   readonly functions: readonly X64Function[];
   readonly imports: readonly string[];
@@ -385,6 +388,9 @@ export function emitModule(
    * with a bounded managed heap can drop its IR blocks before assembler
    * finalization allocates the contiguous output buffer. */
   releaseFunction?: (id: number) => void,
+  /** Stream encoded byte chunks, pool data and stack maps via `codePlan`
+   * instead of materializing an intermediate contiguous `code` buffer. */
+  streamCodePlan: boolean = false,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -451,6 +457,7 @@ export function emitModule(
   }
   const numbers = createNumberEmission(emit);
   const constants: Word64[] = [];
+  const constantOffsets = new Map<string, number>();
   const strings = new Map<
     string,
     { readonly value: string; readonly offset: number }
@@ -677,8 +684,8 @@ export function emitModule(
   function constant(value: number): Memory<64> {
     const bits = encodeFloat64(value);
     const key = "constant:" + String(bits.hi) + ":" + String(bits.lo);
-    if (!external.has(key)) {
-      external.set(key, { kind: "data", offset: constants.length * 8 });
+    if (!constantOffsets.has(key)) {
+      constantOffsets.set(key, constants.length * 8);
       constants.push(bits);
     }
     return {
@@ -770,6 +777,8 @@ export function emitModule(
             fn,
             (slot) => privateSlots[slot] !== 1,
             Number.MAX_SAFE_INTEGER,
+            undefined,
+            false,
           )
         : undefined;
     const groupOffsets: number[] = [];
@@ -6451,16 +6460,17 @@ export function emitModule(
       }
       emit({ op: "label", name: callbackThunksLabel + ":end" });
     }
-    const callbackKeyOffset = needsCallbackKey
-      ? constants.length * 8
-      : undefined;
+    // Immutable binary64 constants live in the read-only code pool alongside
+    // strings and descriptors so their loads resolve inside emitModule instead
+    // of creating hundreds of thousands of image relocations. Only mutable
+    // globals (callback key, JIT debug descriptor) occupy writable data.
+    const callbackKeyOffset = needsCallbackKey ? 0 : undefined;
     if (callbackKeyOffset !== undefined)
       external.set(callbackKeyLabel, {
         kind: "data",
         offset: callbackKeyOffset,
       });
-    const sharedDataBytes =
-      constants.length * 8 + (callbackKeyOffset === undefined ? 0 : 8);
+    const sharedDataBytes = callbackKeyOffset === undefined ? 0 : 8;
     if (jitDebug)
       external.set(debugDescriptor, { kind: "data", offset: sharedDataBytes });
     // Reserve the complete module span before copying code chunks. Large
@@ -6468,7 +6478,7 @@ export function emitModule(
     const instructionBytes = assembler.byteLength();
     const poolBase = Math.ceil(instructionBytes / 8) * 8;
     const constantsBase = poolBase + poolBytes;
-    const poolEnd = constantsBase + (live ? constants.length * 8 : 0);
+    const poolEnd = constantsBase + constants.length * 8;
     const withPool = poolEnd > poolBase ? poolEnd : instructionBytes;
     const tableOffset = Math.ceil(withPool / 8) * 8;
     const stackMaps: X64Module["stackMaps"][number][] = [];
@@ -6491,17 +6501,29 @@ export function emitModule(
         });
       }
     }
-    const encoded = assembler.finish(
-      (name) =>
-        name === hostedThreadEntryLabel ||
-        external.has(name) ||
-        strings.has(name) ||
-        descriptors.has(name),
+    const totalCodeBytes =
       stackMapPlan === undefined
         ? withPool
-        : tableOffset + (stackMapPlan.wordLength + 2) * 8,
-    );
-    const code = encoded.bytes;
+        : tableOffset + (stackMapPlan.wordLength + 2) * 8;
+    const isExternalLabel = (name: string): boolean =>
+      name === hostedThreadEntryLabel ||
+      external.has(name) ||
+      strings.has(name) ||
+      descriptors.has(name) ||
+      constantOffsets.has(name);
+    const streamed = streamCodePlan && !live;
+    const encodedChunks = streamed
+      ? assembler.finishChunks(isExternalLabel)
+      : undefined;
+    const encodedLayout =
+      encodedChunks === undefined
+        ? assembler.finish(isExternalLabel, totalCodeBytes)
+        : undefined;
+    const encodedLabels =
+      encodedChunks?.labels ?? encodedLayout?.labels ?? assembler.labels;
+    const encodedExternalFixups =
+      encodedChunks?.externalFixups ?? encodedLayout?.externalFixups ?? [];
+    const code = encodedLayout?.bytes ?? new Uint8Array(0);
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
@@ -6516,12 +6538,12 @@ export function emitModule(
         continue;
       }
       const name = functionLabel(fn.id);
-      const offset = encoded.labels.get(name);
-      const end = encoded.labels.get(name + ":end");
+      const offset = encodedLabels.get(name);
+      const end = encodedLabels.get(name + ":end");
       if (offset === undefined || end === undefined)
         throw "function label invariant";
-      const body = encoded.labels.get(name + ":debug-body");
-      const leave = encoded.labels.get(name + ":return");
+      const body = encodedLabels.get(name + ":debug-body");
+      const leave = encodedLabels.get(name + ":return");
       const parameters = debugFrames.get(fn.id);
       const frame =
         body === undefined ||
@@ -6538,38 +6560,18 @@ export function emitModule(
         ...(frame === undefined ? {} : { frame }),
       });
     }
-    if (stackMapPlan !== undefined) {
-      let offset = tableOffset;
-      function writeMapWord(value: number): void {
-        if (
-          !writeWord64(
-            code,
-            offset,
-            {
-              lo: value % 4294967296,
-              hi: Math.floor(value / 4294967296),
-            },
-            "little",
-          ).ok
-        )
-          throw "x86-64 stack map word invariant";
-        offset += 8;
-      }
-      stackMapPlan.forEachWord(writeMapWord);
-      writeMapWord(nativeStackMapFooterMagic);
-      writeMapWord(tableOffset);
-    }
-    if (poolEnd > poolBase) {
+    function writePool(target: Uint8Array, base: number): void {
+      if (poolEnd <= poolBase) return;
       for (const [, item] of strings) {
         if (item === undefined) throw "x86-64 literal invariant";
-        const start = poolBase + item.offset,
+        const start = base + item.offset,
           oneByte = isOneByteText(item.value);
         // Marker 1 in byte 0; the one-byte kind flag is bit 48 (byte 6).
-        code[start] = 1;
-        if (oneByte) code[start + 6] = 1;
+        target[start] = 1;
+        if (oneByte) target[start + 6] = 1;
         if (
           !writeUnsigned(
-            code,
+            target,
             start + nativeStringLengthOffset,
             4,
             item.value.length,
@@ -6582,7 +6584,7 @@ export function emitModule(
         if (
           indexField !== 0 &&
           !writeUnsigned(
-            code,
+            target,
             start + nativeStringIndexFieldOffset,
             4,
             indexField,
@@ -6593,7 +6595,7 @@ export function emitModule(
         for (let i = 0; i < item.value.length; i++)
           if (
             !writeUnsigned(
-              code,
+              target,
               start + nativeStringDataOffset + (oneByte ? i : i * 2),
               oneByte ? 1 : 2,
               item.value.charCodeAt(i),
@@ -6602,27 +6604,66 @@ export function emitModule(
           )
             throw "x86-64 literal unit invariant";
       }
-    }
-    for (const [, item] of descriptors) {
-      if (item === undefined) throw "x86-64 descriptor invariant";
-      for (let index = 0; index < item.words.length; index++) {
-        const value = item.words[index];
-        if (
-          value === undefined ||
-          !writeWord64(
-            code,
-            poolBase + item.offset + index * 8,
-            { lo: value, hi: 0 },
-            "little",
-          ).ok
-        )
-          throw "x86-64 descriptor word invariant";
+      for (const [, item] of descriptors) {
+        if (item === undefined) throw "x86-64 descriptor invariant";
+        for (let index = 0; index < item.words.length; index++) {
+          const value = item.words[index];
+          if (
+            value === undefined ||
+            !writeWord64(
+              target,
+              base + item.offset + index * 8,
+              { lo: value, hi: 0 },
+              "little",
+            ).ok
+          )
+            throw "x86-64 descriptor word invariant";
+        }
       }
+      const constantStart = base + poolBytes;
+      for (let i = 0; i < constants.length; i++) {
+        const word = constants[i];
+        if (
+          word === undefined ||
+          !writeWord64(target, constantStart + i * 8, word, "little").ok
+        )
+          throw "binary64 data invariant";
+      }
+    }
+    const poolData =
+      encodedChunks !== undefined && poolEnd > poolBase
+        ? new Uint8Array(poolEnd - poolBase)
+        : undefined;
+    if (encodedLayout !== undefined) {
+      if (stackMapPlan !== undefined) {
+        let offset = tableOffset;
+        function writeMapWord(value: number): void {
+          if (
+            !writeWord64(
+              code,
+              offset,
+              {
+                lo: value % 4294967296,
+                hi: Math.floor(value / 4294967296),
+              },
+              "little",
+            ).ok
+          )
+            throw "x86-64 stack map word invariant";
+          offset += 8;
+        }
+        stackMapPlan.forEachWord(writeMapWord);
+        writeMapWord(nativeStackMapFooterMagic);
+        writeMapWord(tableOffset);
+      }
+      writePool(code, poolBase);
+    } else if (poolData !== undefined) {
+      writePool(poolData, 0);
     }
     const imageFixups: RelativeFixup[] = [];
     const hostedThreadFixups: RelativeFixup[] = [];
     const managedFixups: X64ManagedReference[] = [];
-    for (const fixup of encoded.externalFixups) {
+    for (const fixup of encodedExternalFixups) {
       if (fixup === undefined) throw "x86-64 fixup invariant";
       if (fixup.ref.label === hostedThreadEntryLabel) {
         hostedThreadFixups.push(fixup);
@@ -6636,37 +6677,86 @@ export function emitModule(
       const local =
         strings.get(fixup.ref.label)?.offset ??
         descriptors.get(fixup.ref.label)?.offset;
-      const constant = live ? external.get(fixup.ref.label) : undefined;
+      const constantOffset = constantOffsets.get(fixup.ref.label);
       const offset =
-        constant?.kind === "data"
-          ? constantsBase + constant.offset
+        constantOffset !== undefined
+          ? constantsBase + constantOffset
           : local === undefined
             ? undefined
             : poolBase + local;
       if (offset === undefined) imageFixups.push(fixup);
-      else {
+      else if (encodedChunks !== undefined) {
+        encodedChunks.patch(fixup, offset);
+      } else {
         const status = patchRelative(code, fixup, fixup.fieldOffset, offset);
         if (status === "range") throw "x86-64 rel32 displacement out of range";
         if (status !== "complete") throw "x86-64 pool fixup invariant";
       }
     }
+    let codePlan: CodePlan | undefined;
+    if (encodedChunks !== undefined) {
+      const chunks = encodedChunks.chunks,
+        chunkSize = encodedChunks.chunkBytes,
+        chunkTotal = encodedChunks.byteLength,
+        plan = stackMapPlan;
+      codePlan = {
+        byteLength: totalCodeBytes,
+        write(output, origin) {
+          let offset = 0;
+          for (const chunk of chunks) {
+            if (chunk === undefined) return "x86-64 code chunk invariant";
+            const available = chunkTotal - offset;
+            output.write(
+              available < chunkSize ? chunk.subarray(0, available) : chunk,
+              origin + offset,
+            );
+            offset += chunkSize;
+          }
+          if (poolData !== undefined) output.write(poolData, origin + poolBase);
+          if (plan !== undefined) {
+            const buffer = new Uint8Array(4096);
+            let buffered = 0,
+              at = tableOffset;
+            function flush(): void {
+              if (buffered === 0) return;
+              output.write(
+                buffered === buffer.length
+                  ? buffer
+                  : buffer.subarray(0, buffered),
+                origin + at,
+              );
+              at += buffered;
+              buffered = 0;
+            }
+            function writeMapWord(value: number): void {
+              if (
+                !writeWord64(
+                  buffer,
+                  buffered,
+                  {
+                    lo: value % 4294967296,
+                    hi: Math.floor(value / 4294967296),
+                  },
+                  "little",
+                ).ok
+              )
+                throw "x86-64 stack map word invariant";
+              buffered += 8;
+              if (buffered === buffer.length) flush();
+            }
+            plan.forEachWord(writeMapWord);
+            writeMapWord(nativeStackMapFooterMagic);
+            writeMapWord(tableOffset);
+            flush();
+          }
+          return undefined;
+        },
+      };
+    }
     const data = new Uint8Array(
       live ? 0 : sharedDataBytes + (jitDebug ? 24 : 0),
     );
     if (jitDebug) data[sharedDataBytes] = 1; // struct jit_descriptor.version
-    for (let i = 0; i < constants.length; i++) {
-      const word = constants[i];
-      if (
-        word === undefined ||
-        !writeWord64(
-          live ? code : data,
-          (live ? constantsBase : 0) + i * 8,
-          word,
-          "little",
-        ).ok
-      )
-        throw "binary64 data invariant";
-    }
     const relocations = imageRelocations(imageFixups, external);
     const managedImports: NativeManagedPointerImport[] = [];
     for (let index = 0; index < abiRequests.length; index++) {
@@ -6708,26 +6798,27 @@ export function emitModule(
       });
     }
     const sourceRanges: X64SourceRange[] = [];
-    const debugRegisterOffset = encoded.labels.get(debugRegister);
+    const debugRegisterOffset = encodedLabels.get(debugRegister);
     for (let index = 0; index + 1 < sourceLabels.length; index++) {
       const row = sourceLabels[index],
         next = sourceLabels[index + 1];
       if (row === undefined || next === undefined)
         throw "debug label invariant";
       if (row.span.start >= row.span.end) continue;
-      const offset = encoded.labels.get(row.name);
-      const end = encoded.labels.get(next.name);
+      const offset = encodedLabels.get(row.name);
+      const end = encodedLabels.get(next.name);
       if (offset === undefined || end === undefined)
         throw "debug source boundary invariant";
       if (end > offset)
         sourceRanges.push({ ...row.span, offset, byteLength: end - offset });
     }
-    for (const range of resolveUnwind(unwind, encoded.labels))
+    for (const range of resolveUnwind(unwind, encodedLabels))
       if (range !== undefined) resolvedUnwind.push(range);
     return {
       ok: true,
       value: {
         code,
+        ...(codePlan === undefined ? {} : { codePlan }),
         data,
         functions,
         imports: [...imports],
@@ -6751,7 +6842,7 @@ export function emitModule(
         records: nativeRecords,
         unwind: resolvedUnwind,
         sourceRanges,
-        probes: probes.resolve(encoded.labels),
+        probes: probes.resolve(encodedLabels),
         ...(callbackKeyOffset === undefined ? {} : { callbackKeyOffset }),
         stackMaps,
         addressFixups: relocations.addressFixups,

@@ -23,6 +23,9 @@ export function shareFrameSlots(
   budget: number,
   /** Slots share a word only within one kind (default: the slot type). */
   kind?: (slot: number) => string,
+  /** Record live-in owners for `otherLiveIn` queries (required when clearing
+   * dead shared slots at block entry; callers with stack maps skip it). */
+  trackOwners: boolean = true,
 ): SlotSharing | undefined {
   const blockCount = fn.blocks.length,
     slotCount = fn.slots.length;
@@ -112,13 +115,13 @@ export function shareFrameSlots(
   const liveStamp = new Uint32Array(blockCount),
     defStamp = new Uint32Array(blockCount),
     occupancy: number[][] = [],
-    liveIns: number[][] = [];
+    liveIns: number[][] | undefined = trackOwners ? [] : undefined;
   const stack: number[] = [];
   for (let slot = 0; slot < slotCount; slot++) {
     const occupied: number[] = [],
-      liveIn: number[] = [];
+      liveIn: number[] | undefined = trackOwners ? [] : undefined;
     occupancy.push(occupied);
-    liveIns.push(liveIn);
+    if (liveIns !== undefined && liveIn !== undefined) liveIns.push(liveIn);
     if (!eligible(slot)) continue;
     const stamp = slot + 1;
     for (const block of defs[slot] ?? []) {
@@ -129,7 +132,8 @@ export function shareFrameSlots(
       if (block === undefined) throw "slot sharing seed invariant";
       if (liveStamp[block] === stamp) continue;
       liveStamp[block] = stamp;
-      liveIn.push(block);
+      occupied.push(block);
+      if (liveIn !== undefined) liveIn.push(block);
       stack.push(block);
     }
     while (stack.length > 0) {
@@ -144,13 +148,10 @@ export function shareFrameSlots(
         if (linkExceptional[at] !== 1 && defStamp[source] === stamp) continue;
         if (liveStamp[source] === stamp) continue;
         liveStamp[source] = stamp;
-        liveIn.push(source);
+        occupied.push(source);
+        if (liveIn !== undefined) liveIn.push(source);
         stack.push(source);
       }
-    }
-    for (const block of liveIn) {
-      if (block === undefined) throw "slot sharing live invariant";
-      occupied.push(block);
     }
     for (const block of refs[slot] ?? []) {
       if (block === undefined) throw "slot sharing reference invariant";
@@ -173,20 +174,29 @@ export function shareFrameSlots(
     order.push(slot);
   }
   order.sort((a, b) => (first[a] ?? 0) - (first[b] ?? 0) || a - b);
-  const color = new Uint32Array(slotCount);
-  const groupType: string[] = [],
-    groupBlocks: Uint8Array[] = [];
+  const color = new Uint32Array(slotCount),
+    blockWords = (blockCount + 31) >>> 5;
+  // Probe at most the first 64 groups of each kind; groups past that cap are
+  // never probed again and need no occupancy bitset.
+  let groupCount = 0;
+  const probedByType = new Map<
+    string,
+    { readonly group: number; readonly bits: Uint32Array }[]
+  >();
   // Live-in owners by (group, block) in an open-addressed table: slots of one
   // group never occupy the same block, so each key has at most one owner. A
   // Map here held one managed entry per live-in block (a tenth of the
   // compiler's self-compile). Capacity is a power of two above twice the
   // live-in total, so probing always reaches an empty slot.
-  let liveTotal = 0;
-  for (const slot of order)
-    if (slot !== undefined) liveTotal += liveIns[slot]?.length ?? 0;
-  let ownerCapacity = 16;
-  while (ownerCapacity < liveTotal * 2 + 1) ownerCapacity *= 2;
-  const ownerMask = ownerCapacity - 1,
+  let ownerCapacity = 0;
+  if (liveIns !== undefined) {
+    let liveTotal = 0;
+    for (const slot of order)
+      if (slot !== undefined) liveTotal += liveIns[slot]?.length ?? 0;
+    ownerCapacity = 16;
+    while (ownerCapacity < liveTotal * 2 + 1) ownerCapacity *= 2;
+  }
+  const ownerMask = ownerCapacity > 0 ? ownerCapacity - 1 : 0,
     ownerGroup = new Uint32Array(ownerCapacity),
     ownerBlock = new Uint32Array(ownerCapacity),
     ownerSlot = new Uint32Array(ownerCapacity);
@@ -210,49 +220,64 @@ export function shareFrameSlots(
     const type = kind === undefined ? (fn.slots[slot] ?? "") : kind(slot);
     const occupied = occupancy[slot];
     if (occupied === undefined) throw "slot sharing slot invariant";
+    let candidates = probedByType.get(type);
+    if (candidates === undefined) {
+      candidates = [];
+      probedByType.set(type, candidates);
+    }
     let chosen = -1,
-      tried = 0;
-    for (let group = 0; group < groupType.length && tried < 64; group++) {
-      if (groupType[group] !== type) continue;
-      tried++;
-      const blocks = groupBlocks[group];
-      if (blocks === undefined) throw "slot sharing group invariant";
+      chosenBits: Uint32Array | undefined;
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      if (candidate === undefined) throw "slot sharing candidate invariant";
+      const bits = candidate.bits;
       let free = true;
       for (const block of occupied) {
         if (++work > budget) return undefined;
-        if (block !== undefined && blocks[block] === 1) {
+        if (
+          block !== undefined &&
+          ((bits[block >>> 5] ?? 0) & (1 << (block & 31))) !== 0
+        ) {
           free = false;
           break;
         }
       }
       if (free) {
-        chosen = group;
+        chosen = candidate.group;
+        chosenBits = bits;
         break;
       }
     }
     if (chosen < 0) {
-      chosen = groupType.length;
-      groupType.push(type);
-      groupBlocks.push(new Uint8Array(blockCount));
+      chosen = groupCount++;
+      if (candidates.length < 64) {
+        chosenBits = new Uint32Array(blockWords);
+        candidates.push({ group: chosen, bits: chosenBits });
+      }
       work += blockCount >>> 3;
       if (work > budget) return undefined;
     }
-    const blocks = groupBlocks[chosen];
-    if (blocks === undefined) throw "slot sharing group invariant";
-    for (const block of occupied) if (block !== undefined) blocks[block] = 1;
-    for (const block of liveIns[slot] ?? [])
-      if (block !== undefined) {
-        const at = ownerAt(chosen, block);
-        ownerGroup[at] = chosen + 1;
-        ownerBlock[at] = block;
-        ownerSlot[at] = slot;
-      }
+    if (chosenBits !== undefined)
+      for (const block of occupied)
+        if (block !== undefined) {
+          const word = block >>> 5;
+          chosenBits[word] = (chosenBits[word] ?? 0) | (1 << (block & 31));
+        }
+    if (liveIns !== undefined)
+      for (const block of liveIns[slot] ?? [])
+        if (block !== undefined) {
+          const at = ownerAt(chosen, block);
+          ownerGroup[at] = chosen + 1;
+          ownerBlock[at] = block;
+          ownerSlot[at] = slot;
+        }
     color[slot] = chosen + 1;
   }
   return {
     color,
-    colors: groupType.length,
+    colors: groupCount,
     otherLiveIn: (slot: number, block: number): boolean => {
+      if (ownerCapacity === 0) throw "slot sharing owner tracking disabled";
       const group = (color[slot] ?? 0) - 1;
       if (group < 0) return false;
       const at = ownerAt(group, block);

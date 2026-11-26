@@ -1210,6 +1210,15 @@ export interface EncodedLayout {
   readonly externalFixups: readonly RelativeFixup[];
 }
 
+export interface EncodedChunks {
+  readonly chunks: readonly Uint8Array[];
+  readonly byteLength: number;
+  readonly chunkBytes: number;
+  readonly labels: ReadonlyMap<string, number>;
+  readonly externalFixups: readonly RelativeFixup[];
+  readonly patch: (fixup: RelativeFixup, target: number) => void;
+}
+
 export function encode(instructions: readonly Instruction[]): Uint8Array {
   return encodeLayout(instructions).bytes;
 }
@@ -1241,6 +1250,11 @@ export interface Assembler {
     isExternal?: (label: string) => boolean,
     byteLength?: number,
   ) => EncodedLayout;
+  /** Resolve local fixups in-place on the encoded byte chunks without
+   * allocating a contiguous copy, for streaming directly into an image. */
+  readonly finishChunks: (
+    isExternal?: (label: string) => boolean,
+  ) => EncodedChunks;
 }
 
 /** Stream instructions into encoding storage and keep only symbols and
@@ -1304,14 +1318,9 @@ export function createAssembler(far: boolean = false): Assembler {
     scopeFixupStart = -1;
   }
 
-  function finish(
+  function resolvePending(
     isExternal?: (label: string) => boolean,
-    byteLength: number = out.bytes.length,
-  ): EncodedLayout {
-    if (finished) invalid("assembler already finalized");
-    if (!Number.isSafeInteger(byteLength) || byteLength < out.bytes.length)
-      invalid("assembly output is smaller than instruction bytes or invalid");
-    finished = true;
+  ): RelativeFixup[] {
     const externalFixups: RelativeFixup[] = [];
     for (const fixup of out.fixups) {
       if (fixup === undefined) throw "rel32 fixup invariant";
@@ -1327,10 +1336,41 @@ export function createAssembler(far: boolean = false): Assembler {
     // The compiler can accumulate millions of local relocations. Drop their
     // records and backing list before allocating the contiguous output.
     out.fixups = [];
+    return externalFixups;
+  }
+
+  function finish(
+    isExternal?: (label: string) => boolean,
+    byteLength: number = out.bytes.length,
+  ): EncodedLayout {
+    if (finished) invalid("assembler already finalized");
+    if (!Number.isSafeInteger(byteLength) || byteLength < out.bytes.length)
+      invalid("assembly output is smaller than instruction bytes or invalid");
+    finished = true;
+    const externalFixups = resolvePending(isExternal);
     const bytes = encodedBytes(out.bytes, byteLength);
     out.bytes.chunks.length = 0;
     out.bytes.chunk = new Uint8Array(0);
     return { bytes, labels, externalFixups };
+  }
+
+  function finishChunks(
+    isExternal?: (label: string) => boolean,
+  ): EncodedChunks {
+    if (finished) invalid("assembler already finalized");
+    finished = true;
+    const externalFixups = resolvePending(isExternal);
+    out.bytes.chunk = new Uint8Array(0);
+    const buffer = out.bytes;
+    return {
+      chunks: buffer.chunks,
+      byteLength: buffer.length,
+      chunkBytes: codeChunkBytes,
+      labels,
+      externalFixups,
+      patch: (fixup: RelativeFixup, target: number): void =>
+        patchChunkRelative(buffer, fixup, target, scratch),
+    };
   }
   return {
     labels,
@@ -1339,5 +1379,6 @@ export function createAssembler(far: boolean = false): Assembler {
     beginScope,
     endScope,
     finish,
+    finishChunks,
   };
 }
