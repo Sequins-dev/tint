@@ -99,6 +99,21 @@ emission and can send just the rewritten functions back across the
 pass barrier.
 [Emitter outlining screen](results/parallel-bounded-compile-emitter-outline-v1.md)
 
+The next profile attributed 35.73 s of a 45.34 s folding sweep to one
+body. Its sparse load IDs made the native optimizer grow a fresh
+array-length fact list even when a load supplied no length. Skipping
+those writes dropped the replay from 49.71 s to 77 ms on macOS and
+66.47 s to 113 ms on Linux, with identical packed output. This serial
+change is being qualified separately. The worker budget will use the
+faster serial baseline.
+[Native constant-folding hot-body replay](results/parallel-bounded-compile-folding-hot-body-v1.md)
+
+Two persistent native Workers each opened the same typed shared
+preparation once and served repeat requests for packed bodies. The
+separate full-emission fixture still needs validation before the
+newer pool can be measured through image placement.
+[Generational Worker shared preparation](results/parallel-bounded-compile-generational-shared-preparation-v1.md)
+
 ## Compiler actor candidates
 
 Native Worker microbenchmarks isolated two substrate costs. One mapped
