@@ -44,6 +44,11 @@ export interface ModuleInstanceFallback {
   readonly ownerKind: "module" | "class";
 }
 
+export interface TopLevelModuleEntry {
+  /** Linked local name of `node:process`'s default export, if loaded. */
+  readonly exitCodeObject?: string;
+}
+
 /** Prepare one resolved, specialized module instance. Rebind and check the returned AST. */
 export function prepareModuleInstance(
   module: Module,
@@ -51,10 +56,17 @@ export function prepareModuleInstance(
   exports: readonly ModuleInstanceExport[],
   retained: readonly string[] = [],
   invokeDirectly: boolean = false,
+  topLevelEntry?: TopLevelModuleEntry,
 ): ModuleInstanceResult {
   if (module.imports.length !== 0)
     return { ok: false, error: "module instance requires resolved imports" };
-  if (
+  if (topLevelEntry !== undefined) {
+    if (exports.length !== 0 || invokeDirectly)
+      return {
+        ok: false,
+        error: "top-level module entry takes no selected function exports",
+      };
+  } else if (
     exports.length === 0 ||
     new Set(exports.map((e) => e.name)).size !== exports.length
   )
@@ -309,17 +321,89 @@ export function prepareModuleInstance(
       end: fn.end,
     });
   }
-  body.push({
-    kind: "return",
-    expression: directCall ?? {
-      kind: "object",
-      properties: values,
+  if (topLevelEntry !== undefined) {
+    const end = module.end;
+    const exitObject = topLevelEntry.exitCodeObject;
+    if (exitObject !== undefined) {
+      let exitVar = "__tint_exit";
+      while (names.has(exitVar)) exitVar += "_";
+      body.push({
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            kind: "binding",
+            name: exitVar,
+            type: undefined,
+            initializer: {
+              kind: "member",
+              object: { kind: "identifier", name: exitObject, start: end, end },
+              property: "exitCode",
+              start: end,
+              end,
+            },
+            start: end,
+            end,
+          },
+        ],
+        start: end,
+        end,
+      });
+      body.push({
+        kind: "return",
+        expression: {
+          kind: "conditional",
+          test: {
+            kind: "binary",
+            operator: "===",
+            left: { kind: "identifier", name: exitVar, start: end, end },
+            right: { kind: "identifier", name: "undefined", start: end, end },
+            start: end,
+            end,
+          },
+          consequent: { kind: "number", value: 0, raw: "0", start: end, end },
+          alternate: {
+            kind: "binary",
+            operator: "|",
+            left: { kind: "identifier", name: exitVar, start: end, end },
+            right: { kind: "number", value: 0, raw: "0", start: end, end },
+            start: end,
+            end,
+          },
+          start: end,
+          end,
+        },
+        start: end,
+        end,
+      });
+    } else {
+      body.push({
+        kind: "return",
+        expression: { kind: "number", value: 0, raw: "0", start: end, end },
+        start: end,
+        end,
+      });
+    }
+    directReturn = {
+      kind: "named",
+      name: "number",
+      start: module.start,
+      end: module.end,
+    };
+  } else {
+    body.push({
+      kind: "return",
+      expression: directCall ?? {
+        kind: "object",
+        properties: values,
+        start: module.end,
+        end: module.end,
+      },
       start: module.end,
       end: module.end,
-    },
-    start: module.end,
-    end: module.end,
-  });
+    });
+  }
   const initializer: FunctionDeclaration = {
     kind: "function",
     name,

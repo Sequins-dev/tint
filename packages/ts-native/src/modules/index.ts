@@ -1635,6 +1635,7 @@ export {
   type ModuleInstanceResult,
   type ModuleInstanceFallback,
   type ModuleInstanceExport,
+  type TopLevelModuleEntry,
 } from "./instance.ts";
 export {
   specializeCheckedRoots,

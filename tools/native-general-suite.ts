@@ -1604,8 +1604,9 @@ export function sections() {
 `;
 
 export const bufferIdentitySource = `
+import process from "node:process";
 import { Buffer } from "node:buffer";
-export function run() {
+function checkBufferIdentity() {
   if (globalThis.Buffer !== Buffer ||
       Object.getPrototypeOf(Buffer) !== Uint8Array ||
       Object.getPrototypeOf(Buffer.prototype) !== Uint8Array.prototype) return 1;
@@ -1634,7 +1635,9 @@ export function run() {
   try { Buffer.from("x", "missing"); return 8; }
   catch (error) { if (!(error instanceof TypeError) || error.code !== "ERR_UNKNOWN_ENCODING") return 8; }
   return 42;
-}`;
+}
+process.exitCode = checkBufferIdentity();
+`;
 
 export type GeneralRealmCaseName =
   "elements" | "intrinsics" | "numbers" | "property-caches" | "buffer-identity";
@@ -1661,14 +1664,16 @@ function sectionRunnerModule(
   expected: readonly string[],
   prelude = "",
 ): string {
-  return `${source}
-export function run() {
+  return `import process from "node:process";
+${source}
+function checkSections() {
 ${prelude}  const actual = sections();
   const expected = ${JSON.stringify(expected)};
   for (let i = 0; i < expected.length; i++)
     if (actual[i] !== expected[i]) return 10 + i;
   return 42;
 }
+process.exitCode = checkSections();
 `;
 }
 
@@ -1714,35 +1719,38 @@ export async function runGeneralRealmSuiteCase(
         expected.elements,
         "  if (Object.isFrozen(Object.seal([]))) return 99;\n",
       ),
-      deps: [] as [string, string][],
+      deps: [["node:process", nodeProcessModule]] as [string, string][],
     },
     {
       name: "intrinsics",
       specifier: "./intrinsics.ts",
       id: "fixture:general-intrinsics",
       text: sectionRunnerModule(intrinsicsSource, expected.intrinsics),
-      deps: [] as [string, string][],
+      deps: [["node:process", nodeProcessModule]] as [string, string][],
     },
     {
       name: "numbers",
       specifier: "./numbers.ts",
       id: "fixture:general-numbers",
       text: sectionRunnerModule(numbersSource, expected.numbers),
-      deps: [] as [string, string][],
+      deps: [["node:process", nodeProcessModule]] as [string, string][],
     },
     {
       name: "property-caches",
       specifier: "./property-caches.ts",
       id: "fixture:general-property-caches",
       text: sectionRunnerModule(propertyCachesSource, expected.propertyCaches),
-      deps: [] as [string, string][],
+      deps: [["node:process", nodeProcessModule]] as [string, string][],
     },
     {
       name: "buffer-identity",
       specifier: "./buffer-identity.ts",
       id: "fixture:ffi-buffer-identity",
       text: bufferIdentitySource,
-      deps: [["node:buffer", nodeBufferModule]] as [string, string][],
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["node:buffer", nodeBufferModule],
+      ] as [string, string][],
     },
   ];
   const dispatcher = generalImportDispatcher(cases);

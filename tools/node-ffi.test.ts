@@ -112,10 +112,12 @@ __attribute__((destructor)) static void tint_record_unload(void) {
 function scalarSource(library: string | undefined, generic: boolean): string {
   const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
   const processImport =
-    library === undefined ? 'import { argv } from "node:process";\n' : "";
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
   return `
 ${processImport}import ffi, { DynamicLibrary, dlclose, dlopen, dlsym, types } from "node:ffi";
-export function run() {
+function checkScalar() {
   if (ffi.dlopen !== dlopen || ffi.DynamicLibrary !== DynamicLibrary ||
       ffi.types !== types || Object.getPrototypeOf(types) !== null ||
       !Object.isFrozen(types) || types.INT_64 !== "int64") return 1;
@@ -180,13 +182,16 @@ export function run() {
     if (error.code !== "ERR_FFI_LIBRARY_CLOSED" || error.message !== "Library is closed") return 13;
   }
   return 42;
-}`;
+}
+process.exitCode = checkScalar();
+`;
 }
 
 const memorySource = `
+import process from "node:process";
 import ffi from "node:ffi";
 import { Buffer } from "node:buffer";
-export function run() {
+function checkMemory() {
   const { lib, functions } = ffi.dlopen(null, {
     malloc: { return: "pointer", arguments: ["uint64"] },
     free: { arguments: ["pointer"] },
@@ -244,15 +249,19 @@ export function run() {
     functions.free(pointer);
     lib.close();
   }
-}`;
+}
+process.exitCode = checkMemory();
+`;
 
 function wideSource(library?: string): string {
   const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
   const processImport =
-    library === undefined ? 'import { argv } from "node:process";\n' : "";
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
   return `
 ${processImport}import { dlopen } from "node:ffi";
-export function run() {
+function checkWide() {
   const types = [];
   const values = [];
   let expected = 0n;
@@ -286,16 +295,20 @@ export function run() {
   } finally {
     lib.close();
   }
-}`;
+}
+process.exitCode = checkWide();
+`;
 }
 
 function callbacksSource(library?: string): string {
   const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
   const processImport =
-    library === undefined ? 'import { argv } from "node:process";\n' : "";
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
   return `
 ${processImport}import ffi from "node:ffi";
-export function run() {
+function checkCallbacks() {
   const path = ${pathExpr};
   const { lib, functions } = ffi.dlopen(path, {
     tint_store_callback: { arguments: ["function"] },
@@ -349,7 +362,9 @@ export function run() {
     separateOwner.close();
     lib.close();
   }
-}`;
+}
+process.exitCode = checkCallbacks();
+`;
 }
 
 /** General callers reach bindings through positional entries and the typed
@@ -357,7 +372,9 @@ export function run() {
 function generalCallersSource(library?: string): string {
   const pathExpr = library === undefined ? "argv[2]" : JSON.stringify(library);
   const processImport =
-    library === undefined ? 'import { argv } from "node:process";\n' : "";
+    library === undefined
+      ? 'import process, { argv } from "node:process";\n'
+      : 'import process from "node:process";\n';
   return `
 ${processImport}import { dlopen } from "node:ffi";
 import { Buffer } from "node:buffer";
@@ -365,7 +382,7 @@ function code(run) {
   try { run(); return "none"; }
   catch (error) { return error.code + ":" + error.message; }
 }
-export function run() {
+function checkGeneralCallers() {
   const { lib, functions } = dlopen(${pathExpr}, {
     tint_add2: { arguments: ["i32", "i32"], return: "i32" },
     tint_first_byte: { arguments: ["buffer"], return: "i32" },
@@ -405,19 +422,24 @@ export function run() {
   } finally {
     lib.close();
   }
-}`;
+}
+process.exitCode = checkGeneralCallers();
+`;
 }
 
 const libuvDiagnosticSource = `
+import process from "node:process";
 import ffi, { getCurrentEventLoop } from "node:ffi";
-export function run() {
+function checkLibuvDiagnostic() {
   if (ffi.getCurrentEventLoop !== getCurrentEventLoop) return 1;
   try { getCurrentEventLoop(); return 2; }
   catch (error) {
     return error instanceof Error && error.code === "ERR_FFI_CALL_FAILED" &&
       error.message === "getCurrentEventLoop requires a libuv embedding" ? 42 : 3;
   }
-}`;
+}
+process.exitCode = checkLibuvDiagnostic();
+`;
 
 const typedBridgeSource = `
 import ffi, { DynamicLibrary, dlopen } from "node:ffi";
@@ -651,7 +673,7 @@ export function run(): number {
 const oracle =
   process.env.NODE26 ??
   (process.version === "v26.13.1" ? process.execPath : "");
-function runOracle(text: string): void {
+function runOracle(text: string, topLevel = false): void {
   const result = spawnSync(
     oracle,
     [
@@ -659,7 +681,8 @@ function runOracle(text: string): void {
       "--input-type=module",
       "-e",
       text +
-        '\nif(process.version!=="v26.13.1")throw new Error(process.version); process.exitCode=run();',
+        '\nif(process.version!=="v26.13.1")throw new Error(process.version);' +
+        (topLevel ? "" : " process.exitCode=run();"),
     ],
     { encoding: "utf8" },
   );
@@ -701,6 +724,7 @@ function nodeFfiGeneralSuite(): string {
       id: "fixture:node-ffi-memory",
       text: memorySource,
       deps: [
+        ["node:process", nodeProcessModule],
         ["node:ffi", nodeFfiModule],
         ["node:buffer", nodeBufferModule],
       ] as [string, string][],
@@ -741,7 +765,10 @@ function nodeFfiGeneralSuite(): string {
       specifier: "./libuv-diagnostic.ts",
       id: "fixture:node-ffi-libuv-diagnostic",
       text: libuvDiagnosticSource,
-      deps: [["node:ffi", nodeFfiModule]] as [string, string][],
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["node:ffi", nodeFfiModule],
+      ] as [string, string][],
     },
   ];
   let general: readonly string[] | undefined;
@@ -911,7 +938,7 @@ test(
   "the Node FFI scalar fixture agrees with the pinned reference",
   { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
   () => {
-    runOracle(scalarSource(combinedDynamicLibrary(), false));
+    runOracle(scalarSource(combinedDynamicLibrary(), false), true);
   },
 );
 
@@ -925,7 +952,7 @@ test("node:ffi binds and calls a shared-library symbol natively", () => {
 test(
   "the Node FFI memory fixture agrees with the pinned reference",
   { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
-  () => runOracle(memorySource),
+  () => runOracle(memorySource, true),
 );
 
 test("node:ffi lends and adopts native memory without losing byte aliases", () => {
@@ -936,7 +963,7 @@ test(
   "the wide call fixture agrees with the pinned Node reference",
   { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
   () => {
-    runOracle(wideSource(combinedDynamicLibrary()));
+    runOracle(wideSource(combinedDynamicLibrary()), true);
   },
 );
 
@@ -965,7 +992,7 @@ test(
   "the callback fixture agrees with the pinned Node reference",
   { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
   () => {
-    runOracle(callbacksSource(combinedDynamicLibrary()));
+    runOracle(callbacksSource(combinedDynamicLibrary()), true);
   },
 );
 
@@ -980,7 +1007,7 @@ test(
   "the general caller fixture agrees with the pinned Node reference",
   { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
   () => {
-    runOracle(generalCallersSource(combinedDynamicLibrary()));
+    runOracle(generalCallersSource(combinedDynamicLibrary()), true);
   },
 );
 

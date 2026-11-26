@@ -232,3 +232,42 @@ test("retention tracks split variable initializers without admitting or blaming 
   const checked = checkClosureModule(valid.value.module);
   assert.ok(checked.ok, JSON.stringify(checked));
 });
+
+test("top-level module entry initializes module statements and reads process.exitCode", () => {
+  const bytes = new TextEncoder().encode(
+    `interface Proc { exitCode: number | undefined; }
+const proc: Proc = { exitCode: undefined };
+function runBody(): void { proc.exitCode = 42; }
+runBody();`,
+  );
+  const source = createSourceText(bytes, bytes.length);
+  assert.ok(source.ok);
+  const parsed = parseModule(source.value);
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const bound = bindModule(parsed.value, ["undefined"]);
+  assert.ok(bound.ok, JSON.stringify(bound));
+  const withExit = prepareModuleInstance(
+    parsed.value,
+    bound.value,
+    [],
+    [],
+    false,
+    { exitCodeObject: "proc" },
+  );
+  assert.ok(withExit.ok, JSON.stringify(withExit));
+  assert.deepEqual(withExit.value.exports, []);
+  const checkedWithExit = checkClosureModule(withExit.value.module);
+  assert.ok(checkedWithExit.ok, JSON.stringify(checkedWithExit));
+
+  const withoutExit = prepareModuleInstance(
+    parsed.value,
+    bound.value,
+    [],
+    [],
+    false,
+    {},
+  );
+  assert.ok(withoutExit.ok, JSON.stringify(withoutExit));
+  const checkedWithoutExit = checkClosureModule(withoutExit.value.module);
+  assert.ok(checkedWithoutExit.ok, JSON.stringify(checkedWithoutExit));
+});

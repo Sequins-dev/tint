@@ -105,10 +105,22 @@ test("general modules pull literal dynamic import targets into the general parti
     "helper",
     "export function answer(n: number): number { return n; }",
   );
+  const sideEffect = module(
+    "side-effect",
+    'throw new Error("must stay lazy");',
+  );
+  const observableTyped = module(
+    "observable-typed",
+    'throw new Error("must stay lazy");\nexport function boom(): number { return 1; }',
+  );
   const leaf = module(
     "leaf",
-    'import { answer } from "./helper";\nexport function run() { return answer(42); }',
-    [["./helper", "helper"]],
+    'import { answer } from "./helper";\nimport "./side-effect";\nimport { boom } from "./observable-typed";\nexport function run() { return answer(42) + boom(); }',
+    [
+      ["./helper", "helper"],
+      ["./side-effect", "side-effect"],
+      ["./observable-typed", "observable-typed"],
+    ],
   );
   const main = module(
     "main",
@@ -116,10 +128,15 @@ test("general modules pull literal dynamic import targets into the general parti
     [["./leaf", "leaf"]],
   );
   const partition = closeGeneralPartition(
-    [helper, leaf, main],
+    [helper, sideEffect, observableTyped, leaf, main],
     new Set(["main"]),
   );
-  assert.deepEqual(partition.general.map((m) => m.id).sort(), ["leaf", "main"]);
+  assert.deepEqual(partition.general.map((m) => m.id).sort(), [
+    "leaf",
+    "main",
+    "observable-typed",
+    "side-effect",
+  ]);
   assert.deepEqual(partition.boundaries, [
     {
       id: "helper",

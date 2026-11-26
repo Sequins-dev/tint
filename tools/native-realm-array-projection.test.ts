@@ -214,6 +214,7 @@ export function checkNativeSelf(): number {
 `;
 
 const typedArraysCaseSource = `
+import process from "node:process";
 import { add, bytes, bump, total, keep, keptLength, keptRead, keptWrite, keptOffset, keptAtomics, keptFill } from "./trusted.ts";
 function rejects(make) {
   try { make(); } catch (e) {
@@ -221,7 +222,7 @@ function rejects(make) {
   }
   return false;
 }
-export function run(): number {
+function checkTypedArrays(): number {
   // Not a typed array: still rejected.
   if (!rejects(() => bytes(new Proxy({}, {getPrototypeOf() {return Uint8Array.prototype;}})))) return 1;
   // The native view writes through to the realm's bytes.
@@ -260,9 +261,11 @@ export function run(): number {
   if (bytes(new Uint16Array(2)) !== -1) return 11;
   return 42;
 }
+process.exitCode = checkTypedArrays();
 `;
 
 const sharedBuffersCaseSource = `
+import process from "node:process";
 import {
   isShared,
   isBytes,
@@ -280,7 +283,7 @@ function rejects(make, message) {
   }
   return false;
 }
-export function run(): number {
+function checkSharedBuffers(): number {
   if (checkNativeSelf() !== 0) return 1;
   const sab = new SharedArrayBuffer(16);
   const words = new Uint32Array(sab, 4, 2);
@@ -314,6 +317,7 @@ export function run(): number {
   if (!rejects(() => castBuffer(ab)) || !rejects(() => castBuffer(bytes))) return 19;
   return 42;
 }
+process.exitCode = checkSharedBuffers();
 `;
 
 let suiteBinary: string | undefined;
@@ -325,14 +329,20 @@ function projectionSuite(): string {
       specifier: "./typed-arrays.ts",
       id: "fixture:realm-typed-arrays",
       text: typedArraysCaseSource,
-      deps: [["./trusted.ts", trusted]] as [string, string][],
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["./trusted.ts", trusted],
+      ] as [string, string][],
     },
     {
       name: "shared-buffers",
       specifier: "./shared-buffers.ts",
       id: "fixture:realm-shared-buffers",
       text: sharedBuffersCaseSource,
-      deps: [["./trusted-shared.ts", sharedTrusted]] as [string, string][],
+      deps: [
+        ["node:process", nodeProcessModule],
+        ["./trusted-shared.ts", sharedTrusted],
+      ] as [string, string][],
     },
   ];
   let partition: readonly string[] | undefined;

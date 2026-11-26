@@ -25,7 +25,11 @@ import {
 } from "./workspace-sources.ts";
 import { projectRoots, projectBuildRequest } from "@tint/compiler/cli";
 import { createSourceText } from "@tint/source/text";
-import { parseModule } from "@tint/typescript/syntax";
+import {
+  bindingIdentifiers,
+  parseModule,
+  type Module,
+} from "@tint/typescript/syntax";
 import {
   buildMacOSProgram,
   compileMacOSProgram,
@@ -513,6 +517,35 @@ function mergeRuntimes(
   }
   return merged;
 }
+function moduleExportsName(module: Module, name: string): boolean {
+  for (const statement of module.statements) {
+    if (statement === undefined) continue;
+    if (
+      (statement.kind === "function" || statement.kind === "class") &&
+      statement.exported === true &&
+      statement.name === name
+    )
+      return true;
+    if (statement.kind === "variable" && statement.exported === true) {
+      for (const declaration of statement.declarations) {
+        if (declaration === undefined) continue;
+        for (const identifier of bindingIdentifiers(declaration))
+          if (identifier?.name === name) return true;
+      }
+    }
+    if (statement.kind === "export" && !statement.declaration.typeOnly) {
+      for (const binding of statement.declaration.bindings ?? [])
+        if (
+          binding !== undefined &&
+          !binding.typeOnly &&
+          binding.exported === name
+        )
+          return true;
+    }
+  }
+  return false;
+}
+
 function buildHostedFixture(
   text: string,
   name: string,
@@ -584,6 +617,10 @@ function buildHostedFixture(
     /** Every far-reach code form (docs/large-images.md); defaults to
      * TINT_FORCE_FAR_REACH. */
     readonly forceFarReach?: boolean;
+    /** Optional exported start function. Defaults to `"run"` when the entry
+     * module exports `run`, otherwise `undefined` (pure top-level ESM module
+     * execution exiting with `process.exitCode ?? 0`). */
+    readonly start?: string | undefined;
     /** Verification-only gap before the compiled program. The ordinary
      * allocator, runtime, program, startup and writers still run unchanged. */
     readonly programPaddingBytes?: number;
@@ -855,6 +892,12 @@ function buildHostedFixture(
   // TINT_CODE_SIZE, TINT_DUMP_PASSES, TINT_REMARKS and TINT_OPT_PASS_LIMIT.
   const observability = observabilityOptions(),
     observation = createBuildObservation(observability);
+  const entryStart =
+    "start" in options
+      ? options.start
+      : original === undefined || moduleExportsName(original.module, "run")
+        ? "run"
+        : undefined;
   const buildRequest: BuildRequest = {
     ...observation.request,
     ...request,
@@ -946,7 +989,7 @@ function buildHostedFixture(
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     entry: fixtureSource,
-    start: "run",
+    start: entryStart,
     ...(options.requireTyped === true ||
     process.env.TINT_GENERAL_FALLBACK === "0"
       ? { requireTyped: true }

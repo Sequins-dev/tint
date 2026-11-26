@@ -230,7 +230,9 @@ export interface BuildRequest extends ModuleRequest {
   readonly debugDirectory?: string;
   readonly maxSpecializations?: number;
   readonly entry: string;
-  readonly start: string;
+  /** Optional exported start function. Omit to execute the entry as a pure
+   * top-level ESM module exiting with `process.exitCode ?? 0`. */
+  readonly start?: string | undefined;
   readonly runtimes: readonly RuntimeSource[];
   /** Compiles application code the typed pipeline rejects with general
    * JavaScript semantics (see CompileRequest.generalLowering). */
@@ -632,7 +634,7 @@ export function compileX64Program(
       moduleLoader: request.moduleLoader,
       entry: request.entry,
       start: request.start,
-      exports: [request.start],
+      exports: request.start === undefined ? [] : [request.start],
       runtimes: request.runtimes,
       // The shared SHA-256 implementation is the x86 baseline. This binding
       // replaces its portable source body with the ARMv8 instruction leaf.
@@ -1301,7 +1303,7 @@ export function compileMacOSProgram(
       ...(request.workerModules === undefined
         ? {}
         : { workerModules: request.workerModules }),
-      exports: [request.start],
+      exports: request.start === undefined ? [] : [request.start],
       start: request.start,
       runtimes: request.runtimes,
       ...(request.generalLowering === undefined

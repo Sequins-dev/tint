@@ -95,10 +95,16 @@ test("Buffer encodings run in native typed code", () => {
 });
 
 test("Buffer identity and views match Node", async () => {
-  const fixture = (await import(
-    "data:text/javascript," + encodeURIComponent(bufferIdentitySource)
-  )) as { run(): number };
-  assert.equal(fixture.run(), 42);
+  const previousExitCode = process.exitCode;
+  try {
+    process.exitCode = undefined;
+    await import(
+      "data:text/javascript," + encodeURIComponent(bufferIdentitySource)
+    );
+    assert.equal(process.exitCode, 42);
+  } finally {
+    process.exitCode = previousExitCode;
+  }
 });
 
 test("Buffer identity and views run with the native ArrayBuffer owner", async () => {

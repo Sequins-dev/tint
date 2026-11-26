@@ -394,7 +394,9 @@ function lowerGeneralProgram(
     ? applicationGraph(original.workerEntries ?? [])
     : undefined;
   const mixed =
-    options.functionFallback === true && workers === undefined
+    options.functionFallback === true &&
+    workers === undefined &&
+    original.start !== undefined
       ? planFunctionFallback(
           original,
           fresh("$typed:" + original.entry),
@@ -738,7 +740,13 @@ function lowerGeneralProgram(
       "},undefined);\n";
   }
   imports += boundaryImports;
-  if (mixed !== undefined)
+  const hostStart = request.start ?? "$tintStart";
+  const processIndex = request.modules.findIndex(
+    (module) =>
+      module !== undefined &&
+      module.id === "packages/native-runtime/src/node/process.ts",
+  );
+  if (mixed !== undefined && request.start !== undefined)
     imports +=
       "import {" +
       request.start +
@@ -826,7 +834,8 @@ function lowerGeneralProgram(
   if (
     typedEntry !== undefined &&
     typedBindings !== undefined &&
-    typedGraph !== undefined
+    typedGraph !== undefined &&
+    request.start !== undefined
   ) {
     for (const source of original.modules) {
       if (
@@ -870,7 +879,9 @@ function lowerGeneralProgram(
     edges,
     builtinStart + (crypto === undefined ? 0 : 2),
     entryIndex,
+    hostStart,
     request.start,
+    processIndex,
     output !== undefined,
     selectedInstallers,
     adapters.functions + errors.functions,
@@ -974,7 +985,8 @@ function lowerGeneralProgram(
         ...units,
         ...(typedBindings === undefined ||
         typedGraph === undefined ||
-        typedEntry === undefined
+        typedEntry === undefined ||
+        request.start === undefined
           ? {}
           : {
               workerEvaluation: workerEvaluations(
@@ -1409,10 +1421,6 @@ const installerArguments: ReadonlyMap<string, string> = new Map<string, string>(
   [
     ["installTypedArrayIntrinsics", ',"little"'],
     ["installMathIntrinsics", ",undefined"],
-    [
-      "installPromiseIntrinsics",
-      ",(promise:unknown,operation:string):void=>{}",
-    ],
   ],
 );
 
@@ -1438,7 +1446,9 @@ function generalHostSource(
   edges: string,
   count: number,
   entry: number,
-  start: string,
+  hostStart: string,
+  startExport: string | undefined,
+  processIndex: number,
   output: boolean,
   installers: readonly string[],
   adapters: string,
@@ -1458,10 +1468,7 @@ function generalHostSource(
   const programInstallers: string[] = [];
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
-    if (
-      (workers !== undefined || crypto !== undefined) &&
-      installer === "installPromiseIntrinsics"
-    ) {
+    if (installer === "installPromiseIntrinsics") {
       installs += " installProgramPromiseIntrinsics(core);\n";
       programInstallers.push("installProgramPromiseIntrinsics");
       continue;
@@ -1563,7 +1570,7 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
             "}finally{events.close();}}}"
       }}`
     : "";
-  const supportsAsyncEntry = workers !== undefined || crypto !== undefined;
+  const supportsAsyncEntry = nodeEventLoop;
   const nodeCryptoImport =
     crypto === undefined
       ? ""
@@ -1587,10 +1594,10 @@ import {createCryptoJobHost,runCryptoBlockingHelper,type CryptoJobs} from "node-
   const entryWrapper =
     workers === undefined
       ? crypto === undefined
-        ? `export function ${start}():number {`
-        : `export function ${start}(argument:number):number {
+        ? `export function ${hostStart}():number {`
+        : `export function ${hostStart}(argument:number):number {
  if(argument!==0)return runCryptoBlockingHelper(argument,signalReactor);`
-      : `export function ${start}(argument:number${hostedByNode ? ",broker:number" : ""}):number {
+      : `export function ${hostStart}(argument:number${hostedByNode ? ",broker:number" : ""}):number {
  const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost(signalReactor);
  if(argument===0)return runIsolate(${entry},0,undefined,memory,parking${hostedByNode ? ",broker" : ""});
  ${crypto === undefined ? "" : "if(argument%2===0)return runCryptoBlockingHelper(argument,signalReactor);"}
@@ -1666,10 +1673,34 @@ export function $tintCallUnit(${signature}):number {
  return value;
 }
 `;
+  const exitCodeHelper =
+    processIndex < 0
+      ? ""
+      : `function readProcessExitCode():number{
+  try{
+   const rec=records[${processIndex}];
+   if(rec===undefined)return 0;
+   if(rec.status!=="evaluated")return 0;
+   const ns=getModuleNamespace(rec);
+   const def=getProperty<ScriptPropertyKey,unknown>(ns,"default",ns,hooks);
+   const proc=viewObjectValue(def,object);
+   if(proc===undefined)return 0;
+   const code=getProperty<ScriptPropertyKey,unknown>(proc,"exitCode",proc,hooks);
+   return typeof code==="number"?code|0:0;
+  }catch(error){report(error);return 1;}
+ }`;
+  const exitCodeExpr = processIndex < 0 ? "0" : "readProcessExitCode()";
   const invoke =
     mixed === undefined
-      ? `
- const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(start)},namespace,hooks);
+      ? startExport === undefined
+        ? `
+ ${nodeEventLoop ? 'events.loop.run("callback");' : "drainScriptJobs(realm.agent,report);"}
+ if(failed)return 1;
+ return ${exitCodeExpr};
+`
+        : `
+ const namespace=getModuleNamespace(root);
+ const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(startExport)},namespace,hooks);
  const result=callObjectValue(main,undefined,[],object);
  if(result.error!=="none"){report(result.value);return 1;}
  ${nodeEventLoop ? 'events.loop.run("callback");' : "drainScriptJobs(realm.agent,report);"}
@@ -1683,9 +1714,10 @@ export function $tintCallUnit(${signature}):number {
   const status=promise.result;
   if(typeof status==="number")return status;
  }
- return 0;
+ return ${exitCodeExpr};
 `
       : `
+ const namespace=getModuleNamespace(root);
  mixedCallable=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(mixed.name)},namespace,hooks);
  const code=$tintTypedStart();
  ${nodeEventLoop ? 'events.loop.run("callback");' : "drainScriptJobs(realm.agent,report);"}
@@ -1754,8 +1786,9 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  ${supportsAsyncEntry ? 'if(evaluated.kind==="pending"){events.loop.run("microtask");evaluated=settledModulePromise(evaluation,realm);}' : ""}
  if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
  if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
+ if(failed)return 1;
  ${workers === undefined ? "" : 'if(threadId!==0){events.loop.run("callback");return failed?1:0;}'}
- const namespace=getModuleNamespace(root);
+ ${exitCodeHelper}
  ${invoke}
  ${eventCleanup}
 }

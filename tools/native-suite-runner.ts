@@ -35,28 +35,28 @@ export function parseFixtureModule(
   };
 }
 
-/** Build the standard ESM `await import(...)` dispatcher source for general
- * combined binaries. Each case module is evaluated lazily only when selected
- * by `argv[1]`. */
+/** Build the pure top-level ESM `await import(...)` dispatcher source for
+ * general combined binaries. Each case module is a plain standard ESM module
+ * evaluated lazily at top level only when selected by `argv[1]`, reporting its
+ * exit status via `process.exitCode`. */
 export function generalImportDispatcher(
   cases: readonly {
     readonly name: string;
     readonly specifier: string;
-    readonly async?: boolean;
   }[],
 ): string {
   const branches = cases
     .map(
-      ({ name, specifier, async: isAsync }) =>
-        `    case ${JSON.stringify(name)}: return ${isAsync ? "await " : ""}(await import(${JSON.stringify(specifier)})).run();`,
+      ({ name, specifier }) =>
+        `  case ${JSON.stringify(name)}:\n    await import(${JSON.stringify(specifier)});\n    break;`,
     )
     .join("\n");
-  return `import { argv } from "node:process";
-export async function run() {
-  switch (argv[1]) {
+  return `import process, { argv } from "node:process";
+switch (argv[1]) {
 ${branches}
-    default: return 99;
-  }
+  default:
+    process.exitCode = 99;
+    break;
 }
 `;
 }
