@@ -4622,6 +4622,10 @@ export function compileX64HostedProgram(
     );
   const managed =
     program.serviceImports.length !== 0 || program.surfacePlans.length !== 0;
+  const openRecords =
+    program.serviceImports.length === 0 && program.surfacePlans.length !== 0
+      ? openSurfaceRecords(program.identityPlans)
+      : undefined;
   if (!managed) {
     // Keep the remapped module and release the superseded version before
     // optimization. The native compiler's managed heap is bounded.
@@ -4642,7 +4646,8 @@ export function compileX64HostedProgram(
   options.report?.("optimize");
   if (request.optimization !== "none")
     optimizeModuleVersion(program.ir, unboundedWork, {
-      closedRecords: !managed,
+      closedRecords: !managed || openRecords !== undefined,
+      ...(openRecords === undefined ? {} : { openRecords }),
       closedCalls: !managed,
       devirtualizeClosures: true,
       ...interruptibleInlining(program.workerFunctions),
@@ -4860,6 +4865,21 @@ function publishedManagedSurfaces(
   return published;
 }
 
+/** Record layout IDs exposed to dynamically compiled code through published
+ * managed surfaces. Records outside this set are only constructed and mutated
+ * by AOT code in this module. */
+function openSurfaceRecords(
+  identityPlans: readonly IdentityPlan[],
+): ReadonlySet<number> {
+  const open = new Set<number>();
+  for (const plan of identityPlans) {
+    if (plan === undefined) throw "service identity plan invariant";
+    const record = plan.record;
+    if (record !== undefined) open.add(record);
+  }
+  return open;
+}
+
 function compileTypedProgram(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
@@ -5064,15 +5084,26 @@ function compileTypedProgram(
     // Analysis tooling alone keeps the unoptimized IR alive.
     reachable = reportIR === undefined ? undefined : program.ir.module;
   // No foreign code (managed surfaces, service callers) enters the program,
-  // constructs its records or supplies function values.
+  // constructs its records or supplies function values. When only managed
+  // surfaces are present (dynamic eval / new Function / ShadowRealm), only the
+  // record layouts published through `identityPlans` are open to JITted code;
+  // AOT module-export and closure-environment records remain closed.
+  const serviceImportCount = request.serviceImports?.length ?? 0;
   const closedWorld =
     request.closedProgram === true &&
     surfacePlans.length === 0 &&
-    (request.serviceImports?.length ?? 0) === 0;
+    serviceImportCount === 0;
+  const openRecords =
+    request.closedProgram === true &&
+    surfacePlans.length !== 0 &&
+    serviceImportCount === 0
+      ? openSurfaceRecords(identityPlans)
+      : undefined;
   if (request.optimization !== "none" && passesRemaining()) {
     const optimized = optimizeModuleVersion(program.ir, unboundedWork, {
       devirtualizeClosures: request.closedProgram === true,
-      closedRecords: closedWorld,
+      closedRecords: closedWorld || openRecords !== undefined,
+      ...(openRecords === undefined ? {} : { openRecords }),
       closedCalls: closedWorld,
       ...interruptibleInlining(program.workerFunctions),
       ...(optimizationObserver === undefined

@@ -726,9 +726,15 @@ export interface OptimizationOptions {
    * the call shapes or the function table). */
   readonly devirtualizeClosures?: boolean;
   /** No foreign code constructs or writes this module's records (no managed
-   * surfaces or native services): closures read from record fields that
-   * only ever hold one closure devirtualize too. */
+   * surfaces or native services), except for layouts explicitly listed in
+   * `openRecords`: closures read from closed record fields that only ever hold
+   * one closure devirtualize, and unallocated closed records prune. */
   readonly closedRecords?: boolean;
+  /** Record layout IDs that foreign or dynamically compiled code may construct
+   * or mutate (for example, layouts published through a managed surface). When
+   * `closedRecords` is set, only layouts outside this set are treated as closed
+   * to this module. */
+  readonly openRecords?: ReadonlySet<number>;
   /** Explicit contract that the module is the whole program: no foreign,
    * service or later-compiled (live) code creates function values or calls
    * into it, so every indirect call reaches only this module's address-taken
@@ -1532,6 +1538,7 @@ export function optimizeModuleVersion(
           devirtualizeBudget,
           options.closedRecords === true,
           remarks,
+          options.openRecords,
         ),
     );
     if (devirtualized.exhausted) {
@@ -1799,7 +1806,12 @@ export function optimizeModuleVersion(
       version,
       sweepChanges,
       (module: ModuleIR): ModuleRewrite | undefined =>
-        pruneUnallocatedRecords(module, pruneBudget, remarks),
+        pruneUnallocatedRecords(
+          module,
+          pruneBudget,
+          remarks,
+          options.openRecords,
+        ),
     );
     if (pruned.exhausted)
       return exhausted("prune-unallocated-records", pruneBudget);
