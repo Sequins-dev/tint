@@ -20,7 +20,8 @@ function caseName({
 // Harness-provided assertions and Node's common callback accounting. The case
 // bodies are copied directly from the pinned source with their original bytes.
 const harness = `
-const crypto = require('node:crypto');
+import crypto from "node:crypto";
+import { Buffer } from "node:buffer";
 function equal(actual, expected, message) {
   if (!Object.is(actual, expected))
     throw new Error((message ?? 'strictEqual') + ': ' + String(actual) + ' != ' + String(expected));
@@ -139,12 +140,12 @@ for (const [file, groups] of cases) {
     const image = prepareHostedFixture(
       fixtureSource(groups),
       file.slice(0, -3),
-      [],
+      [["node:buffer", "packages/native-runtime/src/node/buffer.ts"]],
       [],
       [],
       [],
       {
-        nodeCrypto: "commonjs",
+        nodeCrypto: "esm",
         managedBytes: 67108864,
         allocationCapacity: 1048576,
       },

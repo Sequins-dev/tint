@@ -17,6 +17,7 @@ import {
   type BoundaryRecordUse,
   type WorkerEvaluation,
 } from "@tint/compiler/native";
+import { nodeBuiltins } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import {
   eraseTypeSyntax,
@@ -75,7 +76,6 @@ export interface GeneralLoweringOptions {
   readonly nodeCrypto?: {
     readonly module: string;
     readonly jobs: string;
-    readonly commonJS?: boolean;
   };
   /** Optional host weak-slot module (`createWeakSlot`, `weakSlotKey`,
    * `weakSlotValue`, `setWeakSlotValue`, `clearWeakSlot`), wired only when
@@ -181,9 +181,10 @@ export function createGeneralLowering(
       options.dateTime.tzif,
     );
   const syntheticModules: string[] = [];
-  if (workers !== undefined) syntheticModules.push("node:worker_threads");
+  if (workers !== undefined)
+    syntheticModules.push(nodeBuiltins.workers.specifier);
   if (crypto !== undefined)
-    syntheticModules.push("node:crypto", "crypto", "node:buffer", "buffer");
+    syntheticModules.push(nodeBuiltins.crypto.specifier);
   const objectViews = [
       "viewObjectValue",
       "viewSymbolValue",
@@ -310,7 +311,10 @@ function lowerGeneralProgram(
   const typedGraph = typedWorkerEntry
     ? applicationGraph([original.entry])
     : undefined;
-  if (typedGraph !== undefined && !typedGraph.has("node:worker_threads"))
+  if (
+    typedGraph !== undefined &&
+    !typedGraph.has(nodeBuiltins.workers.specifier)
+  )
     return { ok: false, error: "entry graph does not use node:worker_threads" };
   // Only the modules that depend on the worker bindings need to move into
   // the checked entry's evaluation scope. Shared runtime modules such as
@@ -326,7 +330,7 @@ function lowerGeneralProgram(
         else found.push(source.id);
       }
     }
-    const pending = ["node:worker_threads"];
+    const pending: string[] = [nodeBuiltins.workers.specifier];
     for (let index = 0; index < pending.length; index++) {
       const id = pending[index];
       if (id === undefined || dependents.has(id)) continue;
@@ -352,7 +356,8 @@ function lowerGeneralProgram(
     const entries = original.workerEntries ?? [];
     const claimed = new Map<string, string>();
     for (const id of typedWorkerModules)
-      if (id !== "node:worker_threads") claimed.set(id, original.entry);
+      if (id !== nodeBuiltins.workers.specifier)
+        claimed.set(id, original.entry);
     // A module reached from one Worker entry alone evaluates only in that
     // Worker's isolates, as under Node; shared modules initialize in every
     // isolate, as the main entry's do.
@@ -380,7 +385,8 @@ function lowerGeneralProgram(
       }
       const deferred: string[] = [entry];
       for (const id of workerDependents(graph))
-        if (id !== "node:worker_threads" && id !== entry) deferred.push(id);
+        if (id !== nodeBuiltins.workers.specifier && id !== entry)
+          deferred.push(id);
       for (const source of original.modules)
         if (
           source !== undefined &&
@@ -566,10 +572,7 @@ function lowerGeneralProgram(
     if (options.nodeCrypto !== undefined) {
       for (const declaration of source.module.imports) {
         const name = declaration.specifier;
-        if (
-          declaration.typeOnly ||
-          (name !== "node:crypto" && name !== "crypto")
-        )
+        if (declaration.typeOnly || name !== nodeBuiltins.crypto.specifier)
           continue;
         for (const binding of declaration.bindings) {
           if (
@@ -671,7 +674,7 @@ function lowerGeneralProgram(
         );
         if (boundary >= 0) targetIndex = request.modules.length + boundary;
       }
-      if (workers !== undefined && target === "node:worker_threads")
+      if (workers !== undefined && target === nodeBuiltins.workers.specifier)
         targetIndex = request.modules.length + request.boundaries.length;
       if (targetIndex >= 0)
         edges +=
@@ -780,8 +783,7 @@ function lowerGeneralProgram(
   const hostStart = request.start ?? "$tintStart";
   const processIndex = request.modules.findIndex(
     (module) =>
-      module !== undefined &&
-      module.id === "packages/native-runtime/src/node/process.ts",
+      module !== undefined && module.id === nodeBuiltins.process.source,
   );
   if (mixed !== undefined && request.start !== undefined)
     imports +=
@@ -860,7 +862,6 @@ function lowerGeneralProgram(
       );
     };
     creates += addBuiltin(builtinStart, "crypto", cryptoExports);
-    creates += addBuiltin(builtinStart + 1, "buffer", ["Buffer", "kMaxLength"]);
   }
   const selectedInstallers = installers.installers().slice();
   if (
@@ -883,7 +884,7 @@ function lowerGeneralProgram(
       const dependencies = new Map<string, string>();
       let usesWorker = false;
       for (const [specifier, target] of source.dependencies) {
-        if (target === "node:worker_threads") {
+        if (target === nodeBuiltins.workers.specifier) {
           usesWorker = true;
           dependencies.set(specifier, typedBindings);
         } else dependencies.set(specifier, target);
@@ -922,7 +923,7 @@ function lowerGeneralProgram(
     imports,
     creates,
     edges,
-    builtinStart + (crypto === undefined ? 0 : 2),
+    builtinStart + (crypto === undefined ? 0 : 1),
     entryIndex,
     hostStart,
     request.start,
@@ -940,8 +941,6 @@ function lowerGeneralProgram(
       ? undefined
       : {
           crypto: builtinStart,
-          buffer: builtinStart + 1,
-          commonJS: crypto.commonJS === true,
         },
     useWeakStorage,
     useSharedMemory,
@@ -1636,8 +1635,6 @@ function generalHostSource(
   typedGuests = 0,
   crypto?: {
     readonly crypto: number;
-    readonly buffer: number;
-    readonly commonJS: boolean;
   },
   useWeakStorage = false,
   useSharedMemory = false,
@@ -1792,17 +1789,13 @@ import {createCryptoJobHost,runCryptoBlockingHelper,type CryptoJobs} from "node-
   const nodeCryptoSetup =
     crypto === undefined
       ? ""
-      : `const nodeCrypto=createNodeCryptoModules(programRealmCore(),toRealmError);
- ${crypto.commonJS ? 'createDataProperty<ScriptPropertyKey,unknown>(object,"require",nodeCrypto.require,hooks);' : ""}`;
+      : `const nodeCrypto=createNodeCryptoModules(programRealmCore(),toRealmError);`;
   const builtinResolution =
     crypto === undefined
       ? ""
       : `const specifier=request.specifier;
-  if(specifier==="node:crypto"||specifier==="crypto"){
+  if(specifier===${JSON.stringify(nodeBuiltins.crypto.specifier)}){
    finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(${crypto.crypto})});return;
-  }
-  if(specifier==="node:buffer"||specifier==="buffer"){
-   finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(${crypto.buffer})});return;
   }`;
   const entryWrapper =
     workers === undefined

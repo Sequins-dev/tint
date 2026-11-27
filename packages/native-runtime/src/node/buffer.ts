@@ -364,10 +364,10 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
   });
   realm.prototypes.set(bufferBrand, prototype);
   realm.constructors.set(bufferBrand, constructor);
-  builtinProperty(core.object, "Buffer", constructor, true, true, hooks);
   return constructor;
 }
 
+export const kMaxLength: number = Number.MAX_SAFE_INTEGER;
 export const Buffer: unknown = installNodeBuffer(programRealmCore());
 
 function bufferConstants(core: ProgramRealmCore): RealmObject {
@@ -393,9 +393,26 @@ function bufferConstants(core: ProgramRealmCore): RealmObject {
     )
       throw "BUFFER_CONSTANT_INVARIANT";
   }
-  constant("MAX_LENGTH", Number.MAX_SAFE_INTEGER);
+  constant("MAX_LENGTH", kMaxLength);
   constant("MAX_STRING_LENGTH", 536870888);
   return object;
 }
 
 export const constants: unknown = bufferConstants(programRealmCore());
+
+const bufferModule = createObject<ScriptPropertyKey, unknown>(
+  programRealmCore().realm.objectPrototype,
+);
+const moduleHooks = programRealmCore().hooks;
+builtinProperty(bufferModule, "Buffer", Buffer, true, true, moduleHooks);
+builtinProperty(bufferModule, "constants", constants, true, true, moduleHooks);
+builtinProperty(
+  bufferModule,
+  "kMaxLength",
+  kMaxLength,
+  true,
+  true,
+  moduleHooks,
+);
+const bufferDefault: unknown = bufferModule;
+export { bufferDefault as default };

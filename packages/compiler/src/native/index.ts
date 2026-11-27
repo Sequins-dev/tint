@@ -2924,7 +2924,11 @@ function checkApplication(
             : "callable",
         );
     } else if (exported.module === foreignRuntimeModules.nodeBuffer) {
-      if (exported.name === "Buffer" || exported.name === "constants")
+      if (
+        exported.name === "Buffer" ||
+        exported.name === "constants" ||
+        exported.name === "default"
+      )
         realmImports.set(
           exported.linkedName,
           exported.name === "Buffer" ? "callable" : "value",

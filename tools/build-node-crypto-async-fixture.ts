@@ -119,16 +119,19 @@ export function verifyCryptoPublicFixture(): string {
   return verifyHostedFixture(
     `
 import { createHash, pbkdf2 } from "node:crypto";
-import { Buffer as BufferExport } from "node:buffer";
+import bufferDefault, { Buffer } from "node:buffer";
+import * as bufferNamespace from "node:buffer";
 
 export async function run() {
+  if (["Buffer", "require", "process", "global", "module", "exports", "__filename", "__dirname"].some(name => name in globalThis)) return 27;
   const esm = await import("node:crypto");
-  const crypto = require("node:crypto");
-  if (esm.default !== crypto || esm.createHash !== createHash ||
-      crypto.createHash !== createHash || require("crypto") !== crypto) return 1;
+  const crypto = esm.default;
+  if (esm.createHash !== createHash || crypto.createHash !== createHash) return 1;
   const buffer = await import("node:buffer");
-  if (BufferExport !== Buffer || buffer.Buffer !== Buffer ||
-      require("node:buffer").Buffer !== Buffer) return 2;
+  if (bufferNamespace !== buffer || !("constants" in buffer) ||
+      buffer.Buffer !== Buffer || buffer.default !== bufferDefault ||
+      bufferDefault.Buffer !== Buffer || await import("node:buffer") !== buffer) return 2;
+  try { await import("crypto"); return 28; } catch {}
   const bytes = crypto.randomBytes(16);
   if (!(bytes instanceof Buffer) || !Buffer.isBuffer(bytes) || bytes.constructor !== Buffer) return 3;
   const hash = createHash("sha256");
@@ -213,12 +216,12 @@ export async function run() {
 }
 `,
     "node-crypto-public",
-    [],
+    [["node:buffer", "packages/native-runtime/src/node/buffer.ts"]],
     [],
     [],
     [],
     {
-      nodeCrypto: "commonjs",
+      nodeCrypto: "esm",
       managedBytes: 33554432,
       allocationCapacity: 524288,
     },
