@@ -13,6 +13,8 @@ const maxInlineParameters = 7;
 const maxInlineStatements = 12;
 const maxInlineNodes = 128;
 const maxCandidatesPerSite = 4;
+const maxTinyCandidatesPerSite = 8;
+const maxTinyCandidateNodes = 24;
 const maxInlineDepth = 4;
 
 export interface InlineCandidate {
@@ -1779,6 +1781,26 @@ export function collectInlineCandidates(
       if (!called.has(name)) continue;
       if (list.length === 0) continue;
       if (list.length > maxPerSite) {
+        let allTiny: boolean = list.length <= maxTinyCandidatesPerSite;
+        if (allTiny) {
+          for (const cand of list) {
+            if (cand.nodeCount > maxTinyCandidateNodes) {
+              allTiny = false;
+              break;
+            }
+          }
+        }
+        if (allTiny) {
+          for (const cand of list) {
+            if (cand.slotIndex < 0) {
+              cand.slotIndex = slotCount;
+              slotCount++;
+              activeBySpan.set(cand.spanStart, cand);
+            }
+          }
+          dest.set(name, list);
+          continue;
+        }
         if (arityDest === undefined) continue;
         const groups = new Map<number, InlineCandidate[]>();
         for (const cand of list) {
@@ -4094,13 +4116,51 @@ function emitSingleCandidate(
     return endIdx;
   }
 
+  function isBailFreeExpr(expr: Expression): boolean {
+    const raw = unwrapGroup(expr);
+    if (
+      raw.kind === "number" ||
+      raw.kind === "boolean" ||
+      raw.kind === "string" ||
+      raw.kind === "null" ||
+      raw.kind === "this"
+    )
+      return true;
+    if (raw.kind === "identifier")
+      return raw.name === "undefined" || locals.has(raw.name);
+    return false;
+  }
+
+  function isBailFreeStmt(stmt: Statement | undefined): boolean {
+    if (stmt === undefined || stmt.kind === "empty") return true;
+    if (stmt.kind === "return") {
+      const retExpr = stmt.expression;
+      return retExpr === undefined || isBailFreeExpr(retExpr);
+    }
+    if (stmt.kind === "block") {
+      for (const child of stmt.statements) {
+        if (!isBailFreeStmt(child)) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
   function emitStmt(out: Statement[], stmt: Statement, isFinal: boolean): void {
     if (emitFailed) return;
     switch (stmt.kind) {
       case "empty":
         return;
-      case "block":
-        for (let i: number = 0; i < stmt.statements.length; i++) {
+      case "block": {
+        const len = stmt.statements.length;
+        const tailBailFree: boolean[] = [];
+        for (let i: number = 0; i < len; i++) tailBailFree.push(false);
+        let suffixFree: boolean = isFinal;
+        for (let i: number = len - 1; i >= 0; i--) {
+          tailBailFree[i] = suffixFree;
+          if (suffixFree) suffixFree = isBailFreeStmt(stmt.statements[i]);
+        }
+        for (let i: number = 0; i < len; i++) {
           const coalescedEnd = tryEmitCoalescedConstruct(
             out,
             stmt.statements,
@@ -4113,9 +4173,10 @@ function emitSingleCandidate(
           }
           const child = stmt.statements[i];
           if (child !== undefined)
-            emitStmt(out, child, isFinal && i === stmt.statements.length - 1);
+            emitStmt(out, child, tailBailFree[i] === true);
         }
         return;
+      }
       case "variable":
         for (const decl of stmt.declarations) {
           if (

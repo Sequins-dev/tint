@@ -20,6 +20,7 @@ import {
   lookupCachedScriptProperty,
   lookupCachedStringPrimitiveProperty,
   propertyCacheEntries,
+  propertyInheritedCacheEntries,
   ownKeys,
   preventExtensions,
   propertyEpoch,
@@ -444,7 +445,7 @@ test("an inherited entry holds a deeper prototype until any prototype changes st
 
 test("a site keeps one inline entry per receiver shape until its entries are full", () => {
   const prototype = object(undefined);
-  // Five receiver shapes holding "x" at different slots.
+  // Five receiver shapes holding "x" at different slots (one past propertyCacheEntries = 4).
   const receivers = [
     point(prototype, ["x"]),
     point(prototype, ["a", "x"]),
@@ -464,10 +465,11 @@ test("a site keeps one inline entry per receiver shape until its entries are ful
   assert.equal(inlineEntrySlot(site, false, 3), inlineSlotBits(14));
   // A fifth shape makes the site megamorphic: the lookup still finds it,
   // and the full entries stay as they are (rotating them through a cycle
-  // of five shapes would miss on every read).
+  // of shapes would miss on every read).
+  const overflow = receivers[propertyCacheEntries]!;
   assert.equal(
-    lookupCachedScriptProperty(receivers[4]!, "x", site, false, stubs, 10),
-    receivers[4],
+    lookupCachedScriptProperty(overflow, "x", site, false, stubs, 10),
+    overflow,
   );
   assert.equal(site.megamorphic, true);
   for (let index = 0; index < propertyCacheEntries; index++)
@@ -511,6 +513,10 @@ test("a full inherited site keeps its entries until a newer epoch", () => {
     point(prototype, ["c"]),
     point(prototype, ["d"]),
     point(prototype, ["e"]),
+    point(prototype, ["f"]),
+    point(prototype, ["g"]),
+    point(prototype, ["h"]),
+    point(prototype, ["i"]),
   ];
   const site = createScriptPropertyCache("m");
   for (const receiver of receivers)
@@ -518,15 +524,16 @@ test("a full inherited site keeps its entries until a newer epoch", () => {
       lookupCachedScriptProperty(receiver, "m", site, false, stubs, 10),
       prototype,
     );
-  // The fifth shape is past the full entries.
-  for (let index = 0; index < propertyCacheEntries; index++)
+  // The ninth shape is past the full entries.
+  for (let index = 0; index < propertyInheritedCacheEntries; index++)
     assert.equal(inlineEntryShape(site, true, index), shape(receivers[index]!));
   // A prototype's structural change makes the entries stale: the next
   // lookup starts over with its own shape.
   createDataProperty<ScriptPropertyKey, unknown>(prototype, "n", 1, hooks);
-  lookupCachedScriptProperty(receivers[4]!, "m", site, false, stubs, 10);
+  const overflow = receivers[propertyInheritedCacheEntries]!;
+  lookupCachedScriptProperty(overflow, "m", site, false, stubs, 10);
   assert.equal(site.inheritedEpoch, propertyEpoch.value);
-  assert.equal(inlineEntryShape(site, true, 0), shape(receivers[4]!));
+  assert.equal(inlineEntryShape(site, true, 0), shape(overflow));
   assert.equal(inlineEntryValue(site, 0), "m");
   assert.equal(inlineEntryShape(site, true, 1), unusedPropertyShape);
 });

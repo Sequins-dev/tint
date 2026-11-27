@@ -5562,7 +5562,7 @@ function lowerEntries(
           count < 1 ||
           !Number.isSafeInteger(entries) ||
           entries < 1 ||
-          entries > 4 ||
+          entries > (store ? 4 : 8) ||
           epochRecord === undefined ||
           epochField === undefined ||
           fn.closureEnvironment !== undefined ||

@@ -414,3 +414,145 @@ test("AArch64 emits direct-to-slot general ops, spilled property-load cold stubs
   assert.ok(emitted.ok, JSON.stringify(emitted));
   assert.ok(emitted.value.code.byteLength > 0);
 });
+
+test("AArch64 emits 8-entry inherited property-load cold stubs, known-tag general-equal, and script general-is flag branches", () => {
+  const inheritedSiteFields: {
+    readonly type: "reference" | "number" | "general";
+    readonly mutable: boolean;
+    readonly offset: number;
+  }[] = [];
+  for (let i = 0; i < 8; i++) {
+    const base = 8 + i * 32;
+    inheritedSiteFields.push(
+      { type: "reference", mutable: true, offset: base },
+      { type: "number", mutable: true, offset: base + 8 },
+      { type: "general", mutable: true, offset: base + 16 },
+    );
+  }
+  const epochOff = 8 + 8 * 32;
+  inheritedSiteFields.push(
+    { type: "number", mutable: true, offset: epochOff },
+    { type: "reference", mutable: false, offset: epochOff + 8 },
+    { type: "reference", mutable: false, offset: epochOff + 16 },
+  );
+  const records: ModuleIR["records"] = [
+    {
+      byteLength: 40,
+      fields: [
+        { type: "optional-reference", mutable: true, offset: 8 },
+        { type: "general", mutable: true, offset: 16 },
+      ],
+    },
+    {
+      byteLength: epochOff + 24,
+      fields: inheritedSiteFields,
+    },
+    {
+      byteLength: 16,
+      fields: [{ type: "number", mutable: true, offset: 8 }],
+    },
+  ];
+  const module: ModuleIR = {
+    records,
+    functions: [
+      {
+        id: 0,
+        name: "script_m5_codegen",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["reference", "reference", "general", "general", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "general-wrap",
+                id: 2,
+                value: 0,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+              {
+                kind: "property-load",
+                id: 3,
+                object: 2,
+                site: 1,
+                record: 0,
+                field: 1,
+                count: 1,
+                siteRecord: 1,
+                siteField: 0,
+                inherited: true,
+                entries: 8,
+                epochRecord: 2,
+                epochField: 0,
+                ...span,
+              },
+              { kind: "store", slot: 3, value: 3, ...span },
+              {
+                kind: "general-is",
+                id: 4,
+                value: 3,
+                type: "number",
+                branch: true,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 4,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 5, slot: 3, ...span },
+              { kind: "constant", id: 6, value: 42, ...span },
+              {
+                kind: "general-wrap",
+                id: 7,
+                value: 6,
+                ...span,
+              },
+              {
+                kind: "general-equal",
+                id: 8,
+                left: 5,
+                right: 7,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 8,
+              consequent: 3,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "constant", id: 9, value: 0, ...span }],
+            terminator: { kind: "return", value: 9, ...span },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "constant", id: 10, value: 1, ...span }],
+            terminator: { kind: "return", value: 10, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const emitted = emitModule(module, { linearAllocation: true });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  assert.ok(emitted.value.code.byteLength > 0);
+});

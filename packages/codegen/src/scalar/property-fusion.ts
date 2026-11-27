@@ -4,6 +4,7 @@ import {
   type Block,
   type FunctionIR,
   type Instruction,
+  type ScalarType,
 } from "@tint/ir/scalar";
 
 /** The part a block plays in a fused cached property access (or inline
@@ -651,4 +652,55 @@ export function knownObjectTagAccesses(
     }
   }
   return proven.size === 0 ? undefined : proven;
+}
+
+/** Block-local known general tag codes (`0`=undefined, `1`=number, `2`=boolean,
+ * `3`=string, `4`=null, `5`=reference) for value IDs in functions containing
+ * `general-equal`. Undefined when `fn` has no `general-equal` instructions. */
+export function knownGeneralEqualTags(
+  fn: FunctionIR,
+  valueType: (id: number) => ScalarType,
+): ReadonlyMap<number, number> | undefined {
+  let hasGeneralEqual = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "general equal tag block invariant";
+    for (const op of block.instructions) {
+      if (op !== undefined && op.kind === "general-equal") {
+        hasGeneralEqual = true;
+        break;
+      }
+    }
+    if (hasGeneralEqual) break;
+  }
+  if (!hasGeneralEqual) return undefined;
+  const tags = new Map<number, number>();
+  const slotTag = new Map<number, number>();
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "general equal tag block invariant";
+    slotTag.clear();
+    for (const op of block.instructions) {
+      if (op === undefined) throw "general equal tag instruction invariant";
+      if (op.kind === "general-none") {
+        tags.set(op.id, 0);
+      } else if (op.kind === "general-null") {
+        tags.set(op.id, 4);
+      } else if (op.kind === "general-wrap") {
+        const t = valueType(op.value);
+        tags.set(
+          op.id,
+          t === "number" ? 1 : t === "boolean" ? 2 : t === "string" ? 3 : 5,
+        );
+      } else if (op.kind === "store") {
+        if (fn.slots[op.slot] === "general") {
+          const known = tags.get(op.value);
+          if (known !== undefined) slotTag.set(op.slot, known);
+          else slotTag.delete(op.slot);
+        }
+      } else if (op.kind === "load") {
+        const known = slotTag.get(op.slot);
+        if (known !== undefined) tags.set(op.id, known);
+      }
+    }
+  }
+  return tags.size === 0 ? undefined : tags;
 }

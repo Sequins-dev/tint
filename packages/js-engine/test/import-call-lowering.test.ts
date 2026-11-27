@@ -69,23 +69,23 @@ test("proposal import phases lower through Script, module, eval and Function ent
 test("import-free lowering retains the caller-policy output contract", () => {
   const cases: [string, boolean, string][] = [
     ["42;", false, "81e8e95f79c9ecb3"],
-    ["function f(){ return a?.b(c); }", false, "4f5a1a3c16dc536d"],
+    ["function f(){ return a?.b(c); }", false, "e379a04945c8d7dc"],
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "8115fb8613e4eeeb",
+      "5ec73c38fa0a3c3a",
     ],
-    ["new (f())(1); x = y ?? z;", false, "12693c0c848502bd"],
-    ['eval("1");', false, "a46f4ef7f50e0404"],
+    ["new (f())(1); x = y ?? z;", false, "ddc556fc5eb250c2"],
+    ['eval("1");', false, "1f88eb04ee4c2d86"],
     ["{ using r = null; }", false, "c0c451945c695b05"],
     [
       "export let a = 1; export function f(){ return a; }",
       true,
-      "07ec9de64377921b",
+      "a61c3e462a57f491",
     ],
-    ['import {x} from "./x"; export default x;', true, "db2b396806547918"],
+    ['import {x} from "./x"; export default x;', true, "14a9085ba2b98fc8"],
     ["export async function g(){ await 1; }", true, "173e677523ae9cae"],
-    ["export const o = {a(){ return this?.b; }};", true, "c87ff3a790609186"],
+    ["export const o = {a(){ return this?.b; }};", true, "0680e60440aac04f"],
   ];
   for (const [source, module, hash] of cases) {
     const result = module
