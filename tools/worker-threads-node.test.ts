@@ -5,6 +5,14 @@ import { test } from "node:test";
 import { resolve } from "node:path";
 import { lldbStartCommands } from "./lldb-launch.ts";
 
+function oracleEnv(): NodeJS.ProcessEnv {
+  // CI sets NODE_OPTIONS=--max-old-space-size=5120, which overrides V8's
+  // per-Worker resourceLimits.maxOldGenerationSizeMb in Node 24.
+  const env = { ...process.env };
+  delete env.NODE_OPTIONS;
+  return env;
+}
+
 test("Worker suite matches the Node host", () => {
   const url = new URL("./worker-threads-suite.mjs", import.meta.url);
   const result = spawnSync(
@@ -15,7 +23,7 @@ test("Worker suite matches the Node host", () => {
       url.href,
       fileURLToPath(url),
     ],
-    { encoding: "utf8", timeout: 10000 },
+    { encoding: "utf8", timeout: 10000, env: oracleEnv() },
   );
   assert.equal(result.error, undefined);
   assert.equal(result.status, 42, result.stderr);
@@ -48,7 +56,7 @@ test(
         runner,
         image,
       ],
-      { encoding: "utf8", timeout: 30000 },
+      { encoding: "utf8", timeout: 30000, env: oracleEnv() },
     );
     assert.equal(result.error, undefined);
     assert.equal(result.status, 0, result.stderr + result.stdout);
