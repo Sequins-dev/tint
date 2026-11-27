@@ -131,6 +131,18 @@ export function optimizationExhaustion(
         String(pass.visited) +
         " units of work";
 }
+function copyInstructionsPrefix(
+  source: readonly Instruction[],
+  count: number,
+): Instruction[] {
+  const copied: Instruction[] = [];
+  for (let i = 0; i < count; i++) {
+    const op = source[i];
+    if (op === undefined) throw "optimizer instruction invariant";
+    copied.push(op);
+  }
+  return copied;
+}
 function foldFunctionConstants(
   fn: FunctionIR,
   budget: number,
@@ -138,30 +150,21 @@ function foldFunctionConstants(
   let visited = 0,
     rewritten = 0,
     // Fresh value IDs for rewrites that add instructions.
-    fresh = 0;
+    fresh = 0,
+    // Whole-function single-tag general slots: a local `general` slot that is
+    // never a parameter, exception target, or guarded read destination, and
+    // whose every store writes a `general-wrap` / `general-none` /
+    // `general-null` of the same tag, always carries that tag on every load
+    // across blocks. Only scan when the function contains a `general-is`.
+    hasGeneralIs = false;
   for (const block of fn.blocks) {
     if (block === undefined) throw "optimizer block invariant";
     for (const op of block.instructions) {
       if (op === undefined) throw "optimizer instruction invariant";
       const id = instructionResult(op);
       if (id !== undefined && id >= fresh) fresh = id + 1;
+      if (op.kind === "general-is") hasGeneralIs = true;
     }
-  }
-  const blocks: Block[] = [];
-  // Whole-function single-tag general slots: a local `general` slot that is
-  // never a parameter, exception target, or guarded read destination, and whose
-  // every store writes a `general-wrap` / `general-none` / `general-null` of
-  // the same tag, always carries that tag on every load across blocks.
-  // Only scan when the function actually contains a `general-is` instruction.
-  let hasGeneralIs = false;
-  for (const block of fn.blocks) {
-    if (block === undefined) throw "optimizer block invariant";
-    for (const op of block.instructions)
-      if (op !== undefined && op.kind === "general-is") {
-        hasGeneralIs = true;
-        break;
-      }
-    if (hasGeneralIs) break;
   }
   const fnGeneralTags: (string | undefined)[] = [];
   const blockScalarKinds = new Map<number, string>(),
@@ -189,8 +192,8 @@ function foldFunctionConstants(
           term.operation !== "write"
         )
           blocked[term.slot] = 1;
-        blockScalarKinds.clear();
-        blockGeneralTags.clear();
+        if (blockScalarKinds.size > 0) blockScalarKinds.clear();
+        if (blockGeneralTags.size > 0) blockGeneralTags.clear();
         for (const op of block.instructions) {
           if (op === undefined) throw "optimizer instruction invariant";
           if (op.kind === "load") {
@@ -257,7 +260,8 @@ function foldFunctionConstants(
     }
   if (anyOptionalNumber) {
     const blockedOpt = new Uint8Array(fn.slots.length),
-      hasWrapOpt = new Uint8Array(fn.slots.length);
+      hasWrapOpt = new Uint8Array(fn.slots.length),
+      wrappedInBlock = new Set<number>();
     for (const p of fn.parameters) if (p !== undefined) blockedOpt[p] = 1;
     if (fn.receiverSlot !== undefined) blockedOpt[fn.receiverSlot] = 1;
     for (const block of fn.blocks) {
@@ -271,7 +275,7 @@ function foldFunctionConstants(
         term.operation !== "write"
       )
         blockedOpt[term.slot] = 1;
-      const wrappedInBlock = new Set<number>();
+      if (wrappedInBlock.size > 0) wrappedInBlock.clear();
       for (const op of block.instructions) {
         if (op === undefined) throw "optimizer block invariant";
         if (op.kind === "optional-wrap") wrappedInBlock.add(op.id);
@@ -292,27 +296,44 @@ function foldFunctionConstants(
       )
         fnPresentOptional[slot] = 1;
   }
-  let functionChanged = false;
-  for (const block of fn.blocks) {
+  // Block-local value and slot facts live in sparse maps/sets reused across
+  // blocks and cleared when non-empty. Earlier passes can leave sparse value
+  // IDs in the millions even in small blocks, so dense arrays indexed by value
+  // ID or slot index would allocate proportional to the maximum ID per block.
+  const values = new Map<number, Constant>(),
+    wraps = new Map<number, number>(),
+    present = new Set<number>(),
+    absent = new Set<number>(),
+    texts = new Map<number, string>(),
+    arrayLengths = new Map<number, number>(),
+    unwrapped = new Map<number, number>(),
+    slots = new Map<number, Constant>(),
+    slotTexts = new Map<number, string>(),
+    slotGeneralTags = new Map<number, string>(),
+    slotArrayLengths = new Map<number, number>();
+  let blocks: Block[] | undefined;
+  for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
+    const block = fn.blocks[blockIndex];
     if (block === undefined) throw "optimizer block invariant";
-    const values: (Constant | undefined)[] = [],
-      wraps: (number | undefined)[] = [],
-      present: (number | undefined)[] = [],
-      absent: (number | undefined)[] = [],
-      texts: (string | undefined)[] = [],
-      arrayLengths: (number | undefined)[] = [],
-      unwrapped = new Map<number, number>(),
-      instructions: Instruction[] = [];
+    if (values.size > 0) values.clear();
+    if (wraps.size > 0) wraps.clear();
+    if (present.size > 0) present.clear();
+    if (absent.size > 0) absent.clear();
+    if (texts.size > 0) texts.clear();
+    if (arrayLengths.size > 0) arrayLengths.clear();
+    if (unwrapped.size > 0) unwrapped.clear();
+    if (slots.size > 0) slots.clear();
+    if (slotTexts.size > 0) slotTexts.clear();
+    if (slotArrayLengths.size > 0) slotArrayLengths.clear();
     if (hasGeneralIs) {
-      blockScalarKinds.clear();
-      blockGeneralTags.clear();
+      if (blockScalarKinds.size > 0) blockScalarKinds.clear();
+      if (blockGeneralTags.size > 0) blockGeneralTags.clear();
+      if (slotGeneralTags.size > 0) slotGeneralTags.clear();
     }
-    let slots: (Constant | undefined)[] = [],
-      slotTexts: (string | undefined)[] = [],
-      slotGeneralTags: (string | undefined)[] = [],
-      slotArrayLengths: (number | undefined)[] = [],
-      changed = false;
-    for (const op of block.instructions) {
+    const sourceInstructions = block.instructions;
+    let instructions: Instruction[] | undefined;
+    for (let index = 0; index < sourceInstructions.length; index++) {
+      const op = sourceInstructions[index];
       if (op === undefined) throw "optimizer instruction invariant";
       if (visited >= budget) return undefined;
       visited++;
@@ -320,7 +341,8 @@ function foldFunctionConstants(
         if (op.kind === "load") {
           const slotType = fn.slots[op.slot];
           if (slotType !== undefined) blockScalarKinds.set(op.id, slotType);
-          const knownTag = slotGeneralTags[op.slot] ?? fnGeneralTags[op.slot];
+          const knownTag =
+            slotGeneralTags.get(op.slot) ?? fnGeneralTags[op.slot];
           if (knownTag !== undefined) blockGeneralTags.set(op.id, knownTag);
         } else if (op.kind === "constant") {
           const literal = op.value;
@@ -366,8 +388,10 @@ function foldFunctionConstants(
           const known = blockGeneralTags.get(op.value);
           if (known !== undefined) {
             const result = known === op.type;
-            values[op.id] = result;
+            values.set(op.id, result);
             blockScalarKinds.set(op.id, "boolean");
+            if (instructions === undefined)
+              instructions = copyInstructionsPrefix(sourceInstructions, index);
             instructions.push({
               kind: "constant",
               id: op.id,
@@ -376,20 +400,24 @@ function foldFunctionConstants(
               end: op.end,
               ...(op.inline === undefined ? {} : { inline: op.inline }),
             });
-            changed = true;
             rewritten++;
             continue;
           }
         }
-        if (op.kind === "store")
-          slotGeneralTags[op.slot] = blockGeneralTags.get(op.value);
+        if (op.kind === "store") {
+          const storedTag = blockGeneralTags.get(op.value);
+          if (storedTag !== undefined) slotGeneralTags.set(op.slot, storedTag);
+          else if (slotGeneralTags.size > 0) slotGeneralTags.delete(op.slot);
+        }
       }
       // String constants: literals, their concatenations (bounded, as they
       // become image data), lengths and equality.
       const text = foldedText(op, texts, slotTexts);
       if (text !== undefined) {
-        texts[text.id] = text.value;
+        texts.set(text.id, text.value);
         if (op.kind !== "string-literal") {
+          if (instructions === undefined)
+            instructions = copyInstructionsPrefix(sourceInstructions, index);
           instructions.push({
             kind: "string-literal",
             id: text.id,
@@ -398,15 +426,20 @@ function foldFunctionConstants(
             end: op.end,
             ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
-          changed = true;
           rewritten++;
           continue;
         }
       }
-      if (op.kind === "store") slotTexts[op.slot] = texts[op.value];
+      if (op.kind === "store") {
+        const storedText = texts.get(op.value);
+        if (storedText !== undefined) slotTexts.set(op.slot, storedText);
+        else if (slotTexts.size > 0) slotTexts.delete(op.slot);
+      }
       const textual = foldedTextScalar(op, texts);
       if (textual !== undefined) {
-        values[textual.id] = textual.value;
+        values.set(textual.id, textual.value);
+        if (instructions === undefined)
+          instructions = copyInstructionsPrefix(sourceInstructions, index);
         instructions.push({
           kind: "constant",
           id: textual.id,
@@ -415,23 +448,22 @@ function foldFunctionConstants(
           end: op.end,
           ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
-        changed = true;
         rewritten++;
         continue;
       }
       // Equality of two present optionals is equality of their payloads; a
       // present optional never equals an absent one.
       if (op.kind === "load" && fnPresentOptional[op.slot] === 1)
-        present[op.id] = 1;
+        present.add(op.id);
       if (op.kind === "optional-wrap") {
-        wraps[op.id] = op.value;
-        present[op.id] = 1;
-      } else if (op.kind === "undefined") absent[op.id] = 1;
+        wraps.set(op.id, op.value);
+        present.add(op.id);
+      } else if (op.kind === "undefined") absent.add(op.id);
       else if (
         (op.kind === "optional-value" || op.kind === "optional-value-or") &&
-        wraps[op.value] !== undefined
+        wraps.has(op.value)
       ) {
-        const wrapped = wraps[op.value];
+        const wrapped = wraps.get(op.value);
         if (wrapped !== undefined) {
           let inner: number = wrapped;
           while (unwrapped.has(inner)) {
@@ -440,13 +472,17 @@ function foldFunctionConstants(
             inner = next;
           }
           unwrapped.set(op.id, inner);
-          if (values[inner] !== undefined) values[op.id] = values[inner];
-          changed = true;
+          const innerValue = values.get(inner);
+          if (innerValue !== undefined) values.set(op.id, innerValue);
+          if (instructions === undefined)
+            instructions = copyInstructionsPrefix(sourceInstructions, index);
           rewritten++;
           continue;
         }
-      } else if (op.kind === "optional-present" && present[op.value] === 1) {
-        values[op.id] = true;
+      } else if (op.kind === "optional-present" && present.has(op.value)) {
+        values.set(op.id, true);
+        if (instructions === undefined)
+          instructions = copyInstructionsPrefix(sourceInstructions, index);
         instructions.push({
           kind: "constant",
           id: op.id,
@@ -455,27 +491,29 @@ function foldFunctionConstants(
           end: op.end,
           ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
-        changed = true;
         rewritten++;
         continue;
       } else if (
         op.kind === "binary" &&
         (op.operator === "===" || op.operator === "!==")
       ) {
-        const left = wraps[op.left],
-          right = wraps[op.right];
+        const left = wraps.get(op.left),
+          right = wraps.get(op.right);
         if (left !== undefined && right !== undefined) {
+          if (instructions === undefined)
+            instructions = copyInstructionsPrefix(sourceInstructions, index);
           instructions.push({ ...op, left, right });
-          changed = true;
           rewritten++;
           continue;
         }
         if (
-          (present[op.left] === 1 && absent[op.right] === 1) ||
-          (present[op.right] === 1 && absent[op.left] === 1)
+          (present.has(op.left) && absent.has(op.right)) ||
+          (present.has(op.right) && absent.has(op.left))
         ) {
           const value = op.operator === "!==";
-          values[op.id] = value;
+          values.set(op.id, value);
+          if (instructions === undefined)
+            instructions = copyInstructionsPrefix(sourceInstructions, index);
           instructions.push({
             kind: "constant",
             id: op.id,
@@ -484,7 +522,6 @@ function foldFunctionConstants(
             end: op.end,
             ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
-          changed = true;
           rewritten++;
           continue;
         }
@@ -492,14 +529,16 @@ function foldFunctionConstants(
         // `(o ?? NaN) === v` (absent selects NaN, which equals nothing).
         if (
           (left !== undefined) !== (right !== undefined) &&
-          absent[op.left] !== 1 &&
-          absent[op.right] !== 1
+          !absent.has(op.left) &&
+          !absent.has(op.right)
         ) {
           const other = left === undefined ? op.left : op.right,
             payload = left === undefined ? right : left;
           if (payload === undefined) throw "optional equality invariant";
           const nan = fresh++,
             selected = fresh++;
+          if (instructions === undefined)
+            instructions = copyInstructionsPrefix(sourceInstructions, index);
           instructions.push({
             kind: "constant",
             id: nan,
@@ -518,37 +557,42 @@ function foldFunctionConstants(
             ...(op.inline === undefined ? {} : { inline: op.inline }),
           });
           instructions.push({ ...op, left: selected, right: payload });
-          changed = true;
           rewritten++;
           continue;
         }
       }
       let folded: Constant | undefined;
-      if (op.kind === "constant") values[op.id] = op.value;
+      if (op.kind === "constant") values.set(op.id, op.value);
       else if (op.kind === "array-new") {
-        const len = values[op.length];
+        const len = values.get(op.length);
         if (
           typeof len === "number" &&
           Number.isInteger(len) &&
           len >= 0 &&
           len <= 4294967295
         )
-          arrayLengths[op.id] = len === 0 ? 0 : len;
+          arrayLengths.set(op.id, len === 0 ? 0 : len);
       } else if (op.kind === "array-length") {
-        const len = arrayLengths[op.array];
+        const len = arrayLengths.get(op.array);
         if (len !== undefined) folded = len;
       } else if (op.kind === "store") {
-        slots[op.slot] = values[op.value];
-        slotArrayLengths[op.slot] = arrayLengths[op.value];
+        const storedValue = values.get(op.value);
+        if (storedValue !== undefined) slots.set(op.slot, storedValue);
+        else if (slots.size > 0) slots.delete(op.slot);
+        const storedLength = arrayLengths.get(op.value);
+        if (storedLength !== undefined)
+          slotArrayLengths.set(op.slot, storedLength);
+        else if (slotArrayLengths.size > 0) slotArrayLengths.delete(op.slot);
       } else if (op.kind === "load") {
-        folded = slots[op.slot];
-        arrayLengths[op.id] = slotArrayLengths[op.slot];
+        folded = slots.get(op.slot);
+        const length = slotArrayLengths.get(op.slot);
+        if (length !== undefined) arrayLengths.set(op.id, length);
       } else if (op.kind === "unary") {
-        const value = values[op.operand];
+        const value = values.get(op.operand);
         if (value !== undefined) folded = unary(op.operator, value);
       } else if (op.kind === "binary") {
-        const left = values[op.left],
-          right = values[op.right];
+        const left = values.get(op.left),
+          right = values.get(op.right);
         if (left !== undefined && right !== undefined)
           folded = binary(op.operator, left, right);
       }
@@ -559,7 +603,9 @@ function foldFunctionConstants(
           op.kind === "binary" ||
           op.kind === "array-length")
       ) {
-        values[op.id] = folded;
+        values.set(op.id, folded);
+        if (instructions === undefined)
+          instructions = copyInstructionsPrefix(sourceInstructions, index);
         instructions.push({
           kind: "constant",
           id: op.id,
@@ -568,37 +614,53 @@ function foldFunctionConstants(
           end: op.end,
           ...(op.inline === undefined ? {} : { inline: op.inline }),
         });
-        changed = true;
         rewritten++;
-      } else instructions.push(op);
+      } else if (instructions !== undefined) instructions.push(op);
       // Until effect/alias contracts are explicit, calls and allocation/throw
       // boundaries conservatively forget local-slot facts. SSA constants survive.
       if (op.kind === "host-call" || instructionMayThrow(op)) {
-        slots = [];
-        slotTexts = [];
-        slotGeneralTags = [];
-        slotArrayLengths = [];
+        if (slots.size > 0) slots.clear();
+        if (slotTexts.size > 0) slotTexts.clear();
+        if (slotGeneralTags.size > 0) slotGeneralTags.clear();
+        if (slotArrayLengths.size > 0) slotArrayLengths.clear();
       }
     }
-    if (!changed) blocks.push(block);
-    else if (unwrapped.size === 0) blocks.push({ ...block, instructions });
-    else {
-      const substitution = new Uint32Array(fresh);
-      for (const [from, to] of unwrapped) substitution[from] = to + 1;
-      const substituted: Instruction[] = [];
-      for (const op of instructions) {
-        if (op === undefined) throw "optimizer instruction invariant";
-        substituted.push(substituteInstructionValues(op, substitution));
+    if (instructions === undefined) {
+      if (blocks !== undefined) blocks.push(block);
+    } else {
+      if (blocks === undefined) {
+        blocks = [];
+        for (let i = 0; i < blockIndex; i++) {
+          const previous = fn.blocks[i];
+          if (previous === undefined) throw "optimizer block invariant";
+          blocks.push(previous);
+        }
       }
-      blocks.push({
-        ...block,
-        instructions: substituted,
-        terminator: substituteTerminatorValues(block.terminator, substitution),
-      });
+      if (unwrapped.size === 0) blocks.push({ ...block, instructions });
+      else {
+        const substitution = new Uint32Array(fresh);
+        for (const [from, to] of unwrapped) substitution[from] = to + 1;
+        const substituted: Instruction[] = [];
+        for (const op of instructions) {
+          if (op === undefined) throw "optimizer instruction invariant";
+          substituted.push(substituteInstructionValues(op, substitution));
+        }
+        blocks.push({
+          ...block,
+          instructions: substituted,
+          terminator: substituteTerminatorValues(
+            block.terminator,
+            substitution,
+          ),
+        });
+      }
     }
-    if (changed) functionChanged = true;
   }
-  return { fn: functionChanged ? { ...fn, blocks } : fn, visited, rewritten };
+  return {
+    fn: blocks !== undefined ? { ...fn, blocks } : fn,
+    visited,
+    rewritten,
+  };
 }
 /** Longest string a fold may create (folded strings become image data). */
 const maximumFoldedText = 1024;
@@ -606,17 +668,17 @@ const maximumFoldedText = 1024;
  * a known literal, or a concatenation of two known literals. */
 function foldedText(
   op: Instruction,
-  texts: readonly (string | undefined)[],
-  slotTexts: readonly (string | undefined)[],
+  texts: ReadonlyMap<number, string>,
+  slotTexts: ReadonlyMap<number, string>,
 ): { readonly id: number; readonly value: string } | undefined {
   if (op.kind === "string-literal") return { id: op.id, value: op.value };
   if (op.kind === "load") {
-    const value = slotTexts[op.slot];
+    const value = slotTexts.get(op.slot);
     return value === undefined ? undefined : { id: op.id, value };
   }
   if (op.kind === "string-concat") {
-    const left = texts[op.left],
-      right = texts[op.right];
+    const left = texts.get(op.left),
+      right = texts.get(op.right);
     if (
       left === undefined ||
       right === undefined ||
@@ -630,18 +692,19 @@ function foldedText(
 /** The number or boolean a string operation on known literals yields. */
 function foldedTextScalar(
   op: Instruction,
-  texts: readonly (string | undefined)[],
+  texts: ReadonlyMap<number, string>,
 ): { readonly id: number; readonly value: number | boolean } | undefined {
+  if (texts.size === 0) return undefined;
   if (op.kind === "string-length") {
-    const value = texts[op.string];
+    const value = texts.get(op.string);
     return value === undefined ? undefined : { id: op.id, value: value.length };
   }
   if (
     op.kind === "binary" &&
     (op.operator === "===" || op.operator === "!==")
   ) {
-    const left = texts[op.left],
-      right = texts[op.right];
+    const left = texts.get(op.left),
+      right = texts.get(op.right);
     if (left === undefined || right === undefined) return undefined;
     return {
       id: op.id,
