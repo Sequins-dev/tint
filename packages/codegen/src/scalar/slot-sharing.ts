@@ -248,40 +248,6 @@ export function shareFrameSlots(
     string,
     { readonly group: number; readonly bits: Uint32Array }[]
   >();
-  // Live-in owners by (group, block) in an open-addressed table: slots of one
-  // group never occupy the same block, so each key has at most one owner. A
-  // Map here held one managed entry per live-in block (a tenth of the
-  // compiler's self-compile). Capacity is a power of two above twice the
-  // live-in total, so probing always reaches an empty slot.
-  let ownerCapacity = 0;
-  if (trackOwners) {
-    let liveTotal = 0;
-    for (let index = 0; index < orderCount; index++) {
-      const slot = order[index] ?? 0;
-      liveTotal += (liveStart[slot + 1] ?? 0) - (liveStart[slot] ?? 0);
-    }
-    ownerCapacity = 16;
-    while (ownerCapacity < liveTotal * 2 + 1) ownerCapacity *= 2;
-  }
-  const ownerMask = ownerCapacity > 0 ? ownerCapacity - 1 : 0,
-    ownerGroup = new Uint32Array(ownerCapacity),
-    ownerBlock = new Uint32Array(ownerCapacity),
-    ownerSlot = new Uint32Array(ownerCapacity);
-  function ownerHome(group: number, block: number): number {
-    let mixed = Math.imul(group + 1, 0x9e3779b1) ^ block;
-    mixed = Math.imul(mixed ^ (mixed >>> 16), 0x85ebca6b);
-    return (mixed ^ (mixed >>> 13)) & ownerMask;
-  }
-  function ownerAt(group: number, block: number): number {
-    // Position holding (group, block), or the empty position ending its probe.
-    let at = ownerHome(group, block);
-    while (
-      ownerGroup[at] !== 0 &&
-      (ownerGroup[at] !== group + 1 || ownerBlock[at] !== block)
-    )
-      at = (at + 1) & ownerMask;
-    return at;
-  }
   for (let orderIndex = 0; orderIndex < orderCount; orderIndex++) {
     const slot = order[orderIndex] ?? 0;
     const type = kind === undefined ? (fn.slots[slot] ?? "") : kind(slot);
@@ -328,32 +294,178 @@ export function shareFrameSlots(
         const word = block >>> 5;
         chosenBits[word] = (chosenBits[word] ?? 0) | (1 << (block & 31));
       }
-    if (trackOwners) {
-      const lStart = liveStart[slot] ?? 0,
-        lEnd = liveStart[slot + 1] ?? 0;
-      for (let at = lStart; at < lEnd; at++) {
-        const block = liveData[at] ?? 0;
-        const pos = ownerAt(chosen, block);
-        ownerGroup[pos] = chosen + 1;
-        ownerBlock[pos] = block;
-        ownerSlot[pos] = slot;
-      }
-    }
     color[slot] = chosen + 1;
   }
-  // Release temporary flat buffers so the returned `otherLiveIn` closure
-  // retains only the owner lookup tables.
+  // Release occupancy scratch before returning so no temporary coloring buffers
+  // stay live if the caller later queries `otherLiveIn`.
   occData = new Uint32Array(0);
-  liveData = new Uint32Array(0);
+  probedByType.clear();
   return {
     color,
     colors: groupCount,
-    otherLiveIn: (slot: number, block: number): boolean => {
-      if (ownerCapacity === 0) throw "slot sharing owner tracking disabled";
+    otherLiveIn: trackOwners
+      ? createDeferredOwnerLookup(
+          color,
+          groupCount,
+          slotCount,
+          blockWords,
+          liveStart,
+          liveData,
+        )
+      : disabledOtherLiveIn,
+  };
+}
+function disabledOtherLiveIn(_slot: number, _block: number): boolean {
+  throw "slot sharing owner tracking disabled";
+}
+/** Builds the `otherLiveIn` index lazily on the first actual query and releases
+ * the raw live-in rows immediately afterward. Chooses whichever representation
+ * is smaller between packed bit rows (O(1) bit test using disjoint same-group
+ * occupancy) and an open-addressed hash table for sparse live-in sets. */
+function createDeferredOwnerLookup(
+  color: Uint32Array,
+  groupCount: number,
+  slotCount: number,
+  blockWords: number,
+  initialLiveStart: Uint32Array,
+  initialLiveData: Uint32Array,
+): (slot: number, block: number) => boolean {
+  let built = false,
+    liveStart: Uint32Array = initialLiveStart,
+    liveData: Uint32Array = initialLiveData,
+    mode = 0, // 0 = empty, 1 = packed bit rows, 2 = open-addressed hash table
+    groupRow = new Uint32Array(0),
+    slotRow = new Uint32Array(0),
+    groupLiveBits = new Uint32Array(0),
+    slotLiveBits = new Uint32Array(0),
+    ownerMask = 0,
+    ownerGroup = new Uint32Array(0),
+    ownerBlock = new Uint32Array(0),
+    ownerSlot = new Uint32Array(0);
+  function ownerHome(group: number, block: number): number {
+    let mixed = Math.imul(group + 1, 0x9e3779b1) ^ block;
+    mixed = Math.imul(mixed ^ (mixed >>> 16), 0x85ebca6b);
+    return (mixed ^ (mixed >>> 13)) & ownerMask;
+  }
+  function ownerAt(group: number, block: number): number {
+    let at = ownerHome(group, block);
+    while (
+      ownerGroup[at] !== 0 &&
+      (ownerGroup[at] !== group + 1 || ownerBlock[at] !== block)
+    )
+      at = (at + 1) & ownerMask;
+    return at;
+  }
+  function build(): void {
+    built = true;
+    const members = new Uint32Array(groupCount);
+    for (let slot = 0; slot < slotCount; slot++) {
       const group = (color[slot] ?? 0) - 1;
-      if (group < 0) return false;
-      const at = ownerAt(group, block);
-      return ownerGroup[at] !== 0 && ownerSlot[at] !== slot;
-    },
+      if (group >= 0) members[group] = (members[group] ?? 0) + 1;
+    }
+    let sharedGroups = 0,
+      sharedSlots = 0,
+      liveTotal = 0;
+    for (let group = 0; group < groupCount; group++)
+      if ((members[group] ?? 0) > 1) sharedGroups++;
+    for (let slot = 0; slot < slotCount; slot++) {
+      const group = (color[slot] ?? 0) - 1;
+      if (group < 0 || (members[group] ?? 0) <= 1) continue;
+      sharedSlots++;
+      liveTotal += (liveStart[slot + 1] ?? 0) - (liveStart[slot] ?? 0);
+    }
+    if (liveTotal === 0) {
+      liveStart = new Uint32Array(0);
+      liveData = new Uint32Array(0);
+      mode = 0;
+      return;
+    }
+    let ownerCapacity = 16;
+    while (ownerCapacity < liveTotal * 2 + 1) ownerCapacity *= 2;
+    const hashBytes = ownerCapacity * 12,
+      packedGroupWords = sharedGroups * blockWords,
+      packedSlotWords = sharedSlots * blockWords,
+      packedBytes =
+        (packedGroupWords + packedSlotWords) * 4 + (groupCount + slotCount) * 4;
+    if (
+      packedBytes < hashBytes &&
+      packedGroupWords <= 0x3fffffff &&
+      packedSlotWords <= 0x3fffffff
+    ) {
+      // Same-group slots have disjoint occupancy, so at most one slot in a
+      // group is live-in at any block: another slot is live-in iff the group
+      // bit is set and `slot`'s own bit is clear.
+      groupRow = new Uint32Array(groupCount);
+      let nextGroup = 1;
+      for (let group = 0; group < groupCount; group++)
+        if ((members[group] ?? 0) > 1) groupRow[group] = nextGroup++;
+      slotRow = new Uint32Array(slotCount);
+      groupLiveBits = new Uint32Array(packedGroupWords);
+      slotLiveBits = new Uint32Array(packedSlotWords);
+      let nextSlot = 1;
+      for (let slot = 0; slot < slotCount; slot++) {
+        const group = (color[slot] ?? 0) - 1;
+        if (group < 0) continue;
+        const gRow = (groupRow[group] ?? 0) - 1;
+        if (gRow < 0) continue;
+        const sRow = nextSlot - 1;
+        slotRow[slot] = nextSlot++;
+        const gBase = gRow * blockWords,
+          sBase = sRow * blockWords,
+          lStart = liveStart[slot] ?? 0,
+          lEnd = liveStart[slot + 1] ?? 0;
+        for (let at = lStart; at < lEnd; at++) {
+          const block = liveData[at] ?? 0,
+            word = block >>> 5,
+            bit = 1 << (block & 31);
+          groupLiveBits[gBase + word] =
+            (groupLiveBits[gBase + word] ?? 0) | bit;
+          slotLiveBits[sBase + word] = (slotLiveBits[sBase + word] ?? 0) | bit;
+        }
+      }
+      mode = 1;
+    } else {
+      ownerMask = ownerCapacity - 1;
+      ownerGroup = new Uint32Array(ownerCapacity);
+      ownerBlock = new Uint32Array(ownerCapacity);
+      ownerSlot = new Uint32Array(ownerCapacity);
+      for (let slot = 0; slot < slotCount; slot++) {
+        const group = (color[slot] ?? 0) - 1;
+        if (group < 0 || (members[group] ?? 0) <= 1) continue;
+        const lStart = liveStart[slot] ?? 0,
+          lEnd = liveStart[slot + 1] ?? 0;
+        for (let at = lStart; at < lEnd; at++) {
+          const block = liveData[at] ?? 0,
+            pos = ownerAt(group, block);
+          ownerGroup[pos] = group + 1;
+          ownerBlock[pos] = block;
+          ownerSlot[pos] = slot;
+        }
+      }
+      mode = 2;
+    }
+    liveStart = new Uint32Array(0);
+    liveData = new Uint32Array(0);
+  }
+  return (slot: number, block: number): boolean => {
+    const group = (color[slot] ?? 0) - 1;
+    if (group < 0) return false;
+    if (!built) build();
+    if (mode === 0) return false;
+    if (mode === 1) {
+      const gRow = (groupRow[group] ?? 0) - 1;
+      if (gRow < 0) return false;
+      const word = block >>> 5;
+      if (word >= blockWords) return false;
+      const bit = 1 << (block & 31);
+      if (((groupLiveBits[gRow * blockWords + word] ?? 0) & bit) === 0)
+        return false;
+      const sRow = (slotRow[slot] ?? 0) - 1;
+      return (
+        sRow < 0 || ((slotLiveBits[sRow * blockWords + word] ?? 0) & bit) === 0
+      );
+    }
+    const at = ownerAt(group, block);
+    return ownerGroup[at] !== 0 && ownerSlot[at] !== slot;
   };
 }
