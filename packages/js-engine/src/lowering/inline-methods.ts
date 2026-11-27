@@ -2562,6 +2562,102 @@ function emitSingleCandidate(
     return false;
   }
 
+  function isKnownNonBigIntExpr(expr: Expression): boolean {
+    const raw = unwrapGroup(expr);
+    switch (raw.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "object":
+      case "array":
+      case "new":
+      case "function-expression":
+      case "arrow":
+      case "regexp":
+        return true;
+      case "identifier":
+        return raw.name === "undefined";
+      case "unary":
+        return (
+          raw.operator === "!" ||
+          raw.operator === "typeof" ||
+          raw.operator === "void" ||
+          raw.operator === "delete" ||
+          raw.operator === "+" ||
+          raw.operator === "-" ||
+          raw.operator === "~"
+        );
+      case "binary":
+        return isBooleanResultExpr(raw) || isArithmeticBinary(raw.operator);
+      default:
+        return false;
+    }
+  }
+
+  function emitStrictEqual(
+    lt: Expression,
+    rt: Expression,
+    rawLeft: Expression,
+    rawRight: Expression,
+    span: Span,
+  ): Expression {
+    const fast = bin("===", lt, rt, span);
+    if (isKnownNonBigIntExpr(rawLeft) || isKnownNonBigIntExpr(rawRight))
+      return fast;
+    // Pointer/primitive equality matches JS `===` for every value except two
+    // distinct BigIntValue records with equal numeric value; skip the call for
+    // primitives and ordinary objects (including arrays, functions, proxies).
+    const nonBigIntLeft = bin(
+      "||",
+      bin(
+        "||",
+        bin(
+          "||",
+          typeofIs(lt, "number", span),
+          typeofIs(lt, "string", span),
+          span,
+        ),
+        bin(
+          "||",
+          typeofIs(lt, "boolean", span),
+          bin("===", lt, { ...atSpan(span), kind: "null" }, span),
+          span,
+        ),
+        span,
+      ),
+      bin(
+        "||",
+        bin("===", lt, ident("undefined", span), span),
+        bin(
+          "!==",
+          callHelper(
+            "viewObjectValue",
+            [lt, propAccess(ident("$errors", span), "objectPrototype", span)],
+            span,
+          ),
+          ident("undefined", span),
+          span,
+        ),
+        span,
+      ),
+      span,
+    );
+    return {
+      ...atSpan(span),
+      kind: "conditional",
+      test: fast,
+      consequent: bool(true, span),
+      alternate: {
+        ...atSpan(span),
+        kind: "conditional",
+        test: nonBigIntLeft,
+        consequent: bool(false, span),
+        alternate: callHelper("scriptStrictEqual", [lt, rt], span),
+      },
+    };
+  }
+
   function emitBooleanFromTemp(
     out: Statement[],
     val: Expression,
@@ -3011,7 +3107,8 @@ function emitSingleCandidate(
           if (left === undefined || right === undefined) return undefined;
           const lt = emitIntoTemp(out, left, expr.left);
           const rt = emitIntoTemp(out, right, expr.right);
-          return bin(expr.operator, lt, rt, expr);
+          const eq = emitStrictEqual(lt, rt, expr.left, expr.right, expr);
+          return expr.operator === "===" ? eq : un("!", eq, expr);
         }
         const left = emitExpr(out, expr.left);
         const right = emitExpr(out, expr.right);
@@ -4293,6 +4390,11 @@ function emitSingleCandidate(
             tx.conditionalDepth--;
             return;
           }
+          const testTemp =
+            isKnownNonBigIntExpr(stmt.expression) ||
+            isKnownNonBigIntExpr(clauseTest)
+              ? testVal
+              : emitIntoTemp(out, testVal, clauseTest);
           writtenProps.clear();
           for (const p of savedWritten) writtenProps.add(p);
           forwarded.clear();
@@ -4302,7 +4404,13 @@ function emitSingleCandidate(
           if (ret !== undefined) emitStmt(consStmts, ret, isFinal);
           for (const p of writtenProps) allWritten.add(p);
           chain = ifStmt(
-            bin("===", discTemp, testVal, clause),
+            emitStrictEqual(
+              discTemp,
+              testTemp,
+              stmt.expression,
+              clauseTest,
+              clause,
+            ),
             blockOf(consStmts, clause),
             chain,
             clause,

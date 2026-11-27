@@ -1139,8 +1139,76 @@ function collections() {
   out.push(fastMap.size, fastMap.has(0));
   return out.join(",");
 }
+function hostedRealm() {
+  const out = [];
+  function eq(a, b) { return a === b; }
+  function ne(a, b) { return a !== b; }
+  function sw(a, b) {
+    switch (a) {
+      case b: return 1;
+      default: return 0;
+    }
+  }
+  const r1 = BigInt({ valueOf() { return 44; } });
+  const r2 = BigInt({ toString() { return "44"; } });
+  const r3 = BigInt("45");
+  const o1 = {};
+  const o2 = {};
+  const s1 = Symbol("a");
+  const s2 = Symbol("a");
+  out.push(
+    eq(r1, 44n),
+    eq(44n, r1),
+    eq(r1, r2),
+    eq(r1, r3),
+    eq(r1, 44),
+    eq(44, r1),
+    ne(r1, 44n),
+    ne(r1, r3),
+    sw(r1, 44n),
+    sw(r1, r3),
+    Object.is(r1, 44n),
+    eq(o1, o1),
+    eq(o1, o2),
+    eq(s1, s1),
+    eq(s1, s2),
+    eq(NaN, NaN),
+    eq(-0, 0),
+  );
+  const wm = new WeakMap();
+  const ws = new WeakSet();
+  const k1 = { id: 1 };
+  const k2 = { id: 2 };
+  wm.set(k1, 42);
+  wm.set(k2, 99);
+  ws.add(k1);
+  out.push(wm.get(k1), wm.get(k2), wm.has(k1), ws.has(k1), ws.has(k2));
+  wm.delete(k1);
+  ws.delete(k1);
+  out.push(wm.has(k1), ws.has(k1));
+  const sab = new SharedArrayBuffer(64);
+  const view = new Int32Array(sab);
+  Atomics.store(view, 0, 10);
+  const prev = Atomics.add(view, 0, 32);
+  const cur = Atomics.load(view, 0);
+  const cas = Atomics.compareExchange(view, 0, 42, 100);
+  const after = Atomics.load(view, 0);
+  out.push(prev, cur, cas, after, Atomics.isLockFree(4));
+  const d = new Date(2024, 0, 15, 12, 30, 45);
+  out.push(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate(),
+    d.getHours(),
+    d.getMinutes(),
+    d.getSeconds(),
+    d.getTimezoneOffset(),
+    Date.now() > 1700000000000,
+  );
+  return out.join(",");
+}
 export function sections() {
-  return [numbers(), conversions(), strings(), replaced(), collections()];
+  return [numbers(), conversions(), strings(), replaced(), collections(), hostedRealm()];
 }
 `;
 
@@ -2237,7 +2305,7 @@ async function allNodeExpectations() {
     computeNodeSections(propertyCachesSource, "tint-property-caches-"),
   ]);
   assert.equal(elements.length, 14);
-  assert.equal(intrinsics.length, 5);
+  assert.equal(intrinsics.length, 6);
   assert.equal(numbers.length, 12);
   assert.equal(propertyCaches.length, 20);
   cachedExpected = { elements, intrinsics, numbers, propertyCaches };
