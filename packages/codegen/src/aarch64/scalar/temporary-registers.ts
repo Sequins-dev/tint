@@ -1,3 +1,4 @@
+import type { NumberIndex } from "@tint/foundation/collections/key-index";
 import {
   instructionResult,
   instructionEffects,
@@ -91,6 +92,9 @@ export function temporaryRegisters(
    * that save and restore them around their slow-path call): numeric
    * temporaries may cross them. References still may not. */
   preservesFloats?: (op: Instruction) => boolean,
+  /** Optional compact value-ID index. When supplied, `candidates` and the
+   * returned register table are indexed by compact ID rather than raw SSA ID. */
+  valueIds?: NumberIndex,
 ): Uint8Array | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
@@ -134,8 +138,10 @@ export function temporaryRegisters(
       const collecting = collects === undefined || collects(op),
         call = op.kind === "call" || op.kind === "call-indirect";
       if (collecting && !call) safepoints++;
-      visitInstructionOperands(op, (id) => {
+      visitInstructionOperands(op, (rawId) => {
         work++;
+        const id = valueIds === undefined ? rawId : valueIds.lookup(rawId);
+        if (id < 0 || id >= candidates.length) return;
         ends[id] = position;
         if (safepoints !== (safepointsAt[id] ?? 0)) crossed[id] = 1;
         if (candidates[id] === 3) return;
@@ -147,9 +153,10 @@ export function temporaryRegisters(
           valid[id] = 0;
       });
       if (collecting && call) safepoints++;
-      const id = instructionResult(op);
-      if (id !== undefined) {
-        if (id >= candidates.length) return undefined;
+      const rawId = instructionResult(op);
+      if (rawId !== undefined) {
+        const id = valueIds === undefined ? rawId : valueIds.lookup(rawId);
+        if (id < 0 || id >= candidates.length) return undefined;
         starts[id] = position;
         safepointsAt[id] = safepoints;
         const reference = candidates[id] === 2;
@@ -173,8 +180,10 @@ export function temporaryRegisters(
     }
     position++;
     const term = block.terminator;
-    visitTerminatorOperands(term, (id) => {
+    visitTerminatorOperands(term, (rawId) => {
       work++;
+      const id = valueIds === undefined ? rawId : valueIds.lookup(rawId);
+      if (id < 0 || id >= candidates.length) return;
       ends[id] = position;
       if (safepoints !== (safepointsAt[id] ?? 0)) crossed[id] = 1;
       if (
@@ -217,8 +226,10 @@ export function temporaryRegisters(
     for (const op of block.instructions) {
       if (op === undefined) throw "temporary instruction invariant";
       if (++work > maxWork) return undefined;
-      const id = instructionResult(op);
-      if (id === undefined || valid[id] !== 1) continue;
+      const rawId = instructionResult(op);
+      if (rawId === undefined) continue;
+      const id = valueIds === undefined ? rawId : valueIds.lookup(rawId);
+      if (id < 0 || valid[id] !== 1) continue;
       const start = starts[id] ?? 0,
         end = ends[id] ?? 0;
       if (end <= start) continue;
@@ -240,8 +251,10 @@ export function temporaryRegisters(
       for (const op of block.instructions) {
         if (op === undefined) throw "word temporary instruction invariant";
         if (++work > maxWork) return undefined;
-        const id = instructionResult(op);
-        if (id === undefined || valid[id] !== 3) continue;
+        const rawId = instructionResult(op);
+        if (rawId === undefined) continue;
+        const id = valueIds === undefined ? rawId : valueIds.lookup(rawId);
+        if (id < 0 || valid[id] !== 3) continue;
         const start = starts[id] ?? 0,
           end = ends[id] ?? 0;
         if (end <= start) continue;
@@ -286,8 +299,10 @@ export function temporaryRegisters(
     for (const op of block.instructions) {
       if (op === undefined) throw "reference temporary instruction invariant";
       if (++work > maxWork) return registers;
-      const id = instructionResult(op);
-      if (id === undefined || valid[id] !== 2) continue;
+      const rawId = instructionResult(op);
+      if (rawId === undefined) continue;
+      const id = valueIds === undefined ? rawId : valueIds.lookup(rawId);
+      if (id < 0 || valid[id] !== 2) continue;
       const start = starts[id] ?? 0,
         end = ends[id] ?? 0;
       if (end <= start) continue;

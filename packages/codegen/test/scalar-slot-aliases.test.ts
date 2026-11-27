@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createNumberIndex } from "@tint/foundation/collections/key-index";
 import type { FunctionIR, Instruction, Terminator } from "@tint/ir/scalar";
 import { aliasedSlotLoads } from "../src/aarch64/scalar/slot-aliases.ts";
 
@@ -271,4 +272,54 @@ test("every alias is sound against a brute-force oracle on random blocks", () =>
       }
     });
   }
+});
+
+test("compact valueIds handles sparse SSA IDs without sizing arrays by raw extent", () => {
+  // Sparse raw IDs around 5,000,000 exceed a 1,000,000 raw-ID budget, yet with
+  // a compact valueIds index the allocation is O(defined values) and matches
+  // the dense alias plan (including store conflicts and terminator uses).
+  const dense = fn(
+    ["number", "number"],
+    [
+      {
+        ops: [
+          load(0, 0),
+          load(1, 1),
+          constant(2),
+          add(3, 0, 2),
+          store(0, 3),
+          add(4, 1, 0),
+        ],
+        term: ret(4),
+      },
+    ],
+  );
+  const sparse = fn(
+    ["number", "number"],
+    [
+      {
+        ops: [
+          load(5_000_000, 0),
+          load(5_000_010, 1),
+          constant(5_000_020),
+          add(5_000_030, 5_000_000, 5_000_020),
+          store(0, 5_000_030),
+          add(5_000_040, 5_000_010, 5_000_000),
+        ],
+        term: ret(5_000_040),
+      },
+    ],
+  );
+  assert.equal(aliasedSlotLoads(sparse, 1_000_000), undefined);
+  const denseMarks = aliasedSlotLoads(dense, 1_000_000)!;
+  const valueIds = createNumberIndex();
+  const sparseMarks = aliasedSlotLoads(sparse, 1_000_000, valueIds)!;
+  assert.ok(sparseMarks);
+  assert.equal(sparseMarks.length, 5);
+  assert.equal(sparseMarks[valueIds.lookup(5_000_000)], denseMarks[0]);
+  assert.equal(sparseMarks[valueIds.lookup(5_000_010)], denseMarks[1]);
+  assert.equal(sparseMarks[valueIds.lookup(5_000_000)], 0);
+  assert.equal(sparseMarks[valueIds.lookup(5_000_010)], 1);
+  // Budget exhaustion still triggers cleanly when compact count exceeds budget.
+  assert.equal(aliasedSlotLoads(sparse, 4, createNumberIndex()), undefined);
 });
