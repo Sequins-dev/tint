@@ -1627,7 +1627,12 @@ export function selectArrayAccesses(
     if (visited >= budget) return undefined;
   }
   let rewritten = 0;
-  const blocks: Block[] = [];
+  const blocks: Block[] = [],
+    originalValueLimit = nextValue;
+  // Reused lazily across blocks that substitute original value IDs; cleared
+  // only at keys written by each block. Newly created IDs >= originalValueLimit
+  // are replacement payloads only and resolve as identity lookups.
+  let substitution: Uint32Array | undefined;
   for (const block of fn.blocks) {
     if (block === undefined) throw "bounds block invariant";
     const values = blockValues.get(block.id);
@@ -1841,24 +1846,27 @@ export function selectArrayAccesses(
       blocks.push(block);
       continue;
     }
-    const substitution = new Uint32Array(nextValue);
+    if (replaced.size === 0) {
+      blocks.push({ ...block, instructions });
+      continue;
+    }
+    if (substitution === undefined)
+      substitution = new Uint32Array(originalValueLimit);
     for (const [from, to] of replaced) substitution[from] = to + 1;
     const substituted: Instruction[] = [];
     for (const op of instructions) {
       if (op === undefined) throw "bounds instruction invariant";
-      substituted.push(
-        replaced.size === 0
-          ? op
-          : substituteInstructionValues(op, substitution),
-      );
+      substituted.push(substituteInstructionValues(op, substitution));
     }
+    const terminator = substituteTerminatorValues(
+      block.terminator,
+      substitution,
+    );
+    for (const [from] of replaced) substitution[from] = 0;
     blocks.push({
       ...block,
       instructions: substituted,
-      terminator:
-        replaced.size === 0
-          ? block.terminator
-          : substituteTerminatorValues(block.terminator, substitution),
+      terminator,
     });
   }
   // Safe integer and nonzero facts replace any earlier ones whole (an

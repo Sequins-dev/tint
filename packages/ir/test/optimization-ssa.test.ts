@@ -188,3 +188,54 @@ test("an expensive SSA candidate cannot starve the remaining optimization passes
     ),
   );
 });
+test("settling a formerly known constant to unknown clears it while empty unknown joins stay untouched", () => {
+  // Block 0 branches to b1 (stores constant 10) and b2 (stores unknown param),
+  // both jumping to join b3, which then joins with b4 (stores unknown param) at b5.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "settleUnknown",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["boolean", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
+        terminator: {
+          kind: "branch",
+          condition: 0,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "constant", id: 1, value: 10, ...s },
+          { kind: "store", slot: 2, value: 1, ...s },
+        ],
+        terminator: { kind: "jump", target: 3, ...s },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 2, slot: 1, ...s },
+          { kind: "store", slot: 2, value: 2, ...s },
+        ],
+        terminator: { kind: "jump", target: 3, ...s },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 3, slot: 2, ...s }],
+        terminator: { kind: "return", value: 3, ...s },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const result = foldSSAConstants(fn, 10000)!;
+  assert.equal(result.rewritten, 0);
+  assert.equal(result.fn, fn);
+});

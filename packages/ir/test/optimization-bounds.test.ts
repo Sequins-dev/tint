@@ -1426,3 +1426,135 @@ test("slice bound slots stay tracked as integer slots", () => {
   assert.ok(result);
   assert.deepEqual(result.fn.integerSlots, [1]);
 });
+
+test("reused substitution table resets per block and handles empty-replacement rewrites", () => {
+  // Block 1 rewrites an in-bounds array-read + optional-value-or (substituting
+  // id 14 -> fresh element id); block 2 rewrites a safe multiplication to imul
+  // with zero value substitutions; block 3 rewrites another in-bounds
+  // array-read + optional-value-or in a separate block without leaking block 1's
+  // substitution entry.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "reuseSub",
+    exported: true,
+    parameters: [0],
+    slots: ["Float64Array", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...span },
+          { kind: "store", slot: 3, value: 0, ...span },
+          { kind: "load", id: 1, slot: 3, ...span },
+          { kind: "load", id: 2, slot: 0, ...span },
+          { kind: "array-length", id: 3, array: 2, ...span },
+          {
+            kind: "binary",
+            id: 4,
+            operator: "<",
+            left: 1,
+            right: 3,
+            ...span,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 4,
+          consequent: 1,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 10, slot: 0, ...span },
+          { kind: "load", id: 11, slot: 3, ...span },
+          { kind: "array-read", id: 12, array: 10, index: 11, ...span },
+          { kind: "constant", id: 13, value: 0, ...span },
+          {
+            kind: "optional-value-or",
+            id: 14,
+            value: 12,
+            fallback: 13,
+            ...span,
+          },
+          { kind: "store", slot: 1, value: 14, ...span },
+        ],
+        terminator: { kind: "jump", target: 2, ...span },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "constant", id: 20, value: 7, ...span },
+          { kind: "constant", id: 21, value: 9, ...span },
+          {
+            kind: "binary",
+            id: 22,
+            operator: "*",
+            left: 20,
+            right: 21,
+            ...span,
+          },
+          { kind: "constant", id: 23, value: 255, ...span },
+          {
+            kind: "binary",
+            id: 24,
+            operator: "&",
+            left: 22,
+            right: 23,
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 24, ...span },
+        ],
+        terminator: { kind: "jump", target: 3, ...span },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 30, slot: 0, ...span },
+          { kind: "load", id: 31, slot: 3, ...span },
+          { kind: "array-read", id: 32, array: 30, index: 31, ...span },
+          { kind: "constant", id: 33, value: 0, ...span },
+          {
+            kind: "optional-value-or",
+            id: 34,
+            value: 32,
+            fallback: 33,
+            ...span,
+          },
+          { kind: "load", id: 35, slot: 1, ...span },
+          {
+            kind: "binary",
+            id: 36,
+            operator: "+",
+            left: 34,
+            right: 35,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 36, ...span },
+      },
+      {
+        id: 4,
+        instructions: [{ kind: "constant", id: 40, value: 0, ...span }],
+        terminator: { kind: "return", value: 40, ...span },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const selected = select(fn);
+  assert.ok(
+    selected.blocks[1]!.instructions.some((op) => op.kind === "array-element"),
+  );
+  assert.ok(
+    selected.blocks[2]!.instructions.some(
+      (op) => op.kind === "binary" && op.operator === "imul",
+    ),
+  );
+  assert.ok(
+    selected.blocks[3]!.instructions.some((op) => op.kind === "array-element"),
+  );
+});
