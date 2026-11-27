@@ -26,9 +26,9 @@ requirements remain documented in [runtime host surface](runtime-host-surface.md
   error domains and keep buffers and handles alive for the duration of any
   foreign use.
 - **F2 · Event loop.** Extend Tint's isolate-owned event loop, timer heap,
-  microtask queues, reactor and helper pool. Pursue compiler and runtime
-  intrinsics when measured wins justify them for scheduling, timers, readiness
-  and dispatch. Keep only the owning isolate responsible for JS execution and
+  microtask queues, reactor and helper pool. Keep scheduling, timers, readiness
+  and dispatch amenable to later compiler and runtime intrinsics. Keep only
+  the owning isolate responsible for JS execution and
   settlement. Blocking jobs exchange owned bytes and status. Readiness uses
   generation-guarded handles and per-platform poll/completion adapters.
 - **F3 · Events and cancellation.** Make event maps, event names and listener
@@ -39,10 +39,9 @@ requirements remain documented in [runtime host surface](runtime-host-surface.md
 - **Streams.** Investigate direct integration of Node and Web stream flow with
   Tint's async/await state machines and microtask scheduler. Prototype a
   backpressured typed producer/consumer pipeline with suspension and
-  cancellation. Compare allocation, dispatch and throughput to equivalent
-  Node pipelines, including JS consumers. Reuse the same stream lifecycle and
-  preserve observable turn ordering, backpressure and destruction during
-  guarded specialization.
+  cancellation. Reuse the same stream lifecycle for typed and JS consumers.
+  Preserve observable turn ordering, backpressure and destruction so later
+  specializations can use the same semantics.
 
 ## Milestone 1 · Straightforward non-I/O modules and foundations
 
@@ -53,9 +52,9 @@ requirements remain documented in [runtime host surface](runtime-host-surface.md
 | **M1.P3** | Add `node:events` with typed EventEmitter. Add standard EventTarget, Event, CustomEvent, DOMException, AbortController and AbortSignal. Establish coded errors.                                                                                  |
 | **M1.P4** | Add `node:path`, `node:path/posix`, `node:path/win32` and `node:url`. Expose standard URL and URLSearchParams, including file URL conversion. Complete before fs.                                                                                |
 | **M1.P5** | Add `node:util`, `node:assert`, `node:assert/strict`, `node:string_decoder` and `node:querystring`.                                                                                                                                              |
-| **M1.P6** | Widen the non-I/O `node:process` surface through explicit imports. Add `node:timers`, `node:timers/promises` and `node:console` core formatting and inspection. Tune scheduling with F2.                                                         |
+| **M1.P6** | Widen the non-I/O `node:process` surface through explicit imports. Add `node:timers`, `node:timers/promises` and `node:console` core formatting and inspection. Use F2 for scheduling.                                                           |
 | **M1.P7** | Add public `node:os` through `tint:c/*` before fs. Widen userland `node:ffi` toward Node 26.13.1 parity. Widen `node:crypto` over dynamically loaded OpenSSL 3. Widen non-fs `node:worker_threads` features and expose standard structuredClone. |
-| **M1.P8** | Add `node:stream`, `node:stream/promises` and `node:stream/web` with the async/await and microtask integration investigation and native benchmarks.                                                                                              |
+| **M1.P8** | Add `node:stream`, `node:stream/promises` and `node:stream/web` with a correctness-focused async/await and microtask integration prototype.                                                                                                      |
 
 ## Milestone 2 · Complex non-I/O modules
 
@@ -86,15 +85,22 @@ and Web networking with fetch, WebSocket and EventSource.
 
 ## Validation and delivery
 
-Use one focused PR per phase, rebased on current `origin/main`, targeting
-Darwin arm64, Linux arm64 and Linux x86-64. Preserve Windows as a distinct
+Rebase on current `origin/main` and open one focused PR per phase. Report
+the PR URL and head SHA to the orchestrator, then pause until the orchestrator
+confirms three-target CI passed and the PR was squash-merged into `main`.
+Start the next phase from the updated `main`. The targets are Darwin arm64,
+Linux arm64 and Linux x86-64. Preserve Windows as a distinct
 platform boundary. Record typed-only, untyped and mixed native coverage,
 module identity, errors and supported overloads for each slice. Use tagged
 Node tests or explicitly scoped public case extracts as the behavioral
 oracle. Keep application conformance distinct from Node-host tooling and
-Test262. For performance changes, compare native cycles and wall time with
-matched public behavior, application workloads, and unchanged fallback and
-self-hosting behavior.
+Test262.
+
+Prioritize Node 26.13.1 correctness and conformance, strong typing and clean
+architecture across all four milestones. Keep implementations suitable for
+later optimization. The separate performance discovery and Central Builder
+pipeline owns hot-path tuning and benchmarks after higher-priority performance
+work. Phase PRs are gated on correctness and conformance.
 
 Before opening a PR, run `pnpm build && pnpm typecheck && pnpm boundaries &&
 pnpm format:check`. Register new tests in `tools/check-test-files.json`
