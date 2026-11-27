@@ -289,12 +289,70 @@ export function installDataViewIntrinsics(
   }
   const scratchBuffer = new ArrayBuffer(8);
   const scratchU8 = new Uint8Array(scratchBuffer);
+  const scratchU32 = new Uint32Array(scratchBuffer);
   const probe = new Uint16Array(scratchBuffer);
   probe[0] = 0x0102;
   const hostLittleEndian = (scratchU8[0] ?? 0) === 0x02;
-  const scratchF32 = new Float32Array(scratchBuffer);
   const scratchF64 = new Float64Array(scratchBuffer);
   const sharedScratch = new Uint8Array(8);
+  function decodeFloat32Bits(bits: number): number {
+    const sign = (bits >>> 31) & 1;
+    const exp = (bits >>> 23) & 0xff;
+    const frac = bits & 0x7fffff;
+    if (exp === 0xff) return frac === 0 ? (sign !== 0 ? -1 / 0 : 1 / 0) : 0 / 0;
+    if (exp === 0) {
+      if (frac === 0) return sign !== 0 ? -0 : 0;
+      const value = frac * 1.401298464324817e-45;
+      return sign !== 0 ? -value : value;
+    }
+    const hi = ((sign << 31) | ((exp + 896) << 20) | (frac >>> 3)) >>> 0;
+    const lo = ((frac & 7) << 29) >>> 0;
+    if (hostLittleEndian) {
+      scratchU32[0] = lo;
+      scratchU32[1] = hi;
+    } else {
+      scratchU32[0] = hi;
+      scratchU32[1] = lo;
+    }
+    return scratchF64[0] ?? 0;
+  }
+  function encodeFloat32Bits(value: number): number {
+    scratchF64[0] = value;
+    const lo = (hostLittleEndian ? scratchU32[0] : scratchU32[1]) ?? 0;
+    const hi = (hostLittleEndian ? scratchU32[1] : scratchU32[0]) ?? 0;
+    const sign = hi & 0x80000000;
+    const exp64 = (hi >>> 20) & 0x7ff;
+    const fracHi = hi & 0xfffff;
+    if (exp64 === 0x7ff)
+      return (fracHi !== 0 || lo !== 0 ? 0x7fc00000 : sign | 0x7f800000) >>> 0;
+    let exp32 = exp64 - 896;
+    if (exp32 >= 255) return (sign | 0x7f800000) >>> 0;
+    if (exp32 > 0) {
+      let mantissa = (fracHi << 3) | (lo >>> 29);
+      const round = (lo >>> 28) & 1;
+      const sticky = (lo & 0x0fffffff) !== 0 ? 1 : 0;
+      if (round !== 0 && (sticky !== 0 || (mantissa & 1) !== 0)) {
+        mantissa++;
+        if (mantissa === 0x800000) {
+          mantissa = 0;
+          exp32++;
+          if (exp32 >= 255) return (sign | 0x7f800000) >>> 0;
+        }
+      }
+      return (sign | (exp32 << 23) | mantissa) >>> 0;
+    }
+    if (exp32 < -24) return sign >>> 0;
+    if (exp32 === -24) return (sign | (fracHi !== 0 || lo !== 0 ? 1 : 0)) >>> 0;
+    const sig24 = 0x800000 | (fracHi << 3) | (lo >>> 29);
+    const rem29 = lo & 0x1fffffff;
+    const shift = 1 - exp32;
+    let mantissa = sig24 >>> shift;
+    const half = 1 << (shift - 1);
+    const low = sig24 & ((1 << shift) - 1);
+    if (low > half || (low === half && (rem29 !== 0 || (mantissa & 1) !== 0)))
+      mantissa++;
+    return (sign | mantissa) >>> 0;
+  }
   function installNumeric(
     name: string,
     width: number,
@@ -460,31 +518,28 @@ export function installDataViewIntrinsics(
     "Float32",
     4,
     (bytes, offset, endian): number => {
-      if ((endian === "little") === hostLittleEndian) {
-        scratchU8[0] = bytes[offset] ?? 0;
-        scratchU8[1] = bytes[offset + 1] ?? 0;
-        scratchU8[2] = bytes[offset + 2] ?? 0;
-        scratchU8[3] = bytes[offset + 3] ?? 0;
-      } else {
-        scratchU8[3] = bytes[offset] ?? 0;
-        scratchU8[2] = bytes[offset + 1] ?? 0;
-        scratchU8[1] = bytes[offset + 2] ?? 0;
-        scratchU8[0] = bytes[offset + 3] ?? 0;
-      }
-      return scratchF32[0] ?? 0;
+      const b0 = bytes[offset] ?? 0,
+        b1 = bytes[offset + 1] ?? 0,
+        b2 = bytes[offset + 2] ?? 0,
+        b3 = bytes[offset + 3] ?? 0;
+      const bits =
+        (endian === "little"
+          ? b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+          : (b0 << 24) | (b1 << 16) | (b2 << 8) | b3) >>> 0;
+      return decodeFloat32Bits(bits);
     },
     (bytes, offset, value, endian): void => {
-      scratchF32[0] = value;
-      if ((endian === "little") === hostLittleEndian) {
-        bytes[offset] = scratchU8[0] ?? 0;
-        bytes[offset + 1] = scratchU8[1] ?? 0;
-        bytes[offset + 2] = scratchU8[2] ?? 0;
-        bytes[offset + 3] = scratchU8[3] ?? 0;
+      const bits = encodeFloat32Bits(value);
+      if (endian === "little") {
+        bytes[offset] = bits & 0xff;
+        bytes[offset + 1] = (bits >>> 8) & 0xff;
+        bytes[offset + 2] = (bits >>> 16) & 0xff;
+        bytes[offset + 3] = (bits >>> 24) & 0xff;
       } else {
-        bytes[offset] = scratchU8[3] ?? 0;
-        bytes[offset + 1] = scratchU8[2] ?? 0;
-        bytes[offset + 2] = scratchU8[1] ?? 0;
-        bytes[offset + 3] = scratchU8[0] ?? 0;
+        bytes[offset] = (bits >>> 24) & 0xff;
+        bytes[offset + 1] = (bits >>> 16) & 0xff;
+        bytes[offset + 2] = (bits >>> 8) & 0xff;
+        bytes[offset + 3] = bits & 0xff;
       }
     },
   );
