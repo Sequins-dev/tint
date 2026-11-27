@@ -46,6 +46,9 @@ export type NativeTypedArray =
   | "Float64Array"
   | "BigInt64Array"
   | "BigUint64Array";
+/** Element types for unaligned DataView byte-buffer loads and stores. */
+export type DataViewElement =
+  "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "f16" | "f32" | "f64";
 /** The Atomics operations on a native integer array (see `array-atomic`). */
 export type ArrayAtomicOperation =
   | "load"
@@ -912,6 +915,50 @@ export type Instruction = Span &
         readonly array: number;
         readonly index: number;
         readonly scratch: number;
+      }
+    | {
+        /** Unaligned element read from `array` (Uint8Array) at proven
+         * in-bounds integer byte offset `offset`. Multi-byte elements swap
+         * bytes when `littleEndian` is false. */
+        readonly kind: "bytes-load";
+        readonly id: number;
+        readonly array: number;
+        readonly offset: number;
+        readonly element: DataViewElement;
+        readonly littleEndian: number;
+      }
+    | {
+        /** Unaligned element write to `array` (Uint8Array) at proven
+         * in-bounds integer byte offset `offset`. Converts `value` with
+         * ECMAScript DataView semantics and swaps bytes when `littleEndian`
+         * is false. */
+        readonly kind: "bytes-store";
+        readonly array: number;
+        readonly offset: number;
+        readonly value: number;
+        readonly element: DataViewElement;
+        readonly littleEndian: number;
+      }
+    | {
+        /** Unaligned 64-bit read from `array` (Uint8Array) at proven in-bounds
+         * integer byte offset `offset`, swapping bytes when `littleEndian` is
+         * false, storing the little-endian 64-bit word into `scratch[0..1]`. */
+        readonly kind: "bytes-word64-load";
+        readonly array: number;
+        readonly offset: number;
+        readonly scratch: number;
+        readonly littleEndian: number;
+      }
+    | {
+        /** Unaligned 64-bit write to `array` (Uint8Array) at proven in-bounds
+         * integer byte offset `offset`, loading the little-endian 64-bit word
+         * from `scratch[0..1]` and swapping bytes when `littleEndian` is
+         * false. */
+        readonly kind: "bytes-word64-store";
+        readonly array: number;
+        readonly offset: number;
+        readonly scratch: number;
+        readonly littleEndian: number;
       }
     | {
         /** Trusted opaque cell: general handles must never be viewed as records. */

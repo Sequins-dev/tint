@@ -2679,6 +2679,7 @@ function removable(op: Instruction): boolean {
     case "reference-string":
     // Reads selected as in bounds cannot fail.
     case "array-element":
+    case "bytes-load":
     // Proven record reads cannot fail or throw.
     case "record-read":
     // An unused closure is an unobservable allocation.

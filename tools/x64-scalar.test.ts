@@ -902,6 +902,72 @@ const runnerFixtures = [
   },
 ];
 
+test("x86-64 emits bytes-load, bytes-store, and bytes-word64 ops for every DataView element", () => {
+  const elements = [
+    "i8",
+    "u8",
+    "i16",
+    "u16",
+    "i32",
+    "u32",
+    "f16",
+    "f32",
+    "f64",
+  ] as const;
+  const f = new Fixture(0, ["Uint8Array", "number", "boolean", "Uint32Array"]);
+  const bytes = f.ir.next();
+  f.ir.emit({ ...span, kind: "load", id: bytes, slot: 0 });
+  const offset = f.ir.next();
+  f.ir.emit({ ...span, kind: "load", id: offset, slot: 1 });
+  const le = f.ir.next();
+  f.ir.emit({ ...span, kind: "load", id: le, slot: 2 });
+  const scratch = f.ir.next();
+  f.ir.emit({ ...span, kind: "load", id: scratch, slot: 3 });
+  let acc = f.constant(0);
+  for (const element of elements) {
+    f.ir.emit({
+      ...span,
+      kind: "bytes-store",
+      array: bytes,
+      offset,
+      value: acc,
+      element,
+      littleEndian: le,
+    });
+    const loaded = f.ir.next();
+    f.ir.emit({
+      ...span,
+      kind: "bytes-load",
+      id: loaded,
+      array: bytes,
+      offset,
+      element,
+      littleEndian: le,
+    });
+    acc = f.binary("+", acc, loaded);
+  }
+  f.ir.emit({
+    ...span,
+    kind: "bytes-word64-load",
+    array: bytes,
+    offset,
+    scratch,
+    littleEndian: le,
+  });
+  f.ir.emit({
+    ...span,
+    kind: "bytes-word64-store",
+    array: bytes,
+    offset,
+    scratch,
+    littleEndian: le,
+  });
+  const module: ModuleIR = { functions: [f.finish(acc)] };
+  const emitted = emitX64Module(module, linuxX86_64Target.hostABI);
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  assert.ok(emitted.value.code.length > 0);
+});
+
 const runner = process.env.TINT_X64_SCALAR_RUNNER;
 test(
   "x86-64 runner executes freestanding scalar fixtures",

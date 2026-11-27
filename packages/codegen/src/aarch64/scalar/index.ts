@@ -183,7 +183,15 @@ import {
   sharedMemoryPrimitive,
   type SharedMemoryPrimitive,
 } from "./shared-memory.ts";
-import { memoryFiller, memoryMover } from "./memory.ts";
+import {
+  emitBytesLoad,
+  emitBytesStore,
+  emitBytesWord64Load,
+  emitBytesWord64Store,
+  memoryFiller,
+  memoryMover,
+  type BytesEmitContext,
+} from "./memory.ts";
 import { externalMemoryCapability } from "./external-memory.ts";
 import {
   emitDualMappingMap,
@@ -6694,6 +6702,10 @@ function emitModuleForms(
                   )) ||
                 ((op.kind === "array-read" || op.kind === "array-element") &&
                   integerArrays[valueIds.intern(op.array)] === 1) ||
+                (op.kind === "bytes-load" &&
+                  op.element !== "f16" &&
+                  op.element !== "f32" &&
+                  op.element !== "f64") ||
                 ((op.kind === "optional-wrap" ||
                   op.kind === "optional-value") &&
                   signless[valueIds.intern(op.value)] === 1) ||
@@ -6826,6 +6838,10 @@ function emitModuleForms(
                 op.kind === "array-word64-write" ||
                 op.kind === "array-word64-fill" ||
                 op.kind === "array-atomic-word64" ||
+                op.kind === "bytes-load" ||
+                op.kind === "bytes-store" ||
+                op.kind === "bytes-word64-load" ||
+                op.kind === "bytes-word64-store" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
                 // Packed element accesses compare integer indices and cached
@@ -7091,6 +7107,7 @@ function emitModuleForms(
         // only removes slots, from an optimistic start).
         const constantFlags = new Uint8Array(resultBound),
           constantNumbers = new Float64Array(resultBound),
+          constantBooleans = new Uint8Array(resultBound),
           zeroRefValues = new Uint8Array(resultBound),
           nonNegativeValues = new Uint8Array(resultBound),
           nonNegativeSlots = nonNegativeZeroSlots.slice();
@@ -7100,6 +7117,11 @@ function emitModuleForms(
           return constantFlags[index] === 1
             ? constantNumbers[index]
             : undefined;
+        }
+        /** The value of boolean constant `id`, else undefined. */
+        function booleanConstant(id: number): boolean | undefined {
+          const v = constantBooleans[valueIds.intern(id)];
+          return v === 1 ? false : v === 2 ? true : undefined;
         }
         function nonNegative(id: number): boolean {
           return nonNegativeValues[valueIds.intern(id)] === 1;
@@ -7137,11 +7159,17 @@ function emitModuleForms(
               constantNumbers[index] = constant;
               if (constant > 0 || (constant === 0 && 1 / constant > 0))
                 nonNegativeValues[index] = 1;
+            } else if (typeof constant === "boolean") {
+              constantBooleans[valueIds.intern(op.id)] = constant ? 2 : 1;
             }
           } else if (
             op.kind === "string-length" ||
             op.kind === "array-length" ||
             op.kind === "element-count" ||
+            (op.kind === "bytes-load" &&
+              (op.element === "u8" ||
+                op.element === "u16" ||
+                op.element === "u32")) ||
             (op.kind === "string-code-unit" && op.inBounds === true) ||
             (op.kind === "unary" && op.operator === "uint32") ||
             (op.kind === "binary" && op.operator === ">>>") ||
@@ -8612,6 +8640,7 @@ function emitModuleForms(
               case "string-copy-latin1":
               case "string-ascii-prefix":
               case "bytes-ascii-prefix":
+              case "bytes-load":
               case "string-utf8-length":
               case "string-write-utf8":
               case "string-flat":
@@ -13698,6 +13727,45 @@ function emitModuleForms(
             displacement: (instructions.length - invalid) * 4,
           });
         }
+        let cachedBytesCtx: BytesEmitContext | undefined = undefined;
+        function bytesCtx(): BytesEmitContext {
+          if (cachedBytesCtx === undefined) {
+            cachedBytesCtx = {
+              wordKinds,
+              wordConstants,
+              jsConvert,
+              resultOffset,
+              internValue: (id) => valueIds.intern(id),
+              emit,
+              imm,
+              storedAsInteger,
+              storedAsWord,
+              wantsInteger,
+              booleanConstant,
+              intRegister,
+              intTarget,
+              rawRegister,
+              rawValue,
+              rawLoad,
+              rawStore: (rt, offset) => rawStore(rt, offset),
+              saveRaw,
+              markInteger,
+              materializeInteger,
+              wordValue,
+              floatLoad: (rt, id) => floatLoad(rt, id),
+              floatOperand,
+              floatTarget,
+              floatStore,
+              getCachedArrayDataVal: () => cachedArrayDataVal,
+              getCachedArrayDataReg: () => cachedArrayDataReg,
+              setCachedArrayData: (reg, val) => {
+                cachedArrayDataReg = reg;
+                cachedArrayDataVal = val;
+              },
+            };
+          }
+          return cachedBytesCtx;
+        }
         function arrayWord64Fill(op: {
           readonly array: number;
           readonly scratch: number;
@@ -14908,7 +14976,24 @@ function emitModuleForms(
                         value: cVal,
                         blockId: bid,
                       });
-                  } else if (op.kind === "array-element") {
+                  } else if (
+                    op.kind === "array-element" ||
+                    op.kind === "bytes-load" ||
+                    op.kind === "bytes-word64-load" ||
+                    op.kind === "bytes-word64-store"
+                  ) {
+                    const s = loopLoadSlot.get(op.array);
+                    if (s !== undefined)
+                      arraySlotUses.set(s, (arraySlotUses.get(s) ?? 0) + 1);
+                  } else if (op.kind === "bytes-store") {
+                    const isFloat =
+                      op.element === "f16" ||
+                      op.element === "f32" ||
+                      op.element === "f64";
+                    if (!isFloat && !pureWordInline(op.value, intSlotLoads)) {
+                      pureLoop = false;
+                      break;
+                    }
                     const s = loopLoadSlot.get(op.array);
                     if (s !== undefined)
                       arraySlotUses.set(s, (arraySlotUses.get(s) ?? 0) + 1);
@@ -17906,6 +17991,34 @@ function emitModuleForms(
                 break;
               case "array-atomic-word64":
                 arrayAtomicWord64(op);
+                break;
+              case "bytes-load":
+                emitBytesLoad(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
+                break;
+              case "bytes-store":
+                emitBytesStore(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
+                break;
+              case "bytes-word64-load":
+                emitBytesWord64Load(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
+                break;
+              case "bytes-word64-store":
+                emitBytesWord64Store(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
                 break;
               case "array-buffer-byte-length":
                 rawValue(10, op.buffer);
@@ -33657,6 +33770,42 @@ function emitModuleForms(
             temporaries.set(blockId, found);
             return found;
           }
+          let baseUniqueRoots: readonly number[] | undefined,
+            baseUniqueGenerals: readonly number[] | undefined,
+            baseRootSet: Set<number> | undefined,
+            sharedFallbackMaps: Map<number, number[]> | undefined;
+          if (liveSlots === undefined) {
+            const sortedRoots = rootSlots.slice();
+            sortedRoots.sort((left, right) => left - right);
+            const dedupRoots: number[] = [];
+            const rootSet = new Set<number>();
+            for (const offset of sortedRoots)
+              if (
+                offset !== undefined &&
+                dedupRoots[dedupRoots.length - 1] !== offset
+              ) {
+                dedupRoots.push(offset);
+                rootSet.add(offset);
+              }
+            const sortedGenerals = generalSlots.slice();
+            if (fn.scriptEntry === true && !elideActivation) {
+              sortedGenerals.push(activationOffset + activationCalleeOffset);
+              for (let i = 0; i < scriptActualRegisterPairs; i++)
+                sortedGenerals.push(scriptArgumentsOffset + i * 16);
+            }
+            sortedGenerals.sort((left, right) => left - right);
+            const dedupGenerals: number[] = [];
+            for (const offset of sortedGenerals)
+              if (
+                offset !== undefined &&
+                dedupGenerals[dedupGenerals.length - 1] !== offset
+              )
+                dedupGenerals.push(offset);
+            baseUniqueRoots = dedupRoots;
+            baseUniqueGenerals = dedupGenerals;
+            baseRootSet = rootSet;
+            sharedFallbackMaps = new Map<number, number[]>();
+          }
           let collectingIndex = 0;
           for (let index = 0; index < callSites.length; index++) {
             const site = callSites[index];
@@ -33664,61 +33813,6 @@ function emitModuleForms(
             if (collecting[index] !== true) {
               safepoints.push({ offset: site.offset, start, map: empty });
               continue;
-            }
-            const references: number[] = [],
-              generals: number[] = [];
-            if (liveSlots === undefined) {
-              for (const offset of rootSlots)
-                if (offset !== undefined) references.push(offset);
-              for (const offset of generalSlots)
-                if (offset !== undefined) generals.push(offset);
-            } else {
-              const live = liveSlots[collectingIndex++];
-              if (live === undefined) throw "safepoint live invariant";
-              if (fn.closureEnvironment !== undefined)
-                references.push(environmentOffset);
-              for (const slot of live) {
-                if (slot === undefined) throw "safepoint slot invariant";
-                if (fn.slots[slot] === "general")
-                  generals.push(slotOffset(slot));
-                else references.push(slotOffset(slot));
-              }
-              const found = temporariesOf(site.block);
-              for (let at = 0; at < found.length; at += 4)
-                if (
-                  (found[at] ?? 0) < site.index &&
-                  (found[at + 1] ?? 0) >= site.index
-                ) {
-                  const offset = found[at + 2] ?? 0;
-                  if (found[at + 3] === 1) generals.push(offset);
-                  else references.push(offset);
-                }
-            }
-            for (const offset of siteReferences.get(index) ?? []) {
-              if (offset === undefined) throw "site reference invariant";
-              references.push(offset);
-            }
-            if (fn.scriptEntry === true && !elideActivation) {
-              generals.push(activationOffset + activationCalleeOffset);
-              for (let i = 0; i < scriptActualRegisterPairs; i++)
-                generals.push(scriptArgumentsOffset + i * 16);
-            }
-            const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
-            for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
-            const map: number[] = [frameBytes];
-            for (const list of [references, generals]) {
-              if (list === undefined) throw "safepoint map invariant";
-              list.sort((left, right) => left - right);
-              const unique: number[] = [];
-              for (const offset of list)
-                if (
-                  offset !== undefined &&
-                  unique[unique.length - 1] !== offset
-                )
-                  unique.push(offset);
-              map.push(unique.length);
-              for (const offset of unique)
-                if (offset !== undefined) map.push(offset);
             }
             // Register-homed references: the walk finds each where the
             // nearest callee saved its register.
@@ -33749,6 +33843,100 @@ function emitModuleForms(
               siteOp.call.mayCallback === true
             )
               throw "register root across a may-callback call";
+            const extraSiteRefs = siteReferences.get(index);
+            const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
+            if (
+              liveSlots === undefined &&
+              baseUniqueRoots !== undefined &&
+              baseUniqueGenerals !== undefined &&
+              baseRootSet !== undefined &&
+              sharedFallbackMaps !== undefined &&
+              scriptOverflow === 0
+            ) {
+              let hasNewRef = false;
+              if (extraSiteRefs !== undefined) {
+                for (const offset of extraSiteRefs) {
+                  if (offset === undefined) throw "site reference invariant";
+                  if (!baseRootSet.has(offset)) {
+                    hasNewRef = true;
+                    break;
+                  }
+                }
+              }
+              if (!hasNewRef) {
+                let shared = sharedFallbackMaps.get(held);
+                if (shared === undefined) {
+                  shared = [frameBytes, baseUniqueRoots.length];
+                  for (const offset of baseUniqueRoots)
+                    if (offset !== undefined) shared.push(offset);
+                  shared.push(baseUniqueGenerals.length);
+                  for (const offset of baseUniqueGenerals)
+                    if (offset !== undefined) shared.push(offset);
+                  registerSection(shared, held);
+                  sharedFallbackMaps.set(held, shared);
+                }
+                safepoints.push({ offset: site.offset, start, map: shared });
+                continue;
+              }
+            }
+            const references: number[] = [],
+              generals: number[] = [];
+            if (liveSlots === undefined) {
+              for (const offset of baseUniqueRoots ?? rootSlots)
+                if (offset !== undefined) references.push(offset);
+              for (const offset of baseUniqueGenerals ?? generalSlots)
+                if (offset !== undefined) generals.push(offset);
+            } else {
+              const live = liveSlots[collectingIndex++];
+              if (live === undefined) throw "safepoint live invariant";
+              if (fn.closureEnvironment !== undefined)
+                references.push(environmentOffset);
+              for (const slot of live) {
+                if (slot === undefined) throw "safepoint slot invariant";
+                if (fn.slots[slot] === "general")
+                  generals.push(slotOffset(slot));
+                else references.push(slotOffset(slot));
+              }
+              const found = temporariesOf(site.block);
+              for (let at = 0; at < found.length; at += 4)
+                if (
+                  (found[at] ?? 0) < site.index &&
+                  (found[at + 1] ?? 0) >= site.index
+                ) {
+                  const offset = found[at + 2] ?? 0;
+                  if (found[at + 3] === 1) generals.push(offset);
+                  else references.push(offset);
+                }
+            }
+            for (const offset of extraSiteRefs ?? []) {
+              if (offset === undefined) throw "site reference invariant";
+              references.push(offset);
+            }
+            if (
+              liveSlots !== undefined &&
+              fn.scriptEntry === true &&
+              !elideActivation
+            ) {
+              generals.push(activationOffset + activationCalleeOffset);
+              for (let i = 0; i < scriptActualRegisterPairs; i++)
+                generals.push(scriptArgumentsOffset + i * 16);
+            }
+            for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
+            const map: number[] = [frameBytes];
+            for (const list of [references, generals]) {
+              if (list === undefined) throw "safepoint map invariant";
+              list.sort((left, right) => left - right);
+              const unique: number[] = [];
+              for (const offset of list)
+                if (
+                  offset !== undefined &&
+                  unique[unique.length - 1] !== offset
+                )
+                  unique.push(offset);
+              map.push(unique.length);
+              for (const offset of unique)
+                if (offset !== undefined) map.push(offset);
+            }
             registerSection(map, held);
             safepoints.push({ offset: site.offset, start, map });
           }

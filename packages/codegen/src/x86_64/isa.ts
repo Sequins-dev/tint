@@ -97,6 +97,7 @@ type Encodable =
       readonly src: Gpr<IntegerWidth>;
     }
   | { readonly op: Unary; readonly dst: Rm<IntegerWidth> }
+  | { readonly op: "bswap"; readonly dst: Gpr<DwordOrQword> }
   | {
       readonly op: Shift;
       readonly dst: Rm<IntegerWidth>;
@@ -1015,6 +1016,12 @@ function emit(out: Encoding, insn: Encodable): void {
         insn.dst,
         insn.src,
       );
+    }
+    case "bswap": {
+      const width = integerWidth(insn.dst.width);
+      if (width !== 32 && width !== 64)
+        invalid("bswap requires a 32- or 64-bit register operand");
+      return registerOpcode(bytes, width, width === 64, 0x0fc8, insn.dst);
     }
     case "movsx":
     case "movzx": {

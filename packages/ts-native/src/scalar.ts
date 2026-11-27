@@ -911,6 +911,7 @@ export function lowerFunction(
       case "array-byte-offset":
       case "array-byte-length":
       case "array-length":
+      case "bytes-load":
       case "gc-epoch":
       case "reference-hash":
         type = "number";
@@ -14387,59 +14388,174 @@ export function lowerFunction(
           }
           if (
             builtin === "data-view-get-bigint64" ||
-            builtin === "data-view-get-biguint64"
+            builtin === "data-view-get-biguint64" ||
+            builtin === "data-view-set-word64" ||
+            builtin === "data-view-get" ||
+            builtin === "data-view-set"
           ) {
-            const helper = info(node).callee;
-            if (helper === undefined) throw "DataView method callee invariant";
-            const receiver = value(target.object);
-            const offsetArg = node.arguments[0];
-            if (offsetArg === undefined)
-              throw "DataView offset argument invariant";
-            const offset = value(offsetArg);
-            const leArg = node.arguments[1];
-            let le: number;
-            if (leArg === undefined) le = booleanSlot(false, node);
-            else {
-              const leVal = value(leArg);
-              le =
-                slots[leVal] === "boolean"
-                  ? leVal
-                  : unarySlot("truthy", leVal, "boolean", node);
+            const emitDataViewGuard = (
+              bytes: number,
+              rawOffset: number,
+              width: number,
+            ): {
+              readonly fastOffset: number;
+              readonly fastBlock: Builder;
+              readonly slowBlock: Builder;
+              readonly doneBlock: Builder;
+            } => {
+              const fastOffset = binarySlot(
+                "|",
+                rawOffset,
+                numberSlot(0, node),
+                node,
+              );
+              const checkNonNeg = block(),
+                checkBound = block(),
+                fastBlock = block(),
+                slowBlock = block(),
+                doneBlock = block();
+              choose(
+                load(binarySlot("===", fastOffset, rawOffset, node), node),
+                checkNonNeg,
+                slowBlock,
+                node,
+              );
+              current = checkNonNeg;
+              choose(
+                load(
+                  binarySlot(">=", fastOffset, numberSlot(0, node), node),
+                  node,
+                ),
+                checkBound,
+                slowBlock,
+                node,
+              );
+              current = checkBound;
+              const lenId = nextValue++;
+              emit({
+                kind: "array-length",
+                id: lenId,
+                array: load(bytes, node),
+                start: node.start,
+                end: node.end,
+              });
+              const rem = binarySlot(
+                "-",
+                save(lenId, "number", node),
+                fastOffset,
+                node,
+              );
+              choose(
+                load(
+                  binarySlot(">=", rem, numberSlot(width, node), node),
+                  node,
+                ),
+                fastBlock,
+                slowBlock,
+                node,
+              );
+              return { fastOffset, fastBlock, slowBlock, doneBlock };
+            };
+            const callInfo = info(node);
+            const helper = callInfo.callee;
+            const bytesHelper = callInfo.dataViewBytes;
+            if (
+              builtin === "data-view-get-bigint64" ||
+              builtin === "data-view-get-biguint64"
+            ) {
+              if (helper === undefined)
+                throw "DataView method callee invariant";
+              const receiver = value(target.object);
+              const offsetArg = node.arguments[0];
+              if (offsetArg === undefined)
+                throw "DataView offset argument invariant";
+              const offset = value(offsetArg);
+              const leArg = node.arguments[1];
+              let le: number;
+              if (leArg === undefined) le = booleanSlot(false, node);
+              else {
+                const leVal = value(leArg);
+                le =
+                  slots[leVal] === "boolean"
+                    ? leVal
+                    : unarySlot("truthy", leVal, "boolean", node);
+              }
+              const scratch = word64Scratch();
+              if (bytesHelper !== undefined && slots[offset] === "number") {
+                const bytes = runtimeCall(bytesHelper, [receiver], node);
+                if (bytes === undefined) throw "DataView bytes invariant";
+                const { fastOffset, fastBlock, slowBlock, doneBlock } =
+                  emitDataViewGuard(bytes, offset, 8);
+                current = fastBlock;
+                emit({
+                  kind: "bytes-word64-load",
+                  array: load(bytes, node),
+                  offset: load(fastOffset, node),
+                  scratch: load(scratch, node),
+                  littleEndian: load(le, node),
+                  start: node.start,
+                  end: node.end,
+                });
+                jump(doneBlock.id, node);
+                current = slowBlock;
+                runtimeCall(helper, [receiver, offset, le, scratch], node);
+                if (current !== undefined) jump(doneBlock.id, node);
+                current = doneBlock;
+              } else {
+                runtimeCall(helper, [receiver, offset, le, scratch], node);
+              }
+              return emitBigIntFromWord64(
+                scratch,
+                builtin === "data-view-get-bigint64",
+                node,
+              );
             }
-            const scratch = word64Scratch();
-            runtimeCall(helper, [receiver, offset, le, scratch], node);
-            return emitBigIntFromWord64(
-              scratch,
-              builtin === "data-view-get-bigint64",
-              node,
-            );
-          }
-          if (builtin === "data-view-set-word64") {
-            const helper = info(node).callee;
-            if (helper === undefined) throw "DataView method callee invariant";
-            const receiver = value(target.object);
-            const offsetArg = node.arguments[0];
-            const valArg = node.arguments[1];
-            if (offsetArg === undefined || valArg === undefined)
-              throw "DataView set argument invariant";
-            const offset = value(offsetArg);
-            const val = value(valArg);
-            const leArg = node.arguments[2];
-            let le: number;
-            if (leArg === undefined) le = booleanSlot(false, node);
-            else {
-              const leVal = value(leArg);
-              le =
-                slots[leVal] === "boolean"
-                  ? leVal
-                  : unarySlot("truthy", leVal, "boolean", node);
+            if (builtin === "data-view-set-word64") {
+              if (helper === undefined)
+                throw "DataView method callee invariant";
+              const receiver = value(target.object);
+              const offsetArg = node.arguments[0];
+              const valArg = node.arguments[1];
+              if (offsetArg === undefined || valArg === undefined)
+                throw "DataView set argument invariant";
+              const offset = value(offsetArg);
+              const val = value(valArg);
+              const leArg = node.arguments[2];
+              let le: number;
+              if (leArg === undefined) le = booleanSlot(false, node);
+              else {
+                const leVal = value(leArg);
+                le =
+                  slots[leVal] === "boolean"
+                    ? leVal
+                    : unarySlot("truthy", leVal, "boolean", node);
+              }
+              const scratch = word64Scratch();
+              emitBigIntToWord64(val, scratch, 0, node);
+              if (bytesHelper !== undefined && slots[offset] === "number") {
+                const bytes = runtimeCall(bytesHelper, [receiver], node);
+                if (bytes === undefined) throw "DataView bytes invariant";
+                const { fastOffset, fastBlock, slowBlock, doneBlock } =
+                  emitDataViewGuard(bytes, offset, 8);
+                current = fastBlock;
+                emit({
+                  kind: "bytes-word64-store",
+                  array: load(bytes, node),
+                  offset: load(fastOffset, node),
+                  scratch: load(scratch, node),
+                  littleEndian: load(le, node),
+                  start: node.start,
+                  end: node.end,
+                });
+                jump(doneBlock.id, node);
+                current = slowBlock;
+                runtimeCall(helper, [receiver, offset, scratch, le], node);
+                if (current !== undefined) jump(doneBlock.id, node);
+                current = doneBlock;
+                return undefined;
+              }
+              return runtimeCall(helper, [receiver, offset, scratch, le], node);
             }
-            const scratch = word64Scratch();
-            emitBigIntToWord64(val, scratch, 0, node);
-            return runtimeCall(helper, [receiver, offset, scratch, le], node);
-          }
-          if (builtin === "data-view-get" || builtin === "data-view-set") {
-            const helper = info(node).callee;
             const sig = helper === undefined ? undefined : signatures[helper];
             if (helper === undefined || sig === undefined)
               throw "DataView method callee invariant";
@@ -14465,6 +14581,119 @@ export function lowerFunction(
               } else {
                 throw "DataView optional parameter invariant";
               }
+            }
+            const el = callInfo.dataViewElement;
+            const offset = callArgs[1];
+            const setVal =
+              builtin === "data-view-set" ? callArgs[2] : undefined;
+            if (
+              el !== undefined &&
+              bytesHelper !== undefined &&
+              offset !== undefined &&
+              slots[offset] === "number" &&
+              (builtin === "data-view-get" ||
+                (setVal !== undefined && slots[setVal] === "number"))
+            ) {
+              const width =
+                el === "i8" || el === "u8"
+                  ? 1
+                  : el === "i16" || el === "u16" || el === "f16"
+                    ? 2
+                    : el === "i32" || el === "u32" || el === "f32"
+                      ? 4
+                      : 8;
+              let le: number;
+              if (width === 1) {
+                le = booleanSlot(true, node);
+              } else {
+                const leArgIdx = builtin === "data-view-get" ? 1 : 2;
+                const rawLe = callArgs[leArgIdx + 1];
+                if (
+                  node.arguments[leArgIdx] === undefined ||
+                  rawLe === undefined
+                ) {
+                  le = booleanSlot(false, node);
+                } else if (slots[rawLe] === "boolean") {
+                  le = rawLe;
+                } else if (slots[rawLe] === "optional-boolean") {
+                  const leSlot = booleanSlot(false, node);
+                  const presId = nextValue++;
+                  emit({
+                    kind: "boolean-present",
+                    id: presId,
+                    value: load(rawLe, node),
+                    start: node.start,
+                    end: node.end,
+                  });
+                  conditionalStore(
+                    save(presId, "boolean", node),
+                    leSlot,
+                    () => {
+                      const valId = nextValue++;
+                      emit({
+                        kind: "boolean-value",
+                        id: valId,
+                        value: load(rawLe, node),
+                        start: node.start,
+                        end: node.end,
+                      });
+                      return save(valId, "boolean", node);
+                    },
+                    node,
+                  );
+                  le = leSlot;
+                } else {
+                  le = unarySlot("truthy", rawLe, "boolean", node);
+                }
+              }
+              const bytes = runtimeCall(bytesHelper, [receiver], node);
+              if (bytes === undefined) throw "DataView bytes invariant";
+              const { fastOffset, fastBlock, slowBlock, doneBlock } =
+                emitDataViewGuard(bytes, offset, width);
+              if (builtin === "data-view-get") {
+                const resultSlot = slots.length;
+                slots.push("number");
+                current = fastBlock;
+                const loaded = nextValue++;
+                emit({
+                  kind: "bytes-load",
+                  id: loaded,
+                  array: load(bytes, node),
+                  offset: load(fastOffset, node),
+                  element: el,
+                  littleEndian: load(le, node),
+                  start: node.start,
+                  end: node.end,
+                });
+                store(resultSlot, loaded, node);
+                jump(doneBlock.id, node);
+                current = slowBlock;
+                const slowResult = runtimeCall(helper, callArgs, node);
+                if (slowResult === undefined)
+                  throw "DataView get result invariant";
+                store(resultSlot, load(slowResult, node), node);
+                if (current !== undefined) jump(doneBlock.id, node);
+                current = doneBlock;
+                return resultSlot;
+              }
+              if (setVal === undefined) throw "DataView set value invariant";
+              current = fastBlock;
+              emit({
+                kind: "bytes-store",
+                array: load(bytes, node),
+                offset: load(fastOffset, node),
+                value: load(setVal, node),
+                element: el,
+                littleEndian: load(le, node),
+                start: node.start,
+                end: node.end,
+              });
+              jump(doneBlock.id, node);
+              current = slowBlock;
+              runtimeCall(helper, callArgs, node);
+              if (current !== undefined) jump(doneBlock.id, node);
+              current = doneBlock;
+              return undefined;
             }
             return runtimeCall(helper, callArgs, node);
           }

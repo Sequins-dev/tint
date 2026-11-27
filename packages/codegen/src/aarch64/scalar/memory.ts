@@ -448,3 +448,399 @@ export function memoryFiller(): readonly Instruction[] {
   emit({ op: "ret", rn: 30 });
   return asm.finish();
 }
+
+export type BytesElementKind =
+  "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "f16" | "f32" | "f64";
+
+export interface BytesEmitContext {
+  readonly wordKinds: Uint8Array;
+  readonly wordConstants: Uint32Array;
+  readonly jsConvert: boolean;
+  readonly resultOffset: number;
+  readonly internValue: (id: number) => number;
+  readonly emit: (instruction: Instruction) => void;
+  readonly imm: (rd: number, value: number) => void;
+  readonly storedAsInteger: (id: number) => boolean;
+  readonly storedAsWord: (id: number) => boolean;
+  readonly wantsInteger: (id: number) => boolean;
+  readonly booleanConstant: (id: number) => boolean | undefined;
+  readonly intRegister: (id: number, scratch: number) => number;
+  readonly intTarget: (id: number, fallback: number) => number;
+  readonly rawRegister: (id: number, scratch: number) => number;
+  readonly rawValue: (rt: number, id: number) => void;
+  readonly rawLoad: (rt: number, offset: number) => void;
+  readonly rawStore: (rt: number, offset: number) => void;
+  readonly saveRaw: (rt: number, id: number) => void;
+  readonly markInteger: (id: number) => void;
+  readonly materializeInteger: (id: number) => void;
+  readonly wordValue: (id: number) => void;
+  readonly floatLoad: (rt: number, id: number) => void;
+  readonly floatOperand: (id: number, scratch: number) => number;
+  readonly floatTarget: (id: number, fallback: number) => number;
+  readonly floatStore: (rt: number, id: number) => void;
+  readonly getCachedArrayDataVal: () => number;
+  readonly getCachedArrayDataReg: () => number;
+  readonly setCachedArrayData: (reg: number, val: number) => void;
+}
+
+function bytesDataAndOffset(
+  ctx: BytesEmitContext,
+  array: number,
+  offset: number,
+  hoistedBase: number | undefined,
+): { readonly dataReg: number; readonly index: number } {
+  const fact = ctx.internValue(offset);
+  let index = 12;
+  if (ctx.storedAsInteger(offset)) index = ctx.intRegister(offset, 12);
+  else if (ctx.wordKinds[fact] === 3) ctx.imm(12, ctx.wordConstants[fact] ?? 0);
+  else {
+    ctx.floatLoad(0, offset);
+    ctx.emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
+  }
+  let dataReg = 10;
+  if (hoistedBase !== undefined) {
+    dataReg = hoistedBase;
+  } else if (ctx.getCachedArrayDataVal() === array) {
+    dataReg = 15;
+  } else {
+    const arrReg = ctx.rawRegister(array, 10);
+    if (arrReg >= 19) {
+      dataReg = 15;
+      if (ctx.getCachedArrayDataReg() !== arrReg) {
+        ctx.emit({
+          op: "ldr",
+          width: 64,
+          rt: 15,
+          rn: arrReg,
+          offset: nativeArrayDataOffset,
+        });
+        ctx.setCachedArrayData(arrReg, -1);
+      }
+    } else {
+      ctx.emit({
+        op: "ldr",
+        width: 64,
+        rt: 10,
+        rn: arrReg,
+        offset: nativeArrayDataOffset,
+      });
+    }
+  }
+  return { dataReg, index };
+}
+
+function emitSwapOp(
+  ctx: BytesEmitContext,
+  swapOp: "rev16" | "rev32" | "rev",
+  rd: number,
+  rn: number,
+): void {
+  if (swapOp === "rev16") ctx.emit({ op: "rev16", rd, rn });
+  else if (swapOp === "rev32") ctx.emit({ op: "rev32", rd, rn });
+  else ctx.emit({ op: "rev", rd, rn });
+}
+
+function emitByteSwap(
+  ctx: BytesEmitContext,
+  swapOp: "rev16" | "rev32" | "rev",
+  reg: number,
+  littleEndian: number,
+): void {
+  const constLe = ctx.booleanConstant(littleEndian);
+  if (constLe === true) return;
+  if (constLe === false) {
+    emitSwapOp(ctx, swapOp, reg, reg);
+    return;
+  }
+  ctx.rawValue(13, littleEndian);
+  ctx.emit({ op: "cbnz", width: 32, rt: 13, displacement: 8 });
+  emitSwapOp(ctx, swapOp, reg, reg);
+}
+
+export function emitBytesLoad(
+  ctx: BytesEmitContext,
+  op: {
+    readonly id: number;
+    readonly array: number;
+    readonly offset: number;
+    readonly element: BytesElementKind;
+    readonly littleEndian: number;
+  },
+  hoistedBase: number | undefined,
+): void {
+  const { dataReg, index } = bytesDataAndOffset(
+    ctx,
+    op.array,
+    op.offset,
+    hoistedBase,
+  );
+  const el = op.element,
+    constLe = ctx.booleanConstant(op.littleEndian);
+  if (el === "f16" || el === "f32" || el === "f64") {
+    const target = ctx.floatTarget(op.id, 0);
+    const size: 1 | 2 | 3 = el === "f16" ? 1 : el === "f32" ? 2 : 3;
+    if (constLe === true) {
+      ctx.emit({
+        op: "ldr-indexed",
+        size,
+        fp: true,
+        rt: target,
+        rn: dataReg,
+        rm: index,
+        scaled: false,
+      });
+      if (el === "f16") ctx.emit({ op: "fcvt-d-h", rd: target, rn: target });
+      else if (el === "f32")
+        ctx.emit({ op: "fcvt-d-s", rd: target, rn: target });
+    } else {
+      ctx.emit({
+        op: "ldr-indexed",
+        size,
+        fp: false,
+        rt: 11,
+        rn: dataReg,
+        rm: index,
+        scaled: false,
+      });
+      emitByteSwap(
+        ctx,
+        el === "f16" ? "rev16" : el === "f32" ? "rev32" : "rev",
+        11,
+        op.littleEndian,
+      );
+      if (el === "f16") {
+        ctx.emit({ op: "fmov-s-w", rd: target, rn: 11 });
+        ctx.emit({ op: "fcvt-d-h", rd: target, rn: target });
+      } else if (el === "f32") {
+        ctx.emit({ op: "fmov-s-w", rd: target, rn: 11 });
+        ctx.emit({ op: "fcvt-d-s", rd: target, rn: target });
+      } else {
+        ctx.emit({ op: "fmov-d-x", rd: target, rn: 11 });
+      }
+    }
+    ctx.floatStore(target, op.id);
+    return;
+  }
+  const signed = el === "i8" || el === "i16" || el === "i32";
+  const size: 0 | 1 | 2 =
+    el === "i8" || el === "u8" ? 0 : el === "i16" || el === "u16" ? 1 : 2;
+  const intOut = ctx.wantsInteger(op.id);
+  const dst =
+    intOut && (size === 0 || constLe !== undefined)
+      ? ctx.intTarget(op.id, 11)
+      : 11;
+  if (size === 0 || constLe === true) {
+    ctx.emit({
+      op: "ldr-indexed",
+      size,
+      fp: false,
+      rt: dst,
+      rn: dataReg,
+      rm: index,
+      scaled: false,
+      signed,
+    });
+  } else {
+    ctx.emit({
+      op: "ldr-indexed",
+      size,
+      fp: false,
+      rt: dst,
+      rn: dataReg,
+      rm: index,
+      scaled: false,
+      signed: false,
+    });
+    emitByteSwap(ctx, size === 1 ? "rev16" : "rev32", dst, op.littleEndian);
+    if (signed) {
+      if (size === 1) ctx.emit({ op: "sxth", rd: dst, rn: dst });
+      else ctx.emit({ op: "sxtw", rd: dst, rn: dst });
+    }
+  }
+  if (intOut) {
+    ctx.saveRaw(dst, op.id);
+    ctx.markInteger(op.id);
+  } else {
+    const target = ctx.floatTarget(op.id, 0);
+    if (signed) ctx.emit({ op: "scvtf-d-x", rd: target, rn: dst });
+    else ctx.emit({ op: "ucvtf-d-w", rd: target, rn: dst });
+    ctx.floatStore(target, op.id);
+  }
+}
+
+export function emitBytesStore(
+  ctx: BytesEmitContext,
+  op: {
+    readonly array: number;
+    readonly offset: number;
+    readonly value: number;
+    readonly element: BytesElementKind;
+    readonly littleEndian: number;
+  },
+  hoistedBase: number | undefined,
+): void {
+  const el = op.element,
+    constLe = ctx.booleanConstant(op.littleEndian);
+  const isFloat = el === "f16" || el === "f32" || el === "f64";
+  const storeVal = op.value;
+  ctx.materializeInteger(storeVal);
+  const directWord =
+    !isFloat && (ctx.storedAsInteger(storeVal) || ctx.storedAsWord(storeVal));
+  if (!isFloat && !directWord) {
+    ctx.wordValue(storeVal);
+    ctx.rawStore(9, ctx.resultOffset + 24);
+    if (!ctx.jsConvert) ctx.setCachedArrayData(-1, -1);
+  }
+  const { dataReg, index } = bytesDataAndOffset(
+    ctx,
+    op.array,
+    op.offset,
+    hoistedBase,
+  );
+  if (isFloat) {
+    const size: 1 | 2 | 3 = el === "f16" ? 1 : el === "f32" ? 2 : 3;
+    let fVal = 0;
+    if (ctx.storedAsInteger(storeVal)) ctx.floatLoad(0, storeVal);
+    else fVal = ctx.floatOperand(storeVal, 0);
+    if (el === "f16") {
+      ctx.emit({ op: "fcvt-h-d", rd: 0, rn: fVal });
+      fVal = 0;
+    } else if (el === "f32") {
+      ctx.emit({ op: "fcvt-s-d", rd: 0, rn: fVal });
+      fVal = 0;
+    }
+    if (constLe === true) {
+      ctx.emit({
+        op: "str-indexed",
+        size,
+        fp: true,
+        rt: fVal,
+        rn: dataReg,
+        rm: index,
+        scaled: false,
+      });
+    } else {
+      if (el === "f64") ctx.emit({ op: "fmov-x-d", rd: 11, rn: fVal });
+      else ctx.emit({ op: "fmov-w-s", rd: 11, rn: fVal });
+      emitByteSwap(
+        ctx,
+        el === "f16" ? "rev16" : el === "f32" ? "rev32" : "rev",
+        11,
+        op.littleEndian,
+      );
+      ctx.emit({
+        op: "str-indexed",
+        size,
+        fp: false,
+        rt: 11,
+        rn: dataReg,
+        rm: index,
+        scaled: false,
+      });
+    }
+    return;
+  }
+  const size: 0 | 1 | 2 =
+    el === "i8" || el === "u8" ? 0 : el === "i16" || el === "u16" ? 1 : 2;
+  let word = 11;
+  if (directWord)
+    word = ctx.storedAsInteger(storeVal)
+      ? ctx.intRegister(storeVal, 11)
+      : ctx.rawRegister(storeVal, 11);
+  else ctx.rawLoad(11, ctx.resultOffset + 24);
+  if (size !== 0 && constLe !== true) {
+    const swapOp = size === 1 ? "rev16" : "rev32";
+    if (constLe === false) {
+      emitSwapOp(ctx, swapOp, 11, word);
+      word = 11;
+    } else {
+      if (word !== 11)
+        ctx.emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: word });
+      emitByteSwap(ctx, swapOp, 11, op.littleEndian);
+      word = 11;
+    }
+  }
+  ctx.emit({
+    op: "str-indexed",
+    size,
+    fp: false,
+    rt: word,
+    rn: dataReg,
+    rm: index,
+    scaled: false,
+  });
+}
+
+export function emitBytesWord64Load(
+  ctx: BytesEmitContext,
+  op: {
+    readonly array: number;
+    readonly offset: number;
+    readonly scratch: number;
+    readonly littleEndian: number;
+  },
+  hoistedBase: number | undefined,
+): void {
+  const { dataReg, index } = bytesDataAndOffset(
+    ctx,
+    op.array,
+    op.offset,
+    hoistedBase,
+  );
+  ctx.emit({
+    op: "ldr-indexed",
+    size: 3,
+    fp: false,
+    rt: 11,
+    rn: dataReg,
+    rm: index,
+    scaled: false,
+  });
+  emitByteSwap(ctx, "rev", 11, op.littleEndian);
+  ctx.rawValue(12, op.scratch);
+  ctx.emit({
+    op: "ldr",
+    width: 64,
+    rt: 12,
+    rn: 12,
+    offset: nativeArrayDataOffset,
+  });
+  ctx.emit({ op: "str", width: 64, rt: 11, rn: 12, offset: 0 });
+}
+
+export function emitBytesWord64Store(
+  ctx: BytesEmitContext,
+  op: {
+    readonly array: number;
+    readonly offset: number;
+    readonly scratch: number;
+    readonly littleEndian: number;
+  },
+  hoistedBase: number | undefined,
+): void {
+  const { dataReg, index } = bytesDataAndOffset(
+    ctx,
+    op.array,
+    op.offset,
+    hoistedBase,
+  );
+  ctx.rawValue(11, op.scratch);
+  ctx.emit({
+    op: "ldr",
+    width: 64,
+    rt: 11,
+    rn: 11,
+    offset: nativeArrayDataOffset,
+  });
+  ctx.emit({ op: "ldr", width: 64, rt: 11, rn: 11, offset: 0 });
+  emitByteSwap(ctx, "rev", 11, op.littleEndian);
+  ctx.emit({
+    op: "str-indexed",
+    size: 3,
+    fp: false,
+    rt: 11,
+    rn: dataReg,
+    rm: index,
+    scaled: false,
+  });
+}

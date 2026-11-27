@@ -1536,6 +1536,25 @@ export function verify(
               equal(use(op.to), "number");
               break;
             }
+            case "bytes-load":
+              equal(use(op.array), "Uint8Array");
+              equal(use(op.offset), "number");
+              equal(use(op.littleEndian), "boolean");
+              define(op.id, "number");
+              break;
+            case "bytes-store":
+              equal(use(op.array), "Uint8Array");
+              equal(use(op.offset), "number");
+              equal(use(op.value), "number");
+              equal(use(op.littleEndian), "boolean");
+              break;
+            case "bytes-word64-load":
+            case "bytes-word64-store":
+              equal(use(op.array), "Uint8Array");
+              equal(use(op.offset), "number");
+              equal(use(op.scratch), "Uint32Array");
+              equal(use(op.littleEndian), "boolean");
+              break;
             case "weak-slot-new":
               equal(use(op.key), "general");
               equal(use(op.value), "general");

@@ -599,6 +599,10 @@ function functionFlows(
           case "array-word64-write":
           case "array-word64-fill":
           case "array-atomic-word64":
+          case "bytes-load":
+          case "bytes-store":
+          case "bytes-word64-load":
+          case "bytes-word64-store":
           case "reference-vector-new":
           case "reference-vector-length":
           case "reference-vector-is":
