@@ -454,6 +454,9 @@ export type GeneralProgram =
         /** Record bindings of generated runtime modules (record view
          * slots), and those runtime modules. */
         readonly recordBindings?: readonly NativeRecordBinding[];
+        readonly hostBindings?: readonly NativeHostBinding[];
+        readonly weakBindings?: readonly NativeWeakBinding[];
+        readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
         readonly runtimes?: readonly RuntimeSource[];
       };
     }
@@ -1812,12 +1815,10 @@ function composeTypedWorkers<T>(
     addNativeArrayDetach(runtimes, hostBindings);
   }
   const recordBindings = (request.recordBindings ?? []).slice();
+  const weakBindings = (request.weakBindings ?? []).slice();
+  const foreignMemoryBindings = (request.foreignMemoryBindings ?? []).slice();
   for (const runtime of [...lowering.runtimes, ...(program.runtimes ?? [])])
-    if (
-      runtime !== undefined &&
-      !runtimes.some((existing) => existing.module === runtime.module)
-    )
-      runtimes.push(runtime);
+    if (runtime !== undefined) mergeRuntimeSource(runtimes, runtime);
   for (const binding of [
     ...lowering.recordBindings,
     ...(program.recordBindings ?? []),
@@ -1830,6 +1831,39 @@ function composeTypedWorkers<T>(
       )
     )
       recordBindings.push(binding);
+  for (const binding of program.hostBindings ?? [])
+    if (
+      binding !== undefined &&
+      !hostBindings.some(
+        (existing) =>
+          existing !== undefined &&
+          existing.module === binding.module &&
+          existing.name === binding.name,
+      )
+    )
+      hostBindings.push(binding);
+  for (const binding of program.weakBindings ?? [])
+    if (
+      binding !== undefined &&
+      !weakBindings.some(
+        (existing) =>
+          existing !== undefined &&
+          existing.module === binding.module &&
+          existing.name === binding.name,
+      )
+    )
+      weakBindings.push(binding);
+  for (const binding of program.foreignMemoryBindings ?? [])
+    if (
+      binding !== undefined &&
+      !foreignMemoryBindings.some(
+        (existing) =>
+          existing !== undefined &&
+          existing.module === binding.module &&
+          existing.name === binding.name,
+      )
+    )
+      foreignMemoryBindings.push(binding);
   return compile({
     ...request,
     modules,
@@ -1843,9 +1877,40 @@ function composeTypedWorkers<T>(
       ? {}
       : { workerEvaluation: program.workerEvaluation }),
     hostBindings,
+    weakBindings,
+    foreignMemoryBindings,
     recordBindings,
     runtimes,
   });
+}
+
+function mergeRuntimeSource(
+  runtimes: RuntimeSource[],
+  runtime: RuntimeSource,
+): void {
+  const index = runtimes.findIndex(
+    (existing) => existing !== undefined && existing.module === runtime.module,
+  );
+  if (index < 0) {
+    runtimes.push(runtime);
+    return;
+  }
+  const existing = runtimes[index];
+  if (existing === undefined) return;
+  const first = existing.retainedExports,
+    second = runtime.retainedExports;
+  if (first === undefined) return;
+  if (second === undefined) {
+    runtimes[index] = {
+      module: existing.module,
+      namespace: existing.namespace,
+    };
+    return;
+  }
+  const merged = first.slice();
+  for (const name of second)
+    if (name !== undefined && !merged.includes(name)) merged.push(name);
+  runtimes[index] = { ...existing, retainedExports: merged };
 }
 
 type GeneralCompilation<T> =
@@ -2069,15 +2134,65 @@ function compileGeneralProgram<T>(
     const programBindings = usesRealm
         ? recordBindings.slice()
         : (request.recordBindings ?? []).slice(),
-      programRuntimes = usesRealm ? runtimes.slice() : request.runtimes.slice();
+      programRuntimes = usesRealm ? runtimes.slice() : request.runtimes.slice(),
+      programHostBindings = (request.hostBindings ?? []).slice(),
+      programWeakBindings = (request.weakBindings ?? []).slice(),
+      programForeignMemoryBindings = (
+        request.foreignMemoryBindings ?? []
+      ).slice();
     for (const binding of lowered.value.recordBindings ?? [])
-      if (binding !== undefined) programBindings.push(binding);
+      if (
+        binding !== undefined &&
+        !programBindings.some(
+          (existing) =>
+            existing !== undefined &&
+            existing.module === binding.module &&
+            existing.name === binding.name,
+        )
+      )
+        programBindings.push(binding);
+    for (const binding of lowered.value.hostBindings ?? [])
+      if (
+        binding !== undefined &&
+        !programHostBindings.some(
+          (existing) =>
+            existing !== undefined &&
+            existing.module === binding.module &&
+            existing.name === binding.name,
+        )
+      )
+        programHostBindings.push(binding);
+    for (const binding of lowered.value.weakBindings ?? [])
+      if (
+        binding !== undefined &&
+        !programWeakBindings.some(
+          (existing) =>
+            existing !== undefined &&
+            existing.module === binding.module &&
+            existing.name === binding.name,
+        )
+      )
+        programWeakBindings.push(binding);
+    for (const binding of lowered.value.foreignMemoryBindings ?? [])
+      if (
+        binding !== undefined &&
+        !programForeignMemoryBindings.some(
+          (existing) =>
+            existing !== undefined &&
+            existing.module === binding.module &&
+            existing.name === binding.name,
+        )
+      )
+        programForeignMemoryBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
-      if (runtime !== undefined) programRuntimes.push(runtime);
+      if (runtime !== undefined) mergeRuntimeSource(programRuntimes, runtime);
     const compiled = compile(
       {
         ...request,
         recordBindings: programBindings,
+        hostBindings: programHostBindings,
+        weakBindings: programWeakBindings,
+        foreignMemoryBindings: programForeignMemoryBindings,
         runtimes: programRuntimes,
         modules,
         moduleLoader: replay,

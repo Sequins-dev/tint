@@ -395,9 +395,18 @@ export function sharedFixtureImage(
 
 type GeneralLowering = ReturnType<typeof createGeneralLowering>;
 let generalLowering: GeneralLowering | undefined;
+let generalLoweringTimeZone: string | undefined;
 let nodeGeneralLowering: GeneralLowering | undefined;
+let nodeGeneralLoweringTimeZone: string | undefined;
 const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
+const sharedBlocksModule = "packages/native-runtime/src/shared-blocks.ts";
 const nodeIsolateStackBytes = 16777216;
+function nativeTimeZonePath(): string {
+  const requested = process.env.TZ;
+  const name = requested?.startsWith(":") ? requested.slice(1) : requested;
+  if (!name) return "/etc/localtime";
+  return name.startsWith("/") ? name : "/usr/share/zoneinfo/" + name;
+}
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
  * TINT_GENERAL_FALLBACK=0 disables retries while retaining the worker image
@@ -415,12 +424,17 @@ export function workspaceGeneralLowering(
 ): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0" && workerImage === undefined)
     return undefined;
+  const timeZonePath = nativeTimeZonePath();
   const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
+  const cachedTimeZone = nodeEventLoop
+    ? nodeGeneralLoweringTimeZone
+    : generalLoweringTimeZone;
   if (
     !functionFallback &&
     workerImage === undefined &&
     nodeCrypto === undefined &&
-    cached !== undefined
+    cached !== undefined &&
+    cachedTimeZone === timeZonePath
   )
     return cached;
   const lowering = createGeneralLowering({
@@ -436,6 +450,20 @@ export function workspaceGeneralLowering(
     output: {
       module: "packages/native-runtime/src/intrinsics/fs.ts",
       name: "write",
+    },
+    weakStorage: "packages/native-runtime/src/intrinsics/weak.ts",
+    sharedMemory: {
+      sharedBlocks: sharedBlocksModule,
+      sharedAtomics: "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+      memory: "packages/native-runtime/src/intrinsics/memory.ts",
+      adoptExternal: "packages/native-runtime/src/ffi/primitives.ts",
+    },
+    dateTime: {
+      clock: eventLoopClockModule,
+      fs: "packages/platform/src/" + fixtureTarget.os + "/fs.ts",
+      files: "packages/platform/src/files/service.ts",
+      tzif: "packages/foundation/src/chrono/tzif/index.ts",
+      timeZonePath,
     },
     ...(nodeCrypto === undefined
       ? {}
@@ -462,7 +490,7 @@ export function workspaceGeneralLowering(
       : {
           nodeWorkers: {
             host: "packages/native-runtime/src/node/worker-host.ts",
-            shared: "packages/native-runtime/src/shared-blocks.ts",
+            shared: sharedBlocksModule,
             lifecycle: "packages/native-runtime/src/worker-lifecycle.ts",
             threadHost: "packages/platform/src/workers.ts",
             typedBindings:
@@ -478,8 +506,13 @@ export function workspaceGeneralLowering(
     workerImage === undefined &&
     nodeCrypto === undefined
   ) {
-    if (nodeEventLoop) nodeGeneralLowering = lowering;
-    else generalLowering = lowering;
+    if (nodeEventLoop) {
+      nodeGeneralLowering = lowering;
+      nodeGeneralLoweringTimeZone = timeZonePath;
+    } else {
+      generalLowering = lowering;
+      generalLoweringTimeZone = timeZonePath;
+    }
   }
   return lowering;
 }
@@ -877,9 +910,24 @@ function buildHostedFixture(
     (fixtureTarget.arch === "x86_64"
       ? "initializeGenerationalRuntime"
       : "initializeRuntime");
-  // The tint:ffi runtime's capabilities when the program loads it.
+  // The tint:ffi runtime's capabilities when the program loads it. Exclude the
+  // optional general SharedArrayBuffer helper when no worker or explicit
+  // fixture dependency requests it, so non-SAB programs stay free of FFI
+  // runtime retention; SAB programs bind adoptExternal selectively via
+  // GeneralProgram.foreignMemoryBindings.
+  const ffiRoots =
+    workerImage !== undefined ||
+    allFixtureDependencies.includes(sharedBlocksModule) ||
+    additionalRuntimes.some((runtime) => runtime.module === sharedBlocksModule)
+      ? undefined
+      : roots.filter((id) => id !== sharedBlocksModule);
   const ffi = foreignRuntimeBindings(
-    new Set(moduleLoader?.ids ?? modules.map((module) => module.id)),
+    ffiRoots === undefined
+      ? new Set(moduleLoader?.ids ?? modules.map((module) => module.id))
+      : new Set([
+          ...workspaceModuleLoader(ffiRoots, foreign.snapshot).ids,
+          ...localModuleIds,
+        ]),
   );
   const nativeServices = [
     ...(options.nativeServices ?? []),

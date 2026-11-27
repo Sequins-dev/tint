@@ -17,6 +17,8 @@ export const intrinsicInstallers: readonly string[] = [
   "installAsyncDisposableStackIntrinsics",
   "installArrayIntrinsics",
   "installArrayBufferIntrinsics",
+  "installSharedArrayBufferIntrinsics",
+  "installAtomicsIntrinsics",
   "installDataViewIntrinsics",
   "installTypedArrayIntrinsics",
   "installObjectIntrinsics",
@@ -68,7 +70,11 @@ const byGlobal: ReadonlyMap<string, readonly string[]> = new Map<
     ["installAsyncDisposableStackIntrinsics", "installPromiseIntrinsics"],
   ],
   ["ArrayBuffer", ["installArrayBufferIntrinsics"]],
-  ["SharedArrayBuffer", ["installArrayBufferIntrinsics"]],
+  [
+    "SharedArrayBuffer",
+    ["installArrayBufferIntrinsics", "installSharedArrayBufferIntrinsics"],
+  ],
+  ["Atomics", ["installAtomicsIntrinsics"]],
   ["DataView", ["installArrayBufferIntrinsics", "installDataViewIntrinsics"]],
 ]);
 const typedArrayGlobals = new Set([
@@ -121,9 +127,11 @@ export function generalIntrinsics(
 export function createGeneralIntrinsicPlan(): {
   readonly addModule: (module: Module) => void;
   readonly installers: () => readonly string[];
+  readonly usesDate: () => boolean;
 } {
   const needed = new Set<string>(core);
   let everything = false;
+  let dateUsed = false;
   function add(name: string): void {
     needed.add(name);
   }
@@ -154,6 +162,7 @@ export function createGeneralIntrinsicPlan(): {
       const name = reference.global;
       if (name === undefined) continue;
       if (dynamicGlobals.has(name)) everything = true;
+      if (name === "Date") dateUsed = true;
       const installers = byGlobal.get(name);
       if (installers !== undefined) addAll(installers);
       if (typedArrayGlobals.has(name)) {
@@ -228,5 +237,8 @@ export function createGeneralIntrinsicPlan(): {
         result.push(installer);
     return result;
   }
-  return { addModule, installers };
+  function usesDate(): boolean {
+    return everything || dateUsed;
+  }
+  return { addModule, installers, usesDate };
 }

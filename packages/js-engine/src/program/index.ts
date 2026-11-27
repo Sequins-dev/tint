@@ -8,7 +8,11 @@ import {
   type GeneralLowering,
   type GeneralProgram,
   type GeneralProgramRequest,
+  type NativeForeignMemoryBinding,
+  type NativeHostBinding,
   type NativeRecordBinding,
+  type NativeWeakBinding,
+  type RuntimeSource,
   type BoundaryRecord,
   type BoundaryRecordUse,
   type WorkerEvaluation,
@@ -72,6 +76,28 @@ export interface GeneralLoweringOptions {
     readonly module: string;
     readonly jobs: string;
     readonly commonJS?: boolean;
+  };
+  /** Optional host weak-slot module (`createWeakSlot`, `weakSlotKey`,
+   * `weakSlotValue`, `setWeakSlotValue`, `clearWeakSlot`), wired only when
+   * `WeakMap`/`WeakSet` (or dynamic global access) is referenced. */
+  readonly weakStorage?: string;
+  /** Optional native shared-block backing for `SharedArrayBuffer` in
+   * single-isolate general programs (wired only when `SharedArrayBuffer` or
+   * dynamic global access is referenced and `nodeWorkers` is absent). */
+  readonly sharedMemory?: {
+    readonly sharedBlocks: string;
+    readonly sharedAtomics: string;
+    readonly memory: string;
+    readonly adoptExternal: string;
+  };
+  /** Optional host wall-clock and local time-zone modules for `Date`
+   * (wired only when `Date` or dynamic global access is referenced). */
+  readonly dateTime?: {
+    readonly clock: string;
+    readonly fs: string;
+    readonly files: string;
+    readonly tzif: string;
+    readonly timeZonePath: string;
   };
 }
 export interface GeneralNodeWorkers {
@@ -143,6 +169,17 @@ export function createGeneralLowering(
     if (eventLoop === undefined) throw "node:crypto requires a Node event loop";
     runtimeModules.push(crypto.module, crypto.jobs);
   }
+  if (options.weakStorage !== undefined)
+    runtimeModules.push(options.weakStorage);
+  if (options.sharedMemory !== undefined)
+    runtimeModules.push(options.sharedMemory.sharedBlocks);
+  if (options.dateTime !== undefined)
+    runtimeModules.push(
+      options.dateTime.clock,
+      options.dateTime.fs,
+      options.dateTime.files,
+      options.dateTime.tzif,
+    );
   const syntheticModules: string[] = [];
   if (workers !== undefined) syntheticModules.push("node:worker_threads");
   if (crypto !== undefined)
@@ -873,6 +910,14 @@ function lowerGeneralProgram(
         ";\n";
     }
   }
+  const useWeakStorage =
+    options.weakStorage !== undefined &&
+    selectedInstallers.includes("installWeakCollectionIntrinsics");
+  const useSharedMemory =
+    workers === undefined &&
+    options.sharedMemory !== undefined &&
+    selectedInstallers.includes("installSharedArrayBufferIntrinsics");
+  const useDateTime = options.dateTime !== undefined && installers.usesDate();
   const text = generalHostSource(
     imports,
     creates,
@@ -898,6 +943,9 @@ function lowerGeneralProgram(
           buffer: builtinStart + 1,
           commonJS: crypto.commonJS === true,
         },
+    useWeakStorage,
+    useSharedMemory,
+    useDateTime ? options.dateTime?.timeZonePath : undefined,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -931,6 +979,127 @@ function lowerGeneralProgram(
     hostDependencies.set("worker-lifecycle", workers.lifecycle);
     hostDependencies.set("worker-shared", workers.shared);
   }
+  const capabilityRuntimes: RuntimeSource[] = [];
+  const capabilityHostBindings: NativeHostBinding[] = [];
+  const capabilityWeakBindings: NativeWeakBinding[] = [];
+  const capabilityForeignMemoryBindings: NativeForeignMemoryBinding[] = [];
+  if (useWeakStorage && options.weakStorage !== undefined) {
+    const weak = options.weakStorage;
+    hostDependencies.set("weak-storage", weak);
+    capabilityRuntimes.push({
+      module: weak,
+      namespace: "general-weak-storage",
+      retainedExports: [
+        "createWeakSlot",
+        "weakSlotKey",
+        "weakSlotValue",
+        "setWeakSlotValue",
+        "clearWeakSlot",
+      ],
+    });
+    capabilityWeakBindings.push(
+      { module: weak, name: "createWeakSlot", operation: "new" },
+      { module: weak, name: "weakSlotKey", operation: "key" },
+      { module: weak, name: "weakSlotValue", operation: "value" },
+      { module: weak, name: "setWeakSlotValue", operation: "set-value" },
+      { module: weak, name: "clearWeakSlot", operation: "clear" },
+    );
+  }
+  if (useSharedMemory && options.sharedMemory !== undefined) {
+    const sm = options.sharedMemory;
+    hostDependencies.set("shared-blocks", sm.sharedBlocks);
+    capabilityRuntimes.push(
+      {
+        module: sm.sharedAtomics,
+        namespace: "general-shared-atomics",
+        retainedExports: [
+          "readSharedUnsigned",
+          "writeSharedUnsigned",
+          "readSharedWord64",
+          "writeSharedWord64",
+          "compareExchangeSharedWord64",
+          "compareExchangeSharedUnsigned",
+        ],
+      },
+      {
+        module: sm.memory,
+        namespace: "general-shared-memory",
+        retainedExports: ["mapMemory", "unmapMemory"],
+      },
+      {
+        module: sm.adoptExternal,
+        namespace: "general-shared-adopt",
+        retainedExports: ["adoptExternal"],
+      },
+    );
+    capabilityHostBindings.push(
+      {
+        module: sm.sharedAtomics,
+        name: "readSharedUnsigned",
+        operation: "shared-read-unsigned",
+      },
+      {
+        module: sm.sharedAtomics,
+        name: "writeSharedUnsigned",
+        operation: "shared-write-unsigned",
+      },
+      {
+        module: sm.sharedAtomics,
+        name: "readSharedWord64",
+        operation: "shared-read-word64",
+      },
+      {
+        module: sm.sharedAtomics,
+        name: "writeSharedWord64",
+        operation: "shared-write-word64",
+      },
+      {
+        module: sm.sharedAtomics,
+        name: "compareExchangeSharedWord64",
+        operation: "shared-compare-exchange-word64",
+      },
+      {
+        module: sm.sharedAtomics,
+        name: "compareExchangeSharedUnsigned",
+        operation: "shared-compare-exchange-unsigned",
+      },
+      { module: sm.memory, name: "mapMemory", operation: "memory-map" },
+      { module: sm.memory, name: "unmapMemory", operation: "memory-unmap" },
+    );
+    capabilityForeignMemoryBindings.push({
+      module: sm.adoptExternal,
+      name: "adoptExternal",
+      operation: "adopt",
+    });
+  }
+  if (useDateTime && options.dateTime !== undefined) {
+    const dt = options.dateTime;
+    hostDependencies.set("date-clock", dt.clock);
+    hostDependencies.set("date-fs", dt.fs);
+    hostDependencies.set("date-files", dt.files);
+    hostDependencies.set("date-tzif", dt.tzif);
+    capabilityRuntimes.push({
+      module: dt.clock,
+      namespace: "general-wall-clock",
+      retainedExports: ["wallClockMilliseconds"],
+    });
+    capabilityHostBindings.push({
+      module: dt.clock,
+      name: "wallClockMilliseconds",
+      operation: "wall-clock-time",
+    });
+  }
+  const capabilityBindings = {
+    ...(capabilityHostBindings.length === 0
+      ? {}
+      : { hostBindings: capabilityHostBindings }),
+    ...(capabilityWeakBindings.length === 0
+      ? {}
+      : { weakBindings: capabilityWeakBindings }),
+    ...(capabilityForeignMemoryBindings.length === 0
+      ? {}
+      : { foreignMemoryBindings: capabilityForeignMemoryBindings }),
+  };
   if (typedBindings !== undefined)
     hostDependencies.set("typed-worker-bindings", typedBindings);
   if (typedEntry !== undefined)
@@ -983,6 +1152,10 @@ function lowerGeneralProgram(
         modules: generated,
         entry: hostId,
         ...units,
+        ...capabilityBindings,
+        ...(capabilityRuntimes.length === 0
+          ? {}
+          : { runtimes: capabilityRuntimes }),
         ...(typedBindings === undefined ||
         typedGraph === undefined ||
         typedEntry === undefined ||
@@ -1057,10 +1230,12 @@ function lowerGeneralProgram(
       modules: generated,
       entry: hostId,
       ...units,
+      ...capabilityBindings,
       recordBindings: viewSlots,
       ...(workerModules === undefined ? {} : { workerModules }),
       runtimes: [
         { module: viewsId, namespace: "general-record-views", retainedExports },
+        ...capabilityRuntimes,
       ],
     },
   };
@@ -1464,6 +1639,9 @@ function generalHostSource(
     readonly buffer: number;
     readonly commonJS: boolean;
   },
+  useWeakStorage = false,
+  useSharedMemory = false,
+  dateTimeZonePath?: string,
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
@@ -1492,6 +1670,38 @@ function generalHostSource(
       installs += " installProgramTypedArrayIntrinsics(core);\n";
       programInstallers.push("installProgramTypedArrayIntrinsics");
       continue;
+    }
+    if (installer === "installSharedArrayBufferIntrinsics") {
+      if (workers !== undefined || !useSharedMemory) continue;
+      programInstallers.push(
+        "installSharedArrayBufferIntrinsics",
+        "rejectUnsupportedExecution",
+      );
+      installs +=
+        ' {const shared=createNativeSharedBlockService(nativeSharedMemoryHost(),{pageSize:16384,maxBlocks:65536,maxReservedBytes:Number.MAX_SAFE_INTEGER},nativeSharedAtomicMemoryHost());if(!shared.ok)rejectUnsupportedExecution(realm);else installSharedArrayBufferIntrinsics(object,realm,hooks,shared.value);}\n core.installed.add("installSharedArrayBufferIntrinsics");\n';
+      continue;
+    }
+    if (installer === "installAtomicsIntrinsics") {
+      if (workers !== undefined) continue;
+      programInstallers.push("installAtomicsIntrinsics");
+      installs +=
+        ' installAtomicsIntrinsics(object,realm,hooks,{lockFree1:true,lockFree2:true,lockFree8:true});\n core.installed.add("installAtomicsIntrinsics");\n';
+      continue;
+    }
+    if (installer === "installWeakCollectionIntrinsics" && useWeakStorage) {
+      installs +=
+        " if(realm.agent.weakStorage===undefined)realm.agent.weakStorage={create:(key:unknown,value:unknown,ephemeron:boolean):unknown=>createWeakSlot(key,value,ephemeron),key:(cell:unknown):unknown=>weakSlotKey(cell),value:(cell:unknown):unknown=>weakSlotValue(cell),setValue:(cell:unknown,value:unknown):void=>{setWeakSlotValue(cell,value);},clear:(cell:unknown):void=>{clearWeakSlot(cell);}};\n";
+    }
+    if (
+      installer === "installPrimitiveIntrinsics" &&
+      dateTimeZonePath !== undefined
+    ) {
+      programInstallers.push("installDateTimeZone");
+      installs +=
+        " realm.wallClockMilliseconds=():number=>wallClockMilliseconds();\n" +
+        " {const tzBytes=readFile<number>(createNativeFileHost()," +
+        JSON.stringify(dateTimeZonePath) +
+        ",1048576);if(tzBytes.ok){const tzZone=createTzifZone(tzBytes.value);if(tzZone.ok)installDateTimeZone(realm,tzZone.value);}}\n";
     }
     programInstallers.push(installer);
     installs +=
@@ -1724,11 +1934,21 @@ export function $tintCallUnit(${signature}):number {
  ${nodeEventLoop ? 'events.loop.run("callback");' : "drainScriptJobs(realm.agent,report);"}
  return failed?1:code;
 `;
+  const capabilityImports =
+    (useWeakStorage
+      ? 'import {createWeakSlot,weakSlotKey,weakSlotValue,setWeakSlotValue,clearWeakSlot} from "weak-storage";\n'
+      : "") +
+    (useSharedMemory
+      ? 'import {createNativeSharedBlockService,nativeSharedMemoryHost,nativeSharedAtomicMemoryHost} from "shared-blocks";\n'
+      : "") +
+    (dateTimeZonePath !== undefined
+      ? 'import {wallClockMilliseconds} from "date-clock";\nimport {createNativeFileHost} from "date-fs";\nimport {readFile} from "date-files";\nimport {createTzifZone} from "date-tzif";\n'
+      : "");
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
 import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${programInstallers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
-${eventImports}
+${capabilityImports}${eventImports}
 ${workerImports}
 ${nodeCryptoImport}
 ${write}
