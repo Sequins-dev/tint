@@ -3,6 +3,7 @@ import {
   scalarByteLength,
   isNativeTypedArray,
   instructionResult,
+  naturalLoops,
   visitInstructionOperands,
   visitTerminatorOperands,
   type ScalarType,
@@ -118,15 +119,34 @@ export function leafStorageRegisters(
   // Counting, then one search per FP and integer home.
   if (words * 28 > maxWork) return undefined;
   const counts = new Uint32Array(words),
+    loopSlotWord = new Uint8Array(words),
     registers = new Uint8Array(words);
   let work = words * 28,
     integerSafe = true;
-  function touch(offset: number, bytes: number): void {
+  const blockCount = fn.blocks.length,
+    depth = new Uint8Array(blockCount),
+    forest = naturalLoops(fn, Math.max(1, maxWork - work));
+  if (forest !== undefined) {
+    work += forest.visited;
+    if (work > maxWork) return undefined;
+    for (const loop of forest.loops) {
+      if (loop === undefined) throw "leaf loop invariant";
+      for (const block of loop.body)
+        if (block < blockCount && (depth[block] ?? 0) < 255)
+          depth[block] = (depth[block] ?? 0) + 1;
+    }
+  }
+  let currentWeight = 1,
+    inHotLoop = false;
+  function touch(offset: number, bytes: number, isSlot: boolean): void {
     for (let byte = 0; byte < bytes; byte += 8) {
       work++;
       const index = (offset + byte) / 8;
-      if (offset >= firstByte && index < words)
-        counts[index] = (counts[index] ?? 0) + 1;
+      if (offset >= firstByte && index < words) {
+        const next = (counts[index] ?? 0) + currentWeight;
+        counts[index] = next > 0x7fffffff ? 0x7fffffff : next;
+        if (isSlot && inHotLoop) loopSlotWord[index] = 1;
+      }
     }
   }
   function slot(id: number): void {
@@ -134,11 +154,11 @@ export function leafStorageRegisters(
       type = fn.slots[id];
     if (offset === undefined || type === undefined)
       throw "leaf storage slot invariant";
-    touch(offset, scalarByteLength(type));
+    touch(offset, scalarByteLength(type), true);
   }
   function operand(id: number): void {
     const storage = value(id);
-    touch(storage.offset, scalarByteLength(storage.type));
+    touch(storage.offset, scalarByteLength(storage.type), false);
   }
   for (const id of fn.parameters) {
     if (id === undefined) throw "leaf parameter invariant";
@@ -146,6 +166,14 @@ export function leafStorageRegisters(
   }
   for (const block of fn.blocks) {
     if (block === undefined) throw "leaf storage block invariant";
+    const term = block.terminator;
+    const cold =
+      term.kind === "trap" ||
+      term.kind === "throw" ||
+      term.kind === "throw-literal";
+    const blockDepth = cold ? 0 : (depth[block.id] ?? 0);
+    currentWeight = 1 << Math.min(blockDepth * 2, 16);
+    inHotLoop = blockDepth > 0;
     for (const op of block.instructions) {
       if (op === undefined) throw "leaf storage instruction invariant";
       if (++work > maxWork) return undefined;
@@ -160,7 +188,6 @@ export function leafStorageRegisters(
       if (result !== undefined) operand(result);
       if (op.kind === "load" || op.kind === "store") slot(op.slot);
     }
-    const term = block.terminator;
     visitTerminatorOperands(term, operand);
     if (
       term.kind === "cell" ||
@@ -175,12 +202,22 @@ export function leafStorageRegisters(
   if (integral.length > 0)
     for (const register of integerHomes) {
       if (register === undefined) throw "leaf integer home invariant";
+      // Loop-carried integer slots take GP homes before block-local SSA temps
+      // so loop indices never spill into FP registers (avoiding GP<->FP fmov).
       let best = -1,
+        bestIsLoopSlot = 0,
         score = 2;
       for (let word = firstByte / 8; word < words; word++) {
+        if (integral[word] !== 1 || registers[word] !== 0) continue;
         const count = counts[word] ?? 0;
-        if (integral[word] === 1 && registers[word] === 0 && count > score) {
+        if (count <= 2) continue;
+        const isLoopSlot = loopSlotWord[word] ?? 0;
+        if (
+          isLoopSlot > bestIsLoopSlot ||
+          (isLoopSlot === bestIsLoopSlot && count > score)
+        ) {
           best = word;
+          bestIsLoopSlot = isLoopSlot;
           score = count;
         }
       }

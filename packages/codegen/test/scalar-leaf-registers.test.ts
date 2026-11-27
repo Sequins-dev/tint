@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FunctionIR } from "@tint/ir/scalar";
-import { canUseLeafRegisters } from "../src/aarch64/scalar/leaf-registers.ts";
+import {
+  canUseLeafRegisters,
+  leafStorageRegisters,
+} from "../src/aarch64/scalar/leaf-registers.ts";
 const s = { start: 0, end: 0 };
 const fn: FunctionIR = {
   id: 0,
@@ -276,5 +279,199 @@ test("general numeric equality reads payloads from their planned leaf storage", 
     words.filter((word) => (word & 0xffc003e0) >>> 0 === 0xfd4003e0).length,
     0,
     "numeric equality must not read stale stack payloads after promotion",
+  );
+});
+
+test("leafStorageRegisters prioritizes loop-carried integer slots over SSA temps and prologue params", () => {
+  // 10 straight-line integer params (slots 0..9, each loaded 3x in entry block)
+  // plus 1 loop-carried integer slot (slot 10, accessed once per read/write in loop)
+  // plus 12 loop-local integer SSA temps (ids 100..111, each used 3x in loop).
+  const slots: ("number" | "boolean")[] = [];
+  const params: number[] = [];
+  const entryOps: FunctionIR["blocks"][number]["instructions"][number][] = [];
+  for (let i = 0; i < 10; i++) {
+    slots.push("number");
+    params.push(i);
+    entryOps.push({ kind: "load", id: i * 3, slot: i, ...s });
+    entryOps.push({ kind: "load", id: i * 3 + 1, slot: i, ...s });
+    entryOps.push({ kind: "load", id: i * 3 + 2, slot: i, ...s });
+  }
+  slots.push("number"); // slot 10: loop-carried index
+  const loopOps: FunctionIR["blocks"][number]["instructions"][number][] = [
+    { kind: "load", id: 50, slot: 10, ...s },
+  ];
+  let prev = 50;
+  for (let t = 0; t < 12; t++) {
+    const id = 100 + t;
+    loopOps.push({
+      kind: "binary",
+      id,
+      operator: "+",
+      left: prev,
+      right: prev,
+      ...s,
+    });
+    prev = id;
+  }
+  loopOps.push({ kind: "store", slot: 10, value: prev, ...s });
+  loopOps.push({ kind: "constant", id: 200, value: true, ...s });
+  const loopFn: FunctionIR = {
+    id: 0,
+    name: "loop_priority",
+    exported: true,
+    slots,
+    parameters: params,
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: entryOps,
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: loopOps,
+        terminator: {
+          kind: "branch",
+          condition: 200,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 201, slot: 10, ...s }],
+        terminator: { kind: "return", value: 201, ...s },
+      },
+    ],
+  };
+  const slotOffsets = slots.map((_, i) => i * 8);
+  const valueBase = slots.length * 8;
+  const value = (id: number) => ({
+    offset: valueBase + id * 8,
+    type: "number" as const,
+  });
+  const lastByte = valueBase + 205 * 8;
+  const integerWords = new Uint8Array(lastByte / 8);
+  integerWords.fill(1);
+  const plan = leafStorageRegisters(
+    loopFn,
+    slotOffsets,
+    value,
+    0,
+    lastByte,
+    1000000,
+    undefined,
+    integerWords,
+  );
+  assert.ok(plan);
+  // Slot 10 (loop-carried integer slot) MUST receive a GP home (>= 32), not FP.
+  assert.ok(
+    (plan.registers[10] ?? 0) >= 32,
+    `expected loop-carried slot 10 in GP home, got ${plan.registers[10]}`,
+  );
+});
+
+test("spilled float constants and float slot stores stay in the FP domain (no GP<->FP STLF)", async () => {
+  const { emitModule } = await import("@tint/codegen/aarch64/scalar");
+  const { encode } = await import("@tint/codegen/aarch64/isa");
+  // Non-leaf function with 8 hot float params filling d8..d15 and a call
+  // between constant and store so the constant and slots 8..9 are stack-backed.
+  const slots: "number"[] = Array.from({ length: 10 }, () => "number");
+  const params = Array.from({ length: 8 }, (_, i) => i);
+  const ops: FunctionIR["blocks"][number]["instructions"][number][] = [];
+  for (let i = 0; i < 8; i++) {
+    ops.push({ kind: "load", id: 10 + i * 2, slot: i, ...s });
+    ops.push({ kind: "load", id: 11 + i * 2, slot: i, ...s });
+    ops.push({
+      kind: "binary",
+      id: 30 + i,
+      operator: "+",
+      left: 10 + i * 2,
+      right: 11 + i * 2,
+      ...s,
+    });
+    ops.push({ kind: "store", slot: i, value: 30 + i, ...s });
+  }
+  ops.push(
+    { kind: "constant", id: 0, value: 1.5, ...s },
+    { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+    { kind: "store", slot: 8, value: 0, ...s },
+    { kind: "load", id: 1, slot: 8, ...s },
+    { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+    { kind: "store", slot: 9, value: 1, ...s },
+    { kind: "load", id: 2, slot: 9, ...s },
+    { kind: "binary", id: 3, operator: "+", left: 1, right: 2, ...s },
+  );
+  let acc = 3;
+  for (let i = 0; i < 8; i++) {
+    ops.push({ kind: "load", id: 50 + i, slot: i, ...s });
+    ops.push({
+      kind: "binary",
+      id: 60 + i,
+      operator: "+",
+      left: acc,
+      right: 50 + i,
+      ...s,
+    });
+    acc = 60 + i;
+  }
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "spilled_fp",
+        exported: true,
+        slots,
+        parameters: params,
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: ops,
+            terminator: { kind: "return", value: acc, ...s },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "nop",
+        exported: false,
+        slots: [],
+        parameters: [],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [],
+            terminator: { kind: "return", value: undefined, ...s },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fmovImm = encode({ op: "fmov-d-imm", rd: 0, imm8: 0x78 }); // 1.5
+  assert.ok(fmovImm.ok);
+  const body = emitted.value.functions[0]!;
+  const view = new DataView(emitted.value.code.buffer);
+  const words = Array.from({ length: body.byteLength / 4 }, (_, index) =>
+    view.getUint32(body.offset + index * 4, true),
+  );
+  assert.ok(
+    words.includes(fmovImm.value),
+    "spilled float64 immediate 1.5 should materialize via fmov d0, #imm instead of GP mov+str",
+  );
+  assert.ok(
+    words.some((word) => (word & 0xffc003ff) >>> 0 === 0xfd0003e0),
+    "spilled float constant/store should emit str d0, [sp, #off]",
+  );
+  assert.ok(
+    words.some((word) => (word & 0xffc003ff) >>> 0 === 0xfd4003e0),
+    "spilled float store should load source via ldr d0, [sp, #off]",
   );
 });
