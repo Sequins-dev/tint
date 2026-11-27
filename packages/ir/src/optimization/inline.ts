@@ -613,6 +613,15 @@ export function inlineSmallFunctions(
       }
     }
     const expansion = original ? cost : cost + overhead;
+    // Large effectful string-returning helpers (such as numberToString /
+    // string-index-cache) bloat cold caller blocks and starve referenceAllowance
+    // for hot-loop accessors; keep only pure/leaf string-returning helpers
+    // (e.g. cursor key accessors and list reads) eligible.
+    if (
+      (fn.returnType === "string" || fn.returnType === "optional-string") &&
+      effectful[fn.id] === 1
+    )
+      good = false;
     eligible[fn.id] =
       good && expansion <= limit && returns > 0 ? (original ? 1 : 2) : 0;
     if (eligible[fn.id] !== 0) {
