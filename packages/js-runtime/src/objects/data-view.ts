@@ -16,13 +16,11 @@ import {
   type BufferStorage,
   type BufferStorageWindow,
 } from "./buffer-storage.ts";
-import type { Endian } from "@tint/foundation/binary/bytes";
 import {
-  numericElementWidth,
-  readNumericElement,
-  writeNumericElement,
-  type NumericElementKind,
-} from "./numeric-element.ts";
+  readFloat,
+  writeFloat,
+  type Endian,
+} from "@tint/foundation/binary/bytes";
 import { bufferIndex } from "./array-buffer.ts";
 import {
   createRuntimeError,
@@ -99,6 +97,7 @@ function viewWindow(
 function installViewAccessors<Value>(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
+  sharedScratch: Uint8Array,
   convert: (value: unknown) => Value,
   name: string,
   width: number,
@@ -136,16 +135,15 @@ function installViewAccessors<Value>(
         if (shared === undefined) throw "DATA_VIEW_SHARED_WINDOW_INVARIANT";
         // DataView permits unaligned, bytewise shared accesses. Capture only the
         // requested payload; a witness is not a multi-byte atomic snapshot.
-        const bytes = new Uint8Array(width);
         for (let index = 0; index < width; index++) {
           const result = readSharedByte(
             shared,
             data.byteOffset + offset + index,
           );
           if (!result.ok) throw "DATA_VIEW_SHARED_READ_INVARIANT";
-          bytes[index] = result.value;
+          sharedScratch[index] = result.value;
         }
-        return read(bytes, 0, endian);
+        return read(sharedScratch, 0, endian);
       },
       hooks,
     ),
@@ -176,10 +174,9 @@ function installViewAccessors<Value>(
         else {
           const shared = window.shared;
           if (shared === undefined) throw "DATA_VIEW_SHARED_WINDOW_INVARIANT";
-          const bytes = new Uint8Array(width);
-          write(bytes, 0, converted, endian);
+          write(sharedScratch, 0, converted, endian);
           for (let index = 0; index < width; index++) {
-            const byte = bytes[index];
+            const byte = sharedScratch[index];
             if (byte === undefined) throw "DATA_VIEW_SHARED_BYTE_INVARIANT";
             if (
               writeSharedUnsigned(
@@ -290,23 +287,99 @@ export function installDataViewIntrinsics(
     if (converted.error !== "none") throw createRuntimeError(realm, "type");
     return converted.value;
   }
-  function numeric(kind: NumericElementKind): void {
+  const scratchBuffer = new ArrayBuffer(8);
+  const scratchU8 = new Uint8Array(scratchBuffer);
+  const scratchU32 = new Uint32Array(scratchBuffer);
+  const probe = new Uint16Array(scratchBuffer);
+  probe[0] = 0x0102;
+  const hostLittleEndian = (scratchU8[0] ?? 0) === 0x02;
+  const scratchF64 = new Float64Array(scratchBuffer);
+  const sharedScratch = new Uint8Array(8);
+  function decodeFloat32Bits(bits: number): number {
+    const sign = (bits >>> 31) & 1;
+    const exp = (bits >>> 23) & 0xff;
+    const frac = bits & 0x7fffff;
+    if (exp === 0xff) return frac === 0 ? (sign !== 0 ? -1 / 0 : 1 / 0) : 0 / 0;
+    if (exp === 0) {
+      if (frac === 0) return sign !== 0 ? -0 : 0;
+      const value = frac * 1.401298464324817e-45;
+      return sign !== 0 ? -value : value;
+    }
+    const hi = ((sign << 31) | ((exp + 896) << 20) | (frac >>> 3)) >>> 0;
+    const lo = ((frac & 7) << 29) >>> 0;
+    if (hostLittleEndian) {
+      scratchU32[0] = lo;
+      scratchU32[1] = hi;
+    } else {
+      scratchU32[0] = hi;
+      scratchU32[1] = lo;
+    }
+    return scratchF64[0] ?? 0;
+  }
+  function encodeFloat32Bits(value: number): number {
+    scratchF64[0] = value;
+    const lo = (hostLittleEndian ? scratchU32[0] : scratchU32[1]) ?? 0;
+    const hi = (hostLittleEndian ? scratchU32[1] : scratchU32[0]) ?? 0;
+    const sign = hi & 0x80000000;
+    const exp64 = (hi >>> 20) & 0x7ff;
+    const fracHi = hi & 0xfffff;
+    if (exp64 === 0x7ff)
+      return (fracHi !== 0 || lo !== 0 ? 0x7fc00000 : sign | 0x7f800000) >>> 0;
+    let exp32 = exp64 - 896;
+    if (exp32 >= 255) return (sign | 0x7f800000) >>> 0;
+    if (exp32 > 0) {
+      let mantissa = (fracHi << 3) | (lo >>> 29);
+      const round = (lo >>> 28) & 1;
+      const sticky = (lo & 0x0fffffff) !== 0 ? 1 : 0;
+      if (round !== 0 && (sticky !== 0 || (mantissa & 1) !== 0)) {
+        mantissa++;
+        if (mantissa === 0x800000) {
+          mantissa = 0;
+          exp32++;
+          if (exp32 >= 255) return (sign | 0x7f800000) >>> 0;
+        }
+      }
+      return (sign | (exp32 << 23) | mantissa) >>> 0;
+    }
+    if (exp32 < -24) return sign >>> 0;
+    if (exp32 === -24) return (sign | (fracHi !== 0 || lo !== 0 ? 1 : 0)) >>> 0;
+    const sig24 = 0x800000 | (fracHi << 3) | (lo >>> 29);
+    const rem29 = lo & 0x1fffffff;
+    const shift = 1 - exp32;
+    let mantissa = sig24 >>> shift;
+    const half = 1 << (shift - 1);
+    const low = sig24 & ((1 << shift) - 1);
+    if (low > half || (low === half && (rem29 !== 0 || (mantissa & 1) !== 0)))
+      mantissa++;
+    return (sign | mantissa) >>> 0;
+  }
+  function installNumeric(
+    name: string,
+    width: number,
+    read: (bytes: Uint8Array, offset: number, endian: Endian) => number,
+    write: (
+      bytes: Uint8Array,
+      offset: number,
+      value: number,
+      endian: Endian,
+    ) => void,
+  ): void {
     installViewAccessors<number>(
       realm,
       hooks,
+      sharedScratch,
       toNumber,
-      kind,
-      numericElementWidth(kind),
-      (bytes, offset, endian): number =>
-        readNumericElement(bytes, offset, kind, endian),
-      (bytes, offset, value, endian): void =>
-        writeNumericElement(bytes, offset, kind, value, endian),
+      name,
+      width,
+      read,
+      write,
     );
   }
   function bigint(name: string, signed: boolean): void {
     installViewAccessors<BigIntValue>(
       realm,
       hooks,
+      sharedScratch,
       (value): BigIntValue => coerceBigInt(value, false, realm, hooks),
       name,
       8,
@@ -317,13 +390,205 @@ export function installDataViewIntrinsics(
   }
   bigint("BigInt64", true);
   bigint("BigUint64", false);
-  numeric("Int8");
-  numeric("Uint8");
-  numeric("Int16");
-  numeric("Uint16");
-  numeric("Int32");
-  numeric("Uint32");
-  numeric("Float16");
-  numeric("Float32");
-  numeric("Float64");
+  installNumeric(
+    "Int8",
+    1,
+    (bytes, offset, _endian): number => ((bytes[offset] ?? 0) << 24) >> 24,
+    (bytes, offset, value, _endian): void => {
+      bytes[offset] = value & 0xff;
+    },
+  );
+  installNumeric(
+    "Uint8",
+    1,
+    (bytes, offset, _endian): number => bytes[offset] ?? 0,
+    (bytes, offset, value, _endian): void => {
+      bytes[offset] = value & 0xff;
+    },
+  );
+  installNumeric(
+    "Int16",
+    2,
+    (bytes, offset, endian): number => {
+      const b0 = bytes[offset] ?? 0,
+        b1 = bytes[offset + 1] ?? 0;
+      const bits = endian === "little" ? b0 | (b1 << 8) : (b0 << 8) | b1;
+      return (bits << 16) >> 16;
+    },
+    (bytes, offset, value, endian): void => {
+      const bits = value & 0xffff;
+      if (endian === "little") {
+        bytes[offset] = bits & 0xff;
+        bytes[offset + 1] = (bits >>> 8) & 0xff;
+      } else {
+        bytes[offset] = (bits >>> 8) & 0xff;
+        bytes[offset + 1] = bits & 0xff;
+      }
+    },
+  );
+  installNumeric(
+    "Uint16",
+    2,
+    (bytes, offset, endian): number => {
+      const b0 = bytes[offset] ?? 0,
+        b1 = bytes[offset + 1] ?? 0;
+      return endian === "little" ? b0 | (b1 << 8) : (b0 << 8) | b1;
+    },
+    (bytes, offset, value, endian): void => {
+      const bits = value & 0xffff;
+      if (endian === "little") {
+        bytes[offset] = bits & 0xff;
+        bytes[offset + 1] = (bits >>> 8) & 0xff;
+      } else {
+        bytes[offset] = (bits >>> 8) & 0xff;
+        bytes[offset + 1] = bits & 0xff;
+      }
+    },
+  );
+  installNumeric(
+    "Int32",
+    4,
+    (bytes, offset, endian): number => {
+      const b0 = bytes[offset] ?? 0,
+        b1 = bytes[offset + 1] ?? 0,
+        b2 = bytes[offset + 2] ?? 0,
+        b3 = bytes[offset + 3] ?? 0;
+      return endian === "little"
+        ? b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+        : (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+    },
+    (bytes, offset, value, endian): void => {
+      const bits = value >>> 0;
+      if (endian === "little") {
+        bytes[offset] = bits & 0xff;
+        bytes[offset + 1] = (bits >>> 8) & 0xff;
+        bytes[offset + 2] = (bits >>> 16) & 0xff;
+        bytes[offset + 3] = (bits >>> 24) & 0xff;
+      } else {
+        bytes[offset] = (bits >>> 24) & 0xff;
+        bytes[offset + 1] = (bits >>> 16) & 0xff;
+        bytes[offset + 2] = (bits >>> 8) & 0xff;
+        bytes[offset + 3] = bits & 0xff;
+      }
+    },
+  );
+  installNumeric(
+    "Uint32",
+    4,
+    (bytes, offset, endian): number => {
+      const b0 = bytes[offset] ?? 0,
+        b1 = bytes[offset + 1] ?? 0,
+        b2 = bytes[offset + 2] ?? 0,
+        b3 = bytes[offset + 3] ?? 0;
+      return (
+        (endian === "little"
+          ? b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+          : (b0 << 24) | (b1 << 16) | (b2 << 8) | b3) >>> 0
+      );
+    },
+    (bytes, offset, value, endian): void => {
+      const bits = value >>> 0;
+      if (endian === "little") {
+        bytes[offset] = bits & 0xff;
+        bytes[offset + 1] = (bits >>> 8) & 0xff;
+        bytes[offset + 2] = (bits >>> 16) & 0xff;
+        bytes[offset + 3] = (bits >>> 24) & 0xff;
+      } else {
+        bytes[offset] = (bits >>> 24) & 0xff;
+        bytes[offset + 1] = (bits >>> 16) & 0xff;
+        bytes[offset + 2] = (bits >>> 8) & 0xff;
+        bytes[offset + 3] = bits & 0xff;
+      }
+    },
+  );
+  installNumeric(
+    "Float16",
+    2,
+    (bytes, offset, endian): number => {
+      const result = readFloat(bytes, offset, 2, endian);
+      if (!result.ok) throw "DATA_VIEW_FLOAT16_READ_INVARIANT";
+      return result.value;
+    },
+    (bytes, offset, value, endian): void => {
+      if (!writeFloat(bytes, offset, 2, value, endian).ok)
+        throw "DATA_VIEW_FLOAT16_WRITE_INVARIANT";
+    },
+  );
+  installNumeric(
+    "Float32",
+    4,
+    (bytes, offset, endian): number => {
+      const b0 = bytes[offset] ?? 0,
+        b1 = bytes[offset + 1] ?? 0,
+        b2 = bytes[offset + 2] ?? 0,
+        b3 = bytes[offset + 3] ?? 0;
+      const bits =
+        (endian === "little"
+          ? b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+          : (b0 << 24) | (b1 << 16) | (b2 << 8) | b3) >>> 0;
+      return decodeFloat32Bits(bits);
+    },
+    (bytes, offset, value, endian): void => {
+      const bits = encodeFloat32Bits(value);
+      if (endian === "little") {
+        bytes[offset] = bits & 0xff;
+        bytes[offset + 1] = (bits >>> 8) & 0xff;
+        bytes[offset + 2] = (bits >>> 16) & 0xff;
+        bytes[offset + 3] = (bits >>> 24) & 0xff;
+      } else {
+        bytes[offset] = (bits >>> 24) & 0xff;
+        bytes[offset + 1] = (bits >>> 16) & 0xff;
+        bytes[offset + 2] = (bits >>> 8) & 0xff;
+        bytes[offset + 3] = bits & 0xff;
+      }
+    },
+  );
+  installNumeric(
+    "Float64",
+    8,
+    (bytes, offset, endian): number => {
+      if ((endian === "little") === hostLittleEndian) {
+        scratchU8[0] = bytes[offset] ?? 0;
+        scratchU8[1] = bytes[offset + 1] ?? 0;
+        scratchU8[2] = bytes[offset + 2] ?? 0;
+        scratchU8[3] = bytes[offset + 3] ?? 0;
+        scratchU8[4] = bytes[offset + 4] ?? 0;
+        scratchU8[5] = bytes[offset + 5] ?? 0;
+        scratchU8[6] = bytes[offset + 6] ?? 0;
+        scratchU8[7] = bytes[offset + 7] ?? 0;
+      } else {
+        scratchU8[7] = bytes[offset] ?? 0;
+        scratchU8[6] = bytes[offset + 1] ?? 0;
+        scratchU8[5] = bytes[offset + 2] ?? 0;
+        scratchU8[4] = bytes[offset + 3] ?? 0;
+        scratchU8[3] = bytes[offset + 4] ?? 0;
+        scratchU8[2] = bytes[offset + 5] ?? 0;
+        scratchU8[1] = bytes[offset + 6] ?? 0;
+        scratchU8[0] = bytes[offset + 7] ?? 0;
+      }
+      return scratchF64[0] ?? 0;
+    },
+    (bytes, offset, value, endian): void => {
+      scratchF64[0] = value;
+      if ((endian === "little") === hostLittleEndian) {
+        bytes[offset] = scratchU8[0] ?? 0;
+        bytes[offset + 1] = scratchU8[1] ?? 0;
+        bytes[offset + 2] = scratchU8[2] ?? 0;
+        bytes[offset + 3] = scratchU8[3] ?? 0;
+        bytes[offset + 4] = scratchU8[4] ?? 0;
+        bytes[offset + 5] = scratchU8[5] ?? 0;
+        bytes[offset + 6] = scratchU8[6] ?? 0;
+        bytes[offset + 7] = scratchU8[7] ?? 0;
+      } else {
+        bytes[offset] = scratchU8[7] ?? 0;
+        bytes[offset + 1] = scratchU8[6] ?? 0;
+        bytes[offset + 2] = scratchU8[5] ?? 0;
+        bytes[offset + 3] = scratchU8[4] ?? 0;
+        bytes[offset + 4] = scratchU8[3] ?? 0;
+        bytes[offset + 5] = scratchU8[2] ?? 0;
+        bytes[offset + 6] = scratchU8[1] ?? 0;
+        bytes[offset + 7] = scratchU8[0] ?? 0;
+      }
+    },
+  );
 }

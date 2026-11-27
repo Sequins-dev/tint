@@ -1154,6 +1154,8 @@ function prepareCollectionPass(
       "data-view:dataViewGetFloat64",
       "data-view:dataViewGetBigInt64",
       "data-view:dataViewGetBigUint64",
+      "data-view:dataViewReadWord64",
+      "data-view:dataViewWriteWord64",
       "data-view:dataViewSetInt8",
       "data-view:dataViewSetUint8",
       "data-view:dataViewSetInt16",
