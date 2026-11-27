@@ -1565,7 +1565,9 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
   const eventCleanup = nodeEventLoop
     ? `} catch(error){report(error);return 1;} finally{${
         crypto === undefined
-          ? closeWorkers + "events.close();"
+          ? workers === undefined
+            ? "events.close();"
+            : "try{" + closeWorkers + "}finally{events.close();}"
           : "try{cryptoJobs?.close();}finally{try{closeDigestContexts();}finally{try{" +
             closeWorkers +
             "}finally{events.close();}}}"
@@ -1611,8 +1613,10 @@ function runIsolate(moduleId:number,threadId:number,control:NativeWorkerTurnCont
     workers === undefined
       ? ""
       : `
-  if(control!==undefined){
-   if(control.stopRequested())return;
+  const activeControl=control;
+  if(activeControl!==undefined){
+   if(activeControl.stopRequested())return;
+   if(activeControl.heapExhausted()||typeof error==="function")throw error;
    const exception=viewObjectValue(error,object);
    if(exception!==undefined){
     const message=getProperty<ScriptPropertyKey,unknown>(exception,"message",exception,hooks);

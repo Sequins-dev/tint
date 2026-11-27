@@ -121,6 +121,9 @@ export function createNativeWorkerBacking(
       resizable: storage.resizable,
     };
   }
+  const releaseMapping = (mapping: LocalMapping, address: number): void => {
+    unmap(address, mapping.mappedBytes);
+  };
   return {
     allocate,
     inspect,
@@ -172,9 +175,7 @@ export function createNativeWorkerBacking(
     close: (): void => {
       if (closed) return;
       closed = true;
-      mappings.forEach((mapping, address): void =>
-        unmap(address, mapping.mappedBytes),
-      );
+      mappings.forEach(releaseMapping);
       mappings.clear();
       liveBytes = 0;
       liveMappings = 0;

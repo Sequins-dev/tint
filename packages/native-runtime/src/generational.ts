@@ -1,8 +1,11 @@
 import {
   nativeAllocatorShutdownRequest,
   nativeGenerationalStateWords,
+  nativeIdentityWorkerRecordOffset,
   nativeNumberStringCacheWord,
   nativeStringSplitCacheWord,
+  nativeWorkerFailureCodeOffset,
+  nativeWorkerFailureOutOfMemory,
 } from "@tint/abi/host";
 import {
   createSharedStringHolds,
@@ -18,12 +21,15 @@ import {
 import { createParallelEvacuator } from "./tracing/parallel.ts";
 import { cgroupProcessorLimit } from "./processors.ts";
 import {
+  currentContextDomain,
   currentRootHead,
   configureGenerationalAllocation,
   engineRangeError,
+  loadAcquireMemoryWord,
   memoryPageBytes,
   processorCount,
   releaseMemory,
+  storeReleaseMemoryWord,
 } from "./intrinsics/memory.ts";
 /** Stop-the-world nursery promotion into a packed old prefix; majors compact
  * the whole space in place (mark-compact). Collections run only when the
@@ -44,6 +50,24 @@ import {
  * and a Script throwing any string or object is unaffected. Created when the
  * module initializes, so throwing it never allocates. */
 const managedHeapExhausted: () => void = (): void => {};
+function throwHeapExhausted(): never {
+  const domain = currentContextDomain();
+  if (domain > 0) {
+    const workerRecord = loadAcquireMemoryWord(
+      domain,
+      nativeIdentityWorkerRecordOffset + 8,
+      nativeIdentityWorkerRecordOffset,
+    );
+    if (workerRecord > 0)
+      storeReleaseMemoryWord(
+        workerRecord,
+        nativeWorkerFailureCodeOffset + 8,
+        nativeWorkerFailureCodeOffset,
+        nativeWorkerFailureOutOfMemory,
+      );
+  }
+  throw managedHeapExhausted;
+}
 /** Most collector threads, including the mutator's own (tuned on six
  * performance cores; 8 or 9 measured no faster on a 9-CPU Linux VM, see
  * docs/native-performance-analysis.md); fewer when the process may use fewer
@@ -368,7 +392,7 @@ export function initializeGenerationalRuntime(
       return 0;
     }
     if (bytes === 0 && !collecting) {
-      if (!collect(true)) throw managedHeapExhausted;
+      if (!collect(true)) throwHeapExhausted();
       return 0;
     }
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
@@ -381,9 +405,9 @@ export function initializeGenerationalRuntime(
     const size = Math.ceil(bytes / 8) * 8;
     if (size >= largeObjectBytes) {
       if (size > oldCapacity - (allocation[3] ?? 0) && !collect(true))
-        throw managedHeapExhausted;
+        throwHeapExhausted();
       const top = allocation[3] ?? 0;
-      if (size > oldCapacity - top) throw managedHeapExhausted;
+      if (size > oldCapacity - top) throwHeapExhausted();
       const unit = top / 8,
         word = unit >>> 5;
       bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
@@ -394,9 +418,9 @@ export function initializeGenerationalRuntime(
       return top;
     }
     if (size > youngCapacity - (allocation[0] ?? 0) && !collect(false))
-      throw managedHeapExhausted;
+      throwHeapExhausted();
     const top = allocation[0] ?? 0;
-    if (size > youngCapacity - top) throw managedHeapExhausted;
+    if (size > youngCapacity - top) throwHeapExhausted();
     // Nursery objects keep no start bits (see recordObjectStarts).
     allocation[0] = top + size;
     return oldCapacity + top;

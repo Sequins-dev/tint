@@ -250,6 +250,7 @@ export function createStringIndex<V>(): KeyIndex<string, V> {
  * without releasing numeric scratch capacity; no managed keys are retained. */
 export interface NumberIndex {
   readonly intern: (key: number) => number;
+  readonly lookup: (key: number) => number;
   readonly clear: () => void;
 }
 /** Mixes a nonnegative safe integer: the low and high uint32 halves (the
@@ -332,6 +333,23 @@ export function createNumberIndex(): NumberIndex {
       slots[position] = id;
       stamps[position] = epoch;
       return id;
+    },
+    lookup(key) {
+      if (!Number.isSafeInteger(key) || key < 0) return -1;
+      const hash = numberHash(key),
+        epoch = state.epoch,
+        keys = state.keys,
+        slots = state.slots,
+        stamps = state.stamps,
+        mask = slots.length - 1;
+      let position = hash & mask;
+      while (stamps[position] === epoch) {
+        const id = slots[position];
+        if (id === undefined) throw "number index slot invariant";
+        if (keys[id] === key) return id;
+        position = (position + 1) & mask;
+      }
+      return -1;
     },
     clear() {
       state.count = 0;

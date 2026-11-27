@@ -144,13 +144,22 @@ export function createReactorEventLoop(
     },
   });
 
+  const closeReadWatch = (watch: ReadWatch, _token: number): void => {
+    watch.reference.close();
+  };
   return {
     loop,
     wakeTarget: (): number => activeReactor().control,
     pollWhileIdle: (source): (() => void) => {
       idleSources.push(source);
       return (): void => {
-        idleSources = idleSources.filter((other) => other !== source);
+        const index = idleSources.indexOf(source);
+        if (index < 0) return;
+        for (let i = index + 1; i < idleSources.length; i++) {
+          const next = idleSources[i];
+          if (next !== undefined) idleSources[i - 1] = next;
+        }
+        idleSources.pop();
       };
     },
     watchReadable: (fd, callback): EventLoopHandle => {
@@ -197,7 +206,7 @@ export function createReactorEventLoop(
       const active = reactor;
       if (active !== undefined) active.close();
       reactor = undefined;
-      reads.forEach((watch, _token): void => watch.reference.close());
+      reads.forEach(closeReadWatch);
       reads.clear();
       descriptors.clear();
     },

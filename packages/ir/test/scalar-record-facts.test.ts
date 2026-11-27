@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { FunctionIR, ModuleIR } from "../src/scalar/model.ts";
+import type { FunctionIR, Instruction, ModuleIR } from "../src/scalar/model.ts";
 import {
   verify,
   verifierRecordBudget,
@@ -1242,4 +1242,137 @@ test("Test262 and JIT host operations preserve descriptors", () => {
       operation,
     );
   }
+});
+
+test("dataflowRecordGuards preserves exact guards, presence, and layout pairs with sparse high SSA IDs", () => {
+  const base = 5_000_000;
+  const fn: FunctionIR = {
+    id: 0,
+    name: "sparseIds",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: base + 1, slot: 0, ...span },
+          {
+            kind: "record-has",
+            id: base + 2,
+            object: base + 1,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: base + 2,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: base + 10, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: base + 10,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 3,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: base + 20, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: base + 20,
+          record: 1,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 3,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: base + 30, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: base + 30,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 5,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "trap", ...span },
+      },
+      {
+        id: 5,
+        instructions: [
+          { kind: "load", id: base + 40, slot: 0, ...span },
+          {
+            kind: "record-has",
+            id: base + 41,
+            object: base + 40,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+          { kind: "load", id: base + 42, slot: 0, ...span },
+        ],
+        terminator: {
+          kind: "record",
+          object: base + 42,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 6,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 6,
+        instructions: [{ kind: "load", id: base + 50, slot: 2, ...span }],
+        terminator: { kind: "return", value: base + 50, ...span },
+      },
+    ],
+  };
+  const presence = new Set<Instruction>();
+  const pairs = new Map<number, readonly number[]>();
+  const proven = dataflowRecordGuards(
+    fn,
+    100000,
+    true,
+    undefined,
+    presence,
+    pairs,
+  );
+  assert.ok(proven !== undefined);
+  assert.equal(proven[3], 0);
+  assert.deepEqual(pairs.get(3), [0, 1]);
+  assert.equal(proven[5], 1);
+  assert.equal(presence.size, 1);
+  assert.equal(presence.has(fn.blocks[5]!.instructions[1]!), true);
 });

@@ -227,7 +227,8 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
             engine: imageEngine,
             waiters: waitEvents,
             parentPort: request.parentPort,
-            onError: (message: string): void => request.onError(message),
+            onError: (message: string, code?: string): void =>
+              request.onError(message, code),
             onExit: (status: number): void => request.onExit(status),
             onUnclaimedParentPort: request.onUnclaimedParentPort,
           };
@@ -286,15 +287,21 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     exports: threads,
     checkpointAtomicWaits,
     close: (): void => {
-      const pending = realm.agent.pendingAtomicWaits;
-      for (const wait of pending) {
-        wait.waiting.expire(wait.ticket);
-        wait.waiting.take(wait.ticket);
+      try {
+        const pending = realm.agent.pendingAtomicWaits;
+        for (let i = 0; i < pending.length; i++) {
+          const wait = pending[i];
+          if (wait !== undefined) {
+            wait.waiting.expire(wait.ticket);
+            wait.waiting.take(wait.ticket);
+          }
+        }
+        pending.length = 0;
+        reference?.close();
+        timeout?.close();
+      } finally {
+        threads.close();
       }
-      pending.length = 0;
-      reference?.close();
-      timeout?.close();
-      threads.close();
     },
   };
 }

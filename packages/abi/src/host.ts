@@ -83,6 +83,12 @@ export const nativeWorkerWaitTicketOffset = 104;
  * default. The image retains its reserved virtual address layout. */
 export const nativeWorkerStackBytesOffset = 136;
 export const nativeWorkerHeapBytesOffset = 144;
+/** Worker lifecycle record word recording an allocation-free native failure
+ * reason (written directly by the generational allocator on heap exhaustion so
+ * unwind and teardown recognize OOM without allocating or relying on cross-unit
+ * closure descriptors). */
+export const nativeWorkerFailureCodeOffset = 192;
+export const nativeWorkerFailureOutOfMemory = 1;
 export const nativeWorkerStopRequested = 1;
 export const nativeWorkerStopObserved = 2;
 /** A tag-zero general payload reserved for managed worker interruption. */

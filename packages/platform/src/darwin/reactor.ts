@@ -5,11 +5,6 @@ import {
   kevent64$wait,
   kqueue,
 } from "tint:c/darwin-reactor";
-import {
-  readUnsigned,
-  writeSigned,
-  writeUnsigned,
-} from "@tint/foundation/binary/bytes";
 import { close } from "@tint/native-runtime/intrinsics/fs";
 import type { NativeReactor } from "@tint/native-runtime/event-loop";
 
@@ -28,6 +23,52 @@ const TRIGGER = 0x01000000;
 const IMMEDIATE = 1;
 const INTERRUPTED = -4;
 
+function writeU32LE(
+  buffer: Uint8Array,
+  offset: number,
+  value: number,
+): boolean {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) return false;
+  buffer[offset] = value & 0xff;
+  buffer[offset + 1] = (value >>> 8) & 0xff;
+  buffer[offset + 2] = (value >>> 16) & 0xff;
+  buffer[offset + 3] = (value >>> 24) & 0xff;
+  return true;
+}
+
+function writeU16LE(
+  buffer: Uint8Array,
+  offset: number,
+  value: number,
+): boolean {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffff) return false;
+  buffer[offset] = value & 0xff;
+  buffer[offset + 1] = (value >>> 8) & 0xff;
+  return true;
+}
+
+function writeI16LE(
+  buffer: Uint8Array,
+  offset: number,
+  value: number,
+): boolean {
+  if (!Number.isInteger(value) || value < -32768 || value > 32767) return false;
+  const bits = value & 0xffff;
+  buffer[offset] = bits & 0xff;
+  buffer[offset + 1] = (bits >>> 8) & 0xff;
+  return true;
+}
+
+function readU32LE(buffer: Uint8Array, offset: number): number {
+  return (
+    ((buffer[offset] ?? 0) |
+      ((buffer[offset + 1] ?? 0) << 8) |
+      ((buffer[offset + 2] ?? 0) << 16) |
+      ((buffer[offset + 3] ?? 0) << 24)) >>>
+    0
+  );
+}
+
 function change(
   queue: number,
   event: Uint8Array,
@@ -38,11 +79,11 @@ function change(
   token: number,
 ): void {
   if (
-    !writeUnsigned(event, 0, 4, identifier, "little").ok ||
-    !writeSigned(event, 8, 2, filter, "little").ok ||
-    !writeUnsigned(event, 10, 2, flags, "little").ok ||
-    !writeUnsigned(event, 12, 4, filterFlags, "little").ok ||
-    !writeUnsigned(event, 24, 4, token, "little").ok
+    !writeU32LE(event, 0, identifier) ||
+    !writeI16LE(event, 8, filter) ||
+    !writeU16LE(event, 10, flags) ||
+    !writeU32LE(event, 12, filterFlags) ||
+    !writeU32LE(event, 24, token)
   )
     throw new RangeError("invalid kqueue registration");
   let status: number = INTERRUPTED;
@@ -99,9 +140,8 @@ export function createReactor(): NativeReactor {
       else {
         const ns = Math.ceil(Math.min(timeout, 2147483647) * 1000000);
         if (
-          !writeUnsigned(time, 0, 4, Math.floor(ns / 1000000000), "little")
-            .ok ||
-          !writeUnsigned(time, 8, 4, ns % 1000000000, "little").ok
+          !writeU32LE(time, 0, Math.floor(ns / 1000000000)) ||
+          !writeU32LE(time, 8, ns % 1000000000)
         )
           throw new RangeError("invalid kqueue timeout");
         received = kevent64$poll(queue, 0, 0, events, BATCH, 0, time);
@@ -110,9 +150,7 @@ export function createReactor(): NativeReactor {
       if (received < 0)
         throw new Error("kevent poll failed: " + String(received));
       for (let i = 0; i < received; i++) {
-        const token = readUnsigned(events, i * EVENT_BYTES + 24, 4, "little");
-        if (!token.ok) throw "KQUEUE_EVENT_LAYOUT";
-        publish(token.value);
+        publish(readU32LE(events, i * EVENT_BYTES + 24));
       }
     },
     close: (): void => {
