@@ -646,3 +646,203 @@ test("discarding a result still includes value-returning closures in call effect
   );
   assert.equal(result?.promoted, 0);
 });
+
+test("site-free functions skip per-function rounds while still propagating unknown transitive cell effects", () => {
+  // Build a module where:
+  // - fn 2 is an imported function (unknown cell effects).
+  // - fn 1 (site-free helper) has a tight loop and calls fn 2 (no local
+  //   record-cell terminator, but unknown transitive summary).
+  // - fn 0 (caller) calls fn 1 inside a loop over a record-cell; fn 1's unknown
+  //   transitive summary must still block promotion in fn 0.
+  const base = headerRead("trap", false);
+  const caller = base.functions[0]!;
+  const body = caller.blocks[3]!;
+  const callerBlocks = caller.blocks.slice();
+  callerBlocks[3] = {
+    ...body,
+    instructions: [
+      {
+        kind: "call",
+        id: undefined,
+        target: 1,
+        arguments: [],
+        start: 0,
+        end: 0,
+      },
+      ...body.instructions,
+    ],
+  };
+  const helperBlocks: FunctionIR["blocks"][number][] = [
+    {
+      id: 0,
+      instructions: [
+        { kind: "constant", id: 0, value: 0, start: 0, end: 0 },
+        { kind: "store", slot: 0, value: 0, start: 0, end: 0 },
+      ],
+      terminator: { kind: "jump", target: 1, start: 0, end: 0 },
+    },
+    {
+      id: 1,
+      instructions: [
+        { kind: "load", id: 1, slot: 0, start: 0, end: 0 },
+        { kind: "constant", id: 2, value: 10, start: 0, end: 0 },
+        {
+          kind: "binary",
+          id: 3,
+          operator: "<",
+          left: 1,
+          right: 2,
+          start: 0,
+          end: 0,
+        },
+      ],
+      terminator: {
+        kind: "branch",
+        condition: 3,
+        consequent: 2,
+        alternate: 3,
+        start: 0,
+        end: 0,
+      },
+    },
+    {
+      id: 2,
+      instructions: [
+        {
+          kind: "call",
+          id: undefined,
+          target: 2,
+          arguments: [],
+          start: 0,
+          end: 0,
+        },
+        { kind: "load", id: 4, slot: 0, start: 0, end: 0 },
+        { kind: "constant", id: 5, value: 1, start: 0, end: 0 },
+        {
+          kind: "binary",
+          id: 6,
+          operator: "+",
+          left: 4,
+          right: 5,
+          start: 0,
+          end: 0,
+        },
+        { kind: "store", slot: 0, value: 6, start: 0, end: 0 },
+      ],
+      terminator: { kind: "jump", target: 1, start: 0, end: 0 },
+    },
+    {
+      id: 3,
+      instructions: [],
+      terminator: { kind: "return", value: undefined, start: 0, end: 0 },
+    },
+  ];
+  const helper: FunctionIR = {
+    id: 1,
+    name: "siteFreeUnknown",
+    exported: true,
+    parameters: [],
+    slots: ["number"],
+    returnType: "void",
+    entry: 0,
+    blocks: helperBlocks,
+  };
+  const imported: FunctionIR = {
+    id: 2,
+    name: "ext",
+    import: true,
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "void",
+    entry: 0,
+    blocks: [],
+  };
+  const mod: ModuleIR = {
+    ...base,
+    functions: [{ ...caller, blocks: callerBlocks }, helper, imported],
+  };
+  assert.deepEqual(verify(mod), { ok: true });
+  const remarks: string[] = [];
+  const result = promoteLoopCells(mod, 1000000, (remark) => {
+    remarks.push(remark.message);
+  });
+  assert.ok(result);
+  assert.equal(result.promoted, 0);
+  assert.ok(
+    remarks.some((m) =>
+      m.includes("call to siteFreeUnknown with unknown cell accesses"),
+    ),
+  );
+
+  // A standalone site-free module only pays cellSummaries' instruction sweep
+  // (10 instructions + 1 callee propagation edge = 11 visits), never
+  // promoteRound's naturalLoops + instruction scan.
+  const soloHelper: FunctionIR = {
+    ...helper,
+    id: 0,
+    blocks: helperBlocks.map((b) =>
+      b.id !== 2
+        ? b
+        : {
+            ...b,
+            instructions: b.instructions.map((op) =>
+              op.kind === "call" ? { ...op, target: 1 } : op,
+            ),
+          },
+    ),
+  };
+  const onlySiteFree: ModuleIR = {
+    functions: [soloHelper, { ...imported, id: 1 }],
+  };
+  assert.deepEqual(verify(onlySiteFree), { ok: true });
+  const solo = promoteLoopCells(onlySiteFree, 1000000);
+  assert.ok(solo);
+  assert.equal(solo.promoted, 0);
+  assert.equal(solo.module, onlySiteFree);
+  assert.equal(solo.visited, 11);
+});
+
+test("a function with both an unknown call and a separate local record-cell loop still promotes the cell loop", () => {
+  const base = counter(false);
+  const fn = base.functions[0]!;
+  // Add a call to an imported function before the loop (in block 0, outside
+  // the loop) so fn's own summary becomes unknown (`undefined`), while the
+  // loop itself has no calls.
+  const entry = fn.blocks[0]!;
+  const blocks = fn.blocks.slice();
+  blocks[0] = {
+    ...entry,
+    instructions: [
+      {
+        kind: "call",
+        id: undefined,
+        target: 1,
+        arguments: [],
+        start: 0,
+        end: 0,
+      },
+      ...entry.instructions,
+    ],
+  };
+  const imported: FunctionIR = {
+    id: 1,
+    name: "ext",
+    import: true,
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "void",
+    entry: 0,
+    blocks: [],
+  };
+  const mod: ModuleIR = {
+    ...base,
+    functions: [{ ...fn, blocks }, imported],
+  };
+  assert.deepEqual(verify(mod), { ok: true });
+  const result = promoteLoopCells(mod, 1000000);
+  assert.ok(result);
+  assert.equal(result.promoted, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+});

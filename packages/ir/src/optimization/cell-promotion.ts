@@ -25,19 +25,29 @@ export interface CellPromotion {
 
 /** Cell layouts (record IDs) each function may access through a cell
  * operation, itself or through its callees, or undefined when unknown (host
- * calls, imports, and indirect calls unless `targets` resolves them). With
- * `targets`, one summary per indirect-call class follows the functions':
- * the union of its members'. */
+ * calls, imports, and indirect calls unless `targets` resolves them), plus a
+ * per-function bit recording whether the function itself has any `record-cell`
+ * terminator (independent of its transitive summary). With `targets`, one
+ * summary per indirect-call class follows the functions': the union of its
+ * members'. */
 function cellSummaries(
   module: ModuleIR,
   targets: IndirectCallTargets | undefined,
   budget: number,
-): { summaries: (Set<number> | undefined)[]; visited: number } | undefined {
+):
+  | {
+      summaries: (Set<number> | undefined)[];
+      hasLocalSite: Uint8Array;
+      visited: number;
+    }
+  | undefined {
   const count = module.functions.length,
     summaries: (Set<number> | undefined)[] = [],
+    hasLocalSite = new Uint8Array(count),
     callees: number[][] = [];
   let visited = targets?.visited ?? 0;
-  for (const fn of module.functions) {
+  for (let fnIndex = 0; fnIndex < count; fnIndex++) {
+    const fn = module.functions[fnIndex];
     if (fn === undefined) throw "cell promotion function invariant";
     let own: Set<number> | undefined = new Set<number>();
     const reached: number[] = [];
@@ -45,9 +55,10 @@ function cellSummaries(
     for (const block of fn.blocks) {
       if (block === undefined) throw "cell promotion block invariant";
       const term = block.terminator;
-      if (term.kind === "record-cell" && own !== undefined)
-        own.add(term.record);
-      else if (term.kind === "cell") own = undefined;
+      if (term.kind === "record-cell") {
+        hasLocalSite[fnIndex] = 1;
+        if (own !== undefined) own.add(term.record);
+      } else if (term.kind === "cell") own = undefined;
       for (const op of block.instructions) {
         if (op === undefined) throw "cell promotion instruction invariant";
         if (++visited > budget) return undefined;
@@ -97,7 +108,7 @@ function cellSummaries(
       }
     }
   }
-  return { summaries, visited };
+  return { summaries, hasLocalSite, visited };
 }
 
 /** Scalar promotion of captured variables in loops. A cell (a `record-cell`
@@ -135,8 +146,13 @@ export function promoteLoopCells(
     promoted = 0,
     changed = false;
   const functions: FunctionIR[] = [];
-  for (const fn of module.functions) {
+  for (let fnIndex = 0; fnIndex < module.functions.length; fnIndex++) {
+    const fn = module.functions[fnIndex];
     if (fn === undefined) throw "cell promotion function invariant";
+    if (summary.hasLocalSite[fnIndex] !== 1) {
+      functions.push(fn);
+      continue;
+    }
     let current = fn;
     // One cell per loop per round, inner loops first; outer loops see the
     // inner promotions next round.
