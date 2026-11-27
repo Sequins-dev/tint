@@ -4,6 +4,10 @@ export {
   objectFlagUsedAsPrototype,
   objectFlagArrayData,
   objectFlagsPackedArray,
+  propertyAccessor,
+  shapeKeyIndex,
+  storedValue,
+  type OrdinaryPropertyShape,
 } from "./operations.ts";
 export {
   viewWeakRegistryOwner,
@@ -672,6 +676,12 @@ export {
   builtinFunctionMetadata,
   builtinProperty,
 } from "./intrinsics.ts";
+export {
+  intrinsicObjectMethodKind,
+  objectOwnPropertyList,
+  objectHasOwnDirect,
+  objectDefinePropertyDirect,
+} from "./object-intrinsics.ts";
 export { stringifyJSON } from "./json-stringify.ts";
 export { quoteJSONString } from "./json-string.ts";
 export { parseJSON, tryParseJSONStringLiteral } from "./json-parse.ts";

@@ -1,4 +1,9 @@
-import { pushQuotedJSONString, quoteJSONString } from "./json-string.ts";
+import {
+  pushJSONPropertyKey,
+  pushQuotedJSONString,
+  quoteJSONString,
+} from "./json-string.ts";
+import { latin1Text } from "@tint/foundation/text/latin1";
 import {
   viewObjectValue,
   getObjectValueProperty,
@@ -36,6 +41,21 @@ import {
 
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 type ScriptShape = OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
+
+const jsonBufCapacity = 4096;
+let jsonBufScratch: Uint8Array | undefined = undefined;
+let jsonBufInUse = false;
+const jsonHexBytes = [
+  48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102,
+];
+
+function getJsonBufScratch(): Uint8Array {
+  const existing = jsonBufScratch;
+  if (existing !== undefined) return existing;
+  const created = new Uint8Array(jsonBufCapacity);
+  jsonBufScratch = created;
+  return created;
+}
 
 function isCallable(value: unknown, realm: ErrorRealm): boolean {
   return isCallableObject<ScriptPropertyKey, unknown>(
@@ -326,25 +346,227 @@ export function stringifyJSON(
 
   const out: string[] = [];
   const stack: ScriptObject[] = [];
+  const ownsScratch = !jsonBufInUse;
+  if (ownsScratch) jsonBufInUse = true;
+  const buf: Uint8Array = ownsScratch ? getJsonBufScratch() : new Uint8Array(0);
+  let bufLen = 0;
+  let useBuf = ownsScratch;
+
+  function flushBuf(): void {
+    if (!useBuf) return;
+    useBuf = false;
+    if (bufLen > 0 && buf !== undefined) {
+      out.push(latin1Text(buf, 0, bufLen));
+      bufLen = 0;
+    }
+  }
+
+  function emitByte(byte: number): void {
+    if (useBuf && buf !== undefined) {
+      if (bufLen < jsonBufCapacity) {
+        buf[bufLen++] = byte;
+        return;
+      }
+      flushBuf();
+    }
+    out.push(String.fromCharCode(byte));
+  }
+
+  function emitAscii(text: string): void {
+    const len = text.length;
+    if (useBuf && buf !== undefined) {
+      if (bufLen + len <= jsonBufCapacity) {
+        let p = bufLen;
+        for (let i = 0; i < len; i++) buf[p++] = text.charCodeAt(i);
+        bufLen = p;
+        return;
+      }
+      flushBuf();
+    }
+    out.push(text);
+  }
+
+  function emitText(text: string): void {
+    const len = text.length;
+    if (useBuf && buf !== undefined && bufLen + len <= jsonBufCapacity) {
+      let p = bufLen;
+      let ok = true;
+      for (let i = 0; i < len; i++) {
+        const c = text.charCodeAt(i);
+        if (c > 0xff) {
+          ok = false;
+          break;
+        }
+        buf[p++] = c;
+      }
+      if (ok) {
+        bufLen = p;
+        return;
+      }
+      flushBuf();
+    } else if (useBuf) {
+      flushBuf();
+    }
+    out.push(text);
+  }
+
+  function emitQuoted(text: string): void {
+    const len = text.length;
+    if (
+      useBuf &&
+      buf !== undefined &&
+      bufLen + len * 6 + 2 <= jsonBufCapacity
+    ) {
+      const startPos = bufLen;
+      let p = startPos;
+      buf[p++] = 34;
+      let ok = true;
+      for (let i = 0; i < len; i++) {
+        const u = text.charCodeAt(i);
+        if (u > 0xff) {
+          ok = false;
+          break;
+        }
+        if (u >= 32 && u !== 34 && u !== 92) {
+          buf[p++] = u;
+        } else if (u === 34) {
+          buf[p++] = 92;
+          buf[p++] = 34;
+        } else if (u === 92) {
+          buf[p++] = 92;
+          buf[p++] = 92;
+        } else if (u === 8) {
+          buf[p++] = 92;
+          buf[p++] = 98;
+        } else if (u === 9) {
+          buf[p++] = 92;
+          buf[p++] = 116;
+        } else if (u === 10) {
+          buf[p++] = 92;
+          buf[p++] = 110;
+        } else if (u === 12) {
+          buf[p++] = 92;
+          buf[p++] = 102;
+        } else if (u === 13) {
+          buf[p++] = 92;
+          buf[p++] = 114;
+        } else {
+          buf[p++] = 92;
+          buf[p++] = 117;
+          buf[p++] = 48;
+          buf[p++] = 48;
+          buf[p++] = jsonHexBytes[(u >>> 4) & 15] ?? 48;
+          buf[p++] = jsonHexBytes[u & 15] ?? 48;
+        }
+      }
+      if (ok) {
+        buf[p++] = 34;
+        bufLen = p;
+        return;
+      }
+      bufLen = startPos;
+      flushBuf();
+    } else if (useBuf) {
+      flushBuf();
+    }
+    pushQuotedJSONString(out, text);
+  }
+
+  function emitNumber(n: number): void {
+    const intVal = n | 0;
+    if (
+      intVal === n &&
+      useBuf &&
+      buf !== undefined &&
+      bufLen + 12 <= jsonBufCapacity
+    ) {
+      if (intVal === 0) {
+        buf[bufLen++] = 48;
+        return;
+      }
+      if (intVal > 0 && intVal < 1000000000) {
+        let p = bufLen;
+        if (intVal < 10) {
+          buf[p++] = 48 + intVal;
+        } else if (intVal < 100) {
+          const tens = (intVal / 10) | 0;
+          buf[p++] = 48 + tens;
+          buf[p++] = 48 + (intVal - tens * 10);
+        } else if (intVal < 1000) {
+          const h = (intVal / 100) | 0;
+          const r = intVal - h * 100;
+          const t = (r / 10) | 0;
+          buf[p++] = 48 + h;
+          buf[p++] = 48 + t;
+          buf[p++] = 48 + (r - t * 10);
+        } else if (intVal < 10000) {
+          const th = (intVal / 1000) | 0;
+          const r1 = intVal - th * 1000;
+          const h = (r1 / 100) | 0;
+          const r2 = r1 - h * 100;
+          const t = (r2 / 10) | 0;
+          buf[p++] = 48 + th;
+          buf[p++] = 48 + h;
+          buf[p++] = 48 + t;
+          buf[p++] = 48 + (r2 - t * 10);
+        } else {
+          const s = String(intVal);
+          for (let i = 0; i < s.length; i++) buf[p++] = s.charCodeAt(i);
+        }
+        bufLen = p;
+        return;
+      }
+    }
+    if (intVal === n && intVal >= 0 && intVal < 256)
+      emitAscii(indexKey(intVal));
+    else emitAscii(Number.isFinite(n) ? String(n) : "null");
+  }
+
+  function emitPropertyKey(
+    key: string,
+    written: boolean,
+    nested: string,
+  ): void {
+    if (useBuf && buf !== undefined) {
+      if (gap === "") {
+        if (written) emitByte(44);
+        emitQuoted(key);
+        emitByte(58);
+      } else {
+        emitAscii(written ? ",\n" : "\n");
+        emitText(nested);
+        emitQuoted(key);
+        emitAscii(": ");
+      }
+      return;
+    }
+    if (gap === "") {
+      pushJSONPropertyKey(out, written ? ',"' : '"', key, '":');
+    } else {
+      pushJSONPropertyKey(
+        out,
+        (written ? ",\n" : "\n") + nested + '"',
+        key,
+        '": ',
+      );
+    }
+  }
 
   function appendPrimitive(current: unknown): boolean {
     if (current === null) {
-      out.push("null");
+      emitAscii("null");
       return true;
     }
     if (typeof current === "boolean") {
-      out.push(current ? "true" : "false");
+      emitAscii(current ? "true" : "false");
       return true;
     }
     if (typeof current === "string") {
-      pushQuotedJSONString(out, current);
+      emitQuoted(current);
       return true;
     }
     if (typeof current === "number") {
-      const intVal = current | 0;
-      if (intVal === current && intVal >= 0 && intVal < 256)
-        out.push(indexKey(intVal));
-      else out.push(Number.isFinite(current) ? String(current) : "null");
+      emitNumber(current);
       return true;
     }
     return false;
@@ -401,22 +623,19 @@ export function stringifyJSON(
       }
     }
     if (current === null) {
-      out.push("null");
+      emitAscii("null");
       return true;
     }
     if (typeof current === "boolean") {
-      out.push(current ? "true" : "false");
+      emitAscii(current ? "true" : "false");
       return true;
     }
     if (typeof current === "string") {
-      pushQuotedJSONString(out, current);
+      emitQuoted(current);
       return true;
     }
     if (typeof current === "number") {
-      const intVal = current | 0;
-      if (intVal === current && intVal >= 0 && intVal < 256)
-        out.push(indexKey(intVal));
-      else out.push(Number.isFinite(current) ? String(current) : "null");
+      emitNumber(current);
       return true;
     }
     if (object === undefined) {
@@ -427,7 +646,7 @@ export function stringifyJSON(
     const exotic = object.internalRareSlots?.internalExoticSlots;
     const raw = exotic === undefined ? undefined : exotic.internalRawJSON;
     if (raw !== undefined) {
-      out.push(raw);
+      emitText(raw);
       return true;
     }
     if (isCallableObject<ScriptPropertyKey, unknown>(object)) return false;
@@ -467,38 +686,51 @@ export function stringifyJSON(
     ) {
       const length = packed.length;
       if (length === 0) {
-        out.push("[]");
+        emitAscii("[]");
         return;
       }
-      const sep = gap === "" ? "," : ",\n" + nested;
-      out.push(gap === "" ? "[" : "[\n" + nested);
+      if (gap === "") emitByte(91);
+      else {
+        emitAscii("[\n");
+        emitText(nested);
+      }
       if (packed.generalCount === 0) {
         const numbers = packed.numbers;
         for (let i = 0; i < length; i++) {
-          if (i > 0) out.push(sep);
-          const n = numbers[i];
-          if (n === undefined) out.push("null");
-          else {
-            const intVal = n | 0;
-            if (intVal === n && intVal >= 0 && intVal < 256)
-              out.push(indexKey(intVal));
-            else out.push(Number.isFinite(n) ? String(n) : "null");
+          if (i > 0) {
+            if (gap === "") emitByte(44);
+            else {
+              emitAscii(",\n");
+              emitText(nested);
+            }
           }
+          const n = numbers[i];
+          if (n === undefined) emitAscii("null");
+          else emitNumber(n);
         }
       } else {
         for (let i = 0; i < length; i++) {
-          if (i > 0) out.push(sep);
+          if (i > 0) {
+            if (gap === "") emitByte(44);
+            else {
+              emitAscii(",\n");
+              emitText(nested);
+            }
+          }
           const elem = readArrayElement<ScriptPropertyKey, unknown>(packed, i);
           if (isSimplePrimitive(elem)) {
-            if (elem === undefined || !appendPrimitive(elem)) out.push("null");
+            if (elem === undefined || !appendPrimitive(elem)) emitAscii("null");
           } else {
             if (!serializeValue(indexKey(i), elem, object, nested))
-              out.push("null");
+              emitAscii("null");
           }
         }
       }
-      if (gap !== "") out.push("\n", indent);
-      out.push("]");
+      if (gap !== "") {
+        emitByte(10);
+        emitText(indent);
+      }
+      emitByte(93);
       return;
     }
     const nativeList = object.internalMethods?.nativeListAccess;
@@ -511,25 +743,37 @@ export function stringifyJSON(
     ) {
       const length = nativeList.length();
       if (length === 0) {
-        out.push("[]");
+        emitAscii("[]");
         return;
       }
-      const sep = gap === "" ? "," : ",\n" + nested;
-      out.push(gap === "" ? "[" : "[\n" + nested);
+      if (gap === "") emitByte(91);
+      else {
+        emitAscii("[\n");
+        emitText(nested);
+      }
       for (let i = 0; i < length; i++) {
-        if (i > 0) out.push(sep);
+        if (i > 0) {
+          if (gap === "") emitByte(44);
+          else {
+            emitAscii(",\n");
+            emitText(nested);
+          }
+        }
         const elem = nativeList.has(i)
           ? nativeList.read(i)
           : getPropertyChecked(object, indexKey(i), realm, hooks);
         if (isSimplePrimitive(elem)) {
-          if (elem === undefined || !appendPrimitive(elem)) out.push("null");
+          if (elem === undefined || !appendPrimitive(elem)) emitAscii("null");
         } else {
           if (!serializeValue(indexKey(i), elem, object, nested))
-            out.push("null");
+            emitAscii("null");
         }
       }
-      if (gap !== "") out.push("\n", indent);
-      out.push("]");
+      if (gap !== "") {
+        emitByte(10);
+        emitText(indent);
+      }
+      emitByte(93);
       return;
     }
     const props = object.internalRareSlots?.properties;
@@ -547,13 +791,22 @@ export function stringifyJSON(
       if (typeof rawLength === "number") {
         const length = rawLength;
         if (length === 0) {
-          out.push("[]");
+          emitAscii("[]");
           return;
         }
-        const sep = gap === "" ? "," : ",\n" + nested;
-        out.push(gap === "" ? "[" : "[\n" + nested);
+        if (gap === "") emitByte(91);
+        else {
+          emitAscii("[\n");
+          emitText(nested);
+        }
         for (let i = 0; i < length; i++) {
-          if (i > 0) out.push(sep);
+          if (i > 0) {
+            if (gap === "") emitByte(44);
+            else {
+              emitAscii(",\n");
+              emitText(nested);
+            }
+          }
           const key = indexKey(i);
           const desc =
             object.internalRareSlots?.properties === props
@@ -563,31 +816,46 @@ export function stringifyJSON(
           if (desc !== undefined && !desc.accessor) elem = desc.value;
           else elem = getPropertyChecked(object, key, realm, hooks);
           if (isSimplePrimitive(elem)) {
-            if (elem === undefined || !appendPrimitive(elem)) out.push("null");
+            if (elem === undefined || !appendPrimitive(elem)) emitAscii("null");
           } else {
-            if (!serializeValue(key, elem, object, nested)) out.push("null");
+            if (!serializeValue(key, elem, object, nested)) emitAscii("null");
           }
         }
-        if (gap !== "") out.push("\n", indent);
-        out.push("]");
+        if (gap !== "") {
+          emitByte(10);
+          emitText(indent);
+        }
+        emitByte(93);
         return;
       }
     }
     const length = lengthOfArrayLike(object, realm, hooks);
     if (length === 0) {
-      out.push("[]");
+      emitAscii("[]");
       return;
     }
-    const sep = gap === "" ? "," : ",\n" + nested;
-    out.push(gap === "" ? "[" : "[\n" + nested);
+    if (gap === "") emitByte(91);
+    else {
+      emitAscii("[\n");
+      emitText(nested);
+    }
     for (let i = 0; i < length; i++) {
-      if (i > 0) out.push(sep);
+      if (i > 0) {
+        if (gap === "") emitByte(44);
+        else {
+          emitAscii(",\n");
+          emitText(nested);
+        }
+      }
       const key = indexKey(i);
       const elem = getPropertyChecked(object, key, realm, hooks);
-      if (!serializeValue(key, elem, object, nested)) out.push("null");
+      if (!serializeValue(key, elem, object, nested)) emitAscii("null");
     }
-    if (gap !== "") out.push("\n", indent);
-    out.push("]");
+    if (gap !== "") {
+      emitByte(10);
+      emitText(indent);
+    }
+    emitByte(93);
   }
 
   function appendProperty(
@@ -598,18 +866,28 @@ export function stringifyJSON(
     written: boolean,
   ): boolean {
     if (!hasReplacer && propValue === undefined) return written;
-    const mark = out.length;
-    if (gap === "") {
-      if (written) out.push(",");
-      pushQuotedJSONString(out, key);
-      out.push(":");
-    } else {
-      out.push(written ? ",\n" : "\n", nested);
-      pushQuotedJSONString(out, key);
-      out.push(": ");
+    if (!hasReplacer && isSimplePrimitive(propValue)) {
+      emitPropertyKey(key, written, nested);
+      appendPrimitive(propValue);
+      return true;
     }
+    const wasBuf = useBuf;
+    const mark = wasBuf ? bufLen : out.length;
+    emitPropertyKey(key, written, nested);
     if (!serializeValue(key, propValue, object, nested)) {
-      while (out.length > mark) out.pop();
+      if (useBuf) {
+        bufLen = mark;
+      } else if (wasBuf) {
+        const first = out[0];
+        if (first !== undefined && first.length > mark) {
+          out[0] = first.slice(0, mark);
+          out.length = 1;
+        } else if (mark === 0) {
+          out.length = 0;
+        }
+      } else {
+        while (out.length > mark) out.pop();
+      }
       return written;
     }
     return true;
@@ -620,7 +898,7 @@ export function stringifyJSON(
     indent: string,
     nested: string,
   ): void {
-    out.push("{");
+    emitByte(123);
     let written = false;
     const rare = object.internalRareSlots;
     const methods = object.internalMethods;
@@ -648,8 +926,11 @@ export function stringifyJSON(
               written,
             );
           }
-          if (written && gap !== "") out.push("\n", indent);
-          out.push("}");
+          if (written && gap !== "") {
+            emitByte(10);
+            emitText(indent);
+          }
+          emitByte(125);
           return;
         }
         const filterList = propertyList;
@@ -677,8 +958,11 @@ export function stringifyJSON(
               written,
             );
           }
-          if (written && gap !== "") out.push("\n", indent);
-          out.push("}");
+          if (written && gap !== "") {
+            emitByte(10);
+            emitText(indent);
+          }
+          emitByte(125);
           return;
         }
       }
@@ -711,15 +995,7 @@ export function stringifyJSON(
           }
           if (isSimplePrimitive(propValue)) {
             if (propValue === undefined) continue;
-            if (gap === "") {
-              if (written) out.push(",");
-              pushQuotedJSONString(out, prop);
-              out.push(":");
-            } else {
-              out.push(written ? ",\n" : "\n", nested);
-              pushQuotedJSONString(out, prop);
-              out.push(": ");
-            }
+            emitPropertyKey(prop, written, nested);
             appendPrimitive(propValue);
             written = true;
           } else {
@@ -727,15 +1003,18 @@ export function stringifyJSON(
           }
         }
       }
-      if (written && gap !== "") out.push("\n", indent);
-      out.push("}");
+      if (written && gap !== "") {
+        emitByte(10);
+        emitText(indent);
+      }
+      emitByte(125);
       return;
     }
 
     if (plain && (object.internalFlags & objectFlagDictionary) !== 0) {
       const props = object.internalRareSlots?.properties;
       if (props === undefined || props.size === 0) {
-        out.push("}");
+        emitByte(125);
         return;
       }
       let fastDict = true;
@@ -768,20 +1047,15 @@ export function stringifyJSON(
             if (k === undefined) throw "JSON_KEY_INVARIANT";
             const v = snapVals[i];
             if (v === undefined) continue;
-            if (gap === "") {
-              if (written) out.push(",");
-              pushQuotedJSONString(out, k);
-              out.push(":");
-            } else {
-              out.push(written ? ",\n" : "\n", nested);
-              pushQuotedJSONString(out, k);
-              out.push(": ");
-            }
+            emitPropertyKey(k, written, nested);
             appendPrimitive(v);
             written = true;
           }
-          if (written && gap !== "") out.push("\n", indent);
-          out.push("}");
+          if (written && gap !== "") {
+            emitByte(10);
+            emitText(indent);
+          }
+          emitByte(125);
           return;
         }
         const objEpoch = object.internalPropertyEpoch;
@@ -794,23 +1068,18 @@ export function stringifyJSON(
               : getPropertyChecked(object, prop, realm, hooks);
           if (isSimplePrimitive(propValue)) {
             if (propValue === undefined) continue;
-            if (gap === "") {
-              if (written) out.push(",");
-              pushQuotedJSONString(out, prop);
-              out.push(":");
-            } else {
-              out.push(written ? ",\n" : "\n", nested);
-              pushQuotedJSONString(out, prop);
-              out.push(": ");
-            }
+            emitPropertyKey(prop, written, nested);
             appendPrimitive(propValue);
             written = true;
           } else {
             written = appendProperty(prop, propValue, object, nested, written);
           }
         }
-        if (written && gap !== "") out.push("\n", indent);
-        out.push("}");
+        if (written && gap !== "") {
+          emitByte(10);
+          emitText(indent);
+        }
+        emitByte(125);
         return;
       }
     }
@@ -844,8 +1113,11 @@ export function stringifyJSON(
         }
         written = appendProperty(property, propValue, object, nested, written);
       }
-      if (written && gap !== "") out.push("\n", indent);
-      out.push("}");
+      if (written && gap !== "") {
+        emitByte(10);
+        emitText(indent);
+      }
+      emitByte(125);
       return;
     }
 
@@ -872,20 +1144,33 @@ export function stringifyJSON(
       const propValue = getPropertyChecked(object, property, realm, hooks);
       written = appendProperty(property, propValue, object, nested, written);
     }
-    if (written && gap !== "") out.push("\n", indent);
-    out.push("}");
+    if (written && gap !== "") {
+      emitByte(10);
+      emitText(indent);
+    }
+    emitByte(125);
   }
 
   let holder: ScriptObject | undefined = undefined;
   let rootValue: unknown = value;
-  if (hasReplacer) {
-    holder = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
-    if (
-      !createDataProperty<ScriptPropertyKey, unknown>(holder, "", value, hooks)
-    )
-      throw "JSON_WRAPPER_INVARIANT";
-    rootValue = getPropertyChecked(holder, "", realm, hooks);
+  try {
+    if (hasReplacer) {
+      holder = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
+      if (
+        !createDataProperty<ScriptPropertyKey, unknown>(
+          holder,
+          "",
+          value,
+          hooks,
+        )
+      )
+        throw "JSON_WRAPPER_INVARIANT";
+      rootValue = getPropertyChecked(holder, "", realm, hooks);
+    }
+    if (!serializeValue("", rootValue, holder, "")) return undefined;
+    if (useBuf && buf !== undefined) return latin1Text(buf, 0, bufLen);
+    return out.join("");
+  } finally {
+    if (ownsScratch) jsonBufInUse = false;
   }
-  if (!serializeValue("", rootValue, holder, "")) return undefined;
-  return out.join("");
 }

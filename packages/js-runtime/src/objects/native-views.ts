@@ -1,3 +1,4 @@
+import { gcEpoch, referenceHash } from "@tint/foundation/collections/key-index";
 import {
   createExoticObject,
   ordinaryDefineOwnProperty,
@@ -26,44 +27,161 @@ import {
   type DescriptorUpdate,
 } from "../descriptors/index.ts";
 
+const initialViewSlots = 16;
+const removedViewHash = 0xffffffff;
+const deletedViewSlot = 0xffffffff;
+const maxViewSlots = 0x40000000;
+
+function mixViewHash(native: unknown): number {
+  const h = Math.imul(referenceHash(native), 0x9e3779b1);
+  const mixed = (h ^ (h >>> 16)) >>> 0;
+  return mixed === removedViewHash ? 0 : mixed;
+}
+
 /** Native references lack the identity field on realm objects. Cache their
- * projections with ephemerons keyed by the actual native value. A returned
- * view can keep its source alive without the cache keeping either alive. */
+ * projections with ephemerons keyed by the actual native value in an
+ * open-addressed hash table keyed by epoch-scoped `referenceHash(native)`.
+ * A returned view can keep its source alive without the cache keeping either
+ * alive, and moving GC triggers an in-place rehash + dead-ephemeron sweep. */
 export interface NativeViewCache {
   readonly storage: WeakStorageService;
-  readonly cells: unknown[];
+  cells: unknown[];
+  hashes: Uint32Array | undefined;
+  slots: Uint32Array | undefined;
+  length: number;
+  size: number;
+  used: number;
+  hashEpoch: number;
 }
 
 export function createNativeViewCache(
   storage: WeakStorageService,
 ): NativeViewCache {
-  return { storage, cells: [] };
+  return {
+    storage,
+    cells: [],
+    hashes: undefined,
+    slots: undefined,
+    length: 0,
+    size: 0,
+    used: 0,
+    hashEpoch: gcEpoch(),
+  };
+}
+
+/** Recompute address hashes and probe slots in place after a moving GC cycle,
+ * evicting cleared ephemerons at the same time. */
+function rehashViewCacheInPlace(cache: NativeViewCache): void {
+  const slots = cache.slots,
+    hashes = cache.hashes,
+    cells = cache.cells,
+    storage = cache.storage,
+    length = cache.length;
+  const epoch = gcEpoch();
+  if (slots === undefined || hashes === undefined || length === 0) {
+    cache.hashEpoch = epoch;
+    return;
+  }
+  const capacity = slots.length;
+  if (capacity < 1 || capacity > maxViewSlots)
+    throw "NATIVE_VIEW_CACHE_INVARIANT";
+  slots.fill(0);
+  const mask = capacity - 1;
+  let live = 0;
+  for (let entry = 0; entry < length; entry++) {
+    if (hashes[entry] === removedViewHash) continue;
+    const cell = cells[entry];
+    const key = cell === undefined ? undefined : storage.key(cell);
+    if (key === undefined) {
+      hashes[entry] = removedViewHash;
+      cells[entry] = undefined;
+      continue;
+    }
+    const mixed = mixViewHash(key);
+    hashes[entry] = mixed;
+    let at = mixed & mask;
+    while (slots[at] !== 0) at = (at + 1) & mask;
+    slots[at] = entry + 1;
+    live++;
+  }
+  cache.size = live;
+  cache.used = live;
+  cache.hashEpoch = epoch;
+}
+
+/** Compact live ephemerons into a fresh table of `capacity` slots. */
+function rebuildViewCache(cache: NativeViewCache, capacity: number): void {
+  if (capacity > maxViewSlots) throw "NATIVE_VIEW_CACHE_LIMIT";
+  const oldCells = cache.cells,
+    oldHashes = cache.hashes,
+    storage = cache.storage,
+    length = cache.length,
+    nextCap = capacity >>> 1,
+    nextHashes = new Uint32Array(nextCap),
+    nextSlots = new Uint32Array(capacity),
+    mask = capacity - 1,
+    nextCells: unknown[] = [];
+  const epoch = gcEpoch();
+  let write = 0;
+  if (oldHashes !== undefined) {
+    for (let entry = 0; entry < length; entry++) {
+      if (oldHashes[entry] === removedViewHash) continue;
+      const cell = oldCells[entry];
+      const key = cell === undefined ? undefined : storage.key(cell);
+      if (key === undefined) continue;
+      const mixed = mixViewHash(key);
+      let at = mixed & mask;
+      while (nextSlots[at] !== 0) at = (at + 1) & mask;
+      nextCells.push(cell);
+      nextHashes[write] = mixed;
+      write++;
+      nextSlots[at] = write;
+    }
+  }
+  cache.cells = nextCells;
+  cache.hashes = nextHashes;
+  cache.slots = nextSlots;
+  cache.length = write;
+  cache.size = write;
+  cache.used = write;
+  cache.hashEpoch = epoch;
 }
 
 export function cachedNativeView(
   cache: NativeViewCache,
   native: unknown,
 ): unknown {
-  const cells = cache.cells,
+  if (cache.length === 0) return undefined;
+  if (cache.hashEpoch !== gcEpoch()) rehashViewCacheInPlace(cache);
+  const slots = cache.slots,
+    hashes = cache.hashes,
+    cells = cache.cells,
     storage = cache.storage;
-  for (let i = cells.length - 1; i >= 0; i--) {
-    const cell = cells[i];
-    const key = storage.key(cell);
-    if (key === native) {
-      const view = storage.value(cell);
-      const last = cells.length - 1;
-      if (i !== last) {
-        cells[i] = cells[last];
-        cells[last] = cell;
+  if (slots === undefined || hashes === undefined) return undefined;
+  const capacity = slots.length;
+  if (capacity < 1 || capacity > maxViewSlots) return undefined;
+  const mixed = mixViewHash(native),
+    mask = capacity - 1;
+  let at = mixed & mask;
+  while (true) {
+    const probe = slots[at] ?? 0;
+    if (probe === 0) return undefined;
+    if (probe !== deletedViewSlot) {
+      const entry = probe - 1;
+      if (hashes[entry] === mixed) {
+        const cell = cells[entry];
+        const key = cell === undefined ? undefined : storage.key(cell);
+        if (key === native) return storage.value(cell);
+        if (key === undefined) {
+          slots[at] = deletedViewSlot;
+          hashes[entry] = removedViewHash;
+          cells[entry] = undefined;
+          if (cache.size > 0) cache.size--;
+        }
       }
-      return view;
     }
-    if (key === undefined) {
-      const last = cells.pop();
-      if (i < cells.length && last !== undefined) cells[i] = last;
-    }
+    at = (at + 1) & mask;
   }
-  return undefined;
 }
 
 export function cacheNativeView(
@@ -71,7 +189,61 @@ export function cacheNativeView(
   native: unknown,
   view: unknown,
 ): void {
-  cache.cells.push(cache.storage.create(native, view, true));
+  const cell = cache.storage.create(native, view, true);
+  if (cache.slots === undefined || cache.hashes === undefined) {
+    cache.cells = [];
+    cache.hashes = new Uint32Array(initialViewSlots >>> 1);
+    cache.slots = new Uint32Array(initialViewSlots);
+    cache.length = 0;
+    cache.size = 0;
+    cache.used = 0;
+    cache.hashEpoch = gcEpoch();
+  } else if (cache.hashEpoch !== gcEpoch()) {
+    rehashViewCacheInPlace(cache);
+  }
+  const currentSlots = cache.slots,
+    currentHashes = cache.hashes;
+  if (currentSlots === undefined || currentHashes === undefined)
+    throw "NATIVE_VIEW_CACHE_INVARIANT";
+  if (
+    (cache.used + 1) * 2 > currentSlots.length ||
+    cache.length >= currentHashes.length
+  ) {
+    const nextCapacity =
+      cache.size * 4 >= currentSlots.length
+        ? currentSlots.length * 2
+        : currentSlots.length;
+    rebuildViewCache(cache, nextCapacity);
+  }
+  if (cache.hashEpoch !== gcEpoch()) rehashViewCacheInPlace(cache);
+  const slots = cache.slots,
+    hashes = cache.hashes;
+  if (slots === undefined || hashes === undefined)
+    throw "NATIVE_VIEW_CACHE_INVARIANT";
+  const capacity = slots.length;
+  if (capacity < 1 || capacity > maxViewSlots)
+    throw "NATIVE_VIEW_CACHE_INVARIANT";
+  const mixed = mixViewHash(native),
+    mask = capacity - 1;
+  let at = mixed & mask;
+  let target = -1;
+  while (true) {
+    const probe = slots[at] ?? 0;
+    if (probe === 0) {
+      if (target < 0) target = at;
+      break;
+    }
+    if (probe === deletedViewSlot && target < 0) target = at;
+    at = (at + 1) & mask;
+  }
+  const entry = cache.length;
+  if (slots[target] === 0) cache.used++;
+  cache.cells.push(cell);
+  hashes[entry] = mixed;
+  slots[target] = entry + 1;
+  cache.length = entry + 1;
+  cache.size++;
+  if (cache.hashEpoch !== gcEpoch()) rehashViewCacheInPlace(cache);
 }
 
 export function createNativeCallableView(

@@ -18,7 +18,10 @@ import type {
   NativeCallbackView,
   NativeTypedArray,
 } from "@tint/typescript/checker";
-import { projectRecordExpression } from "./record-view.ts";
+import {
+  projectRecordExpression,
+  type RecordViewMetadataHoister,
+} from "./record-view.ts";
 
 export interface DynamicObjectRuntime {
   readonly create: number;
@@ -919,6 +922,76 @@ export function insertDynamicObjectRuntime(
     };
     return { ...node, body: bodyWithRuntime(returned, node.parameters) };
   }
+  const hoistedRecordMeta = new Map<
+    string,
+    { readonly keys: string; readonly writable: string }
+  >();
+  const hoistedRecordStatements: Statement[] = [];
+  const recordMetaHoister: RecordViewMetadataHoister = {
+    intern: (fields, span) => {
+      let signature = "";
+      for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        if (field === undefined) throw "native record view field invariant";
+        signature +=
+          String(field.name.length) +
+          ":" +
+          field.name +
+          (field.readonly ? "0" : "1") +
+          ";";
+      }
+      const existing = hoistedRecordMeta.get(signature);
+      if (existing !== undefined) return existing;
+      const id = hoistedRecordMeta.size;
+      const keysName = "$tint$rv$keys_" + String(id);
+      const writableName = "$tint$rv$writable_" + String(id);
+      const keyElements: Expression[] = [];
+      const writableElements: Expression[] = [];
+      for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        if (field === undefined) throw "native record view field invariant";
+        keyElements.push({ ...span, kind: "string", value: field.name });
+        writableElements.push({
+          ...span,
+          kind: "boolean",
+          value: !field.readonly,
+        });
+      }
+      hoistedRecordStatements.push({
+        ...span,
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            ...span,
+            name: keysName,
+            type: {
+              ...span,
+              kind: "array",
+              readonly: true,
+              element: { ...span, kind: "named", name: "string" },
+            },
+            initializer: { ...span, kind: "array", elements: keyElements },
+          },
+          {
+            ...span,
+            name: writableName,
+            type: {
+              ...span,
+              kind: "array",
+              readonly: true,
+              element: { ...span, kind: "named", name: "boolean" },
+            },
+            initializer: { ...span, kind: "array", elements: writableElements },
+          },
+        ],
+      });
+      const entry = { keys: keysName, writable: writableName };
+      hoistedRecordMeta.set(signature, entry);
+      return entry;
+    },
+  };
   const rewritten = rewriteModule(module, {
     statement: (node, original) => {
       if (node.kind === "function" && usesRuntime(original))
@@ -961,6 +1034,7 @@ export function insertDynamicObjectRuntime(
           node,
           record,
           dynamicRuntimeAliasPrefix + "projectNativeRecord",
+          recordMetaHoister,
         );
       const callback = callbackSites.get(site);
       if (callback !== undefined) {
@@ -1022,14 +1096,22 @@ export function insertDynamicObjectRuntime(
       (statement.kind === "variable" || statement.kind === "class") &&
       usesRuntime(statement),
   );
-  if (first >= 0) {
+  if (first >= 0 || hoistedRecordStatements.length > 0) {
     const statements: Statement[] = [];
+    let insertedHoisted = hoistedRecordStatements.length === 0;
     for (let index = 0; index < rewritten.statements.length; index++) {
       const item = rewritten.statements[index];
       if (item === undefined) throw "dynamic module statement invariant";
+      if (!insertedHoisted && item.kind !== "import") {
+        for (const decl of hoistedRecordStatements) statements.push(decl);
+        insertedHoisted = true;
+      }
       if (index === first)
         statements.push(aliasesAt(item, patterns.length !== 0));
       statements.push(item);
+    }
+    if (!insertedHoisted) {
+      for (const decl of hoistedRecordStatements) statements.push(decl);
     }
     return { ...rewritten, statements };
   }

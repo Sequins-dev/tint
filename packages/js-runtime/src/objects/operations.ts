@@ -354,6 +354,10 @@ export interface ObjectInternalMethods<Key, Value> {
   /** The same view when it never changes, so hot typed callers read it
    * without calling `typedRecord`. */
   readonly typedView?: TypedRecordView;
+  /** Bitmask of writable fields for record views with <= 32 fields. */
+  readonly recordViewWritableMask?: number;
+  /** Direct field write hook for record views (avoids per-view closure). */
+  readonly recordViewWrite?: (field: number, value: Value) => void;
   /** Direct field access for typed RecordView objects (record-views.ts). */
   readonly recordViewAccess?: {
     readonly keys: readonly string[];
@@ -1391,6 +1395,100 @@ function unpackArrayElements<Key, Value>(
   object.internalShape = undefined;
   noteStructureChange<Key, Value>(object);
   object.internalArrayElements = undefined;
+}
+/** Match an unescaped JSON object key directly against a cached default-data
+ * shape transition without allocating a substring slice. */
+export function findParsedDataTransition<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  source: string,
+  begin: number,
+  end: number,
+  hooks: ObjectHooks<Value>,
+): OrdinaryPropertyShape<Key, Value> | undefined {
+  if (
+    (object.internalFlags & (objectFlagDictionary | objectFlagContracted)) !==
+    0
+  )
+    return undefined;
+  const shape = object.internalShape;
+  const base =
+    shape === undefined
+      ? rootPropertyShape<Key, Value>(object, hooks.undefinedValue)
+      : shape;
+  const defaultKind =
+    propertyWritable | propertyEnumerable | propertyConfigurable;
+  const slot = base.keys.length;
+  const keyLen = end - begin;
+  let successor = base.firstSuccessor;
+  while (successor !== undefined) {
+    const candidate = successor.keys[slot];
+    if (
+      successor.kinds[slot] === defaultKind &&
+      typeof candidate === "string" &&
+      candidate.length === keyLen
+    ) {
+      let match = true;
+      for (let i = 0; i < keyLen; i++) {
+        if (candidate.charCodeAt(i) !== source.charCodeAt(begin + i)) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return successor;
+    }
+    successor = successor.nextSibling;
+  }
+  return undefined;
+}
+/** Commit a property value using a transition previously returned by
+ * `findParsedDataTransition` on the same freshly constructed JSON object. */
+export function commitParsedDataTransition<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  successor: OrdinaryPropertyShape<Key, Value>,
+  value: Value,
+): void {
+  setFastValue<Key, Value>(object, successor.keys.length - 1, value);
+  object.internalShape = successor;
+  noteStructureChange<Key, Value>(object);
+}
+/** Fast property append for freshly constructed JSON objects: hits cached
+ * default-data shape transitions without re-running `fastKey` or `shapeKeyIndex`
+ * (cached transitions exist only for non-numeric keys absent from the base
+ * shape), falling back to `createDataProperty` for first-time shapes,
+ * duplicate keys, and integer indices. */
+export function createParsedDataProperty<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  key: Key,
+  value: Value,
+  hooks: ObjectHooks<Value>,
+): boolean {
+  if (
+    (object.internalFlags & (objectFlagDictionary | objectFlagContracted)) ===
+    0
+  ) {
+    const shape = object.internalShape;
+    const base =
+      shape === undefined
+        ? rootPropertyShape<Key, Value>(object, hooks.undefinedValue)
+        : shape;
+    const defaultKind =
+      propertyWritable | propertyEnumerable | propertyConfigurable;
+    const slot = base.keys.length;
+    let successor = base.firstSuccessor;
+    while (successor !== undefined) {
+      if (
+        successor.keys[slot] === key &&
+        successor.kinds[slot] === defaultKind
+      ) {
+        setFastValue<Key, Value>(object, slot, value);
+        object.internalShape = successor;
+        noteStructureChange<Key, Value>(object);
+        return true;
+      }
+      successor = successor.nextSibling;
+    }
+  }
+  return createDataProperty<Key, Value>(object, key, value, hooks);
 }
 /** Create or replace an own data property, without invoking setters. */
 export function createDataProperty<Key, Value>(
