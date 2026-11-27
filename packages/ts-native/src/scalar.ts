@@ -13908,6 +13908,59 @@ export function lowerFunction(
             if (result === undefined) throw "number format result invariant";
             return result;
           }
+          if (
+            builtin === "data-view-get-bigint64" ||
+            builtin === "data-view-get-biguint64"
+          ) {
+            const helper = info(node).callee;
+            if (helper === undefined) throw "DataView method callee invariant";
+            const receiver = value(target.object);
+            const offsetArg = node.arguments[0];
+            if (offsetArg === undefined)
+              throw "DataView offset argument invariant";
+            const offset = value(offsetArg);
+            const leArg = node.arguments[1];
+            let le: number;
+            if (leArg === undefined) le = booleanSlot(false, node);
+            else {
+              const leVal = value(leArg);
+              le =
+                slots[leVal] === "boolean"
+                  ? leVal
+                  : unarySlot("truthy", leVal, "boolean", node);
+            }
+            const scratch = word64Scratch();
+            runtimeCall(helper, [receiver, offset, le, scratch], node);
+            return emitBigIntFromWord64(
+              scratch,
+              builtin === "data-view-get-bigint64",
+              node,
+            );
+          }
+          if (builtin === "data-view-set-word64") {
+            const helper = info(node).callee;
+            if (helper === undefined) throw "DataView method callee invariant";
+            const receiver = value(target.object);
+            const offsetArg = node.arguments[0];
+            const valArg = node.arguments[1];
+            if (offsetArg === undefined || valArg === undefined)
+              throw "DataView set argument invariant";
+            const offset = value(offsetArg);
+            const val = value(valArg);
+            const leArg = node.arguments[2];
+            let le: number;
+            if (leArg === undefined) le = booleanSlot(false, node);
+            else {
+              const leVal = value(leArg);
+              le =
+                slots[leVal] === "boolean"
+                  ? leVal
+                  : unarySlot("truthy", leVal, "boolean", node);
+            }
+            const scratch = word64Scratch();
+            emitBigIntToWord64(val, scratch, 0, node);
+            return runtimeCall(helper, [receiver, offset, scratch, le], node);
+          }
           if (builtin === "data-view-get" || builtin === "data-view-set") {
             const helper = info(node).callee;
             const sig = helper === undefined ? undefined : signatures[helper];

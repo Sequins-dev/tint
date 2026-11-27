@@ -3901,20 +3901,36 @@ function lowerEntries(
                 if (target.kind !== "member") fail("invalid number receiver");
                 expr(target.object);
               } else if (dataViewGetHelperKey(intrinsic) !== undefined) {
-                const key = dataViewGetHelperKey(intrinsic);
-                if (key === undefined) throw "dataView get helper invariant";
-                builtin = "data-view-get";
-                callee = builtinHelper(key);
+                if (
+                  intrinsic === "data-view-get-bigint64" ||
+                  intrinsic === "data-view-get-biguint64"
+                ) {
+                  builtin = intrinsic;
+                  callee = builtinHelper("data-view:dataViewReadWord64");
+                } else {
+                  const key = dataViewGetHelperKey(intrinsic);
+                  if (key === undefined) throw "dataView get helper invariant";
+                  builtin = "data-view-get";
+                  callee = builtinHelper(key);
+                }
                 let target = node.callee;
                 while (target.kind === "group" || target.kind === "satisfies")
                   target = target.expression;
                 if (target.kind !== "member") fail("invalid DataView receiver");
                 expr(target.object);
               } else if (dataViewSetHelperKey(intrinsic) !== undefined) {
-                const key = dataViewSetHelperKey(intrinsic);
-                if (key === undefined) throw "dataView set helper invariant";
-                builtin = "data-view-set";
-                callee = builtinHelper(key);
+                if (
+                  intrinsic === "data-view-set-bigint64" ||
+                  intrinsic === "data-view-set-biguint64"
+                ) {
+                  builtin = "data-view-set-word64";
+                  callee = builtinHelper("data-view:dataViewWriteWord64");
+                } else {
+                  const key = dataViewSetHelperKey(intrinsic);
+                  if (key === undefined) throw "dataView set helper invariant";
+                  builtin = "data-view-set";
+                  callee = builtinHelper(key);
+                }
                 let target = node.callee;
                 while (target.kind === "group" || target.kind === "satisfies")
                   target = target.expression;
