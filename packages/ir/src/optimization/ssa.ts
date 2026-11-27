@@ -78,12 +78,12 @@ export function foldSSAConstants(
         !same(previous, value))
     ) {
       states[id] = 2;
-      values[id] = undefined;
+      if (previous !== undefined) values[id] = undefined;
       return before !== 2;
     }
     if (before === 0) {
       states[id] = state;
-      values[id] = value;
+      if (value !== undefined) values[id] = value;
       return true;
     }
     return false;
