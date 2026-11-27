@@ -226,7 +226,10 @@ export function requestSourceTailCall(
   realm: ErrorRealm,
 ): { readonly error: "none" | "type"; readonly value: unknown } {
   const target = viewObjectValue(value, witness);
-  if (target === undefined || target.internalCall === undefined)
+  if (
+    target === undefined ||
+    target.internalRareSlots?.internalCall === undefined
+  )
     return { error: "type", value: undefined };
   const frame = realm.agent.activeTailCallFrame;
   if (frame === undefined || frame.pending !== undefined)
@@ -718,7 +721,7 @@ export function ordinaryHasInstance(
   nativePrototype?: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): { readonly error: "none" | "type"; readonly value: boolean } {
   const fn = viewObjectValue(constructor, realm.objectPrototype);
-  if (fn === undefined || fn.internalCall === undefined)
+  if (fn === undefined || fn.internalRareSlots?.internalCall === undefined)
     return { error: "none", value: false };
   const rare = fn.internalRareSlots;
   const boundTarget = rare === undefined ? undefined : rare.internalBoundTarget;
@@ -784,7 +787,8 @@ export function instanceOfValue(
       value: scriptBoolean(result.value, realm.objectPrototype),
     };
   }
-  if (object.internalCall === undefined) return { error: "type", value: false };
+  if (object.internalRareSlots?.internalCall === undefined)
+    return { error: "type", value: false };
   return ordinaryHasInstance(value, constructor, hooks, realm, nativePrototype);
 }
 

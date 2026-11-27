@@ -59,14 +59,17 @@ test("Math.pow exposes standard descriptors and integer-power special values", (
     ]) {
       assert.ok(
         Object.is(
-          pow.internalCall!(undefined, [base, exponent]),
+          pow.internalRareSlots!.internalCall!(undefined, [base, exponent]),
           Math.pow(base, exponent),
         ),
         `${base} ** ${exponent}`,
       );
     }
   }
-  assert.equal(pow.internalCall!(undefined, ["2", "32"]), 4294967296);
+  assert.equal(
+    pow.internalRareSlots!.internalCall!(undefined, ["2", "32"]),
+    4294967296,
+  );
 });
 
 test("Math has its configurable nonwritable toStringTag", () => {
@@ -124,7 +127,7 @@ test("Math unary intrinsics preserve numeric special values and descriptors", ()
       unknown
     >;
     assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-    assert.ok(method.internalCall);
+    assert.ok(method.internalRareSlots?.internalCall);
     for (const value of [
       NaN,
       Infinity,
@@ -141,7 +144,10 @@ test("Math unary intrinsics preserve numeric special values and descriptors", ()
       Number.MAX_SAFE_INTEGER,
     ])
       assert.ok(
-        Object.is(method.internalCall(undefined, [value]), Math[name](value)),
+        Object.is(
+          method.internalRareSlots?.internalCall(undefined, [value]),
+          Math[name](value),
+        ),
         `${name}(${value})`,
       );
   }
@@ -166,7 +172,7 @@ test("Math.random consumes its embedding capability per call without coercing ar
     unknown
   >;
   assert.equal(
-    fn.internalCall!(undefined, [
+    fn.internalRareSlots!.internalCall!(undefined, [
       {
         valueOf() {
           throw new Error("unused");
@@ -175,11 +181,11 @@ test("Math.random consumes its embedding capability per call without coercing ar
     ]),
     0.25,
   );
-  assert.equal(fn.internalCall!(undefined, []), 0.5);
+  assert.equal(fn.internalRareSlots!.internalCall!(undefined, []), 0.5);
   assert.equal(calls, 2);
   assert.equal(objects.getOwnProperty(fn, "length")!.value, 0);
   assert.equal(objects.getOwnProperty(fn, "name")!.value, "random");
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.equal(descriptor.enumerable, false);
   assert.equal(descriptor.writable, true);
   assert.equal(descriptor.configurable, true);

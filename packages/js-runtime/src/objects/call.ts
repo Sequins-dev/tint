@@ -3,7 +3,9 @@ import type { OrdinaryObject, Receiver } from "./operations.ts";
 export function isCallableObject<Key, Value>(
   object: OrdinaryObject<Key, Value> | undefined,
 ): boolean {
-  return object !== undefined && object.internalCall !== undefined;
+  return (
+    object !== undefined && object.internalRareSlots?.internalCall !== undefined
+  );
 }
 
 /** The embedding converts the type error to the current realm's exception.
@@ -19,7 +21,7 @@ export function callObject<Key, Value>(
   let currentArguments = arguments_;
   while (true) {
     if (target === undefined) return { error: "type", value: undefinedValue };
-    const implementation = target.internalCall;
+    const implementation = target.internalRareSlots?.internalCall;
     if (implementation === undefined)
       return { error: "type", value: undefinedValue };
     const rare = target.internalRareSlots;
@@ -51,10 +53,10 @@ export function constructObject<Key, Value>(
 ): { readonly error: "none" | "type"; readonly value: Value } {
   if (object === undefined || newTarget.object === undefined)
     return { error: "type", value: undefinedValue };
-  const implementation = object.internalConstruct;
+  const implementation = object.internalRareSlots?.internalConstruct;
   if (
     implementation === undefined ||
-    newTarget.object.internalConstruct === undefined
+    newTarget.object.internalRareSlots?.internalConstruct === undefined
   )
     return { error: "type", value: undefinedValue };
   const context = object.internalRareSlots?.internalExecutionContext;

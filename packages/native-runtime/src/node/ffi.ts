@@ -1412,7 +1412,10 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   );
 
   function callableCallback(value: unknown): boolean {
-    return viewObjectValue(value, core.object)?.internalCall !== undefined;
+    return (
+      viewObjectValue(value, core.object)?.internalRareSlots?.internalCall !==
+      undefined
+    );
   }
   builtinProperty(
     prototype,

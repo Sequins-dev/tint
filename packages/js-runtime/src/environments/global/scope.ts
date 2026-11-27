@@ -151,7 +151,7 @@ function recordGlobalCell<Key, Value>(
     cache.cell = undefined;
     return;
   }
-  const properties = object.properties;
+  const properties = object.internalRareSlots?.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined || descriptor.accessor) {
     cache.global = undefined;

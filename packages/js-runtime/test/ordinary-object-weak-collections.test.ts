@@ -128,7 +128,7 @@ test("weak collections preserve key identity, symbols, undefined values and sepa
     assert.equal(f.call(set, "delete", [invalid]), false);
   }
   const method = f.get(map, "get") as Obj;
-  f.type(() => method.internalCall!(set, [key]));
+  f.type(() => method.internalRareSlots!.internalCall!(set, [key]));
 });
 test("weak map upserts validate callbacks, skip hits and replace callback insertions", () => {
   const f = setup(),
@@ -186,7 +186,7 @@ test("WeakRef retains constructor/deref targets until the host checkpoint and re
   ])
     f.type(() => o.constructObjectValue(constructor, [invalid], f.root));
   const deref = f.get(ref, "deref") as Obj;
-  f.type(() => deref.internalCall!(f.make("WeakMap"), []));
+  f.type(() => deref.internalRareSlots!.internalCall!(f.make("WeakMap"), []));
 });
 test("FinalizationRegistry validates held values and tokens, and unregister removes every matching cell", () => {
   const f = setup();

@@ -31,7 +31,7 @@ test("Intl.getCanonicalLocales has standard intrinsic metadata", () => {
     "getCanonicalLocales",
   );
   assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("Intl.Locale constructor and branded prototype accessors have standard metadata", () => {
@@ -54,7 +54,7 @@ test("Intl.Locale constructor and branded prototype accessors have standard meta
   assert.ok(locale);
   assert.equal(objects.getOwnProperty(locale, "name")?.value, "Locale");
   assert.equal(objects.getOwnProperty(locale, "length")?.value, 1);
-  assert.ok(locale.internalConstruct);
+  assert.ok(locale.internalRareSlots?.internalConstruct);
   const descriptor = objects.getOwnProperty(locale, "prototype")!;
   assert.equal(descriptor.configurable, false);
   assert.equal(descriptor.writable, false);
@@ -128,7 +128,7 @@ test("Intl.ListFormat exposes real constructor, methods and standard metadata", 
   const constructor = objects.getOwnProperty(intl, "ListFormat")?.value as
     objects.OrdinaryObject<objects.ScriptPropertyKey, unknown> | undefined;
   assert.ok(constructor);
-  assert.ok(constructor.internalConstruct);
+  assert.ok(constructor.internalRareSlots?.internalConstruct);
   assert.equal(
     objects.getOwnProperty(constructor, "name")?.value,
     "ListFormat",
@@ -153,6 +153,6 @@ test("Intl.ListFormat exposes real constructor, methods and standard metadata", 
     >;
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "length")?.value, length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });

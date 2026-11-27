@@ -68,13 +68,13 @@ test("synchronous graph loading follows source-order DFS and commits statuses to
   const promise = modules.loadRequestedModules(root, hooks, 42);
   assert.deepEqual(log, ["root->a", "a->b", "root->c"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   for (const module of [root, a, b, c]) assert.equal(module.status, "unlinked");
   assert.equal(
-    modules.loadRequestedModules(root, hooks, undefined).internalExoticSlots
-      ?.internalPromiseData?.state,
+    modules.loadRequestedModules(root, hooks, undefined).internalRareSlots
+      ?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(log.length, 3);
@@ -104,14 +104,14 @@ test("asynchronous loads stay new until every completion, including cycles", () 
   pending[1]!();
   assert.equal(c.status, "new");
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   pending[0]!();
   assert.equal(root.status, "new");
   pending[2]!();
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(a.status, "unlinked");
@@ -137,10 +137,13 @@ test("first failure wins, late successes persist and retries load only missing s
   pending[0]!({ ok: false, error });
   pending[1]!({ ok: true, module: c });
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
-  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
+  assert.equal(
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
+    error,
+  );
   assert.equal(root.loaded[1], c);
   assert.deepEqual(log, ["a", "c"]);
   assert.equal(root.status, "new");
@@ -149,7 +152,7 @@ test("first failure wins, late successes persist and retries load only missing s
   pending[2]!({ ok: true, module: a });
   pending[3]!({ ok: true, module: leaf });
   assert.equal(
-    retry.internalExoticSlots?.internalPromiseData?.state,
+    retry.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
 });
@@ -168,8 +171,8 @@ test("synchronous failure stops requesting later siblings", () => {
     });
   };
   assert.equal(
-    modules.loadRequestedModules(root, hooks, undefined).internalExoticSlots
-      ?.internalPromiseData?.result,
+    modules.loadRequestedModules(root, hooks, undefined).internalRareSlots
+      ?.internalExoticSlots?.internalPromiseData?.result,
     error,
   );
   assert.deepEqual(log, ["a"]);
@@ -191,7 +194,8 @@ test("unsupported attributes reject in the active realm before calling the loade
     { realm: other, scriptOrModule: undefined },
     () => modules.loadRequestedModules(root, hooks, undefined),
   );
-  const data = promise.internalExoticSlots?.internalPromiseData;
+  const data =
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData;
   assert.equal(data?.state, "rejected");
   assert.equal(
     (
@@ -259,7 +263,7 @@ test("host identity and unknown-request faults propagate without settling the gr
   assert.ok(finish);
   assert.throws(finish, (e) => e === "MODULE_LOAD_IDENTITY_INVARIANT");
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
 });
@@ -290,28 +294,28 @@ test("overlapping loads preserve a module already linked and evaluated by anothe
   const first = modules.loadRequestedModules(root, hooks, undefined);
   const second = modules.loadRequestedModules(root, hooks, undefined);
   assert.equal(
-    first.internalExoticSlots?.internalPromiseData?.state,
+    first.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   assert.equal(
-    second.internalExoticSlots?.internalPromiseData?.state,
+    second.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   pending[0]!();
   assert.equal(
-    first.internalExoticSlots?.internalPromiseData?.state,
+    first.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(modules.linkModule(root).ok, true);
   assert.equal(
-    modules.evaluateModule(root, hooks).internalExoticSlots?.internalPromiseData
-      ?.state,
+    modules.evaluateModule(root, hooks).internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(root.status, "evaluated");
   pending[1]!();
   assert.equal(
-    second.internalExoticSlots?.internalPromiseData?.state,
+    second.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(root.status, "evaluated");
@@ -401,11 +405,13 @@ test("failed dynamic loads reject without recording a loaded module", async () =
   assert.deepEqual(referrer.loadedRequests, []);
   assert.equal(state.finished, true);
   assert.equal(
-    state.capability.promise.internalExoticSlots?.internalPromiseData?.state,
+    state.capability.promise.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData?.state,
     "rejected",
   );
   assert.equal(
-    state.capability.promise.internalExoticSlots?.internalPromiseData?.result,
+    state.capability.promise.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData?.result,
     error,
   );
 });
@@ -444,7 +450,8 @@ test("a completed dynamic load links and evaluates on jobs before resolving its 
   });
   assert.equal(executed, 0);
   assert.equal(
-    state.capability.promise.internalExoticSlots?.internalPromiseData?.state,
+    state.capability.promise.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData?.state,
     "pending",
   );
   assert.equal(
@@ -455,11 +462,13 @@ test("a completed dynamic load links and evaluates on jobs before resolving its 
   );
   assert.equal(executed, 1);
   assert.equal(
-    state.capability.promise.internalExoticSlots?.internalPromiseData?.state,
+    state.capability.promise.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(
-    state.capability.promise.internalExoticSlots?.internalPromiseData?.result,
+    state.capability.promise.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData?.result,
     modules.getModuleNamespace(target),
   );
 });

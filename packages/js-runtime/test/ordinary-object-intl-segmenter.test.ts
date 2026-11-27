@@ -33,7 +33,7 @@ function setup() {
   const method = (object: Obj, name: ScriptPropertyKey) =>
     get(object, name) as Obj;
   const call = (fn: Obj, receiver: unknown, args: unknown[] = []) =>
-    fn.internalCall!(receiver, args);
+    fn.internalRareSlots!.internalCall!(receiver, args);
   const options = (fields: Record<string, unknown>) => {
     const result = o.createObject<ScriptPropertyKey, unknown>(
       realm.objectPrototype,
@@ -43,7 +43,10 @@ function setup() {
     return result;
   };
   const make = (locale: unknown = undefined, input: unknown = undefined) =>
-    constructor.internalConstruct!([locale, input], constructor) as Obj;
+    constructor.internalRareSlots!.internalConstruct!(
+      [locale, input],
+      constructor,
+    ) as Obj;
   const iteratorKey = o.wellKnownSymbol(realm.symbolRegistry, "iterator");
   const tagKey = o.wellKnownSymbol(realm.symbolRegistry, "toStringTag");
   const segments = (segmenter: Obj, text: string) =>
@@ -113,7 +116,7 @@ test("Intl.Segmenter resolves granularity and a supported locale", () => {
   );
   assert.throws(() => f.make(undefined, "options"), f.isError("type"));
   assert.throws(
-    () => f.constructor.internalCall!(undefined, []),
+    () => f.constructor.internalRareSlots!.internalCall!(undefined, []),
     f.isError("type"),
   );
 });

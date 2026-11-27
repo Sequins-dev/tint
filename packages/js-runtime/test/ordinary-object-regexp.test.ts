@@ -100,7 +100,7 @@ test("RegExp search is a nonconstructable symbol method with standard metadata",
     "[Symbol.search]",
   );
   assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("RegExp match is installed with its symbol name and arity", () => {

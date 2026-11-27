@@ -55,7 +55,7 @@ test("normalize has standard metadata and implements all four forms", () => {
   assert.equal(f.method.configurable, true);
   assert.equal(o.getOwnProperty(f.normalize, "name")?.value, "normalize");
   assert.equal(o.getOwnProperty(f.normalize, "length")?.value, 0);
-  assert.equal(f.normalize.internalConstruct, undefined);
+  assert.equal(f.normalize.internalRareSlots?.internalConstruct, undefined);
   assert.equal(f.invoke("A\u030a"), "Å");
   assert.equal(f.invoke("Å", ["NFD"]), "A\u030a");
   assert.equal(f.invoke("\u1e9b\u0323", ["NFKC"]), "\u1e69");

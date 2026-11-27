@@ -18,12 +18,12 @@ export function run():number {
  const next=getProperty<ScriptPropertyKey,unknown>(other.generatorPrototype,"next",other.generatorPrototype,hooks);
  const first=callObjectValue(next,generator,[99],root);
  if(first.error!=="none"||first.value!==yielded)return 1;
- for(let i=0;i<30000;i++){const garbage=createObject<ScriptPropertyKey,unknown>(root);if(garbage.internalExoticSlots?.internalGeneratorData!==undefined)return 11;}
+ for(let i=0;i<30000;i++){const garbage=createObject<ScriptPropertyKey,unknown>(root);if(garbage.internalRareSlots?.internalExoticSlots?.internalGeneratorData!==undefined)return 11;}
  const second=callObjectValue(next,generator,[42],root);
  const result=viewObjectValue(second.value,root);
  if(second.error!=="none"||result===undefined)return 2;
  if(result.prototype!==otherRoot||getProperty<ScriptPropertyKey,unknown>(result,"value",result,hooks)!==42||getProperty<ScriptPropertyKey,unknown>(result,"done",result,hooks)!==true)return 3;
- const record=generator.internalExoticSlots?.internalGeneratorData;if(record===undefined||record.continuation!==undefined)return 4;
+ const record=generator.internalRareSlots?.internalExoticSlots?.internalGeneratorData;if(record===undefined||record.continuation!==undefined)return 4;
  const iterator=getProperty<ScriptPropertyKey,unknown>(generator,wellKnownSymbol(realm.symbolRegistry,"iterator"),generator,hooks);
  if(callObjectValue(iterator,generator,[],root).value!==generator)return 5;
  const fake=createObject<ScriptPropertyKey,unknown>(generator);
@@ -53,7 +53,7 @@ export function run():number {
   if(!setProperty<ScriptPropertyKey,unknown>(fn,"prototype",selected,{value:fn,object:fn},hooks))throw "generator prototype update";
   return (kind:string,value:unknown):GeneratorOutcome<unknown> =>{entered++;return {kind:"return",value:args[0]};};
  },realm,hooks,"source",1,root);
- if(initialized!==0||entered!==0||source.internalConstruct!==undefined||source.internalRareSlots?.internalHomeObject!==root)return 12;
+ if(initialized!==0||entered!==0||source.internalRareSlots?.internalConstruct!==undefined||source.internalRareSlots?.internalHomeObject!==root)return 12;
  const created=callObjectValue(source,yielded,[42],root);
  const instance=viewObjectValue(created.value,root);
  if(created.error!=="none"||instance===undefined||instance.prototype!==selected||initialized!==1||entered!==0)return 13;

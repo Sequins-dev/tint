@@ -306,8 +306,8 @@ test("general arithmetic in a slot-backed loop emits a guarded numeric operation
       (node) => node.kind === "binary" && node.operator === "+",
     ) > 0,
   );
-  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 1);
-  assert.equal(runtimeCalls(source, "binaryObjectValueOperationOrThrow"), 1);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 0);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperationOrThrow"), 2);
 });
 
 test("for-let captures keep distinct initialization and iteration environments", () => {

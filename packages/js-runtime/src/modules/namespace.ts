@@ -214,7 +214,7 @@ export function getModuleNamespace(
     configurable: false,
   };
   // Construction initializes the ordinary symbol backing store before sealing.
-  const properties = namespace.properties;
+  const properties = namespace.internalRareSlots?.properties;
   if (properties === undefined) throw "NAMESPACE_PROPERTIES_INVARIANT";
   properties.set(tag, tagDescriptor);
   namespace.internalPropertyEpoch++;

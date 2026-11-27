@@ -128,7 +128,7 @@ test("Collator constructor, prototype, accessor and bound function descriptors",
   assert.notEqual(f.get(f.create(), "compare"), compare);
   assert.equal(f.get(compare, "name"), "");
   assert.equal(f.get(compare, "length"), 2);
-  assert.equal(compare.internalConstruct, undefined);
+  assert.equal(compare.internalRareSlots?.internalConstruct, undefined);
   assert.equal(o.getOwnProperty(compare, "prototype"), undefined);
   assert.throws(
     () => f.call(descriptor?.get, prototype),
@@ -352,9 +352,12 @@ test("Locale collation metadata lists only collations supported by the service",
   const f = setup(),
     intl = f.get(f.global, "Intl"),
     constructor = f.object(f.get(intl, "Locale"));
-  assert.ok(constructor.internalConstruct);
+  assert.ok(constructor.internalRareSlots?.internalConstruct);
   for (const tag of ["en", "de", "es", "sv", "th"]) {
-    const locale = constructor.internalConstruct([tag], constructor),
+    const locale = constructor.internalRareSlots?.internalConstruct(
+        [tag],
+        constructor,
+      ),
       values = f.call(f.get(locale, "getCollations"), locale),
       length = Number(f.get(values, "length"));
     assert.ok(length > 0);

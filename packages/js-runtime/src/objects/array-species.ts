@@ -27,7 +27,10 @@ export function arraySpeciesCreate(
       hooks,
     );
     const candidate = viewObjectValue(constructor, realm.objectPrototype);
-    if (candidate !== undefined && candidate.internalConstruct !== undefined) {
+    if (
+      candidate !== undefined &&
+      candidate.internalRareSlots?.internalConstruct !== undefined
+    ) {
       const constructorRealm = getFunctionRealm(candidate, realm);
       if (
         constructorRealm !== realm &&
@@ -54,7 +57,10 @@ export function arraySpeciesCreate(
       hooks,
     );
   const target = viewObjectValue(constructor, realm.objectPrototype);
-  if (target === undefined || target.internalConstruct === undefined)
+  if (
+    target === undefined ||
+    target.internalRareSlots?.internalConstruct === undefined
+  )
     throw createRuntimeError(realm, "type");
   const result = constructObject<ScriptPropertyKey, unknown>(
     target,

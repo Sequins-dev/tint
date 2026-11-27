@@ -31,19 +31,19 @@ test("JSON exposes a tagged ordinary object and a non-constructible stringify me
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(stringify, "name")?.value, "stringify");
   assert.equal(objects.getOwnProperty(stringify, "length")?.value, 3);
-  assert.equal(stringify.internalConstruct, undefined);
+  assert.equal(stringify.internalRareSlots?.internalConstruct, undefined);
   const parse = objects.getOwnProperty(json, "parse")
     ?.value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   assert.ok(parse);
   assert.equal(objects.getOwnProperty(parse, "name")?.value, "parse");
   assert.equal(objects.getOwnProperty(parse, "length")?.value, 2);
-  assert.equal(parse.internalConstruct, undefined);
+  assert.equal(parse.internalRareSlots?.internalConstruct, undefined);
   for (const name of ["rawJSON", "isRawJSON"]) {
     const method = objects.getOwnProperty(json, name)
       ?.value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
     assert.ok(method, name);
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });

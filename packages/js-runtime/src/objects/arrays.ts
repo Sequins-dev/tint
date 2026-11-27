@@ -155,7 +155,7 @@ function clearConfigurableIndices<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   array: ArrayObjectHooks<Key, Value>,
 ): boolean {
-  const properties = object.properties;
+  const properties = object.internalRareSlots?.properties;
   if (properties === undefined) throw "ARRAY_LENGTH_INVARIANT";
   for (const [key, descriptor] of properties) {
     if (key === array.lengthKey) continue;

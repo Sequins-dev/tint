@@ -25,6 +25,6 @@ test("Number formatters expose standard function and property descriptors", () =
     >;
     assert.equal(objects.getOwnProperty(fn, "name")?.value, name);
     assert.equal(objects.getOwnProperty(fn, "length")?.value, 1);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   }
 });

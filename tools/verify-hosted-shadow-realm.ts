@@ -20,7 +20,7 @@ export function run():number {
  },inner.executionContext);
  createDataProperty<ScriptPropertyKey,unknown>(target,"name","target",hooks);createDataProperty<ScriptPropertyKey,unknown>(target,"length",2.8,hooks);
  const wrappedValue=getShadowRealmWrappedValue(outer,target),wrapped=viewObjectValue(wrappedValue,root);
- if(wrapped===undefined||wrapped.prototype!==outer.functionPrototype||wrapped.internalConstruct!==undefined)return 1;
+ if(wrapped===undefined||wrapped.prototype!==outer.functionPrototype||wrapped.internalRareSlots?.internalConstruct!==undefined)return 1;
  if(getProperty<ScriptPropertyKey,unknown>(wrapped,"name",wrapped,hooks)!=="target"||getProperty<ScriptPropertyKey,unknown>(wrapped,"length",wrapped,hooks)!==2)return 2;
  if(getShadowRealmWrappedValue(outer,target)===wrappedValue)return 3;
  const returned=hooks.call(wrappedValue,undefined,[callback]);if(returned===callback||hooks.call(returned,undefined,[])!==42)return 4;
@@ -36,7 +36,7 @@ export function run():number {
  inner.moduleLoader=(referrer,request,host,payload):void=>{if(referrer.realm!==inner)throw "FIXTURE_IMPORT_REALM";finishLoadingImportedModule(referrer,request,payload,{ok:true,module});};
  const importValue=getProperty<ScriptPropertyKey,unknown>(instance,"importValue",instance,hooks),result=hooks.call(importValue,instance,["./entry.js","value"]),promise=viewObjectValue(result,root);
  if(promise===undefined||promise.prototype!==outer.promisePrototype)return 10;
- drainScriptJobs(outer.agent,(error):void=>{throw error;});const record=promise.internalExoticSlots?.internalPromiseData;
+ drainScriptJobs(outer.agent,(error):void=>{throw error;});const record=promise.internalRareSlots?.internalExoticSlots?.internalPromiseData;
  if(record===undefined||record.state!=="fulfilled"||record.result!==42||outer.agent.activeContext!==undefined)return 11;
  const caller=createSourceFunction((receiver,args,callee,newTarget):unknown=>hooks.call(method,instance,["caller"]),true,outer,hooks,"outer",0,undefined,"legacy");
  if(hooks.call(caller,undefined,[])!==true)return 12;

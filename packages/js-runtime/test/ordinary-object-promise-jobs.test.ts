@@ -141,7 +141,7 @@ test("Promise.try is a unary non-constructor static method", () => {
   const method = descriptor.value as ScriptObject;
   assert.equal(runtime.getOwnProperty(method, "length")?.value, 1);
   assert.equal(runtime.getOwnProperty(method, "name")?.value, "try");
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   assert.deepEqual(
     runtime.ownKeys(method, runtime.scriptPropertyKeyOrder).slice(0, 2),
     ["length", "name"],

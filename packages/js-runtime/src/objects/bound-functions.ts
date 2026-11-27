@@ -16,9 +16,9 @@ export function createBoundFunction<Key, Value>(
   box: (object: OrdinaryObject<Key, Value>) => Value,
   sameValue: (left: Value, right: Value) => boolean,
 ): OrdinaryObject<Key, Value> {
-  const call = target.internalCall;
+  const call = target.internalRareSlots?.internalCall;
   if (call === undefined) throw "BOUND_CALLABLE_INVARIANT";
-  const construct = target.internalConstruct;
+  const construct = target.internalRareSlots?.internalConstruct;
   const boundArgs = prefix.slice();
   function argumentsFor(args: readonly Value[]): Value[] {
     const values = boundArgs.slice();

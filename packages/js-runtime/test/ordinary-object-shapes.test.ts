@@ -102,7 +102,7 @@ test("objects with one prototype and key order share one shape", () => {
     [a.internalValue0, a.internalValue1, a.internalValue2, a.internalValue3],
     [0, 1, 2, undefined],
   );
-  assert.equal(a.properties, undefined);
+  assert.equal(a.internalRareSlots?.properties, undefined);
   // A different order or prototype is a different shape.
   assert.notEqual(shape(point(prototype, ["y", "x", "z"])), shape(a));
   assert.notEqual(shape(point(object(undefined), ["x", "y", "z"])), shape(a));
@@ -272,7 +272,7 @@ test("accessors and symbol keys stay in fast mode", () => {
   assert.equal(read(target, "z"), 3);
   // Turning the accessor into data drops its stored descriptor.
   redefine(target, "y", writableField, true);
-  assert.equal(target.properties?.size ?? 0, 0);
+  assert.equal(target.internalRareSlots?.properties?.size ?? 0, 0);
   assert.equal(read(target, "y"), 7);
   // Dictionary mode keeps the key order.
   assert.ok(deleteProperty<ScriptPropertyKey, unknown>(target, "x"));
@@ -621,7 +621,10 @@ test("a site caches stores to writable properties and the transitions that add t
   const site = createScriptPropertyCache("x");
   assert.ok(storeCachedScriptProperty(first, "x", 1, site, 10));
   assert.equal(first.internalValue0, 1);
-  assert.equal(site.storeShape, prototype.internalChildShape);
+  assert.equal(
+    site.storeShape,
+    prototype.internalRareSlots?.internalChildShape,
+  );
   assert.equal(site.storeTransition, first.internalShape);
   assert.equal(site.storeSlot, inlineSlotBits(10));
   assert.equal(site.storeEpoch, propertyEpoch.value);
@@ -659,7 +662,10 @@ test("a site caches stores to writable properties and the transitions that add t
     storeCachedScriptProperty(shadowing, "shadowed", 1, shadowSite, 10),
   );
   assert.equal(shadowing.internalValue0, 1);
-  assert.equal(shadowSite.storeShape, prototype.internalChildShape);
+  assert.equal(
+    shadowSite.storeShape,
+    prototype.internalRareSlots?.internalChildShape,
+  );
   assert.notEqual(shadowSite.storeTransition, undefined);
   defineOwnProperty<ScriptPropertyKey, unknown>(
     prototype,
@@ -706,19 +712,19 @@ test("a site caches stores to writable properties and the transitions that add t
 test("exotic internal slots stay unallocated until written", () => {
   const plain = object(undefined);
   const other = object(undefined);
-  assert.equal(plain.internalExoticSlots, undefined);
+  assert.equal(plain.internalRareSlots?.internalExoticSlots, undefined);
   assert.equal(exoticSlots(plain).internalDateValue, undefined);
   assert.equal(exoticSlots(plain).internalErrorData, false);
   assert.equal(exoticSlots(plain).internalIsHTMLDDA, false);
-  assert.equal(plain.internalExoticSlots, undefined);
+  assert.equal(plain.internalRareSlots?.internalExoticSlots, undefined);
   const slots = ensureExoticSlots(plain);
-  assert.equal(plain.internalExoticSlots, slots);
+  assert.equal(plain.internalRareSlots?.internalExoticSlots, slots);
   assert.equal(ensureExoticSlots(plain), slots);
   slots.internalDateValue = 1234;
   slots.internalErrorData = true;
   assert.equal(exoticSlots(plain).internalDateValue, 1234);
   assert.equal(exoticSlots(plain).internalErrorData, true);
-  assert.equal(other.internalExoticSlots, undefined);
+  assert.equal(other.internalRareSlots?.internalExoticSlots, undefined);
   assert.equal(exoticSlots(other).internalDateValue, undefined);
   assert.equal(exoticSlots(other).internalErrorData, false);
 });
@@ -727,9 +733,9 @@ test("rare generic internal slots stay unallocated until written", () => {
   const plain = object(undefined);
   const other = object(undefined);
   assert.equal(plain.internalRareSlots === undefined, true);
-  createDataProperty<ScriptPropertyKey, unknown>(plain, "0", 42, hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(plain, "a", 42, hooks);
   assert.equal(
-    getProperty<ScriptPropertyKey, unknown>(plain, "0", plain, hooks),
+    getProperty<ScriptPropertyKey, unknown>(plain, "a", plain, hooks),
     42,
   );
   assert.equal(plain.internalRareSlots === undefined, true);

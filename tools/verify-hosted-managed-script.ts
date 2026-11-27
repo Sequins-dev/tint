@@ -176,7 +176,7 @@ function verifyDynamicCarrier(read:ManagedSurfaceDirectoryRead,table:unknown,run
  }
  try{
  function callCarrier(value:unknown,receiver:unknown,args:readonly unknown[]):unknown{
-  const fn=viewObjectValue(value,a.global.object);if(fn===undefined||fn.internalConstruct!==undefined)throw "CARRIER_SHAPE";
+  const fn=viewObjectValue(value,a.global.object);if(fn===undefined||fn.internalRareSlots?.internalConstruct!==undefined)throw "CARRIER_SHAPE";
   const result=callObjectValue(fn,receiver,args,a.global.object);
   if(result.error!=="none")throw "CARRIER_CALL";
   return result.value;

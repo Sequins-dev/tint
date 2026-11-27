@@ -105,7 +105,9 @@ export function looselyEqual(
   ) {
     const object = viewObjectValue(right, realm.objectPrototype);
     const exotic =
-      object === undefined ? undefined : object.internalExoticSlots;
+      object === undefined
+        ? undefined
+        : object.internalRareSlots?.internalExoticSlots;
     if (exotic !== undefined && exotic.internalIsHTMLDDA)
       return { error: "none", value: true };
   }
@@ -116,7 +118,9 @@ export function looselyEqual(
   ) {
     const object = viewObjectValue(left, realm.objectPrototype);
     const exotic =
-      object === undefined ? undefined : object.internalExoticSlots;
+      object === undefined
+        ? undefined
+        : object.internalRareSlots?.internalExoticSlots;
     if (exotic !== undefined && exotic.internalIsHTMLDDA)
       return { error: "none", value: true };
   }

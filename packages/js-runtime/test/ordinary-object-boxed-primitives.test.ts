@@ -71,7 +71,7 @@ test("primitive wrapper payloads are internal and strings expose immutable UTF-1
   assert.ok(
     Object.is(objects.exoticSlots(number).internalPrimitiveData?.value, -0),
   );
-  assert.equal(number.properties?.size ?? 0, 0);
+  assert.equal(number.internalRareSlots?.properties?.size ?? 0, 0);
 });
 
 test("String code point construction is an ordinary nonconstructor builtin", () => {
@@ -166,7 +166,7 @@ for (const name of ["substring", "slice"] as const)
     assert.equal(objects.getOwnProperty(method, "length")?.value, 2);
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "prototype"), undefined);
-    assert.ok(method.internalCall);
+    assert.ok(method.internalRareSlots?.internalCall);
     for (const text of ["abc", "A\ud83d\ude00Z", ""])
       for (const args of [
         [],
@@ -179,7 +179,7 @@ for (const name of ["substring", "slice"] as const)
         [1, undefined],
       ] as const)
         assert.equal(
-          method.internalCall(text, args),
+          method.internalRareSlots?.internalCall(text, args),
           text[name](args[0] as number, args[1]),
           JSON.stringify({ text, args }),
         );
@@ -196,7 +196,7 @@ for (const name of ["indexOf", "lastIndexOf"] as const)
       unknown
     >;
     assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-    assert.ok(method.internalCall);
+    assert.ok(method.internalRareSlots?.internalCall);
     for (const search of ["a", "", "missing", undefined, null, 42])
       for (const position of [
         undefined,
@@ -212,7 +212,10 @@ for (const name of ["indexOf", "lastIndexOf"] as const)
         99,
       ])
         assert.equal(
-          method.internalCall("aba42undefinednull", [search, position]),
+          method.internalRareSlots?.internalCall("aba42undefinednull", [
+            search,
+            position,
+          ]),
           "aba42undefinednull"[name](String(search), position),
         );
   });
@@ -247,7 +250,7 @@ test("String search, trimming and repetition methods expose standard descriptors
       name.startsWith("trim") ? 0 : 1,
     );
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
   assert.equal(
     objects.getOwnProperty(realm.stringPrototype, "trimLeft")?.value,
@@ -273,8 +276,8 @@ test("String.raw exposes standard metadata", () => {
     unknown
   >;
   assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-  assert.equal(method.internalConstruct, undefined);
-  assert.ok(method.internalCall);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
+  assert.ok(method.internalRareSlots?.internalCall);
   assert.equal(descriptor.writable, true);
   assert.equal(descriptor.configurable, true);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "raw");
@@ -292,7 +295,7 @@ test("String.substr clamps UTF-16 offsets and lengths independently", () => {
     ScriptPropertyKey,
     unknown
   >;
-  assert.ok(method.internalCall);
+  assert.ok(method.internalRareSlots?.internalCall);
   assert.equal(objects.getOwnProperty(method, "length")?.value, 2);
   for (const value of ["", "abc", "a😀z"])
     for (const start of [
@@ -308,7 +311,7 @@ test("String.substr clamps UTF-16 offsets and lengths independently", () => {
     ])
       for (const length of [undefined, NaN, -Infinity, -1, 0, 1.9, 9, Infinity])
         assert.equal(
-          method.internalCall(value, [start, length]),
+          method.internalRareSlots?.internalCall(value, [start, length]),
           value.substr(start ?? 0, length),
         );
 });

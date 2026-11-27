@@ -16,8 +16,8 @@ export function createTemporalObjectFixture() {
     sameValue: Object.is,
     call(callee, receiver, args) {
       const fn = objects.viewObjectValue(callee, root);
-      assert.ok(fn?.internalCall);
-      return fn.internalCall(receiver, args);
+      assert.ok(fn?.internalRareSlots?.internalCall);
+      return fn.internalRareSlots?.internalCall(receiver, args);
     },
   };
   const root = objects.createObject<ScriptPropertyKey, unknown>(undefined);
@@ -35,8 +35,8 @@ export function createTemporalObjectFixture() {
     args: readonly unknown[] = [],
   ) => {
     const fn = get(value, key) as ObjectValue;
-    assert.ok(fn.internalCall);
-    return fn.internalCall(value, args);
+    assert.ok(fn.internalRareSlots?.internalCall);
+    return fn.internalRareSlots?.internalCall(value, args);
   };
   const bag = (data: Record<string, unknown>) => {
     const value = objects.createObject<ScriptPropertyKey, unknown>(root);

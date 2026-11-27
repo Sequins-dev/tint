@@ -18,7 +18,7 @@ export function run():number {
  const method=viewObjectValue(property.value,root);if(method===undefined)return 2;
  const length=getOwnProperty<ScriptPropertyKey,unknown>(method,"length");
  if(length===undefined||length.value!==0||length.writable||length.enumerable||!length.configurable)return 3;
- if(getOwnProperty<ScriptPropertyKey,unknown>(method,"name")?.value!=="toString"||method.internalConstruct!==undefined)return 4;
+ if(getOwnProperty<ScriptPropertyKey,unknown>(method,"name")?.value!=="toString"||method.internalRareSlots?.internalConstruct!==undefined)return 4;
  const value=bigIntFromString("42");if(value===undefined)return 5;
  const decimal=callObjectValue(method,value,[],root),binary=callObjectValue(method,value,[2],root);
  if(decimal.error!=="none"||decimal.value!=="42"||binary.error!=="none"||binary.value!=="101010")return 6;

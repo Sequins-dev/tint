@@ -23,7 +23,7 @@ function setup(name: string) {
   const descriptor = objects.getOwnProperty(realm.stringPrototype, name);
   assert.ok(descriptor, name + " must be installed");
   const method = objects.viewObjectValue(descriptor.value, root);
-  assert.ok(method?.internalCall);
+  assert.ok(method?.internalRareSlots?.internalCall);
   return {
     root,
     realm,
@@ -31,7 +31,7 @@ function setup(name: string) {
     descriptor,
     method,
     call(receiver: unknown, ...args: unknown[]) {
-      return method.internalCall!(receiver, args);
+      return method.internalRareSlots!.internalCall!(receiver, args);
     },
     error(kind: string) {
       return (error: unknown) =>
@@ -67,7 +67,7 @@ for (const name of ["toLocaleLowerCase", "toLocaleUpperCase"] as const) {
     assert.equal(f.descriptor.configurable, true);
     assert.equal(objects.getOwnProperty(f.method, "length")?.value, 0);
     assert.equal(objects.getOwnProperty(f.method, "name")?.value, name);
-    assert.equal(f.method.internalConstruct, undefined);
+    assert.equal(f.method.internalRareSlots?.internalConstruct, undefined);
     assert.equal(objects.getOwnProperty(f.method, "prototype"), undefined);
   });
   test(`${name} follows full Unicode and Turkish, Azeri and Lithuanian contexts`, () => {

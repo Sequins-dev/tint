@@ -22,8 +22,8 @@ test("Intl owns a tagged namespace and a non-constructor supportedValuesOf metho
     unknown
   >;
   assert.equal(namespace.prototype, realm.objectPrototype);
-  assert.equal(namespace.internalCall, undefined);
-  assert.equal(namespace.internalConstruct, undefined);
+  assert.equal(namespace.internalRareSlots?.internalCall, undefined);
+  assert.equal(namespace.internalRareSlots?.internalConstruct, undefined);
   const method = objects.getOwnProperty(namespace, "supportedValuesOf")!
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(method, "length")!.value, 1);
@@ -31,7 +31,7 @@ test("Intl owns a tagged namespace and a non-constructor supportedValuesOf metho
     objects.getOwnProperty(method, "name")!.value,
     "supportedValuesOf",
   );
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("Intl.PluralRules exposes its constructor, branded prototype and method metadata", () => {
@@ -65,7 +65,7 @@ test("Intl.PluralRules exposes its constructor, branded prototype and method met
     const method = objects.getOwnProperty(prototype, name)!
       .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
     assert.equal(objects.getOwnProperty(method, "length")?.value, length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });
 
@@ -107,10 +107,10 @@ test("Intl numbering-system enumeration reflects the implemented numeric rendere
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   const method = objects.getOwnProperty(intl, "supportedValuesOf")!
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
-  const first = method.internalCall!(undefined, [
+  const first = method.internalRareSlots!.internalCall!(undefined, [
     "numberingSystem",
   ]) as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
-  const second = method.internalCall!(undefined, [
+  const second = method.internalRareSlots!.internalCall!(undefined, [
     "numberingSystem",
   ]) as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(first, "length")?.value, 78);
@@ -157,6 +157,6 @@ test("Intl.NumberFormat exposes range methods with two-argument metadata", () =>
       objects.OrdinaryObject<objects.ScriptPropertyKey, unknown> | undefined;
     assert.ok(method);
     assert.equal(objects.getOwnProperty(method, "length")?.value, 2);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });

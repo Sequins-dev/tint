@@ -14,7 +14,7 @@ export function run():number {
  const constructed=constructObject<ScriptPropertyKey,unknown>(constructor,[executor],{object:constructor,value:constructor},undefined);
  const promise=viewObjectValue(constructed.value,root);
  if(promise===undefined)return 1;
- const record=promise.internalExoticSlots?.internalPromiseData;
+ const record=promise.internalRareSlots?.internalExoticSlots?.internalPromiseData;
  if(record===undefined||record.state!=="fulfilled"||record.result!==42)return 2;
  const handler=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
   if(receiver!==undefined||args[0]!==42)throw 91;
@@ -24,7 +24,7 @@ export function run():number {
  const childResult=callObjectValue(then,promise,[handler],root);
  const child=viewObjectValue(childResult.value,root);
  if(child===undefined)return 3;
- const childRecord=child.internalExoticSlots?.internalPromiseData;
+ const childRecord=child.internalRareSlots?.internalExoticSlots?.internalPromiseData;
  if(childRecord===undefined||childRecord.state!=="pending")return 4;
  if(drainScriptJobs(agent,(error):void=>{throw error;})!==1)return 5;
  if(childRecord.result!==84)return 6;
@@ -38,7 +38,7 @@ export function run():number {
  const rejected=constructObject<ScriptPropertyKey,unknown>(constructor,[rejectedExecutor],{object:constructor,value:constructor},undefined);
  const rejectedObject=viewObjectValue(rejected.value,root);
  if(rejectedObject===undefined)return 7;
- const rejectedRecord=rejectedObject.internalExoticSlots?.internalPromiseData;
+ const rejectedRecord=rejectedObject.internalRareSlots?.internalExoticSlots?.internalPromiseData;
  if(rejectedRecord===undefined||rejectedRecord.state!=="rejected"||rejectedRecord.result!==123)return 8;
  return 42;
 }`,

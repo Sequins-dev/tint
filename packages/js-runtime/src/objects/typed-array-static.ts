@@ -25,7 +25,10 @@ function requireConstructor(
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = viewObjectValue(value, realm.objectPrototype);
-  if (object === undefined || object.internalConstruct === undefined)
+  if (
+    object === undefined ||
+    object.internalRareSlots?.internalConstruct === undefined
+  )
     throw createRuntimeError(realm, "type");
   return object;
 }
@@ -71,7 +74,10 @@ export function installTypedArrayStatic(
           mapper = args[1];
         if (mapper !== undefined) {
           const callable = viewObjectValue(mapper, realm.objectPrototype);
-          if (callable === undefined || callable.internalCall === undefined)
+          if (
+            callable === undefined ||
+            callable.internalRareSlots?.internalCall === undefined
+          )
             throw createRuntimeError(realm, "type");
         }
         const iteratorHooks = createScriptIteratorHooks(realm, hooks);

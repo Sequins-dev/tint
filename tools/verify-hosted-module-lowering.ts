@@ -124,8 +124,8 @@ export function run():number {
  if(first.error!=="none"||again.error!=="none"||other.error!=="none"||first.value!==again.value||first.value===other.value)return 72;
  const capability=root.topLevelCapability;if(capability===undefined||evaluateModule(root,hooks)!==capability.promise||log.text!=="bard")return 73;
  const early=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(aNamespace,"early",aNamespace,hooks),object),namedClass=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(dcNamespace,"Named",dcNamespace,hooks),object);
- if(early===undefined||early.internalExoticSlots?.internalSourceText!=="function early(){return 42;}")return 74;
- if(namedClass===undefined||namedClass.internalExoticSlots?.internalSourceText!=="class Named{}")return 75;
+ if(early===undefined||early.internalRareSlots?.internalExoticSlots?.internalSourceText!=="function early(){return 42;}")return 74;
+ if(namedClass===undefined||namedClass.internalRareSlots?.internalExoticSlots?.internalSourceText!=="class Named{}")return 75;
  const md=create_mutableDefault(global,realm,undefined);if(settledModulePromise(loadRequestedModules(md,hooks,undefined),realm).kind!=="fulfilled"||!linkModule(md).ok||settledModulePromise(evaluateModule(md,hooks),realm).kind!=="fulfilled")return 76;
  const mdNamespace=getModuleNamespace(md),mutableDefault=getProperty<ScriptPropertyKey,unknown>(mdNamespace,"default",mdNamespace,hooks),changed=callObjectValue(mutableDefault,undefined,[],object);
  if(changed.error!=="none"||changed.value!==42||getProperty<ScriptPropertyKey,unknown>(mdNamespace,"default",mdNamespace,hooks)!==42||getProperty<ScriptPropertyKey,unknown>(mdNamespace,"f",mdNamespace,hooks)!==42)return 77;
@@ -139,16 +139,16 @@ export function run():number {
  const otherMetaNamespace=getModuleNamespace(otherMeta);if(getProperty<ScriptPropertyKey,unknown>(otherMetaNamespace,"default",otherMetaNamespace,hooks)===meta)return 81;
  const dynamicPromise=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(dynamicNamespace,"promise",dynamicNamespace,hooks),object);
  if(dynamicPromise===undefined)return 82;
- const pending=dynamicPromise.internalExoticSlots?.internalPromiseData;if(pending===undefined||pending.state!=="pending")return 82;
+ const pending=dynamicPromise.internalRareSlots?.internalExoticSlots?.internalPromiseData;if(pending===undefined||pending.state!=="pending")return 82;
  const jobFailure:{count:number}={count:0};drainScriptJobs(realm.agent,(error:unknown):void=>{jobFailure.count++;});if(jobFailure.count!==0)return 83;
- const resolved=dynamicPromise.internalExoticSlots?.internalPromiseData;if(resolved===undefined||resolved.state!=="fulfilled"||resolved.result!==aNamespace)return 84;
+ const resolved=dynamicPromise.internalRareSlots?.internalExoticSlots?.internalPromiseData;if(resolved===undefined||resolved.state!=="fulfilled"||resolved.result!==aNamespace)return 84;
  if(dynamic.loadedRequests.length!==1||dynamic.loadedRequests[0]?.module!==a)return 85;
  const scriptRecord=createScriptRecord(realm,undefined),scriptCompletion=execute_scriptRoot(global,scriptRecord);
  if(scriptCompletion.error!=="none"||importedBy.value!==scriptRecord)return 86;
  const scriptPromise=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(object,"scriptPromise",object,hooks),object);
- if(scriptPromise===undefined)return 87;const scriptData=scriptPromise.internalExoticSlots?.internalPromiseData;if(scriptData===undefined||scriptData.state!=="pending")return 87;
+ if(scriptPromise===undefined)return 87;const scriptData=scriptPromise.internalRareSlots?.internalExoticSlots?.internalPromiseData;if(scriptData===undefined||scriptData.state!=="pending")return 87;
  drainScriptJobs(realm.agent,(error:unknown):void=>{jobFailure.count++;});if(jobFailure.count!==0)return 88;
- const scriptResult=scriptPromise.internalExoticSlots?.internalPromiseData;if(scriptResult===undefined||scriptResult.state!=="fulfilled"||scriptResult.result!==aNamespace)return 89;
+ const scriptResult=scriptPromise.internalRareSlots?.internalExoticSlots?.internalPromiseData;if(scriptResult===undefined||scriptResult.state!=="fulfilled"||scriptResult.result!==aNamespace)return 89;
  return 42;
 }`,
   "module-lowering",

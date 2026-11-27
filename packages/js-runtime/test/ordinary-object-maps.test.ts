@@ -47,7 +47,7 @@ test("Map intrinsics expose constructor and method metadata", () => {
     >;
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "length")?.value, length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
   assert.equal(
     objects.getOwnProperty(

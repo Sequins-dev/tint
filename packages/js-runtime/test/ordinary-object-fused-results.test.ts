@@ -128,7 +128,10 @@ test("createRetainedSourceFunction names from a property key and keeps its sourc
     "visible",
     "m() {}",
   );
-  assert.equal(named.internalExoticSlots?.internalSourceText, "m() {}");
+  assert.equal(
+    named.internalRareSlots?.internalExoticSlots?.internalSourceText,
+    "m() {}",
+  );
   assert.equal(getOwnProperty(named, "name")?.value, "m");
   const symbolic = createRetainedSourceFunction(
     () => 1,

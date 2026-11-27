@@ -35,11 +35,11 @@ test("iterator intrinsic prototypes share identity behavior and array values ide
     const next = objects.getOwnProperty(proto, "next")!
       .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
     assert.equal(objects.getOwnProperty(next, "length")?.value, 0);
-    assert.equal(next.internalConstruct, undefined);
+    assert.equal(next.internalRareSlots?.internalConstruct, undefined);
   }
   const identity = objects.getOwnProperty(realm.iteratorPrototype, key)!
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
-  assert.equal(identity.internalCall!(42, []), 42);
+  assert.equal(identity.internalRareSlots!.internalCall!(42, []), 42);
 });
 
 test("Iterator base exposes configurable constructor and tag accessors", () => {
@@ -79,11 +79,11 @@ test("Iterator base exposes configurable constructor and tag accessors", () => {
       objects.ScriptPropertyKey,
       unknown
     >;
-    assert.equal(get.internalCall!(undefined, []), expected);
+    assert.equal(get.internalRareSlots!.internalCall!(undefined, []), expected);
     assert.equal(objects.getOwnProperty(get, "length")?.value, 0);
     assert.equal(objects.getOwnProperty(set, "length")?.value, 1);
-    assert.equal(get.internalConstruct, undefined);
-    assert.equal(set.internalConstruct, undefined);
+    assert.equal(get.internalRareSlots?.internalConstruct, undefined);
+    assert.equal(set.internalRareSlots?.internalConstruct, undefined);
   }
 });
 
@@ -115,7 +115,7 @@ test("Iterator static factories have standard metadata", () => {
     >;
     assert.equal(objects.getOwnProperty(method, "length")?.value, length);
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });
 
@@ -141,7 +141,7 @@ test("Iterator.prototype.toArray has standard method metadata", () => {
   >;
   assert.equal(objects.getOwnProperty(method, "length")?.value, 0);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "toArray");
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 
 for (const [group, names] of [
@@ -174,7 +174,7 @@ for (const [group, names] of [
       >;
       assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
       assert.equal(objects.getOwnProperty(method, "name")?.value, name);
-      assert.equal(method.internalConstruct, undefined);
+      assert.equal(method.internalRareSlots?.internalConstruct, undefined);
     }
   });
 }
@@ -207,7 +207,7 @@ test("Iterator disposal is a non-constructible zero-argument symbol method", () 
     "[Symbol.dispose]",
   );
   assert.equal(objects.getOwnProperty(method, "length")?.value, 0);
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("Iterator joint factories have one required argument and no constructor", () => {
@@ -233,7 +233,7 @@ test("Iterator joint factories have one required argument and no constructor", (
     >;
     assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });
 
@@ -261,5 +261,5 @@ test("iterator disposal is a nonconstructible zero-argument intrinsic", () => {
   >;
   assert.equal(objects.getOwnProperty(fn, "name")?.value, "[Symbol.dispose]");
   assert.equal(objects.getOwnProperty(fn, "length")?.value, 0);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
 });

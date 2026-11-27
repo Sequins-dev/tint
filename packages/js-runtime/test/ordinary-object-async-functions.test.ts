@@ -29,7 +29,7 @@ test("source async functions are non-constructible and retain intrinsic prototyp
   );
   assert.equal(calls, 0);
   assert.equal(fn.prototype, realm.asyncFunctionPrototype);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.equal(object.getOwnProperty(fn, "prototype"), undefined);
   assert.equal(object.getOwnProperty(fn, "name")?.value, "f");
   assert.equal(object.getOwnProperty(fn, "length")?.value, 2);
@@ -61,7 +61,7 @@ test("suspending async functions keep initialization lazy and non-constructible"
   );
   assert.equal(initialized, false);
   assert.ok(fn.prototype === realm.asyncFunctionPrototype);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.deepEqual(
     object.ownKeys(fn, () => -1),
     ["length", "name"],
@@ -99,10 +99,10 @@ test("async dispatch returns a delegated promise without adopting it", () => {
     1,
   );
   assert.equal(calls, 0);
-  assert.equal(fn.internalCall?.(7, [42]), promise);
+  assert.equal(fn.internalRareSlots?.internalCall?.(7, [42]), promise);
   assert.equal(callee, fn);
   assert.equal(calls, 1);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.equal(fn.prototype, realm.asyncFunctionPrototype);
 });
 test("async dispatch rejects delegate throws and settles profile results", () => {
@@ -130,15 +130,17 @@ test("async dispatch rejects delegate throws and settles profile results", () =>
       realm,
       hooks,
     );
-    const value = fn.internalCall?.(undefined, []);
+    const value = fn.internalRareSlots?.internalCall?.(undefined, []);
     assert.ok(value && typeof value === "object");
     const promise = value as OrdinaryObject<ScriptPropertyKey, unknown>;
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.state,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       fail ? "rejected" : "fulfilled",
     );
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.result,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.result,
       fail ? marker : 42,
     );
   }

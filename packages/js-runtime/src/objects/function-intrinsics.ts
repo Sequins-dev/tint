@@ -55,7 +55,10 @@ export function installFunctionIntrinsics(
     value: unknown,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = viewObjectValue(value, realm.objectPrototype);
-    if (object === undefined || object.internalCall === undefined)
+    if (
+      object === undefined ||
+      object.internalRareSlots?.internalCall === undefined
+    )
       throw createRuntimeError(realm, "type");
     return object;
   }

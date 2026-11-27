@@ -82,7 +82,7 @@ test("partial-date equality and year-month comparison have intrinsic method cont
       const fn = descriptor.value as OrdinaryObject<ScriptPropertyKey, unknown>;
       assert.equal(objects.getOwnProperty(fn, "length")!.value, target.length);
       assert.equal(objects.getOwnProperty(fn, "name")!.value, target.name);
-      assert.equal(fn.internalConstruct, undefined);
+      assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
     }
   }
 });

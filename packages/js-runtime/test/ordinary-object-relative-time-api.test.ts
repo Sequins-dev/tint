@@ -31,7 +31,10 @@ function setup() {
   const get = (object: Obj, key: string) =>
     o.getProperty(object, key, object, hooks);
   const call = (name: string, receiver: unknown, args: unknown[] = []) =>
-    (get(prototype, name) as Obj).internalCall!(receiver, args);
+    (get(prototype, name) as Obj).internalRareSlots!.internalCall!(
+      receiver,
+      args,
+    );
   const options = (fields: Record<string, unknown>) => {
     const result = o.createObject<ScriptPropertyKey, unknown>(undefined);
     for (const [k, v] of Object.entries(fields))
@@ -66,7 +69,10 @@ test("RelativeTimeFormat exposes standard metadata and immutable configured slot
   const r = setup();
   assert.equal(r.get(r.constructor, "name"), "RelativeTimeFormat");
   assert.equal(r.get(r.constructor, "length"), 0);
-  r.type(() => r.constructor.internalCall!(undefined, []), "type");
+  r.type(
+    () => r.constructor.internalRareSlots!.internalCall!(undefined, []),
+    "type",
+  );
   const options = r.options({
       numeric: "auto",
       style: "short",
@@ -91,7 +97,7 @@ test("RelativeTimeFormat exposes standard metadata and immutable configured slot
     const method = r.get(r.prototype, name) as Obj;
     assert.equal(r.get(method, "name"), name);
     assert.equal(r.get(method, "length"), length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
     const d = o.getOwnProperty(r.prototype, name)!;
     assert.equal(d.enumerable, false);
     assert.equal(d.writable, true);

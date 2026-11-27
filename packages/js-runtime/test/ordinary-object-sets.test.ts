@@ -46,7 +46,7 @@ test("Set intrinsics expose metadata and shared values aliases", () => {
     >;
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "length")?.value, length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
   const values = objects.getOwnProperty(realm.setPrototype, "values")?.value;
   assert.equal(

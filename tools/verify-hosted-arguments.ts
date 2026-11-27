@@ -37,7 +37,7 @@ export function run():number{
  const objectPrototype=createObject<ScriptPropertyKey,unknown>(undefined);
  const realm=createErrorRealm(objectPrototype,unknownHooks);
  const thrower=realm.throwTypeError;
- const throwCall=thrower.internalCall;
+ const throwCall=thrower.internalRareSlots?.internalCall;
  if(throwCall===undefined||(thrower.internalFlags&1)!==0||thrower.prototype!==realm.functionPrototype)return 16;
  let threw=false;
  try{throwCall(undefined,[]);}catch(error){
@@ -49,7 +49,7 @@ export function run():number{
  ensureRareSlots<ScriptPropertyKey,unknown>(tagged).internalArgumentsData=true;
  const stringifier=viewObjectValue(getProperty<ScriptPropertyKey,unknown>(objectPrototype,"toString",objectPrototype,unknownHooks),objectPrototype);
  if(stringifier===undefined)return 12;
- const invoke=stringifier.internalCall;
+ const invoke=stringifier.internalRareSlots?.internalCall;
  if(invoke===undefined)return 13;
  if(invoke(tagged,[])!=="[object Arguments]")return 14;
  const child=createObject<ScriptPropertyKey,unknown>(tagged);
@@ -74,7 +74,7 @@ export function run():number{
  const other=createSourceFunction((receiver,args,callee,newTarget):unknown=>callee,true,realm,unknownHooks);
  if(callObjectValue(fn,other,[],objectPrototype).value!==fn)return 23;
  if(callObjectValue(other,fn,[],objectPrototype).value!==other)return 24;
- const construct=fn.internalConstruct;
+ const construct=fn.internalRareSlots?.internalConstruct;
  if(construct===undefined||construct([],fn)!==fn||construct([],other)!==fn)return 25;
  return 42;
 }

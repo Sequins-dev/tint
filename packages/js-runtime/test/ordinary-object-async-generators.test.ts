@@ -27,14 +27,18 @@ test("async generator objects have private lazy state and distinct prototype cha
     realm.asyncGeneratorPrototype.prototype === realm.asyncIteratorPrototype,
   );
   assert.ok(realm.asyncIteratorPrototype.prototype === root);
-  assert.equal(generator.properties?.size ?? 0, 0);
+  assert.equal(generator.internalRareSlots?.properties?.size ?? 0, 0);
   assert.equal(
-    generator.internalExoticSlots?.internalAsyncGeneratorData?.record.state,
+    generator.internalRareSlots?.internalExoticSlots?.internalAsyncGeneratorData
+      ?.record.state,
     "suspended-start",
   );
-  assert.equal(generator.internalExoticSlots?.internalGeneratorData, undefined);
   assert.equal(
-    realm.asyncGeneratorPrototype.internalExoticSlots
+    generator.internalRareSlots?.internalExoticSlots?.internalGeneratorData,
+    undefined,
+  );
+  assert.equal(
+    realm.asyncGeneratorPrototype.internalRareSlots?.internalExoticSlots
       ?.internalAsyncGeneratorData,
     undefined,
   );
@@ -60,7 +64,7 @@ test("async generator prototypes expose shared methods and correct descriptors",
     >;
     assert.equal(object.getOwnProperty(method, "name")?.value, name);
     assert.equal(object.getOwnProperty(method, "length")?.value, 1);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
   const tag = object.wellKnownSymbol(realm.symbolRegistry, "toStringTag");
   assert.equal(
@@ -138,7 +142,7 @@ test("source async generator functions are non-constructible with unique instanc
     hooks,
   );
   assert.ok(fn.prototype === realm.asyncGeneratorFunctionPrototype);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.equal(object.getOwnProperty(fn, "name")?.value, "g");
   assert.equal(object.getOwnProperty(fn, "length")?.value, 2);
   const descriptor = object.getOwnProperty(fn, "prototype");

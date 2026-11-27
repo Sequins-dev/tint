@@ -1827,6 +1827,7 @@ function lowerScriptEntry(
   let usesNullishEquality = false;
   let excludesHTMLDDAObjects = false;
   let usesRelationalFallback = false;
+  let usesUnaryFallback = false;
   let usesLooseEqualityFallback = false;
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
@@ -6149,7 +6150,11 @@ function lowerScriptEntry(
           const slots = temporary(
             scalarBranch(
               scalarBinary("||", isMap, isSet, span),
-              optionalMember(view, "internalExoticSlots", span),
+              optionalMember(
+                optionalMember(view, "internalRareSlots", span),
+                "internalExoticSlots",
+                span,
+              ),
               id("undefined", span),
               span,
             ),
@@ -6181,7 +6186,11 @@ function lowerScriptEntry(
           dataExpr = scalarBranch(
             is(field ?? ""),
             optionalMember(
-              optionalMember(view, "internalExoticSlots", span),
+              optionalMember(
+                optionalMember(view, "internalRareSlots", span),
+                "internalExoticSlots",
+                span,
+              ),
               shape === "set" ? "internalSetData" : "internalMapData",
               span,
             ),
@@ -6967,8 +6976,24 @@ function lowerScriptEntry(
     span: Span,
   ): Expression {
     const args = [text(operator, span), left, right];
-    if (compactResults || operator === "**")
+    if (compactResults)
       return checkedOperatorValue("binaryObjectValueOperation", args, span);
+    if (operator === "**") {
+      usesRelationalFallback = true;
+      return temporary(
+        runtimeCall(
+          "binaryObjectValueOperationOrThrow",
+          [
+            text(operator, span),
+            left,
+            right,
+            member(id("$global"), "hooks", span),
+            id("$errors"),
+          ],
+          span,
+        ),
+      );
+    }
     if (
       operator === "<" ||
       operator === "<=" ||
@@ -7024,10 +7049,19 @@ function lowerScriptEntry(
       };
     }
     const start = statements.length;
-    const general = checkedOperatorValue(
-      "binaryObjectValueOperation",
-      args,
-      span,
+    usesRelationalFallback = true;
+    const general = temporary(
+      runtimeCall(
+        "binaryObjectValueOperationOrThrow",
+        [
+          text(operator, span),
+          left,
+          right,
+          member(id("$global"), "hooks", span),
+          id("$errors"),
+        ],
+        span,
+      ),
     );
     statements.push(assigned(general));
     const slow: BlockStatement = {
@@ -7093,10 +7127,18 @@ function lowerScriptEntry(
       return checkedOperatorValue("unaryObjectValueOperation", args, span);
     const result = temporary(id("undefined", span), true, true);
     const start = statements.length;
-    const fallback = checkedOperatorValue(
-      "unaryObjectValueOperation",
-      args,
-      span,
+    usesUnaryFallback = true;
+    const fallback = temporary(
+      runtimeCall(
+        "unaryObjectValueOperationOrThrow",
+        [
+          text(operator, span),
+          operand,
+          member(id("$global"), "hooks", span),
+          id("$errors"),
+        ],
+        span,
+      ),
     );
     storeSlot(result, fallback, span);
     const alternate: BlockStatement = {
@@ -13333,9 +13375,13 @@ function lowerScriptEntry(
             if (!needMap && !needSet) continue;
             const slotsTemp = temporary(
               optionalMember(
-                runtimeCall(
-                  "viewTypeofObject",
-                  [copyIdentifier(slot, node)],
+                optionalMember(
+                  runtimeCall(
+                    "viewTypeofObject",
+                    [copyIdentifier(slot, node)],
+                    node,
+                  ),
+                  "internalRareSlots",
                   node,
                 ),
                 "internalExoticSlots",
@@ -14508,6 +14554,7 @@ function lowerScriptEntry(
     usesIntrinsicCalls,
     usesObjectLiterals,
     usesSmallArrays,
+    usesUnaryFallback,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

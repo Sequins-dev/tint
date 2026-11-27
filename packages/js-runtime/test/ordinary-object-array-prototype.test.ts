@@ -52,7 +52,7 @@ for (const name of [
     >;
     assert.equal(object.getOwnProperty(method, "length")?.value, 1);
     assert.equal(object.getOwnProperty(method, "name")?.value, name);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   });
 }
 
@@ -79,7 +79,7 @@ for (const name of ["splice", "slice", "copyWithin", "with", "toSpliced"])
       unknown
     >;
     assert.equal(object.getOwnProperty(method, "length")?.value, 2);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   });
 
 for (const name of ["pop", "shift", "reverse", "flat", "toReversed"]) {
@@ -93,6 +93,6 @@ for (const name of ["pop", "shift", "reverse", "flat", "toReversed"]) {
       unknown
     >;
     assert.equal(object.getOwnProperty(method, "length")?.value, 0);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   });
 }

@@ -34,7 +34,7 @@ test("Array locale method has its own standard zero-argument metadata", () => {
   const { method } = setup();
   assert.equal(objects.getOwnProperty(method, "length")?.value, 0);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "toLocaleString");
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 test("Array locale snapshots length and forwards original elements and exactly two options", () => {
   const { root, hooks, realm, method } = setup();
@@ -58,7 +58,11 @@ test("Array locale snapshots length and forwards original elements and exactly t
   objects.createDataProperty(array, "0", element, hooks);
   objects.createDataProperty(array, "2", element, hooks);
   assert.equal(
-    method.internalCall!(array, [locale, options, "ignored"]),
+    method.internalRareSlots!.internalCall!(array, [
+      locale,
+      options,
+      "ignored",
+    ]),
     "value,,value",
   );
   assert.deepEqual(log, ["call", "call"]);
@@ -73,6 +77,6 @@ test("TypedArray locale method owns zero-argument metadata and validates its bra
   assert.ok(d);
   const method = d.value as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(method, "length")?.value, 0);
-  assert.equal(method.internalConstruct, undefined);
-  assert.throws(() => method.internalCall!({}, []));
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
+  assert.throws(() => method.internalRareSlots!.internalCall!({}, []));
 });

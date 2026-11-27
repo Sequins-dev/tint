@@ -31,7 +31,8 @@ export function replaceRegExp(
   const input = regexpString(value, realm, hooks);
   const callable = viewObjectValue(replacer, realm.objectPrototype);
   const functional =
-    callable !== undefined && callable.internalCall !== undefined;
+    callable !== undefined &&
+    callable.internalRareSlots?.internalCall !== undefined;
   const template = functional ? "" : regexpString(replacer, realm, hooks);
   const flags = regexpString(
     getProperty<ScriptPropertyKey, unknown>(object, "flags", object, hooks),

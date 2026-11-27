@@ -36,7 +36,10 @@ function setup() {
   const get = (object: Obj, key: string) =>
     o.getProperty(object, key, object, hooks);
   const call = (name: string, receiver: unknown, args: unknown[] = []) =>
-    (get(prototype, name) as Obj).internalCall!(receiver, args);
+    (get(prototype, name) as Obj).internalRareSlots!.internalCall!(
+      receiver,
+      args,
+    );
   const options = (fields: Record<string, unknown>) => {
     const result = o.createObject<ScriptPropertyKey, unknown>(undefined);
     for (const [k, v] of Object.entries(fields))
@@ -44,7 +47,10 @@ function setup() {
     return result;
   };
   const make = (locale: unknown = "en", input: unknown = undefined) => {
-    return constructor.internalConstruct!([locale, input], constructor) as Obj;
+    return constructor.internalRareSlots!.internalConstruct!(
+      [locale, input],
+      constructor,
+    ) as Obj;
   };
   const type = (run: () => unknown, kind: string) =>
     assert.throws(
@@ -72,7 +78,7 @@ function formatted(
   value: unknown = 0,
 ): string {
   const bound = r.get(formatter, "format") as Obj;
-  return bound.internalCall!(undefined, [value]) as string;
+  return bound.internalRareSlots!.internalCall!(undefined, [value]) as string;
 }
 function records(
   r: ReturnType<typeof setup>,
@@ -96,7 +102,7 @@ function temporal(
 ): Obj {
   const group = r.get(r.root, "Temporal") as Obj,
     ctor = r.get(group, name) as Obj;
-  return ctor.internalConstruct!(args, ctor) as Obj;
+  return ctor.internalRareSlots!.internalConstruct!(args, ctor) as Obj;
 }
 function types(r: ReturnType<typeof setup>, formatter: Obj, value: unknown) {
   return records(r, r.call("formatToParts", formatter, [value]) as Obj)
@@ -109,7 +115,7 @@ function nanos(text: string) {
 
 function date(r: ReturnType<typeof setup>, value: number): Obj {
   const ctor = r.get(r.root, "Date") as Obj;
-  return ctor.internalConstruct!([value], ctor) as Obj;
+  return ctor.internalRareSlots!.internalConstruct!([value], ctor) as Obj;
 }
 function callDate(
   r: ReturnType<typeof setup>,
@@ -118,7 +124,7 @@ function callDate(
   args: unknown[] = [],
 ): unknown {
   const method = r.get(r.realm.datePrototype, name) as Obj;
-  return method.internalCall!(value, args);
+  return method.internalRareSlots!.internalCall!(value, args);
 }
 test("Date locale methods forward to the same private formatter used for Temporal", () => {
   const r = setup(),
@@ -139,7 +145,7 @@ test("Date locale methods forward to the same private formatter used for Tempora
   const instant = temporal(r, "Instant", [nanos("0")]),
     method = r.get(instant, "toLocaleString") as Obj;
   assert.equal(
-    method.internalCall!(instant, ["en", options]),
+    method.internalRareSlots!.internalCall!(instant, ["en", options]),
     callDate(r, "toLocaleString", value, ["en", options]),
   );
 });

@@ -48,7 +48,7 @@ for (const name of names) {
       const method = descriptor.value as ObjectValue;
       assert.equal(f.get(method, "name"), "toLocaleString");
       assert.equal(f.get(method, "length"), 0);
-      assert.equal(method.internalConstruct, undefined);
+      assert.equal(method.internalRareSlots?.internalConstruct, undefined);
     },
   );
 
@@ -56,7 +56,7 @@ for (const name of names) {
     const f = createTemporalObjectFixture();
     const temporal = f.get(f.root, "Temporal") as ObjectValue;
     const method = f.get(prototypeOf(f, name), "toLocaleString") as ObjectValue;
-    assert.ok(method.internalCall);
+    assert.ok(method.internalRareSlots?.internalCall);
     const other =
       name === "PlainDate"
         ? f.construct("PlainDateTime", [2024, 2, 29])
@@ -81,7 +81,8 @@ for (const name of names) {
       other,
     ])
       assert.throws(
-        () => method.internalCall!(receiver, [poison, poison]),
+        () =>
+          method.internalRareSlots!.internalCall!(receiver, [poison, poison]),
         (error: unknown) =>
           objects.viewObjectValue(error, f.root)?.prototype ===
           f.realm.prototypes.get("type"),
@@ -91,7 +92,7 @@ for (const name of names) {
   test(name + " locale serialization observes locales through ECMA-402", () => {
     const f = createTemporalObjectFixture();
     const method = f.get(prototypeOf(f, name), "toLocaleString") as ObjectValue;
-    assert.ok(method.internalCall);
+    assert.ok(method.internalRareSlots?.internalCall);
     const observed = new Error("locales observed");
     const locales = objects.createExoticObject(f.root, {
       get() {
@@ -101,7 +102,7 @@ for (const name of names) {
     // A branded receiver reads its locales argument (CanonicalizeLocaleList);
     // it neither ignores locale options nor falls back to toString.
     assert.throws(
-      () => method.internalCall!(sample(f, name), [locales]),
+      () => method.internalRareSlots!.internalCall!(sample(f, name), [locales]),
       (error: unknown) => error === observed,
     );
   });

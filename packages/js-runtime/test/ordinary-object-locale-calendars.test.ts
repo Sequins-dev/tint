@@ -43,7 +43,7 @@ test("Locale calendar methods have ordinary builtin metadata and preserve explic
   const r = setup();
   assert.equal(objects.getOwnProperty(r.method, "name")!.value, "getCalendars");
   assert.equal(objects.getOwnProperty(r.method, "length")!.value, 0);
-  assert.equal(r.method.internalConstruct, undefined);
+  assert.equal(r.method.internalRareSlots?.internalConstruct, undefined);
   for (const [tag, expected] of [
     ["en-u-ca", [""]],
     ["en-u-ca-true", [""]],
@@ -51,7 +51,12 @@ test("Locale calendar methods have ordinary builtin metadata and preserve explic
     ["en-u-ca-foobar", ["foobar"]],
   ] as const)
     assert.deepEqual(
-      values(r.method.internalCall!(r.locale(tag), []) as ObjectValue),
+      values(
+        r.method.internalRareSlots!.internalCall!(
+          r.locale(tag),
+          [],
+        ) as ObjectValue,
+      ),
       expected,
       tag,
     );
@@ -68,8 +73,14 @@ test("calendar results use the method realm, are fresh and do not consult a rece
     },
     own.hooks,
   );
-  const first = own.method.internalCall!(locale, []) as ObjectValue,
-    second = own.method.internalCall!(locale, []) as ObjectValue;
+  const first = own.method.internalRareSlots!.internalCall!(
+      locale,
+      [],
+    ) as ObjectValue,
+    second = own.method.internalRareSlots!.internalCall!(
+      locale,
+      [],
+    ) as ObjectValue;
   assert.equal(first.prototype, own.realm.arrayPrototype);
   assert.notEqual(first, second);
   assert.deepEqual(values(first), ["buddhist", "gregory"]);
@@ -78,7 +89,9 @@ test("calendar results use the method realm, are fresh and do not consult a rece
   const enumeration = objects.getOwnProperty(own.intl, "supportedValuesOf")!
     .value as ObjectValue;
   const supported = values(
-    enumeration.internalCall!(undefined, ["calendar"]) as ObjectValue,
+    enumeration.internalRareSlots!.internalCall!(undefined, [
+      "calendar",
+    ]) as ObjectValue,
   );
   assert.ok(supported.includes("buddhist"));
   assert.deepEqual(supported, [...new Set(supported)].sort());
@@ -96,7 +109,7 @@ test("calendar methods require the actual Locale internal slot", () => {
   ]) {
     let caught: unknown;
     try {
-      r.method.internalCall!(receiver, []);
+      r.method.internalRareSlots!.internalCall!(receiver, []);
     } catch (error) {
       caught = error;
     }
@@ -115,7 +128,7 @@ test("Locale collation methods preserve keywords, metadata, brands and method-re
     "getCollations",
   );
   assert.equal(objects.getOwnProperty(own.method, "length")!.value, 0);
-  assert.equal(own.method.internalConstruct, undefined);
+  assert.equal(own.method.internalRareSlots?.internalConstruct, undefined);
   for (const [tag, expected] of [
     ["en-u-co-true", [""]],
     ["en-u-co", [""]],
@@ -123,8 +136,14 @@ test("Locale collation methods preserve keywords, metadata, brands and method-re
     ["de", ["eor", "phonebk"]],
   ] as const) {
     const locale = foreign.locale(tag);
-    const first = own.method.internalCall!(locale, []) as ObjectValue;
-    const second = own.method.internalCall!(locale, []) as ObjectValue;
+    const first = own.method.internalRareSlots!.internalCall!(
+      locale,
+      [],
+    ) as ObjectValue;
+    const second = own.method.internalRareSlots!.internalCall!(
+      locale,
+      [],
+    ) as ObjectValue;
     assert.deepEqual(values(first), expected);
     assert.equal(first.prototype, own.realm.arrayPrototype);
     assert.notEqual(first, second);
@@ -140,7 +159,7 @@ test("Locale collation methods preserve keywords, metadata, brands and method-re
   ]) {
     let caught: unknown;
     try {
-      own.method.internalCall!(receiver, []);
+      own.method.internalRareSlots!.internalCall!(receiver, []);
     } catch (error) {
       caught = error;
     }

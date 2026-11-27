@@ -87,6 +87,7 @@ export function scriptRuntimeImports(
   usesIntrinsicCalls: boolean = false,
   usesObjectLiterals: boolean = false,
   usesSmallArrays: boolean = false,
+  usesUnaryFallback: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -184,6 +185,9 @@ export function scriptRuntimeImports(
           : []),
         ...(usesRelationalFallback && !usesFusedResults
           ? ["binaryObjectValueOperationOrThrow"]
+          : []),
+        ...(usesUnaryFallback && !usesFusedResults
+          ? ["unaryObjectValueOperationOrThrow"]
           : []),
         "scriptStrictEqual",
         "binaryObjectValueOperation",

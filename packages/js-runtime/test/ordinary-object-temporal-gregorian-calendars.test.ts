@@ -73,7 +73,10 @@ test("calendar copying, ISO comparison and equality use distinct identity rules"
     )!.value as ObjectValue,
     "compare",
   )!.value as ObjectValue;
-  assert.equal(compare.internalCall!(undefined, [greg, buddhist]), 0);
+  assert.equal(
+    compare.internalRareSlots!.internalCall!(undefined, [greg, buddhist]),
+    0,
+  );
   assert.throws(
     () => f.call(greg, "until", [buddhist]),
     (error) =>

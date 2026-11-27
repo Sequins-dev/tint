@@ -41,6 +41,6 @@ test("legacy string HTML methods have standard callable metadata", () => {
     assert.equal(descriptor.enumerable, false);
     assert.equal(descriptor.writable, true);
     assert.equal(descriptor.configurable, true);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   }
 });

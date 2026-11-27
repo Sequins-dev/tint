@@ -298,7 +298,10 @@ export function regexpExec(
     hooks,
   );
   const callable = viewObjectValue(method, realm.objectPrototype);
-  if (callable === undefined || callable.internalCall === undefined)
+  if (
+    callable === undefined ||
+    callable.internalRareSlots?.internalCall === undefined
+  )
     return executeRegExpObject(object, input, realm, hooks);
   const value = hooks.call(method, object, [input]);
   if (value === null) return null;

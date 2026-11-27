@@ -101,7 +101,7 @@ export function run():number{
  const privateSite:DirectEvalSite={scriptOrModule:identity,lexical,variables,catches:undefined,thisValue:object,newTarget:undefined,home,derived:undefined,activeFunction:undefined,privateEnvironment};
  const privateCarrier=createScriptRecord(realm,privateSite);
  const privateValue=privateRead(global,privateCarrier);if(privateValue.error!=="none"||privateValue.value!==43)return 83;
- const absent=privateMissing(global,privateCarrier);if(absent.error!=="throw"||viewObjectValue(absent.value,object)?.prototype!==realm.prototypes.get("syntax")||(object.properties!==undefined&&object.properties.has("marker")))return 84;
+ const absent=privateMissing(global,privateCarrier);if(absent.error!=="throw"||viewObjectValue(absent.value,object)?.prototype!==realm.prototypes.get("syntax")||(object.internalRareSlots?.properties!==undefined&&object.internalRareSlots?.properties.has("marker")))return 84;
  const foreignSite:DirectEvalSite={scriptOrModule:identity,lexical,variables,catches:undefined,thisValue:home,newTarget:undefined,home,derived:undefined,activeFunction:undefined,privateEnvironment};
  const wrongBrand=privateRead(global,createScriptRecord(realm,foreignSite));if(wrongBrand.error!=="throw"||viewObjectValue(wrongBrand.value,object)?.prototype!==realm.prototypes.get("type"))return 85;
  for(let i=0;i<1024;i++){const bytes=new Uint32Array(8192);bytes[0]=i;if(bytes[0]!==i)return 86;}

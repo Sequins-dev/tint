@@ -54,12 +54,15 @@ test("Object intrinsic exposes constructor and reflection method metadata", () =
     assert.equal(objects.getOwnProperty(fn, "length")?.value, length);
     assert.equal(objects.getOwnProperty(fn, "name")?.value, name);
   }
-  const fresh = constructor.internalCall!(
+  const fresh = constructor.internalRareSlots!.internalCall!(
     undefined,
     [],
   ) as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(fresh.prototype, root);
-  assert.notEqual(fresh, constructor.internalCall!(undefined, [null]));
+  assert.notEqual(
+    fresh,
+    constructor.internalRareSlots!.internalCall!(undefined, [null]),
+  );
 });
 test("Object prototype exposes generic locale and prototype queries", () => {
   const root = objects.createObject<ScriptPropertyKey, unknown>(undefined);
@@ -83,7 +86,7 @@ test("Object prototype exposes generic locale and prototype queries", () => {
     >;
     assert.equal(objects.getOwnProperty(fn, "length")?.value, length);
     assert.equal(objects.getOwnProperty(fn, "name")?.value, name);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   }
 });
 test("Object prototype exposes the legacy prototype accessor", () => {
@@ -101,6 +104,6 @@ test("Object prototype exposes the legacy prototype accessor", () => {
     const fn = value as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
     assert.equal(objects.getOwnProperty(fn, "name")?.value, name);
     assert.equal(objects.getOwnProperty(fn, "length")?.value, length);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   }
 });

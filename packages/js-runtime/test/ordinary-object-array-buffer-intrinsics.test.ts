@@ -30,7 +30,7 @@ test("immutable ArrayBuffer APIs have standard intrinsic metadata", () => {
     >;
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "length")?.value, length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
   const descriptor = objects.getOwnProperty(
     realm.arrayBufferPrototype,

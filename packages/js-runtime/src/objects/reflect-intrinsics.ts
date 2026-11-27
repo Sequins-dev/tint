@@ -172,7 +172,7 @@ export function installReflectIntrinsics(
   );
   install("apply", 3, (receiver, args): unknown => {
     const target = object(args[0]);
-    if (target.internalCall === undefined)
+    if (target.internalRareSlots?.internalCall === undefined)
       throw createRuntimeError(realm, "type");
     const list = arrayLikeValues(args[2], realm, hooks);
     const result = callObject<ScriptPropertyKey, unknown>(
@@ -186,11 +186,11 @@ export function installReflectIntrinsics(
   });
   install("construct", 2, (receiver, args): unknown => {
     const target = object(args[0]);
-    if (target.internalConstruct === undefined)
+    if (target.internalRareSlots?.internalConstruct === undefined)
       throw createRuntimeError(realm, "type");
     const newTarget = args.length > 2 ? args[2] : args[0],
       newObject = object(newTarget);
-    if (newObject.internalConstruct === undefined)
+    if (newObject.internalRareSlots?.internalConstruct === undefined)
       throw createRuntimeError(realm, "type");
     const list = arrayLikeValues(args[1], realm, hooks);
     const result = constructObject<ScriptPropertyKey, unknown>(

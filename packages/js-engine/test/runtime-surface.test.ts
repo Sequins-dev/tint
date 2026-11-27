@@ -52,7 +52,7 @@ const corpus = [
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
-    sha256: "6199f87b7101585cebf135300d973f6f1cb62b3961ffaf438c2d4ea6c417179c",
+    sha256: "1ac85988e80c1ff926fbb67f6f568172ff20928464fc57729ccc13ca3d6a5100",
   },
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {

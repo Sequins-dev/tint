@@ -31,7 +31,10 @@ function setup() {
   const get = (object: Obj, key: string) =>
     o.getProperty(object, key, object, hooks);
   const call = (name: string, receiver: unknown, args: unknown[] = []) =>
-    (get(prototype, name) as Obj).internalCall!(receiver, args);
+    (get(prototype, name) as Obj).internalRareSlots!.internalCall!(
+      receiver,
+      args,
+    );
   const options = (fields: Record<string, unknown>) => {
     const result = o.createObject<ScriptPropertyKey, unknown>(undefined);
     for (const [k, v] of Object.entries(fields))
@@ -67,7 +70,10 @@ test("DurationFormat metadata, defaults and property order", () => {
     f = r.make();
   assert.equal(r.get(r.constructor, "name"), "DurationFormat");
   assert.equal(r.get(r.constructor, "length"), 0);
-  r.type(() => r.constructor.internalCall!(undefined, []), "type");
+  r.type(
+    () => r.constructor.internalRareSlots!.internalCall!(undefined, []),
+    "type",
+  );
   const resolved = r.call("resolvedOptions", f) as Obj;
   const names = [
     "years",
@@ -99,7 +105,7 @@ test("DurationFormat metadata, defaults and property order", () => {
   ] as const) {
     const method = r.get(r.prototype, name) as Obj;
     assert.equal(r.get(method, "length"), length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
     for (const receiver of [undefined, null, 0, r.prototype, o.createObject(f)])
       r.type(() => r.call(name, receiver), "type");
   }
@@ -190,7 +196,7 @@ test("Temporal.Duration locale strings use the private duration service and bran
   const r = setup(),
     temporal = r.get(r.root, "Temporal") as Obj,
     ctor = r.get(temporal, "Duration") as Obj,
-    duration = ctor.internalConstruct!(
+    duration = ctor.internalRareSlots!.internalConstruct!(
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       ctor,
     ) as Obj,
@@ -201,14 +207,23 @@ test("Temporal.Duration locale strings use the private duration service and bran
     [duration],
   );
   assert.equal(
-    method.internalCall!(duration, ["en", r.options({ style: "long" })]),
+    method.internalRareSlots!.internalCall!(duration, [
+      "en",
+      r.options({ style: "long" }),
+    ]),
     expected,
   );
-  r.type(() => method.internalCall!(r.options({ years: 1 }), []), "type");
+  r.type(
+    () => method.internalRareSlots!.internalCall!(r.options({ years: 1 }), []),
+    "type",
+  );
   const publicCtor = r.constructor;
   o.createDataProperty(r.intl, "DurationFormat", 0, r.hooks);
   assert.equal(
-    method.internalCall!(duration, ["en", r.options({ style: "long" })]),
+    method.internalRareSlots!.internalCall!(duration, [
+      "en",
+      r.options({ style: "long" }),
+    ]),
     expected,
   );
   o.createDataProperty(r.intl, "DurationFormat", publicCtor, r.hooks);

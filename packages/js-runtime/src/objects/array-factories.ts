@@ -40,7 +40,10 @@ export function installArrayFactories(
     iterable: boolean,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const target = viewObjectValue(receiver, realm.objectPrototype);
-    if (target === undefined || target.internalConstruct === undefined)
+    if (
+      target === undefined ||
+      target.internalRareSlots?.internalConstruct === undefined
+    )
       return createArrayObject<ScriptPropertyKey, unknown>(
         length,
         realm.arrayPrototype,

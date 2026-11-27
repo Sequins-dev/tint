@@ -171,12 +171,12 @@ test("each realm owns one non-extensible ThrowTypeError intrinsic", () => {
   let first: unknown;
   let second: unknown;
   try {
-    realm.throwTypeError.internalCall!(undefined, []);
+    realm.throwTypeError.internalRareSlots!.internalCall!(undefined, []);
   } catch (error) {
     first = error;
   }
   try {
-    realm.throwTypeError.internalCall!(42, [1]);
+    realm.throwTypeError.internalRareSlots!.internalCall!(42, [1]);
   } catch (error) {
     second = error;
   }
@@ -210,7 +210,7 @@ test("Error.isError exposes a nonconstructible unary method", () => {
   >;
   assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "isError");
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("SuppressedError owns a ternary constructor and non-enumerable failure values", () => {
@@ -225,8 +225,8 @@ test("SuppressedError owns a ternary constructor and non-enumerable failure valu
     "SuppressedError",
   );
   assert.equal(constructor.prototype, realm.constructors.get("error"));
-  assert.ok(constructor.internalCall);
-  const error = constructor.internalCall(
+  assert.ok(constructor.internalRareSlots?.internalCall);
+  const error = constructor.internalRareSlots?.internalCall(
     undefined,
     [19, 42],
   ) as objects.OrdinaryObject<ScriptPropertyKey, unknown>;

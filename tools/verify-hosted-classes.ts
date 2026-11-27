@@ -76,7 +76,7 @@ export function run():number {
  if(accessorDescriptor===undefined||accessorDescriptor.enumerable||!accessorDescriptor.configurable)return 18;
  const getter=viewObjectValue(accessorDescriptor.get,root),accessorSetter=viewObjectValue(accessorDescriptor.set,root);
  if(getter===undefined||accessorSetter===undefined)return 19;
- if(getter.internalConstruct!==undefined||accessorSetter.internalConstruct!==undefined)return 20;
+ if(getter.internalRareSlots?.internalConstruct!==undefined||accessorSetter.internalRareSlots?.internalConstruct!==undefined)return 20;
  if(getProperty<ScriptPropertyKey,unknown>(getter,"name",getter,hooks)!=="get value"||getProperty<ScriptPropertyKey,unknown>(accessorSetter,"name",accessorSetter,hooks)!=="set value")return 21;
  if(getProperty<ScriptPropertyKey,unknown>(getter,"length",getter,hooks)!==0||getProperty<ScriptPropertyKey,unknown>(accessorSetter,"length",accessorSetter,hooks)!==1)return 22;
  if(callObjectValue(getter,42,[],root).value!==42)return 23;

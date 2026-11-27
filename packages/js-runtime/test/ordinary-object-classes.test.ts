@@ -112,7 +112,7 @@ test("class methods are non-enumerable, replaceable and non-constructible", () =
     ScriptPropertyKey,
     unknown
   >;
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   assert.equal(method.internalRareSlots?.internalHomeObject, target);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "method");
   assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
@@ -186,8 +186,8 @@ test("class accessor definitions merge halves and preserve callable metadata", (
   >;
   assert.equal(objects.getOwnProperty(setter, "name")?.value, "set x");
   assert.equal(objects.getOwnProperty(setter, "length")?.value, 1);
-  assert.equal(getter.internalConstruct, undefined);
-  assert.equal(setter.internalConstruct, undefined);
+  assert.equal(getter.internalRareSlots?.internalConstruct, undefined);
+  assert.equal(setter.internalRareSlots?.internalConstruct, undefined);
   assert.equal(objects.callObject(getter, 42, [], undefined).value, 42);
   objects.defineClassMethod(target, "x", 0, () => 1, realm, hooks);
   objects.defineClassAccessor(target, "x", false, () => 42, realm, hooks);
@@ -397,7 +397,7 @@ test("private class methods install before fields and remain separate from prope
     method.internalRareSlots?.internalHomeObject,
     realm.objectPrototype,
   );
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "#method");
   assert.equal(objects.callObject(method, instance, [], undefined).value, 42);
   assert.throws(() =>

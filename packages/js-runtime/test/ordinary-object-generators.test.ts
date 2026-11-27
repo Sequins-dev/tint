@@ -27,17 +27,20 @@ test("generator creation installs private state without evaluating the body", ()
   const generator = object.createGeneratorObject(continuation, realm);
   assert.equal(generator.prototype, realm.generatorPrototype);
   assert.equal(realm.generatorPrototype.prototype, realm.iteratorPrototype);
-  assert.equal(generator.properties?.size ?? 0, 0);
+  assert.equal(generator.internalRareSlots?.properties?.size ?? 0, 0);
   assert.equal(
-    generator.internalExoticSlots?.internalGeneratorData?.state,
+    generator.internalRareSlots?.internalExoticSlots?.internalGeneratorData
+      ?.state,
     "suspended-start",
   );
   assert.equal(
-    typeof generator.internalExoticSlots?.internalGeneratorData?.continuation,
+    typeof generator.internalRareSlots?.internalExoticSlots
+      ?.internalGeneratorData?.continuation,
     "function",
   );
   assert.equal(
-    realm.generatorPrototype.internalExoticSlots?.internalGeneratorData,
+    realm.generatorPrototype.internalRareSlots?.internalExoticSlots
+      ?.internalGeneratorData,
     undefined,
   );
   const prototype = object.createObject<ScriptPropertyKey, unknown>(
@@ -103,9 +106,12 @@ test("source generator functions have non-constructible identities and distinct 
     realm.generatorFunctionPrototype.prototype,
     realm.functionPrototype,
   );
-  assert.equal(realm.generatorFunctionPrototype.internalCall, undefined);
-  assert.ok(first.internalCall);
-  assert.equal(first.internalConstruct, undefined);
+  assert.equal(
+    realm.generatorFunctionPrototype.internalRareSlots?.internalCall,
+    undefined,
+  );
+  assert.ok(first.internalRareSlots?.internalCall);
+  assert.equal(first.internalRareSlots?.internalConstruct, undefined);
   assert.equal(object.getOwnProperty(first, "name")?.value, "g");
   assert.equal(object.getOwnProperty(first, "length")?.value, 2);
   const descriptor = object.getOwnProperty(first, "prototype");
@@ -181,7 +187,7 @@ test("source generator parameter initialization throws at call time", () => {
   );
   assert.equal(calls, 0);
   assert.throws(
-    () => fn.internalCall!(marker, [42]),
+    () => fn.internalRareSlots!.internalCall!(marker, [42]),
     (error) => error === marker,
   );
   assert.equal(calls, 1);
@@ -207,11 +213,12 @@ test("a hidden generator transfers only an unstarted continuation and releases i
   );
   const start = object.takeGeneratorStart(hidden, realm);
   assert.equal(
-    hidden.internalExoticSlots?.internalGeneratorData?.state,
+    hidden.internalRareSlots?.internalExoticSlots?.internalGeneratorData?.state,
     "completed",
   );
   assert.equal(
-    hidden.internalExoticSlots?.internalGeneratorData?.continuation,
+    hidden.internalRareSlots?.internalExoticSlots?.internalGeneratorData
+      ?.continuation,
     undefined,
   );
   const result = object.runScriptContext(
@@ -240,7 +247,8 @@ test("a hidden generator transfers only an unstarted continuation and releases i
       () => ({ kind: "return", value: undefined }),
       realm,
     );
-    g.internalExoticSlots!.internalGeneratorData!.state = state;
+    g.internalRareSlots!.internalExoticSlots!.internalGeneratorData!.state =
+      state;
     assert.throws(
       () => object.takeGeneratorStart(g, realm),
       (e) => e === "DYNAMIC_GENERATOR_CARRIER_INVARIANT",

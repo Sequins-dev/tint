@@ -119,38 +119,24 @@ export interface OrdinaryObject<Key, Value> {
   /** Packed boolean flags: bit 1 = extensible, bit 2 = internalDictionary,
    * bit 4 = internalUsedAsPrototype, bit 8 = internalArrayData. */
   internalFlags: number;
-  /** Dictionary-mode own properties. In fast mode, allocated lazily only for
-   * accessor keys' descriptors (data values live in the shape's slots). */
-  properties: Map<Key, Descriptor<Value>> | undefined;
   /** Bumped whenever a key is added or deleted or a stored descriptor is
    * replaced. Only an in-place [[Value]] write to a writable data descriptor
    * leaves it unchanged, so a cached descriptor of a dictionary-mode object
    * stays the live cell. Generated transitions of fast-mode objects, which
    * hold no descriptors to cache, do not bump it. */
   internalPropertyEpoch: number;
-  /** Root of the shared shapes of objects whose [[Prototype]] is this
-   * object, so equal shapes also imply the same prototype. */
-  internalChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
   /** Fast-mode values of the shape's keys from propertySlots on, in linked
    * 16-slot chunks so generated caches can read spilled own slots inline. */
   internalValues: PropertySpill<Value> | undefined;
-  /** Internal [[Call]], never a named/inherited JavaScript property. */
-  readonly internalCall: ObjectCall<Value> | undefined;
   internalRegisterCall: ObjectRegisterEntry<Value> | undefined;
-  readonly internalConstruct: ObjectConstruct<Value> | undefined;
   /** Packed own elements; present only on array exotic objects until a
    * property operation requires ordinary descriptors for their indices. */
   internalArrayElements: ArrayElements<Key, Value> | undefined;
   readonly internalMethods: ObjectInternalMethods<Key, Value> | undefined;
-  /** Lazily allocated side record for rarely-present generic ordinary-object
-   * internal slots (execution context, bound targets, super homes, tail
-   * dispatchers, private elements, arguments aliases, contracts, immutable
-   * prototypes, indexed dictionary layouts). Undefined on ordinary objects. */
+  /** Lazily allocated side record for rarely-present ordinary-object,
+   * dictionary, prototype, callable, and exotic internal slots. Undefined on
+   * plain fast-mode instances and packed arrays. */
   internalRareSlots: OrdinaryRareSlots<Key, Value> | undefined;
-  /** Lazily allocated side record for rarely-present builtin and exotic
-   * internal slots. Undefined on ordinary objects; read via exoticSlots and
-   * initialized via ensureExoticSlots. */
-  internalExoticSlots: ExoticObjectSlots | undefined;
   /** Fast-mode values of the shape's first propertySlots keys, in place so
    * generated caches load and store them at a computed offset. Undefined
    * (no value) past the shape's keys; a present JavaScript undefined is
@@ -167,6 +153,19 @@ export interface OrdinaryObject<Key, Value> {
 /** Generic internal slots present only on specialized ordinary objects.
  * Allocated lazily via ensureRareSlots so plain instances stay compact. */
 export interface OrdinaryRareSlots<Key, Value> {
+  /** Dictionary-mode own properties. In fast mode, allocated lazily only for
+   * accessor keys' descriptors (data values live in the shape's slots). */
+  properties: Map<Key, Descriptor<Value>> | undefined;
+  /** Root of the shared shapes of objects whose [[Prototype]] is this
+   * object, so equal shapes also imply the same prototype. */
+  internalChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
+  /** Internal [[Call]], never a named/inherited JavaScript property. */
+  readonly internalCall: ObjectCall<Value> | undefined;
+  readonly internalConstruct: ObjectConstruct<Value> | undefined;
+  /** Lazily allocated side record for rarely-present builtin and exotic
+   * internal slots. Undefined on ordinary objects; read via exoticSlots and
+   * initialized via ensureExoticSlots. */
+  internalExoticSlots: ExoticObjectSlots | undefined;
   internalImmutablePrototype: boolean;
   /** Presence of [[ParameterMap]], including unmapped arguments objects. */
   internalArgumentsData: boolean;
@@ -736,7 +735,8 @@ const emptyExoticSlots: ExoticObjectSlots = createExoticSlots();
 export function exoticSlots(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): ExoticObjectSlots {
-  const slots = object.internalExoticSlots;
+  const rare = object.internalRareSlots;
+  const slots = rare === undefined ? undefined : rare.internalExoticSlots;
   return slots === undefined ? emptyExoticSlots : slots;
 }
 /** The exotic slots of `object` for a write. Neither function is generic:
@@ -744,10 +744,11 @@ export function exoticSlots(
 export function ensureExoticSlots(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): ExoticObjectSlots {
-  const existing = object.internalExoticSlots;
+  const rare = ensureRareSlots<ScriptPropertyKey, unknown>(object);
+  const existing = rare.internalExoticSlots;
   if (existing !== undefined) return existing;
   const created = createExoticSlots();
-  object.internalExoticSlots = created;
+  rare.internalExoticSlots = created;
   return created;
 }
 export function ensureRareSlots<Key, Value>(
@@ -756,6 +757,11 @@ export function ensureRareSlots<Key, Value>(
   const existing = object.internalRareSlots;
   if (existing !== undefined) return existing;
   const created: OrdinaryRareSlots<Key, Value> = {
+    properties: undefined,
+    internalChildShape: undefined,
+    internalCall: undefined,
+    internalConstruct: undefined,
+    internalExoticSlots: undefined,
     internalImmutablePrototype: false,
     internalArgumentsData: false,
     internalIndexedProperties: undefined,
@@ -782,20 +788,17 @@ export function createObject<Key, Value>(
     markPrototype<Key, Value>(prototype);
   return {
     internalShape:
-      prototype === undefined ? undefined : prototype.internalChildShape,
+      prototype === undefined
+        ? undefined
+        : prototype.internalRareSlots?.internalChildShape,
     prototype,
     internalFlags: objectFlagExtensible,
-    properties: undefined,
     internalPropertyEpoch: 0,
-    internalChildShape: undefined,
     internalValues: undefined,
-    internalCall: undefined,
     internalRegisterCall: undefined,
-    internalConstruct: undefined,
     internalArrayElements: undefined,
     internalMethods: undefined,
     internalRareSlots: undefined,
-    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,
@@ -825,17 +828,12 @@ export function createPackedArrayObject<Key, Value>(
         : prototype.internalRareSlots?.internalArrayChildShape,
     prototype,
     internalFlags: objectFlagsPackedArray,
-    properties: undefined,
     internalPropertyEpoch: 0,
-    internalChildShape: undefined,
     internalValues: undefined,
-    internalCall: undefined,
     internalRegisterCall: undefined,
-    internalConstruct: undefined,
     internalArrayElements: elements,
     internalMethods: methods,
     internalRareSlots: undefined,
-    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,
@@ -857,10 +855,10 @@ export function acceptsPropertyContract<Key, Value>(
       (object.internalFlags & objectFlagArrayData) !== 0) &&
     (rare === undefined ||
       (rare.internalDataAliases === undefined &&
-        !rare.internalArgumentsData)) &&
-    (allowCallable ||
-      (object.internalCall === undefined &&
-        object.internalConstruct === undefined))
+        !rare.internalArgumentsData &&
+        (allowCallable ||
+          (rare.internalCall === undefined &&
+            rare.internalConstruct === undefined))))
   );
 }
 /** Publish a previously validated contract and invalidate any direct cell. */
@@ -894,10 +892,11 @@ export function createAliasedObject<Key, Value>(
 function ensureProperties<Key, Value>(
   object: OrdinaryObject<Key, Value>,
 ): Map<Key, Descriptor<Value>> {
-  const existing = object.properties;
+  const rare = ensureRareSlots<Key, Value>(object);
+  const existing = rare.properties;
   if (existing !== undefined) return existing;
   const created = new Map<Key, Descriptor<Value>>();
-  object.properties = created;
+  rare.properties = created;
   if ((object.internalFlags & objectFlagDictionary) !== 0)
     object.internalShape = undefined;
   return created;
@@ -911,7 +910,7 @@ export function aliasDataProperty<Key, Value>(
 ): void {
   const rare = object.internalRareSlots;
   const aliases = rare === undefined ? undefined : rare.internalDataAliases;
-  const properties = object.properties;
+  const properties = rare === undefined ? undefined : rare.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (
     aliases === undefined ||
@@ -989,9 +988,20 @@ function allocateObject<Key, Value>(
   )
     markPrototype<Key, Value>(prototype);
   const internalRareSlots: OrdinaryRareSlots<Key, Value> | undefined =
-    internalDataAliases === undefined && internalExecutionContext === undefined
+    !dictionary &&
+    internalCall === undefined &&
+    internalConstruct === undefined &&
+    internalDataAliases === undefined &&
+    internalExecutionContext === undefined
       ? undefined
       : {
+          properties: dictionary
+            ? new Map<Key, Descriptor<Value>>()
+            : undefined,
+          internalChildShape: undefined,
+          internalCall,
+          internalConstruct,
+          internalExoticSlots: undefined,
           internalImmutablePrototype: false,
           internalArgumentsData: false,
           internalIndexedProperties: undefined,
@@ -1010,22 +1020,17 @@ function allocateObject<Key, Value>(
     internalShape:
       dictionary || prototype === undefined
         ? undefined
-        : prototype.internalChildShape,
+        : prototype.internalRareSlots?.internalChildShape,
     prototype,
     internalFlags: dictionary
       ? objectFlagExtensible | objectFlagDictionary
       : objectFlagExtensible,
-    properties: dictionary ? new Map<Key, Descriptor<Value>>() : undefined,
     internalPropertyEpoch: 0,
-    internalChildShape: undefined,
     internalValues: undefined,
-    internalCall,
     internalRegisterCall: undefined,
-    internalConstruct,
     internalArrayElements: undefined,
     internalMethods,
     internalRareSlots,
-    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,
@@ -1067,10 +1072,10 @@ export function ordinaryGetOwnProperty<Key, Value>(
       ? undefined
       : fastDescriptor<Key, Value>(object, shape, index);
   }
-  const properties = object.properties;
+  const rare = object.internalRareSlots;
+  const properties = rare === undefined ? undefined : rare.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined) return undefined;
-  const rare = object.internalRareSlots;
   const aliases = rare === undefined ? undefined : rare.internalDataAliases;
   const alias = aliases === undefined ? undefined : aliases.get(key);
   if (alias === undefined) return descriptor;
@@ -1188,7 +1193,7 @@ export function ordinaryDefineOwnProperty<Key, Value>(
         if (descriptor.accessor)
           ensureProperties<Key, Value>(object).set(key, descriptor);
         else if ((previous & propertyAccessor) !== 0) {
-          const properties = object.properties;
+          const properties = object.internalRareSlots?.properties;
           if (properties !== undefined) properties.delete(key);
         }
         if (previous !== kind)
@@ -1265,7 +1270,7 @@ function unpackArrayElements<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   elements: ArrayElements<Key, Value>,
 ): void {
-  const existing = object.properties;
+  const existing = object.internalRareSlots?.properties;
   const properties = new Map<Key, Descriptor<Value>>();
   properties.set(
     elements.keys.lengthKey,
@@ -1279,7 +1284,7 @@ function unpackArrayElements<Key, Value>(
     );
   if (existing !== undefined)
     for (const [key, descriptor] of existing) properties.set(key, descriptor);
-  object.properties = properties;
+  ensureRareSlots<Key, Value>(object).properties = properties;
   object.internalShape = undefined;
   noteStructureChange<Key, Value>(object);
   object.internalArrayElements = undefined;
@@ -1322,7 +1327,7 @@ export function createDataProperty<Key, Value>(
     (object.internalFlags & objectFlagExtensible) !== 0
   ) {
     const rare = object.internalRareSlots;
-    const existing = object.properties;
+    const existing = rare === undefined ? undefined : rare.properties;
     if (
       (rare === undefined ||
         (rare.internalDataAliases === undefined &&
@@ -1370,13 +1375,14 @@ export function createDataProperty<Key, Value>(
  * mode on a shared shape. */
 export interface ObjectLiteralSite {
   readonly keys: readonly ScriptPropertyKey[];
+  prototype: ScriptObject | undefined;
   root: ScriptShape | undefined;
   shape: ScriptShape | undefined;
 }
 export function createObjectLiteralSite(
   keys: readonly ScriptPropertyKey[],
 ): ObjectLiteralSite {
-  return { keys, root: undefined, shape: undefined };
+  return { keys, prototype: undefined, root: undefined, shape: undefined };
 }
 /** A new ordinary object with `prototype` and the site's keys defined as data
  * properties with `values`, as the literal's CreateDataPropertyOrThrow steps
@@ -1425,7 +1431,8 @@ export function createLiteralObject(
     reached.shared &&
     reached.keys.length === keys.length
   ) {
-    site.root = prototype.internalChildShape;
+    site.prototype = prototype;
+    site.root = prototype.internalRareSlots?.internalChildShape;
     site.shape = reached;
   }
   return object;
@@ -1505,27 +1512,17 @@ export function createLiteralObject1(
   hooks: ObjectHooks<unknown>,
 ): ScriptObject {
   const shape = site.shape;
-  const root = site.root;
-  if (
-    shape !== undefined &&
-    root !== undefined &&
-    prototype.internalChildShape === root
-  )
+  if (shape !== undefined && site.prototype === prototype)
     return {
       internalShape: shape,
       prototype,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 1,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: undefined,
       internalValue2: undefined,
@@ -1545,27 +1542,17 @@ export function createLiteralObject2(
   hooks: ObjectHooks<unknown>,
 ): ScriptObject {
   const shape = site.shape;
-  const root = site.root;
-  if (
-    shape !== undefined &&
-    root !== undefined &&
-    prototype.internalChildShape === root
-  )
+  if (shape !== undefined && site.prototype === prototype)
     return {
       internalShape: shape,
       prototype,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 2,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: undefined,
@@ -1586,27 +1573,17 @@ export function createLiteralObject3(
   hooks: ObjectHooks<unknown>,
 ): ScriptObject {
   const shape = site.shape;
-  const root = site.root;
-  if (
-    shape !== undefined &&
-    root !== undefined &&
-    prototype.internalChildShape === root
-  )
+  if (shape !== undefined && site.prototype === prototype)
     return {
       internalShape: shape,
       prototype,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 3,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -1628,27 +1605,17 @@ export function createLiteralObject4(
   hooks: ObjectHooks<unknown>,
 ): ScriptObject {
   const shape = site.shape;
-  const root = site.root;
-  if (
-    shape !== undefined &&
-    root !== undefined &&
-    prototype.internalChildShape === root
-  )
+  if (shape !== undefined && site.prototype === prototype)
     return {
       internalShape: shape,
       prototype,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 4,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -1719,11 +1686,11 @@ export function ordinaryDeleteProperty<Key, Value>(
     if (((shape.kinds[index] ?? 0) & propertyConfigurable) === 0) return false;
     useDictionaryProperties<Key, Value>(object);
   }
-  const properties = object.properties;
+  const rare = object.internalRareSlots;
+  const properties = rare === undefined ? undefined : rare.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
-  const rare = object.internalRareSlots;
   const contract =
     rare === undefined ? undefined : rare.internalPropertyContract;
   if (contract !== undefined && !contract.canDelete(key)) return false;
@@ -1802,7 +1769,7 @@ export function setPrototype<Key, Value>(
       prototype === undefined ||
       (object.internalFlags & objectFlagUsedAsPrototype) !== 0
         ? undefined
-        : prototype.internalChildShape;
+        : prototype.internalRareSlots?.internalChildShape;
   else object.internalShape = undefined;
   noteStructureChange<Key, Value>(object);
   return true;
@@ -1889,7 +1856,7 @@ export function refreshPropertyCell<Key, Value>(
         rare.internalPropertyContract !== undefined))
   )
     return undefined;
-  const properties = object.properties;
+  const properties = rare === undefined ? undefined : rare.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined || descriptor.accessor) return undefined;
   cache.object = object;
@@ -2242,7 +2209,7 @@ function fastAccessor<Key, Value>(
   index: number,
 ): Descriptor<Value> {
   const key = shape.keys[index];
-  const properties = object.properties;
+  const properties = object.internalRareSlots?.properties;
   const descriptor =
     key === undefined || properties === undefined
       ? undefined
@@ -2320,7 +2287,7 @@ export function useDictionaryProperties<Key, Value>(
 ): void {
   if ((object.internalFlags & objectFlagDictionary) !== 0) return;
   const shape = object.internalShape;
-  const existing = object.properties;
+  const existing = object.internalRareSlots?.properties;
   const properties =
     existing === undefined ? ensureProperties<Key, Value>(object) : existing;
   if (shape !== undefined) {
@@ -2376,7 +2343,7 @@ export function ordinaryHasOwnProperty<Key, Value>(
     const index = elements.keys.index(key);
     if (index >= 0) return index < arrayElementCount<Key, Value>(elements);
   }
-  const properties = object.properties;
+  const properties = object.internalRareSlots?.properties;
   return properties !== undefined && properties.has(key);
 }
 
@@ -2392,7 +2359,9 @@ function rootPropertyShape<Key, Value>(
       ? undefined
       : object.prototype;
   const shared =
-    prototype === undefined ? undefined : prototype.internalChildShape;
+    prototype === undefined
+      ? undefined
+      : prototype.internalRareSlots?.internalChildShape;
   if (shared !== undefined) return shared;
   const root: OrdinaryPropertyShape<Key, Value> = {
     keys: [],
@@ -2405,7 +2374,8 @@ function rootPropertyShape<Key, Value>(
     undefinedValue,
     index: undefined,
   };
-  if (prototype !== undefined) prototype.internalChildShape = root;
+  if (prototype !== undefined)
+    ensureRareSlots<Key, Value>(prototype).internalChildShape = root;
   return root;
 }
 /** Never the shape of an object: an empty cache entry holds it, so an object
@@ -2488,7 +2458,7 @@ function buildIndexedPropertyLayout<Key, Value>(
 ): IndexedPropertyLayout<Value> | null {
   let keys: number[] | undefined = undefined;
   let cells: Descriptor<Value>[] | undefined = undefined;
-  const properties = object.properties;
+  const properties = object.internalRareSlots?.properties;
   if (properties === undefined) return null;
   for (const [key, descriptor] of properties) {
     const candidate: unknown = key;
@@ -2538,9 +2508,9 @@ export function indexedPropertyCell<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
 ): Descriptor<Value> | undefined {
-  if (object.properties === undefined) return undefined;
   const rare = object.internalRareSlots;
-  let layout = rare === undefined ? undefined : rare.internalIndexedProperties;
+  if (rare === undefined || rare.properties === undefined) return undefined;
+  let layout = rare.internalIndexedProperties;
   if (layout === undefined) {
     layout = buildIndexedPropertyLayout<Key, Value>(object);
     if (layout !== null || rare !== undefined)
@@ -2631,7 +2601,7 @@ function cacheableShape(
   // prototype-specific empty-array shape.
   if (
     object.internalArrayElements !== undefined &&
-    object.properties === undefined &&
+    object.internalRareSlots?.properties === undefined &&
     !hasCustomPropertyGet<ScriptPropertyKey, unknown>(object) &&
     key !== "length" &&
     fastKey<string>(key)
@@ -3151,7 +3121,7 @@ export function lookupCachedScriptProperty(
           (key === "length" || !fastKey<string>(key))
         )
           return undefined;
-        const properties = current.properties;
+        const properties = rare === undefined ? undefined : rare.properties;
         const descriptor =
           properties === undefined ? undefined : properties.get(key);
         if (descriptor !== undefined) {
@@ -3233,7 +3203,7 @@ export function lookupCachedStringPrimitiveProperty(
       const rare = current.internalRareSlots;
       if (rare !== undefined && rare.internalDataAliases !== undefined)
         return false;
-      const properties = current.properties;
+      const properties = rare === undefined ? undefined : rare.properties;
       const descriptor =
         properties === undefined ? undefined : properties.get(key);
       if (descriptor !== undefined) {
@@ -3636,7 +3606,7 @@ export function ordinaryOwnKeys<Key, Value>(
         keys.push(key);
       }
   } else {
-    const properties = object.properties;
+    const properties = object.internalRareSlots?.properties;
     if (properties !== undefined)
       for (const [key, descriptor] of properties) keys.push(key);
   }
@@ -3676,7 +3646,7 @@ export function propertyMapKeys<Key, Value>(
         keys.push(key);
       }
   } else {
-    const properties = object.properties;
+    const properties = object.internalRareSlots?.properties;
     if (properties !== undefined)
       for (const [key, descriptor] of properties) keys.push(key);
   }

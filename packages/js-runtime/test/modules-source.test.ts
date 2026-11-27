@@ -209,13 +209,13 @@ test("module completion maps thrown values and sticky unsupported without invent
     assert.equal(modules.linkModule(f.module).ok, true);
   }
   assert.equal(
-    modules.evaluateModule(normal.module, hooks).internalExoticSlots
-      ?.internalPromiseData?.state,
+    modules.evaluateModule(normal.module, hooks).internalRareSlots
+      ?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(
-    modules.evaluateModule(thrown.module, hooks).internalExoticSlots
-      ?.internalPromiseData?.result,
+    modules.evaluateModule(thrown.module, hooks).internalRareSlots
+      ?.internalExoticSlots?.internalPromiseData?.result,
     error,
   );
   modules.evaluateModule(unsupported.module, hooks);
@@ -285,8 +285,8 @@ test("completion contract faults propagate out while the same user-thrown string
   );
   assert.equal(bad.module.evaluationError, undefined);
   assert.equal(
-    modules.evaluateModule(thrown.module, hooks).internalExoticSlots
-      ?.internalPromiseData?.result,
+    modules.evaluateModule(thrown.module, hooks).internalRareSlots
+      ?.internalExoticSlots?.internalPromiseData?.result,
     "MODULE_COMPLETION_INVARIANT",
   );
 });
@@ -326,7 +326,7 @@ test("lowered async source modules reuse the continuation driver and module cell
   assert.equal(modules.linkModule(module).ok, true);
   const promise = modules.evaluateModule(module, hooks);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   assert.deepEqual(log, ["start"]);
@@ -339,7 +339,7 @@ test("lowered async source modules reuse the continuation driver and module cell
   });
   assert.deepEqual(log, ["start", "resume"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(bindings.getBindingValue(module.environment, "x").value, 42);
@@ -378,9 +378,12 @@ test("a lowered async source error after suspension rejects with the original id
     throw fault;
   });
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
-  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
+  assert.equal(
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
+    error,
+  );
   assert.equal(module.evaluationError?.error, error);
 });

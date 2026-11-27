@@ -23,15 +23,15 @@ export function bindHostRecordViews() {
         )
         .replace(
           'throw "UNBOUND_OBJECT_VIEW";',
-          'return typeof value === "object" && value !== null && "internalCall" in value ? value : undefined;',
+          'return typeof value === "object" && value !== null && "internalShape" in value ? value : undefined;',
         )
         .replace(
           'throw "UNBOUND_TYPEOF_OBJECT_VIEW";',
-          'return typeof value === "object" && value !== null && "internalCall" in value ? value : undefined;',
+          'return typeof value === "object" && value !== null && "internalShape" in value ? value : undefined;',
         )
         .replace(
           'throw "UNBOUND_WEAK_REGISTRY_VIEW";',
-          'return typeof value === "object" && value !== null && "internalCall" in value ? value : undefined;',
+          'return typeof value === "object" && value !== null && "internalShape" in value ? value : undefined;',
         )
         .replace(
           'throw "UNBOUND_SYMBOL_VIEW";',

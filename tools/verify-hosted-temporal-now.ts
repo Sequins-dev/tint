@@ -11,7 +11,7 @@ export function run():number {
  const now=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(temporal,"Now")?.value,root);
  if(now===undefined)return 3;
  const instant=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(now,"instant")?.value,root);
- const call=instant?.internalCall;
+ const call=instant?.internalRareSlots?.internalCall;
  if(call===undefined)return 4;
  for(const item of [{clock:-1e20,expected:"-8640000000000000000000"},{clock:-0.25,expected:"-1000000"},{clock:0.75,expected:"0"},{clock:123456789.5,expected:"123456789000000"},{clock:1e20,expected:"8640000000000000000000"}]){
   if(item===undefined)return 5;
@@ -27,7 +27,7 @@ export function run():number {
  realm.systemTimeZoneIdentifier=():string=>{zones++;return "+05:30";};
  function invoke(target:OrdinaryObject<ScriptPropertyKey,unknown>,name:string,args:unknown[]):unknown {
    const method=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(target,name)?.value,root);
-   const run=method?.internalCall;if(run===undefined)throw "NOW_METHOD_INVARIANT";
+   const run=method?.internalRareSlots?.internalCall;if(run===undefined)throw "NOW_METHOD_INVARIANT";
    return run(null,args);
  }
  if(invoke(now,"timeZoneId",[])!=="+05:30"||clocks!==0||zones!==1)return 9;

@@ -2243,3 +2243,162 @@ test("multi-block callees with traced reference slots stay under referenceAllowa
     246,
   );
 });
+
+test("scriptEntry callers skip effectful non-allocators and cold throw-only blocks", () => {
+  const span = { start: 0, end: 1 };
+  const wideFields = Array.from({ length: 17 }, (_, i) => ({
+    offset: i < 9 ? 8 + i * 8 : 80 + (i - 9) * 16,
+    type: (i >= 9 ? "general" : "number") as "general" | "number",
+    mutable: true,
+  }));
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 208, fields: wideFields },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "scriptCaller",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "general-is",
+                id: 1,
+                value: 0,
+                type: "boolean",
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            // Hot block: reaches return.
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 1, ...span },
+              { kind: "call", id: 3, target: 2, arguments: [], ...span },
+              { kind: "call", id: 4, target: 1, arguments: [2], ...span },
+              { kind: "general-wrap", id: 5, value: 4, ...span },
+            ],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+          {
+            // Cold throw-only block: cannot reach return.
+            id: 2,
+            instructions: [
+              { kind: "load", id: 6, slot: 1, ...span },
+              { kind: "call", id: 7, target: 1, arguments: [6], ...span },
+              { kind: "call", id: 8, target: 3, arguments: [], ...span },
+            ],
+            terminator: { kind: "throw-literal", value: "boom", ...span },
+          },
+        ],
+      },
+      {
+        // Compact 17-field OrdinaryObject-like script object allocator.
+        id: 1,
+        name: "allocWide",
+        exported: false,
+        parameters: [0],
+        slots: ["general"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "constant", id: 1, value: 0, ...span },
+              {
+                kind: "record-new",
+                id: 2,
+                record: 0,
+                arguments: Array.from({ length: 17 }, (_, i) =>
+                  i >= 9 ? 0 : 1,
+                ),
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+      {
+        // Effectful non-allocator helper (allocates a small 1-field record).
+        id: 2,
+        name: "allocSmallList",
+        exported: false,
+        parameters: [],
+        slots: [],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 1, ...span },
+              {
+                kind: "record-new",
+                id: 1,
+                record: 1,
+                arguments: [0],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        // Pure leaf scalar helper.
+        id: 3,
+        name: "pureLeaf",
+        exported: false,
+        parameters: [],
+        slots: [],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "constant", id: 0, value: 7, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 100000)!;
+  assert.deepEqual(verify(result.module), { ok: true });
+  // Only the hot-block call to allocWide (target 1) inlines; allocSmallList
+  // (effectful non-allocator) and both calls in the cold throw-only block stay
+  // out of line.
+  assert.equal(result.inlined, 1);
+  const remainingCalls = result.module.functions[0]!.blocks.flatMap(
+    (b) => b.instructions,
+  )
+    .filter((op) => op.kind === "call")
+    .map((op) => op.target)
+    .sort((a, b) => a - b);
+  assert.deepEqual(remainingCalls, [1, 2, 3]);
+});

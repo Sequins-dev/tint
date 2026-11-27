@@ -49,7 +49,7 @@ function defaultObjectTag(
   if (isArrayValue(object, realm)) return "Array";
   const rare = object.internalRareSlots;
   if (rare !== undefined && rare.internalArgumentsData) return "Arguments";
-  if (object.internalCall !== undefined) return "Function";
+  if (object.internalRareSlots?.internalCall !== undefined) return "Function";
   if (exoticSlots(object).internalErrorData) return "Error";
   if (exoticSlots(object).internalRegExpData !== undefined) return "RegExp";
   if (exoticSlots(object).internalDateValue !== undefined) return "Date";

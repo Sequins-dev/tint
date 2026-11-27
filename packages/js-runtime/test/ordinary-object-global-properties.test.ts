@@ -36,7 +36,7 @@ test("eval installs standard function metadata and preserves non-string identiti
     realm = object.createErrorRealm(global, hooks);
   assert.equal(typeof object.installEvalIntrinsic, "function");
   const evaluate = object.installEvalIntrinsic(global, realm, hooks);
-  assert.equal(evaluate.internalConstruct, undefined);
+  assert.equal(evaluate.internalRareSlots?.internalConstruct, undefined);
   assert.equal(object.getOwnProperty(evaluate, "prototype"), undefined);
   assert.equal(exoticSlots(evaluate).internalInitialName, "eval");
   for (const [name, value] of [
@@ -68,11 +68,17 @@ test("eval installs standard function metadata and preserves non-string identiti
       },
     },
   ])
-    assert.equal(evaluate.internalCall!(undefined, [value]), value);
-  assert.equal(evaluate.internalCall!(undefined, []), undefined);
+    assert.equal(
+      evaluate.internalRareSlots!.internalCall!(undefined, [value]),
+      value,
+    );
+  assert.equal(
+    evaluate.internalRareSlots!.internalCall!(undefined, []),
+    undefined,
+  );
   assert.equal(realm.unsupported, false);
   assert.throws(
-    () => evaluate.internalCall!(undefined, [""]),
+    () => evaluate.internalRareSlots!.internalCall!(undefined, [""]),
     (error) => error === undefined,
   );
   assert.equal(
@@ -289,7 +295,7 @@ test("indirect eval forwards raw strings and abrupt completions without coercion
   });
   for (const source of ["", "1+2", "\uD800"])
     assert.equal(
-      evaluate.internalCall!(undefined, [source, "ignored"]),
+      evaluate.internalRareSlots!.internalCall!(undefined, [source, "ignored"]),
       source,
     );
   const value = {
@@ -297,10 +303,16 @@ test("indirect eval forwards raw strings and abrupt completions without coercion
       throw "COERCED";
     },
   };
-  assert.equal(evaluate.internalCall!(undefined, [value]), value);
-  assert.equal(evaluate.internalCall!(undefined, []), undefined);
+  assert.equal(
+    evaluate.internalRareSlots!.internalCall!(undefined, [value]),
+    value,
+  );
+  assert.equal(
+    evaluate.internalRareSlots!.internalCall!(undefined, []),
+    undefined,
+  );
   assert.throws(
-    () => evaluate.internalCall!(undefined, ["throw"]),
+    () => evaluate.internalRareSlots!.internalCall!(undefined, ["throw"]),
     (e) => e === thrown,
   );
   assert.deepEqual(received, ["", "1+2", "\uD800", "throw"]);
@@ -353,7 +365,7 @@ test("eval compiler and unsupported state belong to the intrinsic realm", () => 
     42,
   );
   assert.throws(
-    () => evalA.internalCall!(undefined, ["x"]),
+    () => evalA.internalRareSlots!.internalCall!(undefined, ["x"]),
     (e) => e === undefined,
   );
   assert.equal(a.realm.unsupported, true);

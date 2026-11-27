@@ -85,14 +85,16 @@ export function readObjectValuePropertyKey(
     // prototype chain; ToString of a Number is canonical, naming the Number
     // itself (-0 names "0"). Read the element without the string round trip.
     const exotic =
-      object === undefined ? undefined : object.internalExoticSlots;
+      object === undefined
+        ? undefined
+        : object.internalRareSlots?.internalExoticSlots;
     const data =
       exotic === undefined ? undefined : exotic.internalTypedArrayData;
     if (data !== undefined)
       return typedArrayElementAt(data, key === 0 ? 0 : key);
     if (Number.isSafeInteger(key) && object !== undefined) {
       while (object !== undefined) {
-        const cursorExotic = object.internalExoticSlots;
+        const cursorExotic = object.internalRareSlots?.internalExoticSlots;
         const typed =
           cursorExotic === undefined
             ? undefined
@@ -164,7 +166,7 @@ export function writeObjectValuePropertyKey(
   if (typeof key === "number") {
     const object = viewObjectValue(base, realm.objectPrototype);
     if (object !== undefined) {
-      const exotic = object.internalExoticSlots;
+      const exotic = object.internalRareSlots?.internalExoticSlots;
       if (exotic !== undefined) {
         const data = exotic.internalTypedArrayData;
         if (data !== undefined) {

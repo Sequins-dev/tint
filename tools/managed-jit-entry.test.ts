@@ -53,13 +53,15 @@ test("managed Script assembly emits every import against the real AOT-selected f
       // f's warm global read of v loads its cached cell inline: the
       // cachedGlobalIdentifierCell import adds one signature, and reading
       // the cell's value adds the descriptor record.
+      // Binary/unary slow fallbacks lower to *OrThrow directly without
+      // pulling Outcome/rare-slot record descriptors into the JIT unit.
       assert.deepEqual(prepared.value.counts, {
         signatures: 21,
         memberOnly: 3,
-        records: 21,
+        records: 11,
         functions: 7,
       });
-      assert.equal(prepared.value.native.managedImports.length, 50);
+      assert.equal(prepared.value.native.managedImports.length, 40);
     }
     if (text === samples[2]) {
       // Distinct runtime functions with one signature type share a directory
