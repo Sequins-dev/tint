@@ -4164,35 +4164,108 @@ function checkClosureModuleLayout(
     return selectedDiscriminants(info, selected, base, node);
   }
 
+  function alternateFactsInner(
+    a: Set<number>,
+    b: Set<number>,
+    node: Span,
+  ): Set<number> {
+    if (a === b) return a;
+    const result = intersect(a, b);
+    if (a.size === result.size && b.size === result.size) return result;
+    const bindingCount = graph.bindings.length;
+    let rightDiffByBinding: Map<number, number[]> | undefined;
+    let leftDiff: number[] | undefined;
+    for (const other of b) {
+      if (other < bindingCount || a.has(other)) continue;
+      const right = narrowed[other - bindingCount];
+      if (right === undefined) continue;
+      if (rightDiffByBinding === undefined)
+        rightDiffByBinding = new Map<number, number[]>();
+      let bucket = rightDiffByBinding.get(right.binding);
+      if (bucket === undefined) {
+        bucket = [];
+        rightDiffByBinding.set(right.binding, bucket);
+      }
+      bucket.push(other);
+    }
+    for (const token of a) {
+      if (token < bindingCount || b.has(token)) continue;
+      const left = narrowed[token - bindingCount];
+      if (left === undefined) continue;
+      if (leftDiff === undefined) leftDiff = [];
+      leftDiff.push(token);
+    }
+    if (rightDiffByBinding === undefined && leftDiff === undefined)
+      return result;
+    if (rightDiffByBinding !== undefined) {
+      for (const token of a) {
+        if (token < bindingCount) continue;
+        const left = narrowed[token - bindingCount];
+        if (left === undefined) continue;
+        const matches = rightDiffByBinding.get(left.binding);
+        if (matches === undefined) continue;
+        for (const other of matches) {
+          const right = narrowed[other - bindingCount];
+          if (right === undefined || left.property !== right.property) continue;
+          result.delete(token);
+          result.delete(other);
+          result.add(
+            narrowToken(
+              left.binding,
+              unionSubset([left.type, right.type], node),
+              left.property,
+            ),
+          );
+        }
+      }
+    }
+    if (leftDiff !== undefined) {
+      let leftDiffByBinding: Map<number, number[]> | undefined;
+      for (const token of leftDiff) {
+        const left = narrowed[token - bindingCount];
+        if (left === undefined) continue;
+        if (leftDiffByBinding === undefined)
+          leftDiffByBinding = new Map<number, number[]>();
+        let bucket = leftDiffByBinding.get(left.binding);
+        if (bucket === undefined) {
+          bucket = [];
+          leftDiffByBinding.set(left.binding, bucket);
+        }
+        bucket.push(token);
+      }
+      if (leftDiffByBinding !== undefined) {
+        for (const other of b) {
+          if (other < bindingCount || !a.has(other)) continue;
+          const right = narrowed[other - bindingCount];
+          if (right === undefined) continue;
+          const matches = leftDiffByBinding.get(right.binding);
+          if (matches === undefined) continue;
+          for (const token of matches) {
+            const left = narrowed[token - bindingCount];
+            if (left === undefined || left.property !== right.property)
+              continue;
+            result.delete(token);
+            result.delete(other);
+            result.add(
+              narrowToken(
+                left.binding,
+                unionSubset([left.type, right.type], node),
+                left.property,
+              ),
+            );
+          }
+        }
+      }
+    }
+    return result;
+  }
   function alternateFacts(
     a: Set<number>,
     b: Set<number>,
     node: Span,
   ): Set<number> {
-    const result = intersect(a, b);
-    for (const token of a) {
-      const left = narrowed[token - graph.bindings.length];
-      if (left === undefined) continue;
-      for (const other of b) {
-        const right = narrowed[other - graph.bindings.length];
-        if (
-          right === undefined ||
-          left.binding !== right.binding ||
-          left.property !== right.property
-        )
-          continue;
-        result.delete(token);
-        result.delete(other);
-        result.add(
-          narrowToken(
-            left.binding,
-            unionSubset([left.type, right.type], node),
-            left.property,
-          ),
-        );
-      }
-    }
-    return result;
+    const merged = alternateFactsInner(a, b, node);
+    return merged === a || merged === b ? new Set(merged) : merged;
   }
   function membershipObject(id: number): boolean {
     const type = types[id];
@@ -4442,15 +4515,15 @@ function checkClosureModuleLayout(
         facts.add(token);
     return facts;
   }
-  function refine(
+  function refineInner(
     node: Expression,
     truth: boolean,
     base: Set<number>,
-    evaluated: Set<number> = base,
+    evaluated: Set<number>,
   ): Set<number> {
     node = ungroup(node);
     if (node.kind === "unary" && node.operator === "!")
-      return refine(node.operand, !truth, base, evaluated);
+      return refineInner(node.operand, !truth, base, evaluated);
     if (node.kind === "binary") {
       if (
         truth &&
@@ -4507,78 +4580,88 @@ function checkClosureModuleLayout(
       }
       if (node.operator === "&&")
         return truth
-          ? refine(
+          ? refineInner(
               node.right,
               true,
-              refine(node.left, true, base, evaluated),
+              refineInner(node.left, true, base, evaluated),
               evaluated,
             )
-          : alternateFacts(
-              refine(node.left, false, base, evaluated),
-              refine(
+          : alternateFactsInner(
+              refineInner(node.left, false, base, evaluated),
+              refineInner(
                 node.right,
                 false,
-                refine(node.left, true, base, evaluated),
+                refineInner(node.left, true, base, evaluated),
                 evaluated,
               ),
               node,
             );
       if (node.operator === "||")
         return !truth
-          ? refine(
+          ? refineInner(
               node.right,
               false,
-              refine(node.left, false, base, evaluated),
+              refineInner(node.left, false, base, evaluated),
               evaluated,
             )
-          : alternateFacts(
-              refine(node.left, true, base, evaluated),
-              refine(
+          : alternateFactsInner(
+              refineInner(node.left, true, base, evaluated),
+              refineInner(
                 node.right,
                 true,
-                refine(node.left, false, base, evaluated),
+                refineInner(node.left, false, base, evaluated),
                 evaluated,
               ),
               node,
             );
     }
     if (!pure(node)) {
+      if (base === evaluated) return base;
+      let hasNew = false;
+      for (const token of base)
+        if (!evaluated.has(token)) {
+          hasNew = true;
+          break;
+        }
+      if (!hasNew) return base;
       // Evaluation already invalidated unsafe preexisting facts. Only newly
       // reconstructed short-circuit facts need to survive another effect:
       // facts of bindings no closure captures survive calls, except for
       // bindings the operand itself assigns.
       const written = assignedWithin(node);
-      const retained = stableFacts(base);
-      // stableFacts keeps facts of immutable bindings and narrowed facts of
-      // uncaptured bindings; binding facts of uncaptured mutable bindings
-      // survive too unless the operand assigns them.
-      for (const token of base)
-        if (
-          token >= 0 &&
-          token < graph.bindings.length &&
-          graph.bindings[token]?.captured === false &&
-          written !== undefined &&
-          !written.has(token)
-        )
+      const bindingCount = graph.bindings.length;
+      const retained = new Set<number>();
+      for (const token of base) {
+        if (evaluated.has(token) || token < 0) {
           retained.add(token);
-      if (written === undefined || written.size !== 0) {
-        const tokens: number[] = [];
-        for (const token of retained) tokens.push(token);
-        for (const token of tokens) {
-          if (token === undefined) throw "refined token invariant";
-          let binding: number | undefined = undefined;
-          if (token >= 0 && token < graph.bindings.length) binding = token;
-          else if (token >= graph.bindings.length)
-            binding = narrowed[token - graph.bindings.length]?.binding;
+          continue;
+        }
+        if (token < bindingCount) {
+          const info = graph.bindings[token];
           if (
-            binding !== undefined &&
-            graph.bindings[binding]?.mutable !== false &&
-            (written === undefined || written.has(binding))
+            info?.mutable === false ||
+            (info?.captured === false &&
+              written !== undefined &&
+              !written.has(token))
           )
-            retained.delete(token);
+            retained.add(token);
+        } else {
+          const fact = narrowed[token - bindingCount];
+          if (
+            fact !== undefined &&
+            (fact.property === undefined || fact.checkedRead === true)
+          ) {
+            const info = graph.bindings[fact.binding];
+            if (
+              info?.mutable === false ||
+              (info?.captured === false &&
+                written !== undefined &&
+                !written.has(fact.binding))
+            )
+              retained.add(token);
+          }
         }
       }
-      for (const token of base) if (evaluated.has(token)) retained.add(token);
       return retained;
     }
     const instance = refineInstanceof(node, truth, base);
@@ -4595,9 +4678,7 @@ function checkClosureModuleLayout(
     if (introduced !== undefined) return introduced;
     const field = refineField(node, truth, base);
     if (field !== undefined) return field;
-    // Delegated refinements produce their own result. Copy only when this
-    // fallback owns the facts it is about to update.
-    const result = new Set(base);
+    // Copy only when this fallback actually adds or deletes a fact.
     if (node.kind === "binary") {
       if (["===", "!==", "==", "!="].includes(node.operator)) {
         const local = isUndefined(node.left)
@@ -4607,17 +4688,34 @@ function checkClosureModuleLayout(
             : undefined;
         const b = local === undefined ? undefined : references.get(local);
         if (b !== undefined && presentType(bindingTypes[b.id]) !== undefined) {
-          if (truth === (node.operator === "!==" || node.operator === "!="))
-            result.add(b.id);
+          const presentAfter =
+            truth === (node.operator === "!==" || node.operator === "!=");
+          if (presentAfter ? base.has(b.id) : !base.has(b.id)) return base;
+          const result = new Set(base);
+          if (presentAfter) result.add(b.id);
           else result.delete(b.id);
+          return result;
         }
       }
     } else if (node.kind === "identifier" && truth) {
       const b = references.get(node);
-      if (b !== undefined && presentType(bindingTypes[b.id]) !== undefined)
+      if (b !== undefined && presentType(bindingTypes[b.id]) !== undefined) {
+        if (base.has(b.id)) return base;
+        const result = new Set(base);
         result.add(b.id);
+        return result;
+      }
     }
-    return result;
+    return base;
+  }
+  function refine(
+    node: Expression,
+    truth: boolean,
+    base: Set<number>,
+    evaluated: Set<number> = base,
+  ): Set<number> {
+    const refined = refineInner(node, truth, base, evaluated);
+    return refined === base ? new Set(base) : refined;
   }
   function join(
     a: number,

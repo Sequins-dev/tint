@@ -183,7 +183,8 @@ type CollectionPass =
   | { readonly ok: true; readonly value: PreparedCollectionRuntime }
   | (RuntimePreparationError & { readonly retry: boolean });
 interface CollectionPassInput {
-  readonly module: Module;
+  module: Module;
+  readonly needsHashes: boolean;
   readonly plan: CollectionRuntimePlan;
   readonly roots: readonly string[];
   readonly records: readonly RuntimeBindingRecord[] | undefined;
@@ -591,14 +592,11 @@ function prepareCollectionPass(
     })();
     if (!transformed.ok) fail(transformed.error);
 
-    // Surface materialization adds syntax after specialization's hash pass.
-    // Stamp the completed tree before creating identity-keyed checker indexes.
-    const finalized =
-      transform === undefined
-        ? transformed.value
-        : rewriteModule(transformed.value, { hashes: true });
+    // Return the unfinalized syntax so the observed checker graph in this
+    // frame can die before the whole-tree hash pass and transformed recheck.
     return {
-      module: finalized,
+      module: transformed.value,
+      needsHashes: transform !== undefined,
       plan,
       roots: specializedValue.roots,
       records: control?.records,
@@ -619,6 +617,12 @@ function prepareCollectionPass(
       setStarts = plan.setStarts,
       mapStarts = plan.mapStarts,
       sortStarts = plan.sortStarts;
+    // Surface materialization adds syntax after specialization's hash pass.
+    // Stamp the completed tree here after prepareInput's frame has released
+    // the observed checker, replacing the unhashed tree in place before
+    // creating identity-keyed checker indexes.
+    if (input.needsHashes)
+      input.module = rewriteModule(input.module, { hashes: true });
     const priorConsulted = consulted.slice();
     if (records !== undefined)
       for (const record of records) {
