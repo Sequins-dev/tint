@@ -658,3 +658,207 @@ test("an optional compared with a wrapped number selects NaN when absent", () =>
   assert.equal(comparison.left, select.id);
   assert.equal(comparison.right, 1);
 });
+
+test("constant folding handles sparse high value IDs with exact invalidation and block isolation", () => {
+  const baseId = 2_500_000;
+  const blocks: FunctionIR["blocks"][number][] = [
+    {
+      id: 0,
+      instructions: [
+        // Known zero-length array stored to slot 1, loaded and folded.
+        { kind: "constant", id: baseId, value: 0, ...span },
+        {
+          kind: "array-new",
+          id: baseId + 1,
+          type: "Float64Array",
+          length: baseId,
+          ...span,
+        },
+        { kind: "store", slot: 1, value: baseId + 1, ...span },
+        { kind: "load", id: baseId + 2, slot: 1, ...span },
+        { kind: "array-length", id: baseId + 3, array: baseId + 2, ...span },
+        // Overwriting slot 1 with an unknown-length parameter array must invalidate.
+        { kind: "load", id: baseId + 4, slot: 0, ...span },
+        { kind: "store", slot: 1, value: baseId + 4, ...span },
+        { kind: "load", id: baseId + 5, slot: 1, ...span },
+        { kind: "array-length", id: baseId + 6, array: baseId + 5, ...span },
+        // Known constant and string stored to slots 2 and 3, then invalidated by unknown stores.
+        { kind: "constant", id: baseId + 7, value: 10, ...span },
+        { kind: "store", slot: 2, value: baseId + 7, ...span },
+        { kind: "load", id: baseId + 8, slot: 2, ...span },
+        { kind: "store", slot: 2, value: baseId + 6, ...span },
+        { kind: "load", id: baseId + 9, slot: 2, ...span },
+        { kind: "string-literal", id: baseId + 10, value: "hi", ...span },
+        { kind: "store", slot: 3, value: baseId + 10, ...span },
+        { kind: "load", id: baseId + 11, slot: 3, ...span },
+        {
+          kind: "string-length",
+          id: baseId + 12,
+          string: baseId + 11,
+          ...span,
+        },
+        { kind: "load", id: baseId + 13, slot: 4, ...span },
+        { kind: "store", slot: 3, value: baseId + 13, ...span },
+        { kind: "load", id: baseId + 14, slot: 3, ...span },
+        {
+          kind: "string-length",
+          id: baseId + 15,
+          string: baseId + 14,
+          ...span,
+        },
+        // Known constant in slot 2 invalidated across an effect barrier.
+        { kind: "store", slot: 2, value: baseId + 7, ...span },
+        {
+          kind: "host-call",
+          id: baseId + 16,
+          operation: "argument-count",
+          arguments: [],
+          ...span,
+        },
+        { kind: "load", id: baseId + 17, slot: 2, ...span },
+        // Re-store known constant so block 1 tests that block-local facts do not leak.
+        { kind: "store", slot: 2, value: baseId + 7, ...span },
+        {
+          kind: "binary",
+          id: baseId + 18,
+          operator: "+",
+          left: baseId + 3,
+          right: baseId + 8,
+          ...span,
+        },
+        {
+          kind: "binary",
+          id: baseId + 19,
+          operator: "+",
+          left: baseId + 18,
+          right: baseId + 9,
+          ...span,
+        },
+        {
+          kind: "binary",
+          id: baseId + 20,
+          operator: "+",
+          left: baseId + 19,
+          right: baseId + 12,
+          ...span,
+        },
+        {
+          kind: "binary",
+          id: baseId + 21,
+          operator: "+",
+          left: baseId + 20,
+          right: baseId + 15,
+          ...span,
+        },
+        {
+          kind: "binary",
+          id: baseId + 22,
+          operator: "+",
+          left: baseId + 21,
+          right: baseId + 17,
+          ...span,
+        },
+        { kind: "store", slot: 5, value: baseId + 22, ...span },
+      ],
+      terminator: { kind: "jump", target: 1, ...span },
+    },
+  ];
+  // Add many sparse blocks to verify bounded work and zero cross-block fact leakage.
+  const sparseBlocks = 256;
+  let nextId = baseId + 100;
+  for (let b = 1; b <= sparseBlocks; b++) {
+    const loadId = nextId++;
+    const accId = nextId++;
+    const sumId = nextId++;
+    blocks.push({
+      id: b,
+      instructions: [
+        { kind: "load", id: loadId, slot: 2, ...span },
+        { kind: "load", id: accId, slot: 5, ...span },
+        {
+          kind: "binary",
+          id: sumId,
+          operator: "+",
+          left: accId,
+          right: loadId,
+          ...span,
+        },
+        { kind: "store", slot: 5, value: sumId, ...span },
+      ],
+      terminator:
+        b < sparseBlocks
+          ? { kind: "jump", target: b + 1, ...span }
+          : { kind: "return", value: sumId, ...span },
+    });
+  }
+  const input: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "sparseFold",
+        exported: true,
+        parameters: [0, 4],
+        slots: [
+          "Float64Array",
+          "Float64Array",
+          "number",
+          "string",
+          "string",
+          "number",
+        ],
+        returnType: "number",
+        entry: 0,
+        blocks,
+      },
+    ],
+  };
+  assert.deepEqual(verify(input), { ok: true });
+  const result = optimizeModule(input, 100000, { passLimit: 1 });
+  assert.equal(result.budgetExhausted, false);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const ops0 = result.module.functions[0]!.blocks[0]!.instructions;
+  // Known zero-length array-length folds to 0.
+  assert.deepEqual(ops0[4], {
+    kind: "constant",
+    id: baseId + 3,
+    value: 0,
+    ...span,
+  });
+  // Overwritten array slot does NOT fold.
+  assert.equal(ops0[8]?.kind, "array-length");
+  // First load of slot 2 folds to 10; after unknown store it does NOT fold.
+  assert.deepEqual(ops0[11], {
+    kind: "constant",
+    id: baseId + 8,
+    value: 10,
+    ...span,
+  });
+  assert.equal(ops0[13]?.kind, "load");
+  // First string load/length folds; after unknown string store it does NOT fold.
+  assert.deepEqual(ops0[16], {
+    kind: "string-literal",
+    id: baseId + 11,
+    value: "hi",
+    ...span,
+  });
+  assert.deepEqual(ops0[17], {
+    kind: "constant",
+    id: baseId + 12,
+    value: 2,
+    ...span,
+  });
+  assert.equal(ops0[20]?.kind, "load");
+  assert.equal(ops0[21]?.kind, "string-length");
+  // Load after host-call barrier does NOT fold.
+  assert.equal(ops0[24]?.kind, "load");
+  // 0 + 10 folds to 10.
+  assert.deepEqual(ops0[26], {
+    kind: "constant",
+    id: baseId + 18,
+    value: 10,
+    ...span,
+  });
+  // Block 1 load of slot 2 must NOT inherit block 0's local slot fact.
+  const ops1 = result.module.functions[0]!.blocks[1]!.instructions;
+  assert.equal(ops1[0]?.kind, "load");
+});
