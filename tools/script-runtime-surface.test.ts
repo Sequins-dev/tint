@@ -390,7 +390,10 @@ test("Script surface instantiations match the real linked export namespaces and 
   // list anchor (-1 anchor).
   // Inlined constructor sites (`ConstructSite.keys` + slow-path value list)
   // add two list anchors (+2 anchors).
-  assert.equal(census.value.anchors.length, 134);
+  // Cached property-contract sub-schemas (`ObjectShapeContract.subSchemas`) and
+  // flat reusable pending lists (`objects` + `schemas` replacing `Enrollment[]`)
+  // add two list anchors (+2 anchors).
+  assert.equal(census.value.anchors.length, 136);
   assert.equal(census.value.collections.length, 58);
   assert.deepEqual(
     ["list", "set", "map"].map(

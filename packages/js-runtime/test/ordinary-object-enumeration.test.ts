@@ -145,3 +145,38 @@ test("enumeration omits symbol keys and remains exhausted", () => {
   objects.defineOwnProperty(object, "later", descriptor, hooks);
   assert.equal(objects.nextEnumerableProperty(iterator), undefined);
 });
+
+test("fast-snapshot enumeration observes mid-loop deletion and prototype mutations", () => {
+  const proto = objects.createObject<string, unknown>(undefined);
+  property(proto, "hiddenProto", false);
+  const obj = objects.createObject<string, unknown>(proto);
+  property(obj, "a");
+  property(obj, "b");
+  property(obj, "c");
+
+  // Mid-loop deletion of unvisited key must skip the deleted key.
+  const it1 = objects.createPropertyEnumeration(
+    obj,
+    objects.stringPropertyKeyOrder,
+  );
+  assert.equal(objects.nextEnumerableProperty(it1), "a");
+  assert.equal(objects.deleteProperty(obj, "b"), true);
+  assert.equal(objects.nextEnumerableProperty(it1), "c");
+  assert.equal(objects.nextEnumerableProperty(it1), undefined);
+
+  // Mid-loop addition of an enumerable property on the prototype must be observed,
+  // while already-yielded keys must not repeat.
+  const obj2 = objects.createObject<string, unknown>(proto);
+  property(obj2, "x");
+  property(obj2, "y");
+  const it2 = objects.createPropertyEnumeration(
+    obj2,
+    objects.stringPropertyKeyOrder,
+  );
+  assert.equal(objects.nextEnumerableProperty(it2), "x");
+  property(proto, "x", true);
+  property(proto, "z", true);
+  assert.equal(objects.nextEnumerableProperty(it2), "y");
+  assert.equal(objects.nextEnumerableProperty(it2), "z");
+  assert.equal(objects.nextEnumerableProperty(it2), undefined);
+});

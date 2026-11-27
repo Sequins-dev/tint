@@ -1,6 +1,6 @@
 import { groupByProperty } from "./grouping.ts";
 import { addEntriesFromIterable } from "./entry-iteration.ts";
-import { createArrayFromList } from "./array-like.ts";
+import { createArray2, createArrayFromList } from "./array-like.ts";
 import { scriptBoolean, scriptSameValue, viewObjectValue } from "./values.ts";
 import { scriptPropertyKeyOrder, type ScriptPropertyKey } from "./symbols.ts";
 import {
@@ -12,10 +12,16 @@ import {
   defineOwnProperty,
   getOwnProperty,
   getProperty,
+  ordinaryHasOwnProperty,
   ownKeys,
   preventExtensions,
+  propertyEpoch,
   setPrototype,
   setProperty,
+  storedValue,
+  objectFlagDictionary,
+  propertyAccessor,
+  propertyEnumerable,
   type OrdinaryObject,
   type ObjectHooks,
   type ObjectCall,
@@ -25,7 +31,15 @@ import {
   fromPropertyDescriptor,
   type DescriptorKeys,
 } from "./descriptors.ts";
-import { type DescriptorUpdate } from "../descriptors/index.ts";
+import {
+  configurableField,
+  enumerableField,
+  getField,
+  setField,
+  valueField,
+  writableField,
+  type DescriptorUpdate,
+} from "../descriptors/index.ts";
 import {
   builtinFunctionMetadata,
   builtinFunction,
@@ -76,8 +90,137 @@ export function installObjectIntrinsics(
     if (converted.error === "type") throw createRuntimeError(realm, "type");
     return converted.value;
   }
+  let cleanDescriptorProtoEpoch = -1;
+  function descriptorProtoClean(): boolean {
+    const epoch = propertyEpoch.value;
+    if (cleanDescriptorProtoEpoch === epoch) return true;
+    let cursor: OrdinaryObject<ScriptPropertyKey, unknown> | undefined =
+      realm.objectPrototype;
+    while (cursor !== undefined) {
+      if (
+        getOwnProperty<ScriptPropertyKey, unknown>(cursor, "enumerable") !==
+          undefined ||
+        getOwnProperty<ScriptPropertyKey, unknown>(cursor, "configurable") !==
+          undefined ||
+        getOwnProperty<ScriptPropertyKey, unknown>(cursor, "value") !==
+          undefined ||
+        getOwnProperty<ScriptPropertyKey, unknown>(cursor, "writable") !==
+          undefined ||
+        getOwnProperty<ScriptPropertyKey, unknown>(cursor, "get") !==
+          undefined ||
+        getOwnProperty<ScriptPropertyKey, unknown>(cursor, "set") !== undefined
+      )
+        return false;
+      cursor = cursor.prototype;
+    }
+    cleanDescriptorProtoEpoch = epoch;
+    return true;
+  }
   function descriptor(value: unknown): DescriptorUpdate<unknown> {
     const source = requireObject(value);
+    if (
+      source.internalMethods === undefined &&
+      source.internalArrayElements === undefined &&
+      (source.internalFlags & objectFlagDictionary) === 0 &&
+      source.prototype === realm.objectPrototype &&
+      source.internalRareSlots?.internalDataAliases === undefined &&
+      descriptorProtoClean()
+    ) {
+      const shape = source.internalShape;
+      if (shape === undefined)
+        return {
+          fields: 0,
+          value: hooks.undefinedValue,
+          writable: false,
+          get: hooks.undefinedValue,
+          set: hooks.undefinedValue,
+          enumerable: false,
+          configurable: false,
+        };
+      const shapeKeys = shape.keys,
+        kinds = shape.kinds;
+      let hasAccessor = false;
+      for (let i = 0; i < shapeKeys.length; i++) {
+        if (((kinds[i] ?? 0) & propertyAccessor) !== 0) {
+          hasAccessor = true;
+          break;
+        }
+      }
+      if (!hasAccessor) {
+        let fields = 0,
+          val: unknown = hooks.undefinedValue,
+          get: unknown = hooks.undefinedValue,
+          set: unknown = hooks.undefinedValue,
+          writable = false,
+          enumerable = false,
+          configurable = false;
+        for (let i = 0; i < shapeKeys.length; i++) {
+          const k = shapeKeys[i];
+          if (k === "value") {
+            const raw = storedValue<ScriptPropertyKey, unknown>(source, i);
+            val = raw === undefined ? shape.undefinedValue : raw;
+            fields |= valueField;
+          } else if (k === "writable") {
+            const raw = storedValue<ScriptPropertyKey, unknown>(source, i);
+            writable = scriptBoolean(
+              raw === undefined ? shape.undefinedValue : raw,
+              realm.objectPrototype,
+            );
+            fields |= writableField;
+          } else if (k === "enumerable") {
+            const raw = storedValue<ScriptPropertyKey, unknown>(source, i);
+            enumerable = scriptBoolean(
+              raw === undefined ? shape.undefinedValue : raw,
+              realm.objectPrototype,
+            );
+            fields |= enumerableField;
+          } else if (k === "configurable") {
+            const raw = storedValue<ScriptPropertyKey, unknown>(source, i);
+            configurable = scriptBoolean(
+              raw === undefined ? shape.undefinedValue : raw,
+              realm.objectPrototype,
+            );
+            fields |= configurableField;
+          } else if (k === "get") {
+            const raw = storedValue<ScriptPropertyKey, unknown>(source, i);
+            get = raw === undefined ? shape.undefinedValue : raw;
+            if (
+              get !== undefined &&
+              !isCallableObject<ScriptPropertyKey, unknown>(
+                viewObjectValue(get, realm.objectPrototype),
+              )
+            )
+              throw createRuntimeError(realm, "type");
+            fields |= getField;
+          } else if (k === "set") {
+            const raw = storedValue<ScriptPropertyKey, unknown>(source, i);
+            set = raw === undefined ? shape.undefinedValue : raw;
+            if (
+              set !== undefined &&
+              !isCallableObject<ScriptPropertyKey, unknown>(
+                viewObjectValue(set, realm.objectPrototype),
+              )
+            )
+              throw createRuntimeError(realm, "type");
+            fields |= setField;
+          }
+        }
+        if (
+          (fields & (getField | setField)) !== 0 &&
+          (fields & (valueField | writableField)) !== 0
+        )
+          throw createRuntimeError(realm, "type");
+        return {
+          fields,
+          value: val,
+          writable,
+          get,
+          set,
+          enumerable,
+          configurable,
+        };
+      }
+    }
     const result = toPropertyDescriptor<ScriptPropertyKey, unknown>(
       source,
       value,
@@ -261,6 +404,13 @@ export function installObjectIntrinsics(
   install("hasOwn", 2, (receiver, args): unknown => {
     const object = toObject(args[0]),
       key = propertyKey(args[1]);
+    if (
+      object.internalMethods === undefined &&
+      object.internalArrayElements === undefined &&
+      object.internalRareSlots?.internalContractedElements === undefined &&
+      object.internalRareSlots?.internalDataAliases === undefined
+    )
+      return ordinaryHasOwnProperty<ScriptPropertyKey, unknown>(object, key);
     return (
       getOwnProperty<ScriptPropertyKey, unknown>(object, key) !== undefined
     );
@@ -317,13 +467,120 @@ export function installObjectIntrinsics(
     kind: string,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = toObject(value);
-    const result = createArrayObject<ScriptPropertyKey, unknown>(
-      0,
-      realm.arrayPrototype,
-      realm.arrayHooks,
-      hooks,
-    );
-    let index = 0;
+    const items: unknown[] = [];
+    const rare = object.internalRareSlots;
+    if (
+      !symbols &&
+      object.internalMethods === undefined &&
+      object.internalArrayElements === undefined &&
+      (rare === undefined ||
+        (rare.internalDataAliases === undefined &&
+          rare.internalContractedElements === undefined))
+    ) {
+      if ((object.internalFlags & objectFlagDictionary) === 0) {
+        const shape = object.internalShape;
+        if (shape !== undefined) {
+          const shapeKeys = shape.keys,
+            kinds = shape.kinds;
+          let hasIndexKey = false;
+          for (let i = 0; i < shapeKeys.length; i++) {
+            const k = shapeKeys[i];
+            if (typeof k === "string") {
+              const c = k.charCodeAt(0);
+              if (c >= 48 && c <= 57 && scriptPropertyKeyOrder(k) >= 0) {
+                hasIndexKey = true;
+                break;
+              }
+            }
+          }
+          if (!hasIndexKey) {
+            for (let i = 0; i < shapeKeys.length; i++) {
+              const key = shapeKeys[i];
+              if (typeof key !== "string") continue;
+              const propKind = kinds[i] ?? 0;
+              if (enumerableOnly && (propKind & propertyEnumerable) === 0)
+                continue;
+              if (kind === "key") {
+                items.push(key);
+                continue;
+              }
+              const item =
+                (propKind & propertyAccessor) === 0 &&
+                object.internalShape === shape
+                  ? storedValue<ScriptPropertyKey, unknown>(object, i)
+                  : getProperty<ScriptPropertyKey, unknown>(
+                      object,
+                      key,
+                      object,
+                      hooks,
+                    );
+              items.push(
+                kind === "value" ? item : createArray2(key, item, realm),
+              );
+            }
+            return createArrayFromList(
+              items,
+              0,
+              realm.arrayPrototype,
+              realm,
+              hooks,
+            );
+          }
+        } else {
+          return createArrayFromList(
+            items,
+            0,
+            realm.arrayPrototype,
+            realm,
+            hooks,
+          );
+        }
+      } else {
+        const props = rare?.properties;
+        if (props === undefined || props.size === 0)
+          return createArrayFromList(
+            items,
+            0,
+            realm.arrayPrototype,
+            realm,
+            hooks,
+          );
+        let fastDict = true;
+        for (const [k, desc] of props) {
+          if (typeof k !== "string") continue;
+          if (desc.accessor) {
+            fastDict = false;
+            break;
+          }
+          const c = k.charCodeAt(0);
+          if (c >= 48 && c <= 57 && scriptPropertyKeyOrder(k) >= 0) {
+            fastDict = false;
+            break;
+          }
+        }
+        if (fastDict) {
+          for (const [key, desc] of props) {
+            if (typeof key !== "string") continue;
+            if (enumerableOnly && !desc.enumerable) continue;
+            if (kind === "key") {
+              items.push(key);
+              continue;
+            }
+            const item = desc.value;
+            items.push(
+              kind === "value" ? item : createArray2(key, item, realm),
+            );
+          }
+          return createArrayFromList(
+            items,
+            0,
+            realm.arrayPrototype,
+            realm,
+            hooks,
+          );
+        }
+      }
+    }
     for (const key of ownKeys<ScriptPropertyKey, unknown>(
       object,
       (key): number => scriptPropertyKeyOrder(key),
@@ -353,17 +610,9 @@ export function installObjectIntrinsics(
                 hooks,
               );
       }
-      if (
-        !createDataProperty<ScriptPropertyKey, unknown>(
-          result,
-          String(index++),
-          entry,
-          hooks,
-        )
-      )
-        throw "PROPERTY_LIST_INVARIANT";
+      items.push(entry);
     }
-    return result;
+    return createArrayFromList(items, 0, realm.arrayPrototype, realm, hooks);
   }
   install("getOwnPropertyNames", 1, (receiver, args): unknown =>
     ownPropertyList(args[0], false, false, "key"),

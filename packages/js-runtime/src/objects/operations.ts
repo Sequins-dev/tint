@@ -100,6 +100,7 @@ export const objectFlagExtensible = 1;
 export const objectFlagDictionary = 2;
 export const objectFlagUsedAsPrototype = 4;
 export const objectFlagArrayData = 8;
+export const objectFlagContracted = 16;
 export const objectFlagsPackedArray =
   objectFlagExtensible | objectFlagDictionary | objectFlagArrayData;
 
@@ -172,6 +173,11 @@ export interface OrdinaryRareSlots<Key, Value> {
   /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
   internalIndexedProperties: IndexedPropertyLayout<Value> | null | undefined;
   internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
+  /** Packed elements retained read-only after attaching a property contract.
+   * Moving elements out of `internalArrayElements` forces every inline element
+   * store to miss to the contract-checked path while preserving O(1) reads and
+   * avoiding eager Map allocation until the first mutation. */
+  internalContractedElements: ArrayElements<Key, Value> | undefined;
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Compiler/runtime-owned call steps. Each step owns and restores its context
    * before returning a transfer; JavaScript return values never select a step. */
@@ -348,6 +354,21 @@ export interface ObjectInternalMethods<Key, Value> {
   /** The same view when it never changes, so hot typed callers read it
    * without calling `typedRecord`. */
   readonly typedView?: TypedRecordView;
+  /** Direct field access for typed RecordView objects (record-views.ts). */
+  readonly recordViewAccess?: {
+    readonly keys: readonly string[];
+    readonly read: (field: number) => Value;
+  };
+  /** True when none of `recordViewAccess.keys` is `"toJSON"`. */
+  readonly recordViewNoToJSON?: boolean;
+  /** True when none of `recordViewAccess.keys` is an integer array index. */
+  readonly recordViewNoIntegerKeys?: boolean;
+  /** Direct indexed access for typed NativeListView objects (native-views.ts). */
+  readonly nativeListAccess?: {
+    readonly length: () => number;
+    readonly has: (index: number) => boolean;
+    readonly read: (index: number) => Value;
+  };
 }
 export interface TypedRecordView {
   readonly value: unknown;
@@ -440,6 +461,10 @@ export interface OrdinaryPropertyShape<Key, Value> {
    * string keys reuses the runtime's existing collection instantiation;
    * symbol keys are scanned. */
   index: Map<string, number> | undefined;
+  /** Parallel shape identity assigned to contracted fast-mode objects so
+   * uncontracted inline store caches never match them while reads keep using
+   * the same inline slots and key tables. */
+  contractedShape: OrdinaryPropertyShape<Key, Value> | undefined;
 }
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 type ScriptShape = OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
@@ -766,6 +791,7 @@ export function ensureRareSlots<Key, Value>(
     internalArgumentsData: false,
     internalIndexedProperties: undefined,
     internalPropertyContract: undefined,
+    internalContractedElements: undefined,
     internalPrivateElements: undefined,
     internalTailDispatch: undefined,
     internalBoundTarget: undefined,
@@ -861,6 +887,46 @@ export function acceptsPropertyContract<Key, Value>(
             rare.internalConstruct === undefined))))
   );
 }
+/** Return packed elements readable on `object` (either active or contracted). */
+export function readableArrayElements<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): ArrayElements<Key, Value> | undefined {
+  const direct = object.internalArrayElements;
+  if (direct !== undefined) return direct;
+  const rare = object.internalRareSlots;
+  return rare === undefined ? undefined : rare.internalContractedElements;
+}
+function contractedOfShape<Key, Value>(
+  shape: OrdinaryPropertyShape<Key, Value>,
+): OrdinaryPropertyShape<Key, Value> {
+  const existing = shape.contractedShape;
+  if (existing !== undefined) return existing;
+  const created: OrdinaryPropertyShape<Key, Value> = {
+    keys: shape.keys,
+    kinds: shape.kinds,
+    hash: (shape.hash ^ 0x434f4e54) >>> 0,
+    shared: false,
+    firstSuccessor: undefined,
+    nextSibling: undefined,
+    successors: 0,
+    undefinedValue: shape.undefinedValue,
+    index: shape.index,
+    contractedShape: undefined,
+  };
+  created.contractedShape = created;
+  shape.contractedShape = created;
+  return created;
+}
+function unpackContractedElements<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): void {
+  const rare = object.internalRareSlots;
+  if (rare === undefined) return;
+  const elements = rare.internalContractedElements;
+  if (elements === undefined) return;
+  rare.internalContractedElements = undefined;
+  unpackArrayElements<Key, Value>(object, elements);
+}
 /** Publish a previously validated contract and invalidate any direct cell. */
 export function attachPropertyContract<Key, Value>(
   object: OrdinaryObject<Key, Value>,
@@ -869,13 +935,24 @@ export function attachPropertyContract<Key, Value>(
 ): void {
   if (!acceptsPropertyContract<Key, Value>(object, allowCallable))
     throw "PROPERTY_CONTRACT_OBJECT_INVARIANT";
-  // Contract checks run on descriptor storage.
-  useDictionaryProperties<Key, Value>(object);
-  // Contracted array writes use the existing descriptor guard. Transfer the
-  // packed elements without invoking any user code or changing their keys.
+  const rare = ensureRareSlots<Key, Value>(object);
+  rare.internalPropertyContract = contract;
+  object.internalFlags |= objectFlagContracted;
+  // Keep shape-mode objects on a distinct contracted shape (never entered into
+  // inline store caches) and keep packed arrays in internalContractedElements
+  // (forcing inline element-store to miss) until the first mutation.
+  if ((object.internalFlags & objectFlagDictionary) === 0) {
+    const shape = object.internalShape;
+    if (shape !== undefined)
+      object.internalShape = contractedOfShape<Key, Value>(shape);
+    else object.internalFlags |= objectFlagDictionary;
+  }
   const elements = object.internalArrayElements;
-  if (elements !== undefined) unpackArrayElements<Key, Value>(object, elements);
-  ensureRareSlots<Key, Value>(object).internalPropertyContract = contract;
+  if (elements !== undefined) {
+    rare.internalContractedElements = elements;
+    object.internalArrayElements = undefined;
+    object.internalShape = undefined;
+  }
   noteStructureChange<Key, Value>(object);
 }
 export function createAliasedObject<Key, Value>(
@@ -1006,6 +1083,7 @@ function allocateObject<Key, Value>(
           internalArgumentsData: false,
           internalIndexedProperties: undefined,
           internalPropertyContract: undefined,
+          internalContractedElements: undefined,
           internalPrivateElements: undefined,
           internalTailDispatch: undefined,
           internalBoundTarget: undefined,
@@ -1053,7 +1131,7 @@ export function ordinaryGetOwnProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: Key,
 ): Descriptor<Value> | undefined {
-  const elements = object.internalArrayElements;
+  const elements = readableArrayElements<Key, Value>(object);
   if (elements !== undefined) {
     if (key === elements.keys.lengthKey)
       return arrayLengthDescriptor<Key, Value>(elements);
@@ -1108,6 +1186,12 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   update: DescriptorUpdate<Value>,
   hooks: ObjectHooks<Value>,
 ): PropertyDefinitionResult {
+  if ((object.internalFlags & objectFlagContracted) !== 0) {
+    if (object.internalRareSlots?.internalContractedElements !== undefined)
+      unpackContractedElements<Key, Value>(object);
+    if ((object.internalFlags & objectFlagDictionary) === 0)
+      useDictionaryProperties<Key, Value>(object);
+  }
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
     if (key === elements.keys.lengthKey) {
@@ -1277,11 +1361,30 @@ function unpackArrayElements<Key, Value>(
     arrayLengthDescriptor<Key, Value>(elements),
   );
   const count = arrayElementCount<Key, Value>(elements);
-  for (let index = 0; index < count; index++)
-    properties.set(
-      elements.keys.indexKey(index),
-      arrayElementDescriptor<Key, Value>(elements, index),
-    );
+  const keys = elements.keys;
+  if (elements.generalCount === 0) {
+    const numbers = elements.numbers;
+    const undef = elements.undefinedValue;
+    for (let index = 0; index < count; index++) {
+      const n = numbers[index];
+      if (n === undefined) throw "ARRAY_ELEMENT_INVARIANT";
+      properties.set(keys.indexKey(index), {
+        accessor: false,
+        value: keys.fromNumber(n),
+        writable: true,
+        get: undef,
+        set: undef,
+        enumerable: true,
+        configurable: true,
+      });
+    }
+  } else {
+    for (let index = 0; index < count; index++)
+      properties.set(
+        keys.indexKey(index),
+        arrayElementDescriptor<Key, Value>(elements, index),
+      );
+  }
   if (existing !== undefined)
     for (const [key, descriptor] of existing) properties.set(key, descriptor);
   ensureRareSlots<Key, Value>(object).properties = properties;
@@ -1299,7 +1402,10 @@ export function createDataProperty<Key, Value>(
   // A new property on an ordinary extensible object already has a complete,
   // valid descriptor. Existing properties and exotic objects still use
   // DefineOwnProperty for redefinitions, aliases and length constraints.
-  if ((object.internalFlags & objectFlagDictionary) === 0) {
+  if (
+    (object.internalFlags & (objectFlagDictionary | objectFlagContracted)) ===
+    0
+  ) {
     const shape = object.internalShape;
     if (
       (object.internalFlags & objectFlagExtensible) !== 0 &&
@@ -1664,6 +1770,12 @@ export function ordinaryDeleteProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: Key,
 ): boolean {
+  if ((object.internalFlags & objectFlagContracted) !== 0) {
+    if (object.internalRareSlots?.internalContractedElements !== undefined)
+      unpackContractedElements<Key, Value>(object);
+    if ((object.internalFlags & objectFlagDictionary) === 0)
+      useDictionaryProperties<Key, Value>(object);
+  }
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
     if (key === elements.keys.lengthKey) return false;
@@ -1706,6 +1818,8 @@ export function preventExtensions<Key, Value>(
   const method = object.internalMethods?.preventExtensions;
   if (method !== undefined) return method(object);
   // Cached transitions rely on fast-mode objects being extensible.
+  if (object.internalRareSlots?.internalContractedElements !== undefined)
+    unpackContractedElements<Key, Value>(object);
   useDictionaryProperties<Key, Value>(object);
   object.internalShape = undefined;
   object.internalFlags &= ~objectFlagExtensible;
@@ -1752,6 +1866,11 @@ export function setPrototype<Key, Value>(
   )
     markPrototype<Key, Value>(prototype);
   // Shapes grow from the prototype's root: replay the keys from the new one.
+  if (
+    (object.internalFlags & objectFlagContracted) !== 0 &&
+    (object.internalFlags & objectFlagDictionary) === 0
+  )
+    useDictionaryProperties<Key, Value>(object);
   const shape = object.internalShape;
   if (
     (object.internalFlags & objectFlagDictionary) === 0 &&
@@ -2294,10 +2413,22 @@ export function useDictionaryProperties<Key, Value>(
     const keys = shape.keys;
     if (existing === undefined) {
       // No accessors stored in properties: populate directly in shape order.
+      const kinds = shape.kinds;
+      const undef = shape.undefinedValue;
       for (let index = 0; index < keys.length; index++) {
         const key = keys[index];
         if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
-        properties.set(key, fastDescriptor<Key, Value>(object, shape, index));
+        const kind = kinds[index] ?? 0;
+        const raw = storedValue<Key, Value>(object, index);
+        properties.set(key, {
+          accessor: false,
+          value: raw === undefined ? undef : raw,
+          writable: (kind & propertyWritable) !== 0,
+          get: undef,
+          set: undef,
+          enumerable: (kind & propertyEnumerable) !== 0,
+          configurable: (kind & propertyConfigurable) !== 0,
+        });
       }
     } else {
       // Accessors are already stored; insert every key in shape order.
@@ -2337,7 +2468,7 @@ export function ordinaryHasOwnProperty<Key, Value>(
     const shape = object.internalShape;
     return shape !== undefined && shapeKeyIndex<Key, Value>(shape, key) >= 0;
   }
-  const elements = object.internalArrayElements;
+  const elements = readableArrayElements<Key, Value>(object);
   if (elements !== undefined) {
     if (key === elements.keys.lengthKey) return true;
     const index = elements.keys.index(key);
@@ -2373,6 +2504,7 @@ function rootPropertyShape<Key, Value>(
     successors: 0,
     undefinedValue,
     index: undefined,
+    contractedShape: undefined,
   };
   if (prototype !== undefined)
     ensureRareSlots<Key, Value>(prototype).internalChildShape = root;
@@ -2390,6 +2522,7 @@ export const unusedPropertyShape: ScriptShape = {
   successors: 0,
   undefinedValue: undefined,
   index: undefined,
+  contractedShape: undefined,
 };
 /** Sentinel shape for String primitives on inherited method sites: never
  * installed on any object, so object hits never match it while tag-3 string
@@ -2404,6 +2537,7 @@ export const stringPrimitiveShape: ScriptShape = {
   successors: 0,
   undefinedValue: undefined,
   index: undefined,
+  contractedShape: undefined,
 };
 /** Shapes past this many keys, or past this many successors of one shape,
  * stay private to their object so dictionary-like use cannot grow the
@@ -2439,6 +2573,7 @@ function transitionPropertyShape<Key, Value>(
     successors: 0,
     undefinedValue: shape.undefinedValue,
     index: undefined,
+    contractedShape: undefined,
   };
   if (linked) {
     shape.firstSuccessor = next;
@@ -2560,6 +2695,7 @@ export function ensureArrayChildShape(prototype: ScriptObject): ScriptShape {
     successors: 0,
     undefinedValue: undefined,
     index: undefined,
+    contractedShape: undefined,
   };
   rare.internalArrayChildShape = created;
   return created;
@@ -3324,7 +3460,11 @@ export function storeCachedScriptProperty(
   cache: ScriptPropertyCache,
   slotWord: number,
 ): boolean {
-  if ((object.internalFlags & objectFlagDictionary) !== 0) return false;
+  if (
+    (object.internalFlags & (objectFlagDictionary | objectFlagContracted)) !==
+    0
+  )
+    return false;
   const shape = object.internalShape;
   const index =
     shape === undefined
@@ -3442,7 +3582,7 @@ export function getProperty<Key, Value>(
       cursor = cursor.prototype;
       continue;
     }
-    const elements = cursor.internalArrayElements;
+    const elements = readableArrayElements<Key, Value>(cursor);
     if (
       elements !== undefined &&
       cursor.internalMethods?.getOwnProperty === undefined
@@ -3497,7 +3637,12 @@ export function setProperty<Key, Value>(
       }
       if ((kind & propertyWritable) === 0) return false;
       // OrdinarySetWithOwnDescriptor on the receiver redefines only [[Value]].
-      if (cursor !== object || receiver.object !== object) break;
+      if (
+        cursor !== object ||
+        receiver.object !== object ||
+        (object.internalFlags & objectFlagContracted) !== 0
+      )
+        break;
       setFastValue<Key, Value>(object, index, value);
       return true;
     }
@@ -3610,7 +3755,7 @@ export function ordinaryOwnKeys<Key, Value>(
     if (properties !== undefined)
       for (const [key, descriptor] of properties) keys.push(key);
   }
-  const elements = object.internalArrayElements;
+  const elements = readableArrayElements<Key, Value>(object);
   if (elements !== undefined) {
     // Packed indices precede every other key, and "length" was created at
     // array construction so it precedes every non-index string key.

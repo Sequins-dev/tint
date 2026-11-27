@@ -37,7 +37,9 @@ import {
   objectValueHasProperty,
   programRealmCore,
   projectPropertyContract,
+  propertyEpoch,
   propertyKeyValue,
+  readDynamicObjectProperty,
   readObjectValueProperty,
   setObjectLiteralPrototype,
   setObjectValueProperty,
@@ -59,6 +61,14 @@ import { detachNativeArray } from "../intrinsics/native-array-detach.ts";
 
 type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
 let cachedContracts: Map<string, ObjectShapeContract> | undefined = undefined;
+let lastContractText0 = "";
+let lastContractSchema0: ObjectShapeContract | undefined = undefined;
+let lastContractText1 = "";
+let lastContractSchema1: ObjectShapeContract | undefined = undefined;
+let lastContractText2 = "";
+let lastContractSchema2: ObjectShapeContract | undefined = undefined;
+let lastContractText3 = "";
+let lastContractSchema3: ObjectShapeContract | undefined = undefined;
 
 function contractCache(): Map<string, ObjectShapeContract> {
   const existing = cachedContracts;
@@ -68,10 +78,32 @@ function contractCache(): Map<string, ObjectShapeContract> {
   return created;
 }
 
+function rememberContract(text: string, schema: ObjectShapeContract): void {
+  lastContractText3 = lastContractText2;
+  lastContractSchema3 = lastContractSchema2;
+  lastContractText2 = lastContractText1;
+  lastContractSchema2 = lastContractSchema1;
+  lastContractText1 = lastContractText0;
+  lastContractSchema1 = lastContractSchema0;
+  lastContractText0 = text;
+  lastContractSchema0 = schema;
+}
+
 function contract(text: string): ObjectShapeContract {
+  if (text === lastContractText0 && lastContractSchema0 !== undefined)
+    return lastContractSchema0;
+  if (text === lastContractText1 && lastContractSchema1 !== undefined)
+    return lastContractSchema1;
+  if (text === lastContractText2 && lastContractSchema2 !== undefined)
+    return lastContractSchema2;
+  if (text === lastContractText3 && lastContractSchema3 !== undefined)
+    return lastContractSchema3;
   const contracts = contractCache();
   const known = contracts.get(text);
-  if (known !== undefined) return known;
+  if (known !== undefined) {
+    rememberContract(text, known);
+    return known;
+  }
   let cursor = 0;
   function token(): string {
     const separator = text.indexOf(":", cursor);
@@ -157,6 +189,7 @@ function contract(text: string): ObjectShapeContract {
   }
   const schema: ObjectShapeContract = { types, root: 0 };
   contracts.set(text, schema);
+  rememberContract(text, schema);
   return schema;
 }
 
@@ -216,6 +249,8 @@ export function setPrototype(base: unknown, value: unknown): void {
 }
 export function read(base: unknown, key: unknown): unknown {
   const core = programRealmCore();
+  if (typeof key === "string" || typeof key === "number")
+    return readDynamicObjectProperty(base, key, core.hooks, core.realm);
   return readObjectValueProperty(
     base,
     objectPropertyKeyOrThrow(base, key, core.hooks, core.realm),
@@ -271,10 +306,12 @@ export function project(value: unknown, schema: string): unknown {
 }
 export function write(base: unknown, key: unknown, value: unknown): void {
   const core = programRealmCore();
+  const property: ScriptPropertyKey =
+    typeof key === "string" ? key : requireKey(key, core);
   if (
     setObjectValueProperty(
       base,
-      requireKey(key, core),
+      property,
       value,
       true,
       core.hooks,
@@ -305,9 +342,11 @@ export function has(key: unknown, base: unknown): boolean {
 }
 export function remove(base: unknown, key: unknown): boolean {
   const core = programRealmCore();
+  const property: ScriptPropertyKey =
+    typeof key === "string" ? key : requireKey(key, core);
   const result = deleteObjectValueProperty(
     base,
-    requireKey(key, core),
+    property,
     true,
     core.realm.objectPrototype,
   );
@@ -341,10 +380,31 @@ export function advance(
   return typeof key === "string" ? key : undefined;
 }
 
+let cachedObjectCore: ProgramRealmCore | undefined = undefined;
+let cachedObjectValue: unknown = undefined;
+let cachedObjectGlobalEpoch = -1;
+let cachedObjectPropEpoch = -1;
+
 export function objectConstructor(): unknown {
   const core = programRealmCore();
   installProgramObjectIntrinsics(core);
-  return readObjectValueProperty(core.object, "Object", core.hooks, core.realm);
+  if (
+    cachedObjectCore === core &&
+    core.object.internalPropertyEpoch === cachedObjectGlobalEpoch &&
+    propertyEpoch.value === cachedObjectPropEpoch
+  )
+    return cachedObjectValue;
+  const ctor = readObjectValueProperty(
+    core.object,
+    "Object",
+    core.hooks,
+    core.realm,
+  );
+  cachedObjectCore = core;
+  cachedObjectValue = ctor;
+  cachedObjectGlobalEpoch = core.object.internalPropertyEpoch;
+  cachedObjectPropEpoch = propertyEpoch.value;
+  return ctor;
 }
 export function invokeEnumeration(
   receiver: unknown,
@@ -543,10 +603,14 @@ export function invokeArrayMethod(
   third: unknown,
 ): unknown {
   const core = programRealmCore();
-  const args: unknown[] = [];
-  if (arity > 0) args.push(first);
-  if (arity > 1) args.push(second);
-  if (arity > 2) args.push(third);
+  const args: unknown[] =
+    arity === 0
+      ? []
+      : arity === 1
+        ? [first]
+        : arity === 2
+          ? [first, second]
+          : [first, second, third];
   const result = callObjectValue(
     callable,
     receiver,

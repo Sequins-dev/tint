@@ -1,4 +1,4 @@
-import { pushQuotedJSONString } from "./json-string.ts";
+import { pushQuotedJSONString, quoteJSONString } from "./json-string.ts";
 import {
   viewObjectValue,
   getObjectValueProperty,
@@ -88,6 +88,11 @@ function toNumberChecked(
   return result.value;
 }
 
+let cachedToJSONRealm: ErrorRealm | undefined = undefined;
+let cachedToJSONEpoch = -1;
+let cachedObjectProtoClean = false;
+let cachedArrayProtoClean = false;
+
 function prototypeChainHasToJSON(start: ScriptObject | undefined): boolean {
   let cursor = start;
   while (cursor !== undefined) {
@@ -127,13 +132,35 @@ function objectSkipsToJSON(
   const rare = object.internalRareSlots;
   if (rare !== undefined && rare.internalDataAliases !== undefined)
     return false;
-  if (object.internalArrayElements !== undefined) {
+  if (
+    object.internalArrayElements !== undefined ||
+    rare?.internalContractedElements !== undefined
+  ) {
     if (!arrayProtoClean || object.prototype !== realm.arrayPrototype)
       return false;
-    const props = object.internalRareSlots?.properties;
+    const props = rare?.properties;
     return props === undefined || !props.has("toJSON");
   }
-  if (object.internalMethods !== undefined) return false;
+  const methods = object.internalMethods;
+  if (methods !== undefined) {
+    if (methods.recordViewNoToJSON === true) {
+      if (!objectProtoClean || object.prototype !== realm.objectPrototype)
+        return false;
+      const shape = object.internalShape;
+      if (shape !== undefined && shapeHasToJSON(shape)) return false;
+      const props = rare?.properties;
+      return props === undefined || !props.has("toJSON");
+    }
+    if (methods.nativeListAccess !== undefined) {
+      if (!arrayProtoClean || object.prototype !== realm.arrayPrototype)
+        return false;
+      const shape = object.internalShape;
+      if (shape !== undefined && shapeHasToJSON(shape)) return false;
+      const props = rare?.properties;
+      return props === undefined || !props.has("toJSON");
+    }
+    return false;
+  }
   if (!objectProtoClean || object.prototype !== realm.objectPrototype)
     return false;
   if ((object.internalFlags & objectFlagDictionary) === 0) {
@@ -201,13 +228,23 @@ export function stringifyJSON(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): string | undefined {
+  if ((replacer === undefined || replacer === null) && space === undefined) {
+    if (typeof value === "string") return quoteJSONString(value);
+    if (typeof value === "number")
+      return Number.isFinite(value) ? String(value) : "null";
+    if (typeof value === "boolean") return value ? "true" : "false";
+    if (value === null) return "null";
+    if (value === undefined) return undefined;
+  }
   const hasReplacer = isCallable(replacer, realm);
   let propertyList: string[] | undefined = undefined;
   if (!hasReplacer && isArrayValue(replacer, realm)) {
     const list: string[] = [];
     const array = viewObjectValue(replacer, realm.objectPrototype);
     if (array === undefined) throw "JSON_REPLACER_INVARIANT";
-    const rawPacked = array.internalArrayElements;
+    const rawPacked =
+      array.internalArrayElements ??
+      array.internalRareSlots?.internalContractedElements;
     const packedReplacer =
       rawPacked !== undefined &&
       array.prototype === realm.arrayPrototype &&
@@ -215,15 +252,25 @@ export function stringifyJSON(
         rawPacked.length
         ? rawPacked
         : undefined;
+    const nativeListReplacer =
+      packedReplacer === undefined && array.prototype === realm.arrayPrototype
+        ? array.internalMethods?.nativeListAccess
+        : undefined;
     const length =
       packedReplacer !== undefined
         ? packedReplacer.length
-        : lengthOfArrayLike(array, realm, hooks);
+        : nativeListReplacer !== undefined
+          ? nativeListReplacer.length()
+          : lengthOfArrayLike(array, realm, hooks);
     for (let i = 0; i < length; i++) {
       const item =
         packedReplacer !== undefined
           ? readArrayElement<ScriptPropertyKey, unknown>(packedReplacer, i)
-          : getPropertyChecked(replacer, indexKey(i), realm, hooks);
+          : nativeListReplacer !== undefined
+            ? nativeListReplacer.has(i)
+              ? nativeListReplacer.read(i)
+              : getPropertyChecked(replacer, indexKey(i), realm, hooks)
+            : getPropertyChecked(replacer, indexKey(i), realm, hooks);
       if (typeof item === "string") {
         if (!list.includes(item)) list.push(item);
         continue;
@@ -266,9 +313,16 @@ export function stringifyJSON(
   } else if (typeof spacing === "string") gap = spacing.slice(0, 10);
 
   const initialEpoch = propertyEpoch.value;
-  const objectProtoClean = !prototypeChainHasToJSON(realm.objectPrototype);
-  const arrayProtoClean =
-    objectProtoClean && !prototypeChainHasToJSON(realm.arrayPrototype);
+  if (cachedToJSONRealm !== realm || cachedToJSONEpoch !== initialEpoch) {
+    const objClean = !prototypeChainHasToJSON(realm.objectPrototype);
+    cachedObjectProtoClean = objClean;
+    cachedArrayProtoClean =
+      objClean && !prototypeChainHasToJSON(realm.arrayPrototype);
+    cachedToJSONRealm = realm;
+    cachedToJSONEpoch = initialEpoch;
+  }
+  const objectProtoClean = cachedObjectProtoClean;
+  const arrayProtoClean = cachedArrayProtoClean;
 
   const out: string[] = [];
   const stack: ScriptObject[] = [];
@@ -287,7 +341,10 @@ export function stringifyJSON(
       return true;
     }
     if (typeof current === "number") {
-      out.push(Number.isFinite(current) ? String(current) : "null");
+      const intVal = current | 0;
+      if (intVal === current && intVal >= 0 && intVal < 256)
+        out.push(indexKey(intVal));
+      else out.push(Number.isFinite(current) ? String(current) : "null");
       return true;
     }
     return false;
@@ -356,7 +413,10 @@ export function stringifyJSON(
       return true;
     }
     if (typeof current === "number") {
-      out.push(Number.isFinite(current) ? String(current) : "null");
+      const intVal = current | 0;
+      if (intVal === current && intVal >= 0 && intVal < 256)
+        out.push(indexKey(intVal));
+      else out.push(Number.isFinite(current) ? String(current) : "null");
       return true;
     }
     if (object === undefined) {
@@ -394,7 +454,9 @@ export function stringifyJSON(
     indent: string,
     nested: string,
   ): void {
-    const packed = object.internalArrayElements;
+    const packed =
+      object.internalArrayElements ??
+      object.internalRareSlots?.internalContractedElements;
     if (
       !hasReplacer &&
       packed !== undefined &&
@@ -415,7 +477,13 @@ export function stringifyJSON(
         for (let i = 0; i < length; i++) {
           if (i > 0) out.push(sep);
           const n = numbers[i];
-          out.push(n !== undefined && Number.isFinite(n) ? String(n) : "null");
+          if (n === undefined) out.push("null");
+          else {
+            const intVal = n | 0;
+            if (intVal === n && intVal >= 0 && intVal < 256)
+              out.push(indexKey(intVal));
+            else out.push(Number.isFinite(n) ? String(n) : "null");
+          }
         }
       } else {
         for (let i = 0; i < length; i++) {
@@ -427,6 +495,37 @@ export function stringifyJSON(
             if (!serializeValue(indexKey(i), elem, object, nested))
               out.push("null");
           }
+        }
+      }
+      if (gap !== "") out.push("\n", indent);
+      out.push("]");
+      return;
+    }
+    const nativeList = object.internalMethods?.nativeListAccess;
+    if (
+      !hasReplacer &&
+      nativeList !== undefined &&
+      object.prototype === realm.arrayPrototype &&
+      arrayProtoClean &&
+      propertyEpoch.value === initialEpoch
+    ) {
+      const length = nativeList.length();
+      if (length === 0) {
+        out.push("[]");
+        return;
+      }
+      const sep = gap === "" ? "," : ",\n" + nested;
+      out.push(gap === "" ? "[" : "[\n" + nested);
+      for (let i = 0; i < length; i++) {
+        if (i > 0) out.push(sep);
+        const elem = nativeList.has(i)
+          ? nativeList.read(i)
+          : getPropertyChecked(object, indexKey(i), realm, hooks);
+        if (isSimplePrimitive(elem)) {
+          if (elem === undefined || !appendPrimitive(elem)) out.push("null");
+        } else {
+          if (!serializeValue(indexKey(i), elem, object, nested))
+            out.push("null");
         }
       }
       if (gap !== "") out.push("\n", indent);
@@ -524,10 +623,70 @@ export function stringifyJSON(
     out.push("{");
     let written = false;
     const rare = object.internalRareSlots;
+    const methods = object.internalMethods;
+    if (!hasReplacer && methods !== undefined) {
+      const access = methods.recordViewAccess;
+      if (access !== undefined) {
+        const rareProps = rare === undefined ? undefined : rare.properties;
+        const noExpandos =
+          object.internalShape === undefined &&
+          (rareProps === undefined || rareProps.size === 0);
+        if (
+          propertyList === undefined &&
+          methods.recordViewNoIntegerKeys === true &&
+          noExpandos
+        ) {
+          const keys = access.keys;
+          for (let f = 0; f < keys.length; f++) {
+            const prop = keys[f];
+            if (prop === undefined) throw "JSON_KEY_INVARIANT";
+            written = appendProperty(
+              prop,
+              access.read(f),
+              object,
+              nested,
+              written,
+            );
+          }
+          if (written && gap !== "") out.push("\n", indent);
+          out.push("}");
+          return;
+        }
+        const filterList = propertyList;
+        if (filterList !== undefined && noExpandos) {
+          const keys = access.keys;
+          for (let i = 0; i < filterList.length; i++) {
+            const property = filterList[i];
+            if (property === undefined) throw "JSON_KEY_INVARIANT";
+            let field = -1;
+            for (let f = 0; f < keys.length; f++) {
+              if (keys[f] === property) {
+                field = f;
+                break;
+              }
+            }
+            const propValue =
+              field >= 0
+                ? access.read(field)
+                : getPropertyChecked(object, property, realm, hooks);
+            written = appendProperty(
+              property,
+              propValue,
+              object,
+              nested,
+              written,
+            );
+          }
+          if (written && gap !== "") out.push("\n", indent);
+          out.push("}");
+          return;
+        }
+      }
+    }
     const plain =
       !hasReplacer &&
       propertyList === undefined &&
-      object.internalMethods === undefined &&
+      methods === undefined &&
       (rare === undefined || rare.internalDataAliases === undefined);
 
     if (plain && (object.internalFlags & objectFlagDictionary) === 0) {
@@ -550,7 +709,22 @@ export function stringifyJSON(
           } else {
             propValue = getPropertyChecked(object, prop, realm, hooks);
           }
-          written = appendProperty(prop, propValue, object, nested, written);
+          if (isSimplePrimitive(propValue)) {
+            if (propValue === undefined) continue;
+            if (gap === "") {
+              if (written) out.push(",");
+              pushQuotedJSONString(out, prop);
+              out.push(":");
+            } else {
+              out.push(written ? ",\n" : "\n", nested);
+              pushQuotedJSONString(out, prop);
+              out.push(": ");
+            }
+            appendPrimitive(propValue);
+            written = true;
+          } else {
+            written = appendProperty(prop, propValue, object, nested, written);
+          }
         }
       }
       if (written && gap !== "") out.push("\n", indent);
@@ -566,6 +740,8 @@ export function stringifyJSON(
       }
       let fastDict = true;
       let allPrimitive = true;
+      const snapKeys: string[] = [];
+      const snapVals: unknown[] = [];
       for (const [k, desc] of props) {
         if (typeof k !== "string") continue;
         const firstCode = k.charCodeAt(0);
@@ -578,14 +754,19 @@ export function stringifyJSON(
           fastDict = false;
           break;
         }
-        if (desc.enumerable && !isSimplePrimitive(desc.value))
-          allPrimitive = false;
+        if (desc.enumerable) {
+          const v = desc.value;
+          if (!isSimplePrimitive(v)) allPrimitive = false;
+          snapKeys.push(k);
+          snapVals.push(v);
+        }
       }
       if (fastDict) {
         if (allPrimitive) {
-          for (const [k, desc] of props) {
-            if (typeof k !== "string" || !desc.enumerable) continue;
-            const v = desc.value;
+          for (let i = 0; i < snapKeys.length; i++) {
+            const k = snapKeys[i];
+            if (k === undefined) throw "JSON_KEY_INVARIANT";
+            const v = snapVals[i];
             if (v === undefined) continue;
             if (gap === "") {
               if (written) out.push(",");
@@ -603,13 +784,6 @@ export function stringifyJSON(
           out.push("}");
           return;
         }
-        const snapKeys: string[] = [];
-        const snapVals: unknown[] = [];
-        for (const [k, desc] of props) {
-          if (typeof k !== "string" || !desc.enumerable) continue;
-          snapKeys.push(k);
-          snapVals.push(desc.value);
-        }
         const objEpoch = object.internalPropertyEpoch;
         for (let i = 0; i < snapKeys.length; i++) {
           const prop = snapKeys[i];
@@ -618,7 +792,22 @@ export function stringifyJSON(
             object.internalPropertyEpoch === objEpoch
               ? snapVals[i]
               : getPropertyChecked(object, prop, realm, hooks);
-          written = appendProperty(prop, propValue, object, nested, written);
+          if (isSimplePrimitive(propValue)) {
+            if (propValue === undefined) continue;
+            if (gap === "") {
+              if (written) out.push(",");
+              pushQuotedJSONString(out, prop);
+              out.push(":");
+            } else {
+              out.push(written ? ",\n" : "\n", nested);
+              pushQuotedJSONString(out, prop);
+              out.push(": ");
+            }
+            appendPrimitive(propValue);
+            written = true;
+          } else {
+            written = appendProperty(prop, propValue, object, nested, written);
+          }
         }
         if (written && gap !== "") out.push("\n", indent);
         out.push("}");

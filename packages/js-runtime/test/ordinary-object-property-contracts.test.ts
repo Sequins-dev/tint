@@ -242,3 +242,131 @@ test("array contracts validate existing packed elements and guard later writes",
   assert.equal(operations.getOwnProperty(array, "length")?.value, 3);
   assert.ok(operations.createDataProperty(array, "metadata", "open", hooks));
 });
+
+test("contracted shapes and packed arrays defer dictionary unpacking until mutation and reject cached stores", () => {
+  const prototype = operations.createObject<ScriptPropertyKey, unknown>(
+    undefined,
+  );
+  const realm = createErrorRealm(prototype, hooks);
+  const isRealmTypeError = (error: unknown) =>
+    typeof error === "object" &&
+    error !== null &&
+    "prototype" in error &&
+    error.prototype === realm.prototypes.get("type");
+
+  const obj = operations.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  operations.createDataProperty(obj, "a", 1, hooks);
+  operations.createDataProperty(obj, "b", "ok", hooks);
+  const originalShape = obj.internalShape;
+  assert.ok(originalShape);
+
+  const schemaA: ObjectShapeContract = {
+    root: 0,
+    types: [
+      {
+        kind: "object",
+        stringIndex: -1,
+        readonlyIndex: false,
+        fields: [
+          { name: "a", value: 1, required: true, readonly: false },
+          { name: "b", value: 2, required: true, readonly: false },
+        ],
+      },
+      { kind: "number" },
+      { kind: "string" },
+    ],
+  };
+  // Structurally identical schema with reordered fields & distinct types array.
+  const schemaB: ObjectShapeContract = {
+    root: 0,
+    types: [
+      {
+        kind: "object",
+        stringIndex: -1,
+        readonlyIndex: false,
+        fields: [
+          { name: "b", value: 1, required: true, readonly: false },
+          { name: "a", value: 2, required: true, readonly: false },
+        ],
+      },
+      { kind: "string" },
+      { kind: "number" },
+    ],
+  };
+
+  enrollObjectPropertyContract(obj, schemaA, realm);
+  // Stays in fast shape mode on a distinct contracted shape until mutated.
+  assert.equal(
+    (obj.internalFlags & operations.objectFlagDictionary) === 0,
+    true,
+  );
+  assert.notEqual(obj.internalShape, originalShape);
+  assert.equal(obj.internalRareSlots?.properties, undefined);
+  // Cached store must refuse contracted objects.
+  const storeCache = operations.createScriptPropertyCache();
+  assert.equal(
+    operations.storeCachedScriptProperty(obj, "a", "bad", storeCache, 0),
+    false,
+  );
+  // Structurally equivalent schema hits attached() O(1) without re-enrolling.
+  const beforeContract = obj.internalRareSlots?.internalPropertyContract;
+  enrollObjectPropertyContract(obj, schemaB, realm);
+  assert.equal(obj.internalRareSlots?.internalPropertyContract, beforeContract);
+  // Invalid write transitions lazily to dictionary mode and throws TypeError.
+  assert.throws(
+    () =>
+      operations.setProperty(
+        obj,
+        "a",
+        "bad",
+        { object: obj, value: obj },
+        hooks,
+      ),
+    isRealmTypeError,
+  );
+  assert.equal(operations.getOwnProperty(obj, "a")?.value, 1);
+  assert.equal(operations.deleteProperty(obj, "a"), false);
+  assert.equal(
+    operations.setProperty(obj, "a", 42, { object: obj, value: obj }, hooks),
+    true,
+  );
+  assert.equal(operations.getOwnProperty(obj, "a")?.value, 42);
+
+  // Packed arrays defer unpacking to internalContractedElements until mutated.
+  const arr = createArrayObject(
+    0,
+    realm.arrayPrototype,
+    realm.arrayHooks,
+    hooks,
+  );
+  operations.createDataProperty(arr, "0", 10, hooks);
+  operations.createDataProperty(arr, "1", 20, hooks);
+  const arrSchema: ObjectShapeContract = {
+    root: 0,
+    types: [
+      { kind: "array-elements", element: 1, readonly: false },
+      { kind: "number" },
+    ],
+  };
+  enrollObjectPropertyContract(arr, arrSchema, realm);
+  assert.equal(arr.internalArrayElements, undefined);
+  assert.ok(arr.internalRareSlots?.internalContractedElements);
+  assert.equal(arr.internalRareSlots?.properties, undefined);
+  assert.equal(operations.getOwnProperty(arr, "1")?.value, 20);
+  assert.equal(operations.getOwnProperty(arr, "length")?.value, 2);
+  assert.throws(
+    () =>
+      operations.setProperty(
+        arr,
+        "0",
+        "bad",
+        { object: arr, value: arr },
+        hooks,
+      ),
+    isRealmTypeError,
+  );
+  assert.equal(arr.internalRareSlots?.internalContractedElements, undefined);
+  assert.equal(operations.getOwnProperty(arr, "0")?.value, 10);
+});

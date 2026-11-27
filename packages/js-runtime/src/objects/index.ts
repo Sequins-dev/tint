@@ -318,6 +318,7 @@ export {
   callGeneralValue,
   getObjectValueProperty,
   readObjectValueProperty,
+  readDynamicObjectProperty,
   readCachedObjectValueProperty,
   writeCachedObjectValueProperty,
   getObjectValuePropertyWithReceiver,
@@ -672,5 +673,6 @@ export {
   builtinProperty,
 } from "./intrinsics.ts";
 export { stringifyJSON } from "./json-stringify.ts";
-export { parseJSON } from "./json-parse.ts";
+export { quoteJSONString } from "./json-string.ts";
+export { parseJSON, tryParseJSONStringLiteral } from "./json-parse.ts";
 export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";

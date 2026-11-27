@@ -7,6 +7,7 @@ import {
   shapeKeyIndex,
   storedValue,
   type OrdinaryObject,
+  type PropertyWriteContract,
   objectFlagArrayData,
   objectFlagDictionary,
   propertyAccessor,
@@ -75,6 +76,15 @@ export type PropertyValueRule =
 export interface ObjectShapeContract {
   readonly types: readonly PropertyValueRule[];
   readonly root: number;
+  subSchemas?: ObjectShapeContract[] | undefined;
+  canonicalId?: number | undefined;
+  unionMask?: number | undefined;
+  unionObjectMember?: ObjectShapeContract | undefined;
+  cachedRealm?: ErrorRealm | undefined;
+  cachedContract?:
+    PropertyWriteContract<ScriptPropertyKey, unknown> | undefined;
+  cachedInitContract?:
+    PropertyWriteContract<ScriptPropertyKey, unknown> | undefined;
 }
 export interface ClassMethodContract {
   readonly parameters: readonly number[];
@@ -82,10 +92,52 @@ export interface ClassMethodContract {
   readonly result: number;
 }
 type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
-interface Enrollment {
-  readonly object: ObjectRecord;
-  readonly schema: ObjectShapeContract;
+interface PendingList {
+  readonly objects: ObjectRecord[];
+  readonly schemas: ObjectShapeContract[];
 }
+const scratchPending: PendingList = { objects: [], schemas: [] };
+let scratchInUse = false;
+
+function acquirePending(): PendingList {
+  if (!scratchInUse) {
+    scratchInUse = true;
+    scratchPending.objects.length = 0;
+    scratchPending.schemas.length = 0;
+    return scratchPending;
+  }
+  return { objects: [], schemas: [] };
+}
+
+function releasePending(list: PendingList): void {
+  if (list === scratchPending) {
+    scratchPending.objects.length = 0;
+    scratchPending.schemas.length = 0;
+    scratchInUse = false;
+  }
+}
+
+function subSchema(
+  schema: ObjectShapeContract,
+  index: number,
+): ObjectShapeContract {
+  let table = schema.subSchemas;
+  if (table === undefined) {
+    table = [];
+    for (let i = 0; i < schema.types.length; i++) {
+      table.push(
+        i === schema.root
+          ? schema
+          : { types: schema.types, root: i, subSchemas: table },
+      );
+    }
+    schema.subSchemas = table;
+  }
+  const existing = table[index];
+  if (existing === undefined) throw "PROPERTY_CONTRACT_SUBSCHEMA_INVARIANT";
+  return existing;
+}
+
 function reject(realm: ErrorRealm): never {
   const context = realm.agent.activeContext;
   throw createRuntimeError(
@@ -103,22 +155,150 @@ function fieldFor(
   }
   return undefined;
 }
+let schemaIds: Map<string, number> | undefined = undefined;
+let nextSchemaId = 1;
+
+function sortStrings(items: string[]): void {
+  for (let i = 1; i < items.length; i++) {
+    const current = items[i];
+    if (current === undefined) continue;
+    let j = i - 1;
+    while (j >= 0) {
+      const prev = items[j];
+      if (prev === undefined || prev <= current) break;
+      items[j + 1] = prev;
+      j--;
+    }
+    items[j + 1] = current;
+  }
+}
+
+function canonicalSchemaKey(
+  types: readonly PropertyValueRule[],
+  root: number,
+): string | undefined {
+  const visited: number[] = [];
+  for (let i = 0; i < types.length; i++) visited.push(-1);
+  let nextVisit = 0;
+  let uncanonical = false;
+  function encode(index: number): string {
+    if (index < 0) return "-";
+    const seen = visited[index];
+    if (seen !== undefined && seen >= 0) return "@" + String(seen);
+    const rule = types[index];
+    if (rule === undefined) throw "PROPERTY_CONTRACT_VALUE_INVARIANT";
+    if (rule.kind === "class-field" || rule.kind === "class-method") {
+      uncanonical = true;
+      return "";
+    }
+    const visit = nextVisit++;
+    visited[index] = visit;
+    switch (rule.kind) {
+      case "object": {
+        let out =
+          "O(" +
+          encode(rule.stringIndex) +
+          "," +
+          (rule.readonlyIndex ? "1" : "0") +
+          ",";
+        const fields = rule.fields;
+        if (fields.length > 0) {
+          const encodedFields: string[] = [];
+          for (let i = 0; i < fields.length; i++) {
+            const f = fields[i];
+            if (f === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
+            encodedFields.push(
+              String(f.name.length) +
+                ":" +
+                f.name +
+                ":" +
+                (f.required ? "1" : "0") +
+                (f.readonly ? "1" : "0") +
+                ":" +
+                encode(f.value),
+            );
+          }
+          if (encodedFields.length > 1) sortStrings(encodedFields);
+          out += encodedFields.join(";");
+        }
+        return out + ")";
+      }
+      case "array-elements":
+        return (
+          "A(" + (rule.readonly ? "1" : "0") + "," + encode(rule.element) + ")"
+        );
+      case "union": {
+        const members: string[] = [];
+        for (let i = 0; i < rule.members.length; i++) {
+          const m = rule.members[i];
+          if (m === undefined) throw "PROPERTY_CONTRACT_MEMBER_INVARIANT";
+          members.push(encode(m));
+        }
+        if (members.length > 1) sortStrings(members);
+        return "U(" + members.join(",") + ")";
+      }
+      case "literal": {
+        const v = rule.value;
+        return typeof v === "string"
+          ? "L(s:" + v + ")"
+          : typeof v === "number"
+            ? "L(n:" + String(v) + ")"
+            : v
+              ? "L(b:1)"
+              : "L(b:0)";
+      }
+      default:
+        return "P(" + rule.kind + ")";
+    }
+  }
+  const key = encode(root);
+  return uncanonical ? undefined : key;
+}
+
+function ensureSchemaId(schema: ObjectShapeContract): number {
+  const existing = schema.canonicalId;
+  if (existing !== undefined) return existing;
+  const key = canonicalSchemaKey(schema.types, schema.root);
+  if (key === undefined) {
+    const unique = nextSchemaId++;
+    schema.canonicalId = unique;
+    return unique;
+  }
+  let table = schemaIds;
+  if (table === undefined) {
+    table = new Map<string, number>();
+    schemaIds = table;
+  }
+  const known = table.get(key);
+  if (known !== undefined) {
+    schema.canonicalId = known;
+    return known;
+  }
+  const created = nextSchemaId++;
+  table.set(key, created);
+  schema.canonicalId = created;
+  return created;
+}
+
 function sameSchema(
   left: ObjectShapeContract,
   right: ObjectShapeContract,
 ): boolean {
-  return left.types === right.types && left.root === right.root;
+  if (left === right) return true;
+  if (left.types === right.types && left.root === right.root) return true;
+  return ensureSchemaId(left) === ensureSchemaId(right);
 }
 function attached(object: ObjectRecord, schema: ObjectShapeContract): boolean {
   const rare = object.internalRareSlots;
   const contract =
     rare === undefined ? undefined : rare.internalPropertyContract;
-  return (
-    contract !== undefined &&
-    contract.schemas.some(
-      (existing) => existing !== undefined && sameSchema(existing, schema),
-    )
-  );
+  if (contract === undefined) return false;
+  const schemas = contract.schemas;
+  for (let i = 0; i < schemas.length; i++) {
+    const existing = schemas[i];
+    if (existing !== undefined && sameSchema(existing, schema)) return true;
+  }
+  return false;
 }
 function requiredFieldsPresent(
   object: ObjectRecord,
@@ -139,23 +319,27 @@ function requiredFieldsPresent(
 function validateObject(
   object: ObjectRecord,
   schema: ObjectShapeContract,
-  pending: Enrollment[],
+  pending: PendingList,
   realm: ErrorRealm,
 ): boolean {
   if (!acceptsPropertyContract<ScriptPropertyKey, unknown>(object))
     return false;
   if (attached(object, schema)) return true;
-  for (let i = 0; i < pending.length; i++) {
-    const item = pending[i];
-    if (item === undefined) throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
-    if (item.object === object && sameSchema(item.schema, schema)) return true;
+  const pendingObjects = pending.objects,
+    pendingSchemas = pending.schemas;
+  for (let i = 0; i < pendingObjects.length; i++) {
+    if (pendingObjects[i] === object) {
+      const seen = pendingSchemas[i];
+      if (seen !== undefined && sameSchema(seen, schema)) return true;
+    }
   }
   const rule = schema.types[schema.root];
   if (rule?.kind === "object") {
     if ((object.internalFlags & objectFlagArrayData) !== 0) return false;
     if (
       object.internalMethods === undefined &&
-      object.internalArrayElements === undefined
+      object.internalArrayElements === undefined &&
+      object.internalRareSlots?.internalContractedElements === undefined
     ) {
       if ((object.internalFlags & objectFlagDictionary) === 0) {
         const shape = object.internalShape;
@@ -166,23 +350,47 @@ function validateObject(
             if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
             if (field.required) return false;
           }
-          pending.push({ object, schema });
+          pendingObjects.push(object);
+          pendingSchemas.push(schema);
           return true;
         }
         const kinds = shape.kinds;
+        const keys = shape.keys;
+        if (rule.stringIndex < 0) {
+          pendingObjects.push(object);
+          pendingSchemas.push(schema);
+          for (let i = 0; i < fields.length; i++) {
+            const field = fields[i];
+            if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
+            const pos =
+              keys[i] === field.name
+                ? i
+                : shapeKeyIndex<ScriptPropertyKey, unknown>(shape, field.name);
+            if (pos < 0) {
+              if (field.required) return false;
+              continue;
+            }
+            if (((kinds[pos] ?? 0) & propertyAccessor) !== 0) return false;
+            const raw = storedValue<ScriptPropertyKey, unknown>(object, pos);
+            const value = raw === undefined ? shape.undefinedValue : raw;
+            if (!validateValue(value, schema, field.value, pending, realm))
+              return false;
+          }
+          return true;
+        }
         for (let i = 0; i < fields.length; i++) {
           const field = fields[i];
           if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
           if (!field.required) continue;
-          const pos = shapeKeyIndex<ScriptPropertyKey, unknown>(
-            shape,
-            field.name,
-          );
+          const pos =
+            keys[i] === field.name
+              ? i
+              : shapeKeyIndex<ScriptPropertyKey, unknown>(shape, field.name);
           if (pos < 0 || ((kinds[pos] ?? 0) & propertyAccessor) !== 0)
             return false;
         }
-        pending.push({ object, schema });
-        const keys = shape.keys;
+        pendingObjects.push(object);
+        pendingSchemas.push(schema);
         for (let i = 0; i < keys.length; i++) {
           const key = keys[i];
           if (typeof key !== "string") continue;
@@ -193,18 +401,12 @@ function validateObject(
           const value = raw === undefined ? shape.undefinedValue : raw;
           if (
             rule.stringIndex >= 0 &&
-            !validateValue(
-              value,
-              schema.types,
-              rule.stringIndex,
-              pending,
-              realm,
-            )
+            !validateValue(value, schema, rule.stringIndex, pending, realm)
           )
             return false;
           if (
             field !== undefined &&
-            !validateValue(value, schema.types, field.value, pending, realm)
+            !validateValue(value, schema, field.value, pending, realm)
           )
             return false;
         }
@@ -219,7 +421,8 @@ function validateObject(
         const desc = props === undefined ? undefined : props.get(field.name);
         if (desc === undefined || desc.accessor) return false;
       }
-      pending.push({ object, schema });
+      pendingObjects.push(object);
+      pendingSchemas.push(schema);
       if (props !== undefined) {
         for (const [key, desc] of props) {
           if (typeof key !== "string") continue;
@@ -228,24 +431,12 @@ function validateObject(
           if (desc.accessor) return false;
           if (
             rule.stringIndex >= 0 &&
-            !validateValue(
-              desc.value,
-              schema.types,
-              rule.stringIndex,
-              pending,
-              realm,
-            )
+            !validateValue(desc.value, schema, rule.stringIndex, pending, realm)
           )
             return false;
           if (
             field !== undefined &&
-            !validateValue(
-              desc.value,
-              schema.types,
-              field.value,
-              pending,
-              realm,
-            )
+            !validateValue(desc.value, schema, field.value, pending, realm)
           )
             return false;
         }
@@ -255,9 +446,12 @@ function validateObject(
     if (!requiredFieldsPresent(object, rule)) return false;
   } else if (rule?.kind === "array-elements") {
     if ((object.internalFlags & objectFlagArrayData) === 0) return false;
-    const packed = object.internalArrayElements;
+    const packed =
+      object.internalArrayElements ??
+      object.internalRareSlots?.internalContractedElements;
     if (packed !== undefined) {
-      pending.push({ object, schema });
+      pendingObjects.push(object);
+      pendingSchemas.push(schema);
       const count = arrayElementCount<ScriptPropertyKey, unknown>(packed);
       if (count > 0) {
         if (packed.generalCount === 0) {
@@ -267,13 +461,7 @@ function validateObject(
             const numbers = packed.numbers;
             for (let i = 0; i < count; i++) {
               if (
-                !validateValue(
-                  numbers[i],
-                  schema.types,
-                  rule.element,
-                  pending,
-                  realm,
-                )
+                !validateValue(numbers[i], schema, rule.element, pending, realm)
               )
                 return false;
             }
@@ -284,9 +472,7 @@ function validateObject(
               packed,
               i,
             );
-            if (
-              !validateValue(elem, schema.types, rule.element, pending, realm)
-            )
+            if (!validateValue(elem, schema, rule.element, pending, realm))
               return false;
           }
         }
@@ -302,7 +488,8 @@ function validateObject(
     }
     const props = object.internalRareSlots?.properties;
     if (props !== undefined) {
-      pending.push({ object, schema });
+      pendingObjects.push(object);
+      pendingSchemas.push(schema);
       for (const [key, desc] of props) {
         if (!validateDescriptor(key, desc, schema, pending, realm, false))
           return false;
@@ -310,7 +497,8 @@ function validateObject(
       return true;
     }
   } else return false;
-  pending.push({ object, schema });
+  pendingObjects.push(object);
+  pendingSchemas.push(schema);
   for (const key of ownKeys<ScriptPropertyKey, unknown>(
     object,
     scriptPropertyKeyOrder,
@@ -325,12 +513,12 @@ function validateObject(
 }
 function validateValue(
   value: unknown,
-  types: readonly PropertyValueRule[],
+  parent: ObjectShapeContract,
   index: number,
-  pending: Enrollment[],
+  pending: PendingList,
   realm: ErrorRealm,
 ): boolean {
-  const rule = types[index];
+  const rule = parent.types[index];
   if (rule === undefined) throw "PROPERTY_CONTRACT_VALUE_INVARIANT";
   switch (rule.kind) {
     case "array":
@@ -362,15 +550,16 @@ function validateValue(
       const object = viewObjectValue(value, realm.objectPrototype);
       return (
         object !== undefined &&
-        validateObject(object, { types, root: index }, pending, realm)
+        validateObject(object, subSchema(parent, index), pending, realm)
       );
     }
     case "union": {
-      const before = pending.length;
+      const before = pending.objects.length;
       for (const member of rule.members) {
         if (member === undefined) throw "PROPERTY_CONTRACT_MEMBER_INVARIANT";
-        if (validateValue(value, types, member, pending, realm)) return true;
-        pending.length = before;
+        if (validateValue(value, parent, member, pending, realm)) return true;
+        pending.objects.length = before;
+        pending.schemas.length = before;
       }
       return false;
     }
@@ -381,7 +570,7 @@ function validateDescriptor(
   key: ScriptPropertyKey,
   descriptor: Descriptor<unknown>,
   schema: ObjectShapeContract,
-  pending: Enrollment[],
+  pending: PendingList,
   realm: ErrorRealm,
   modifyingValue: boolean,
 ): boolean {
@@ -401,13 +590,7 @@ function validateDescriptor(
     return (
       !descriptor.accessor &&
       (!modifyingValue || !rule.readonly) &&
-      validateValue(
-        descriptor.value,
-        schema.types,
-        rule.element,
-        pending,
-        realm,
-      )
+      validateValue(descriptor.value, schema, rule.element, pending, realm)
     );
   }
   if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
@@ -422,19 +605,137 @@ function validateDescriptor(
     (rule.stringIndex < 0 ||
       validateValue(
         descriptor.value,
-        schema.types,
+        schema,
         rule.stringIndex,
         pending,
         realm,
       )) &&
     (field === undefined ||
-      validateValue(
-        descriptor.value,
-        schema.types,
-        field.value,
-        pending,
-        realm,
-      ))
+      validateValue(descriptor.value, schema, field.value, pending, realm))
+  );
+}
+function buildSingleSchemaContract(
+  schema: ObjectShapeContract,
+  realm: ErrorRealm,
+  initializing: boolean,
+): PropertyWriteContract<ScriptPropertyKey, unknown> {
+  const schemas: readonly ObjectShapeContract[] = [schema];
+  const rule = schema.types[schema.root];
+  if (
+    rule?.kind === "object" &&
+    rule.fields.length === 0 &&
+    rule.stringIndex >= 0 &&
+    !rule.readonlyIndex
+  ) {
+    const indexRule = schema.types[rule.stringIndex];
+    if (
+      indexRule !== undefined &&
+      (indexRule.kind === "number" ||
+        indexRule.kind === "string" ||
+        indexRule.kind === "boolean")
+    ) {
+      const expected = indexRule.kind;
+      return {
+        schemas,
+        beforeDefine: (key, descriptor, _writesValue): void => {
+          if (typeof key !== "string") return;
+          if (descriptor.accessor || typeof descriptor.value !== expected)
+            reject(realm);
+        },
+        canDelete: (_key): boolean => true,
+      };
+    }
+  }
+  if (rule?.kind === "array-elements" && !rule.readonly) {
+    const elemRule = schema.types[rule.element];
+    if (
+      elemRule !== undefined &&
+      (elemRule.kind === "number" ||
+        elemRule.kind === "string" ||
+        elemRule.kind === "boolean")
+    ) {
+      const expected = elemRule.kind;
+      return {
+        schemas,
+        beforeDefine: (key, descriptor, _writesValue): void => {
+          if (typeof key !== "string" || scriptPropertyKeyOrder(key) < 0)
+            return;
+          if (descriptor.accessor || typeof descriptor.value !== expected)
+            reject(realm);
+        },
+        canDelete: (_key): boolean => true,
+      };
+    }
+  }
+  return {
+    schemas,
+    beforeDefine: (key, descriptor, writesValue): void => {
+      const pending = acquirePending();
+      try {
+        if (
+          !validateDescriptor(
+            key,
+            descriptor,
+            schema,
+            pending,
+            realm,
+            !initializing && writesValue,
+          )
+        )
+          reject(realm);
+        if (pending.objects.length > 0) commit(pending, realm);
+      } finally {
+        releasePending(pending);
+      }
+    },
+    canDelete: (key): boolean => {
+      if (rule?.kind === "class-method") return true;
+      if (rule?.kind === "class-field") return key !== rule.name;
+      if (typeof key !== "string") return true;
+      if (rule?.kind === "array-elements")
+        return !(rule.readonly && scriptPropertyKeyOrder(key) >= 0);
+      if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
+      const field = fieldFor(rule, key);
+      return !(
+        rule.readonlyIndex ||
+        field?.required === true ||
+        field?.readonly === true
+      );
+    },
+  };
+}
+function singleSchemaContract(
+  schema: ObjectShapeContract,
+  realm: ErrorRealm,
+  initializing: boolean,
+): PropertyWriteContract<ScriptPropertyKey, unknown> {
+  if (schema.cachedRealm === realm) {
+    const existing = initializing
+      ? schema.cachedInitContract
+      : schema.cachedContract;
+    if (existing !== undefined) return existing;
+  } else {
+    schema.cachedRealm = realm;
+    schema.cachedContract = undefined;
+    schema.cachedInitContract = undefined;
+  }
+  const created = buildSingleSchemaContract(schema, realm, initializing);
+  if (initializing) schema.cachedInitContract = created;
+  else schema.cachedContract = created;
+  return created;
+}
+function publishSingle(
+  object: ObjectRecord,
+  schema: ObjectShapeContract,
+  realm: ErrorRealm,
+  initializing: boolean,
+): void {
+  const kind = schema.types[schema.root]?.kind;
+  const allowCallable = kind === "class-field" || kind === "class-method";
+  attachPropertyContract<ScriptPropertyKey, unknown>(
+    object,
+    singleSchemaContract(schema, realm, initializing),
+    allowCallable,
   );
 }
 function publish(
@@ -443,6 +744,13 @@ function publish(
   realm: ErrorRealm,
   initializing: boolean,
 ): void {
+  if (schemas.length === 1) {
+    const only = schemas[0];
+    if (only !== undefined) {
+      publishSingle(object, only, realm, initializing);
+      return;
+    }
+  }
   let allowCallable = false;
   for (let i = 0; i < schemas.length; i++) {
     const schema = schemas[i];
@@ -458,22 +766,27 @@ function publish(
     {
       schemas,
       beforeDefine: (key, descriptor, writesValue): void => {
-        const pending: Enrollment[] = [];
-        for (const schema of schemas) {
-          if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
-          if (
-            !validateDescriptor(
-              key,
-              descriptor,
-              schema,
-              pending,
-              realm,
-              !initializing && writesValue,
+        const pending = acquirePending();
+        try {
+          for (const schema of schemas) {
+            if (schema === undefined)
+              throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
+            if (
+              !validateDescriptor(
+                key,
+                descriptor,
+                schema,
+                pending,
+                realm,
+                !initializing && writesValue,
+              )
             )
-          )
-            reject(realm);
+              reject(realm);
+          }
+          if (pending.objects.length > 0) commit(pending, realm);
+        } finally {
+          releasePending(pending);
         }
-        commit(pending, realm);
       },
       canDelete: (key): boolean => {
         for (const schema of schemas) {
@@ -519,7 +832,7 @@ export function attachClassFieldContract(
     types: [{ kind: "class-field", name, allowed }],
     root: 0,
   };
-  commit([{ object, schema }], realm);
+  commitOne(object, schema, realm);
 }
 
 export function attachClassMethodContract(
@@ -534,7 +847,7 @@ export function attachClassMethodContract(
     types: [{ kind: "class-method", name, call }],
     root: 0,
   };
-  commit([{ object, schema }], realm);
+  commitOne(object, schema, realm);
 }
 
 /** Lookup on ordinary storage mirrors the completed member reference. The
@@ -595,18 +908,32 @@ export function callWithClassMethodContract(
     checkPrimitiveContract(realm, completed.value, contract.result);
   return completed;
 }
-function commit(pending: readonly Enrollment[], realm: ErrorRealm): void {
-  for (const item of pending) {
-    if (item === undefined) throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
-    const object = item.object;
-    if (attached(object, item.schema)) continue;
-    const rare = object.internalRareSlots;
-    const existing =
-      rare === undefined ? undefined : rare.internalPropertyContract;
-    const schemas: ObjectShapeContract[] =
-      existing === undefined ? [] : existing.schemas.slice();
-    schemas.push(item.schema);
-    publish(object, schemas, realm, false);
+function commitOne(
+  object: ObjectRecord,
+  schema: ObjectShapeContract,
+  realm: ErrorRealm,
+): void {
+  if (attached(object, schema)) return;
+  const rare = object.internalRareSlots;
+  const existing =
+    rare === undefined ? undefined : rare.internalPropertyContract;
+  if (existing === undefined) {
+    publishSingle(object, schema, realm, false);
+    return;
+  }
+  const schemas: ObjectShapeContract[] = existing.schemas.slice();
+  schemas.push(schema);
+  publish(object, schemas, realm, false);
+}
+function commit(pending: PendingList, realm: ErrorRealm): void {
+  const objects = pending.objects,
+    schemas = pending.schemas;
+  for (let i = 0; i < objects.length; i++) {
+    const object = objects[i],
+      schema = schemas[i];
+    if (object === undefined || schema === undefined)
+      throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
+    commitOne(object, schema, realm);
   }
 }
 /** Side-effect-free admission until every reachable own descriptor has passed. */
@@ -615,9 +942,13 @@ export function enrollObjectPropertyContract(
   schema: ObjectShapeContract,
   realm: ErrorRealm,
 ): void {
-  const pending: Enrollment[] = [];
-  if (!validateObject(object, schema, pending, realm)) reject(realm);
-  commit(pending, realm);
+  const pending = acquirePending();
+  try {
+    if (!validateObject(object, schema, pending, realm)) reject(realm);
+    if (pending.objects.length > 0) commit(pending, realm);
+  } finally {
+    releasePending(pending);
+  }
 }
 /** The literal is fresh and unpublished. It may initialize readonly keys. */
 export function beginObjectPropertyContract(
@@ -625,7 +956,7 @@ export function beginObjectPropertyContract(
   schema: ObjectShapeContract,
   realm: ErrorRealm,
 ): void {
-  publish(object, [schema], realm, true);
+  publishSingle(object, schema, realm, true);
 }
 export function finishObjectPropertyContract(
   object: ObjectRecord,
@@ -635,7 +966,7 @@ export function finishObjectPropertyContract(
   const rule = schema.types[schema.root];
   if (rule?.kind === "object" && !requiredFieldsPresent(object, rule))
     reject(realm);
-  publish(object, [schema], realm, false);
+  publishSingle(object, schema, realm, false);
 }
 /** Validate the live result of a property read without enrolling its receiver. */
 export function projectPropertyContract(
@@ -644,9 +975,87 @@ export function projectPropertyContract(
   realm: ErrorRealm,
   enroll: boolean = false,
 ): unknown {
-  const pending: Enrollment[] = [];
-  if (!validateValue(value, schema.types, schema.root, pending, realm))
-    reject(realm);
-  if (enroll) commit(pending, realm);
+  const root = schema.types[schema.root];
+  if (root !== undefined) {
+    if (root.kind === "unknown") return value;
+    if (root.kind === "boolean") {
+      if (typeof value !== "boolean") reject(realm);
+      return value;
+    }
+    if (root.kind === "number") {
+      if (typeof value !== "number") reject(realm);
+      return value;
+    }
+    if (root.kind === "string") {
+      if (typeof value !== "string") reject(realm);
+      return value;
+    }
+    if (root.kind === "null") {
+      if (value !== null) reject(realm);
+      return value;
+    }
+    if (root.kind === "undefined") {
+      if (value !== undefined) reject(realm);
+      return value;
+    }
+    if (root.kind === "object" || root.kind === "array-elements") {
+      const obj = viewObjectValue(value, realm.objectPrototype);
+      if (obj !== undefined && attached(obj, schema)) return value;
+    }
+    if (root.kind === "union") {
+      let mask = schema.unionMask;
+      if (mask === undefined) {
+        let computed = 0;
+        let objectMember: ObjectShapeContract | undefined = undefined;
+        let objectCount = 0;
+        const members = root.members;
+        for (let i = 0; i < members.length; i++) {
+          const memberIndex = members[i];
+          if (memberIndex === undefined) continue;
+          const m = schema.types[memberIndex];
+          if (m === undefined) continue;
+          if (m.kind === "number") computed |= 1;
+          else if (m.kind === "string") computed |= 2;
+          else if (m.kind === "boolean") computed |= 4;
+          else if (m.kind === "null") computed |= 8;
+          else if (m.kind === "undefined") computed |= 16;
+          else if (m.kind === "object" || m.kind === "array-elements") {
+            objectCount++;
+            if (objectCount === 1)
+              objectMember = subSchema(schema, memberIndex);
+            else objectMember = undefined;
+          }
+        }
+        schema.unionMask = computed;
+        schema.unionObjectMember = objectMember;
+        mask = computed;
+      }
+      if (value === undefined) {
+        if ((mask & 16) !== 0) return value;
+      } else if (typeof value === "number") {
+        if ((mask & 1) !== 0) return value;
+      } else if (typeof value === "string") {
+        if ((mask & 2) !== 0) return value;
+      } else if (typeof value === "boolean") {
+        if ((mask & 4) !== 0) return value;
+      } else if (value === null) {
+        if ((mask & 8) !== 0) return value;
+      } else {
+        const objMember = schema.unionObjectMember;
+        if (objMember !== undefined) {
+          const obj = viewObjectValue(value, realm.objectPrototype);
+          if (obj !== undefined && attached(obj, objMember)) return value;
+        }
+      }
+    }
+  }
+  const pending = acquirePending();
+  try {
+    if (!validateValue(value, schema, schema.root, pending, realm))
+      reject(realm);
+    if (enroll && pending.objects.length > 0) commit(pending, realm);
+  } finally {
+    releasePending(pending);
+  }
   return value;
 }

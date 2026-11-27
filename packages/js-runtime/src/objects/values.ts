@@ -26,6 +26,8 @@ import {
   lookupCachedStringPrimitiveProperty,
   cachedScriptPropertyValue,
   storeCachedScriptProperty,
+  shapeKeyIndex,
+  storedValue,
   type ConstructSite,
   type PropertySpill,
   type ScriptPropertyCache,
@@ -36,7 +38,9 @@ import {
   objectFlagDictionary,
   objectFlagExtensible,
   objectFlagUsedAsPrototype,
+  propertyAccessor,
 } from "./operations.ts";
+import { arrayElementCount, readArrayElement } from "./array-elements.ts";
 import { callObject, constructObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
 import {
@@ -1277,6 +1281,62 @@ export function readObjectValueProperty(
 ): unknown {
   if (base === null || base === undefined)
     throw createRuntimeError(realm, "type");
+  return propertyValueOf(base, key, base, hooks, realm);
+}
+
+/** Fast dynamic property read for typed-to-realm accesses where `key` is a
+ * numeric index or string, bypassing stringification on in-bounds packed array
+ * reads and descriptor wrappers on own ordinary data properties. */
+export function readDynamicObjectProperty(
+  base: unknown,
+  key: string | number,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): unknown {
+  if (base === null || base === undefined)
+    throw createRuntimeError(realm, "type");
+  if (typeof key === "number") {
+    const object = viewObjectValue(base, realm.objectPrototype);
+    const elements =
+      object === undefined
+        ? undefined
+        : (object.internalArrayElements ??
+          object.internalRareSlots?.internalContractedElements);
+    if (
+      elements !== undefined &&
+      key >= 0 &&
+      (key | 0) === key &&
+      key < arrayElementCount<ScriptPropertyKey, unknown>(elements)
+    )
+      return readArrayElement<ScriptPropertyKey, unknown>(elements, key);
+    return propertyValueOf(base, String(key), base, hooks, realm);
+  }
+  const object = viewObjectValue(base, realm.objectPrototype);
+  if (object !== undefined) {
+    const elements =
+      object.internalArrayElements ??
+      object.internalRareSlots?.internalContractedElements;
+    if (elements !== undefined && key === "length") return elements.length;
+    if (
+      object.internalMethods === undefined &&
+      elements === undefined &&
+      object.internalRareSlots?.internalDataAliases === undefined
+    ) {
+      if ((object.internalFlags & objectFlagDictionary) === 0) {
+        const shape = object.internalShape;
+        if (shape !== undefined) {
+          const pos = shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
+          if (pos >= 0 && ((shape.kinds[pos] ?? 0) & propertyAccessor) === 0) {
+            const raw = storedValue<ScriptPropertyKey, unknown>(object, pos);
+            return raw === undefined ? shape.undefinedValue : raw;
+          }
+        }
+      } else {
+        const desc = object.internalRareSlots?.properties?.get(key);
+        if (desc !== undefined && !desc.accessor) return desc.value;
+      }
+    }
+  }
   return propertyValueOf(base, key, base, hooks, realm);
 }
 

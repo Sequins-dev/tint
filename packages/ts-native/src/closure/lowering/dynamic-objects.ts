@@ -24,6 +24,7 @@ export interface DynamicObjectRuntime {
   readonly create: number;
   readonly createArray: number;
   readonly invoke: number;
+  readonly invokeFixed?: number | undefined;
   readonly finish: number;
   readonly enroll: number;
   readonly convertKey: number;
@@ -826,6 +827,8 @@ export function insertDynamicObjectRuntime(
         if (name === undefined) throw "realm instanceof helper invariant";
         alias(name);
       }
+    else if (helpers.has("dynamic-object:invokeArrayMethod"))
+      alias("invokeArrayMethod");
     return {
       kind: "variable",
       mode: "const",

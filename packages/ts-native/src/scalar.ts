@@ -8066,6 +8066,7 @@ export function lowerFunction(
       case "static-call": {
         if (node.kind !== "call") throw "realm method call invariant";
         const target = node.callee;
+        const callArgs = node.arguments;
         if (target.kind !== "member") throw "realm method target invariant";
         const receiver =
           operation === "array-method"
@@ -8076,12 +8077,38 @@ export function lowerFunction(
           [receiver, stringSlot(target.property, node)],
           node,
         );
-        const args = dynamicArray(runtime, node.arguments, node);
-        const raw = dynamicResult(
-          runtime.invoke,
-          [receiver, callee, args],
-          node,
-        );
+        let raw: number;
+        const invokeFixed = runtime.invokeFixed;
+        if (invokeFixed !== undefined && callArgs.length <= 3) {
+          const evaluated: number[] = [];
+          for (const arg of callArgs) {
+            if (arg === undefined) throw "dynamic call argument invariant";
+            evaluated.push(value(arg));
+          }
+          while (evaluated.length < 3) {
+            const none = nextValue++;
+            emit({
+              kind: "general-none",
+              id: none,
+              start: node.start,
+              end: node.end,
+            });
+            evaluated.push(save(none, "general", node));
+          }
+          const a0 = evaluated[0],
+            a1 = evaluated[1],
+            a2 = evaluated[2];
+          if (a0 === undefined || a1 === undefined || a2 === undefined)
+            throw "dynamic call fixed argument invariant";
+          raw = dynamicResult(
+            invokeFixed,
+            [receiver, callee, numberSlot(callArgs.length, node), a0, a1, a2],
+            node,
+          );
+        } else {
+          const args = dynamicArray(runtime, callArgs, node);
+          raw = dynamicResult(runtime.invoke, [receiver, callee, args], node);
+        }
         const schema = metadata.dynamicContract;
         const type = metadata.type;
         if (schema === undefined || type === "void")
