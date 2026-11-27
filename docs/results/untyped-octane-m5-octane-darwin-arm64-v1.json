@@ -1,0 +1,1542 @@
+{
+  "prepared": {
+    "head": "b73d3fa70b68623974ae281744cece0587a4a022",
+    "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node": "/opt/homebrew/bin/node",
+    "nodeSha256": "119fc1d81312ba4839aefc45399c4afdb87d4879e743004a4f976694f678f910",
+    "script": "/tmp/tint-m5-bench/tmp/tint-octane-bench-X0QOac/benchmark.mjs",
+    "native": {
+      "untyped": {
+        "target": "darwin-aarch64",
+        "path": "/tmp/tint-m5-bench/tmp/tint-octane-bench-X0QOac/octane",
+        "imageSha256": "0be04425c3213e7e2da57ee83de63edb3fa63e439556506fd655bef02afdbc5e",
+        "buildManifest": {
+          "path": "/tmp/tint-m5-bench/tmp/tint-octane-bench-X0QOac/octane.manifest.json",
+          "sha256": "cbf852a34aae75ccf48a37f18f3d59c5015258ebdb8ed71e1c8ef871d5e577ec"
+        }
+      }
+    },
+    "checksums": {
+      "Richards": {
+        "sum": 48,
+        "iterations": 48,
+        "warm": 48
+      },
+      "DeltaBlue": {
+        "sum": 32,
+        "iterations": 32,
+        "warm": 32
+      },
+      "NavierStokes": {
+        "sum": 4,
+        "iterations": 4,
+        "warm": 15
+      },
+      "RayTrace": {
+        "sum": 12,
+        "iterations": 12,
+        "warm": 12
+      }
+    },
+    "nativeLaunch": {
+      "args": [
+        "0"
+      ],
+      "exit": 42
+    },
+    "octane": {
+      "revision": "570ad1ccfe86e3eecba0636c8f932ac08edec517",
+      "upstream": "https://raw.githubusercontent.com/chromium/octane/570ad1ccfe86e3eecba0636c8f932ac08edec517",
+      "hashes": {
+        "LICENSE": "cf853177951c6de1b17c029b66edf71f8b194cca1722339a7b5def4e8165aaaa",
+        "base.js": "216612c2e7096a02b3e52b57e9cf9351bbaf180d60938d5c60b85fd756232733",
+        "richards.js": "1246a64a24b931158bf01c24640343259fa74b0226e73bad630bd1f686aa0fa7",
+        "deltablue.js": "6c4784e82f3e8f5c18306d289653d08b17b38838f1bac16b38611d7318fa5a36",
+        "navier-stokes.js": "27926de809451c60b0c49a4185c08f97081310d0db166a30c1d202fb656556a2",
+        "raytrace.js": "64b8ff90969966dd69659100e28754976dfc3e9a4f8ee55b9232f974c66ed08c"
+      }
+    },
+    "scriptSha256": "8f87293a6224d7b4eb86aa91316f256c6faacb635257c476fdbbe3c3dae5d03e"
+  },
+  "candidates": [
+    {
+      "head": "9450aa5e288c6f3fe12cf598ad3df10e376315ca",
+      "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "node": "/opt/homebrew/bin/node",
+      "nodeSha256": "119fc1d81312ba4839aefc45399c4afdb87d4879e743004a4f976694f678f910",
+      "script": "/tmp/tint-m5-bench/tmp/tint-octane-bench-auXcGq/benchmark.mjs",
+      "native": {
+        "untyped": {
+          "target": "darwin-aarch64",
+          "path": "/tmp/tint-m5-bench/tmp/tint-octane-bench-auXcGq/octane",
+          "imageSha256": "00d8c24d19035904918900fe8e49d14213c6b3dca103fe3d6698923d8338b216",
+          "buildManifest": {
+            "path": "/tmp/tint-m5-bench/tmp/tint-octane-bench-auXcGq/octane.manifest.json",
+            "sha256": "c58916f8d88301ec8386b19f4fe2537f865953912320b1daddb35807c2deab20"
+          }
+        }
+      },
+      "checksums": {
+        "Richards": {
+          "sum": 48,
+          "iterations": 48,
+          "warm": 48
+        },
+        "DeltaBlue": {
+          "sum": 32,
+          "iterations": 32,
+          "warm": 32
+        },
+        "NavierStokes": {
+          "sum": 4,
+          "iterations": 4,
+          "warm": 15
+        },
+        "RayTrace": {
+          "sum": 12,
+          "iterations": 12,
+          "warm": 12
+        }
+      },
+      "nativeLaunch": {
+        "args": [
+          "0"
+        ],
+        "exit": 42
+      },
+      "octane": {
+        "revision": "570ad1ccfe86e3eecba0636c8f932ac08edec517",
+        "upstream": "https://raw.githubusercontent.com/chromium/octane/570ad1ccfe86e3eecba0636c8f932ac08edec517",
+        "hashes": {
+          "LICENSE": "cf853177951c6de1b17c029b66edf71f8b194cca1722339a7b5def4e8165aaaa",
+          "base.js": "216612c2e7096a02b3e52b57e9cf9351bbaf180d60938d5c60b85fd756232733",
+          "richards.js": "1246a64a24b931158bf01c24640343259fa74b0226e73bad630bd1f686aa0fa7",
+          "deltablue.js": "6c4784e82f3e8f5c18306d289653d08b17b38838f1bac16b38611d7318fa5a36",
+          "navier-stokes.js": "27926de809451c60b0c49a4185c08f97081310d0db166a30c1d202fb656556a2",
+          "raytrace.js": "64b8ff90969966dd69659100e28754976dfc3e9a4f8ee55b9232f974c66ed08c"
+        }
+      },
+      "scriptSha256": "8f87293a6224d7b4eb86aa91316f256c6faacb635257c476fdbbe3c3dae5d03e"
+    }
+  ],
+  "cpu": "Apple M5 Max",
+  "rounds": 18,
+  "summary": {
+    "Richards": {
+      "node": {
+        "ns": {
+          "median": 45476.126174132034,
+          "q1": 44938.58416875204,
+          "q3": 45898.872117201485
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 508972.6547400157,
+          "q1": 506637.591868639,
+          "q3": 512724.8167991638
+        },
+        "deltaFromNodeNs": {
+          "median": 463368.500272433,
+          "q1": 461723.9646613598,
+          "q3": 467051.8475274245
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 502385.4151368141,
+          "q1": 500109.159698089,
+          "q3": 504481.9849232832
+        },
+        "deltaFromNodeNs": {
+          "median": 456494.3512280782,
+          "q1": 455024.7440735499,
+          "q3": 459418.1875387828
+        },
+        "deltaFromPreviousNs": {
+          "median": -6679.249306519807,
+          "q1": -8803.177624940843,
+          "q3": -2514.9869422117918
+        }
+      }
+    },
+    "DeltaBlue": {
+      "node": {
+        "ns": {
+          "median": 63166.674226522446,
+          "q1": 59874.026104807854,
+          "q3": 64816.41158461571
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 761689.4505918026,
+          "q1": 757092.1219885349,
+          "q3": 766517.5646543503
+        },
+        "deltaFromNodeNs": {
+          "median": 699686.8588030338,
+          "q1": 693184.8935782909,
+          "q3": 703320.6280320883
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 739220.0641334057,
+          "q1": 734937.5076591969,
+          "q3": 743063.1648749113
+        },
+        "deltaFromNodeNs": {
+          "median": 675825.5288004875,
+          "q1": 671040.017157793,
+          "q3": 680074.2335617542
+        },
+        "deltaFromPreviousNs": {
+          "median": -22992.826998233795,
+          "q1": -30743.174254894257,
+          "q3": -18160.1382791996
+        }
+      }
+    },
+    "NavierStokes": {
+      "node": {
+        "ns": {
+          "median": 1830041.7363643646,
+          "q1": 1823835.849761963,
+          "q3": 1835471.3767766953
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 2723953.127861023,
+          "q1": 2720135.4056596756,
+          "q3": 2733786.404132843
+        },
+        "deltaFromNodeNs": {
+          "median": 900552.1237850189,
+          "q1": 887950.5395889282,
+          "q3": 904632.8067779541
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 2723546.7433929443,
+          "q1": 2718598.872423172,
+          "q3": 2737390.7417058945
+        },
+        "deltaFromNodeNs": {
+          "median": 895645.7078456879,
+          "q1": 888039.0077829361,
+          "q3": 908026.0843038559
+        },
+        "deltaFromPreviousNs": {
+          "median": -1281.2018394470215,
+          "q1": -7880.419492721558,
+          "q3": 11411.592364311218
+        }
+      }
+    },
+    "RayTrace": {
+      "node": {
+        "ns": {
+          "median": 503894.1204547882,
+          "q1": 495334.193110466,
+          "q3": 510020.79248428345
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 2830602.467060089,
+          "q1": 2814259.5440149307,
+          "q3": 2840388.889114062
+        },
+        "deltaFromNodeNs": {
+          "median": 2327246.5368111925,
+          "q1": 2312101.562817891,
+          "q3": 2335706.616441409
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 2781717.0421282453,
+          "q1": 2771971.3250796,
+          "q3": 2789394.1501776376
+        },
+        "deltaFromNodeNs": {
+          "median": 2276477.4163564043,
+          "q1": 2265618.046124776,
+          "q3": 2284248.287479083
+        },
+        "deltaFromPreviousNs": {
+          "median": -53888.88716697693,
+          "q1": -67217.03211466479,
+          "q3": -32054.66767152131
+        }
+      }
+    }
+  },
+  "samples": [
+    {
+      "round": 0,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "Richards": 46235.24844646454,
+        "DeltaBlue": 65765.6192779541,
+        "NavierStokes": 1824156.2843322754,
+        "RayTrace": 495347.261428833
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.240234375,
+        3.78125,
+        4.64306640625
+      ],
+      "loadAfter": [
+        4.240234375,
+        3.78125,
+        4.64306640625
+      ],
+      "idlePercent": 79.04761904761905
+    },
+    {
+      "round": 0,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "Richards": 504178.83694171906,
+        "DeltaBlue": 772975.280880928,
+        "NavierStokes": 2724125.027656555,
+        "RayTrace": 2830142.4185434976
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.240234375,
+        3.78125,
+        4.64306640625
+      ],
+      "loadAfter": [
+        3.98046875,
+        3.73486328125,
+        4.62158203125
+      ],
+      "idlePercent": 88.86731391585761
+    },
+    {
+      "round": 0,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "Richards": 500207.45893319446,
+        "DeltaBlue": 739529.974758625,
+        "NavierStokes": 2720697.7009773254,
+        "RayTrace": 2771288.1565093994
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.98046875,
+        3.73486328125,
+        4.62158203125
+      ],
+      "loadAfter": [
+        3.98046875,
+        3.73486328125,
+        4.62158203125
+      ],
+      "idlePercent": 89.99818807755028
+    },
+    {
+      "round": 1,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "Richards": 510708.3370288213,
+        "DeltaBlue": 767696.6264843941,
+        "NavierStokes": 2717218.75667572,
+        "RayTrace": 2814052.085081736
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.98046875,
+        3.73486328125,
+        4.62158203125
+      ],
+      "loadAfter": [
+        4.22216796875,
+        3.7890625,
+        4.63525390625
+      ],
+      "idlePercent": 88.5036496350365
+    },
+    {
+      "round": 1,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "Richards": 503731.77230358124,
+        "DeltaBlue": 740216.1583304405,
+        "NavierStokes": 2715114.5339012146,
+        "RayTrace": 2777951.419353485
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.22216796875,
+        3.7890625,
+        4.63525390625
+      ],
+      "loadAfter": [
+        4.22216796875,
+        3.7890625,
+        4.63525390625
+      ],
+      "idlePercent": 87.85239514095805
+    },
+    {
+      "round": 1,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "Richards": 44991.33427937826,
+        "DeltaBlue": 64511.723816394806,
+        "NavierStokes": 1831375.002861023,
+        "RayTrace": 513097.24648793536
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.22216796875,
+        3.7890625,
+        4.63525390625
+      ],
+      "loadAfter": [
+        4.22216796875,
+        3.7890625,
+        4.63525390625
+      ],
+      "idlePercent": 83.9622641509434
+    },
+    {
+      "round": 2,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "Richards": 506128.4800370534,
+        "DeltaBlue": 734751.3139247894,
+        "NavierStokes": 2724458.2176208496,
+        "RayTrace": 2793128.490447998
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.22216796875,
+        3.7890625,
+        4.63525390625
+      ],
+      "loadAfter": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "idlePercent": 89.44482522275531
+    },
+    {
+      "round": 2,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "Richards": 46177.08424727122,
+        "DeltaBlue": 62018.245458602905,
+        "NavierStokes": 1844947.9937553406,
+        "RayTrace": 500309.01034673053
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "loadAfter": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "idlePercent": 75.94339622641509
+    },
+    {
+      "round": 2,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "Richards": 505630.2100419998,
+        "DeltaBlue": 751571.6254711151,
+        "NavierStokes": 2719781.219959259,
+        "RayTrace": 2824010.411898295
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "loadAfter": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "idlePercent": 89.449852841295
+    },
+    {
+      "round": 3,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "Richards": 45950.5170583725,
+        "DeltaBlue": 72899.75136518478,
+        "NavierStokes": 1832750.0224113464,
+        "RayTrace": 509041.6669845581
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "loadAfter": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "idlePercent": 80.64516129032258
+    },
+    {
+      "round": 3,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "Richards": 509153.64424387616,
+        "DeltaBlue": 769998.7143278122,
+        "NavierStokes": 2721395.969390869,
+        "RayTrace": 2840788.185596466
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.2841796875,
+        3.80908203125,
+        4.63720703125
+      ],
+      "loadAfter": [
+        4.50146484375,
+        3.86181640625,
+        4.65087890625
+      ],
+      "idlePercent": 86.89087165408374
+    },
+    {
+      "round": 3,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "Richards": 497800.3551562627,
+        "DeltaBlue": 738167.9713726044,
+        "NavierStokes": 2719958.3053588867,
+        "RayTrace": 2788274.32791392
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.50146484375,
+        3.86181640625,
+        4.65087890625
+      ],
+      "loadAfter": [
+        4.50146484375,
+        3.86181640625,
+        4.65087890625
+      ],
+      "idlePercent": 88.25124265702667
+    },
+    {
+      "round": 4,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "Richards": 518209.20904477435,
+        "DeltaBlue": 788306.0052990913,
+        "NavierStokes": 2764406.2638282776,
+        "RayTrace": 2919242.9979642234
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.50146484375,
+        3.86181640625,
+        4.65087890625
+      ],
+      "loadAfter": [
+        4.30078125,
+        3.83056640625,
+        4.63525390625
+      ],
+      "idlePercent": 83.92327015300297
+    },
+    {
+      "round": 4,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "Richards": 494775.1859823863,
+        "DeltaBlue": 743186.2205266953,
+        "NavierStokes": 2722635.269165039,
+        "RayTrace": 2789767.4242655435
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.30078125,
+        3.83056640625,
+        4.63525390625
+      ],
+      "loadAfter": [
+        4.30078125,
+        3.83056640625,
+        4.63525390625
+      ],
+      "idlePercent": 79.80396626396171
+    },
+    {
+      "round": 4,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "Richards": 44862.8564675649,
+        "DeltaBlue": 62796.87583446503,
+        "NavierStokes": 1822281.2414169312,
+        "RayTrace": 512753.4866333008
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.30078125,
+        3.83056640625,
+        4.63525390625
+      ],
+      "loadAfter": [
+        4.30078125,
+        3.83056640625,
+        4.63525390625
+      ],
+      "idlePercent": 83.41232227488152
+    },
+    {
+      "round": 5,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "Richards": 502010.41499773663,
+        "DeltaBlue": 744089.8418426514,
+        "NavierStokes": 2797031.2237739563,
+        "RayTrace": 2847066.0050710044
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.30078125,
+        3.83056640625,
+        4.63525390625
+      ],
+      "loadAfter": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "idlePercent": 87.18885590317424
+    },
+    {
+      "round": 5,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "Richards": 46137.14416821798,
+        "DeltaBlue": 63649.751245975494,
+        "NavierStokes": 1830479.2046546936,
+        "RayTrace": 494385.4014078776
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "loadAfter": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "idlePercent": 71.4975845410628
+    },
+    {
+      "round": 5,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "Richards": 516902.7696053187,
+        "DeltaBlue": 763078.12333107,
+        "NavierStokes": 2735520.7800865173,
+        "RayTrace": 2803208.331267039
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "loadAfter": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "idlePercent": 88.35477318889642
+    },
+    {
+      "round": 6,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "Richards": 44104.168812433876,
+        "DeltaBlue": 59537.78326511383,
+        "NavierStokes": 1845989.70413208,
+        "RayTrace": 508486.17156346637
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "loadAfter": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "idlePercent": 82.84313725490196
+    },
+    {
+      "round": 6,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "Richards": 506145.8299557368,
+        "DeltaBlue": 760414.0639305115,
+        "NavierStokes": 2713281.273841858,
+        "RayTrace": 2842940.9861564636
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.1162109375,
+        3.7998046875,
+        4.61962890625
+      ],
+      "loadAfter": [
+        4.5869140625,
+        3.90234375,
+        4.65087890625
+      ],
+      "idlePercent": 89.134900707601
+    },
+    {
+      "round": 6,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "Richards": 500076.39328638715,
+        "DeltaBlue": 742529.9733877182,
+        "NavierStokes": 2720708.48941803,
+        "RayTrace": 2786961.7342948914
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.5869140625,
+        3.90234375,
+        4.65087890625
+      ],
+      "loadAfter": [
+        4.5869140625,
+        3.90234375,
+        4.65087890625
+      ],
+      "idlePercent": 89.87428571428572
+    },
+    {
+      "round": 7,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "Richards": 507764.7715806961,
+        "DeltaBlue": 759494.811296463,
+        "NavierStokes": 2718750,
+        "RayTrace": 2836513.9166514077
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.5869140625,
+        3.90234375,
+        4.65087890625
+      ],
+      "loadAfter": [
+        4.29931640625,
+        3.85400390625,
+        4.62939453125
+      ],
+      "idlePercent": 89.28408572731418
+    },
+    {
+      "round": 7,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "Richards": 499187.49928474426,
+        "DeltaBlue": 735496.0888624191,
+        "NavierStokes": 2747833.251953125,
+        "RayTrace": 2781250
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.29931640625,
+        3.85400390625,
+        4.62939453125
+      ],
+      "loadAfter": [
+        4.29931640625,
+        3.85400390625,
+        4.62939453125
+      ],
+      "idlePercent": 86.7090043093672
+    },
+    {
+      "round": 7,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "Richards": 44230.898221333824,
+        "DeltaBlue": 59549.46577548981,
+        "NavierStokes": 1844822.9432106018,
+        "RayTrace": 495329.8370043437
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.29931640625,
+        3.85400390625,
+        4.62939453125
+      ],
+      "loadAfter": [
+        4.29931640625,
+        3.85400390625,
+        4.62939453125
+      ],
+      "idlePercent": 81.01851851851852
+    },
+    {
+      "round": 8,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "Richards": 498309.8953962326,
+        "DeltaBlue": 738723.9709496498,
+        "NavierStokes": 2717770.755290985,
+        "RayTrace": 2762961.745262146
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.29931640625,
+        3.85400390625,
+        4.62939453125
+      ],
+      "loadAfter": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "idlePercent": 89.96571428571428
+    },
+    {
+      "round": 8,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "Richards": 45113.70758215586,
+        "DeltaBlue": 71708.34392309189,
+        "NavierStokes": 1823729.0382385254,
+        "RayTrace": 495052.07935969037
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "loadAfter": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "idlePercent": 80.09708737864078
+    },
+    {
+      "round": 8,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "Richards": 504993.0413564046,
+        "DeltaBlue": 758493.49796772,
+        "NavierStokes": 2727135.5390548706,
+        "RayTrace": 2831062.5155766807
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "loadAfter": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "idlePercent": 89.16514598540147
+    },
+    {
+      "round": 9,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "Richards": 44921.0007985433,
+        "DeltaBlue": 59781.25333786011,
+        "NavierStokes": 1818031.2514305115,
+        "RayTrace": 494500.00127156574
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "loadAfter": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "idlePercent": 81.55339805825243
+    },
+    {
+      "round": 9,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "Richards": 506539.0666325887,
+        "DeltaBlue": 753755.2192807198,
+        "NavierStokes": 2719166.7556762695,
+        "RayTrace": 2813625.0178019204
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.03466796875,
+        3.80615234375,
+        4.60791015625
+      ],
+      "loadAfter": [
+        3.87158203125,
+        3.77587890625,
+        4.59228515625
+      ],
+      "idlePercent": 89.66225467822912
+    },
+    {
+      "round": 9,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "Richards": 504509.5433791478,
+        "DeltaBlue": 738910.1535081863,
+        "NavierStokes": 2755854.01058197,
+        "RayTrace": 2814625.004927317
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.87158203125,
+        3.77587890625,
+        4.59228515625
+      ],
+      "loadAfter": [
+        3.87158203125,
+        3.77587890625,
+        4.59228515625
+      ],
+      "idlePercent": 80.30790441176471
+    },
+    {
+      "round": 10,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "Richards": 507598.9564259847,
+        "DeltaBlue": 758600.2871394157,
+        "NavierStokes": 2738083.54139328,
+        "RayTrace": 2814881.920814514
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.87158203125,
+        3.77587890625,
+        4.59228515625
+      ],
+      "loadAfter": [
+        4.1220703125,
+        3.8291015625,
+        4.60595703125
+      ],
+      "idlePercent": 88.05460750853243
+    },
+    {
+      "round": 10,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "Richards": 500923.60377311707,
+        "DeltaBlue": 732067.6892995834,
+        "NavierStokes": 2713458.240032196,
+        "RayTrace": 2804600.6759007773
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.1220703125,
+        3.8291015625,
+        4.60595703125
+      ],
+      "loadAfter": [
+        4.1220703125,
+        3.8291015625,
+        4.60595703125
+      ],
+      "idlePercent": 89.38598493494636
+    },
+    {
+      "round": 10,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "Richards": 45223.95630677541,
+        "DeltaBlue": 61567.71630048752,
+        "NavierStokes": 1820333.480834961,
+        "RayTrace": 543409.7448984782
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.1220703125,
+        3.8291015625,
+        4.60595703125
+      ],
+      "loadAfter": [
+        4.1220703125,
+        3.8291015625,
+        4.60595703125
+      ],
+      "idlePercent": 80.75117370892019
+    },
+    {
+      "round": 11,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "Richards": 503422.7470556895,
+        "DeltaBlue": 743309.9076151848,
+        "NavierStokes": 2728510.26058197,
+        "RayTrace": 2763749.9968210855
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.1220703125,
+        3.8291015625,
+        4.60595703125
+      ],
+      "loadAfter": [
+        3.95166015625,
+        3.79833984375,
+        4.59033203125
+      ],
+      "idlePercent": 89.59286367795059
+    },
+    {
+      "round": 11,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "Richards": 45710.94115575155,
+        "DeltaBlue": 64917.974174022675,
+        "NavierStokes": 1833760.2615356445,
+        "RayTrace": 510347.1676508586
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.95166015625,
+        3.79833984375,
+        4.59033203125
+      ],
+      "loadAfter": [
+        3.95166015625,
+        3.79833984375,
+        4.59033203125
+      ],
+      "idlePercent": 81.9047619047619
+    },
+    {
+      "round": 11,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "Richards": 510251.7505486806,
+        "DeltaBlue": 764937.4976754189,
+        "NavierStokes": 2742385.506629944,
+        "RayTrace": 2834045.092264811
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.95166015625,
+        3.79833984375,
+        4.59033203125
+      ],
+      "loadAfter": [
+        3.95166015625,
+        3.79833984375,
+        4.59033203125
+      ],
+      "idlePercent": 87.15722120658135
+    },
+    {
+      "round": 12,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "Richards": 46366.33396148682,
+        "DeltaBlue": 60152.34440565109,
+        "NavierStokes": 1829604.2680740356,
+        "RayTrace": 504673.65980148315
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.95166015625,
+        3.79833984375,
+        4.59033203125
+      ],
+      "loadAfter": [
+        3.794921875,
+        3.76806640625,
+        4.57470703125
+      ],
+      "idlePercent": 83.33333333333333
+    },
+    {
+      "round": 12,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "Richards": 508791.6652361552,
+        "DeltaBlue": 767044.2536473274,
+        "NavierStokes": 2721854.269504547,
+        "RayTrace": 2940121.511618296
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.794921875,
+        3.76806640625,
+        4.57470703125
+      ],
+      "loadAfter": [
+        3.794921875,
+        3.76806640625,
+        4.57470703125
+      ],
+      "idlePercent": 90.00916590284143
+    },
+    {
+      "round": 12,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "Richards": 506769.95515823364,
+        "DeltaBlue": 744716.1599993706,
+        "NavierStokes": 2739614.725112915,
+        "RayTrace": 2738319.4963137307
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.794921875,
+        3.76806640625,
+        4.57470703125
+      ],
+      "loadAfter": [
+        3.794921875,
+        3.76806640625,
+        4.57470703125
+      ],
+      "idlePercent": 89.77635782747603
+    },
+    {
+      "round": 13,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "Richards": 518092.8707122803,
+        "DeltaBlue": 762964.8372530937,
+        "NavierStokes": 2723781.2280654907,
+        "RayTrace": 2827576.3392448425
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.794921875,
+        3.76806640625,
+        4.57470703125
+      ],
+      "loadAfter": [
+        3.73095703125,
+        3.7548828125,
+        4.5654296875
+      ],
+      "idlePercent": 90.04348821240559
+    },
+    {
+      "round": 13,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "Richards": 578458.3340088526,
+        "DeltaBlue": 726244.7774410248,
+        "NavierStokes": 2703937.4709129333,
+        "RayTrace": 2783208.3304723105
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.73095703125,
+        3.7548828125,
+        4.5654296875
+      ],
+      "loadAfter": [
+        3.73095703125,
+        3.7548828125,
+        4.5654296875
+      ],
+      "idlePercent": 89.04328018223235
+    },
+    {
+      "round": 13,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "Richards": 44697.04131285349,
+        "DeltaBlue": 59598.96743297577,
+        "NavierStokes": 1836062.490940094,
+        "RayTrace": 497204.84018325806
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.73095703125,
+        3.7548828125,
+        4.5654296875
+      ],
+      "loadAfter": [
+        3.73095703125,
+        3.7548828125,
+        4.5654296875
+      ],
+      "idlePercent": 76.33928571428571
+    },
+    {
+      "round": 14,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "Richards": 500770.83706855774,
+        "DeltaBlue": 731087.2450470924,
+        "NavierStokes": 2725697.9942321777,
+        "RayTrace": 2782184.08425649
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.73095703125,
+        3.7548828125,
+        4.5654296875
+      ],
+      "loadAfter": [
+        3.67236328125,
+        3.7421875,
+        4.55615234375
+      ],
+      "idlePercent": 90.0865998176846
+    },
+    {
+      "round": 14,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "Richards": 45541.66396458944,
+        "DeltaBlue": 58427.09541320801,
+        "NavierStokes": 1824968.7552452087,
+        "RayTrace": 505038.1620724996
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.67236328125,
+        3.7421875,
+        4.55615234375
+      ],
+      "loadAfter": [
+        3.67236328125,
+        3.7421875,
+        4.55615234375
+      ],
+      "idlePercent": 82.4390243902439
+    },
+    {
+      "round": 14,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "Richards": 506933.16757678986,
+        "DeltaBlue": 763513.0286216736,
+        "NavierStokes": 2726822.7338790894,
+        "RayTrace": 2805058.99588267
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.67236328125,
+        3.7421875,
+        4.55615234375
+      ],
+      "loadAfter": [
+        3.67236328125,
+        3.7421875,
+        4.55615234375
+      ],
+      "idlePercent": 89.1854893908282
+    },
+    {
+      "round": 15,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "Richards": 45743.937293688454,
+        "DeltaBlue": 63536.472618579865,
+        "NavierStokes": 1836041.7485237122,
+        "RayTrace": 503114.58110809326
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.67236328125,
+        3.7421875,
+        4.55615234375
+      ],
+      "loadAfter": [
+        3.5380859375,
+        3.712890625,
+        4.541015625
+      ],
+      "idlePercent": 83.33333333333333
+    },
+    {
+      "round": 15,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "Richards": 512897.5609938304,
+        "DeltaBlue": 756458.3420753479,
+        "NavierStokes": 2738177.001476288,
+        "RayTrace": 2841958.3439826965
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.5380859375,
+        3.712890625,
+        4.541015625
+      ],
+      "loadAfter": [
+        3.5380859375,
+        3.712890625,
+        4.541015625
+      ],
+      "idlePercent": 89.96800731261426
+    },
+    {
+      "round": 15,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "Richards": 502760.4152758916,
+        "DeltaBlue": 749488.2792234421,
+        "NavierStokes": 2750916.7194366455,
+        "RayTrace": 2774020.8307902017
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.5380859375,
+        3.712890625,
+        4.541015625
+      ],
+      "loadAfter": [
+        3.5380859375,
+        3.712890625,
+        4.541015625
+      ],
+      "idlePercent": 88.81789137380191
+    },
+    {
+      "round": 16,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "Richards": 512206.5842151642,
+        "DeltaBlue": 749321.5948343277,
+        "NavierStokes": 2728583.27627182,
+        "RayTrace": 2798899.3326822915
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.5380859375,
+        3.712890625,
+        4.541015625
+      ],
+      "loadAfter": [
+        3.89501953125,
+        3.78369140625,
+        4.56103515625
+      ],
+      "idlePercent": 89.37043795620438
+    },
+    {
+      "round": 16,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "Richards": 516839.4198020299,
+        "DeltaBlue": 742693.9979195595,
+        "NavierStokes": 2730718.7914848328,
+        "RayTrace": 2763326.426347097
+      },
+      "exit": 42,
+      "loadBefore": [
+        3.89501953125,
+        3.78369140625,
+        4.56103515625
+      ],
+      "loadAfter": [
+        3.89501953125,
+        3.78369140625,
+        4.56103515625
+      ],
+      "idlePercent": 89.37385740402193
+    },
+    {
+      "round": 16,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "Richards": 45460.06520589193,
+        "DeltaBlue": 64286.47041320801,
+        "NavierStokes": 1821020.781993866,
+        "RayTrace": 489138.921101888
+      },
+      "exit": 0,
+      "loadBefore": [
+        3.89501953125,
+        3.78369140625,
+        4.56103515625
+      ],
+      "loadAfter": [
+        4.1435546875,
+        3.8369140625,
+        4.5751953125
+      ],
+      "idlePercent": 81.44796380090497
+    },
+    {
+      "round": 17,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "Richards": 504399.3095556895,
+        "DeltaBlue": 732967.4363136292,
+        "NavierStokes": 2718145.728111267,
+        "RayTrace": 2774135.410785675
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.1435546875,
+        3.8369140625,
+        4.5751953125
+      ],
+      "loadAfter": [
+        4.1435546875,
+        3.8369140625,
+        4.5751953125
+      ],
+      "idlePercent": 89.61573650503202
+    },
+    {
+      "round": 17,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "Richards": 45492.18714237213,
+        "DeltaBlue": 67988.28393220901,
+        "NavierStokes": 1827614.5458221436,
+        "RayTrace": 515069.4251060486
+      },
+      "exit": 0,
+      "loadBefore": [
+        4.1435546875,
+        3.8369140625,
+        4.5751953125
+      ],
+      "loadAfter": [
+        4.1435546875,
+        3.8369140625,
+        4.5751953125
+      ],
+      "idlePercent": 81.55339805825243
+    },
+    {
+      "round": 17,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "Richards": 513277.78895696,
+        "DeltaBlue": 756624.9966621399,
+        "NavierStokes": 2721197.9627609253,
+        "RayTrace": 2839190.9996668496
+      },
+      "exit": 42,
+      "loadBefore": [
+        4.1435546875,
+        3.8369140625,
+        4.5751953125
+      ],
+      "loadAfter": [
+        4.4521484375,
+        3.90576171875,
+        4.59521484375
+      ],
+      "idlePercent": 89.37043795620438
+    }
+  ]
+}
