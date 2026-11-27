@@ -409,15 +409,24 @@ function prepareCollectionPass(
       );
     }
     const hasNumberKeySet = helpers.has("number-key-set:createSet");
+    const hasCompactSet = helpers.has("compact-set:createSet");
     for (const set of demand.sets) {
       if (set === undefined) throw "set demand invariant";
       if (set.element === "number" && hasNumberKeySet) continue;
       setStarts.push(
-        request("linked-set", setNames, [elementType(set.element)]),
+        request(
+          hasCompactSet && supportsCompactMapValue(types, set.element)
+            ? "compact-set"
+            : "linked-set",
+          setNames,
+          [elementType(set.element)],
+        ),
       );
     }
     const hasNumberNumberMap = helpers.has("number-number-map:createMap");
     const hasStringNumberMap = helpers.has("string-number-map:createMap");
+    const hasCompactMap = helpers.has("compact-map:createMap");
+    const hasCompactNumberMap = helpers.has("compact-number-map:createMap");
     const erasedMaps = new Set<string>();
     for (const map of demand.maps) {
       if (map === undefined) throw "map demand invariant";
@@ -435,8 +444,10 @@ function prepareCollectionPass(
         if (erasedMaps.has(erasure)) continue;
         erasedMaps.add(erasure);
       }
-      // Number and string keys use compact open-addressed specializations when
-      // their value type fits a parallel list; others use linked-map.
+      // Number and string keys use compact key-specialized providers when their
+      // value type fits a parallel list; other keys with numeric values use
+      // compact-number-map (direct Float64Array values) and general list-fitting
+      // pairs use compact-map, falling back to linked-map otherwise.
       mapStarts.push(
         (map.key === "number" || map.key === "string") &&
           supportsCompactMapValue(types, map.value)
@@ -445,10 +456,19 @@ function prepareCollectionPass(
               mapNames,
               [elementType(map.value)],
             )
-          : request("linked-map", mapNames, [
-              elementType(map.key),
-              elementType(map.value),
-            ]),
+          : map.value === "number" &&
+              hasCompactNumberMap &&
+              supportsCompactMapValue(types, map.key)
+            ? request("compact-number-map", mapNames, [elementType(map.key)])
+            : request(
+                hasCompactMap &&
+                  supportsCompactMapValue(types, map.key) &&
+                  supportsCompactMapValue(types, map.value)
+                  ? "compact-map"
+                  : "linked-map",
+                mapNames,
+                [elementType(map.key), elementType(map.value)],
+              ),
       );
     }
     for (const sort of demand.sorts) {
@@ -1190,13 +1210,23 @@ function prepareCollectionPass(
         builtinHelpers.set(key, functionId(linkedName));
     }
     const identityHashGcEpoch =
-      helpers.get("linked-map:gcEpoch") ?? helpers.get("linked-set:gcEpoch");
+      helpers.get("linked-map:gcEpoch") ??
+      helpers.get("linked-set:gcEpoch") ??
+      helpers.get("compact-map:gcEpoch") ??
+      helpers.get("compact-number-map:gcEpoch") ??
+      helpers.get("compact-set:gcEpoch");
     const identityHashRef =
       helpers.get("linked-map:referenceHash") ??
-      helpers.get("linked-set:referenceHash");
+      helpers.get("linked-set:referenceHash") ??
+      helpers.get("compact-map:referenceHash") ??
+      helpers.get("compact-number-map:referenceHash") ??
+      helpers.get("compact-set:referenceHash");
     const identityHashUsesAddress =
       helpers.get("linked-map:usesAddressHash") ??
-      helpers.get("linked-set:usesAddressHash");
+      helpers.get("linked-set:usesAddressHash") ??
+      helpers.get("compact-map:usesAddressHash") ??
+      helpers.get("compact-number-map:usesAddressHash") ??
+      helpers.get("compact-set:usesAddressHash");
     const identityHash =
       identityHashGcEpoch !== undefined &&
       identityHashRef !== undefined &&

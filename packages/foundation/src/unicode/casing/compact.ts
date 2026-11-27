@@ -65,10 +65,64 @@ function lookup(
   return undefined;
 }
 
+function quickBmpCase(point: number, upper: boolean): number {
+  if (point < 0x100) {
+    if (upper) {
+      if ((point >= 0xe0 && point <= 0xf6) || (point >= 0xf8 && point <= 0xfe))
+        return point - 32;
+      if (point === 0xdf) return -1;
+      if (point === 0xb5) return 0x039c;
+      if (point === 0xff) return 0x0178;
+      return 0;
+    }
+    if ((point >= 0xc0 && point <= 0xd6) || (point >= 0xd8 && point <= 0xde))
+      return point + 32;
+    return 0;
+  }
+  if (point <= 0x012f) {
+    if (upper) return (point & 1) === 1 ? point - 1 : 0;
+    return (point & 1) === 0 ? point + 1 : 0;
+  }
+  if (point === 0x0130) return upper ? 0 : -1;
+  if (point === 0x0131) return upper ? 0x0049 : 0;
+  if (point >= 0x0386 && point <= 0x03ce) {
+    if (upper) {
+      if (point >= 0x03b1 && point <= 0x03c1) return point - 32;
+      if (point >= 0x03c3 && point <= 0x03cb) return point - 32;
+      if (point === 0x03c2) return 0x03a3;
+      if (point === 0x03ac) return 0x0386;
+      if (point >= 0x03ad && point <= 0x03af) return point - 37;
+      if (point === 0x03cc) return 0x038c;
+      if (point === 0x03cd || point === 0x03ce) return point - 63;
+      if (point === 0x0390 || point === 0x03b0) return -1;
+      return 0;
+    }
+    if (point >= 0x0391 && point <= 0x03a1) return point + 32;
+    if (point >= 0x03a3 && point <= 0x03ab) return point + 32;
+    if (point === 0x0386) return 0x03ac;
+    if (point >= 0x0388 && point <= 0x038a) return point + 37;
+    if (point === 0x038c) return 0x03cc;
+    if (point === 0x038e || point === 0x038f) return point + 63;
+    return 0;
+  }
+  return -1;
+}
+
+function isQuickAsciiNonIgnorable(point: number): number {
+  if ((point >= 65 && point <= 90) || (point >= 97 && point <= 122)) return 1;
+  if (point === 32 || (point >= 48 && point <= 57)) return 0;
+  return -1;
+}
+
 function precedingCased(text: string, offset: number): boolean {
   while (offset > 0) {
     let point = text.charCodeAt(--offset);
-    if (point >= 0xdc00 && point <= 0xdfff && offset > 0) {
+    if (point < 0x80) {
+      const quick = isQuickAsciiNonIgnorable(point);
+      if (quick >= 0) return quick === 1;
+    } else if (point >= 0x0391 && point <= 0x03ce && point !== 0x03a2) {
+      return true;
+    } else if (point >= 0xdc00 && point <= 0xdfff && offset > 0) {
       const high = text.charCodeAt(offset - 1);
       if (high >= 0xd800 && high <= 0xdbff) {
         offset--;
@@ -85,7 +139,12 @@ function followingCased(text: string, offset: number): boolean {
   const length = text.length;
   while (offset < length) {
     let point = text.charCodeAt(offset++);
-    if (point >= 0xd800 && point <= 0xdbff && offset < length) {
+    if (point < 0x80) {
+      const quick = isQuickAsciiNonIgnorable(point);
+      if (quick >= 0) return quick === 1;
+    } else if (point >= 0x0391 && point <= 0x03ce && point !== 0x03a2) {
+      return true;
+    } else if (point >= 0xd800 && point <= 0xdbff && offset < length) {
       const low = text.charCodeAt(offset);
       if (low >= 0xdc00 && low <= 0xdfff) {
         offset++;
@@ -134,44 +193,138 @@ function convert(text: string, upper: boolean): string {
       continue;
     }
     let next = offset + 1;
-    let converted: string | undefined;
-    if (point < 0x100) {
-      if (upper) {
-        if (
-          (point >= 0xe0 && point <= 0xf6) ||
-          (point >= 0xf8 && point <= 0xfe)
-        )
-          converted = String.fromCharCode(point - 32);
-        else if (point === 0xdf) converted = "SS";
-        else if (point === 0xb5) converted = "\u039c";
-        else if (point === 0xff) converted = "\u0178";
-      } else if (
-        (point >= 0xc0 && point <= 0xd6) ||
-        (point >= 0xd8 && point <= 0xde)
-      ) {
-        converted = String.fromCharCode(point + 32);
-      }
-    } else {
-      if (point >= 0xd800 && point <= 0xdbff && next < length) {
-        const low = text.charCodeAt(next);
-        if (low >= 0xdc00 && low <= 0xdfff) {
-          next++;
-          point = ((point - 0xd800) << 10) + (low - 0xdc00) + 0x10000;
-        }
-      }
-      converted =
+    // Batch consecutive non-ASCII BMP single-unit mappings (e.g. Greek words
+    // like "ΌΣΟΣ" -> "όσος") into a single String.fromCharCode allocation.
+    if (point <= 0x03ce) {
+      const c0 =
         !upper &&
         point === 0x03a3 &&
         precedingCased(text, offset) &&
         !followingCased(text, next)
-          ? "\u03c2"
-          : lookup(
-              point,
-              upper ? upperPoints : lowerPoints,
-              upper ? upperOffsets : lowerOffsets,
-              upper ? upperText : lowerText,
-            );
+          ? 0x03c2
+          : quickBmpCase(point, upper);
+      if (c0 === 0) {
+        offset = next;
+        continue;
+      }
+      if (c0 > 0) {
+        if (offset > runStart) out += text.slice(runStart, offset);
+        let c1 = -1,
+          c2 = -1,
+          c3 = -1;
+        let runEnd = next;
+        if (runEnd < length) {
+          const p1 = text.charCodeAt(runEnd);
+          if (p1 >= 0x80 && p1 <= 0x03ce) {
+            const m1 =
+              !upper &&
+              p1 === 0x03a3 &&
+              precedingCased(text, runEnd) &&
+              !followingCased(text, runEnd + 1)
+                ? 0x03c2
+                : quickBmpCase(p1, upper);
+            if (m1 > 0) {
+              c1 = m1;
+              runEnd++;
+              if (runEnd < length) {
+                const p2 = text.charCodeAt(runEnd);
+                if (p2 >= 0x80 && p2 <= 0x03ce) {
+                  const m2 =
+                    !upper &&
+                    p2 === 0x03a3 &&
+                    precedingCased(text, runEnd) &&
+                    !followingCased(text, runEnd + 1)
+                      ? 0x03c2
+                      : quickBmpCase(p2, upper);
+                  if (m2 > 0) {
+                    c2 = m2;
+                    runEnd++;
+                    if (runEnd < length) {
+                      const p3 = text.charCodeAt(runEnd);
+                      if (p3 >= 0x80 && p3 <= 0x03ce) {
+                        const m3 =
+                          !upper &&
+                          p3 === 0x03a3 &&
+                          precedingCased(text, runEnd) &&
+                          !followingCased(text, runEnd + 1)
+                            ? 0x03c2
+                            : quickBmpCase(p3, upper);
+                        if (m3 > 0) {
+                          c3 = m3;
+                          runEnd++;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        out +=
+          c3 >= 0
+            ? String.fromCharCode(c0, c1, c2, c3)
+            : c2 >= 0
+              ? String.fromCharCode(c0, c1, c2)
+              : c1 >= 0
+                ? String.fromCharCode(c0, c1)
+                : String.fromCharCode(c0);
+        changed = true;
+        runStart = runEnd;
+        offset = runEnd;
+        continue;
+      }
+      if (upper && point === 0xdf) {
+        if (offset > runStart) out += text.slice(runStart, offset);
+        out += "SS";
+        changed = true;
+        runStart = next;
+        offset = next;
+        continue;
+      }
+      if (!upper && point === 0x0130) {
+        if (offset > runStart) out += text.slice(runStart, offset);
+        out += "i\u0307";
+        changed = true;
+        runStart = next;
+        offset = next;
+        continue;
+      }
     }
+    let converted: string | undefined;
+    if (point >= 0xd800 && point <= 0xdbff && next < length) {
+      const low = text.charCodeAt(next);
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        next++;
+        point = ((point - 0xd800) << 10) + (low - 0xdc00) + 0x10000;
+        if (point >= 0x10400 && point <= 0x1044f) {
+          let target = 0;
+          if (upper) {
+            if (point >= 0x10428) target = point - 0x28;
+          } else if (point <= 0x10427) {
+            target = point + 0x28;
+          }
+          if (target > 0) {
+            const adjusted = target - 0x10000;
+            if (offset > runStart) out += text.slice(runStart, offset);
+            out += String.fromCharCode(
+              0xd800 + (adjusted >> 10),
+              0xdc00 + (adjusted & 0x3ff),
+            );
+            changed = true;
+            runStart = next;
+          }
+          offset = next;
+          continue;
+        }
+      }
+    }
+    converted = lookup(
+      point,
+      upper ? upperPoints : lowerPoints,
+      upper ? upperOffsets : lowerOffsets,
+      upper ? upperText : lowerText,
+    );
     if (converted !== undefined) {
       if (offset > runStart) out += text.slice(runStart, offset);
       out += converted;

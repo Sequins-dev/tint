@@ -178,8 +178,17 @@ export function createRuntimeBindingContext(input: {
         if (set !== undefined) return match.matches(element(set), first, false);
         if (map === undefined) return false;
         // Number and string keyed maps use key-specialized providers whose
-        // only type argument is the value (see the collection pass).
+        // only type argument is the value; general keys with numeric values use
+        // compact-number-map whose only type argument is the key.
         if (second === undefined) {
+          if (
+            map.value === "number" &&
+            input.helpers.has("compact-number-map:createMap") &&
+            input.requests[start]?.name ===
+              helper("compact-number-map", "createMap") &&
+            match.matches(element(map.key), first, false)
+          )
+            return true;
           const provider = !supportsCompactMapValue(input.types, map.value)
             ? undefined
             : map.key === "number"
