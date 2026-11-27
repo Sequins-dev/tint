@@ -28,10 +28,11 @@ function transferSlot(term: Terminator): number | undefined {
     : undefined;
 }
 
-/** Forwards closure environments past the closures that carry them. When
- * every write of a slot stores `function-new f env` (in the same block) and
- * the slot is no parameter, receiver or transfer target, each
- * `function-environment (load slot)` reads `env` from a fresh slot that
+/** Forwards closure environments past the closures that carry them. Rewrites
+ * direct same-block `function-environment (function-new f env)` to `env`, and
+ * when every write of a slot stores `function-new f env` (in the same block)
+ * and the slot is no parameter, receiver or transfer target, rewrites each
+ * `function-environment (load slot)` to read `env` from a fresh slot that
  * mirrors those writes instead. A slot left unread then loses its stores,
  * so the closures become dead values (the environment records stay as
  * long as something reads them). Verified IR only; values are block-local.
@@ -47,6 +48,7 @@ export function forwardClosureEnvironments(
     reads = new Uint32Array(slotCount),
     environmentReads = new Uint32Array(slotCount),
     excluded = new Uint8Array(slotCount);
+  let directEnvironments = 0;
   for (const parameter of fn.parameters)
     if (parameter !== undefined) excluded[parameter] = 1;
   if (fn.receiverSlot !== undefined) excluded[fn.receiverSlot] = 1;
@@ -74,9 +76,12 @@ export function forwardClosureEnvironments(
         reads[op.slot] = (reads[op.slot] ?? 0) + 1;
         loads.set(op.id, op.slot);
       } else if (op.kind === "function-environment") {
-        const slot = loads.get(op.callee);
-        if (slot !== undefined)
-          environmentReads[slot] = (environmentReads[slot] ?? 0) + 1;
+        if (closures.has(op.callee)) directEnvironments++;
+        else {
+          const slot = loads.get(op.callee);
+          if (slot !== undefined)
+            environmentReads[slot] = (environmentReads[slot] ?? 0) + 1;
+        }
       }
     }
   }
@@ -94,7 +99,8 @@ export function forwardClosureEnvironments(
       slots.push("reference");
       candidates++;
     }
-  if (candidates === 0) return { fn, visited, rewritten: 0 };
+  if (candidates === 0 && directEnvironments === 0)
+    return { fn, visited, rewritten: 0 };
   let fresh = 0;
   for (const block of fn.blocks) {
     if (block === undefined) throw "closure environment block invariant";
@@ -147,6 +153,19 @@ export function forwardClosureEnvironments(
         continue;
       }
       if (current.kind === "function-environment") {
+        const direct = environments.get(current.callee);
+        if (direct !== undefined) {
+          instructions.push({
+            kind: "reference-wrap",
+            id: current.id,
+            value: direct,
+            start: current.start,
+            end: current.end,
+          });
+          wrappedMirrors.set(current.id, direct);
+          rewritten++;
+          continue;
+        }
         const slot = loads.get(current.callee);
         if (slot !== undefined) {
           const mirrored = fresh++;
@@ -191,50 +210,53 @@ export function forwardClosureEnvironments(
   }
   // A closure slot whose only reads were environment reads is now unread:
   // drop its loads (dead values) and stores.
-  for (const block of blocks) {
-    if (block === undefined) throw "closure environment block invariant";
-    const used = new Set<number>();
-    for (const op of block.instructions) {
-      if (op === undefined) throw "closure environment instruction invariant";
-      if (op.kind === "load") continue;
-      if (op.kind === "store") {
-        used.add(op.value);
-        continue;
+  let result: Block[] = blocks;
+  if (candidates > 0) {
+    for (const block of blocks) {
+      if (block === undefined) throw "closure environment block invariant";
+      const used = new Set<number>();
+      for (const op of block.instructions) {
+        if (op === undefined) throw "closure environment instruction invariant";
+        if (op.kind === "load") continue;
+        if (op.kind === "store") {
+          used.add(op.value);
+          continue;
+        }
+        visitInstructionOperands(op, (value) => {
+          used.add(value);
+        });
       }
-      visitInstructionOperands(op, (value) => {
+      visitTerminatorOperands(block.terminator, (value) => {
         used.add(value);
       });
+      for (const op of block.instructions) {
+        if (op === undefined) throw "closure environment instruction invariant";
+        if (
+          op.kind === "load" &&
+          (mirrors[op.slot] ?? 0) !== 0 &&
+          used.has(op.id)
+        )
+          remaining[op.slot] = (remaining[op.slot] ?? 0) + 1;
+      }
     }
-    visitTerminatorOperands(block.terminator, (value) => {
-      used.add(value);
-    });
-    for (const op of block.instructions) {
-      if (op === undefined) throw "closure environment instruction invariant";
-      if (
-        op.kind === "load" &&
-        (mirrors[op.slot] ?? 0) !== 0 &&
-        used.has(op.id)
-      )
-        remaining[op.slot] = (remaining[op.slot] ?? 0) + 1;
+    result = [];
+    for (const block of blocks) {
+      if (block === undefined) throw "closure environment block invariant";
+      const instructions: Instruction[] = [];
+      for (const op of block.instructions) {
+        if (op === undefined) throw "closure environment instruction invariant";
+        const slot =
+          op.kind === "load" || op.kind === "store" ? op.slot : undefined;
+        if (
+          slot !== undefined &&
+          (mirrors[slot] ?? 0) !== 0 &&
+          (remaining[slot] ?? 0) === 0
+        )
+          continue;
+        instructions.push(op);
+      }
+      result.push({ ...block, instructions });
     }
-  }
-  const result: Block[] = [];
-  for (const block of blocks) {
-    if (block === undefined) throw "closure environment block invariant";
-    const instructions: Instruction[] = [];
-    for (const op of block.instructions) {
-      if (op === undefined) throw "closure environment instruction invariant";
-      const slot =
-        op.kind === "load" || op.kind === "store" ? op.slot : undefined;
-      if (
-        slot !== undefined &&
-        (mirrors[slot] ?? 0) !== 0 &&
-        (remaining[slot] ?? 0) === 0
-      )
-        continue;
-      instructions.push(op);
-    }
-    result.push({ ...block, instructions });
   }
   const debug =
     fn.debug === undefined

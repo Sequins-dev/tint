@@ -5,6 +5,7 @@ import {
   devirtualizeClosureCalls,
   optimizeModule,
 } from "@tint/ir/optimization";
+import { forwardClosureEnvironments } from "../src/optimization/closure-environments.ts";
 
 const span = { start: 0, end: 0 };
 /** `run(n)` creates a closure over a one-field environment record holding
@@ -1123,4 +1124,122 @@ test("large devirtualized closures become forwarding thunks to their direct twin
   assert.ok(forward?.kind === "call");
   assert.equal(forward.target, twin.id);
   assert.equal(forward.arguments.length, 2);
+});
+
+test("direct same-block function-environment(function-new) forwards the environment and eliminates dead closures", () => {
+  const envConsumer: FunctionIR = {
+    id: 0,
+    name: "envConsumer",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+          { kind: "function-new", id: 2, target: 1, environment: 1, ...span },
+          { kind: "function-environment", id: 3, callee: 2, ...span },
+          { kind: "reference-value", id: 4, value: 3, ...span },
+        ],
+        terminator: {
+          kind: "record",
+          object: 4,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 5, slot: 1, ...span }],
+        terminator: { kind: "return", value: 5, ...span },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  };
+  const base = closureModule();
+  const input: ModuleIR = {
+    ...base,
+    functions: [envConsumer, base.functions[1]!],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+
+  const forwarded = forwardClosureEnvironments(envConsumer, 10000);
+  assert.ok(forwarded);
+  assert.equal(forwarded.rewritten, 2);
+  assert.ok(
+    verify({
+      ...base,
+      functions: [forwarded.fn, base.functions[1]!],
+    }).ok,
+  );
+  const block0 = forwarded.fn.blocks[0]!;
+  assert.ok(
+    !block0.instructions.some((op) => op.kind === "function-environment"),
+    "direct function-environment is rewritten",
+  );
+  assert.equal(block0.terminator.kind, "record");
+  assert.equal(
+    block0.terminator.object,
+    1,
+    "record read uses the environment record directly",
+  );
+
+  // Through the full optimizer, the dead function-new (and env record) disappear.
+  const optimized = optimizeModule(input, 20000000);
+  assert.ok(
+    verify(optimized.module).ok,
+    JSON.stringify(verify(optimized.module)),
+  );
+  const out = optimized.module.functions[0]!;
+  assert.ok(
+    !out.blocks.some((b) =>
+      b.instructions.some(
+        (op) =>
+          op.kind === "function-new" || op.kind === "function-environment",
+      ),
+    ),
+    "dead closure allocation is removed after direct environment forwarding",
+  );
+});
+
+test("direct function-environment on a stateless function-new without environment stays intact", () => {
+  const stateless: FunctionIR = {
+    id: 0,
+    name: "stateless",
+    exported: true,
+    parameters: [],
+    slots: ["optional-reference"],
+    returnType: "optional-reference",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "function-new", id: 0, target: 1, ...span },
+          { kind: "function-environment", id: 1, callee: 0, ...span },
+          { kind: "store", slot: 0, value: 1, ...span },
+          { kind: "load", id: 2, slot: 0, ...span },
+        ],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+    ],
+  };
+  const base = closureModule();
+  const input: ModuleIR = {
+    functions: [stateless, { ...base.functions[2]!, id: 1 }],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const forwarded = forwardClosureEnvironments(stateless, 10000);
+  assert.ok(forwarded);
+  assert.equal(forwarded.rewritten, 0);
+  assert.equal(forwarded.fn, stateless);
 });

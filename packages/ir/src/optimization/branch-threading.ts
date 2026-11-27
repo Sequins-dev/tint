@@ -22,22 +22,36 @@ const maxThinInstructions = 8;
 const maxThreadDepth = 4;
 const maxRounds = 4;
 
-/** A block that only loads slots, copies loaded values into slots and then
- * jumps or branches on a loaded value: the lowering of a boolean carried in
- * a slot (`a && b` results, inlined boolean returns) to the branch using it.
- * It cannot throw or write memory, so executing a copy elsewhere, or skipping
- * its loads, is unobservable. */
+/** A block that only loads slots, copies loaded values into slots, or computes
+ * pure scalar equality/negation against constants and then jumps or branches
+ * on a computed value: the lowering of a boolean or integer guard carried in a
+ * slot (`a && b` results, inlined boolean returns, class method override
+ * guards) to the branch using it. It cannot throw or write memory, so
+ * executing a copy elsewhere, or skipping its loads, is unobservable. */
 function thinBlock(block: Block): boolean {
   if (block.exception !== undefined) return false;
   if (block.instructions.length > maxThinInstructions) return false;
-  const loaded: number[] = [];
+  const loaded = new Set<number>(),
+    pure = new Set<number>();
   for (const op of block.instructions) {
     if (op === undefined) throw "branch threading instruction invariant";
-    if (op.kind === "load") loaded.push(op.id);
-    else if (op.kind !== "store" || !loaded.includes(op.value)) return false;
+    if (op.kind === "load") {
+      loaded.add(op.id);
+      pure.add(op.id);
+    } else if (op.kind === "constant") pure.add(op.id);
+    else if (
+      op.kind === "binary" &&
+      (op.operator === "===" || op.operator === "!==") &&
+      pure.has(op.left) &&
+      pure.has(op.right)
+    )
+      pure.add(op.id);
+    else if (op.kind === "unary" && op.operator === "!" && pure.has(op.operand))
+      pure.add(op.id);
+    else if (op.kind !== "store" || !loaded.has(op.value)) return false;
   }
   const term = block.terminator;
-  if (term.kind === "branch") return loaded.includes(term.condition);
+  if (term.kind === "branch") return pure.has(term.condition);
   return term.kind === "jump";
 }
 
@@ -98,7 +112,7 @@ export function threadBranches(
       const block = blocks[target];
       if (block === undefined) throw "branch threading target invariant";
       if (!thinBlock(block)) break;
-      const values = new Map<number, boolean>(),
+      const values = new Map<number, number | boolean>(),
         stores: Instruction[] = [],
         stored = new Map<number, boolean>();
       let complete = true;
@@ -108,9 +122,29 @@ export function threadBranches(
         if (op.kind === "load") {
           const value = stored.get(op.slot) ?? known.get(op.slot);
           if (value !== undefined) values.set(op.id, value);
+        } else if (op.kind === "constant") {
+          values.set(op.id, op.value);
+        } else if (
+          op.kind === "binary" &&
+          (op.operator === "===" || op.operator === "!==")
+        ) {
+          const left = values.get(op.left),
+            right = values.get(op.right);
+          if (
+            left !== undefined &&
+            right !== undefined &&
+            typeof left === typeof right
+          )
+            values.set(
+              op.id,
+              op.operator === "===" ? left === right : left !== right,
+            );
+        } else if (op.kind === "unary" && op.operator === "!") {
+          const operand = values.get(op.operand);
+          if (typeof operand === "boolean") values.set(op.id, !operand);
         } else if (op.kind === "store") {
           const value = values.get(op.value);
-          if (value === undefined) {
+          if (typeof value !== "boolean") {
             complete = false;
             break;
           }
@@ -140,7 +174,7 @@ export function threadBranches(
       if (term.kind === "jump") next = term.target;
       else if (term.kind === "branch") {
         const value = values.get(term.condition);
-        if (value === undefined) break;
+        if (typeof value !== "boolean") break;
         next = value ? term.consequent : term.alternate;
         decided = true;
       } else break;
@@ -187,6 +221,31 @@ export function threadBranches(
               end: op.end,
               ...(op.inline === undefined ? {} : { inline: op.inline }),
             });
+          } else if (op.kind === "constant") {
+            const id = nextId++;
+            renamed.set(op.id, id);
+            instructions.push({
+              kind: "constant",
+              id,
+              value: op.value,
+              start: op.start,
+              end: op.end,
+              ...(op.inline === undefined ? {} : { inline: op.inline }),
+            });
+          } else if (op.kind === "binary") {
+            const left = renamed.get(op.left),
+              right = renamed.get(op.right);
+            if (left === undefined || right === undefined)
+              throw "branch threading binary invariant";
+            const id = nextId++;
+            renamed.set(op.id, id);
+            instructions.push({ ...op, id, left, right });
+          } else if (op.kind === "unary") {
+            const operand = renamed.get(op.operand);
+            if (operand === undefined) throw "branch threading unary invariant";
+            const id = nextId++;
+            renamed.set(op.id, id);
+            instructions.push({ ...op, id, operand });
           } else if (op.kind === "store") {
             const value = renamed.get(op.value);
             if (value === undefined) throw "branch threading copy invariant";
