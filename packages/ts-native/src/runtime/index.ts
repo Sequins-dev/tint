@@ -1110,6 +1110,7 @@ function prepareCollectionPass(
           asWidth: bigIntHelper("bigIntAsWidth"),
           toWord64: bigIntHelper("bigIntToWord64"),
           fromWord64: bigIntHelper("bigIntFromWord64"),
+          hash: bigIntHelper("hashBigInt"),
         }
       : undefined;
     const builtinHelpers = new Map<string, number>();
@@ -1181,6 +1182,24 @@ function prepareCollectionPass(
       if (linkedName !== undefined)
         builtinHelpers.set(key, functionId(linkedName));
     }
+    const identityHashGcEpoch =
+      helpers.get("linked-map:gcEpoch") ?? helpers.get("linked-set:gcEpoch");
+    const identityHashRef =
+      helpers.get("linked-map:referenceHash") ??
+      helpers.get("linked-set:referenceHash");
+    const identityHashUsesAddress =
+      helpers.get("linked-map:usesAddressHash") ??
+      helpers.get("linked-set:usesAddressHash");
+    const identityHash =
+      identityHashGcEpoch !== undefined &&
+      identityHashRef !== undefined &&
+      identityHashUsesAddress !== undefined
+        ? {
+            gcEpoch: functionId(identityHashGcEpoch),
+            referenceHash: functionId(identityHashRef),
+            usesAddressHash: functionId(identityHashUsesAddress),
+          }
+        : undefined;
     return {
       ok: true,
       value: {
@@ -1189,6 +1208,7 @@ function prepareCollectionPass(
         options: {
           builtinHelpers:
             builtinHelpers.size === 0 ? undefined : builtinHelpers,
+          identityHash,
           ...(helpers.has("number-text:numberToString")
             ? {
                 numberToString: functionId(

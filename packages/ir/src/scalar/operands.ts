@@ -18,6 +18,7 @@ export function visitInstructionOperands(
     case "reference-none":
     case "string-literal":
     case "closure-environment":
+    case "gc-epoch":
       return;
     case "store":
     case "general-kind":
@@ -36,6 +37,7 @@ export function visitInstructionOperands(
     case "string-present":
     case "reference-wrap":
     case "reference-value":
+    case "reference-hash":
     case "string-reference":
     case "reference-string":
     case "error-message":

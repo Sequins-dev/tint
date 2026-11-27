@@ -510,6 +510,8 @@ const instructions: Instruction[] = [
     ...span,
   },
   { kind: "string-split-cache", string: 2, separator: 3, value: 4, ...span },
+  { kind: "gc-epoch", id: 1, ...span },
+  { kind: "reference-hash", id: 1, value: 2, ...span },
   {
     kind: "string-from-utf8",
     id: 1,
@@ -941,6 +943,8 @@ const instructionKinds: { readonly [K in Instruction["kind"]]: true } = {
   "string-index-cache": true,
   "string-split-cached": true,
   "string-split-cache": true,
+  "gc-epoch": true,
+  "reference-hash": true,
   "bytes-ascii-prefix": true,
   "string-ascii-case": true,
   "string-flat": true,
@@ -1202,7 +1206,7 @@ test("the store bounds packed memory under the budget policy", () => {
   const { store } = filled("budget", 256);
   const statistics = store.statistics();
   // One open chunk plus the chunk being sealed may exceed the budget.
-  assert.ok(statistics.peakPackedBytes < 2048 + 4 * 512);
+  assert.ok(statistics.peakPackedBytes < 2048 + 5 * 512);
   for (let id = 0; id < 64; id++) store.get(id);
   assert.ok(store.statistics().peakResidentBytes <= 4096 + 40000);
   store.close();

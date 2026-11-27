@@ -56,6 +56,7 @@ export function substituteInstructionValues(
     case "reference-none":
     case "string-literal":
     case "closure-environment":
+    case "gc-epoch":
       return op;
     case "store":
     case "general-kind":
@@ -74,6 +75,7 @@ export function substituteInstructionValues(
     case "string-present":
     case "reference-wrap":
     case "reference-value":
+    case "reference-hash":
     case "string-reference":
     case "reference-string":
     case "error-message":

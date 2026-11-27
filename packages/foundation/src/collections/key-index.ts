@@ -360,3 +360,19 @@ export function createNumberIndex(): NumberIndex {
     },
   };
 }
+/** Monotonic moving-GC counter on native targets (0 in portable JS). */
+export function gcEpoch(): number {
+  return 0;
+}
+/** Epoch-scoped 32-bit hash for non-string/non-number keys on native targets:
+ * value-based for BigInt, address-based for managed references, 0 otherwise
+ * (always 0 in portable JS). */
+export function referenceHash(_value: unknown): number {
+  return 0;
+}
+/** Whether `referenceHash(value)` is address-based and can change across a
+ * moving GC cycle (compile-time constant per specialization on native targets;
+ * false in portable JS). */
+export function usesAddressHash(_value: unknown): boolean {
+  return false;
+}

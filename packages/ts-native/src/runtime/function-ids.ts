@@ -143,6 +143,7 @@ export function visitRuntimeFunctions(
     add(bigints.asWidth, "bigint", -1, "asWidth");
     add(bigints.toWord64, "bigint", -1, "toWord64");
     add(bigints.fromWord64, "bigint", -1, "fromWord64");
+    add(bigints.hash, "bigint", -1, "hash");
   }
   add(options.numberToString, "number-text", -1, "toString");
   add(options.numberFromString, "number-text", -1, "fromString");

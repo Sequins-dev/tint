@@ -10,8 +10,8 @@ export const nativeGenerationalNurseryAddressOffset = 64;
  * allocator's policy compares against it instead of deriving it. */
 export const nativeGenerationalLargeObjectOffset = 72;
 /** The generational state block's minimum length in uint32 words, through the
- * string-split cache word; publication rejects a shorter block. */
-export const nativeGenerationalStateWords = 20;
+ * GC epoch word; publication rejects a shorter block. */
+export const nativeGenerationalStateWords = 21;
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
@@ -479,6 +479,9 @@ export const nativeNumberStringCacheEntries = 256;
  * move. */
 export const nativeStringSplitCacheWord = 19;
 export const nativeStringSplitCacheEntries = 16;
+/** Monotonic uint32 counter incremented at every moving collection so address-
+ * hashed collections can detect reference movement and rehash in place. */
+export const nativeGcEpochWord = 20;
 export const nativeStringSlicedFlag = 2;
 export const nativeStringSlicedStartOffset = 16;
 export const nativeStringParentOffset = 24;

@@ -35,6 +35,7 @@ import {
   nativeStringSlicedStartOffset,
   nativeStringTwoByteHeader,
   nativeCStackReserveBytes,
+  nativeGcEpochWord,
   nativeGenerationalLargeObjectOffset,
   nativeGenerationalNurseryAddressOffset,
   nativeStackMapFooterMagic,
@@ -4714,6 +4715,53 @@ export function emitModule(
         case "string-split-cache":
           if (host === undefined) break;
           return;
+        case "gc-epoch": {
+          emit({ op: "xor", dst: eax, src: eax });
+          if (host !== undefined) {
+            const done = fnLabel + ":gc-epoch:" + String(op.id);
+            emit({ op: "mov", dst: scratch, src: frame(savedContext) });
+            emit({
+              op: "mov",
+              dst: scratch,
+              src: mem(11, allocationStateOffset),
+            });
+            emit({ op: "test", dst: scratch, src: scratch });
+            branch(emit, "e", done);
+            emit({
+              op: "mov",
+              dst: eax,
+              src: { ...mem(11, nativeGcEpochWord * 4), width: 32 },
+            });
+            emit({ op: "label", name: done });
+          }
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        case "reference-hash": {
+          const valueType = types.get(op.value);
+          if (valueType === "general") {
+            const done = fnLabel + ":ref-hash:" + String(op.id);
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "cmp", dst: frame(home(op.value)), src: imm(5) });
+            branch(emit, "ne", done);
+            emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
+            emit({ op: "mov", dst: scratch, src: rax });
+            emit({ op: "shr", dst: rax, count: 3 });
+            emit({ op: "shr", dst: scratch, count: 21 });
+            emit({ op: "xor", dst: eax, src: r11d });
+            emit({ op: "label", name: done });
+          } else {
+            emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+            emit({ op: "mov", dst: scratch, src: rax });
+            emit({ op: "shr", dst: rax, count: 3 });
+            emit({ op: "shr", dst: scratch, count: 21 });
+            emit({ op: "xor", dst: eax, src: r11d });
+          }
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
         // A string's index field (nativeStringIndexFieldOffset): bit 0 set
         // when an array index is cached in the bits above.
         case "string-index-cached": {

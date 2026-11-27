@@ -284,6 +284,8 @@ export interface BigIntRuntime {
   readonly toWord64: number;
   /** (scratch: Uint32Array, signed: boolean) => bigint. */
   readonly fromWord64: number;
+  /** (bigint) => uint32 value hash. */
+  readonly hash: number;
 }
 export interface MapRuntimeBinding {
   readonly key: CollectionElement;
@@ -797,6 +799,8 @@ export function lowerFunction(
       case "array-byte-offset":
       case "array-byte-length":
       case "array-length":
+      case "gc-epoch":
+      case "reference-hash":
         type = "number";
         break;
       case "load":
@@ -11246,6 +11250,133 @@ export function lowerFunction(
             [input],
             node,
           );
+        }
+        if (builtin === "gc-epoch") {
+          const id = nextValue++;
+          emit({ kind: "gc-epoch", id, start: node.start, end: node.end });
+          return save(id, "number", node);
+        }
+        if (builtin === "uses-address-hash") {
+          const first = node.arguments[0];
+          if (first === undefined) return booleanSlot(false, node);
+          const arg = value(first),
+            slotType = slots[arg];
+          const addressHashed =
+            bigIntSlots[arg] !== 1 &&
+            (slotType === "reference" ||
+              slotType === "optional-reference" ||
+              slotType === "general" ||
+              nativeTypedArray(slotType) !== undefined);
+          return booleanSlot(addressHashed, node);
+        }
+        if (builtin === "reference-hash") {
+          const first = node.arguments[0];
+          if (first === undefined) return numberSlot(0, node);
+          const arg = value(first),
+            slotType = slots[arg];
+          if (bigIntSlots[arg] === 1 && slotType === "reference") {
+            const hashed = runtimeCall(bigIntRuntime().hash, [arg], node);
+            if (hashed === undefined) throw "BigInt hash invariant";
+            return hashed;
+          }
+          if (bigIntSlots[arg] === 1 && slotType === "optional-reference") {
+            const result = temporary("number"),
+              present = block(),
+              absent = block(),
+              done = block(),
+              test = nextValue++;
+            emit({
+              kind: "unary",
+              operator: "truthy",
+              id: test,
+              operand: load(arg, node),
+              start: node.start,
+              end: node.end,
+            });
+            choose(test, present, absent, node);
+            current = present;
+            const presentSlot = save(load(arg, node), "reference", node);
+            const hashed = runtimeCall(
+              bigIntRuntime().hash,
+              [presentSlot],
+              node,
+            );
+            if (hashed === undefined) throw "BigInt hash invariant";
+            store(result, load(hashed, node), node);
+            jump(done.id, node);
+            current = absent;
+            store(result, load(numberSlot(0, node), node), node);
+            jump(done.id, node);
+            current = done;
+            return result;
+          }
+          if (slotType === "general") {
+            const bigintRecord = info(node).bigIntRecord;
+            if (bigints !== undefined && bigintRecord !== undefined) {
+              const result = temporary("number"),
+                asBigInt = block(),
+                notBigInt = block(),
+                done = block();
+              choose(
+                errorRecordTest(load(arg, node), bigintRecord, node),
+                asBigInt,
+                notBigInt,
+                node,
+              );
+              current = asBigInt;
+              const bigintRef = save(
+                coerce(load(arg, node), "reference", node),
+                "reference",
+                node,
+              );
+              const hashed = runtimeCall(
+                bigIntRuntime().hash,
+                [bigintRef],
+                node,
+              );
+              if (hashed === undefined) throw "BigInt hash invariant";
+              store(result, load(hashed, node), node);
+              jump(done.id, node);
+              current = notBigInt;
+              const id = nextValue++;
+              emit({
+                kind: "reference-hash",
+                id,
+                value: load(arg, node),
+                start: node.start,
+                end: node.end,
+              });
+              store(result, id, node);
+              jump(done.id, node);
+              current = done;
+              return result;
+            }
+            const id = nextValue++;
+            emit({
+              kind: "reference-hash",
+              id,
+              value: load(arg, node),
+              start: node.start,
+              end: node.end,
+            });
+            return save(id, "number", node);
+          }
+          if (
+            slotType === "reference" ||
+            slotType === "optional-reference" ||
+            nativeTypedArray(slotType) !== undefined
+          ) {
+            const id = nextValue++;
+            emit({
+              kind: "reference-hash",
+              id,
+              value: load(arg, node),
+              start: node.start,
+              end: node.end,
+            });
+            return save(id, "number", node);
+          }
+          return numberSlot(0, node);
         }
         if (builtin !== undefined && builtin !== "function-call") {
           const target = ungroup(node.callee);

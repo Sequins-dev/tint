@@ -3500,6 +3500,8 @@ export function cacheLoopProperties(
       case "string-flat":
       case "string-flatten-into":
       case "string-index-cached":
+      case "gc-epoch":
+      case "reference-hash":
       case "optional-value":
       case "optional-value-or":
       case "function-address":

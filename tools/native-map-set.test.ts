@@ -283,6 +283,131 @@ function objectMaps(): void {
   }
   mix(map.size);
   for (const [item, pair] of map) mix(item.value + pair.length);
+  // Small (linear-walk <= 8) and large (bucketed) object maps/sets under GC.
+  const smallMap = new Map<Item, number>();
+  const smallSet = new Set<Item>();
+  const smallItems: Item[] = [];
+  for (let i = 0; i < 6; i++) {
+    const it: Item = { value: 300 + i };
+    smallItems.push(it);
+    smallMap.set(it, i * 11 + 1);
+    smallSet.add(it);
+  }
+  churn(2000);
+  for (let i = 0; i < smallItems.length; i++) {
+    const it = smallItems[i];
+    if (it !== undefined) {
+      mix(smallMap.get(it) ?? -1);
+      mix(smallMap.has(it) ? 1 : 2);
+      mix(smallSet.has(it) ? 3 : 4);
+    }
+  }
+  const smallFirst = smallItems[0];
+  if (smallFirst !== undefined) {
+    smallMap.set(smallFirst, 999);
+    mix(smallMap.get(smallFirst) ?? -1);
+    mix(smallMap.delete(smallFirst) ? 5 : 6);
+    mix(smallMap.has(smallFirst) ? 7 : 8);
+    mix(smallSet.delete(smallFirst) ? 9 : 10);
+    smallMap.set(smallFirst, 888);
+    smallSet.add(smallFirst);
+  }
+  churn(2000);
+  for (const [it, val] of smallMap) mix(it.value + val);
+  for (const it of smallSet) mix(it.value);
+  // Lookup/delete/reinsert on a large bucketed map after repeated GC.
+  const largeMap = new Map<Item, number>();
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it !== undefined) largeMap.set(it, i * 13 + 7);
+  }
+  churn(3000);
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it !== undefined) {
+      mix(largeMap.get(it) ?? -1);
+      if (i % 3 === 0) mix(largeMap.delete(it) ? 1 : 2);
+    }
+  }
+  churn(2000);
+  for (let i = 0; i < items.length; i += 3) {
+    const it = items[i];
+    if (it !== undefined) largeMap.set(it, i * 19 + 3);
+  }
+  mix(largeMap.size);
+  for (const [it, val] of largeMap) mix(it.value + val);
+}
+function bigIntMapsAndSets(): void {
+  const base = 1n << 100n;
+  const map = new Map<bigint, number>();
+  const set = new Set<bigint>();
+  map.set(0n, 100);
+  map.set(-0n, 101);
+  set.add(0n);
+  set.add(-0n);
+  for (let i = 1; i <= 80; i++) {
+    const pos = base + BigInt(i);
+    const neg = -base - BigInt(i);
+    map.set(pos, i * 3);
+    map.set(neg, i * 5);
+    set.add(pos);
+    set.add(neg);
+  }
+  mix(map.size);
+  mix(set.size);
+  churn(2000);
+  // Distinct heap allocations with identical BigInt values must hit.
+  mix(map.get(0n) ?? -1);
+  mix(set.has(0n) ? 1 : 2);
+  for (let i = 1; i <= 80; i++) {
+    const probePos = (1n << 100n) + BigInt(i);
+    const probeNeg = -(1n << 100n) - BigInt(i);
+    mix(map.get(probePos) ?? -1);
+    mix(map.get(probeNeg) ?? -1);
+    mix(set.has(probePos) ? 1 : 2);
+    mix(set.has(probeNeg) ? 3 : 4);
+    if (i % 4 === 0) {
+      mix(map.delete(probePos) ? 5 : 6);
+      mix(set.delete(probeNeg) ? 7 : 8);
+    }
+  }
+  mix(map.size);
+  mix(set.size);
+  for (let i = 4; i <= 80; i += 4) {
+    map.set((1n << 100n) + BigInt(i), i * 11);
+    set.add(-(1n << 100n) - BigInt(i));
+  }
+  for (const [k, v] of map) mix(Number(k & 0xffffn) + v);
+  for (const k of set) mix(Number(k & 0xffffn));
+}
+function mixedUnknownMaps(): void {
+  const map = new Map<unknown, number>();
+  const objs: Item[] = [];
+  for (let i = 0; i < 20; i++) {
+    const it: Item = { value: 700 + i };
+    objs.push(it);
+    map.set(it, i + 1);
+  }
+  map.set("alpha", 1001);
+  map.set("beta", 1002);
+  map.set(42, 1003);
+  map.set(-0, 1004);
+  map.set(NaN, 1005);
+  map.set(undefined, 1006);
+  map.set(null, 1007);
+  churn(2000);
+  for (let i = 0; i < objs.length; i++) {
+    const it = objs[i];
+    if (it !== undefined) mix(map.get(it) ?? -1);
+  }
+  mix(map.get("alpha") ?? -1);
+  mix(map.get("beta") ?? -1);
+  mix(map.get(42) ?? -1);
+  mix(map.get(0) ?? -1);
+  mix(map.get(NaN) ?? -1);
+  mix(map.get(undefined) ?? -1);
+  mix(map.get(null) ?? -1);
+  mix(map.size);
 }
 /** Number lists start dense with no presence storage; holes, stored
  * undefined and growth by length make them holey; emptying makes them dense. */
@@ -333,6 +458,8 @@ export function checksum(): number {
   numberNumberMaps();
   stringMaps();
   objectMaps();
+  bigIntMapsAndSets();
+  mixedUnknownMaps();
   return total;
 }
 `;

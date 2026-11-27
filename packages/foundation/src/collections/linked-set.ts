@@ -1,4 +1,10 @@
-import { hashString } from "./key-index.ts";
+import {
+  gcEpoch,
+  hashString,
+  referenceHash,
+  usesAddressHash,
+} from "./key-index.ts";
+export { gcEpoch, referenceHash, usesAddressHash } from "./key-index.ts";
 
 // An insertion-ordered hash set in the style of linked-map (Close's
 // deterministic tables): entries form one insertion-order list, and once the
@@ -7,16 +13,15 @@ import { hashString } from "./key-index.ts";
 // or nested indexes: set state is ordinary record fields.
 interface SetEntry<T> {
   readonly value: T;
-  readonly hash: number;
+  hash: number;
   readonly order: number;
   next: SetEntry<T> | undefined;
   previous: SetEntry<T> | undefined;
   /** The next entry in the same bucket. */
   chain: SetEntry<T> | undefined;
 }
-/** Insertion-ordered members. String and number members hash by value;
- * other members have no stable hash and share one chain, resolved by
- * SameValueZero. */
+/** Insertion-ordered members. String, number and BigInt members hash by value;
+ * managed references hash by epoch-scoped address and rehash in place on GC. */
 export interface LinkedSet<T> {
   head: SetEntry<T> | undefined;
   tail: SetEntry<T> | undefined;
@@ -25,12 +30,19 @@ export interface LinkedSet<T> {
   /** Bucket heads once the set outgrows a linear walk; length is a power of
    * two; bucket indexes mask hashes with length - 1. */
   buckets: (SetEntry<T> | undefined)[] | undefined;
+  /** GC epoch at which address-hashed entries and buckets were last built. */
+  hashEpoch: number;
 }
 // Sets up to this size are searched linearly through the order list.
 const linearLimit = 8;
-function valueHash(value: unknown): number {
+function valueFallbackHash(value: unknown): number {
   if (typeof value === "string") return hashString(value);
   return typeof value === "number" ? value >>> 0 : 0;
+}
+function valueHash<T>(value: T): number {
+  const hash = referenceHash(value);
+  if (hash !== 0) return hash;
+  return valueFallbackHash(value);
 }
 /** Murmur3's finalizer spreads sequential and patterned hashes across
  * power-of-two buckets. */
@@ -46,6 +58,7 @@ export function createSet<T>(): LinkedSet<T> {
     size: 0,
     order: 0,
     buckets: undefined,
+    hashEpoch: gcEpoch(),
   };
 }
 function findSet<T>(
@@ -80,6 +93,29 @@ function findSet<T>(
   }
   return undefined;
 }
+/** Recompute address-based hashes and bucket chains in place (zero allocations)
+ * after a moving GC cycle. */
+function rehashInPlace<T>(set: LinkedSet<T>): void {
+  const buckets = set.buckets;
+  if (buckets !== undefined) {
+    const capacity = buckets.length;
+    for (let i = 0; i < capacity; i++) buckets[i] = undefined;
+  }
+  const epoch = gcEpoch();
+  const mask = buckets === undefined ? 0 : buckets.length - 1;
+  let entry = set.head;
+  while (entry !== undefined) {
+    const hash = valueHash<T>(entry.value);
+    entry.hash = hash;
+    if (buckets !== undefined) {
+      const bucket = bucketOf(hash, mask);
+      entry.chain = buckets[bucket];
+      buckets[bucket] = entry;
+    }
+    entry = entry.next;
+  }
+  set.hashEpoch = epoch;
+}
 /** Rebuild the buckets for at least `size` entries (load factor <= 1). */
 function rebuild<T>(set: LinkedSet<T>, size: number): void {
   let capacity = 16;
@@ -87,23 +123,35 @@ function rebuild<T>(set: LinkedSet<T>, size: number): void {
   const buckets: (SetEntry<T> | undefined)[] = [],
     mask = capacity - 1;
   for (let i = 0; i < capacity; i++) buckets.push(undefined);
-  let entry = set.head;
+  const head = set.head;
+  const rehash = head !== undefined && usesAddressHash(head.value);
+  const epoch = rehash ? gcEpoch() : set.hashEpoch;
+  let entry = head;
   while (entry !== undefined) {
-    const bucket = bucketOf(entry.hash, mask);
+    const hash = rehash ? valueHash<T>(entry.value) : entry.hash;
+    if (rehash) entry.hash = hash;
+    const bucket = bucketOf(hash, mask);
     entry.chain = buckets[bucket];
     buckets[bucket] = entry;
     entry = entry.next;
   }
+  set.hashEpoch = epoch;
   set.buckets = buckets;
 }
 export function hasSet<T>(set: LinkedSet<T>, value: T): boolean {
-  return findSet<T>(set, value, valueHash(value)) !== undefined;
+  if (usesAddressHash(value) && set.hashEpoch !== gcEpoch())
+    rehashInPlace<T>(set);
+  return findSet<T>(set, value, valueHash<T>(value)) !== undefined;
 }
 /** Return whether a new member was added. Duplicate insertion does not allocate. */
 export function addSet<T>(set: LinkedSet<T>, value: T): boolean {
-  const hash = valueHash(value);
+  if (usesAddressHash(value) && set.hashEpoch !== gcEpoch())
+    rehashInPlace<T>(set);
+  const hash = valueHash<T>(value);
   if (findSet<T>(set, value, hash) !== undefined) return false;
   appendSet<T>(set, value, hash);
+  if (usesAddressHash(value) && set.hashEpoch !== gcEpoch())
+    rehashInPlace<T>(set);
   return true;
 }
 /** Append an already unique member. Keep ownership/order updates shared by
@@ -141,13 +189,27 @@ export function cloneSet<T>(source: LinkedSet<T>): LinkedSet<T> {
   const result = createSet<T>();
   let entry = source.head;
   while (entry !== undefined) {
-    appendSet<T>(result, entry.value, entry.hash);
+    const value = entry.value;
+    appendSet<T>(
+      result,
+      value,
+      usesAddressHash(value) ? valueHash<T>(value) : entry.hash,
+    );
     entry = entry.next;
   }
+  const head = result.head;
+  if (
+    head !== undefined &&
+    usesAddressHash(head.value) &&
+    result.hashEpoch !== gcEpoch()
+  )
+    rehashInPlace<T>(result);
   return result;
 }
 export function deleteSet<T>(set: LinkedSet<T>, value: T): boolean {
-  const entry = findSet<T>(set, value, valueHash(value));
+  if (usesAddressHash(value) && set.hashEpoch !== gcEpoch())
+    rehashInPlace<T>(set);
+  const entry = findSet<T>(set, value, valueHash<T>(value));
   if (entry === undefined) return false;
   const buckets = set.buckets;
   if (buckets !== undefined) {
@@ -179,6 +241,7 @@ export function clearSet<T>(set: LinkedSet<T>): void {
   set.tail = undefined;
   set.size = 0;
   set.buckets = undefined;
+  set.hashEpoch = gcEpoch();
 }
 export function sizeSet<T>(set: LinkedSet<T>): number {
   return set.size;

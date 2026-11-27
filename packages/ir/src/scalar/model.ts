@@ -670,6 +670,21 @@ export type Instruction = Span &
         readonly separator: number;
         readonly value: number;
       }
+    /** Monotonic uint32 counter incremented at every moving collection
+     * (nativeGcEpochWord in the published allocation state, or 0 when no
+     * generational state is published). */
+    | {
+        readonly kind: "gc-epoch";
+        readonly id: number;
+      }
+    /** Epoch-scoped 32-bit address hash of a managed reference (or 0 for an
+     * absent optional reference or non-reference general value). Valid until
+     * `gc-epoch` changes. */
+    | {
+        readonly kind: "reference-hash";
+        readonly id: number;
+        readonly value: number;
+      }
     /** `string` with each ASCII letter mapped to upper case (`upper`) or
      * lower case, every other unit unchanged: a new string of the same
      * length and kind (asciiUppercase and asciiLowercase). */
