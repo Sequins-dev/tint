@@ -26,6 +26,24 @@ const minimumCapacity = 16;
 /** Growths that concatenate exactly before the buffer takes over. */
 const exactGrowths = 3;
 
+/** One piece of an inlined multi-piece string-allocate written directly into
+ * a loop builder buffer instead of through a temporary string. */
+interface InlinePiece {
+  readonly literal?: string;
+  readonly value: number;
+  readonly sourceSlot?: number;
+}
+/** A single-use `string-allocate` filled by contiguous `string-write`s right
+ * before an append's `string-concat` (as emitted by multi-piece templates and
+ * `+` chains). */
+interface InlineAllocation {
+  readonly allocIndex: number;
+  readonly writeIndices: readonly number[];
+  readonly lengthValue: number;
+  readonly oneByte: boolean;
+  readonly twoByteValue: number;
+  readonly pieces: readonly InlinePiece[];
+}
 /** One `s = s + piece` of a candidate slot: the load of the slot, the
  * concatenation and the store back, in one block. */
 interface Append {
@@ -34,6 +52,7 @@ interface Append {
   readonly concat: number;
   readonly store: number;
   readonly piece: number;
+  readonly inline?: InlineAllocation;
   readonly start: number;
   readonly end: number;
 }
@@ -246,12 +265,21 @@ function slotAppends(
         if (loadIndex === undefined) return undefined;
         loads.delete(concat.left);
         concats.delete(op.value);
+        const inline = matchInlineAllocation(
+          block,
+          loadIndex,
+          concatIndex,
+          concat.right,
+          uses,
+          slot,
+        );
         appends.push({
           block: id,
           load: loadIndex,
           concat: concatIndex,
           store: index,
           piece: concat.right,
+          ...(inline === undefined ? {} : { inline }),
           start: concat.start,
           end: concat.end,
         });
@@ -275,6 +303,182 @@ function slotAppends(
     if (crossesSplit(block, appends, id)) return undefined;
   }
   return fn.slots[slot] === "string" ? appends : undefined;
+}
+
+/** Linear combination of a nonnegative integer constant and variable string
+ * lengths (`string-length(v)`), used to prove contiguous `string-write`
+ * offsets covering `[0, alloc.length)`. */
+interface LengthSum {
+  readonly constant: number;
+  readonly terms: readonly number[];
+}
+function sameLengthSum(left: LengthSum, right: LengthSum): boolean {
+  if (left.constant !== right.constant) return false;
+  if (left.terms.length !== right.terms.length) return false;
+  for (let i = 0; i < left.terms.length; i++)
+    if (left.terms[i] !== right.terms[i]) return false;
+  return true;
+}
+function addLengthSums(left: LengthSum, right: LengthSum): LengthSum {
+  const sum = left.constant + right.constant;
+  const terms: number[] = [];
+  for (const term of left.terms) if (term !== undefined) terms.push(term);
+  for (const term of right.terms) if (term !== undefined) terms.push(term);
+  terms.sort((a, b) => a - b);
+  return { constant: sum, terms };
+}
+/** Recognize when `piece` is a single-use `string-allocate` in `block` filled
+ * contiguously by `m >= 2` `string-write`s immediately feeding `concatIndex`,
+ * with no intervening side effects. */
+function matchInlineAllocation(
+  block: Block,
+  loadIndex: number,
+  concatIndex: number,
+  piece: number,
+  uses: Uint32Array,
+  slot: number,
+): InlineAllocation | undefined {
+  const instructions = block.instructions;
+  const defs = new Map<number, Instruction>();
+  const defIndex = new Map<number, number>();
+  let allocIndex = -1;
+  for (let i = 0; i < concatIndex; i++) {
+    const op = instructions[i];
+    if (op === undefined) return undefined;
+    const result = instructionResult(op);
+    if (result !== undefined) {
+      defs.set(result, op);
+      defIndex.set(result, i);
+      if (result === piece && op.kind === "string-allocate") allocIndex = i;
+    }
+  }
+  if (allocIndex < 0) return undefined;
+  const alloc = instructions[allocIndex];
+  if (alloc === undefined || alloc.kind !== "string-allocate") return undefined;
+  const writeIndices: number[] = [];
+  for (let i = allocIndex + 1; i < concatIndex; i++) {
+    const op = instructions[i];
+    if (op === undefined) return undefined;
+    if (op.kind === "string-write" && op.target === piece) {
+      if (op.source === piece || op.offset === piece) return undefined;
+      writeIndices.push(i);
+      continue;
+    }
+    if (i === loadIndex) continue;
+    // Allow only pure local instructions between allocation and concat so
+    // removing the temporary allocation cannot reorder side effects or throws.
+    if (
+      op.kind !== "constant" &&
+      op.kind !== "string-literal" &&
+      op.kind !== "load" &&
+      op.kind !== "binary" &&
+      op.kind !== "unary" &&
+      op.kind !== "string-length" &&
+      op.kind !== "string-two-byte"
+    )
+      return undefined;
+  }
+  if (writeIndices.length < 2) return undefined;
+  if ((uses[piece] ?? 0) !== writeIndices.length + 1) return undefined;
+  const memo = new Map<number, LengthSum>();
+  const failed = new Set<number>();
+  function resolveLength(id: number): LengthSum | undefined {
+    const cached = memo.get(id);
+    if (cached !== undefined) return cached;
+    if (failed.has(id)) return undefined;
+    // Guard against unexpected cycles before recursing.
+    failed.add(id);
+    const def = defs.get(id);
+    if (def === undefined) return undefined;
+    let resolved: LengthSum | undefined;
+    if (def.kind === "constant") {
+      const value = def.value;
+      if (
+        typeof value === "number" &&
+        Number.isSafeInteger(value) &&
+        value >= 0
+      )
+        resolved = { constant: value, terms: [] };
+    } else if (def.kind === "string-length") {
+      const target = defs.get(def.string);
+      if (target !== undefined && target.kind === "string-literal")
+        resolved = { constant: target.value.length, terms: [] };
+      else resolved = { constant: 0, terms: [def.string] };
+    } else if (def.kind === "binary" && def.operator === "+") {
+      const left = resolveLength(def.left),
+        right = resolveLength(def.right);
+      if (left !== undefined && right !== undefined)
+        resolved = addLengthSums(left, right);
+    }
+    if (resolved !== undefined) {
+      failed.delete(id);
+      memo.set(id, resolved);
+    }
+    return resolved;
+  }
+  let running: LengthSum = { constant: 0, terms: [] };
+  const pieces: InlinePiece[] = [];
+  for (const writeIndex of writeIndices) {
+    if (writeIndex === undefined) return undefined;
+    const write = instructions[writeIndex];
+    if (write === undefined || write.kind !== "string-write") return undefined;
+    const offset = resolveLength(write.offset);
+    if (offset === undefined || !sameLengthSum(offset, running))
+      return undefined;
+    const srcDef = defs.get(write.source);
+    if (srcDef !== undefined && srcDef.kind === "string-literal") {
+      running = {
+        constant: running.constant + srcDef.value.length,
+        terms: running.terms,
+      };
+      pieces.push({ literal: srcDef.value, value: write.source });
+    } else {
+      running = addLengthSums(running, { constant: 0, terms: [write.source] });
+      let sourceSlot: number | undefined;
+      if (
+        srcDef !== undefined &&
+        srcDef.kind === "load" &&
+        srcDef.slot !== slot
+      ) {
+        const at = defIndex.get(write.source);
+        if (at !== undefined) {
+          let overwritten = false;
+          for (let j = at + 1; j < concatIndex; j++) {
+            const between = instructions[j];
+            if (
+              between !== undefined &&
+              between.kind === "store" &&
+              between.slot === srcDef.slot
+            ) {
+              overwritten = true;
+              break;
+            }
+          }
+          if (!overwritten) sourceSlot = srcDef.slot;
+        }
+      }
+      pieces.push(
+        sourceSlot === undefined
+          ? { value: write.source }
+          : { value: write.source, sourceSlot },
+      );
+    }
+  }
+  const total = resolveLength(alloc.length);
+  if (total === undefined || !sameLengthSum(total, running)) return undefined;
+  const twoByteDef = defs.get(alloc.twoByte);
+  const oneByte =
+    twoByteDef !== undefined &&
+    twoByteDef.kind === "constant" &&
+    twoByteDef.value === false;
+  return {
+    allocIndex,
+    writeIndices,
+    lengthValue: alloc.length,
+    oneByte,
+    twoByteValue: alloc.twoByte,
+    pieces,
+  };
 }
 
 /** Whether a value defined before one of the block's appends is read after
@@ -413,6 +617,11 @@ function rewriteLoop(fn: FunctionIR, candidate: Candidate): FunctionIR {
     out.push({ kind: "constant", id, value: number, start, end });
     return id;
   }
+  function stringLiteral(out: Instruction[], text: string): number {
+    const id = value();
+    out.push({ kind: "string-literal", id, value: text, start, end });
+    return id;
+  }
   function branch(
     condition: number,
     consequent: number,
@@ -460,6 +669,12 @@ function rewriteLoop(fn: FunctionIR, candidate: Candidate): FunctionIR {
       if (append === undefined) throw "string builder append invariant";
       skip.add(append.load);
       skip.add(append.store);
+      const inline = append.inline;
+      if (inline !== undefined) {
+        skip.add(inline.allocIndex);
+        for (const writeIndex of inline.writeIndices)
+          if (writeIndex !== undefined) skip.add(writeIndex);
+      }
       splits.set(append.concat, append);
     }
     let id = block.id,
@@ -471,6 +686,282 @@ function rewriteLoop(fn: FunctionIR, candidate: Candidate): FunctionIR {
       const append = splits.get(index);
       if (append === undefined) {
         out.push(op);
+        continue;
+      }
+      const inline = append.inline;
+      if (inline !== undefined) {
+        // Multi-piece append: write every piece directly into the builder
+        // buffer without allocating or copying a temporary string.
+        const pieceLengthSlot = slots.length;
+        slots.push("number");
+        let pieceWideSlot = -1;
+        if (!inline.oneByte) {
+          pieceWideSlot = slots.length;
+          slots.push("boolean");
+        }
+        const resolvedSlots: number[] = [];
+        for (const piece of inline.pieces) {
+          if (piece === undefined)
+            throw "string builder inline piece invariant";
+          if (piece.literal !== undefined) {
+            resolvedSlots.push(-1);
+          } else if (piece.sourceSlot !== undefined) {
+            resolvedSlots.push(piece.sourceSlot);
+          } else {
+            const fresh = slots.length;
+            slots.push("string");
+            store(out, fresh, piece.value);
+            resolvedSlots.push(fresh);
+          }
+        }
+        store(out, pieceLengthSlot, inline.lengthValue);
+        if (pieceWideSlot >= 0) store(out, pieceWideSlot, inline.twoByteValue);
+        const grow = nextBlock++,
+          exact = nextBlock++,
+          allocate = nextBlock++,
+          write = nextBlock++,
+          rest = nextBlock++;
+        const need = binary(
+          out,
+          "+",
+          load(out, lengthSlot),
+          inline.lengthValue,
+        );
+        const full = binary(
+          out,
+          ">",
+          need,
+          stringLength(out, load(out, bufferSlot)),
+        );
+        let fitTarget = write;
+        if (!inline.oneByte) {
+          const kindCheck = nextBlock++,
+            bufferKind = nextBlock++;
+          fitTarget = kindCheck;
+          const pieceChecks: Instruction[] = [];
+          const pieceTwoByte = load(pieceChecks, pieceWideSlot);
+          added.push({
+            id: kindCheck,
+            instructions: pieceChecks,
+            terminator: branch(pieceTwoByte, bufferKind, write),
+          });
+          const bufferChecks: Instruction[] = [];
+          const bufferTwoByte = stringTwoByte(
+            bufferChecks,
+            load(bufferChecks, bufferSlot),
+          );
+          added.push({
+            id: bufferKind,
+            instructions: bufferChecks,
+            terminator: branch(bufferTwoByte, write, grow),
+          });
+        }
+        const head: Block = {
+          id,
+          instructions: out,
+          terminator: branch(full, grow, fitTarget),
+        };
+        if (id === block.id) replaced.set(id, head);
+        else added.push(head);
+        const growths: Instruction[] = [];
+        const count = load(growths, growthSlot);
+        store(
+          growths,
+          growthSlot,
+          binary(growths, "+", count, constant(growths, 1)),
+        );
+        added.push({
+          id: grow,
+          instructions: growths,
+          terminator: branch(
+            binary(growths, "<", count, constant(growths, exactGrowths)),
+            exact,
+            allocate,
+          ),
+        });
+        const emitWide = (
+          targetOut: Instruction[],
+          oldBuffer: number,
+        ): number =>
+          inline.oneByte
+            ? stringTwoByte(targetOut, oldBuffer)
+            : binary(
+                targetOut,
+                "!==",
+                binary(
+                  targetOut,
+                  "|",
+                  unary(
+                    targetOut,
+                    "boolean-number",
+                    stringTwoByte(targetOut, oldBuffer),
+                  ),
+                  unary(
+                    targetOut,
+                    "boolean-number",
+                    load(targetOut, pieceWideSlot),
+                  ),
+                ),
+                constant(targetOut, 0),
+              );
+        // Exact growth allocates the exact needed length and copies the old
+        // buffer, then jumps to `write` to copy each piece directly.
+        const exactOps: Instruction[] = [];
+        const exactOld = load(exactOps, bufferSlot);
+        const exactNeeded = binary(
+          exactOps,
+          "+",
+          load(exactOps, lengthSlot),
+          load(exactOps, pieceLengthSlot),
+        );
+        const exactGrown = value();
+        exactOps.push({
+          kind: "string-allocate",
+          id: exactGrown,
+          length: exactNeeded,
+          twoByte: emitWide(exactOps, exactOld),
+          start,
+          end,
+        });
+        exactOps.push({
+          kind: "string-write",
+          target: exactGrown,
+          offset: constant(exactOps, 0),
+          source: exactOld,
+          start,
+          end,
+        });
+        store(exactOps, bufferSlot, exactGrown);
+        added.push({
+          id: exact,
+          instructions: exactOps,
+          terminator: jump(write),
+        });
+        const growth: Instruction[] = [];
+        const oldBuffer = load(growth, bufferSlot);
+        const needed = binary(
+          growth,
+          "+",
+          load(growth, lengthSlot),
+          load(growth, pieceLengthSlot),
+        );
+        const doubled = binary(
+          growth,
+          "+",
+          binary(growth, "+", needed, needed),
+          constant(growth, minimumCapacity),
+        );
+        const capacity = binary(
+          growth,
+          "max",
+          needed,
+          binary(growth, "min", doubled, constant(growth, maximumStringLength)),
+        );
+        const grown = value();
+        growth.push({
+          kind: "string-allocate",
+          id: grown,
+          length: capacity,
+          twoByte: emitWide(growth, oldBuffer),
+          start,
+          end,
+        });
+        growth.push({
+          kind: "string-write",
+          target: grown,
+          offset: constant(growth, 0),
+          source: oldBuffer,
+          start,
+          end,
+        });
+        store(growth, bufferSlot, grown);
+        added.push({
+          id: allocate,
+          instructions: growth,
+          terminator: jump(write),
+        });
+        const writes: Instruction[] = [];
+        const buffer = load(writes, bufferSlot);
+        const baseOffset = load(writes, lengthSlot);
+        let relValue = -1,
+          relConstant = 0;
+        for (let k = 0; k < inline.pieces.length; k++) {
+          const piece = inline.pieces[k],
+            pieceSrcSlot = resolvedSlots[k];
+          if (piece === undefined || pieceSrcSlot === undefined)
+            throw "string builder inline piece invariant";
+          let offset: number;
+          if (relValue < 0) {
+            offset =
+              relConstant === 0
+                ? baseOffset
+                : binary(
+                    writes,
+                    "+",
+                    baseOffset,
+                    constant(writes, relConstant),
+                  );
+          } else {
+            if (relConstant > 0) {
+              relValue = binary(
+                writes,
+                "+",
+                relValue,
+                constant(writes, relConstant),
+              );
+              relConstant = 0;
+            }
+            offset = binary(writes, "+", baseOffset, relValue);
+          }
+          const literal = piece.literal;
+          const isLast = k + 1 === inline.pieces.length;
+          if (literal !== undefined) {
+            const source = stringLiteral(writes, literal);
+            writes.push({
+              kind: "string-write",
+              target: buffer,
+              offset,
+              source,
+              start,
+              end,
+            });
+            if (!isLast) relConstant += literal.length;
+          } else {
+            const source = load(writes, pieceSrcSlot);
+            writes.push({
+              kind: "string-write",
+              target: buffer,
+              offset,
+              source,
+              start,
+              end,
+            });
+            if (!isLast) {
+              const pieceLen = stringLength(writes, source);
+              if (relValue < 0 && relConstant === 0) relValue = pieceLen;
+              else if (relValue < 0) {
+                relValue = binary(
+                  writes,
+                  "+",
+                  constant(writes, relConstant),
+                  pieceLen,
+                );
+                relConstant = 0;
+              } else relValue = binary(writes, "+", relValue, pieceLen);
+            }
+          }
+        }
+        // Update lengthSlot directly from `baseOffset + pieceLengthSlot` after
+        // the writes so `baseOffset` stays live in `lengthSlot`'s register and
+        // the loop-carried length recurrence is one addition.
+        store(
+          writes,
+          lengthSlot,
+          binary(writes, "+", baseOffset, load(writes, pieceLengthSlot)),
+        );
+        added.push({ id: write, instructions: writes, terminator: jump(rest) });
+        id = rest;
+        out = [];
         continue;
       }
       // The check: grow when the piece does not fit, or is two-byte for a
