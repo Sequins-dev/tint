@@ -1343,6 +1343,16 @@ def is_dense_map_fields(fields):
     )
 
 
+def is_dense_set_fields(fields):
+    return (
+        "members" in fields
+        and "hashes" in fields
+        and "slots" in fields
+        and "size" in fields
+        and "length" in fields
+    )
+
+
 def dense_map_live_indices(inferior, hashes_addr, deleted_addr, length):
     """Live entry indices (in insertion order) of a StringKeyMap / NumberKeyMap."""
     count = min(max(length, 0), CHILD_LIMIT)

@@ -157,6 +157,19 @@ export function tintRemoteObject(
       description: "Map",
       ...id,
     };
+  if (
+    /\bmembers\b/.test(kind) &&
+    /\bhashes\b/.test(kind) &&
+    /\bslots\b/.test(kind) &&
+    /\bsize\b/.test(kind)
+  )
+    return {
+      type: "object",
+      subtype: "set",
+      className: "Set",
+      description: "Set",
+      ...id,
+    };
   if (/^(Uint8|Uint16|Uint32|Float64)Array/.test(kind))
     return {
       type: "object",

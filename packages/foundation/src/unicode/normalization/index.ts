@@ -1,10 +1,5 @@
 import { asciiEndOfText, latin1Text } from "../../text/latin1.ts";
 import {
-  createStringBuilder,
-  appendString,
-  finishString,
-} from "../../text/string-builder.ts";
-import {
   decompositionPoints,
   decompositionInfo,
   decompositionValues,
@@ -399,15 +394,14 @@ function stringFromPoints(
     }
     return prefix.length === 0 ? tail : prefix + tail;
   }
-  const builder = createStringBuilder();
-  if (prefix.length > 0) appendString(builder, prefix);
+  const pieces: string[] = [];
+  if (prefix.length > 0) pieces.push(prefix);
   let at = 0;
   while (at < count) {
     const p0 = points[at] ?? 0;
     if (p0 > 0xffff) {
       const adjusted = p0 - 0x10000;
-      appendString(
-        builder,
+      pieces.push(
         String.fromCharCode(
           0xd800 + (adjusted >> 10),
           0xdc00 + (adjusted & 0x3ff),
@@ -450,8 +444,7 @@ function stringFromPoints(
           p15) <=
         0xffff
       ) {
-        appendString(
-          builder,
+        pieces.push(
           String.fromCharCode(
             p0,
             p1,
@@ -478,10 +471,10 @@ function stringFromPoints(
     let run = 1;
     while (run < 8 && at + run < count && (points[at + run] ?? 0) <= 0xffff)
       run++;
-    appendString(builder, chunkFromPoints(points, at, run));
+    pieces.push(chunkFromPoints(points, at, run));
     at += run;
   }
-  return finishString(builder);
+  return pieces.join("");
 }
 /** Unicode17 NFC/NFD/NFKC/NFKD. Invalid form is a caller-level policy decision. */
 export function normalizeUnicode(

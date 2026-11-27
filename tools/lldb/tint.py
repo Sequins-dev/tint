@@ -670,6 +670,72 @@ class DenseMapProvider(object):
         return True
 
 
+class DenseSetProvider(object):
+    """Open-addressed insertion-ordered CompactSet: one child per live member
+    in insertion order."""
+
+    def __init__(self, value, internal_dict):
+        self.value = value
+        self.items = []
+
+    def update(self):
+        self.items = []
+        try:
+            length = int(_number(_field(self.value, "length")) or 0)
+            members = _field(self.value, "members")
+            hashes = _field(self.value, "hashes")
+            if members is None or hashes is None:
+                return False
+            members_addr = members.GetNonSyntheticValue().GetValueAsUnsigned()
+            hashes_addr = hashes.GetNonSyntheticValue().GetValueAsUnsigned()
+            if members_addr == 0 or hashes_addr == 0 or length <= 0:
+                return False
+            inferior = _value_inferior(self.value)
+            live = core.dense_map_live_indices(inferior, hashes_addr, 0, length)
+            if not live:
+                return False
+            mem_real = members.GetNonSyntheticValue()
+            if mem_real.GetType().GetName().startswith("object"):
+                sbtype, _ = _marker_type(self.value, members_addr)
+                if sbtype is not None:
+                    mem_real = self.value.CreateValueFromAddress("*", members_addr, sbtype).GetNonSyntheticValue()
+            mem_fields = _fields_of(mem_real.GetType())
+            mem_children = {}
+            if core.is_number_list_fields(mem_fields):
+                mp = NumberListProvider(mem_real, None)
+                mp.update()
+                for child in mp.items:
+                    mem_children[child.GetName()] = child
+            elif core.is_list_fields(mem_fields):
+                mp = ListProvider(mem_real, None)
+                mp.update()
+                if mp.inner is not None:
+                    for child in mp.inner.slots:
+                        mem_children[child.GetName()] = child
+            for out_idx, idx in enumerate(live):
+                child = mem_children.get("[%d]" % idx)
+                if child is not None:
+                    self.items.append(child.Clone("[%d]" % out_idx))
+        except TintError:
+            pass
+        return False
+
+    def num_children(self):
+        return len(self.items)
+
+    def get_child_index(self, name):
+        for index, child in enumerate(self.items):
+            if child.GetName() == name:
+                return index
+        return -1
+
+    def get_child_at_index(self, index):
+        return self.items[index] if 0 <= index < len(self.items) else None
+
+    def has_children(self):
+        return True
+
+
 def map_summary(value, internal_dict):
     size = _field(value, "size") or _field(value, "count")
     return "size=%d" % int(_number(size) or 0)
@@ -753,6 +819,10 @@ def is_dense_map_type(sbtype, internal_dict):
     return core.is_dense_map_fields(_fields_of(sbtype))
 
 
+def is_dense_set_type(sbtype, internal_dict):
+    return core.is_dense_set_fields(_fields_of(sbtype))
+
+
 def register_formatters(debugger):
     module = __name__
     commands = [
@@ -774,6 +844,9 @@ def register_formatters(debugger):
         % (module, module),
         "type summary add -w tint -F %s.map_summary --recognizer-function %s.is_dense_map_type" % (module, module),
         "type synthetic add -w tint -l %s.DenseMapProvider --recognizer-function %s.is_dense_map_type"
+        % (module, module),
+        "type summary add -w tint -F %s.map_summary --recognizer-function %s.is_dense_set_type" % (module, module),
+        "type synthetic add -w tint -l %s.DenseSetProvider --recognizer-function %s.is_dense_set_type"
         % (module, module),
     ]
     for command in commands:
