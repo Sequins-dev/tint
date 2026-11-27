@@ -10,7 +10,11 @@ import {
   type CLibraryManifestEntry,
   type CTarget,
 } from "@tint/abi/c";
-import type { ImportMapping } from "@tint/source/resolver";
+import {
+  nodeBuiltins,
+  registeredNodeBuiltins,
+  type ImportMapping,
+} from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import {
   requestModules,
@@ -89,9 +93,9 @@ export interface NativeForeignMemoryBinding {
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
 export const foreignRuntimeModules = {
-  nodeFfi: "packages/native-runtime/src/node/ffi.ts",
-  nodeBuffer: "packages/native-runtime/src/node/buffer.ts",
-  nodeProcess: "packages/native-runtime/src/node/process.ts",
+  nodeFfi: nodeBuiltins.ffi.source,
+  nodeBuffer: nodeBuiltins.buffer.source,
+  nodeProcess: nodeBuiltins.process.source,
   processIntrinsics: "packages/native-runtime/src/intrinsics/process.ts",
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",
@@ -529,27 +533,16 @@ export function expandForeignInputs(
     }
     for (const packageId of packages) {
       if (packageId === undefined) throw "foreign package invariant";
-      grantForeignRuntime(
-        inputs,
-        mappings,
-        packageId,
-        "node:ffi",
-        foreignRuntimeModules.nodeFfi,
-      );
-      grantForeignRuntime(
-        inputs,
-        mappings,
-        packageId,
-        "node:buffer",
-        foreignRuntimeModules.nodeBuffer,
-      );
-      grantForeignRuntime(
-        inputs,
-        mappings,
-        packageId,
-        "node:process",
-        foreignRuntimeModules.nodeProcess,
-      );
+      for (const builtin of registeredNodeBuiltins) {
+        if (builtin.source === undefined) continue;
+        grantForeignRuntime(
+          inputs,
+          mappings,
+          packageId,
+          builtin.specifier,
+          builtin.source,
+        );
+      }
     }
   }
   return { ok: true, value: { inputs: expanded, mappings, libraries } };

@@ -26,7 +26,7 @@ import {
   type ProgramRealmCore,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
-import { adoptNodeBuffer, installNodeBuffer } from "./buffer.ts";
+import { adoptNodeBuffer } from "./buffer.ts";
 import {
   digestFinished,
   finishDigestAs,
@@ -637,21 +637,16 @@ const unsupportedCryptoExports: readonly string[] = [
 
 export interface NodeCryptoModules {
   readonly crypto: RealmObject;
-  readonly buffer: RealmObject;
   readonly exportValue: (module: RealmObject, name: string) => unknown;
-  readonly require: RealmObject;
   readonly reportMissingExport: (name: string) => void;
 }
 
-/** CommonJS and ESM get the same functions and Buffer in this realm. */
+/** Construct the public ESM exports in the owning realm. */
 export function createNodeCryptoModules(
   core: ProgramRealmCore,
   toRealmError: (value: unknown) => unknown,
 ): NodeCryptoModules {
   const crypto = createObject<ScriptPropertyKey, unknown>(
-    core.realm.objectPrototype,
-  );
-  const buffer = createObject<ScriptPropertyKey, unknown>(
     core.realm.objectPrototype,
   );
   function adaptError(name: string, error: unknown): never {
@@ -760,42 +755,12 @@ export function createNodeCryptoModules(
   builtinProperty(crypto, "pbkdf2", pbkdf2Fn, true, true, core.hooks);
   for (const key of unsupportedCryptoExports)
     unsupportedProperty(core, crypto, key, key);
-  const constructor = installNodeBuffer(core);
-  builtinProperty(buffer, "Buffer", constructor, true, true, core.hooks);
-  builtinProperty(
-    buffer,
-    "kMaxLength",
-    Number.MAX_SAFE_INTEGER,
-    true,
-    true,
-    core.hooks,
-  );
   return {
     crypto,
-    buffer,
     exportValue: (module: RealmObject, name: string): unknown =>
       getProperty<ScriptPropertyKey, unknown>(module, name, module, core.hooks),
     reportMissingExport: (name: string): void => {
       if (unsupportedCryptoExports.includes(name)) unsupported(core, name);
     },
-    require: builtinFunction(
-      core.realm.functionPrototype,
-      "require",
-      1,
-      (_receiver, args): unknown => {
-        const name = args[0];
-        if (name === "node:crypto" || name === "crypto") return crypto;
-        if (name === "node:buffer" || name === "buffer") return buffer;
-        if (typeof name !== "string")
-          return invalid(core, "id", "string", name);
-        return fail(
-          core,
-          "error",
-          "Cannot find module '" + name + "'",
-          "MODULE_NOT_FOUND",
-        );
-      },
-      core.hooks,
-    ),
   };
 }

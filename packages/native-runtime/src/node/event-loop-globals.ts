@@ -21,7 +21,7 @@ import type { EventLoop, EventLoopHandle } from "../event-loop.ts";
 
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 type ScriptCall = (receiver: unknown, args: readonly unknown[]) => unknown;
-type TimerKind = "timeout" | "interval" | "immediate";
+type TimerKind = "timeout" | "interval";
 
 /** Install the Node scheduling surface in the owning realm. Managed timer
  * wrappers never leave the isolate, even when the loop has an inbox. */
@@ -82,8 +82,8 @@ export function installNodeEventLoopGlobals(
 
   function timer(kind: TimerKind, args: readonly unknown[]): unknown {
     const fn = checkedCallback(args[0]);
-    const delay = kind === "immediate" ? 0 : delayOf(args[1]);
-    const parameters = args.slice(kind === "immediate" ? 1 : 2);
+    const delay = delayOf(args[1]);
+    const parameters = args.slice(2);
     const handle = createObject<ScriptPropertyKey, unknown>(
       realm.objectPrototype,
     );
@@ -97,11 +97,9 @@ export function installNodeEventLoopGlobals(
       }
     };
     const task =
-      kind === "immediate"
-        ? loop.setImmediate(callback)
-        : kind === "interval"
-          ? loop.setInterval(callback, delay)
-          : loop.setTimeout(callback, delay);
+      kind === "interval"
+        ? loop.setInterval(callback, delay)
+        : loop.setTimeout(callback, delay);
     active.set(id, task);
     method(handle, "ref", (_receiver, _args): unknown => {
       task.ref();
@@ -112,23 +110,22 @@ export function installNodeEventLoopGlobals(
       return handle;
     });
     method(handle, "hasRef", (_receiver, _args): unknown => task.hasRef());
-    if (kind !== "immediate")
-      method(
-        handle,
-        wellKnownSymbol(realm.symbolRegistry, "toPrimitive"),
-        (_receiver, _args): unknown => id,
-      );
+    method(
+      handle,
+      wellKnownSymbol(realm.symbolRegistry, "toPrimitive"),
+      (_receiver, _args): unknown => id,
+    );
     return handle;
   }
-  function clear(value: unknown, immediate: boolean): void {
+  function clear(value: unknown): void {
     const object = viewObjectValue(value, global);
     let id = 0;
     if (object !== undefined) id = exoticSlots(object).internalIdentity;
-    else if (!immediate && typeof value === "number") id = value;
-    else if (!immediate && typeof value === "string") id = Number(value);
+    else if (typeof value === "number") id = value;
+    else if (typeof value === "string") id = Number(value);
     if (!Number.isInteger(id) || id <= 0) return;
     const task = active.get(id);
-    if (task === undefined || (task.kind === "immediate") !== immediate) return;
+    if (task === undefined) return;
     task.close();
     active.delete(id);
   }
@@ -139,19 +136,12 @@ export function installNodeEventLoopGlobals(
   method(global, "setInterval", (_receiver, args): unknown =>
     timer("interval", args),
   );
-  method(global, "setImmediate", (_receiver, args): unknown =>
-    timer("immediate", args),
-  );
   const clearTimer: ScriptCall = (_receiver, args): unknown => {
-    clear(args[0], false);
+    clear(args[0]);
     return undefined;
   };
   method(global, "clearTimeout", clearTimer);
   method(global, "clearInterval", clearTimer);
-  method(global, "clearImmediate", (_receiver, args): unknown => {
-    clear(args[0], true);
-    return undefined;
-  });
   method(global, "queueMicrotask", (_receiver, args): unknown => {
     const fn = checkedCallback(args[0]);
     enqueueScriptJob(
@@ -161,14 +151,4 @@ export function installNodeEventLoopGlobals(
     );
     return undefined;
   });
-  const process = createObject<ScriptPropertyKey, unknown>(
-    realm.objectPrototype,
-  );
-  method(process, "nextTick", (_receiver, args): unknown => {
-    const fn = checkedCallback(args[0]);
-    const parameters = args.slice(1);
-    loop.nextTick((): void => invoke(fn, undefined, parameters));
-    return undefined;
-  });
-  property(global, "process", process);
 }

@@ -2,6 +2,7 @@ import {
   describeDynamicBoundary,
   type DynamicBoundaryType,
 } from "./dynamic-boundaries.ts";
+import { nodeBuiltins } from "@tint/source/resolver";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
   rewriteModule,
@@ -499,6 +500,10 @@ export function closeGeneralPartition(
     if (module !== undefined) typeModules.set(module.id, module);
   const records = createBoundaryRecords(typeModules);
   const observableCache = new Map<string, boolean>();
+  const realmExports = new Map<string, readonly string[]>();
+  for (const builtin of [nodeBuiltins.buffer, nodeBuiltins.ffi])
+    if (trustedIds.has(builtin.source) && builtin.realmExports !== undefined)
+      realmExports.set(builtin.source, builtin.realmExports);
   /** Whether evaluating a non-trusted module at program startup would have
    * observable top-level effects (e.g., side effects, throws, or non-literal
    * initializers) instead of being purely declarative. Such modules must stay
@@ -664,15 +669,16 @@ export function closeGeneralPartition(
           crossing = false;
         if (statement.kind === "export") {
           const bindings = statement.declaration.bindings;
-          if (bindings === undefined) crossing = false;
+          if (bindings === undefined) crossing = realmExports.has(target);
           else
             for (const binding of bindings)
               if (
                 binding !== undefined &&
                 !binding.typeOnly &&
                 !types.has(binding.local) &&
-                (binding.namespace ||
-                  boundaryExport(typed, binding.local, records) === undefined)
+                (binding.namespace
+                  ? !realmExports.has(target)
+                  : boundaryExport(typed, binding.local, records) === undefined)
               )
                 crossing = false;
         } else
@@ -681,8 +687,10 @@ export function closeGeneralPartition(
               binding !== undefined &&
               !binding.typeOnly &&
               !types.has(binding.imported) &&
-              (binding.namespace ||
-                boundaryExport(typed, binding.imported, records) === undefined)
+              (binding.namespace
+                ? !realmExports.has(target)
+                : boundaryExport(typed, binding.imported, records) ===
+                  undefined)
             )
               crossing = false;
         if (!crossing) {
@@ -703,8 +711,34 @@ export function closeGeneralPartition(
       generalModules.push(module);
   const boundaries: TypedBoundaryModule[] = [];
   const used = new Map<string, BoundaryExport[]>();
+  function retainBoundary(typed: SourceModule, names: readonly string[]): void {
+    const target = typed.id;
+    let exports = used.get(target);
+    if (exports === undefined) {
+      exports = [];
+      used.set(target, exports);
+      boundaries.push({ id: target, exports });
+    }
+    for (const name of names) {
+      if (name === undefined) continue;
+      const boundary = boundaryExport(typed, name, records);
+      if (
+        boundary !== undefined &&
+        !exports.some((item) => item !== undefined && item.name === name)
+      )
+        exports.push(boundary);
+    }
+  }
   for (const module of generalModules) {
     if (module === undefined) throw "general partition invariant";
+    for (const specifier of importCallSpecifiers(module)) {
+      const target = module.dependencies.get(specifier);
+      if (target === undefined) continue;
+      const typed = byId.get(target);
+      const names = realmExports.get(target);
+      if (typed !== undefined && names !== undefined)
+        retainBoundary(typed, names);
+    }
     for (const statement of module.module.statements) {
       if (statement === undefined) continue;
       const declaration =
@@ -718,11 +752,20 @@ export function closeGeneralPartition(
       if (target === undefined || general.has(target)) continue;
       const typed = byId.get(target);
       if (typed === undefined) continue;
-      const existing = used.get(target),
-        exports: BoundaryExport[] = existing ?? [];
-      if (existing === undefined) {
-        used.set(target, exports);
-        boundaries.push({ id: target, exports });
+      if (statement.kind === "export") {
+        const bindings = statement.declaration.bindings;
+        if (
+          bindings === undefined ||
+          bindings.some((binding) => binding?.namespace === true)
+        ) {
+          retainBoundary(typed, realmExports.get(target) ?? []);
+          continue;
+        }
+      } else if (
+        declaration.bindings.some((binding) => binding?.namespace === true)
+      ) {
+        retainBoundary(typed, realmExports.get(target) ?? []);
+        continue;
       }
       const names: string[] = [];
       if (statement.kind === "export")
@@ -734,15 +777,7 @@ export function closeGeneralPartition(
         for (const binding of declaration.bindings)
           if (binding !== undefined && !binding.typeOnly)
             names.push(binding.imported);
-      for (const name of names) {
-        if (name === undefined) continue;
-        const boundary = boundaryExport(typed, name, records);
-        if (
-          boundary !== undefined &&
-          !exports.some((item) => item !== undefined && item.name === name)
-        )
-          exports.push(boundary);
-      }
+      retainBoundary(typed, names);
     }
   }
   const crossing = records.records();

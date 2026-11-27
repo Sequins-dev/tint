@@ -420,7 +420,7 @@ export function workspaceGeneralLowering(
     readonly stackBytes: number;
     readonly nodeHosted: boolean;
   },
-  nodeCrypto?: "esm" | "commonjs",
+  nodeCrypto?: "esm",
 ): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0" && workerImage === undefined)
     return undefined;
@@ -471,7 +471,6 @@ export function workspaceGeneralLowering(
           nodeCrypto: {
             module: "packages/native-runtime/src/node/crypto-public.ts",
             jobs: "packages/native-runtime/src/node/crypto-host.ts",
-            commonJS: nodeCrypto === "commonjs",
           },
         }),
     ...(nodeEventLoop
@@ -620,7 +619,7 @@ function buildHostedFixture(
     readonly requireTyped?: boolean;
     readonly nodeEventLoop?: boolean;
     readonly nodeWorkers?: boolean;
-    readonly nodeCrypto?: "esm" | "commonjs";
+    readonly nodeCrypto?: "esm";
     readonly nodeWorkerLibrary?: boolean;
     /** Host validation over captured application sources, when supplied. */
     readonly validateSource?: GeneralLowering["validateSource"];

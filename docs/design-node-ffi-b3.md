@@ -292,8 +292,7 @@ alias. Add only this adapter to `tools/boundaries.ts`'s
 catalog. The trusted partition stays typed in a mixed program. Typed callers
 and ordinary JS take the same adapter path. Demand-install realm intrinsics
 in a typed-only program importing FFI. Supply default and named exports from
-the same underlying module values and reuse a CommonJS module loader if the
-embedding supports one.
+the same underlying module values through the ESM-only built-in registry.
 
 At the entry use `unknown` for untrusted values that need Node validation.
 Preserve property access and evaluation through the program realm. Use

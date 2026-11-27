@@ -63,16 +63,96 @@ export type ResolverResult =
       };
     };
 
+interface NodeBuiltin {
+  readonly specifier: string;
+  readonly source?: string;
+}
+
+interface SourceNodeBuiltin extends NodeBuiltin {
+  readonly source: string;
+  readonly realmExports?: readonly string[];
+}
+
+/** One canonical ESM specifier per application built-in. Source-backed
+ * entries can be linked directly. Hosts supply the entries with no source. */
+export const nodeBuiltins: {
+  readonly buffer: SourceNodeBuiltin;
+  readonly crypto: NodeBuiltin;
+  readonly ffi: SourceNodeBuiltin;
+  readonly fs: NodeBuiltin;
+  readonly process: SourceNodeBuiltin;
+  readonly workers: NodeBuiltin;
+} = {
+  buffer: {
+    specifier: "node:buffer",
+    source: "packages/native-runtime/src/node/buffer.ts",
+    realmExports: ["default", "Buffer", "constants", "kMaxLength"],
+  },
+  crypto: { specifier: "node:crypto" },
+  ffi: {
+    specifier: "node:ffi",
+    source: "packages/native-runtime/src/node/ffi.ts",
+    realmExports: [
+      "suffix",
+      "DynamicLibrary",
+      "dlopen",
+      "dlclose",
+      "dlsym",
+      "types",
+      "getInt8",
+      "getUint8",
+      "getInt16",
+      "getUint16",
+      "getInt32",
+      "getUint32",
+      "getInt64",
+      "getUint64",
+      "getFloat32",
+      "getFloat64",
+      "setInt8",
+      "setUint8",
+      "setInt16",
+      "setUint16",
+      "setInt32",
+      "setUint32",
+      "setInt64",
+      "setUint64",
+      "setFloat32",
+      "setFloat64",
+      "exportBuffer",
+      "exportString",
+      "exportArrayBuffer",
+      "exportArrayBufferView",
+      "toBuffer",
+      "toArrayBuffer",
+      "toString",
+      "getRawPointer",
+      "getCurrentEventLoop",
+      "default",
+    ],
+  },
+  fs: { specifier: "node:fs" },
+  process: {
+    specifier: "node:process",
+    source: "packages/native-runtime/src/node/process.ts",
+  },
+  workers: { specifier: "node:worker_threads" },
+};
+
+export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
+  nodeBuiltins.buffer,
+  nodeBuiltins.crypto,
+  nodeBuiltins.ffi,
+  nodeBuiltins.fs,
+  nodeBuiltins.process,
+  nodeBuiltins.workers,
+];
+
 function packageShape(specifier: string): "bare" | "deep" | "invalid" {
   // `tint:ffi` and `tint:ffi/unsafe` are granted with C binding modules
   // (docs/native-ffi.md).
   if (
-    specifier === "node:buffer" ||
-    specifier === "node:crypto" ||
-    specifier === "node:fs" ||
-    specifier === "node:ffi" ||
-    specifier === "node:process" ||
-    specifier === "node:worker_threads" ||
+    registeredNodeBuiltins.some((builtin) => builtin.specifier === specifier) ||
     specifier === "tint:ffi" ||
     specifier === "tint:ffi/unsafe"
   )

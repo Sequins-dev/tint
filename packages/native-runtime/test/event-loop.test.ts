@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { hasProperty, programRealmCore } from "@tint/js-runtime/objects";
 import { createJobQueue, drainJobs, enqueueJob } from "@tint/js-runtime/jobs";
 import { createEventLoop } from "../src/event-loop.ts";
+import { installNodeEventLoopGlobals } from "../src/node/event-loop-globals.ts";
 
 function fixture() {
   let now = 0;
@@ -33,6 +35,22 @@ function fixture() {
     },
   };
 }
+
+test("the application realm installs only standard scheduling globals", () => {
+  const { loop } = fixture();
+  const core = programRealmCore();
+  installNodeEventLoopGlobals(loop, core.object, core.realm, core.hooks);
+  for (const name of ["process", "setImmediate", "clearImmediate"])
+    assert.equal(hasProperty(core.object, name), false, name);
+  for (const name of [
+    "setTimeout",
+    "clearTimeout",
+    "setInterval",
+    "clearInterval",
+    "queueMicrotask",
+  ])
+    assert.equal(hasProperty(core.object, name), true, name);
+});
 
 for (const entry of ["callback", "microtask"] as const)
   test("event loop checkpoints after " + entry + " entry", () => {

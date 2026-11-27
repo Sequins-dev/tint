@@ -2217,8 +2217,7 @@ export const bufferIdentitySource = `
 import process from "node:process";
 import { Buffer } from "node:buffer";
 function checkBufferIdentity() {
-  if (globalThis.Buffer !== Buffer ||
-      Object.getPrototypeOf(Buffer) !== Uint8Array ||
+  if (Object.getPrototypeOf(Buffer) !== Uint8Array ||
       Object.getPrototypeOf(Buffer.prototype) !== Uint8Array.prototype) return 1;
   const bytes = Buffer.from([0x6f, 0x6b, 0]);
   if (!Buffer.isBuffer(bytes) || !(bytes instanceof Uint8Array) ||

@@ -6,6 +6,9 @@ hosted native programs and self-build the compiler natively; see the
 
 ## Order and priority
 
+The [Node API roadmap](node-api-roadmap.md) owns built-in API sequencing and
+application compatibility.
+
 1. **macOS arm64 is the first implementation and bootstrap target**, using the current
    development host to prove direct native output and compiler self-hosting.
 2. **Linux is an intended supported platform and the long-term primary target.**

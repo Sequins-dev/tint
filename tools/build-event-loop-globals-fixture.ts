@@ -7,7 +7,8 @@ if (process.env.TINT_BUILD_ONLY !== "1")
 verifyHostedFixture(
   `
 const trace = [];
-process.nextTick(() => trace.push("esm tick"));
+if ("process" in globalThis || "setImmediate" in globalThis || "clearImmediate" in globalThis)
+  throw new Error("unexpected Node global");
 Promise.resolve().then(() => trace.push("esm promise"));
 queueMicrotask(() => trace.push("esm microtask"));
 
@@ -17,16 +18,15 @@ export function run() {
   const unref = setTimeout(() => { throw new Error("unref timer"); }, 100);
   if (unref.unref() !== unref || unref.hasRef())
     throw new Error("timeout ref state");
-  setImmediate((n) => {
-    if (n !== 42) throw new Error("immediate argument");
-    trace.push("immediate");
-    process.nextTick(() => trace.push("tick"));
+  setTimeout((n) => {
+    if (n !== 42) throw new Error("timer argument");
+    trace.push("timer");
     queueMicrotask(() => trace.push("microtask"));
     setTimeout(() => {
-      if (trace.join(",") !== "esm promise,esm microtask,esm tick,immediate,tick,microtask")
+      if (trace.join(",") !== "esm promise,esm microtask,timer,microtask")
         throw new Error(trace.join(","));
     }, { valueOf: () => 1 });
-  }, 42);
+  }, 0, 42);
   return 42;
 }
 `,
@@ -36,8 +36,9 @@ export function run() {
   [],
   [],
   {
-    managedBytes: 4194304,
-    allocationCapacity: 65536,
+    // The globalThis check enables the full intrinsic set.
+    managedBytes: 33554432,
+    allocationCapacity: 524288,
     // x86-64 module initialization needs more than the small fixture stack.
     stackBytes: 16777216,
     nodeEventLoop: true,

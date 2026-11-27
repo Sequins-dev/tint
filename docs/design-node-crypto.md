@@ -70,8 +70,8 @@ location. Application compilation consumes the generated declarations.
 ## Execution and errors
 
 The Node host registers `node:crypto` and `node:buffer` in the realm's
-module loader. Static imports, runtime imports and CommonJS `require`
-share the same crypto exports and Buffer constructor. The host uses the
+module loader. Static and dynamic ESM imports share crypto exports and the
+`node:buffer` constructor in the owning realm. The host uses the
 existing 16 MiB Node isolate stack budget. The x86-64 realm initializer
 exceeds the compact 1 MiB stack used by small typed fixtures.
 

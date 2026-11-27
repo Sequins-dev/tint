@@ -17,10 +17,10 @@ function caseName({
   );
 }
 
-// Harness-provided assertions and Node's common callback accounting. The case
-// bodies are copied directly from the pinned source with their original bytes.
+// Harness-provided assertions, Node's common callback accounting and ESM imports.
 const harness = `
-const crypto = require('node:crypto');
+import crypto from "node:crypto";
+import { Buffer, kMaxLength } from "node:buffer";
 function equal(actual, expected, message) {
   if (!Object.is(actual, expected))
     throw new Error((message ?? 'strictEqual') + ': ' + String(actual) + ' != ' + String(expected));
@@ -97,7 +97,15 @@ const assert = {
 `;
 function fixtureSource(selected: Cases): string {
   const declarations = selected
-    .map(({ source }, index) => `function check${index}() {\n${source}\n}\n`)
+    .map(({ source }, index) => {
+      // The pinned random cases include this setup line. Use the harness's
+      // ESM binding and preserve the upstream assertions.
+      const body = source.replace(
+        /^const \{ kMaxLength \} = require\('buffer'\);\n/m,
+        "",
+      );
+      return `function check${index}() {\n${body}\n}\n`;
+    })
     .join("");
   const entries = selected
     .map(({ file, name, ranges }, index) => {
@@ -139,12 +147,12 @@ for (const [file, groups] of cases) {
     const image = prepareHostedFixture(
       fixtureSource(groups),
       file.slice(0, -3),
-      [],
+      [["node:buffer", "packages/native-runtime/src/node/buffer.ts"]],
       [],
       [],
       [],
       {
-        nodeCrypto: "commonjs",
+        nodeCrypto: "esm",
         managedBytes: 67108864,
         allocationCapacity: 1048576,
       },
