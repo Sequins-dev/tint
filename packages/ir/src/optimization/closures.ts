@@ -50,6 +50,7 @@ export function devirtualizeClosureCalls(
   budget: number,
   closedRecords: boolean = false,
   remarks?: RemarkSink,
+  openRecords?: ReadonlySet<number>,
 ): ClosureDevirtualization | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
@@ -232,6 +233,11 @@ export function devirtualizeClosureCalls(
   function isReferenceField(record: number, field: number): boolean {
     return recordLayouts[record]?.fields[field]?.type === "reference";
   }
+  function isClosedRecord(record: number): boolean {
+    return (
+      closedRecords && (openRecords === undefined || !openRecords.has(record))
+    );
+  }
   // Pre-scan once to avoid repeatedly scanning functions that neither write
   // reference record fields nor make indirect calls nor produce closures.
   const fnCount = module.functions.length,
@@ -248,10 +254,12 @@ export function devirtualizeClosureCalls(
       if (block === undefined) throw "closure block invariant";
       const term = block.terminator;
       if (term.kind === "record" || term.kind === "record-cell") {
-        if (isReferenceField(term.record, term.field)) {
-          if (term.operation === "read") {
-            if (closedRecords) closureSource = true;
-          } else if (closedRecords) writesRefField = true;
+        if (
+          isClosedRecord(term.record) &&
+          isReferenceField(term.record, term.field)
+        ) {
+          if (term.operation === "read") closureSource = true;
+          else writesRefField = true;
         }
       }
       for (const op of block.instructions) {
@@ -260,8 +268,8 @@ export function devirtualizeClosureCalls(
           closureSource = true;
         else if (
           hasScriptEntries &&
-          closedRecords &&
           op.kind === "record-read" &&
+          isClosedRecord(op.record) &&
           isReferenceField(op.record, op.field)
         )
           closureSource = true;
@@ -270,7 +278,11 @@ export function devirtualizeClosureCalls(
           op.scriptArguments === undefined
         )
           callsIndirect = true;
-        else if (closedRecords && op.kind === "record-new" && !writesRefField) {
+        else if (
+          op.kind === "record-new" &&
+          isClosedRecord(op.record) &&
+          !writesRefField
+        ) {
           const fields = recordLayouts[op.record]?.fields;
           for (let field = 0; field < op.arguments.length; field++)
             if (fields?.[field]?.type === "reference") {
@@ -291,7 +303,8 @@ export function devirtualizeClosureCalls(
           if (block === undefined) throw "closure block invariant";
           for (const op of block.instructions) {
             if (op === undefined) throw "closure instruction invariant";
-            if (op.kind !== "record-new") continue;
+            if (op.kind !== "record-new" || !isClosedRecord(op.record))
+              continue;
             const fields = recordLayouts[op.record]?.fields;
             for (let field = 0; field < op.arguments.length; field++) {
               const meta = fields?.[field];
@@ -308,6 +321,7 @@ export function devirtualizeClosureCalls(
           if (
             (term.kind === "record" || term.kind === "record-cell") &&
             term.operation !== "read" &&
+            isClosedRecord(term.record) &&
             isReferenceField(term.record, term.field)
           )
             staticUnknownFields.add(term.record * 65536 + term.field);
@@ -321,7 +335,7 @@ export function devirtualizeClosureCalls(
     record: number,
     field: number,
   ): KnownClosure | undefined {
-    if (!closedRecords) return undefined;
+    if (!isClosedRecord(record)) return undefined;
     const key = record * 65536 + field;
     return unknownFields.has(key) ? undefined : fieldTargets.get(key);
   }
@@ -529,7 +543,7 @@ export function devirtualizeClosureCalls(
                 ? stored.get(op.slot)
                 : slotTarget(op.slot);
             if (value !== undefined) local.set(op.id, value);
-          } else if (op.kind === "record-new") {
+          } else if (op.kind === "record-new" && isClosedRecord(op.record)) {
             const fields = recordLayouts[op.record]?.fields;
             for (let field = 0; field < op.arguments.length; field++) {
               const meta = fields?.[field];
@@ -548,6 +562,7 @@ export function devirtualizeClosureCalls(
         if (
           (term.kind === "record" || term.kind === "record-cell") &&
           term.operation !== "read" &&
+          isClosedRecord(term.record) &&
           isReferenceField(term.record, term.field)
         )
           writeField(

@@ -30,6 +30,7 @@ export function pruneUnallocatedRecords(
   module: ModuleIR,
   budget: number,
   remarks?: RemarkSink,
+  openRecords?: ReadonlySet<number>,
 ): UnallocatedRecordPruning | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
   const records = module.records;
@@ -39,6 +40,12 @@ export function pruneUnallocatedRecords(
   const live = new Uint8Array(records.length),
     escapedDescriptor = new Uint8Array(records.length),
     presentFields: (Uint8Array | undefined)[] = [];
+  if (openRecords !== undefined)
+    for (const record of openRecords)
+      if (record !== undefined && record < records.length) {
+        live[record] = 1;
+        escapedDescriptor[record] = 1;
+      }
   for (let r = 0; r < records.length; r++) {
     const layout = records[r];
     if (layout === undefined) {
