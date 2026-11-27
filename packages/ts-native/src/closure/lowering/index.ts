@@ -423,10 +423,6 @@ function mathHelperKey(intrinsic: string | undefined): string | undefined {
       return "math:mathLog1p";
     case "math-cbrt":
       return "math:mathCbrt";
-    case "math-fround":
-      return "math:mathFround";
-    case "math-f16round":
-      return "math:mathF16round";
     case "math-sin":
       return "math:mathSin";
     case "math-cos":
@@ -3841,6 +3837,8 @@ function lowerEntries(
               else if (intrinsic === "number-is-nan") builtin = "is-nan";
               else if (intrinsic === "math-floor") builtin = "floor";
               else if (intrinsic === "math-sqrt") builtin = "sqrt";
+              else if (intrinsic === "math-fround") builtin = "fround";
+              else if (intrinsic === "math-f16round") builtin = "f16round";
               else if (intrinsic === "math-round") builtin = "round";
               else if (intrinsic === "math-clz32") builtin = "clz32";
               else if (intrinsic === "math-trunc") builtin = "trunc";
@@ -3856,7 +3854,9 @@ function lowerEntries(
                 builtin = "math-hypot";
                 if (node.arguments.length === 2)
                   callee = builtinHelper("math:mathHypot2");
-                else if (node.arguments.length >= 3)
+                else if (node.arguments.length === 3)
+                  callee = builtinHelper("math:mathHypot3");
+                else if (node.arguments.length >= 4)
                   callee = builtinHelper("math:mathHypot");
               } else if (mathHelperKey(intrinsic) !== undefined) {
                 const key = mathHelperKey(intrinsic);

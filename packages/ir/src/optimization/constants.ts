@@ -1,3 +1,5 @@
+import { roundFloat } from "@tint/foundation/binary/bytes";
+
 export type Constant = number | boolean;
 export function unary(operator: string, value: Constant): Constant | undefined {
   if (operator === "!") return !value;
@@ -24,6 +26,10 @@ export function unary(operator: string, value: Constant): Constant | undefined {
       return Math.trunc(value);
     case "sqrt":
       return Math.sqrt(value);
+    case "fround":
+      return roundFloat(value, 4);
+    case "f16round":
+      return roundFloat(value, 2);
   }
   return undefined;
 }

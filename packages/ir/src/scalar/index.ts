@@ -2016,9 +2016,17 @@ export function verify(
                 equal(t, "boolean");
                 define(op.id, "number");
               } else if (
-                ["+", "-", "~", "ceil", "trunc", "sqrt", "uint32"].includes(
-                  op.operator,
-                )
+                [
+                  "+",
+                  "-",
+                  "~",
+                  "ceil",
+                  "trunc",
+                  "sqrt",
+                  "fround",
+                  "f16round",
+                  "uint32",
+                ].includes(op.operator)
               ) {
                 equal(t, "number");
                 define(op.id, "number");

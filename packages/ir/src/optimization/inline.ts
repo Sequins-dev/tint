@@ -83,7 +83,16 @@ function crossingType(
         op.operator === "is-integer"
         ? "boolean"
         : op.operator === "boolean-number" ||
-            ["+", "-", "~", "ceil", "trunc", "sqrt"].includes(op.operator)
+            [
+              "+",
+              "-",
+              "~",
+              "ceil",
+              "trunc",
+              "sqrt",
+              "fround",
+              "f16round",
+            ].includes(op.operator)
           ? "number"
           : undefined;
     case "binary":

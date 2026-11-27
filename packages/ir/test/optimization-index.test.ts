@@ -508,6 +508,44 @@ test("square-root folding preserves signed zero and exceptional numeric results"
   }
 });
 
+test("fround and f16round unary operations fold across finite, signed zero, subnormal and non-finite inputs", () => {
+  for (const [operator, expected] of [
+    ["fround", (v: number) => Math.fround(v)],
+    ["f16round", (v: number) => Math.f16round(v)],
+  ] as const) {
+    for (const value of [
+      0,
+      -0,
+      1.337,
+      -65504,
+      6.103515625e-5,
+      5.960464477539063e-8,
+      Infinity,
+      -Infinity,
+      NaN,
+    ]) {
+      const input = module(
+        [
+          { kind: "constant", id: 0, value, ...span },
+          { kind: "unary", id: 1, operator, operand: 0, ...span },
+        ],
+        1,
+      );
+      assert.ok(verify(input).ok);
+      const output = optimizeModule(input).module;
+      assert.ok(verify(output).ok);
+      const folded = output.functions[0]?.blocks[0]?.instructions.find(
+        (op) => "id" in op && op.id === 1,
+      );
+      assert.ok(folded?.kind === "constant");
+      assert.ok(
+        Object.is(folded.value, expected(value)),
+        `${operator}(${value})`,
+      );
+    }
+  }
+});
+
 test("unused embedded strings and value packing disappear while opaque operands remain", () => {
   const input = module(
     [

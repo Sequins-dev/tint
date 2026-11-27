@@ -351,6 +351,8 @@ export function forwardLocalLoads(
           op.operator === "ceil" ||
           op.operator === "trunc" ||
           op.operator === "sqrt" ||
+          op.operator === "fround" ||
+          op.operator === "f16round" ||
           op.operator === "uint32" ||
           op.operator === "boolean-number"
         );

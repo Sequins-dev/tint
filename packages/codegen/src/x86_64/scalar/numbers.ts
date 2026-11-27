@@ -131,6 +131,14 @@ export function createNumberEmission(emit: Emit): NumberEmission {
       case "sqrt":
         emit({ op: "sqrtsd", dst: x0, src });
         break;
+      case "fround":
+        emit({ op: "cvtsd2ss", dst: x0, src });
+        emit({ op: "cvtss2sd", dst: x0, src: x0 });
+        break;
+      case "f16round":
+        toFloat16(src);
+        fromFloat16();
+        return true;
       case "boolean-number":
         emit({ op: "cvtsi2sd", dst: x0, src });
         break;

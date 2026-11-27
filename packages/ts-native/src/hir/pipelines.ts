@@ -80,6 +80,7 @@ const pureMath: readonly string[] = [
   "imul",
   "clz32",
   "fround",
+  "f16round",
   "hypot",
   "log",
   "log2",

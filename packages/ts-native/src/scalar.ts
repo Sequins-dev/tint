@@ -13817,7 +13817,7 @@ export function lowerFunction(
             }
             const helper = info(node).callee;
             if (helper === undefined) throw "math hypot helper invariant";
-            if (callArgs.length === 2) {
+            if (callArgs.length === 2 || callArgs.length === 3) {
               const result = runtimeCall(helper, callArgs, node);
               if (result === undefined) throw "math hypot result invariant";
               return result;
@@ -14261,7 +14261,11 @@ export function lowerFunction(
             return unarySlot(
               builtin,
               first,
-              builtin === "ceil" || builtin === "trunc" || builtin === "sqrt"
+              builtin === "ceil" ||
+                builtin === "trunc" ||
+                builtin === "sqrt" ||
+                builtin === "fround" ||
+                builtin === "f16round"
                 ? "number"
                 : "boolean",
               node,
