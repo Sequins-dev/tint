@@ -4332,3 +4332,81 @@ test("length-only string slices compute bounds without allocating or rooting a s
   assert.ok(!result.value.helpers.some((h) => h.kind === "string-slice-copy"));
   assert.ok(!result.value.helpers.some((h) => h.kind === "string-slice-kind"));
 });
+
+test("bytes-load folds constant littleEndian and omits byte swaps on LE", () => {
+  function wordsFor(leMode: "true" | "false" | "dynamic"): number[] {
+    const slots: ("Uint8Array" | "number" | "boolean")[] =
+      leMode === "dynamic"
+        ? ["Uint8Array", "number", "boolean"]
+        : ["Uint8Array", "number"];
+    const instructions: ModuleIR["functions"][number]["blocks"][number]["instructions"] =
+      [
+        { kind: "load", id: 0, slot: 0, ...span },
+        { kind: "load", id: 1, slot: 1, ...span },
+        leMode === "dynamic"
+          ? { kind: "load", id: 2, slot: 2, ...span }
+          : { kind: "constant", id: 2, value: leMode === "true", ...span },
+        {
+          kind: "bytes-load",
+          id: 3,
+          array: 0,
+          offset: 1,
+          element: "f64",
+          littleEndian: 2,
+          ...span,
+        },
+      ];
+    const result = emitModule({
+      functions: [
+        {
+          id: 0,
+          name: "readF64",
+          exported: true,
+          parameters: leMode === "dynamic" ? [0, 1, 2] : [0, 1],
+          slots,
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: 3, ...span },
+            },
+          ],
+        },
+      ],
+    });
+    assert.ok(result.ok, JSON.stringify(result));
+    const code = result.value.code;
+    const words: number[] = [];
+    for (let off = 0; off < code.length; off += 4)
+      words.push(
+        (code[off]! |
+          (code[off + 1]! << 8) |
+          (code[off + 2]! << 16) |
+          (code[off + 3]! << 24)) >>>
+          0,
+      );
+    return words;
+  }
+  const hasRev64 = (words: number[]): boolean =>
+    words.some((w) => (w & 0xfffffc00) >>> 0 === 0xdac00c00);
+  const hasCbnz32 = (words: number[]): boolean =>
+    words.some((w) => (w & 0xff000000) >>> 0 === 0x35000000);
+  const leWords = wordsFor("true");
+  const beWords = wordsFor("false");
+  const dynWords = wordsFor("dynamic");
+  assert.equal(hasRev64(leWords), false, "constant LE f64 should not emit REV");
+  assert.equal(hasRev64(beWords), true, "constant BE f64 should emit REV");
+  assert.equal(
+    hasCbnz32(beWords),
+    false,
+    "constant BE f64 should not branch on endianness",
+  );
+  assert.equal(hasRev64(dynWords), true, "dynamic LE f64 should emit REV");
+  assert.equal(
+    hasCbnz32(dynWords),
+    true,
+    "dynamic LE f64 should conditionally skip REV",
+  );
+});

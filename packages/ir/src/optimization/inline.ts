@@ -169,6 +169,10 @@ function supported(
     case "array-word64-write":
     case "array-word64-fill":
     case "array-atomic-word64":
+    case "bytes-load":
+    case "bytes-store":
+    case "bytes-word64-load":
+    case "bytes-word64-store":
     // Tag tests and payload views of general values are pure inline
     // sequences (a mismatched checked view traps).
     case "general-is":
@@ -1685,6 +1689,43 @@ export function inlineSmallFunctions(
                   scratch: value(instruction.scratch),
                   from: value(instruction.from),
                   to: value(instruction.to),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "bytes-load":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  array: value(instruction.array),
+                  offset: value(instruction.offset),
+                  littleEndian: value(instruction.littleEndian),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "bytes-store":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  offset: value(instruction.offset),
+                  value: value(instruction.value),
+                  littleEndian: value(instruction.littleEndian),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "bytes-word64-load":
+              case "bytes-word64-store":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  offset: value(instruction.offset),
+                  scratch: value(instruction.scratch),
+                  littleEndian: value(instruction.littleEndian),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

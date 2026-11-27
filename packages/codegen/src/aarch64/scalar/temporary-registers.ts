@@ -49,6 +49,10 @@ function transparent(op: Instruction): boolean {
     op.kind === "array-element" ||
     op.kind === "array-write" ||
     op.kind === "array-store" ||
+    op.kind === "bytes-load" ||
+    op.kind === "bytes-store" ||
+    op.kind === "bytes-word64-load" ||
+    op.kind === "bytes-word64-store" ||
     // General tags and payloads move through x9..x12 only.
     op.kind === "general-is" ||
     op.kind === "general-value" ||

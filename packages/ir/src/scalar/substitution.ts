@@ -434,6 +434,41 @@ export function substituteInstructionValues(
         ? op
         : { ...op, array, scratch, from, to };
     }
+    case "bytes-load": {
+      const array = substitutedValue(values, op.array),
+        offset = substitutedValue(values, op.offset),
+        littleEndian = substitutedValue(values, op.littleEndian);
+      return array === op.array &&
+        offset === op.offset &&
+        littleEndian === op.littleEndian
+        ? op
+        : { ...op, array, offset, littleEndian };
+    }
+    case "bytes-store": {
+      const array = substitutedValue(values, op.array),
+        offset = substitutedValue(values, op.offset),
+        value = substitutedValue(values, op.value),
+        littleEndian = substitutedValue(values, op.littleEndian);
+      return array === op.array &&
+        offset === op.offset &&
+        value === op.value &&
+        littleEndian === op.littleEndian
+        ? op
+        : { ...op, array, offset, value, littleEndian };
+    }
+    case "bytes-word64-load":
+    case "bytes-word64-store": {
+      const array = substitutedValue(values, op.array),
+        offset = substitutedValue(values, op.offset),
+        scratch = substitutedValue(values, op.scratch),
+        littleEndian = substitutedValue(values, op.littleEndian);
+      return array === op.array &&
+        offset === op.offset &&
+        scratch === op.scratch &&
+        littleEndian === op.littleEndian
+        ? op
+        : { ...op, array, offset, scratch, littleEndian };
+    }
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":
@@ -671,6 +706,9 @@ export function renumberInstructionResult(
     case "array-word64-write":
     case "array-word64-fill":
     case "array-atomic-word64":
+    case "bytes-store":
+    case "bytes-word64-load":
+    case "bytes-word64-store":
     case "weak-slot-set-value":
     case "weak-slot-clear":
     case "reference-vector-write":

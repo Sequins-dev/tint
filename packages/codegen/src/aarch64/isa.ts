@@ -203,11 +203,20 @@ export type Instruction =
   | { readonly op: "movi-16b"; readonly vd: number; readonly immediate: number }
   | { readonly op: "fcmp"; readonly rn: number; readonly rm: number }
   | { readonly op: "fmov-d-x"; readonly rd: number; readonly rn: DataRegister }
-  /** SXTW Xd, Wn (SBFM Xd, Xn, #0, #31): sign-extend the low 32 bits. */
-  | { readonly op: "sxtw"; readonly rd: number; readonly rn: number }
-  /** RBIT Xd, Xn (bit reversal) and CLZ Xd, Xn (leading zeros, 64 for
-   * zero): together the trailing zero count of a word. */
-  | { readonly op: "rbit" | "clz"; readonly rd: number; readonly rn: number }
+  /** SXTB/SXTH/SXTW Xd, Wn (SBFM): sign-extend the low 8, 16 or 32 bits. */
+  | {
+      readonly op: "sxtb" | "sxth" | "sxtw";
+      readonly rd: number;
+      readonly rn: number;
+    }
+  /** REV (64-bit), REV32 (32-bit W-register byte reverse, zero-extended),
+   * REV16 (reverse bytes in each 16-bit halfword of W-register),
+   * RBIT Xd, Xn (bit reversal) and CLZ Xd, Xn (leading zeros). */
+  | {
+      readonly op: "rev" | "rev32" | "rev16" | "rbit" | "clz";
+      readonly rd: number;
+      readonly rn: number;
+    }
   /** FMOV (scalar, immediate); see float64Immediate for the encoding. */
   | { readonly op: "fmov-d-imm"; readonly rd: number; readonly imm8: number }
   | { readonly op: "fmov-x-d"; readonly rd: DataRegister; readonly rn: number }
@@ -877,17 +886,40 @@ export function encode(instruction: Instruction): EncodingResult<number> {
                   : 0x1e601800;
       return word(base + i.rm * 65536 + i.rn * 32 + i.rd);
     }
+    case "sxtb":
+    case "sxth":
     case "sxtw": {
       if (!integer(i.rd, 0, 30) || !integer(i.rn, 0, 30))
         return fail("INVALID_REGISTER");
-      return word(0x93407c00 + i.rn * 32 + i.rd);
+      return word(
+        (i.op === "sxtb"
+          ? 0x93401c00
+          : i.op === "sxth"
+            ? 0x93403c00
+            : 0x93407c00) +
+          i.rn * 32 +
+          i.rd,
+      );
     }
+    case "rev":
+    case "rev32":
+    case "rev16":
     case "rbit":
     case "clz": {
       if (!integer(i.rd, 0, 30) || !integer(i.rn, 0, 30))
         return fail("INVALID_REGISTER");
       return word(
-        (i.op === "rbit" ? 0xdac00000 : 0xdac01000) + i.rn * 32 + i.rd,
+        (i.op === "rev"
+          ? 0xdac00c00
+          : i.op === "rev32"
+            ? 0x5ac00800
+            : i.op === "rev16"
+              ? 0x5ac00400
+              : i.op === "rbit"
+                ? 0xdac00000
+                : 0xdac01000) +
+          i.rn * 32 +
+          i.rd,
       );
     }
     case "fmov-d-imm": {

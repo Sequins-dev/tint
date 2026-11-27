@@ -561,6 +561,42 @@ function dataViewSetHelperKey(
       return undefined;
   }
 }
+function dataViewElementKind(
+  intrinsic: string | undefined,
+): ExpressionInfo["dataViewElement"] {
+  if (intrinsic === undefined) return undefined;
+  switch (intrinsic) {
+    case "data-view-get-int8":
+    case "data-view-set-int8":
+      return "i8";
+    case "data-view-get-uint8":
+    case "data-view-set-uint8":
+      return "u8";
+    case "data-view-get-int16":
+    case "data-view-set-int16":
+      return "i16";
+    case "data-view-get-uint16":
+    case "data-view-set-uint16":
+      return "u16";
+    case "data-view-get-int32":
+    case "data-view-set-int32":
+      return "i32";
+    case "data-view-get-uint32":
+    case "data-view-set-uint32":
+      return "u32";
+    case "data-view-get-float16":
+    case "data-view-set-float16":
+      return "f16";
+    case "data-view-get-float32":
+    case "data-view-set-float32":
+      return "f32";
+    case "data-view-get-float64":
+    case "data-view-set-float64":
+      return "f64";
+    default:
+      return undefined;
+  }
+}
 interface Initializer {
   readonly function: number;
   readonly body: BlockStatement;
@@ -2528,6 +2564,8 @@ function lowerEntries(
         let arrayInstance: ExpressionInfo["arrayInstance"];
         let sharedBufferInstance = false;
         let dataViewRec: number | undefined;
+        let dataViewEl: ExpressionInfo["dataViewElement"];
+        let dataViewBytesCallee: number | undefined;
         let generalCall: ExpressionInfo["generalCall"];
         let fixedFfiCall: number | undefined;
         if (viewUse !== undefined) {
@@ -3945,7 +3983,9 @@ function lowerEntries(
                   if (key === undefined) throw "dataView get helper invariant";
                   builtin = "data-view-get";
                   callee = builtinHelper(key);
+                  dataViewEl = dataViewElementKind(intrinsic);
                 }
+                dataViewBytesCallee = builtinHelper("data-view:dataViewBytes");
                 let target = node.callee;
                 while (target.kind === "group" || target.kind === "satisfies")
                   target = target.expression;
@@ -3963,7 +4003,9 @@ function lowerEntries(
                   if (key === undefined) throw "dataView set helper invariant";
                   builtin = "data-view-set";
                   callee = builtinHelper(key);
+                  dataViewEl = dataViewElementKind(intrinsic);
                 }
+                dataViewBytesCallee = builtinHelper("data-view:dataViewBytes");
                 let target = node.callee;
                 while (target.kind === "group" || target.kind === "satisfies")
                   target = target.expression;
@@ -4293,6 +4335,10 @@ function lowerEntries(
           arrayInstance,
           sharedBufferInstance: sharedBufferInstance ? true : undefined,
           ...(dataViewRec === undefined ? {} : { dataViewRecord: dataViewRec }),
+          ...(dataViewEl === undefined ? {} : { dataViewElement: dataViewEl }),
+          ...(dataViewBytesCallee === undefined
+            ? {}
+            : { dataViewBytes: dataViewBytesCallee }),
           sharedBufferFlow: sharedBufferFlow ? true : undefined,
           arrayReceiver,
           arraySetSource,

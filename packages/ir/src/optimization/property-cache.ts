@@ -3508,6 +3508,7 @@ export function cacheLoopProperties(
       case "record-descriptor-address":
       case "general-record-descriptor":
       case "reference-vector-length":
+      case "bytes-load":
         return "number";
       case "general-value":
         return op.type;
@@ -3538,6 +3539,9 @@ export function cacheLoopProperties(
       case "array-word64-write":
       case "array-word64-fill":
       case "array-atomic-word64":
+      case "bytes-store":
+      case "bytes-word64-load":
+      case "bytes-word64-store":
       case "string-write":
       case "number-string-cache":
       case "string-index-cache":

@@ -824,3 +824,17 @@ test("cache-maintenance and barrier operands are validated", () => {
     "INVALID_MODE",
   );
 });
+test("byte-swap and sign-extension encodings match AArch64 ISA", () => {
+  for (const [instruction, expected] of [
+    [{ op: "rev", rd: 9, rn: 10 }, 0xdac00d49],
+    [{ op: "rev32", rd: 9, rn: 10 }, 0x5ac00949],
+    [{ op: "rev16", rd: 9, rn: 10 }, 0x5ac00549],
+    [{ op: "sxtb", rd: 9, rn: 10 }, 0x93401d49],
+    [{ op: "sxth", rd: 9, rn: 10 }, 0x93403d49],
+    [{ op: "sxtw", rd: 9, rn: 10 }, 0x93407d49],
+  ] as const)
+    assert.deepEqual(encode(instruction), { ok: true, value: expected });
+  rejected({ op: "rev", rd: 31, rn: 0 }, "INVALID_REGISTER");
+  rejected({ op: "rev16", rd: 0, rn: 31 }, "INVALID_REGISTER");
+  rejected({ op: "sxth", rd: 31, rn: 0 }, "INVALID_REGISTER");
+});

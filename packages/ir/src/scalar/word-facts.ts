@@ -230,6 +230,13 @@ export function provenWordFacts(
         add(n, arrayWords[node(op.array)] === 1 ? 9 : 15);
       else if (op.kind === "array-element")
         add(n, arrayWords[node(op.array)] === 1 ? 1 : 7);
+      else if (op.kind === "bytes-load")
+        add(
+          n,
+          op.element === "f16" || op.element === "f32" || op.element === "f64"
+            ? 7
+            : 1,
+        );
       else if (
         op.kind === "array-length" ||
         op.kind === "string-length" ||

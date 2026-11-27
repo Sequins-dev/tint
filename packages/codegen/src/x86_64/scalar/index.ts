@@ -100,6 +100,7 @@ import {
   type Address,
   type Gpr,
   type Memory,
+  type Xmm,
 } from "../isa.ts";
 import type { UnwindRange } from "@tint/abi/unwind";
 import {
@@ -1778,6 +1779,207 @@ export function emitModule(
         src: rax,
       });
       emit({ op: "label", name: done });
+    }
+    function bytesLoad(op: {
+      readonly id: number;
+      readonly array: number;
+      readonly offset: number;
+      readonly element:
+        "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "f16" | "f32" | "f64";
+      readonly littleEndian: number;
+    }): void {
+      const site = fnLabel + ":bytes-load:" + String(instructionCount);
+      const skip = site + ":le";
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.offset)) });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      const address: Address = {
+        kind: "base",
+        base: 11,
+        index: 9,
+        scale: 1,
+        disp: 0,
+      };
+      const el = op.element;
+      if (el === "i8") {
+        emit({
+          op: "movsx",
+          dst: rax,
+          src: { kind: "mem", width: 8, address },
+        });
+        numberBits();
+      } else if (el === "u8") {
+        emit({
+          op: "movzx",
+          dst: eax,
+          src: { kind: "mem", width: 8, address },
+        });
+        numberBits();
+      } else if (el === "i16" || el === "u16" || el === "f16") {
+        emit({
+          op: "movzx",
+          dst: eax,
+          src: { kind: "mem", width: 16, address },
+        });
+        emit({ op: "cmp", dst: frame(home(op.littleEndian)), src: imm(0) });
+        branch(emit, "ne", skip);
+        emit({ op: "bswap", dst: eax });
+        emit({ op: "shr", dst: eax, count: 16 });
+        emit({ op: "label", name: skip });
+        if (el === "f16") {
+          numbers.fromFloat16();
+        } else {
+          if (el === "i16")
+            emit({
+              op: "movsx",
+              dst: rax,
+              src: { kind: "gpr", width: 16, index: 0 },
+            });
+          numberBits();
+        }
+      } else if (el === "i32" || el === "u32" || el === "f32") {
+        emit({ op: "mov", dst: eax, src: { kind: "mem", width: 32, address } });
+        emit({ op: "cmp", dst: frame(home(op.littleEndian)), src: imm(0) });
+        branch(emit, "ne", skip);
+        emit({ op: "bswap", dst: eax });
+        emit({ op: "label", name: skip });
+        if (el === "f32") {
+          const toXmm: {
+            readonly op: "movd";
+            readonly dst: Xmm;
+            readonly src: Gpr<32>;
+          } = { op: "movd", dst: x0, src: eax };
+          emit(toXmm);
+          emit({ op: "cvtss2sd", dst: x0, src: x0 });
+          floatBits(emit, rax, x0);
+        } else {
+          if (el === "i32") emit({ op: "movsx", dst: rax, src: eax });
+          numberBits();
+        }
+      } else {
+        emit({ op: "mov", dst: rax, src: { kind: "mem", width: 64, address } });
+        emit({ op: "cmp", dst: frame(home(op.littleEndian)), src: imm(0) });
+        branch(emit, "ne", skip);
+        emit({ op: "bswap", dst: rax });
+        emit({ op: "label", name: skip });
+      }
+      define(op.id, "number");
+    }
+    function bytesStore(op: {
+      readonly array: number;
+      readonly offset: number;
+      readonly value: number;
+      readonly element:
+        "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "f16" | "f32" | "f64";
+      readonly littleEndian: number;
+    }): void {
+      const site = fnLabel + ":bytes-store:" + String(instructionCount);
+      const skip = site + ":le";
+      const el = op.element;
+      if (el === "f64")
+        emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+      else if (el === "f32") {
+        emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
+        float32Bits(emit, eax, x0);
+      } else if (el === "f16") {
+        numbers.toFloat16(frame(home(op.value)));
+      } else {
+        numbers.toWord(frame(home(op.value)));
+      }
+      if (el !== "i8" && el !== "u8") {
+        emit({ op: "cmp", dst: frame(home(op.littleEndian)), src: imm(0) });
+        branch(emit, "ne", skip);
+        if (el === "f64") emit({ op: "bswap", dst: rax });
+        else if (el === "i32" || el === "u32" || el === "f32")
+          emit({ op: "bswap", dst: eax });
+        else {
+          emit({ op: "bswap", dst: eax });
+          emit({ op: "shr", dst: eax, count: 16 });
+        }
+        emit({ op: "label", name: skip });
+      }
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.offset)) });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      const address: Address = {
+        kind: "base",
+        base: 11,
+        index: 9,
+        scale: 1,
+        disp: 0,
+      };
+      if (el === "i8" || el === "u8")
+        emit({
+          op: "mov",
+          dst: { kind: "mem", width: 8, address },
+          src: byte(0),
+        });
+      else if (el === "i16" || el === "u16" || el === "f16")
+        emit({
+          op: "mov",
+          dst: { kind: "mem", width: 16, address },
+          src: { kind: "gpr", width: 16, index: 0 },
+        });
+      else if (el === "i32" || el === "u32" || el === "f32")
+        emit({ op: "mov", dst: { kind: "mem", width: 32, address }, src: eax });
+      else
+        emit({ op: "mov", dst: { kind: "mem", width: 64, address }, src: rax });
+    }
+    function bytesWord64Load(op: {
+      readonly array: number;
+      readonly offset: number;
+      readonly scratch: number;
+      readonly littleEndian: number;
+    }): void {
+      const skip =
+        fnLabel + ":bytes-word64-load:" + String(instructionCount) + ":le";
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.offset)) });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "mov",
+        dst: rax,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: 1, disp: 0 },
+        },
+      });
+      emit({ op: "cmp", dst: frame(home(op.littleEndian)), src: imm(0) });
+      branch(emit, "ne", skip);
+      emit({ op: "bswap", dst: rax });
+      emit({ op: "label", name: skip });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.scratch)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({ op: "mov", dst: mem(11, 0), src: rax });
+    }
+    function bytesWord64Store(op: {
+      readonly array: number;
+      readonly offset: number;
+      readonly scratch: number;
+      readonly littleEndian: number;
+    }): void {
+      const skip =
+        fnLabel + ":bytes-word64-store:" + String(instructionCount) + ":le";
+      emit({ op: "mov", dst: r10, src: frame(home(op.scratch)) });
+      emit({ op: "mov", dst: r10, src: mem(10, nativeArrayDataOffset) });
+      emit({ op: "mov", dst: rax, src: mem(10, 0) });
+      emit({ op: "cmp", dst: frame(home(op.littleEndian)), src: imm(0) });
+      branch(emit, "ne", skip);
+      emit({ op: "bswap", dst: rax });
+      emit({ op: "label", name: skip });
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.offset)) });
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "mov",
+        dst: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: 1, disp: 0 },
+        },
+        src: rax,
+      });
     }
     /** Fill [from, to) of an 8-byte typed array with the 64-bit word staged in
      * `op.scratch`. */
@@ -3824,6 +4026,22 @@ export function emitModule(
         case "array-word64-fill":
           if (host === undefined) break;
           arrayWord64Fill(op);
+          return;
+        case "bytes-load":
+          if (host === undefined) break;
+          bytesLoad(op);
+          return;
+        case "bytes-store":
+          if (host === undefined) break;
+          bytesStore(op);
+          return;
+        case "bytes-word64-load":
+          if (host === undefined) break;
+          bytesWord64Load(op);
+          return;
+        case "bytes-word64-store":
+          if (host === undefined) break;
+          bytesWord64Store(op);
           return;
         case "string-none":
           emit({ op: "xor", dst: eax, src: eax });

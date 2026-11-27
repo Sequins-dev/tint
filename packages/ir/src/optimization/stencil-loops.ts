@@ -440,7 +440,11 @@ export function scalarizeStencilLoops(
           op.kind === "array-word64-read" ||
           op.kind === "array-word64-write" ||
           op.kind === "array-word64-fill" ||
-          op.kind === "array-atomic-word64"
+          op.kind === "array-atomic-word64" ||
+          op.kind === "bytes-load" ||
+          op.kind === "bytes-store" ||
+          op.kind === "bytes-word64-load" ||
+          op.kind === "bytes-word64-store"
         ) {
           valid = false;
           break;

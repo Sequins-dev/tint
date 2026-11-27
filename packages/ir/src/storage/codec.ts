@@ -2,6 +2,7 @@ import type {
   ActivationField,
   ArrayAtomicOperation,
   Block,
+  DataViewElement,
   Environment,
   EnvironmentCell,
   FunctionDebug,
@@ -273,6 +274,17 @@ const atomicOperations: readonly ArrayAtomicOperation[] = [
   "xor",
   "exchange",
   "compare-exchange",
+];
+const dataViewElements: readonly DataViewElement[] = [
+  "i8",
+  "u8",
+  "i16",
+  "u16",
+  "i32",
+  "u32",
+  "f16",
+  "f32",
+  "f64",
 ];
 function writeList(writer: ByteWriter, values: readonly number[]): void {
   writeUnsigned(writer, values.length);
@@ -1027,6 +1039,30 @@ export function encodeInstruction(
       writePrefix(writer, 134, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.value);
+      return true;
+    case "bytes-load":
+      writePrefix(writer, 135, op, 0);
+      writeByte(writer, dataViewElements.indexOf(op.element));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.offset);
+      writeSigned(writer, op.littleEndian);
+      return true;
+    case "bytes-store":
+      writePrefix(writer, 136, op, 0);
+      writeByte(writer, dataViewElements.indexOf(op.element));
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.offset);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.littleEndian);
+      return true;
+    case "bytes-word64-load":
+    case "bytes-word64-store":
+      writePrefix(writer, op.kind === "bytes-word64-load" ? 137 : 138, op, 0);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.offset);
+      writeSigned(writer, op.scratch);
+      writeSigned(writer, op.littleEndian);
       return true;
     case "weak-slot-new":
       writePrefix(writer, 48, op, 0);
@@ -2060,6 +2096,76 @@ export function decodeInstruction(
         array,
         index,
         scratch,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 135: {
+      const element = dataViewElements[readByte(reader)];
+      if (element === undefined) throw "packed IR DataView element";
+      const id = readSigned(reader),
+        array = readSigned(reader),
+        offset = readSigned(reader),
+        littleEndian = readSigned(reader);
+      return {
+        kind: "bytes-load",
+        id,
+        array,
+        offset,
+        element,
+        littleEndian,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 136: {
+      const element = dataViewElements[readByte(reader)];
+      if (element === undefined) throw "packed IR DataView element";
+      const array = readSigned(reader),
+        offset = readSigned(reader),
+        value = readSigned(reader),
+        littleEndian = readSigned(reader);
+      return {
+        kind: "bytes-store",
+        array,
+        offset,
+        value,
+        element,
+        littleEndian,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 137: {
+      const array = readSigned(reader),
+        offset = readSigned(reader),
+        scratch = readSigned(reader),
+        littleEndian = readSigned(reader);
+      return {
+        kind: "bytes-word64-load",
+        array,
+        offset,
+        scratch,
+        littleEndian,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 138: {
+      const array = readSigned(reader),
+        offset = readSigned(reader),
+        scratch = readSigned(reader),
+        littleEndian = readSigned(reader);
+      return {
+        kind: "bytes-word64-store",
+        array,
+        offset,
+        scratch,
+        littleEndian,
         start,
         end,
         ...(inline === undefined ? {} : { inline }),

@@ -335,6 +335,24 @@ export function visitInstructionOperands(
       visit(op.from);
       visit(op.to);
       return;
+    case "bytes-load":
+      visit(op.array);
+      visit(op.offset);
+      visit(op.littleEndian);
+      return;
+    case "bytes-store":
+      visit(op.array);
+      visit(op.offset);
+      visit(op.value);
+      visit(op.littleEndian);
+      return;
+    case "bytes-word64-load":
+    case "bytes-word64-store":
+      visit(op.array);
+      visit(op.offset);
+      visit(op.scratch);
+      visit(op.littleEndian);
+      return;
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":
@@ -406,6 +424,9 @@ export function instructionResult(
     instruction.kind === "array-word64-write" ||
     instruction.kind === "array-word64-fill" ||
     instruction.kind === "array-atomic-word64" ||
+    instruction.kind === "bytes-store" ||
+    instruction.kind === "bytes-word64-load" ||
+    instruction.kind === "bytes-word64-store" ||
     instruction.kind === "weak-slot-set-value" ||
     instruction.kind === "weak-slot-clear" ||
     instruction.kind === "reference-vector-write" ||

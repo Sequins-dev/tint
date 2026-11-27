@@ -436,3 +436,10 @@ jmp .Lentry
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("bswap encodes 32-bit and 64-bit registers with REX as needed", () => {
+  assert.equal(hex(encode([{ op: "bswap", dst: reg(32, 0) }])), "0fc8");
+  assert.equal(hex(encode([{ op: "bswap", dst: reg(32, 9) }])), "410fc9");
+  assert.equal(hex(encode([{ op: "bswap", dst: reg(64, 0) }])), "480fc8");
+  assert.equal(hex(encode([{ op: "bswap", dst: reg(64, 9) }])), "490fc9");
+});

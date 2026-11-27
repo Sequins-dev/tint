@@ -122,6 +122,20 @@ export interface ExpressionInfo {
   readonly bigIntRecord?: number | undefined;
   /** `x instanceof DataView`: the NativeDataViewBox record layout. */
   readonly dataViewRecord?: number | undefined;
+  /** Element type for an inline DataView get/set call. */
+  readonly dataViewElement?:
+    | "i8"
+    | "u8"
+    | "i16"
+    | "u16"
+    | "i32"
+    | "u32"
+    | "f16"
+    | "f32"
+    | "f64"
+    | undefined;
+  /** `data-view:dataViewBytes` helper callee for inline DataView get/set calls. */
+  readonly dataViewBytes?: number | undefined;
   readonly realmTypeof?: number | undefined;
   readonly generalCall?: { readonly target: number | undefined } | undefined;
   /** Optional fixed-arity native entry for a guarded Node FFI callable. */
