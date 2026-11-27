@@ -45,6 +45,7 @@ export function visitRuntimeFunctions(
     add(runtime.resize, "list", index, "resize");
     add(runtime.pop, "list", index, "pop");
     add(runtime.wrap, "list", index, "wrap");
+    add(runtime.empty, "list", index, "empty");
     add(runtime.sort, "list", index, "sort");
   }
   const sets = options.sets ?? [];

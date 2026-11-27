@@ -64,12 +64,14 @@ function crossingType(
     case "function-environment":
       return "optional-reference";
     case "reference-string":
+    case "string-none":
+    case "string-wrap":
       return "optional-string";
     case "string-value":
     case "string-literal":
       return "string";
-    case "string-wrap":
-      return "optional-string";
+    case "string-present":
+      return "boolean";
     case "optional-wrap":
       return "optional-number";
     case "optional-value":
@@ -211,6 +213,10 @@ function supported(
     case "reference-none":
     case "reference-wrap":
     case "reference-value":
+    case "string-none":
+    case "string-wrap":
+    case "string-present":
+    case "string-value":
     case "string-reference":
     case "reference-string":
     case "record-read":
@@ -503,6 +509,8 @@ export function inlineSmallFunctions(
           scalar(fn.returnType) ||
           fn.returnType === "reference" ||
           fn.returnType === "optional-reference" ||
+          fn.returnType === "string" ||
+          fn.returnType === "optional-string" ||
           // A straight-line general result (such as a bound property
           // cache read) needs only the caller's general result slot.
           (fn.returnType === "general" && fn.blocks.length === 1)),
@@ -1160,6 +1168,7 @@ export function inlineSmallFunctions(
               case "undefined":
               case "boolean-none":
               case "reference-none":
+              case "string-none":
               case "general-none":
               case "general-null":
                 cloned.push({
@@ -1260,6 +1269,9 @@ export function inlineSmallFunctions(
               case "boolean-value":
               case "reference-wrap":
               case "reference-value":
+              case "string-wrap":
+              case "string-present":
+              case "string-value":
               case "string-reference":
               case "reference-string":
               case "general-is":

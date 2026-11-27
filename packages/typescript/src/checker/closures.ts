@@ -5364,12 +5364,15 @@ function checkClosureModuleLayout(
       for (const member of contract.members) {
         if (member === undefined) throw "class member contract invariant";
         const element = member.node;
-        if (element.kind !== "field" || element.static || element.private)
-          continue;
+        if (element.kind !== "field" || element.static) continue;
         const name = literalPropertyName(element.key);
         const site =
           name === undefined ? undefined : initialization.unproven.get(name);
         if (name === undefined || site === undefined) continue;
+        if (element.private) {
+          uninitializedFields.set(element, true);
+          continue;
+        }
         // Speculative reads have contracts for one primitive category.
         if (
           !system.assignable(member.type, number) &&

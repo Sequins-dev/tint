@@ -351,7 +351,22 @@ export function planClassRecords(
     let type: ScalarType | undefined = encoding(pm.type);
     if (type === undefined) fail("unsupported private field storage");
     const pmNode = pm.node;
-    if (pmNode.kind === "field" && pmNode.initializer === undefined)
+    // On a base class, a private field without an inline initializer that the
+    // constructor definitely assigns before any read or `this` escape stays
+    // unboxed with deferred initialization (no optional wrapper or state byte).
+    // Derived classes keep initialized tracking because super() may expose
+    // `this` before the subclass installs its private fields.
+    const provenPrivate =
+      base === undefined &&
+      pmNode.kind === "field" &&
+      pmNode.initializer === undefined &&
+      !uninitialized(pmNode) &&
+      !holdsUndefinedType(type);
+    if (
+      pmNode.kind === "field" &&
+      pmNode.initializer === undefined &&
+      !provenPrivate
+    )
       type = widenForUninitializedPrivate(type);
     instanceNames.push(classPrivateSlot(contract.instance, pm.name));
     inherited.push(-1);
@@ -359,7 +374,8 @@ export function planClassRecords(
       type,
       mutable: true,
       optional: false,
-      initialized: true,
+      initialized: !provenPrivate,
+      deferred: provenPrivate,
     });
   }
   const hasStaticBlock = contract.members.some(

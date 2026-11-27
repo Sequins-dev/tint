@@ -432,7 +432,6 @@ export interface StringNumberMapCursor {
   index: number;
   after: number;
   compactions: number;
-  hasCurrent: boolean;
   currentKey: string;
   currentValue: number;
 }
@@ -443,67 +442,84 @@ export function createMapCursor(map: StringNumberMap): StringNumberMapCursor {
     index: 0,
     after: 0,
     compactions: map.compactions,
-    hasCurrent: false,
     currentKey: "",
     currentValue: 0,
   };
 }
 
+function findNextMapEntry(
+  map: StringNumberMap,
+  index: number,
+  after: number,
+  compactions: number,
+): number {
+  const length = map.length,
+    hashes = map.hashes;
+  if (hashes === undefined) return length;
+  if (compactions !== map.compactions) {
+    const orders = map.orders,
+      baseOrder = map.baseOrder;
+    let at = 0;
+    while (at < length) {
+      if (hashes[at] !== removedHash) {
+        const ord =
+          orders === undefined ? baseOrder + at + 1 : (orders[at] ?? 0);
+        if (ord > after) break;
+      }
+      at++;
+    }
+    return at;
+  }
+  while (index < length && hashes[index] === removedHash) index++;
+  return index;
+}
+
+function mapEntryOrder(map: StringNumberMap, index: number): number {
+  const orders = map.orders;
+  return orders === undefined
+    ? map.baseOrder + index + 1
+    : (orders[index] ?? 0);
+}
+
+function mapKeyAt(map: StringNumberMap, index: number): string {
+  const keys = map.strKeys;
+  return keys === undefined ? "" : (keys[index] ?? "");
+}
+
+function mapValueAt(map: StringNumberMap, index: number): number {
+  const values = map.numValues;
+  return values === undefined ? 0 : (values[index] ?? 0);
+}
+
 export function advanceMapCursor(cursor: StringNumberMapCursor): boolean {
   const map = cursor.map;
-  cursor.hasCurrent = false;
   if (map === undefined) return false;
-  const length = map.length,
-    keys = map.strKeys,
-    values = map.numValues,
-    hashes = map.hashes;
-  if (
-    keys === undefined ||
-    values === undefined ||
-    hashes === undefined ||
-    length === 0
-  ) {
-    cursor.map = undefined;
-    return false;
-  }
-  const orders = map.orders,
-    baseOrder = map.baseOrder;
   let index = cursor.index;
-  if (cursor.compactions !== map.compactions) {
-    index = 0;
-    while (index < length) {
-      if (hashes[index] !== removedHash) {
-        const ord =
-          orders === undefined ? baseOrder + index + 1 : (orders[index] ?? 0);
-        if (ord > cursor.after) break;
-      }
-      index++;
-    }
-    cursor.compactions = map.compactions;
-  } else {
-    while (index < length && hashes[index] === removedHash) index++;
+  const compactions = map.compactions,
+    cursorCompactions = cursor.compactions;
+  if (map.fastLimit === 0 || cursorCompactions !== compactions) {
+    index = findNextMapEntry(map, index, cursor.after, cursorCompactions);
+    cursor.compactions = compactions;
   }
-  if (index >= length) {
+  if (index >= map.length) {
     cursor.map = undefined;
     return false;
   }
-  const key = keys[index];
-  if (key === undefined) throw "map cursor key invariant";
-  cursor.currentKey = key;
-  cursor.currentValue = values[index] ?? 0;
-  cursor.hasCurrent = true;
-  cursor.after =
-    orders === undefined ? baseOrder + index + 1 : (orders[index] ?? 0);
+  cursor.currentKey = mapKeyAt(map, index);
+  cursor.currentValue = mapValueAt(map, index);
+  cursor.after = mapEntryOrder(map, index);
   cursor.index = index + 1;
   return true;
 }
 
 export function readMapCursorKey(cursor: StringNumberMapCursor): string {
-  if (!cursor.hasCurrent) throw "MAP_CURSOR_NOT_POSITIONED";
+  if (cursor.map === undefined || cursor.index === 0)
+    throw "MAP_CURSOR_NOT_POSITIONED";
   return cursor.currentKey;
 }
 
 export function readMapCursorValue(cursor: StringNumberMapCursor): number {
-  if (!cursor.hasCurrent) throw "MAP_CURSOR_NOT_POSITIONED";
+  if (cursor.map === undefined || cursor.index === 0)
+    throw "MAP_CURSOR_NOT_POSITIONED";
   return cursor.currentValue;
 }

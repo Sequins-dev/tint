@@ -223,13 +223,6 @@ export function devirtualizeClosureCalls(
   // environment (or the cell boxes it holds) devirtualize too. An absent
   // record-new argument leaves a cell field uninitialized, not written.
   const recordLayouts = module.records ?? [];
-  let hasScriptEntries = false;
-  for (const fn of module.functions) {
-    if (fn !== undefined && fn.scriptEntry === true) {
-      hasScriptEntries = true;
-      break;
-    }
-  }
   function isReferenceField(record: number, field: number): boolean {
     return recordLayouts[record]?.fields[field]?.type === "reference";
   }
@@ -267,7 +260,6 @@ export function devirtualizeClosureCalls(
         if (op.kind === "function-new" && eligible(op.target))
           closureSource = true;
         else if (
-          hasScriptEntries &&
           op.kind === "record-read" &&
           isClosedRecord(op.record) &&
           isReferenceField(op.record, op.field)
@@ -422,7 +414,7 @@ export function devirtualizeClosureCalls(
           if (directKnown !== undefined) local.set(op.id, directKnown);
           const source = loaded.get(op.value);
           if (source !== undefined) loaded.set(op.id, source);
-        } else if (hasScriptEntries && op.kind === "record-read") {
+        } else if (op.kind === "record-read") {
           const fieldKnown = fieldTarget(op.record, op.field);
           if (fieldKnown !== undefined) local.set(op.id, fieldKnown);
         } else if (op.kind === "load" && isClosureSlot(fn.slots[op.slot]))
@@ -529,7 +521,7 @@ export function devirtualizeClosureCalls(
               target: op.target,
               environment: op.environment !== undefined,
             });
-          else if (hasScriptEntries && op.kind === "record-read") {
+          else if (op.kind === "record-read") {
             const fieldKnown = fieldTarget(op.record, op.field);
             if (fieldKnown !== undefined) local.set(op.id, fieldKnown);
           } else if (op.kind === "store" && fn.slots[op.slot] === "reference") {
@@ -629,7 +621,7 @@ export function devirtualizeClosureCalls(
             target: op.target,
             environment: op.environment !== undefined,
           });
-        else if (hasScriptEntries && op.kind === "record-read") {
+        else if (op.kind === "record-read") {
           const fieldKnown = fieldTarget(op.record, op.field);
           if (fieldKnown !== undefined) known.set(op.id, fieldKnown);
         } else if (

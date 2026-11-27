@@ -362,7 +362,6 @@ export interface NumberSetCursor {
   index: number;
   after: number;
   compactions: number;
-  hasCurrent: boolean;
   current: number;
 }
 
@@ -372,53 +371,67 @@ export function createSetCursor(set: NumberKeySet): NumberSetCursor {
     index: 0,
     after: 0,
     compactions: set.compactions,
-    hasCurrent: false,
     current: 0,
   };
 }
 
+function findNextSetEntry(
+  set: NumberKeySet,
+  index: number,
+  after: number,
+  compactions: number,
+): number {
+  const length = set.length,
+    deleted = set.deleted;
+  if (compactions !== set.compactions) {
+    const orders = set.orders,
+      baseOrder = set.baseOrder;
+    let at = 0;
+    while (at < length) {
+      if (deleted === undefined || deleted[at] !== 1) {
+        const ord =
+          orders === undefined ? baseOrder + at + 1 : (orders[at] ?? 0);
+        if (ord > after) break;
+      }
+      at++;
+    }
+    return at;
+  }
+  if (deleted !== undefined)
+    while (index < length && deleted[index] === 1) index++;
+  return index;
+}
+
+function setEntryOrder(set: NumberKeySet, index: number): number {
+  const orders = set.orders;
+  return orders === undefined
+    ? set.baseOrder + index + 1
+    : (orders[index] ?? 0);
+}
+
 export function advanceSetCursor(cursor: NumberSetCursor): boolean {
   const set = cursor.set;
-  cursor.hasCurrent = false;
   if (set === undefined) return false;
-  const length = set.length,
-    members = set.members;
-  if (members === undefined || length === 0) {
-    cursor.set = undefined;
-    return false;
-  }
-  const deleted = set.deleted,
-    orders = set.orders,
-    baseOrder = set.baseOrder;
   let index = cursor.index;
-  if (cursor.compactions !== set.compactions) {
-    index = 0;
-    while (index < length) {
-      if (deleted === undefined || deleted[index] !== 1) {
-        const ord =
-          orders === undefined ? baseOrder + index + 1 : (orders[index] ?? 0);
-        if (ord > cursor.after) break;
-      }
-      index++;
-    }
-    cursor.compactions = set.compactions;
-  } else {
-    while (index < length && deleted !== undefined && deleted[index] === 1)
-      index++;
+  const compactions = set.compactions,
+    cursorCompactions = cursor.compactions;
+  if (set.fastLimit === 0 || cursorCompactions !== compactions) {
+    index = findNextSetEntry(set, index, cursor.after, cursorCompactions);
+    cursor.compactions = compactions;
   }
-  if (index >= length) {
+  const members = set.members;
+  if (members === undefined || index >= set.length) {
     cursor.set = undefined;
     return false;
   }
   cursor.current = members[index] ?? 0;
-  cursor.hasCurrent = true;
-  cursor.after =
-    orders === undefined ? baseOrder + index + 1 : (orders[index] ?? 0);
+  cursor.after = setEntryOrder(set, index);
   cursor.index = index + 1;
   return true;
 }
 
 export function readSetCursor(cursor: NumberSetCursor): number {
-  if (!cursor.hasCurrent) throw "SET_CURSOR_NOT_POSITIONED";
+  if (cursor.set === undefined || cursor.index === 0)
+    throw "SET_CURSOR_NOT_POSITIONED";
   return cursor.current;
 }

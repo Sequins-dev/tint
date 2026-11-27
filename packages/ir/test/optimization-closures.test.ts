@@ -1243,3 +1243,86 @@ test("direct function-environment on a stateless function-new without environmen
   assert.equal(forwarded.rewritten, 0);
   assert.equal(forwarded.fn, stateless);
 });
+
+test("typed functions without scriptEntry devirtualize closures read from immutable record fields", () => {
+  // Record 0 holds a single immutable closure reference (like a class
+  // constructor-state slot storing a private method). Neither function is a
+  // scriptEntry, so typed programs must still propagate and devirtualize it.
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "function-new", id: 0, target: 1, ...span },
+          { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+          { kind: "store", slot: 1, value: 1, ...span },
+          { kind: "load", id: 2, slot: 1, ...span },
+          {
+            kind: "record-read",
+            id: 3,
+            object: 2,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+          { kind: "load", id: 4, slot: 0, ...span },
+          {
+            kind: "call-indirect",
+            id: 5,
+            target: 1,
+            callee: 3,
+            arguments: [4],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 5, ...span },
+      },
+    ],
+  };
+  const helper: FunctionIR = {
+    id: 1,
+    name: "privateMethod",
+    exported: false,
+    parameters: [0],
+    slots: ["number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "constant", id: 1, value: 3, ...span },
+          { kind: "binary", id: 2, operator: "*", left: 0, right: 1, ...span },
+        ],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+    ],
+  };
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "reference", mutable: false }],
+      },
+    ],
+    functions: [run, helper],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const result = devirtualizeClosureCalls(input, 10000, true);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+  const call = result.module.functions[0]!.blocks[0]!.instructions.find(
+    (op) => op.kind === "call",
+  );
+  assert.ok(call?.kind === "call");
+  assert.equal(call.target, 1);
+});
