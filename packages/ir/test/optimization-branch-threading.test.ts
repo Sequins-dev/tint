@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { verify, type FunctionIR, type ModuleIR } from "@tint/ir/scalar";
+import { optimizeModule } from "@tint/ir/optimization";
 import { threadBranches } from "../src/optimization/branch-threading.ts";
 const s = { start: 0, end: 0 };
 
@@ -184,4 +185,78 @@ test("undecided thin blocks, writes and exhausted budgets are left alone", () =>
   assert.equal(threadBranches(carried, 3), undefined);
   const generated = { ...carried, name: "__tint_reference_list_read$1" };
   assert.equal(threadBranches(generated, 100000)?.rewritten, 0);
+});
+
+test("thin blocks comparing a slot against a constant thread into predecessor jumps", () => {
+  // Models a post-prune-unallocated-records override guard:
+  // b0 stores 0 into guard slot 1 and jumps to thin block b1, which loads slot 1,
+  // compares `=== 0`, and branches to b2 (fast) or b3 (slow).
+  const guarded: FunctionIR = {
+    id: 0,
+    name: "guarded",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "constant", id: 2, value: 0, ...s },
+          { kind: "binary", id: 3, operator: "===", left: 1, right: 2, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 2,
+          alternate: 3,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 4, slot: 0, ...s }],
+        terminator: { kind: "return", value: 4, ...s },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "constant", id: 5, value: -1, ...s }],
+        terminator: { kind: "return", value: 5, ...s },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [guarded] }), { ok: true });
+
+  const result = threadBranches(guarded, 100000);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  assert.deepEqual(verify({ functions: [result.fn] }), { ok: true });
+  assert.equal(result.fn.blocks[0]!.terminator.kind, "branch");
+  assert.deepEqual(run(result.fn, [42]), run(guarded, [42]));
+
+  // After optimization, constant folding eliminates the dead slow path b3.
+  const optimized = optimizeModule({ functions: [guarded] }, 20000000);
+  assert.deepEqual(verify(optimized.module), { ok: true });
+  const out = optimized.module.functions[0]!;
+  assert.ok(
+    !out.blocks.some((b) => b.terminator.kind === "branch"),
+    "guard branch folds away",
+  );
+  assert.ok(
+    !out.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "constant" && op.value === -1),
+    ),
+    "dead slow path is eliminated",
+  );
+  assert.equal(run(out, [42]).result, 42);
 });
