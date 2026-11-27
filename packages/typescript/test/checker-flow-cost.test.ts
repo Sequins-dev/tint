@@ -130,3 +130,50 @@ test("entry snapshots preserve loop, handler and unreachable definite assignment
   );
   assert.ok(valid.ok, JSON.stringify(valid));
 });
+
+test("alternateFacts and impure refine stay linear with hundreds of narrowed bindings", () => {
+  const count = 200;
+  const params = Array.from(
+    { length: count },
+    (_, i) => `v${i}: number | string`,
+  ).join(", ");
+  const narrowings = Array.from(
+    { length: count },
+    (_, i) => `if (typeof v${i} !== "number") return 0;`,
+  ).join("\n");
+  const branches = Array.from(
+    { length: 24 },
+    (_, i) =>
+      `if (probe(${i}) || probe(${i + 1}) || probe(${i + 2})) { sum += v${i}; } else { sum += v${i + 1}; }`,
+  ).join("\n");
+  const program =
+    `function probe(n: number): boolean { return n > 0; }\n` +
+    `function f(${params}): number {\n${narrowings}\nlet sum = 0;\n${branches}\nreturn sum;\n}`;
+  const { result, visits } = checkWithVisits(program);
+  assert.ok(result.ok, JSON.stringify(result));
+  // With O(|a| * |b|) alternateFacts on 200 narrowed facts across 24 chains,
+  // Set iterations exceeded 2,000,000; linear merges stay well below 250,000.
+  assert.ok(
+    visits < 250_000,
+    `${visits} Set entries visited for ${count} narrowed bindings across 24 impure branches`,
+  );
+});
+
+test("alternateFacts preserves union of differing narrowed types across branches", () => {
+  const header =
+    'type V = { readonly kind: "a"; readonly x: number } | { readonly kind: "b"; readonly x: number } | { readonly kind: "c"; readonly y: string };\n';
+  const valid = checkClosureModule(
+    parse(
+      header +
+        'function f(v: V, flag: boolean): number { if (flag) { if (v.kind !== "a") return 0; } else { if (v.kind !== "b") return 0; } return v.x; }',
+    ),
+  );
+  assert.ok(valid.ok, JSON.stringify(valid));
+  const invalid = checkClosureModule(
+    parse(
+      header +
+        'function f(v: V, flag: boolean): number { if (flag) { if (v.kind !== "a") return 0; } else { if (v.kind !== "c") return 0; } return v.x; }',
+    ),
+  );
+  assert.equal(invalid.ok, false);
+});

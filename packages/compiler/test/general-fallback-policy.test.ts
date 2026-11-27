@@ -464,3 +464,40 @@ test("a typed binder restriction inside a method is owned by the class", () => {
     text.split("\n")[0],
   );
 });
+
+test("requireTyped fails fast with the typed Worker preparation reason instead of lowering general guests", () => {
+  const calls: boolean[] = [];
+  const { lowering } = recordingLowering();
+  const compiled = compileArm64Program({
+    modules: [
+      source("main", "export function run(): number { return 42; }"),
+      source("peer", "export const x: number = 1;"),
+    ],
+    entry: "main",
+    exports: ["run"],
+    start: "run",
+    runtimes: [],
+    workerModules: ["peer"],
+    requireTyped: true,
+    generalLowering: {
+      ...lowering,
+      prepareTypedWorkers: (_request, typed) => {
+        calls.push(typed);
+        return {
+          ok: false,
+          error:
+            "module ./shared.ts uses the Worker bindings in the graphs of main and peer",
+        };
+      },
+    },
+  });
+  assert.deepEqual(calls, [true]);
+  assert.equal(compiled.ok, false);
+  if (!compiled.ok) {
+    assert.equal(compiled.error.stage, "worker-entry");
+    assert.match(
+      compiled.error.message,
+      /module \.\/shared\.ts uses the Worker bindings in the graphs of main and peer/,
+    );
+  }
+});

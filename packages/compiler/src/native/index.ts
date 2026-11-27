@@ -1733,29 +1733,34 @@ function compileWithTypedWorkerEntry<T>(
   const available = requestModules(request);
   const application = generalApplicationModules(request, available);
   if (!application.ok) return stageFailure("worker-entry", application.error);
+  const typedPreparation = prepare(
+    {
+      available,
+      modules: application.value,
+      entry: request.entry,
+      start,
+      boundaries: [],
+      workerEntries: guests,
+    },
+    true,
+  );
   const typedGuests = composeTypedWorkers<T>(
     request,
     compile,
     lowering,
-    prepare(
-      {
-        available,
-        modules: application.value,
-        entry: request.entry,
-        start,
-        boundaries: [],
-        workerEntries: guests,
-      },
-      true,
-    ),
+    typedPreparation,
     available,
     guests,
   );
-  let declined = "typed Worker entries were not composed";
+  let declined = !typedPreparation.ok
+    ? typedPreparation.error
+    : "typed Worker entries were not composed";
   if (typedGuests !== undefined) {
     if (typedGuests.ok) return typedGuests;
     declined = typedGuests.error.message;
   }
+  if (request.requireTyped === true)
+    return typedGuests ?? stageFailure("worker-entry", declined);
   const guestModules = composeTypedWorkers<T>(
     request,
     compile,
@@ -1774,15 +1779,10 @@ function compileWithTypedWorkerEntry<T>(
     available,
     guests,
   );
-  if (guestModules === undefined)
-    return request.requireTyped === true
-      ? stageFailure("worker-entry", "missing typed Worker composition")
-      : compile(request);
-  if (guestModules.ok) {
+  if (guestModules?.ok === true) {
     onGuestFallback?.({ modules: guests, reason: declined });
     return guestModules;
   }
-  if (request.requireTyped === true) return guestModules;
   return compile(request);
 }
 /** Compiles one prepared typed-entry composition; undefined when preparation
