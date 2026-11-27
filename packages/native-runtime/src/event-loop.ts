@@ -272,8 +272,15 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
         checkpoint("callback");
       }
     } finally {
-      if (phase.next === phase.callbacks.length) phase.callbacks.length = 0;
-      else phase.callbacks.splice(0, phase.next);
+      const remaining = phase.callbacks.length - phase.next;
+      if (remaining <= 0) phase.callbacks.length = 0;
+      else if (phase.next > 0) {
+        for (let i = 0; i < remaining; i++) {
+          const item = phase.callbacks[phase.next + i];
+          if (item !== undefined) phase.callbacks[i] = item;
+        }
+        phase.callbacks.length = remaining;
+      }
       phase.next = 0;
     }
   }

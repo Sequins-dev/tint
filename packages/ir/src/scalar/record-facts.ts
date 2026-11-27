@@ -1,3 +1,4 @@
+import { createNumberIndex } from "@tint/foundation/collections/key-index";
 import { instructionResult } from "./operands.ts";
 import {
   analyzeLiveSlotRows,
@@ -553,15 +554,14 @@ export function dataflowRecordGuards(
   }
   if (tracked === 0 || fn.blocks[fn.entry] === undefined) return proven;
   let work = fn.slots.length + blockCount,
-    maximum = 0;
+    maxBlockOps = 0;
   for (const block of fn.blocks) {
     if (block === undefined) throw "record dataflow block invariant";
-    work += block.instructions.length + 1;
-    for (const op of block.instructions) {
+    const opCount = block.instructions.length;
+    work += opCount + 1;
+    if (opCount > maxBlockOps) maxBlockOps = opCount;
+    for (const op of block.instructions)
       if (op === undefined) throw "record dataflow instruction invariant";
-      const id = instructionResult(op);
-      if (id !== undefined && id >= maximum) maximum = id + 1;
-    }
   }
   if (work > maxWork) return undefined;
   // Live-in sets as dense rows when they fit (same sets and work).
@@ -575,11 +575,14 @@ export function dataflowRecordGuards(
   if (rowLiveness === undefined && listLiveness === undefined) return undefined;
   work += rowLiveness?.work ?? listLiveness?.work ?? 0;
   const liveSlots = listLiveness?.slots;
-  // Value facts are block-local; a generation stamp discards stale entries.
-  const layouts = new Uint32Array(maximum),
-    sources = new Uint32Array(maximum),
-    loadedVersions = new Uint32Array(maximum),
-    stamps = new Uint32Array(maximum),
+  // Value facts are block-local; interning per block bounds the four scratch
+  // lanes by the largest block rather than the function's maximum SSA ID.
+  const valueCapacity = maxBlockOps * 2 + 2,
+    valueIds = createNumberIndex(),
+    layouts = new Uint32Array(valueCapacity),
+    sources = new Uint32Array(valueCapacity),
+    loadedVersions = new Uint32Array(valueCapacity),
+    stamps = new Uint32Array(valueCapacity),
     // Entry facts: pairs of (1-based tracked slot, layout + 1) in `pool`.
     starts = new Uint32Array(blockCount),
     counts = new Uint32Array(blockCount),
@@ -746,7 +749,8 @@ export function dataflowRecordGuards(
     }
   }
   function layoutOf(value: number): number {
-    return stamps[value] === generation ? (layouts[value] ?? 0) : 0;
+    const idx = valueIds.lookup(value);
+    return idx >= 0 && stamps[idx] === generation ? (layouts[idx] ?? 0) : 0;
   }
   function define(
     value: number,
@@ -754,17 +758,19 @@ export function dataflowRecordGuards(
     source: number,
     version: number,
   ): void {
-    stamps[value] = generation;
-    layouts[value] = layout;
-    sources[value] = source;
-    loadedVersions[value] = version;
+    const idx = valueIds.intern(value);
+    stamps[idx] = generation;
+    layouts[idx] = layout;
+    sources[idx] = source;
+    loadedVersions[idx] = version;
   }
   /** The tracked slot (1-based) still holding a value's object here, or 0. */
   function holder(value: number): number {
-    if (stamps[value] !== generation) return 0;
-    const source = sources[value] ?? 0;
+    const idx = valueIds.lookup(value);
+    if (idx < 0 || stamps[idx] !== generation) return 0;
+    const source = sources[idx] ?? 0;
     return source !== 0 &&
-      (versions[source] ?? 0) === (loadedVersions[value] ?? 0)
+      (versions[source] ?? 0) === (loadedVersions[idx] ?? 0)
       ? source
       : 0;
   }
@@ -778,6 +784,7 @@ export function dataflowRecordGuards(
   // Leaves `current` and value facts as they stand before the terminator.
   function simulate(block: Block): void {
     generation++;
+    valueIds.clear();
     clearFacts();
     for (let position = 0; position < touchedCount; position++)
       versions[touched[position] ?? 0] = 0;
@@ -815,19 +822,22 @@ export function dataflowRecordGuards(
       )
         define(op.id, fn.closureEnvironment + 1, 0, 0);
       else if (op.kind === "reference-value" || op.kind === "reference-wrap") {
-        if (stamps[op.value] === generation)
+        const srcIdx = valueIds.lookup(op.value);
+        if (srcIdx >= 0 && stamps[srcIdx] === generation)
           define(
             op.id,
-            layouts[op.value] ?? 0,
-            sources[op.value] ?? 0,
-            loadedVersions[op.value] ?? 0,
+            layouts[srcIdx] ?? 0,
+            sources[srcIdx] ?? 0,
+            loadedVersions[srcIdx] ?? 0,
           );
         else define(op.id, 0, 0, 0);
       } else if (op.kind === "record-read") {
         // Verified IR: the verifier proved this receiver's layout.
         const object = op.object,
-          slot = holder(object);
-        if (stamps[object] === generation) layouts[object] = op.record + 1;
+          slot = holder(object),
+          objIdx = valueIds.lookup(object);
+        if (objIdx >= 0 && stamps[objIdx] === generation)
+          layouts[objIdx] = op.record + 1;
         else define(object, op.record + 1, 0, 0);
         if (slot !== 0) set(slot, op.record + 1);
         define(op.id, 0, 0, 0);

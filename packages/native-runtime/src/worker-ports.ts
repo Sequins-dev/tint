@@ -3,6 +3,7 @@ import {
   createNativeAgentPacketProducer,
   createNativeAgentMailbox,
   drainNativeAgentPackets,
+  drainNativeAgentPacketsEach,
   nativeAgentPacketsQueued,
   publishNativeAgentPacket,
   releaseNativeAgentMailboxBlocks,
@@ -100,6 +101,8 @@ export function createNativeMessagePorts(
   /** Discards the grants of a packet that will never be delivered; the
    * ports release the packet itself. */
   disposePacket: (entry: NativeAgentPacketEntry) => void,
+  /** Optional allocation-free check for an in-flight engine abort (OOM). */
+  isAbort?: () => boolean,
 ): NativeMessagePorts {
   const scratch = new Uint32Array(2);
   const packetHeader: MutableSharedWindow = {
@@ -107,6 +110,18 @@ export function createNativeMessagePorts(
     byteLength: 32,
     engineId: 0,
   };
+  const mailboxWindow: MutableSharedWindow = {
+    base: 0,
+    byteLength: PAGE,
+    engineId: 0,
+  };
+  const releasePairWindow: MutableSharedWindow = {
+    base: 0,
+    byteLength: PAGE,
+    engineId: 0,
+  };
+  const reusablePacket = { base: 0, byteLength: 0, segment: 0 };
+  const reusableEntry = { packet: reusablePacket, used: 0 };
   const signal = new Uint8Array(1);
   const notifications = new Uint8Array(256);
   function registry(base: number): NativeSharedBlockRegistry {
@@ -168,16 +183,69 @@ export function createNativeMessagePorts(
   }
   /** The final owner frees a mailbox's recycled payloads, then its page. */
   function releaseMailbox(base: number): void {
-    releaseNativeAgentMailboxBlocks(memory, registry(base));
+    mailboxWindow.base = base;
+    mailboxWindow.byteLength = PAGE;
+    mailboxWindow.engineId = base;
+    releaseNativeAgentMailboxBlocks(
+      memory,
+      mailboxWindow,
+      scratch,
+      packetHeader,
+    );
     releaseMemory(base);
   }
+  function disposeEntrySafely(
+    queueRegistry: NativeSharedBlockRegistry,
+    entry: NativeAgentPacketEntry,
+  ): void {
+    try {
+      disposePacket(entry);
+    } catch (error) {
+      // During managed heap exhaustion, still release the packet's unmanaged
+      // memory and finish tearing down the endpoint without stranding the peer.
+      if (typeof error !== "function" && !(isAbort?.() === true)) throw error;
+    } finally {
+      releaseNativeAgentPacket(
+        memory,
+        parking,
+        queueRegistry,
+        entry.packet,
+        scratch,
+        packetHeader,
+      );
+    }
+  }
+  let activeDrainQueue: NativeSharedBlockRegistry | undefined;
+  const disposeDrainedPacket = (
+    base: number,
+    byteLength: number,
+    segment: number,
+    used: number,
+  ): void => {
+    const queueRegistry = activeDrainQueue;
+    if (queueRegistry === undefined) return;
+    reusablePacket.base = base;
+    reusablePacket.byteLength = byteLength;
+    reusablePacket.segment = segment;
+    reusableEntry.used = used;
+    disposeEntrySafely(queueRegistry, reusableEntry);
+  };
   function releaseEndpoint(
     grant: NativeMessagePortGrant,
     state: number,
     queue: NativeAgentMailbox,
-    pending: readonly NativeAgentPacketEntry[],
+    pending: readonly NativeAgentPacketEntry[] | undefined,
+    pendingStart: number,
+    existingPair?: NativeSharedBlockRegistry,
   ): void {
-    const pair = registry(grant.base);
+    let pair: NativeSharedBlockRegistry;
+    if (existingPair !== undefined) pair = existingPair;
+    else {
+      releasePairWindow.base = grant.base;
+      releasePairWindow.byteLength = PAGE;
+      releasePairWindow.engineId = grant.base;
+      pair = releasePairWindow;
+    }
     const local = endpoint(grant.side);
     const peer = endpoint(1 - grant.side);
     lock(pair);
@@ -191,29 +259,25 @@ export function createNativeMessagePorts(
     }
 
     try {
-      const undelivered = pending.slice();
-      for (const entry of drainNativeAgentPackets(
-        memory,
-        parking,
-        queue.registry,
-        undefined,
-        scratch,
-        packetHeader,
-      ))
-        undelivered.push(entry);
-      for (const entry of undelivered) {
-        try {
-          disposePacket(entry);
-        } finally {
-          releaseNativeAgentPacket(
-            memory,
-            parking,
-            queue.registry,
-            entry.packet,
-            scratch,
-            packetHeader,
-          );
+      if (pending !== undefined) {
+        for (let i = pendingStart; i < pending.length; i++) {
+          const entry = pending[i];
+          if (entry !== undefined) disposeEntrySafely(queue.registry, entry);
         }
+      }
+      const previousQueue = activeDrainQueue;
+      activeDrainQueue = queue.registry;
+      try {
+        drainNativeAgentPacketsEach(
+          memory,
+          parking,
+          queue.registry,
+          scratch,
+          packetHeader,
+          disposeDrainedPacket,
+        );
+      } finally {
+        activeDrainQueue = previousQueue;
       }
     } finally {
       // Once this decrement succeeds the other closer may unmap the pair.
@@ -234,10 +298,10 @@ export function createNativeMessagePorts(
       if (remaining === 1) {
         // Signal pipes close with the pair, so a sender can write its
         // peer's pipe after releasing the pair lock.
-        for (const side of [local, peer]) {
-          threads.close(read(pair, side + INPUT));
-          threads.close(read(pair, side + OUTPUT));
-        }
+        threads.close(read(pair, local + INPUT));
+        threads.close(read(pair, local + OUTPUT));
+        threads.close(read(pair, peer + INPUT));
+        threads.close(read(pair, peer + OUTPUT));
         releaseMailbox(read(pair, local + MAILBOX));
         releaseMailbox(read(pair, peer + MAILBOX));
         releaseMemory(pair.base);
@@ -417,7 +481,8 @@ export function createNativeMessagePorts(
               if (!active) return;
             }
           } catch (error) {
-            schedule();
+            if (typeof error !== "function" && !(isAbort?.() === true))
+              schedule();
             throw error;
           }
         };
@@ -509,10 +574,23 @@ export function createNativeMessagePorts(
       },
       close: (): void => {
         if (!owned) return;
-        watch?.close();
         owned = false;
-        producer.close();
-        releaseEndpoint(grant, OWNED, incoming, undelivered());
+        try {
+          watch?.close();
+        } finally {
+          try {
+            producer.close();
+          } finally {
+            const start = cursor;
+            cursor = pending.length;
+            try {
+              releaseEndpoint(grant, OWNED, incoming, pending, start, pair);
+            } finally {
+              pending.length = 0;
+              cursor = 0;
+            }
+          }
+        }
       },
     };
   }
@@ -588,7 +666,9 @@ export function createNativeMessagePorts(
         grant,
         IN_FLIGHT,
         mailbox(pair, endpoint(grant.side)),
-        [],
+        undefined,
+        0,
+        pair,
       );
     },
   };

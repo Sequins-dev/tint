@@ -1,6 +1,8 @@
 import {
   nativeThreadExitReadOffset,
   nativeThreadExitWriteOffset,
+  nativeWorkerFailureCodeOffset,
+  nativeWorkerFailureOutOfMemory,
   nativeWorkerStopObserved,
   nativeWorkerStopRequested,
   nativeWorkerStopStateOffset,
@@ -79,6 +81,8 @@ export interface NativeWorkerTurnControl {
   /** Raw address of this worker's lifecycle record (stop state + wait ticket). */
   readonly recordBase: number;
   stopRequested(): boolean;
+  /** True once the worker's managed allocator has recorded heap exhaustion. */
+  heapExhausted(): boolean;
   readonly waiters: NativeWaitRegistry | undefined;
   readonly engine: NativeWorkerEngineGrant | undefined;
   readonly stackBytes: number;
@@ -96,6 +100,10 @@ export interface NativeWorkerEngineGrant {
   readonly strings: number;
 }
 
+export const workerOutOfMemoryCode = "ERR_WORKER_OUT_OF_MEMORY";
+export const workerOutOfMemoryMessage =
+  "Worker terminated due to reaching memory limit: JS heap out of memory";
+
 export interface NativeWorkerRequest {
   readonly threadId: number;
   readonly moduleId: number;
@@ -106,7 +114,7 @@ export interface NativeWorkerRequest {
   readonly heapBytes?: number;
   readonly engine?: NativeWorkerEngineGrant;
   onUnclaimedParentPort?(grant: NativeMessagePortGrant): void;
-  onError(message: string): void;
+  onError(message: string, code?: string): void;
   onExit(status: number): void;
 }
 
@@ -130,6 +138,9 @@ const BLOCKS = 160;
 const BLOCK_BYTES = 168;
 const BLOCK_ENGINE = 176;
 const STRINGS = 184;
+const FAILURE_CODE = nativeWorkerFailureCodeOffset;
+const FAILURE_OUT_OF_MEMORY = nativeWorkerFailureOutOfMemory;
+const FAILURE_UNCAUGHT = 2;
 
 /** Launch from the current image. The owner watches a nonblocking exit pipe.
  * Worker code uses its own hosted context and shares only scalar startup data. */
@@ -227,6 +238,7 @@ export function startNativeWorker(
     if (count < 0 || status === 0 || status > 256)
       throw "NATIVE_WORKER_EXIT_RECORD";
     const failure = errors.receive();
+    const failureCode = readNumber(memory, record, FAILURE_CODE, scratch);
     const entered = readNumber(memory, record, ENTERED, scratch) !== 0;
     const port = request.parentPort;
     const unclaimed =
@@ -241,6 +253,14 @@ export function startNativeWorker(
       );
     if (failure !== undefined)
       runtime.loop.enqueuePending((): void => request.onError(failure));
+    else if (failureCode === FAILURE_OUT_OF_MEMORY)
+      runtime.loop.enqueuePending((): void =>
+        request.onError(workerOutOfMemoryMessage, workerOutOfMemoryCode),
+      );
+    else if (failureCode === FAILURE_UNCAUGHT)
+      runtime.loop.enqueuePending((): void =>
+        request.onError("uncaught worker exception"),
+      );
     else if (!entered)
       runtime.loop.enqueuePending((): void =>
         request.onError("worker isolate initialization failed"),
@@ -356,6 +376,12 @@ export function runNativeWorker(
       readNumber(memory, record, nativeWorkerStopStateOffset, scratch) !== 0
     );
   }
+  function heapExhausted(): boolean {
+    return (
+      readNumber(memory, record, FAILURE_CODE, scratch) ===
+      FAILURE_OUT_OF_MEMORY
+    );
+  }
   let waiters: NativeWaitRegistry | undefined;
   const waitRegistry = readNumber(memory, record, WAIT_REGISTRY, scratch);
   if (waitRegistry !== 0) {
@@ -437,6 +463,7 @@ export function runNativeWorker(
     input: readNumber(memory, record, CONTROL_INPUT, scratch),
     recordBase: record.base,
     stopRequested,
+    heapExhausted,
     waiters,
     engine,
     stackBytes: readNumber(
@@ -473,9 +500,28 @@ export function runNativeWorker(
         nativeWorkerStopObserved
     )
       return 1;
+    // Managed heap exhaustion records FAILURE_OUT_OF_MEMORY directly in the
+    // native exit page (and in single-unit tests throws a native closure) so
+    // reporting ERR_WORKER_OUT_OF_MEMORY never needs to allocate.
+    if (heapExhausted() || typeof error === "function") {
+      writeNumber(memory, record, FAILURE_CODE, FAILURE_OUT_OF_MEMORY);
+      return 1;
+    }
     const text =
       typeof error === "string" ? error : "uncaught worker exception";
-    if (errors.value.send(text).ok) return 1;
+    try {
+      if (errors.value.send(text).ok) return 1;
+    } catch (sendError) {
+      writeNumber(
+        memory,
+        record,
+        FAILURE_CODE,
+        heapExhausted() || typeof sendError === "function"
+          ? FAILURE_OUT_OF_MEMORY
+          : FAILURE_UNCAUGHT,
+      );
+      return 1;
+    }
     writeNumber(memory, record, ENTERED, 0);
     return 70;
   }

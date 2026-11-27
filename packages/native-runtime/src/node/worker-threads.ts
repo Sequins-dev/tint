@@ -59,7 +59,7 @@ export interface WorkerResourceLimits {
 export interface NodeWorkerLaunch {
   readonly parentPort: NativeMessagePortGrant;
   onUnclaimedParentPort(grant: NativeMessagePortGrant): void;
-  onError(message: string): void;
+  onError(message: string, code?: string): void;
   onExit(code: number): void;
 }
 export interface NodeWorkerPlan {
@@ -488,6 +488,11 @@ export function createNodeWorkerThreads(
       try {
         value = messages.receive(endpoint.port, entry);
       } catch (error) {
+        if (
+          options.control?.heapExhausted() === true ||
+          typeof error === "function"
+        )
+          throw error;
         emitOne(endpoint, "messageerror", error);
         return;
       }
@@ -533,6 +538,7 @@ export function createNodeWorkerThreads(
     options.threads,
     reactor,
     (entry): void => messages.discard(entry),
+    (): boolean => options.control?.heapExhausted() === true,
   );
   const messages: NativeWorkerMessages = createNativeWorkerMessages({
     realm,
@@ -719,6 +725,7 @@ export function createNodeWorkerThreads(
     let status: number | undefined;
     let eof = false;
     let failure: string | undefined;
+    let failureCode: string | undefined;
     function complete(): void {
       if (!eof || status === undefined) return;
       const worker = workerObjects.get(id);
@@ -728,6 +735,8 @@ export function createNodeWorkerThreads(
         if (failure !== undefined) {
           const error = createRuntimeError(realm, "error");
           builtinProperty(error, "message", failure, true, true, hooks);
+          if (failureCode !== undefined)
+            builtinProperty(error, "code", failureCode, true, true, hooks);
           emitOne(endpoint, "error", error);
         }
       } finally {
@@ -745,8 +754,9 @@ export function createNodeWorkerThreads(
       const lifecycle = plan.launch({
         parentPort: grant,
         onUnclaimedParentPort: (port): void => ports.discard(port),
-        onError: (message): void => {
+        onError: (message, code): void => {
           failure = message;
+          failureCode = code;
         },
         onExit: (code): void => {
           status = code;
@@ -891,8 +901,14 @@ export function createNodeWorkerThreads(
       return false;
     },
     close: (): void => {
-      for (const endpoint of endpoints) closePort(endpoint, false);
-      backing.close();
+      try {
+        for (let i = 0; i < endpoints.length; i++) {
+          const endpoint = endpoints[i];
+          if (endpoint !== undefined) closePort(endpoint, false);
+        }
+      } finally {
+        backing.close();
+      }
     },
   };
 }

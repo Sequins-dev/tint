@@ -72,13 +72,20 @@ export function createNativeAgentMailbox(
 export function releaseNativeAgentMailboxBlocks(
   host: NativeSharedMemoryHost,
   registry: NativeSharedBlockRegistry,
+  scratch: Uint32Array = new Uint32Array(2),
+  headerWindow?: MutableSharedWindow,
 ): void {
-  const scratch = new Uint32Array(2);
-  const header = {
-    base: 0,
-    byteLength: MESSAGE_HEADER,
-    engineId: registry.engineId,
-  };
+  const header: MutableSharedWindow =
+    headerWindow !== undefined
+      ? headerWindow
+      : {
+          base: 0,
+          byteLength: MESSAGE_HEADER,
+          engineId: registry.engineId,
+        };
+  header.base = 0;
+  header.byteLength = MESSAGE_HEADER;
+  header.engineId = registry.engineId;
   let block = readNumber(host, registry, FREE, scratch);
   while (block !== 0) {
     header.base = block;
@@ -555,6 +562,52 @@ export function drainNativeAgentPackets(
     head = next;
   }
   return entries;
+}
+/** Allocation-free packet drain for terminal cleanup: detaches the queued list
+ * under the queue lock and invokes `visit` with scalar packet metadata only. */
+export function drainNativeAgentPacketsEach(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  scratch: Uint32Array,
+  header: MutableSharedWindow,
+  visit: (
+    base: number,
+    byteLength: number,
+    segment: number,
+    used: number,
+  ) => void,
+): void {
+  let head = 0;
+  lock(host, parking, registry, scratch);
+  try {
+    head = readNumber(host, registry, HEAD, scratch);
+    if (head !== 0) {
+      writeNumber(host, registry, HEAD, 0);
+      writeNumber(host, registry, TAIL, 0);
+    }
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+  if (head === 0) return;
+  header.byteLength = PACKET_HEADER;
+  header.engineId = registry.engineId;
+  while (head !== 0) {
+    header.base = head;
+    const next = readNumber(host, header, 0, scratch);
+    const used = readNumber(host, header, 8, scratch);
+    const byteLength = readNumber(host, header, 16, scratch);
+    const segment = readNumber(host, header, 24, scratch);
+    if (
+      (segment === 0
+        ? byteLength % MAPPING_QUANTUM !== 0
+        : head < segment || head + byteLength !== segment + MAPPING_QUANTUM) ||
+      used > byteLength - PACKET_HEADER
+    )
+      throw "NATIVE_AGENT_PACKET_LENGTH";
+    visit(head, byteLength, segment, used);
+    head = next;
+  }
 }
 /** Whether a packet is queued: one unlocked read, for a receiver that polls
  * before it parks. A packet published concurrently may be missed; only

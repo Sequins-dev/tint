@@ -15,6 +15,15 @@ if (!isMainThread && workerData.mode === "notify") {
   Atomics.store(words, 2, Atomics.notify(words, 0, 1));
   Atomics.wait(words, 3, 0, 5000);
   parentPort.close();
+} else if (!isMainThread && workerData.mode === "oom-callback") {
+  parentPort.on("message", (msg) => {
+    if (msg === "boom") {
+      parentPort.postMessage("queued-before-oom");
+      const retained = [];
+      for (;;) retained.push(new Array(2048).fill(1));
+    }
+  });
+  parentPort.postMessage("ready");
 } else if (!isMainThread) {
   if (workerData.mode === "error") throw new Error("worker failed");
   if (workerData.mode === "stop") {
@@ -254,6 +263,44 @@ async function verifyWaitAsync(filename) {
   }
 }
 
+async function verifyOutOfMemory(filename) {
+  const worker = new Worker(filename, {
+    workerData: { mode: "oom-callback" },
+    resourceLimits: { maxOldGenerationSizeMb: 8 },
+  });
+  let deadline;
+  try {
+    if ((await once(worker, "message")) !== "ready") return 20;
+    const order = [];
+    const done = new Promise((resolve) => {
+      worker.on("message", (msg) => order.push(`msg:${msg}`));
+      worker.once("error", (error) =>
+        order.push(`err:${error.code ?? ""}:${error.message}`),
+      );
+      worker.once("exit", (code) => {
+        order.push(`exit:${code}`);
+        resolve(code);
+      });
+    });
+    const timeout = new Promise((resolve) => {
+      deadline = setTimeout(() => resolve("timeout"), 5000);
+    });
+    worker.postMessage("boom");
+    worker.postMessage("after-boom");
+    const status = await Promise.race([done, timeout]);
+    if (status !== 1) return 21;
+    if (
+      order.join("|") !==
+      "msg:queued-before-oom|err:ERR_WORKER_OUT_OF_MEMORY:Worker terminated due to reaching memory limit: JS heap out of memory|exit:1"
+    )
+      return 22;
+    return 42;
+  } finally {
+    clearTimeout(deadline);
+    await worker.terminate();
+  }
+}
+
 /** Hosts give Worker the module designation for this same source. */
 export async function run(filename) {
   if (
@@ -270,5 +317,7 @@ export async function run(filename) {
   const worker = await verifyWorker(filename);
   if (worker !== 42) return worker;
   const lifecycle = await verifyLifecycle(filename);
-  return lifecycle === 42 ? verifyWaitAsync(filename) : lifecycle;
+  if (lifecycle !== 42) return lifecycle;
+  const wait = await verifyWaitAsync(filename);
+  return wait === 42 ? verifyOutOfMemory(filename) : wait;
 }
