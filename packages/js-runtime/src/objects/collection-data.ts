@@ -1,9 +1,23 @@
-import { viewBigIntValue, compareBigIntValues } from "./bigints.ts";
+import {
+  viewBigIntValue,
+  compareBigIntValues,
+  type BigIntValue,
+} from "./bigints.ts";
 
 function hashMapString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++)
     hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  return hash;
+}
+
+function hashBigIntValue(value: BigIntValue): number {
+  const integer = value.integer;
+  const digits = integer.digits;
+  let hash = integer.negative ? 0x811c9dc5 : 0x9e3779b1;
+  for (let i = 0; i < digits.length; i++) {
+    hash = Math.imul(hash ^ (digits[i] ?? 0), 0x01000193) >>> 0;
+  }
   return hash;
 }
 
@@ -13,6 +27,28 @@ function sameOtherKey(left: unknown, right: unknown): boolean {
   if (a === undefined) return false;
   const b = viewBigIntValue(right);
   return b !== undefined && compareBigIntValues(a, b) === 0;
+}
+
+function findBigIntEntry(
+  map: ScriptMap,
+  bigint: BigIntValue,
+  hash: number,
+): ScriptMapEntry | undefined {
+  const buckets = map.buckets;
+  let entry =
+    buckets === undefined ? map.head : buckets[bucketOf(hash, map.mask)];
+  while (entry !== undefined) {
+    if (entry.hash === hash) {
+      const candidate = viewBigIntValue(entry.key);
+      if (
+        candidate !== undefined &&
+        compareBigIntValues(candidate, bigint) === 0
+      )
+        return entry;
+    }
+    entry = buckets === undefined ? entry.next : entry.chain;
+  }
+  return undefined;
 }
 
 // Insertion-ordered hash table for Script Map and Set collections with inline
@@ -282,6 +318,9 @@ function hasScriptMapSlow(map: ScriptMap, key: unknown): boolean {
     }
     return false;
   }
+  const bigint = viewBigIntValue(key);
+  if (bigint !== undefined)
+    return findBigIntEntry(map, bigint, hashBigIntValue(bigint)) !== undefined;
   return findOtherEntry(map, key) !== undefined;
 }
 
@@ -345,6 +384,11 @@ function getScriptMapSlow(map: ScriptMap, key: unknown): unknown {
       entry = entry.next;
     }
     return undefined;
+  }
+  const bigint = viewBigIntValue(key);
+  if (bigint !== undefined) {
+    const found = findBigIntEntry(map, bigint, hashBigIntValue(bigint));
+    return found === undefined ? undefined : found.value;
   }
   const found = findOtherEntry(map, key);
   return found === undefined ? undefined : found.value;
@@ -459,6 +503,16 @@ function setScriptMapSlow(
     }
     return insertScriptMapEntry(map, key, Number.NaN, hash, value);
   }
+  const bigint = viewBigIntValue(key);
+  if (bigint !== undefined) {
+    const hash = hashBigIntValue(bigint);
+    const existing = findBigIntEntry(map, bigint, hash);
+    if (existing !== undefined) {
+      existing.value = value;
+      return false;
+    }
+    return insertScriptMapEntry(map, key, Number.NaN, hash, value);
+  }
   const existing = findOtherEntry(map, key);
   if (existing !== undefined) {
     existing.value = value;
@@ -557,6 +611,13 @@ function addScriptSetSlow(map: ScriptMap, value: unknown): void {
     insertScriptMapEntry(map, value, Number.NaN, hash, value);
     return;
   }
+  const bigint = viewBigIntValue(value);
+  if (bigint !== undefined) {
+    const hash = hashBigIntValue(bigint);
+    if (findBigIntEntry(map, bigint, hash) !== undefined) return;
+    insertScriptMapEntry(map, value, Number.NaN, hash, value);
+    return;
+  }
   if (findOtherEntry(map, value) !== undefined) return;
   insertScriptMapEntry(map, value, Number.NaN, 0, value);
 }
@@ -602,7 +663,11 @@ export function deleteScriptMap(map: ScriptMap, key: unknown): boolean {
       entry = buckets === undefined ? entry.next : entry.chain;
     }
   } else {
-    entry = findOtherEntry(map, key);
+    const bigint = viewBigIntValue(key);
+    entry =
+      bigint !== undefined
+        ? findBigIntEntry(map, bigint, hashBigIntValue(bigint))
+        : findOtherEntry(map, key);
   }
   if (entry === undefined) return false;
   const target = entry;

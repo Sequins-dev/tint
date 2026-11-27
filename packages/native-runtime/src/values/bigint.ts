@@ -163,13 +163,13 @@ export function bigIntToWord64(
   const d0 = digits[0] ?? 0,
     d1 = digits[1] ?? 0,
     d2 = digits[2] ?? 0;
-  let lo = (d0 + (d1 & 63) * 67108864) >>> 0;
-  let hi = ((d1 >>> 6) + (d2 & 4095) * 1048576) >>> 0;
+  let lo = (d0 | ((d1 & 63) << 26)) >>> 0;
+  let hi = ((d1 >>> 6) | ((d2 & 4095) << 20)) >>> 0;
   if (integer.negative && (lo !== 0 || hi !== 0)) {
-    if (lo === 0) hi = (4294967296 - hi) >>> 0;
+    if (lo === 0) hi = -hi >>> 0;
     else {
-      lo = (4294967296 - lo) >>> 0;
-      hi = (4294967295 - hi) >>> 0;
+      lo = -lo >>> 0;
+      hi = ~hi >>> 0;
     }
   }
   scratch[offset] = lo;
@@ -187,16 +187,16 @@ export function bigIntFromWord64(
   if (lo === 0 && hi === 0)
     return createBigIntValue({ negative: false, digits: [] });
   let negative = false;
-  if (signed && hi >= 2147483648) {
+  if (signed && (hi & 0x80000000) !== 0) {
     negative = true;
-    if (lo === 0) hi = 4294967296 - hi;
+    if (lo === 0) hi = -hi >>> 0;
     else {
-      lo = 4294967296 - lo;
-      hi = 4294967295 - hi;
+      lo = -lo >>> 0;
+      hi = ~hi >>> 0;
     }
   }
   const d0 = lo & 67108863;
-  const d1 = (lo >>> 26) + (hi & 1048575) * 64;
+  const d1 = (lo >>> 26) | ((hi & 1048575) << 6);
   const d2 = hi >>> 20;
   const digits: number[] = d2 !== 0 ? [d0, d1, d2] : d1 !== 0 ? [d0, d1] : [d0];
   return createBigIntValue({ negative, digits });

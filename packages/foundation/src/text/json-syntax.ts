@@ -24,6 +24,9 @@ export interface JSONBuilder<Value, ArrayState, ObjectState> {
   null(start: number, end: number): Value;
   boolean(value: boolean, start: number, end: number): Value;
   number(text: string, start: number, end: number): Value;
+  /** Optional fast path when the caller only needs the numeric value (not the
+   * raw source text slice), allowing plain integers to parse without slicing. */
+  numberValue?(value: number, start: number, end: number): Value;
   string(value: string, start: number, end: number): Value;
   openArray(start: number): ArrayState;
   element(array: ArrayState, value: Value): void;
@@ -44,9 +47,11 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
   source: string,
   builder: JSONBuilder<Value, ArrayState, ObjectState>,
 ): JSONBuildResult<Value> {
+  const length = source.length;
+  const directNumber = builder.numberValue;
   let position = 0;
   function whitespace(): void {
-    while (position < source.length) {
+    while (position < length) {
       const unit = source.charCodeAt(position);
       if (unit !== 32 && unit !== 9 && unit !== 10 && unit !== 13) break;
       position++;
@@ -61,7 +66,7 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
     position++;
     // A string without escapes is one slice of the source.
     const begin = position;
-    while (position < source.length) {
+    while (position < length) {
       const unit = source.charCodeAt(position);
       if (unit === 34) {
         position++;
@@ -72,7 +77,7 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
     }
     const parts: string[] = [];
     let start = begin;
-    while (position < source.length) {
+    while (position < length) {
       const unit = source.charCodeAt(position++);
       if (unit === 34) {
         parts.push(source.slice(start, position - 1));
@@ -81,15 +86,16 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
       if (unit < 32) return undefined;
       if (unit !== 92) continue;
       parts.push(source.slice(start, position - 1));
-      const escape = source.charAt(position++);
-      if (escape === '"' || escape === "\\" || escape === "/")
-        parts.push(escape);
-      else if (escape === "b") parts.push("\b");
-      else if (escape === "f") parts.push("\f");
-      else if (escape === "n") parts.push("\n");
-      else if (escape === "r") parts.push("\r");
-      else if (escape === "t") parts.push("\t");
-      else if (escape === "u") {
+      const escape = source.charCodeAt(position++);
+      if (escape === 34) parts.push('"');
+      else if (escape === 92) parts.push("\\");
+      else if (escape === 47) parts.push("/");
+      else if (escape === 98) parts.push("\b");
+      else if (escape === 102) parts.push("\f");
+      else if (escape === 110) parts.push("\n");
+      else if (escape === 114) parts.push("\r");
+      else if (escape === 116) parts.push("\t");
+      else if (escape === 117) {
         let value = 0;
         for (let i = 0; i < 4; i++) {
           const code = source.charCodeAt(position++);
@@ -161,46 +167,93 @@ export function parseJSONWith<Value, ArrayState, ObjectState>(
       if (objectState === undefined) throw "JSON_CONTAINER_INVARIANT";
       return builder.closeObject(objectState, start, position);
     }
-    if (source.startsWith("null", position)) {
+    if (
+      first === 110 &&
+      position + 4 <= length &&
+      source.charCodeAt(position + 1) === 117 &&
+      source.charCodeAt(position + 2) === 108 &&
+      source.charCodeAt(position + 3) === 108
+    ) {
       position += 4;
       return builder.null(start, position);
     }
-    if (source.startsWith("true", position)) {
+    if (
+      first === 116 &&
+      position + 4 <= length &&
+      source.charCodeAt(position + 1) === 114 &&
+      source.charCodeAt(position + 2) === 117 &&
+      source.charCodeAt(position + 3) === 101
+    ) {
       position += 4;
       return builder.boolean(true, start, position);
     }
-    if (source.startsWith("false", position)) {
+    if (
+      first === 102 &&
+      position + 5 <= length &&
+      source.charCodeAt(position + 1) === 97 &&
+      source.charCodeAt(position + 2) === 108 &&
+      source.charCodeAt(position + 3) === 115 &&
+      source.charCodeAt(position + 4) === 101
+    ) {
       position += 5;
       return builder.boolean(false, start, position);
     }
-    if (first === 45) position++;
-    if (source.charCodeAt(position) === 48) position++;
-    else {
-      if (!digit()) return fail(start);
-      while (digit()) position++;
+    const negative = first === 45;
+    if (negative) position++;
+    let intValue = 0;
+    let intDigits = 0;
+    const head = source.charCodeAt(position);
+    if (head === 48) {
+      position++;
+      intDigits = 1;
+    } else {
+      if (head < 48 || head > 57) return fail(start);
+      intValue = head - 48;
+      intDigits = 1;
+      position++;
+      while (position < length) {
+        const c = source.charCodeAt(position);
+        if (c < 48 || c > 57) break;
+        if (intDigits < 15) intValue = intValue * 10 + (c - 48);
+        intDigits++;
+        position++;
+      }
     }
+    let isFloat = false;
     if (source.charCodeAt(position) === 46) {
+      isFloat = true;
       position++;
       if (!digit()) return fail(start);
       while (digit()) position++;
     }
     const exponent = source.charCodeAt(position);
     if (exponent === 101 || exponent === 69) {
+      isFloat = true;
       position++;
       const sign = source.charCodeAt(position);
       if (sign === 43 || sign === 45) position++;
       if (!digit()) return fail(start);
       while (digit()) position++;
     }
+    if (directNumber !== undefined) {
+      if (!isFloat && intDigits <= 15) {
+        return directNumber(negative ? -intValue : intValue, start, position);
+      }
+      return directNumber(
+        Number(source.slice(start, position)),
+        start,
+        position,
+      );
+    }
     return builder.number(source.slice(start, position), start, position);
   }
   const result = value();
   whitespace();
-  const complete = ok && position === source.length;
+  const complete = ok && position === length;
   return {
     value: complete ? result : undefined,
     ok: complete,
-    offset: Math.min(position, source.length),
+    offset: Math.min(position, length),
   };
 }
 
