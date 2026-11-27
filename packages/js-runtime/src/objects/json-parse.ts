@@ -7,6 +7,7 @@ import {
   appendString,
   finishString,
 } from "@tint/foundation/text/string-builder";
+import { latin1Text } from "@tint/foundation/text/latin1";
 import { createArrayObject } from "./arrays.ts";
 import {
   createArray0,
@@ -28,6 +29,9 @@ import {
 import {
   createObject,
   createDataProperty,
+  createParsedDataProperty,
+  findParsedDataTransition,
+  commitParsedDataTransition,
   getProperty,
   deleteProperty,
   ownKeys,
@@ -62,6 +66,15 @@ function requireJSONText(
 }
 
 const pow10 = [1, 10, 100, 1000, 10000, 100000, 1000000];
+let parseLatin1Scratch: Uint8Array | undefined = undefined;
+
+function getParseLatin1Scratch(): Uint8Array {
+  const existing = parseLatin1Scratch;
+  if (existing !== undefined) return existing;
+  const created = new Uint8Array(256);
+  parseLatin1Scratch = created;
+  return created;
+}
 
 function hexNibble(code: number): number {
   if (code >= 48 && code <= 57) return code - 48;
@@ -89,6 +102,125 @@ export function tryParseJSONStringLiteral(source: string): string | undefined {
     if (c === 92) break;
   }
   if (i === end) return source.slice(1, end);
+  if (end <= 160) {
+    // Fast single-allocation Latin-1 unescape path for short escaped strings.
+    let latin1 = true;
+    for (let k = 1; k < i; k++) {
+      if (source.charCodeAt(k) > 0xff) {
+        latin1 = false;
+        break;
+      }
+    }
+    if (latin1) {
+      const bytes = getParseLatin1Scratch();
+      let outLen = 0;
+      for (let k = 1; k < i; k++) bytes[outLen++] = source.charCodeAt(k);
+      let pos = i;
+      while (pos < end) {
+        const c = source.charCodeAt(pos);
+        if (c < 32 || c === 34) return undefined;
+        if (c > 0xff) {
+          latin1 = false;
+          break;
+        }
+        if (c === 92) {
+          if (pos + 1 >= end) return undefined;
+          const esc = source.charCodeAt(pos + 1);
+          if (esc === 34) {
+            bytes[outLen++] = 34;
+            pos += 2;
+          } else if (esc === 92) {
+            bytes[outLen++] = 92;
+            pos += 2;
+          } else if (esc === 47) {
+            bytes[outLen++] = 47;
+            pos += 2;
+          } else if (esc === 98) {
+            bytes[outLen++] = 8;
+            pos += 2;
+          } else if (esc === 102) {
+            bytes[outLen++] = 12;
+            pos += 2;
+          } else if (esc === 110) {
+            bytes[outLen++] = 10;
+            pos += 2;
+          } else if (esc === 114) {
+            bytes[outLen++] = 13;
+            pos += 2;
+          } else if (esc === 116) {
+            bytes[outLen++] = 9;
+            pos += 2;
+          } else if (esc === 117) {
+            if (pos + 5 >= end) return undefined;
+            const h0 = hexNibble(source.charCodeAt(pos + 2)),
+              h1 = hexNibble(source.charCodeAt(pos + 3)),
+              h2 = hexNibble(source.charCodeAt(pos + 4)),
+              h3 = hexNibble(source.charCodeAt(pos + 5));
+            if ((h0 | h1 | h2 | h3) < 0) return undefined;
+            const code = (h0 << 12) | (h1 << 8) | (h2 << 4) | h3;
+            if (code > 0xff) {
+              latin1 = false;
+              break;
+            }
+            bytes[outLen++] = code;
+            pos += 6;
+          } else return undefined;
+        } else {
+          bytes[outLen++] = c;
+          pos++;
+        }
+      }
+      if (latin1) return latin1Text(bytes, 0, outLen);
+    }
+    let out = "";
+    let start = 1;
+    while (i < end) {
+      const c = source.charCodeAt(i);
+      if (c < 32 || c === 34) return undefined;
+      if (c === 92) {
+        if (i + 1 >= end) return undefined;
+        if (i > start) out += source.slice(start, i);
+        const esc = source.charCodeAt(i + 1);
+        if (esc === 34) {
+          out += '"';
+          i += 2;
+        } else if (esc === 92) {
+          out += "\\";
+          i += 2;
+        } else if (esc === 47) {
+          out += "/";
+          i += 2;
+        } else if (esc === 98) {
+          out += "\b";
+          i += 2;
+        } else if (esc === 102) {
+          out += "\f";
+          i += 2;
+        } else if (esc === 110) {
+          out += "\n";
+          i += 2;
+        } else if (esc === 114) {
+          out += "\r";
+          i += 2;
+        } else if (esc === 116) {
+          out += "\t";
+          i += 2;
+        } else if (esc === 117) {
+          if (i + 5 >= end) return undefined;
+          const h0 = hexNibble(source.charCodeAt(i + 2)),
+            h1 = hexNibble(source.charCodeAt(i + 3)),
+            h2 = hexNibble(source.charCodeAt(i + 4)),
+            h3 = hexNibble(source.charCodeAt(i + 5));
+          if ((h0 | h1 | h2 | h3) < 0) return undefined;
+          out += String.fromCharCode((h0 << 12) | (h1 << 8) | (h2 << 4) | h3);
+          i += 6;
+        } else return undefined;
+        start = i;
+      } else i++;
+    }
+    if (start < end) out += source.slice(start, end);
+    return out;
+  }
   const out = createStringBuilder();
   let start = 1;
   while (i < end) {
@@ -288,11 +420,63 @@ function parseJSONDirect(
     }
     while (true) {
       if (source.charCodeAt(position) <= 32) skipWhitespace();
+      if (source.charCodeAt(position) === 34) {
+        const begin = position + 1;
+        let scan = begin;
+        let simple = false;
+        while (scan < length) {
+          const unit = source.charCodeAt(scan);
+          if (unit === 34) {
+            simple = true;
+            break;
+          }
+          if (unit === 92 || unit < 32) break;
+          scan++;
+        }
+        if (simple) {
+          position = scan + 1;
+          const transition = findParsedDataTransition<
+            ScriptPropertyKey,
+            unknown
+          >(object, source, begin, scan, hooks);
+          if (source.charCodeAt(position) <= 32) skipWhitespace();
+          if (source.charCodeAt(position++) !== 58) syntaxError();
+          const child = parseValue();
+          if (transition !== undefined) {
+            commitParsedDataTransition<ScriptPropertyKey, unknown>(
+              object,
+              transition,
+              child,
+            );
+          } else {
+            createParsedDataProperty<ScriptPropertyKey, unknown>(
+              object,
+              source.slice(begin, scan),
+              child,
+              hooks,
+            );
+          }
+          if (source.charCodeAt(position) <= 32) skipWhitespace();
+          const next = source.charCodeAt(position);
+          if (next === 125) {
+            position++;
+            return object;
+          }
+          if (next !== 44) syntaxError();
+          position++;
+          continue;
+        }
+      }
       const key = parseString();
       if (source.charCodeAt(position) <= 32) skipWhitespace();
       if (source.charCodeAt(position++) !== 58) syntaxError();
       const child = parseValue();
-      createDataProperty<ScriptPropertyKey, unknown>(object, key, child, hooks);
+      createParsedDataProperty<ScriptPropertyKey, unknown>(
+        object,
+        key,
+        child,
+        hooks,
+      );
       if (source.charCodeAt(position) <= 32) skipWhitespace();
       const next = source.charCodeAt(position);
       if (next === 125) {

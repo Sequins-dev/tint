@@ -9,11 +9,19 @@ import type {
   TypeNode,
 } from "@tint/typescript/syntax";
 
+export interface RecordViewMetadataHoister {
+  readonly intern: (
+    fields: readonly NativeRecordViewField[],
+    span: { readonly start: number; readonly end: number },
+  ) => { readonly keys: string; readonly writable: string };
+}
+
 /** Evaluate the value once and close the realm view over that exact record. */
 export function projectRecordExpression(
   record: Expression,
   fields: readonly NativeRecordViewField[],
   helper: string,
+  hoister?: RecordViewMetadataHoister,
 ): Expression {
   const span = { start: record.start, end: record.end };
   function identifier(name: string): Expression {
@@ -114,12 +122,23 @@ export function projectRecordExpression(
     kind: "throw",
     expression: { ...span, kind: "string", value: "NATIVE_RECORD_VIEW_FIELD" },
   };
+  const hoisted = hoister?.intern(fields, span);
   const access: Expression = {
     ...span,
     kind: "object",
     properties: [
-      property("keys", { ...span, kind: "array", elements: keys }),
-      property("writable", { ...span, kind: "array", elements: writable }),
+      property(
+        "keys",
+        hoisted === undefined
+          ? { ...span, kind: "array", elements: keys }
+          : identifier(hoisted.keys),
+      ),
+      property(
+        "writable",
+        hoisted === undefined
+          ? { ...span, kind: "array", elements: writable }
+          : identifier(hoisted.writable),
+      ),
       property("read", {
         ...span,
         kind: "arrow",

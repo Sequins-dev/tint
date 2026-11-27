@@ -33,16 +33,24 @@ import {
   installProgramConstructorGroup,
   installProgramTypedArrayIntrinsics,
   instanceOfValue,
+  intrinsicObjectMethodKind,
+  objectDefinePropertyDirect,
+  objectFlagDictionary,
+  objectHasOwnDirect,
+  objectOwnPropertyList,
   hasProperty,
   objectValueHasProperty,
   programRealmCore,
   projectPropertyContract,
+  propertyAccessor,
   propertyEpoch,
   propertyKeyValue,
   readDynamicObjectProperty,
   readObjectValueProperty,
   setObjectLiteralPrototype,
   setObjectValueProperty,
+  shapeKeyIndex,
+  storedValue,
   symbolDescriptiveString,
   typedArrayWindow,
   viewObjectValue,
@@ -51,6 +59,7 @@ import {
   type ContractField,
   type ObjectShapeContract,
   type OrdinaryObject,
+  type OrdinaryPropertyShape,
   type ProgramRealmCore,
   type PropertyEnumeration,
   type PropertyValueRule,
@@ -247,8 +256,51 @@ export function setPrototype(base: unknown, value: unknown): void {
   const core = programRealmCore();
   setObjectLiteralPrototype(requireObject(base, core), value);
 }
+let cachedObjectCore: ProgramRealmCore | undefined = undefined;
+let cachedObjectValue: unknown = undefined;
+let cachedObjectGlobalEpoch: number = -1;
+let cachedObjectPropEpoch: number = -1;
+let cachedObjectCtorObj: ObjectRecord | undefined = undefined;
+let cachedObjectCtorShape:
+  OrdinaryPropertyShape<ScriptPropertyKey, unknown> | undefined = undefined;
+let cachedObjectKeysSlot: number = -1;
+let cachedObjectValuesSlot: number = -1;
+let cachedObjectEntriesSlot: number = -1;
+let cachedObjectHasOwnSlot: number = -1;
+let cachedObjectDefinePropertySlot: number = -1;
+
+function dataSlotOf(
+  shape: OrdinaryPropertyShape<ScriptPropertyKey, unknown>,
+  key: string,
+): number {
+  const pos = shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
+  if (pos >= 0 && ((shape.kinds[pos] ?? 0) & propertyAccessor) === 0)
+    return pos;
+  return -1;
+}
+
 export function read(base: unknown, key: unknown): unknown {
   const core = programRealmCore();
+  const ctorObj = cachedObjectCtorObj;
+  if (
+    typeof key === "string" &&
+    base === cachedObjectValue &&
+    ctorObj !== undefined
+  ) {
+    const shape = ctorObj.internalShape;
+    if (shape !== undefined && shape === cachedObjectCtorShape) {
+      let slot = -1;
+      if (key === "keys") slot = cachedObjectKeysSlot;
+      else if (key === "values") slot = cachedObjectValuesSlot;
+      else if (key === "entries") slot = cachedObjectEntriesSlot;
+      else if (key === "hasOwn") slot = cachedObjectHasOwnSlot;
+      else if (key === "defineProperty") slot = cachedObjectDefinePropertySlot;
+      if (slot >= 0) {
+        const raw = storedValue<ScriptPropertyKey, unknown>(ctorObj, slot);
+        return raw === undefined ? shape.undefinedValue : raw;
+      }
+    }
+  }
   if (typeof key === "string" || typeof key === "number")
     return readDynamicObjectProperty(base, key, core.hooks, core.realm);
   return readObjectValueProperty(
@@ -380,11 +432,6 @@ export function advance(
   return typeof key === "string" ? key : undefined;
 }
 
-let cachedObjectCore: ProgramRealmCore | undefined = undefined;
-let cachedObjectValue: unknown = undefined;
-let cachedObjectGlobalEpoch = -1;
-let cachedObjectPropEpoch = -1;
-
 export function objectConstructor(): unknown {
   const core = programRealmCore();
   installProgramObjectIntrinsics(core);
@@ -404,6 +451,29 @@ export function objectConstructor(): unknown {
   cachedObjectValue = ctor;
   cachedObjectGlobalEpoch = core.object.internalPropertyEpoch;
   cachedObjectPropEpoch = propertyEpoch.value;
+  cachedObjectCtorObj = undefined;
+  cachedObjectCtorShape = undefined;
+  cachedObjectKeysSlot = -1;
+  cachedObjectValuesSlot = -1;
+  cachedObjectEntriesSlot = -1;
+  cachedObjectHasOwnSlot = -1;
+  cachedObjectDefinePropertySlot = -1;
+  const ctorObj = viewObjectValue(ctor, core.realm.objectPrototype);
+  const shape = ctorObj === undefined ? undefined : ctorObj.internalShape;
+  if (
+    ctorObj !== undefined &&
+    shape !== undefined &&
+    ctorObj.internalMethods === undefined &&
+    (ctorObj.internalFlags & objectFlagDictionary) === 0
+  ) {
+    cachedObjectCtorObj = ctorObj;
+    cachedObjectCtorShape = shape;
+    cachedObjectKeysSlot = dataSlotOf(shape, "keys");
+    cachedObjectValuesSlot = dataSlotOf(shape, "values");
+    cachedObjectEntriesSlot = dataSlotOf(shape, "entries");
+    cachedObjectHasOwnSlot = dataSlotOf(shape, "hasOwn");
+    cachedObjectDefinePropertySlot = dataSlotOf(shape, "defineProperty");
+  }
   return ctor;
 }
 export function invokeEnumeration(
@@ -412,6 +482,34 @@ export function invokeEnumeration(
   input: unknown,
 ): unknown {
   const core = programRealmCore();
+  const intrinsic = intrinsicObjectMethodKind(callee, core.realm);
+  if (intrinsic === "keys")
+    return objectOwnPropertyList(
+      input,
+      true,
+      false,
+      "key",
+      core.realm,
+      core.hooks,
+    );
+  if (intrinsic === "values")
+    return objectOwnPropertyList(
+      input,
+      true,
+      false,
+      "value",
+      core.realm,
+      core.hooks,
+    );
+  if (intrinsic === "entries")
+    return objectOwnPropertyList(
+      input,
+      true,
+      false,
+      "entry",
+      core.realm,
+      core.hooks,
+    );
   const args: unknown[] = [input];
   const result = callObjectValue(
     callee,
@@ -603,6 +701,17 @@ export function invokeArrayMethod(
   third: unknown,
 ): unknown {
   const core = programRealmCore();
+  const intrinsic = intrinsicObjectMethodKind(callable, core.realm);
+  if (intrinsic === "hasOwn" && arity === 2)
+    return objectHasOwnDirect(first, second, core.realm, core.hooks);
+  if (intrinsic === "defineProperty" && arity === 3)
+    return objectDefinePropertyDirect(
+      first,
+      second,
+      third,
+      core.realm,
+      core.hooks,
+    );
   const args: unknown[] =
     arity === 0
       ? []
