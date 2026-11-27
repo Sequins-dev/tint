@@ -2320,6 +2320,7 @@ function lowerEntries(
                 return local;
               }, dynamicAliases.has("bindingObject")),
               update: dynamicAliases.get("update"),
+              invokeFixed: dynamicAliases.get("invokeArrayMethod"),
               speculativeBinary: dynamicAliases.get("speculativeBinary"),
               speculativeString: dynamicAliases.get("speculativeString"),
               speculativeUnary: dynamicAliases.get("speculativeUnary"),

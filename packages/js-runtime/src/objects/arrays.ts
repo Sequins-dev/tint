@@ -44,7 +44,9 @@ function arrayInternalMethods<Key, Value>(
           update,
           hooks,
         );
-      const elements = target.internalArrayElements;
+      const elements =
+        target.internalArrayElements ??
+        target.internalRareSlots?.internalContractedElements;
       if (elements !== undefined) {
         const oldLength = elements.length;
         if (index >= oldLength && !elements.lengthWritable) return "rejected";
@@ -180,7 +182,9 @@ function setArrayLength<Key, Value>(
   const length = array.toNumber(update.value) >>> 0;
   if (length !== array.toNumber(update.value)) throw array.rangeError();
   let applied = { ...update, value: array.fromNumber(length) };
-  const packed = object.internalArrayElements;
+  const packed =
+    object.internalArrayElements ??
+    object.internalRareSlots?.internalContractedElements;
   let oldLength: number;
   let writable: boolean;
   if (packed !== undefined) {

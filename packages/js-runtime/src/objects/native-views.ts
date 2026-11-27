@@ -44,11 +44,24 @@ export function cachedNativeView(
   cache: NativeViewCache,
   native: unknown,
 ): unknown {
-  for (let i = cache.cells.length - 1; i >= 0; i--) {
-    const cell = cache.cells[i];
-    const key = cache.storage.key(cell);
-    if (key === native) return cache.storage.value(cell);
-    if (key === undefined) cache.cells.splice(i, 1);
+  const cells = cache.cells,
+    storage = cache.storage;
+  for (let i = cells.length - 1; i >= 0; i--) {
+    const cell = cells[i];
+    const key = storage.key(cell);
+    if (key === native) {
+      const view = storage.value(cell);
+      const last = cells.length - 1;
+      if (i !== last) {
+        cells[i] = cells[last];
+        cells[last] = cell;
+      }
+      return view;
+    }
+    if (key === undefined) {
+      const last = cells.pop();
+      if (i < cells.length && last !== undefined) cells[i] = last;
+    }
   }
   return undefined;
 }
@@ -114,6 +127,7 @@ export function createNativeListView(
     realm.arrayPrototype,
     {
       typedRecord: (): unknown => native,
+      nativeListAccess: access,
       getOwnProperty: (object, key): Descriptor<unknown> | undefined => {
         if (key === "length") return listDescriptor(access.length(), false);
         const index = array.index(key);

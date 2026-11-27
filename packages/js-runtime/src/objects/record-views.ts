@@ -46,22 +46,57 @@ export function createRecordView(
   record: unknown,
   access: RecordViewAccess,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const index = new Map<string, number>();
-  for (let field = 0; field < access.keys.length; field++) {
-    const key = access.keys[field];
-    if (key === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
-    if (index.has(key)) throw "RECORD_VIEW_DUPLICATE_FIELD";
-    index.set(key, field);
+  const keys = access.keys;
+  const fieldCount = keys.length;
+  let index: Map<string, number> | undefined = undefined;
+  let noToJSON = true,
+    noIntegerKeys = true;
+  if (fieldCount <= 8) {
+    for (let field = 0; field < fieldCount; field++) {
+      const key = keys[field];
+      if (key === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
+      for (let prev = 0; prev < field; prev++) {
+        if (keys[prev] === key) throw "RECORD_VIEW_DUPLICATE_FIELD";
+      }
+      if (key === "toJSON") noToJSON = false;
+      if (noIntegerKeys) {
+        const c = key.charCodeAt(0);
+        if (c >= 48 && c <= 57 && scriptPropertyKeyOrder(key) >= 0)
+          noIntegerKeys = false;
+      }
+    }
+  } else {
+    const map = new Map<string, number>();
+    for (let field = 0; field < fieldCount; field++) {
+      const key = keys[field];
+      if (key === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
+      if (map.has(key)) throw "RECORD_VIEW_DUPLICATE_FIELD";
+      map.set(key, field);
+      if (key === "toJSON") noToJSON = false;
+      if (noIntegerKeys) {
+        const c = key.charCodeAt(0);
+        if (c >= 48 && c <= 57 && scriptPropertyKeyOrder(key) >= 0)
+          noIntegerKeys = false;
+      }
+    }
+    index = map;
   }
   function fieldFor(key: ScriptPropertyKey): number {
     if (typeof key !== "string") return -1;
-    return index.get(key) ?? -1;
+    if (index !== undefined) return index.get(key) ?? -1;
+    for (let i = 0; i < fieldCount; i++) {
+      if (keys[i] === key) return i;
+    }
+    return -1;
   }
   function writable(field: number): boolean {
     return access.writable[field] === true;
   }
   const methods: ObjectInternalMethods<ScriptPropertyKey, unknown> = {
     typedRecord: (): unknown => record,
+    recordViewAccess: access,
+    recordViewNoToJSON: noToJSON,
+    recordViewNoIntegerKeys: noIntegerKeys,
     getOwnProperty: (
       object: OrdinaryObject<ScriptPropertyKey, unknown>,
       key: ScriptPropertyKey,
