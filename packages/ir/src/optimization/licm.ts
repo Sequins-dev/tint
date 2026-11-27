@@ -2,6 +2,7 @@ import {
   blockSuccessors,
   effectInvoke,
   instructionEffects,
+  instructionMayThrow,
   instructionResult,
   naturalLoops,
   recordReadsKept,
@@ -82,8 +83,10 @@ function changesArrayLength(op: Instruction): boolean {
  * Values used in the loop are carried in fresh slots. Moved operations are
  * speculative only in executing when the loop body would not; none has an
  * effect, and a check that would trap in the body traps in the preheader. A
- * check entered on another check's failure edge (a later layout of a union
- * dispatch) stays: its trap is conditional on that earlier failure.
+ * checked read moves only when every path entering the loop body from its
+ * header must reach that block without exiting, looping back, or throwing
+ * first — keeping union-dispatch later layouts (including through bridge
+ * blocks) and branch-guarded checks conditional.
  * Repeated rounds lift computations out of nested loops. A direct record
  * read in the loop may rest on a moved check through slot copies the origin
  * test does not follow (as after inlining): a round that leaves any verified
@@ -362,7 +365,7 @@ function readHoistRefusal(
   unknownProven: boolean,
   originKnown: boolean,
   originProven: boolean,
-  afterFailedCheck: boolean,
+  unconditional: boolean,
   objectInvariant: boolean,
   trappingFailure: boolean,
   field: RecordField | undefined,
@@ -371,7 +374,8 @@ function readHoistRefusal(
   if (field.mutable) return "field is mutable";
   if (!objectInvariant) return "object is not loop invariant";
   if (!trappingFailure) return "failed check does not trap";
-  if (afterFailedCheck) return "reached only when another check fails";
+  if (!unconditional)
+    return "not executed unconditionally on every loop iteration";
   if (!readHoists)
     return "moving a check would leave a direct read in the function unproven";
   if (readHoisted) return "one read already hoisted from this loop";
@@ -383,10 +387,63 @@ function readHoistRefusal(
 }
 interface RecordProof {
   readonly provenOrigins: ReadonlySet<number>;
-  readonly failureTargets: ReadonlySet<number>;
   readonly unknownProven: boolean;
   /** False when moving any check cost a direct read its proof. */
   readonly readHoists: boolean;
+}
+/** Whether entering `loop`'s body from `loop.header` must reach `targetId`
+ * along acyclic, non-throwing paths before returning to `loop.header`,
+ * leaving `loop.body`, or terminating. Keeps conditional checks (later union
+ * layouts behind direct or bridged failure edges, branch-guarded checks, and
+ * checks after early exits or throwing calls) inside the loop. */
+function mustReachBeforeExit(
+  loop: NaturalLoop,
+  targetId: number,
+  byId: ReadonlyMap<number, Block>,
+): boolean {
+  if (targetId === loop.header) return true;
+  const header = byId.get(loop.header);
+  if (header === undefined) return false;
+  // 1 = active on current DFS path (cycle avoiding targetId fails);
+  // 2 = every path from this block reaches targetId before exit or header.
+  const state = new Map<number, number>();
+  const stack: number[] = [];
+  let entered = false;
+  for (const next of blockSuccessors(header)) {
+    if (next === undefined || !loop.body.has(next)) continue;
+    entered = true;
+    if (next === targetId) continue;
+    if (next === loop.header) return false;
+    if (state.get(next) === undefined) stack.push(next);
+  }
+  if (!entered) return false;
+  while (stack.length > 0) {
+    const top = stack.pop();
+    if (top === undefined) break;
+    if (top < 0) {
+      state.set(-top - 1, 2);
+      continue;
+    }
+    const seen = state.get(top);
+    if (seen === 2) continue;
+    if (seen === 1) return false;
+    const block = byId.get(top);
+    if (block === undefined) return false;
+    for (const op of block.instructions)
+      if (op !== undefined && instructionMayThrow(op)) return false;
+    const successors = blockSuccessors(block);
+    if (successors.length === 0) return false;
+    state.set(top, 1);
+    stack.push(-top - 1);
+    for (const next of successors) {
+      if (next === undefined || next === targetId) continue;
+      if (next === loop.header || !loop.body.has(next)) return false;
+      const nextState = state.get(next);
+      if (nextState === 1) return false;
+      if (nextState === undefined) stack.push(next);
+    }
+  }
+  return true;
 }
 // The slot a block-local value derives from (through unwraps and
 // environment reads), which identifies the object a record access uses.
@@ -442,20 +499,8 @@ function recordProofs(fn: FunctionIR, readHoists: boolean): RecordProof {
   // Slot -> the slots stored into it as copies.
   const copies = new Map<number, number[]>();
   let unknownProven = false;
-  // Blocks entered on the failure edge of another check, such as the later
-  // layouts of a union dispatch: they run only when that check failed, so a
-  // trap there is not implied by the object's type and must not move ahead
-  // of the earlier check.
-  const failureTargets = new Set<number>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "licm block invariant";
-    const exit = block.terminator;
-    if (
-      exit.kind === "record" ||
-      exit.kind === "record-cell" ||
-      exit.kind === "cell"
-    )
-      failureTargets.add(exit.alternate);
     const definitions = new Map<number, Instruction>();
     for (const op of block.instructions) {
       if (op === undefined) continue;
@@ -488,7 +533,7 @@ function recordProofs(fn: FunctionIR, readHoists: boolean): RecordProof {
         pending.push(source);
       }
   }
-  return { provenOrigins, failureTargets, unknownProven, readHoists };
+  return { provenOrigins, unknownProven, readHoists };
 }
 
 function hoistLoop(
@@ -513,7 +558,7 @@ function hoistLoop(
   const blocks: Block[] = [];
   let hoisted = 0,
     readHoisted = false;
-  const { provenOrigins, failureTargets, unknownProven, readHoists } = proofs;
+  const { provenOrigins, unknownProven, readHoists } = proofs;
   let lengthsChange = false;
   for (const id of loop.body) {
     const block = byId.get(id);
@@ -560,19 +605,25 @@ function hoistLoop(
       const failure = byId.get(term.alternate);
       const field = module.records?.[term.record]?.fields[term.field];
       const objectOrigin = recordObjectOrigin(block, term.object);
-      readHoist =
+      const trappingFailure =
+        failure !== undefined &&
+        failure.instructions.length === 0 &&
+        failure.terminator.kind === "trap";
+      const eligible =
         readHoists &&
         !readHoisted &&
         !unknownProven &&
-        !failureTargets.has(block.id) &&
         objectOrigin !== undefined &&
         !provenOrigins.has(objectOrigin) &&
         invariant.has(term.object) &&
-        failure !== undefined &&
-        failure.instructions.length === 0 &&
-        failure.terminator.kind === "trap" &&
+        trappingFailure &&
         field !== undefined &&
         !field.mutable;
+      const unconditional =
+        eligible || remarks !== undefined
+          ? mustReachBeforeExit(loop, block.id, byId)
+          : false;
+      readHoist = eligible && unconditional;
       if (!readHoist && remarks !== undefined)
         remarks({
           pass: "hoist-loop-invariants",
@@ -594,11 +645,9 @@ function hoistLoop(
               unknownProven,
               objectOrigin !== undefined,
               objectOrigin !== undefined && provenOrigins.has(objectOrigin),
-              failureTargets.has(block.id),
+              unconditional,
               invariant.has(term.object),
-              failure !== undefined &&
-                failure.instructions.length === 0 &&
-                failure.terminator.kind === "trap",
+              trappingFailure,
               field,
             ),
         });

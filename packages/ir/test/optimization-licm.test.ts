@@ -552,6 +552,204 @@ test("a union dispatch's later layout checks stay behind the earlier check", () 
   );
 });
 
+test("union dispatch later layout checks stay conditional through jump bridges", () => {
+  // b2 tests layout 0 and routes its failure edge through bridge block(s) to
+  // b6 (layout 1 -> trap). Hoisting b6's check to the preheader would trap on
+  // layout 0 objects before b2 runs.
+  const object = (base: number): Instruction[] => [
+    { kind: "load", id: base, slot: 4, ...span },
+    { kind: "function-environment", id: base + 1, callee: base, ...span },
+    { kind: "reference-value", id: base + 2, value: base + 1, ...span },
+  ];
+  const check = (
+    value: number,
+    record: number,
+    alternate: number,
+  ): Block["terminator"] => ({
+    kind: "record",
+    object: value,
+    record,
+    field: 0,
+    operation: "read",
+    slot: 5,
+    consequent: 4,
+    alternate,
+    ...span,
+  });
+  const field = { offset: 16, type: "number" as const, mutable: false };
+  for (const multiHop of [false, true]) {
+    const extraBlocks: Block[] = [
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+      { id: 6, instructions: object(60), terminator: check(62, 1, 5) },
+      {
+        id: 7,
+        instructions: [],
+        terminator: { kind: "jump", target: multiHop ? 8 : 6, ...span },
+      },
+      ...(multiHop
+        ? [
+            {
+              id: 8,
+              instructions: [],
+              terminator: { kind: "jump" as const, target: 6, ...span },
+            },
+          ]
+        : []),
+    ];
+    const module = loop(object(40), {
+      slots: ["reference", "number"],
+      records: [
+        { byteLength: 32, fields: [field] },
+        { byteLength: 32, fields: [field] },
+      ],
+      bodyTerminator: check(42, 0, 7),
+      extraBlocks,
+    });
+    const fn = hoist(module);
+    assert.equal(
+      fn.blocks.find((block) => block.id === 0)!.terminator.kind,
+      "jump",
+    );
+    assert.equal(
+      fn.blocks.find((block) => block.id === 6)!.terminator.kind,
+      "record",
+    );
+  }
+});
+
+test("branch-guarded and post-early-exit checked reads stay inside the loop", () => {
+  const object = (base: number): Instruction[] => [
+    { kind: "load", id: base, slot: 4, ...span },
+    { kind: "function-environment", id: base + 1, callee: base, ...span },
+    { kind: "reference-value", id: base + 2, value: base + 1, ...span },
+  ];
+  const check = (value: number, record: number): Block["terminator"] => ({
+    kind: "record",
+    object: value,
+    record,
+    field: 0,
+    operation: "read",
+    slot: 5,
+    consequent: 4,
+    alternate: 5,
+    ...span,
+  });
+  const field = { offset: 16, type: "number" as const, mutable: false };
+  // Branch-guarded layout dispatch: b2 branches to b6 (layout 0) or b7 (layout 1).
+  const branched = loop(
+    [
+      { kind: "load", id: 30, slot: 1, ...span },
+      { kind: "constant", id: 31, value: 0, ...span },
+      { kind: "binary", id: 32, operator: "===", left: 30, right: 31, ...span },
+    ],
+    {
+      slots: ["reference", "number"],
+      records: [
+        { byteLength: 32, fields: [field] },
+        { byteLength: 32, fields: [field] },
+      ],
+      bodyTerminator: {
+        kind: "branch",
+        condition: 32,
+        consequent: 6,
+        alternate: 7,
+        ...span,
+      },
+      extraBlocks: [
+        {
+          id: 4,
+          instructions: [],
+          terminator: { kind: "jump", target: 1, ...span },
+        },
+        { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+        { id: 6, instructions: object(60), terminator: check(62, 0) },
+        { id: 7, instructions: object(70), terminator: check(72, 1) },
+      ],
+    },
+  );
+  const branchedFn = hoist(branched);
+  assert.equal(
+    branchedFn.blocks.find((block) => block.id === 0)!.terminator.kind,
+    "jump",
+  );
+  assert.equal(
+    branchedFn.blocks.find((block) => block.id === 6)!.terminator.kind,
+    "record",
+  );
+  assert.equal(
+    branchedFn.blocks.find((block) => block.id === 7)!.terminator.kind,
+    "record",
+  );
+
+  // Early loop exit before the checked read: b2 exits to b3 when k === 0.
+  const earlyExit = loop(
+    [
+      { kind: "load", id: 30, slot: 1, ...span },
+      { kind: "constant", id: 31, value: 0, ...span },
+      { kind: "binary", id: 32, operator: "===", left: 30, right: 31, ...span },
+    ],
+    {
+      slots: ["reference", "number"],
+      records: [{ byteLength: 32, fields: [field] }],
+      bodyTerminator: {
+        kind: "branch",
+        condition: 32,
+        consequent: 3,
+        alternate: 6,
+        ...span,
+      },
+      extraBlocks: [
+        {
+          id: 4,
+          instructions: [],
+          terminator: { kind: "jump", target: 1, ...span },
+        },
+        { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+        { id: 6, instructions: object(60), terminator: check(62, 0) },
+      ],
+    },
+  );
+  const earlyExitFn = hoist(earlyExit);
+  assert.equal(
+    earlyExitFn.blocks.find((block) => block.id === 0)!.terminator.kind,
+    "jump",
+  );
+  assert.equal(
+    earlyExitFn.blocks.find((block) => block.id === 6)!.terminator.kind,
+    "record",
+  );
+
+  // Unconditional jump bridge before a checked read still hoists cleanly.
+  const unconditionalBridge = loop([], {
+    slots: ["reference", "number"],
+    records: [{ byteLength: 32, fields: [field] }],
+    bodyTerminator: { kind: "jump", target: 6, ...span },
+    extraBlocks: [
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+      { id: 6, instructions: object(60), terminator: check(62, 0) },
+    ],
+  });
+  const hoistedBridgeFn = hoist(unconditionalBridge);
+  assert.equal(
+    hoistedBridgeFn.blocks.find((block) => block.id === 0)!.terminator.kind,
+    "record",
+  );
+  assert.equal(
+    hoistedBridgeFn.blocks.find((block) => block.id === 6)!.terminator.kind,
+    "jump",
+  );
+});
+
 test("scans the function-wide record proof inputs once for multiple loops", () => {
   function proofReads(includeSecondLoop: boolean): number {
     const original = loop([]).functions[0]!;
