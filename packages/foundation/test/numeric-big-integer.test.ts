@@ -310,3 +310,132 @@ test("fixed-width truncation matches signed and unsigned BigInt at limb boundari
   for (const bits of [-1, 0.5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1])
     assert.equal(integer.truncateInteger(parse(1n), bits, true, 64), undefined);
 });
+test("inline 4-limb representation transitions cleanly across 104-bit boundaries, negative masks, shifts and 1-limb division", () => {
+  const limit4 = (1n << 104n) - 1n;
+  const parsed4 = parse(limit4);
+  assert.equal(parsed4.len, 4);
+  assert.equal(parsed4.digits, undefined);
+  const overflow = integer.add(parsed4, integer.integerOne());
+  assert.equal(overflow.len, 5);
+  assert.ok(overflow.digits !== undefined);
+  assert.equal(text(overflow), String(1n << 104n));
+  const backInline = integer.subtract(overflow, integer.integerOne());
+  assert.equal(backInline.len, 4);
+  assert.equal(backInline.digits, undefined);
+  assert.equal(text(backInline), String(limit4));
+
+  // Hex parsing up to 26 digits (104 bits) stays inline; 27 digits promotes.
+  const hex26 = integer.parseInteger("f".repeat(26), 16)!;
+  assert.equal(hex26.len, 4);
+  assert.equal(hex26.digits, undefined);
+  assert.equal(text(hex26), String(limit4));
+  const hex27 = integer.parseInteger("1" + "0".repeat(26), 16)!;
+  assert.equal(hex27.len, 5);
+  assert.ok(hex27.digits !== undefined);
+  assert.equal(text(hex27), String(1n << 104n));
+
+  // Negative two's-complement bitwise across 26/52/78/104-bit limb boundaries.
+  const samples = [
+    0n,
+    1n,
+    -1n,
+    -(1n << 26n),
+    -(1n << 26n) - 1n,
+    -(1n << 52n),
+    -(1n << 52n) + 1n,
+    -(1n << 63n),
+    (1n << 63n) - 1n,
+    (1n << 64n) - 1n,
+    -(1n << 78n),
+    limit4,
+    -limit4,
+    -(1n << 104n),
+    (1n << 120n) + 0x12345n,
+    -(1n << 120n) - 0x12345n,
+  ];
+  const masks = [
+    0n,
+    1n,
+    -1n,
+    0x7fffffffn,
+    0xffffffffn,
+    (1n << 52n) - 1n,
+    (1n << 96n) - 1n,
+    -(1n << 26n),
+    -(1n << 52n),
+  ];
+  for (const a of samples) {
+    for (const b of masks) {
+      for (const op of ["&", "|", "^"] as const) {
+        const expected = op === "&" ? a & b : op === "|" ? a | b : a ^ b;
+        assert.equal(
+          text(integer.bitwise(parse(a), parse(b), op)),
+          String(expected),
+          `${a} ${op} ${b}`,
+        );
+      }
+    }
+  }
+
+  // shiftSigned across limb boundaries without allocating negated counts.
+  for (const v of samples) {
+    for (const shift of [
+      0n,
+      1n,
+      3n,
+      17n,
+      25n,
+      26n,
+      27n,
+      32n,
+      51n,
+      52n,
+      53n,
+      64n,
+      78n,
+      104n,
+      -3n,
+      -26n,
+      -52n,
+    ]) {
+      const left = integer.shiftSigned(parse(v), parse(shift), false, 64)!;
+      assert.equal(text(left), String(v << shift), `${v} << ${shift}`);
+      const right = integer.shiftSigned(parse(v), parse(shift), true, 64)!;
+      assert.equal(text(right), String(v >> shift), `${v} >> ${shift}`);
+    }
+  }
+
+  // divideQuotient and divideRemainder match divide and BigInt on 1-limb and multi-limb divisors.
+  for (const a of samples) {
+    for (const b of [
+      1n,
+      -1n,
+      17n,
+      -97n,
+      67108863n,
+      67108864n,
+      -67108865n,
+      (1n << 64n) + 7n,
+    ]) {
+      const q = integer.divideQuotient(parse(a), parse(b))!;
+      const r = integer.divideRemainder(parse(a), parse(b))!;
+      assert.equal(text(q), String(a / b), `${a} / ${b}`);
+      assert.equal(text(r), String(a % b), `${a} % ${b}`);
+    }
+    assert.equal(
+      integer.divideQuotient(parse(a), integer.integerZero()),
+      undefined,
+    );
+    assert.equal(
+      integer.divideRemainder(parse(a), integer.integerZero()),
+      undefined,
+    );
+  }
+
+  // integerHash matches for equivalent inline and multi-limb constructions.
+  for (const v of samples) {
+    const a = parse(v);
+    const b = integer.add(a, integer.integerZero());
+    assert.equal(integer.integerHash(a), integer.integerHash(b), `hash ${v}`);
+  }
+});

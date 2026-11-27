@@ -111,16 +111,16 @@ export function durationText(value: Duration, digits: number = -1): string {
   if (
     value.hours !== 0 ||
     value.minutes !== 0 ||
-    magnitude.digits.length !== 0 ||
+    magnitude.len !== 0 ||
     value.sign === 0 ||
     digits >= 0
   ) {
     text += "T";
     if (value.hours !== 0) text += String(Math.abs(value.hours)) + "H";
     if (value.minutes !== 0) text += String(Math.abs(value.minutes)) + "M";
-    if (magnitude.digits.length !== 0 || value.sign === 0 || digits >= 0) {
+    if (magnitude.len !== 0 || value.sign === 0 || digits >= 0) {
       text += decimal(parts.quotient);
-      if (digits > 0 || (digits < 0 && parts.remainder.digits.length !== 0)) {
+      if (digits > 0 || (digits < 0 && parts.remainder.len !== 0)) {
         let fraction = decimal(parts.remainder).padStart(9, "0");
         if (digits >= 0) fraction = fraction.slice(0, digits);
         else while (fraction.endsWith("0")) fraction = fraction.slice(0, -1);

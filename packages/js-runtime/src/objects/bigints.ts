@@ -4,14 +4,16 @@ import {
   add,
   subtract,
   multiply,
-  divide,
+  divideQuotient,
+  divideRemainder,
   negate,
   bitwise,
   bitwiseNot,
-  shift,
+  shiftSigned,
   power,
   compare,
   compareNumber,
+  integerZero,
   type Integer,
 } from "@tint/foundation/numeric/big-integer";
 
@@ -36,7 +38,7 @@ export function viewBigIntValue(value: unknown): BigIntValue | undefined {
 export function bigIntFromString(input: string): BigIntValue | undefined {
   const text = input.trim();
   const length = text.length;
-  if (length === 0) return createBigIntValue({ negative: false, digits: [] });
+  if (length === 0) return createBigIntValue(integerZero());
   let radix = 10;
   let digits = text;
   if (length >= 2 && text.charCodeAt(0) === 48) {
@@ -60,7 +62,7 @@ export function bigIntToString(
   return formatInteger(value.integer, radix);
 }
 export function bigIntToBoolean(value: BigIntValue): boolean {
-  return value.integer.digits.length !== 0;
+  return value.integer.len !== 0;
 }
 /** The parser supplies a validated, canonical decimal literal. */
 export function createBigIntLiteral(text: string): BigIntValue {
@@ -93,7 +95,7 @@ function finish(
   value: Integer | undefined,
   maxDigits: number,
 ): BigIntOperationResult {
-  if (value === undefined || value.digits.length > maxDigits)
+  if (value === undefined || value.len > maxDigits)
     return { error: "range", value: undefined };
   return { error: "none", value: createBigIntValue(value) };
 }
@@ -118,33 +120,17 @@ export function bigIntBinaryOperation(
   if (operator === "+") return finish(add(a, b), maxDigits);
   if (operator === "-") return finish(subtract(a, b), maxDigits);
   if (operator === "*") {
-    if (
-      a.digits.length !== 0 &&
-      b.digits.length !== 0 &&
-      a.digits.length + b.digits.length - 1 > maxDigits
-    )
+    if (a.len !== 0 && b.len !== 0 && a.len + b.len - 1 > maxDigits)
       return { error: "range", value: undefined };
     return finish(multiply(a, b), maxDigits);
   }
-  if (operator === "/" || operator === "%") {
-    const result = divide(a, b);
-    return finish(
-      result === undefined
-        ? undefined
-        : operator === "/"
-          ? result.quotient
-          : result.remainder,
-      maxDigits,
-    );
-  }
+  if (operator === "/") return finish(divideQuotient(a, b), maxDigits);
+  if (operator === "%") return finish(divideRemainder(a, b), maxDigits);
   if (operator === "&") return finish(bitwise(a, b, "&"), maxDigits);
   if (operator === "|") return finish(bitwise(a, b, "|"), maxDigits);
   if (operator === "^") return finish(bitwise(a, b, "^"), maxDigits);
   if (operator === "<<" || operator === ">>")
-    return finish(
-      shift(a, operator === "<<" ? b : negate(b), maxDigits),
-      maxDigits,
-    );
+    return finish(shiftSigned(a, b, operator === ">>", maxDigits), maxDigits);
   if (operator === "**") return finish(power(a, b, maxDigits), maxDigits);
   if (operator === ">>>") return { error: "type", value: undefined };
   return { error: "unsupported", value: undefined };

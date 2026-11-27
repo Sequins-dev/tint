@@ -1,4 +1,8 @@
 import type { Endian } from "@tint/foundation/binary/bytes";
+import {
+  createInlineInteger,
+  integerZero,
+} from "@tint/foundation/numeric/big-integer";
 import { createBigIntValue, type BigIntValue } from "./bigints.ts";
 
 /** Exact word conversion without routing a 64-bit integer through Number. */
@@ -26,8 +30,7 @@ export function readBigIntBytes(
     hi = (b3 | (b2 << 8) | (b1 << 16) | (b0 << 24)) >>> 0;
     lo = (b7 | (b6 << 8) | (b5 << 16) | (b4 << 24)) >>> 0;
   }
-  if (lo === 0 && hi === 0)
-    return createBigIntValue({ negative: false, digits: [] });
+  if (lo === 0 && hi === 0) return createBigIntValue(integerZero());
   let negative = false;
   if (signed && (hi & 0x80000000) !== 0) {
     negative = true;
@@ -40,8 +43,16 @@ export function readBigIntBytes(
   const d0 = lo & 67108863;
   const d1 = (lo >>> 26) | ((hi & 1048575) << 6);
   const d2 = hi >>> 20;
-  const digits = d2 !== 0 ? [d0, d1, d2] : d1 !== 0 ? [d0, d1] : [d0];
-  return createBigIntValue({ negative, digits });
+  return createBigIntValue(
+    createInlineInteger(
+      negative,
+      d2 !== 0 ? 3 : d1 !== 0 ? 2 : 1,
+      d0,
+      d1,
+      d2,
+      0,
+    ),
+  );
 }
 export function writeBigIntBytes(
   bytes: Uint8Array,
@@ -51,10 +62,9 @@ export function writeBigIntBytes(
 ): void {
   if (!(offset >= 0 && offset + 8 <= bytes.length)) throw "BIGINT_WRITE_BOUNDS";
   const integer = value.integer;
-  const digits = integer.digits;
-  const d0 = digits[0] ?? 0;
-  const d1 = digits[1] ?? 0;
-  const d2 = digits[2] ?? 0;
+  const d0 = integer.d0;
+  const d1 = integer.d1;
+  const d2 = integer.d2;
   let lo = (d0 | ((d1 & 63) << 26)) >>> 0;
   let hi = ((d1 >>> 6) | ((d2 & 4095) << 20)) >>> 0;
   if (integer.negative && (lo !== 0 || hi !== 0)) {

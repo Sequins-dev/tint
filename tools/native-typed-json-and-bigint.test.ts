@@ -330,6 +330,63 @@ export function run(): number {
   refMap.set(refA, 99);
   if (refMap.get(refA) !== 99 || refMap.get(refB) !== undefined) return 64;
 
+  // Constant-folded BigInt literal expressions and runtime RangeError preservation.
+  const mask96 = (1n << 96n) - 1n;
+  const bound160 = 1n << 160n;
+  if (mask96 !== 79228162514264337593543950335n) return 65;
+  if (bound160 !== 1461501637330902918203684832716283019655932542976n) return 66;
+  if (~0n !== -1n || -(1n << 104n) !== -20282409603651670423947251286016n) return 67;
+  let caughtDivZero = false;
+  try {
+    if (1n / 0n === 0n) return 68;
+  } catch (e) {
+    caughtDivZero = e instanceof RangeError;
+  }
+  if (!caughtDivZero) return 69;
+  let caughtModZero = false;
+  try {
+    if (1n % 0n === 0n) return 70;
+  } catch (e) {
+    caughtModZero = e instanceof RangeError;
+  }
+  if (!caughtModZero) return 71;
+  let caughtNegExp = false;
+  try {
+    if (2n ** -1n === 0n) return 72;
+  } catch (e) {
+    caughtNegExp = e instanceof RangeError;
+  }
+  if (!caughtNegExp) return 73;
+
+  // Inline fast paths: negative masks across 26/52-bit boundaries, shifts, BigInt64Array/BigUint64Array.
+  const negA64 = -(1n << 26n);
+  const negB64 = -(1n << 52n);
+  if ((negA64 & 0xffffffffn) !== 0xfc000000n) return 74;
+  if ((negB64 & 0xffffffffn) !== 0n) return 75;
+  if ((-1n & 0xffffffffn) !== 0xffffffffn) return 76;
+  if (((-1n - (1n << 26n)) & 0xffffffffn) !== 0xfbffffffn) return 77;
+  const s64 = new BigInt64Array(4);
+  const u64 = new BigUint64Array(4);
+  s64[0] = 0n;
+  s64[1] = -1n;
+  s64[2] = -(1n << 63n);
+  s64[3] = (1n << 63n) - 1n;
+  u64[0] = 0n;
+  u64[1] = 1n;
+  u64[2] = (1n << 64n) - 1n;
+  u64[3] = 0x123456789abcdef0n;
+  if ((s64[0] ?? 1n) !== 0n || (s64[1] ?? 0n) !== -1n) return 78;
+  if ((s64[2] ?? 0n) !== -(1n << 63n) || (s64[3] ?? 0n) !== (1n << 63n) - 1n)
+    return 79;
+  if ((u64[0] ?? 1n) !== 0n || (u64[1] ?? 0n) !== 1n) return 80;
+  if (
+    (u64[2] ?? 0n) !== (1n << 64n) - 1n ||
+    (u64[3] ?? 0n) !== 0x123456789abcdef0n
+  )
+    return 81;
+  if (((u64[3] ?? 0n) >> 32n) !== 0x12345678n) return 82;
+  if (((u64[1] ?? 0n) << 25n) !== 33554432n) return 83;
+
   return 42;
 }
 `;

@@ -183,7 +183,7 @@ function zonedCalendarFraction(
     size = fromNumber(increment);
   if (whole === undefined || size === undefined)
     throw "ZONED_CALENDAR_TOTAL_COUNT_INVARIANT";
-  if (span.digits.length === 0) throw createRuntimeError(realm, "range");
+  if (span.len === 0) throw createRuntimeError(realm, "range");
   const numerator = add(
     multiply(whole, span),
     multiply(subtract(end.integer, start.integer), size),

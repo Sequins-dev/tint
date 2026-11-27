@@ -7,6 +7,8 @@ import {
   negate,
   compare,
   shift,
+  integerFromDigits,
+  integerTopDigit,
   type Integer,
 } from "../big-integer.ts";
 import { twoOverPiDigits, twoOverPiBits } from "./constant.ts";
@@ -32,10 +34,10 @@ function integer(value: number): Integer {
   return result;
 }
 function constant(): Integer {
-  return { negative: false, digits: twoOverPiDigits() };
+  return integerFromDigits(false, twoOverPiDigits().slice());
 }
 function shifted(value: Integer, count: number): Integer {
-  const capacity = value.digits.length + Math.ceil(Math.max(0, count) / 26) + 1;
+  const capacity = value.len + Math.ceil(Math.max(0, count) / 26) + 1;
   const result = shift(value, integer(count), capacity);
   if (result === undefined) throw "TRIG_SHIFT_INVARIANT";
   return result;
@@ -43,8 +45,8 @@ function shifted(value: Integer, count: number): Integer {
 /** Round a signed fixed-point fraction once before exact power-of-two scaling. */
 function fraction(value: Integer, denominatorBits: number): number {
   const magnitude = value.negative ? negate(value) : value;
-  let top = magnitude.digits[magnitude.digits.length - 1] ?? 0;
-  let bits = Math.max(0, magnitude.digits.length - 1) * 26;
+  let top = integerTopDigit(magnitude);
+  let bits = Math.max(0, magnitude.len - 1) * 26;
   while (top !== 0) {
     bits++;
     top = Math.floor(top / 2);
@@ -82,7 +84,7 @@ function reduceLarge(value: number): ReducedAngle {
   const product = multiply(integer(mantissa), constant());
   const whole = shifted(product, -denominatorBits);
   let remainder = subtract(product, shifted(whole, denominatorBits));
-  let quadrant = (whole.digits[0] ?? 0) % 4;
+  let quadrant = whole.d0 % 4;
   if (compare(remainder, shifted(integer(1), denominatorBits - 1)) >= 0) {
     remainder = subtract(remainder, shifted(integer(1), denominatorBits));
     quadrant = (quadrant + 1) % 4;

@@ -37,13 +37,13 @@ export function roundInteger(
 ): Integer | undefined {
   if (
     increment.negative ||
-    increment.digits.length === 0 ||
+    increment.len === 0 ||
     parseRoundingMode(mode) === undefined
   )
     return undefined;
   const split = divide(value, increment);
   if (split === undefined) throw "ROUNDING_DIVISION_INVARIANT";
-  if (split.remainder.digits.length === 0) return value;
+  if (split.remainder.len === 0) return value;
   const negative = value.negative;
   let away = false;
   if (mode === "ceil") away = !negative;
@@ -65,7 +65,7 @@ export function roundInteger(
               ? true
               : mode === "halfTrunc"
                 ? false
-                : (split.quotient.digits[0] ?? 0) % 2 !== 0;
+                : split.quotient.d0 % 2 !== 0;
   }
   let quotient = split.quotient;
   if (away) {

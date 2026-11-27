@@ -119,6 +119,7 @@ export function visitRuntimeFunctions(
   const bigints = options.bigints;
   if (bigints !== undefined) {
     add(bigints.literal, "bigint", -1, "literal");
+    add(bigints.literalInline, "bigint", -1, "literalInline");
     const binary = bigints.binary;
     add(binary["+"], "bigint", -1, "binary+");
     add(binary["-"], "bigint", -1, "binary-");
