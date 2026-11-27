@@ -1704,6 +1704,24 @@ export function verify(
               equal(use(op.separator), "string");
               equal(use(op.value), "reference");
               break;
+            case "gc-epoch":
+              define(op.id, "number");
+              break;
+            case "reference-hash": {
+              const valueType = use(op.value);
+              if (
+                valueType !== "reference" &&
+                valueType !== "optional-reference" &&
+                valueType !== "general" &&
+                !isNativeTypedArray(valueType)
+              )
+                fail(
+                  "TYPE",
+                  "reference-hash expects a reference, typed array or general value",
+                );
+              define(op.id, "number");
+              break;
+            }
             case "string-flatten-into":
               equal(use(op.address), "number");
               equal(use(op.byteLength), "number");

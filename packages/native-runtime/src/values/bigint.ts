@@ -201,3 +201,13 @@ export function bigIntFromWord64(
   const digits: number[] = d2 !== 0 ? [d0, d1, d2] : d1 !== 0 ? [d0, d1] : [d0];
   return createBigIntValue({ negative, digits });
 }
+/** Stable value-based 32-bit FNV-1a hash of a BigIntValue (zero allocations;
+ * equal BigInts across distinct heap allocations produce identical hashes). */
+export function hashBigInt(value: BigIntValue): number {
+  const integer = value.integer,
+    digits = integer.digits;
+  let hash = integer.negative && digits.length !== 0 ? 0x811c9dc5 : 0x9e3779b1;
+  for (let i = 0; i < digits.length; i++)
+    hash = Math.imul(hash ^ (digits[i] ?? 0), 0x01000193) >>> 0;
+  return hash;
+}

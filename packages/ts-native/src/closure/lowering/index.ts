@@ -258,6 +258,15 @@ export interface ModuleEntryOptions {
   readonly atomicsNotify?: number;
   /** On-demand stdlib helper functions keyed as `<namespace>:<exportName>`. */
   readonly builtinHelpers?: ReadonlyMap<string, number> | undefined;
+  /** Native collection identity-hash intrinsics (key-index gcEpoch,
+   * referenceHash, usesAddressHash), lowered inline without boxing keys. */
+  readonly identityHash?:
+    | {
+        readonly gcEpoch: number;
+        readonly referenceHash: number;
+        readonly usesAddressHash: number;
+      }
+    | undefined;
   readonly lists?: readonly ListRuntimeBinding[];
   readonly sets?: readonly SetRuntimeBinding[];
   readonly maps?: readonly MapRuntimeBinding[];
@@ -381,6 +390,7 @@ export function lowerModuleEntries(
     bigints: options?.bigints,
     bigIntRepresentation: options?.bigIntRepresentation,
     builtinHelpers: options?.builtinHelpers,
+    identityHash: options?.identityHash,
     realmTypeof: options?.realmTypeof,
     realmCall: options?.realmCall,
     fixedFfiCalls: options?.fixedFfiCalls,
@@ -574,6 +584,13 @@ function lowerEntries(
     atomicsWait?: number;
     atomicsNotify?: number;
     builtinHelpers?: ReadonlyMap<string, number> | undefined;
+    identityHash?:
+      | {
+          readonly gcEpoch: number;
+          readonly referenceHash: number;
+          readonly usesAddressHash: number;
+        }
+      | undefined;
     lists: readonly ListRuntimeBinding[] | undefined;
     sets: readonly SetRuntimeBinding[] | undefined;
     maps: readonly MapRuntimeBinding[] | undefined;
@@ -1285,6 +1302,7 @@ function lowerEntries(
           ["Uint32Array", "boolean"],
           "reference",
         ),
+        hash: helper(sources.hash, ["reference"], "number"),
       };
     }
     const realmTypeof = recordTarget?.realmTypeof;
@@ -4087,57 +4105,77 @@ function lowerEntries(
                 const binding = referenceBindings.get(target);
                 const source =
                   binding === undefined ? undefined : direct[binding];
-                callee =
-                  source === undefined || node.scriptCall === true
-                    ? undefined
-                    : targetIds[source];
-                if (callee === undefined) {
-                  const id =
-                    (chain !== undefined || node.optional
-                      ? checked.chainReceivers.get(node)
-                      : undefined) ?? checked.expressions.get(target);
-                  const signature =
-                    id === undefined ? undefined : checked.types[id];
-                  if (layout !== undefined || signature?.kind !== "function")
-                    fail("call requires a direct function or managed callback");
-                  const parameters = signature.parameters.map(scalar);
-                  const result: ScalarType | "void" =
-                    checked.types[signature.result]?.kind === "void" ||
-                    checked.types[signature.result]?.kind === "never"
-                      ? "void"
-                      : scalar(signature.result);
-                  callee = callbackSignature(
-                    parameters,
-                    result,
-                    id,
-                    node.scriptCall,
-                  );
-                  indirect = true;
-                  methodReceiver =
-                    signature.method === true && target.kind === "member";
-                  expr(node.callee);
+                const identity = recordTarget?.identityHash;
+                if (
+                  source !== undefined &&
+                  node.scriptCall !== true &&
+                  identity !== undefined &&
+                  (source === identity.gcEpoch ||
+                    source === identity.referenceHash ||
+                    source === identity.usesAddressHash)
+                ) {
+                  builtin =
+                    source === identity.gcEpoch
+                      ? "gc-epoch"
+                      : source === identity.referenceHash
+                        ? "reference-hash"
+                        : "uses-address-hash";
+                  callee = undefined;
                 } else {
-                  if (source !== undefined && ownedFunctions.has(source))
-                    fail(
-                      "direct captured calls require owned environment forwarding",
-                    );
-                  const targetFn =
-                    source === undefined
+                  callee =
+                    source === undefined || node.scriptCall === true
                       ? undefined
-                      : checked.bindings.functions[source];
-                  if (
-                    targetFn === undefined ||
-                    (layout !== undefined &&
-                      checked.bindings.functions[targetFn.parent ?? -1]
-                        ?.scope !== layout.scope &&
-                      !(
-                        targetFn.parent === undefined &&
-                        targetFn.captures.length === 0
-                      ))
-                  )
-                    fail(
-                      "callee must share the supplied activation environment",
+                      : targetIds[source];
+                  if (callee === undefined) {
+                    const id =
+                      (chain !== undefined || node.optional
+                        ? checked.chainReceivers.get(node)
+                        : undefined) ?? checked.expressions.get(target);
+                    const signature =
+                      id === undefined ? undefined : checked.types[id];
+                    if (layout !== undefined || signature?.kind !== "function")
+                      fail(
+                        "call requires a direct function or managed callback",
+                      );
+                    const parameters = signature.parameters.map(scalar);
+                    const result: ScalarType | "void" =
+                      checked.types[signature.result]?.kind === "void" ||
+                      checked.types[signature.result]?.kind === "never"
+                        ? "void"
+                        : scalar(signature.result);
+                    callee = callbackSignature(
+                      parameters,
+                      result,
+                      id,
+                      node.scriptCall,
                     );
+                    indirect = true;
+                    methodReceiver =
+                      signature.method === true && target.kind === "member";
+                    expr(node.callee);
+                  } else {
+                    if (source !== undefined && ownedFunctions.has(source))
+                      fail(
+                        "direct captured calls require owned environment forwarding",
+                      );
+                    const targetFn =
+                      source === undefined
+                        ? undefined
+                        : checked.bindings.functions[source];
+                    if (
+                      targetFn === undefined ||
+                      (layout !== undefined &&
+                        checked.bindings.functions[targetFn.parent ?? -1]
+                          ?.scope !== layout.scope &&
+                        !(
+                          targetFn.parent === undefined &&
+                          targetFn.captures.length === 0
+                        ))
+                    )
+                      fail(
+                        "callee must share the supplied activation environment",
+                      );
+                  }
                 }
               }
               exprArguments(node.arguments);
@@ -4267,6 +4305,7 @@ function lowerEntries(
           fixedFfiCall,
           bigIntRecord:
             (generalTypeof && realmTypeof === undefined) ||
+            (builtin === "reference-hash" && bigints !== undefined) ||
             (dynamicIntrinsic === "dynamic-object-string" &&
               bigints !== undefined) ||
             (dynamicIntrinsic === "flow-property-read" &&

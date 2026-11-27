@@ -45,6 +45,7 @@ import {
   nativeNumberStringCacheEntries,
   nativeStringSplitCacheWord,
   nativeStringSplitCacheEntries,
+  nativeGcEpochWord,
   nativeArrayLengthOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
@@ -8537,6 +8538,8 @@ function emitModuleForms(
               case "string-flat":
               case "string-flatten-into":
               case "string-index-cached":
+              case "gc-epoch":
+              case "reference-hash":
                 id = op.id;
                 type = "number";
                 break;
@@ -19672,6 +19675,131 @@ function emitModuleForms(
                 }
                 emit({ op: "orn-reg", width: 64, rd: 11, rn: 11, rm: 12 });
                 emit({ op: "scvtf-d-x", rd: floatTarget(op.id, 0), rn: 11 });
+                floatStore(floatTarget(op.id, 0), op.id);
+                break;
+              }
+              case "gc-epoch": {
+                rawLoad(9, contextOffset);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 9,
+                  offset: nativeAllocationStateOffset,
+                });
+                emit({ op: "movz", width: 32, rd: 11, immediate: 0, shift: 0 });
+                const skip = instructions.length;
+                emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 11,
+                  rn: 10,
+                  offset: nativeGcEpochWord * 4,
+                });
+                patchInstruction(skip, {
+                  op: "cbz",
+                  width: 64,
+                  rt: 10,
+                  displacement: (instructions.length - skip) * 4,
+                });
+                if (wantsInteger(op.id)) {
+                  const target = rawTarget(op.id, 11);
+                  if (target !== 11)
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: target,
+                      rn: "zr",
+                      rm: 11,
+                    });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
+                emit({ op: "ucvtf-d-w", rd: floatTarget(op.id, 0), rn: 11 });
+                floatStore(floatTarget(op.id, 0), op.id);
+                break;
+              }
+              case "reference-hash": {
+                if (value(op.value).type === "general") {
+                  rawValue(9, op.value);
+                  emit({
+                    op: "movz",
+                    width: 32,
+                    rd: 11,
+                    immediate: 0,
+                    shift: 0,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 5,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const notRef = instructions.length;
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  rawLoad(10, value(op.value).offset + 8);
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 10,
+                    immr: 3,
+                    imms: 63,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 12,
+                    rn: 10,
+                    immr: 21,
+                    imms: 63,
+                  });
+                  emit({ op: "eor-reg", width: 32, rd: 11, rn: 11, rm: 12 });
+                  patchInstruction(notRef, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (instructions.length - notRef) * 4,
+                  });
+                } else {
+                  const ref = rawRegister(op.value, 10);
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: ref,
+                    immr: 3,
+                    imms: 63,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 12,
+                    rn: ref,
+                    immr: 21,
+                    imms: 63,
+                  });
+                  emit({ op: "eor-reg", width: 32, rd: 11, rn: 11, rm: 12 });
+                }
+                if (wantsInteger(op.id)) {
+                  const target = rawTarget(op.id, 11);
+                  if (target !== 11)
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: target,
+                      rn: "zr",
+                      rm: 11,
+                    });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
+                emit({ op: "ucvtf-d-w", rd: floatTarget(op.id, 0), rn: 11 });
                 floatStore(floatTarget(op.id, 0), op.id);
                 break;
               }

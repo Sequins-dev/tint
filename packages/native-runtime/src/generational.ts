@@ -1,5 +1,6 @@
 import {
   nativeAllocatorShutdownRequest,
+  nativeGcEpochWord,
   nativeGenerationalStateWords,
   nativeIdentityWorkerRecordOffset,
   nativeNumberStringCacheWord,
@@ -320,6 +321,8 @@ export function initializeGenerationalRuntime(
     // The number-string and string-split caches are never traced: drop them.
     allocation[nativeNumberStringCacheWord] = 0;
     allocation[nativeStringSplitCacheWord] = 0;
+    allocation[nativeGcEpochWord] =
+      ((allocation[nativeGcEpochWord] ?? 0) + 1) >>> 0;
     const youngTop = allocation[0] ?? 0,
       oldTop = allocation[3] ?? 0,
       // What the space has used: the old fill, and the nursery's when it is

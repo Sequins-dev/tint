@@ -64,6 +64,9 @@ export function instructionEffects(op: Instruction): number {
     case "string-split-cached":
     // A string's index field changes once, from unset to its index.
     case "string-index-cached":
+    // Moving collections increment gc-epoch and can change managed addresses.
+    case "gc-epoch":
+    case "reference-hash":
       return effectReadHeap;
     case "string-index-cache":
       return effectReadHeap | effectWriteHeap;

@@ -1019,6 +1019,15 @@ export function encodeInstruction(
       writeSigned(writer, op.index);
       writeSigned(writer, op.scratch);
       return true;
+    case "gc-epoch":
+      writePrefix(writer, 133, op, 0);
+      writeSigned(writer, op.id);
+      return true;
+    case "reference-hash":
+      writePrefix(writer, 134, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
     case "weak-slot-new":
       writePrefix(writer, 48, op, 0);
       writeSigned(writer, op.id);
@@ -2051,6 +2060,28 @@ export function decodeInstruction(
         array,
         index,
         scratch,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 133: {
+      const id = readSigned(reader);
+      return {
+        kind: "gc-epoch",
+        id,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 134: {
+      const id = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "reference-hash",
+        id,
+        value,
         start,
         end,
         ...(inline === undefined ? {} : { inline }),
