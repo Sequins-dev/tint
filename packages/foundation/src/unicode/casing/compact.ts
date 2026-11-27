@@ -26,14 +26,14 @@ const ignorableRanges =
 
 function containsRange(ranges: string, point: number): boolean {
   let low = 0,
-    high = ranges.length / 4;
+    high = ranges.length >>> 2;
   while (low < high) {
-    const mid = Math.floor((low + high) / 2),
-      offset = mid * 4;
+    const mid = (low + high) >>> 1,
+      offset = mid << 2;
     const start =
-      ranges.charCodeAt(offset) * 65536 + ranges.charCodeAt(offset + 1);
+      (ranges.charCodeAt(offset) << 16) | ranges.charCodeAt(offset + 1);
     const end =
-      ranges.charCodeAt(offset + 2) * 65536 + ranges.charCodeAt(offset + 3);
+      (ranges.charCodeAt(offset + 2) << 16) | ranges.charCodeAt(offset + 3);
     if (point < start) high = mid;
     else if (point > end) low = mid + 1;
     else return true;
@@ -48,12 +48,12 @@ function lookup(
   text: string,
 ): string | undefined {
   let low = 0,
-    high = points.length / 2;
+    high = points.length >>> 1;
   while (low < high) {
-    const mid = Math.floor((low + high) / 2),
-      offset = mid * 2;
+    const mid = (low + high) >>> 1,
+      offset = mid << 1;
     const candidate =
-      points.charCodeAt(offset) + points.charCodeAt(offset + 1) * 65536;
+      points.charCodeAt(offset) | (points.charCodeAt(offset + 1) << 16);
     if (point < candidate) high = mid;
     else if (point > candidate) low = mid + 1;
     else {
@@ -65,41 +65,124 @@ function lookup(
   return undefined;
 }
 
-function followingCased(text: string, offset: number): boolean {
-  while (offset < text.length) {
-    const point = text.codePointAt(offset);
-    if (point === undefined) throw "UNICODE_CASING_OFFSET_INVARIANT";
+function precedingCased(text: string, offset: number): boolean {
+  while (offset > 0) {
+    let point = text.charCodeAt(--offset);
+    if (point >= 0xdc00 && point <= 0xdfff && offset > 0) {
+      const high = text.charCodeAt(offset - 1);
+      if (high >= 0xd800 && high <= 0xdbff) {
+        offset--;
+        point = ((high - 0xd800) << 10) + (point - 0xdc00) + 0x10000;
+      }
+    }
     if (!containsRange(ignorableRanges, point))
       return containsRange(casedRanges, point);
-    offset += point > 65535 ? 2 : 1;
+  }
+  return false;
+}
+
+function followingCased(text: string, offset: number): boolean {
+  const length = text.length;
+  while (offset < length) {
+    let point = text.charCodeAt(offset++);
+    if (point >= 0xd800 && point <= 0xdbff && offset < length) {
+      const low = text.charCodeAt(offset);
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        offset++;
+        point = ((point - 0xd800) << 10) + (low - 0xdc00) + 0x10000;
+      }
+    }
+    if (!containsRange(ignorableRanges, point))
+      return containsRange(casedRanges, point);
   }
   return false;
 }
 
 function convert(text: string, upper: boolean): string {
-  if (asciiEndOfText(text, 0, text.length) === text.length)
+  const length = text.length;
+  if (asciiEndOfText(text, 0, length) === length)
     return upper ? asciiUppercase(text) : asciiLowercase(text);
-  const pieces: string[] = [];
-  let beforeCased = false;
-  for (let offset = 0; offset < text.length;) {
-    const point = text.codePointAt(offset);
-    if (point === undefined) throw "UNICODE_CASING_OFFSET_INVARIANT";
-    const next = offset + (point > 65535 ? 2 : 1);
-    const converted =
-      !upper && point === 0x03a3 && beforeCased && !followingCased(text, next)
-        ? "\u03c2"
-        : lookup(
-            point,
-            upper ? upperPoints : lowerPoints,
-            upper ? upperOffsets : lowerOffsets,
-            upper ? upperText : lowerText,
-          );
-    pieces.push(converted === undefined ? text.slice(offset, next) : converted);
-    if (!containsRange(ignorableRanges, point))
-      beforeCased = containsRange(casedRanges, point);
+  let out = "";
+  let runStart = 0;
+  let changed = false;
+  for (let offset = 0; offset < length;) {
+    let point = text.charCodeAt(offset);
+    if (point < 0x80) {
+      if (upper ? point >= 97 && point <= 122 : point >= 65 && point <= 90) {
+        if (offset > runStart) out += text.slice(runStart, offset);
+        const nextUnit = offset + 1 < length ? text.charCodeAt(offset + 1) : -1;
+        if (
+          nextUnit >= 0 &&
+          (upper
+            ? nextUnit >= 97 && nextUnit <= 122
+            : nextUnit >= 65 && nextUnit <= 90)
+        ) {
+          const asciiEnd = asciiEndOfText(text, offset + 2, length);
+          const span = text.slice(offset, asciiEnd);
+          out += upper ? asciiUppercase(span) : asciiLowercase(span);
+          runStart = asciiEnd;
+          offset = asciiEnd;
+        } else {
+          out += String.fromCharCode(upper ? point - 32 : point + 32);
+          runStart = offset + 1;
+          offset++;
+        }
+        changed = true;
+      } else {
+        offset++;
+      }
+      continue;
+    }
+    let next = offset + 1;
+    let converted: string | undefined;
+    if (point < 0x100) {
+      if (upper) {
+        if (
+          (point >= 0xe0 && point <= 0xf6) ||
+          (point >= 0xf8 && point <= 0xfe)
+        )
+          converted = String.fromCharCode(point - 32);
+        else if (point === 0xdf) converted = "SS";
+        else if (point === 0xb5) converted = "\u039c";
+        else if (point === 0xff) converted = "\u0178";
+      } else if (
+        (point >= 0xc0 && point <= 0xd6) ||
+        (point >= 0xd8 && point <= 0xde)
+      ) {
+        converted = String.fromCharCode(point + 32);
+      }
+    } else {
+      if (point >= 0xd800 && point <= 0xdbff && next < length) {
+        const low = text.charCodeAt(next);
+        if (low >= 0xdc00 && low <= 0xdfff) {
+          next++;
+          point = ((point - 0xd800) << 10) + (low - 0xdc00) + 0x10000;
+        }
+      }
+      converted =
+        !upper &&
+        point === 0x03a3 &&
+        precedingCased(text, offset) &&
+        !followingCased(text, next)
+          ? "\u03c2"
+          : lookup(
+              point,
+              upper ? upperPoints : lowerPoints,
+              upper ? upperOffsets : lowerOffsets,
+              upper ? upperText : lowerText,
+            );
+    }
+    if (converted !== undefined) {
+      if (offset > runStart) out += text.slice(runStart, offset);
+      out += converted;
+      changed = true;
+      runStart = next;
+    }
     offset = next;
   }
-  return pieces.join("");
+  if (!changed) return text;
+  if (runStart < length) out += text.slice(runStart, length);
+  return out;
 }
 
 export function unicodeLowercase(text: string): string {
