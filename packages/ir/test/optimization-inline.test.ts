@@ -2516,3 +2516,106 @@ test("string and optional-string helpers using string wrapper ops inline", () =>
   ).filter((op) => op.kind === "call");
   assert.deepEqual(remainingCalls, []);
 });
+
+test("inlineSmallFunctions excludes effectful string helpers so they do not starve referenceAllowance", () => {
+  // Function 3: opaque slow-path helper (not inlined because it imports).
+  // Function 1: large effectful string-returning helper (~100 cost, calling function 3) -> must NOT inline.
+  // Function 2: tiny call-free eligibility-2 reference accessor after 4 calls to function 1 -> must STILL inline because function 1 did not consume referenceAllowance!
+  const stringHelperOps: Instruction[] = [
+    { kind: "load", id: 0, slot: 0, ...span },
+    { kind: "call", id: 1, target: 3, arguments: [0], ...span },
+  ];
+  for (let i = 0; i < 90; i++) {
+    stringHelperOps.push({ kind: "constant", id: i + 2, value: i, ...span });
+  }
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference", "string"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              // 4 calls to large effectful string helper (would exceed referenceAllowance = 384 if inlined).
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+              { kind: "store", slot: 1, value: 1, ...span },
+              { kind: "call", id: 2, target: 1, arguments: [0], ...span },
+              { kind: "store", slot: 1, value: 2, ...span },
+              { kind: "call", id: 3, target: 1, arguments: [0], ...span },
+              { kind: "store", slot: 1, value: 3, ...span },
+              { kind: "call", id: 4, target: 1, arguments: [0], ...span },
+              { kind: "store", slot: 1, value: 4, ...span },
+              // Hot-loop reference accessor -> must still inline.
+              { kind: "call", id: 5, target: 2, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "effectfulStringHelper",
+        exported: false,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "string",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: stringHelperOps,
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "tinyLeafRefAccessor",
+        exported: false,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 1, slot: 0, ...span }],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: "opaqueFormat",
+        exported: false,
+        import: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "string",
+        entry: 0,
+        blocks: [],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 100000)!;
+  assert.deepEqual(verify(result.module), { ok: true });
+  const remainingTargets = result.module.functions[0]!.blocks.flatMap(
+    (b) => b.instructions,
+  )
+    .filter((op) => op.kind === "call")
+    .map((op) => op.target);
+  assert.deepEqual(remainingTargets, [1, 1, 1, 1]);
+});
