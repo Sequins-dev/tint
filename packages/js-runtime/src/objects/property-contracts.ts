@@ -4,9 +4,14 @@ import {
   getOwnProperty,
   ordinaryHasOwnProperty,
   ownKeys,
+  shapeKeyIndex,
+  storedValue,
   type OrdinaryObject,
   objectFlagArrayData,
+  objectFlagDictionary,
+  propertyAccessor,
 } from "./operations.ts";
+import { arrayElementCount, readArrayElement } from "./array-elements.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import {
@@ -140,22 +145,171 @@ function validateObject(
   if (!acceptsPropertyContract<ScriptPropertyKey, unknown>(object))
     return false;
   if (attached(object, schema)) return true;
-  for (const item of pending) {
+  for (let i = 0; i < pending.length; i++) {
+    const item = pending[i];
     if (item === undefined) throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
     if (item.object === object && sameSchema(item.schema, schema)) return true;
   }
   const rule = schema.types[schema.root];
   if (rule?.kind === "object") {
+    if ((object.internalFlags & objectFlagArrayData) !== 0) return false;
     if (
-      (object.internalFlags & objectFlagArrayData) !== 0 ||
-      !requiredFieldsPresent(object, rule)
-    )
-      return false;
-  } else if (
-    rule?.kind !== "array-elements" ||
-    (object.internalFlags & objectFlagArrayData) === 0
-  )
-    return false;
+      object.internalMethods === undefined &&
+      object.internalArrayElements === undefined
+    ) {
+      if ((object.internalFlags & objectFlagDictionary) === 0) {
+        const shape = object.internalShape;
+        const fields = rule.fields;
+        if (shape === undefined) {
+          for (let i = 0; i < fields.length; i++) {
+            const field = fields[i];
+            if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
+            if (field.required) return false;
+          }
+          pending.push({ object, schema });
+          return true;
+        }
+        const kinds = shape.kinds;
+        for (let i = 0; i < fields.length; i++) {
+          const field = fields[i];
+          if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
+          if (!field.required) continue;
+          const pos = shapeKeyIndex<ScriptPropertyKey, unknown>(
+            shape,
+            field.name,
+          );
+          if (pos < 0 || ((kinds[pos] ?? 0) & propertyAccessor) !== 0)
+            return false;
+        }
+        pending.push({ object, schema });
+        const keys = shape.keys;
+        for (let i = 0; i < keys.length; i++) {
+          const key = keys[i];
+          if (typeof key !== "string") continue;
+          const field = fieldFor(rule, key);
+          if (rule.stringIndex < 0 && field === undefined) continue;
+          if (((kinds[i] ?? 0) & propertyAccessor) !== 0) return false;
+          const raw = storedValue<ScriptPropertyKey, unknown>(object, i);
+          const value = raw === undefined ? shape.undefinedValue : raw;
+          if (
+            rule.stringIndex >= 0 &&
+            !validateValue(
+              value,
+              schema.types,
+              rule.stringIndex,
+              pending,
+              realm,
+            )
+          )
+            return false;
+          if (
+            field !== undefined &&
+            !validateValue(value, schema.types, field.value, pending, realm)
+          )
+            return false;
+        }
+        return true;
+      }
+      const props = object.properties;
+      const fields = rule.fields;
+      for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        if (field === undefined) throw "PROPERTY_CONTRACT_FIELD_INVARIANT";
+        if (!field.required) continue;
+        const desc = props === undefined ? undefined : props.get(field.name);
+        if (desc === undefined || desc.accessor) return false;
+      }
+      pending.push({ object, schema });
+      if (props !== undefined) {
+        for (const [key, desc] of props) {
+          if (typeof key !== "string") continue;
+          const field = fieldFor(rule, key);
+          if (rule.stringIndex < 0 && field === undefined) continue;
+          if (desc.accessor) return false;
+          if (
+            rule.stringIndex >= 0 &&
+            !validateValue(
+              desc.value,
+              schema.types,
+              rule.stringIndex,
+              pending,
+              realm,
+            )
+          )
+            return false;
+          if (
+            field !== undefined &&
+            !validateValue(
+              desc.value,
+              schema.types,
+              field.value,
+              pending,
+              realm,
+            )
+          )
+            return false;
+        }
+      }
+      return true;
+    }
+    if (!requiredFieldsPresent(object, rule)) return false;
+  } else if (rule?.kind === "array-elements") {
+    if ((object.internalFlags & objectFlagArrayData) === 0) return false;
+    const packed = object.internalArrayElements;
+    if (packed !== undefined) {
+      pending.push({ object, schema });
+      const count = arrayElementCount<ScriptPropertyKey, unknown>(packed);
+      if (count > 0) {
+        if (packed.generalCount === 0) {
+          const elemRule = schema.types[rule.element];
+          if (elemRule === undefined) throw "PROPERTY_CONTRACT_VALUE_INVARIANT";
+          if (elemRule.kind !== "number" && elemRule.kind !== "unknown") {
+            const numbers = packed.numbers;
+            for (let i = 0; i < count; i++) {
+              if (
+                !validateValue(
+                  numbers[i],
+                  schema.types,
+                  rule.element,
+                  pending,
+                  realm,
+                )
+              )
+                return false;
+            }
+          }
+        } else {
+          for (let i = 0; i < count; i++) {
+            const elem = readArrayElement<ScriptPropertyKey, unknown>(
+              packed,
+              i,
+            );
+            if (
+              !validateValue(elem, schema.types, rule.element, pending, realm)
+            )
+              return false;
+          }
+        }
+      }
+      const props = object.properties;
+      if (props !== undefined) {
+        for (const [key, desc] of props) {
+          if (!validateDescriptor(key, desc, schema, pending, realm, false))
+            return false;
+        }
+      }
+      return true;
+    }
+    const props = object.properties;
+    if (props !== undefined) {
+      pending.push({ object, schema });
+      for (const [key, desc] of props) {
+        if (!validateDescriptor(key, desc, schema, pending, realm, false))
+          return false;
+      }
+      return true;
+    }
+  } else return false;
   pending.push({ object, schema });
   for (const key of ownKeys<ScriptPropertyKey, unknown>(
     object,
@@ -289,6 +443,16 @@ function publish(
   realm: ErrorRealm,
   initializing: boolean,
 ): void {
+  let allowCallable = false;
+  for (let i = 0; i < schemas.length; i++) {
+    const schema = schemas[i];
+    if (schema === undefined) continue;
+    const kind = schema.types[schema.root]?.kind;
+    if (kind === "class-field" || kind === "class-method") {
+      allowCallable = true;
+      break;
+    }
+  }
   attachPropertyContract<ScriptPropertyKey, unknown>(
     object,
     {
@@ -337,10 +501,7 @@ function publish(
         return true;
       },
     },
-    schemas.some((schema) => {
-      const kind = schema.types[schema.root]?.kind;
-      return kind === "class-field" || kind === "class-method";
-    }),
+    allowCallable,
   );
 }
 

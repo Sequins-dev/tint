@@ -35,22 +35,21 @@ export function viewBigIntValue(value: unknown): BigIntValue | undefined {
  * are forbidden, decimal leading zeros are allowed, and empty text denotes zero. */
 export function bigIntFromString(input: string): BigIntValue | undefined {
   const text = input.trim();
-  if (text.length === 0)
-    return createBigIntValue({ negative: false, digits: [] });
-  const prefix = text.charAt(1);
-  const radix =
-    text.charAt(0) !== "0"
-      ? 10
-      : prefix === "x" || prefix === "X"
-        ? 16
-        : prefix === "b" || prefix === "B"
-          ? 2
-          : prefix === "o" || prefix === "O"
-            ? 8
-            : 10;
-  const digits = radix === 10 ? text : text.slice(2);
-  if (radix !== 10 && (digits.charAt(0) === "+" || digits.charAt(0) === "-"))
-    return undefined;
+  const length = text.length;
+  if (length === 0) return createBigIntValue({ negative: false, digits: [] });
+  let radix = 10;
+  let digits = text;
+  if (length >= 2 && text.charCodeAt(0) === 48) {
+    const prefix = text.charCodeAt(1);
+    if (prefix === 120 || prefix === 88) radix = 16;
+    else if (prefix === 98 || prefix === 66) radix = 2;
+    else if (prefix === 111 || prefix === 79) radix = 8;
+    if (radix !== 10) {
+      digits = text.slice(2);
+      const first = digits.charCodeAt(0);
+      if (first === 43 || first === 45) return undefined;
+    }
+  }
   const value = parseInteger(digits, radix);
   return value === undefined ? undefined : createBigIntValue(value);
 }

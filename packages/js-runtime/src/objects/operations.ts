@@ -1909,10 +1909,10 @@ export function writePropertyCell<Value>(
  * transitions key on the exact kind, so a new bit gives new shapes. */
 const propertyWritable = 1;
 export const propertyEnumerable = 2;
-const propertyConfigurable = 4,
-  /** An accessor: its descriptor stays in `properties` and its value slot
-   * holds no value. */
-  propertyAccessor = 8;
+const propertyConfigurable = 4;
+/** An accessor: its descriptor stays in `properties` and its value slot
+ * holds no value. */
+export const propertyAccessor = 8;
 /** Kinds whose value is not a plain general value in the object's own value
  * slots, so site caches, cached stores and cached transitions leave them to
  * the ordinary lookup. Kinds added later for values held elsewhere or for
@@ -1954,7 +1954,7 @@ function descriptorKind<Value>(descriptor: Descriptor<Value>): number {
  * ones scan their keys. */
 const indexedShapeKeys = 8;
 /** The position of `key` in the shape, or -1. */
-function shapeKeyIndex<Key, Value>(
+export function shapeKeyIndex<Key, Value>(
   shape: OrdinaryPropertyShape<Key, Value>,
   key: Key,
 ): number {
@@ -2320,19 +2320,31 @@ export function useDictionaryProperties<Key, Value>(
 ): void {
   if ((object.internalFlags & objectFlagDictionary) !== 0) return;
   const shape = object.internalShape;
-  const properties = ensureProperties<Key, Value>(object);
+  const existing = object.properties;
+  const properties =
+    existing === undefined ? ensureProperties<Key, Value>(object) : existing;
   if (shape !== undefined) {
-    // Accessors are already stored; insert every key in shape order.
-    const descriptors: Descriptor<Value>[] = [];
-    for (let index = 0; index < shape.keys.length; index++)
-      descriptors.push(fastDescriptor<Key, Value>(object, shape, index));
-    properties.clear();
-    for (let index = 0; index < shape.keys.length; index++) {
-      const key = shape.keys[index],
-        descriptor = descriptors[index];
-      if (key === undefined || descriptor === undefined)
-        throw "PROPERTY_KEY_INVARIANT";
-      properties.set(key, descriptor);
+    const keys = shape.keys;
+    if (existing === undefined) {
+      // No accessors stored in properties: populate directly in shape order.
+      for (let index = 0; index < keys.length; index++) {
+        const key = keys[index];
+        if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+        properties.set(key, fastDescriptor<Key, Value>(object, shape, index));
+      }
+    } else {
+      // Accessors are already stored; insert every key in shape order.
+      const descriptors: Descriptor<Value>[] = [];
+      for (let index = 0; index < keys.length; index++)
+        descriptors.push(fastDescriptor<Key, Value>(object, shape, index));
+      properties.clear();
+      for (let index = 0; index < keys.length; index++) {
+        const key = keys[index],
+          descriptor = descriptors[index];
+        if (key === undefined || descriptor === undefined)
+          throw "PROPERTY_KEY_INVARIANT";
+        properties.set(key, descriptor);
+      }
     }
   }
   object.internalFlags |= objectFlagDictionary;

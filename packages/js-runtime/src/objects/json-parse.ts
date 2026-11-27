@@ -4,7 +4,7 @@ import {
   type JSONNode,
 } from "@tint/foundation/text/json-syntax";
 import { createArrayObject } from "./arrays.ts";
-import { lengthOfArrayLike } from "./array-like.ts";
+import { createArrayFromList, lengthOfArrayLike } from "./array-like.ts";
 import { stringValue } from "./coercion.ts";
 import { isCallableObject } from "./call.ts";
 import {
@@ -36,6 +36,19 @@ interface ParseRecord {
   readonly children: readonly ParseRecord[];
 }
 
+function requireJSONText(
+  input: unknown,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): string {
+  if (typeof input === "string") return input;
+  const converted = stringValue(input, hooks, realm);
+  if (converted.error === "unsupported")
+    return rejectUnsupportedExecution(realm);
+  if (converted.error !== "none") throw createRuntimeError(realm, "type");
+  return converted.value;
+}
+
 /** Realize a JSON tree, retaining the original values for reviver source contexts. */
 export function parseJSON(
   input: unknown,
@@ -43,11 +56,7 @@ export function parseJSON(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): unknown {
-  const converted = stringValue(input, hooks, realm);
-  if (converted.error === "unsupported")
-    return rejectUnsupportedExecution(realm);
-  if (converted.error !== "none") throw createRuntimeError(realm, "type");
-  const source = converted.value;
+  const source = requireJSONText(input, realm, hooks);
   // Without a callable reviver no source context is observable, so values are
   // realized directly during the parse instead of through a retained syntax
   // tree and record tree (which cost several objects per element). IsCallable
@@ -60,35 +69,20 @@ export function parseJSON(
   ) {
     const direct = parseJSONWith<
       unknown,
-      {
-        readonly object: OrdinaryObject<ScriptPropertyKey, unknown>;
-        length: number;
-      },
+      unknown[],
       OrdinaryObject<ScriptPropertyKey, unknown>
     >(source, {
       null: (_start, _end): unknown => null,
       boolean: (value, _start, _end): unknown => value,
       number: (text, _start, _end): unknown => Number(text),
+      numberValue: (value, _start, _end): unknown => value,
       string: (value, _start, _end): unknown => value,
-      openArray: (_start) => ({
-        object: createArrayObject<ScriptPropertyKey, unknown>(
-          0,
-          realm.arrayPrototype,
-          realm.arrayHooks,
-          hooks,
-        ),
-        length: 0,
-      }),
-      element: (array, value): void => {
-        createDataProperty<ScriptPropertyKey, unknown>(
-          array.object,
-          String(array.length),
-          value,
-          hooks,
-        );
-        array.length++;
+      openArray: (_start): unknown[] => [],
+      element: (elements, value): void => {
+        elements.push(value);
       },
-      closeArray: (array, _start, _end): unknown => array.object,
+      closeArray: (elements, _start, _end): unknown =>
+        createArrayFromList(elements, 0, realm.arrayPrototype, realm, hooks),
       openObject: (_start) =>
         createObject<ScriptPropertyKey, unknown>(realm.objectPrototype),
       entry: (object, key, value): void => {
