@@ -2402,3 +2402,117 @@ test("scriptEntry callers skip effectful non-allocators and cold throw-only bloc
     .sort((a, b) => a - b);
   assert.deepEqual(remainingCalls, [1, 2, 3]);
 });
+
+test("string and optional-string helpers using string wrapper ops inline", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["boolean", "optional-string", "string"],
+        returnType: "string",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+              { kind: "store", slot: 1, value: 1, ...span },
+              { kind: "load", id: 2, slot: 1, ...span },
+              { kind: "call", id: 3, target: 2, arguments: [2], ...span },
+              { kind: "store", slot: 2, value: 3, ...span },
+              { kind: "load", id: 4, slot: 2, ...span },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "maybeText",
+        exported: false,
+        parameters: [0],
+        slots: ["boolean"],
+        returnType: "optional-string",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "branch",
+              condition: 0,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "string-literal", id: 1, value: "ok", ...span },
+              { kind: "string-wrap", id: 2, value: 1, ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "string-none", id: 3, ...span }],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "unwrapOrEmpty",
+        exported: false,
+        parameters: [0],
+        slots: ["optional-string"],
+        returnType: "string",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "string-present", id: 1, value: 0, ...span },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 0, ...span },
+              { kind: "string-value", id: 3, value: 2, ...span },
+            ],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "string-literal", id: 4, value: "", ...span },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 100000)!;
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.equal(result.inlined, 2);
+  const remainingCalls = result.module.functions[0]!.blocks.flatMap(
+    (b) => b.instructions,
+  ).filter((op) => op.kind === "call");
+  assert.deepEqual(remainingCalls, []);
+});

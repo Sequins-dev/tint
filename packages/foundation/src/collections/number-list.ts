@@ -23,6 +23,13 @@ export function createNumberList(capacity: number): NumberList {
     present: undefined,
   };
 }
+export function emptyNumberList(): NumberList {
+  return {
+    length: 0,
+    values: undefined,
+    present: undefined,
+  };
+}
 export function wrapNumberList(values: Float64Array): NumberList {
   return {
     length: values.length,

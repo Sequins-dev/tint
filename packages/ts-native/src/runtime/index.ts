@@ -724,6 +724,9 @@ function prepareCollectionPass(
           wrap: helpers.has("number-list:wrapNumberList")
             ? functionId(helper("number-list", "wrapNumberList"))
             : undefined,
+          empty: helpers.has("number-list:emptyNumberList")
+            ? functionId(helper("number-list", "emptyNumberList"))
+            : undefined,
         };
       } else {
         const element = preparedElement(list.element);

@@ -349,7 +349,8 @@ export type ListOperation =
   | "push"
   | "length"
   | "pop"
-  | "wrap";
+  | "wrap"
+  | "empty";
 export interface ListRuntime {
   readonly sort?: number;
   /** Removes and returns the last element (undefined when empty); lists
@@ -357,6 +358,8 @@ export interface ListRuntime {
   readonly pop?: number;
   /** Wraps a freshly initialized dense Float64Array into a NumberList. */
   readonly wrap?: number | undefined;
+  /** Creates an empty dense NumberList in a single straight-line block. */
+  readonly empty?: number | undefined;
   readonly has?: number;
   readonly delete?: number;
   readonly resize?: number;
@@ -6200,10 +6203,205 @@ export function lowerFunction(
     node: Span,
   ): number {
     const runtime = listRuntimeForElement(rest.element);
+    const count = args.length - rest.start;
+    if (count <= 0 && runtime.empty !== undefined)
+      return listValue(runtime, "empty", [], node);
+    if (runtime.wrap !== undefined && count >= 1 && count <= 32) {
+      let denseNumeric = true;
+      for (let index = rest.start; index < args.length; index++) {
+        const argument = args[index];
+        if (
+          argument === undefined ||
+          argument.kind === "spread" ||
+          scalarType(argument) !== "number"
+        ) {
+          denseNumeric = false;
+          break;
+        }
+      }
+      if (denseNumeric) {
+        const elementSlots: number[] = [];
+        for (let index = rest.start; index < args.length; index++) {
+          const argument = args[index];
+          if (argument === undefined || argument.kind === "spread")
+            throw "dense numeric rest argument invariant";
+          elementSlots.push(value(argument));
+        }
+        const lenConst = nextValue++;
+        emit({
+          kind: "constant",
+          id: lenConst,
+          value: elementSlots.length,
+          start: node.start,
+          end: node.end,
+        });
+        const arrayId = nextValue++;
+        emit({
+          kind: "array-new",
+          id: arrayId,
+          type: "Float64Array",
+          length: lenConst,
+          start: node.start,
+          end: node.end,
+        });
+        const arraySlot = save(arrayId, "Float64Array", node);
+        for (let i = 0; i < elementSlots.length; i++) {
+          const elSlot = elementSlots[i];
+          if (elSlot === undefined)
+            throw "dense numeric rest argument invariant";
+          const idxConst = nextValue++;
+          emit({
+            kind: "constant",
+            id: idxConst,
+            value: i,
+            start: node.start,
+            end: node.end,
+          });
+          emit({
+            kind: "array-store",
+            array: load(arraySlot, node),
+            index: idxConst,
+            value: load(elSlot, node),
+            start: node.start,
+            end: node.end,
+          });
+        }
+        return listValue(runtime, "wrap", [arraySlot], node);
+      }
+    }
+    if (count === 1) {
+      const only = args[rest.start];
+      if (only !== undefined && only.kind === "spread") {
+        const source = only.value;
+        const sourceType = scalarType(source);
+        if (isNativeTypedArray(sourceType)) {
+          const srcSlot = value(source);
+          const lengthSlot = arrayLength(srcSlot, only);
+          const list = listValue(runtime, "create", [lengthSlot], node);
+          const idx = numberSlot(0, only),
+            head = block(),
+            body = block(),
+            done = block();
+          jump(head.id, only);
+          current = head;
+          choose(
+            load(binarySlot("<", idx, lengthSlot, only), only),
+            body,
+            done,
+            only,
+          );
+          current = body;
+          const elem = readArrayElement(srcSlot, idx, only);
+          listCall(runtime, "push", [list, elem], only);
+          store(
+            idx,
+            load(binarySlot("+", idx, numberSlot(1, only), only), only),
+            only,
+          );
+          jump(head.id, only);
+          current = done;
+          return list;
+        }
+        if (
+          sourceType === "reference" &&
+          info(source).listElement !== undefined
+        ) {
+          const srcRuntime = listRuntime(source);
+          const srcSlot = value(source);
+          const lengthSlot = listValue(srcRuntime, "length", [srcSlot], only);
+          if (
+            runtime.wrap !== undefined &&
+            srcRuntime === runtime &&
+            !rest.admitsUndefined
+          ) {
+            const arrayId = nextValue++;
+            emit({
+              kind: "array-new",
+              id: arrayId,
+              type: "Float64Array",
+              length: load(lengthSlot, only),
+              start: node.start,
+              end: node.end,
+            });
+            const arraySlot = save(arrayId, "Float64Array", only);
+            const idx = numberSlot(0, only),
+              head = block(),
+              body = block(),
+              done = block();
+            jump(head.id, only);
+            current = head;
+            choose(
+              load(binarySlot("<", idx, lengthSlot, only), only),
+              body,
+              done,
+              only,
+            );
+            current = body;
+            if (srcRuntime.has !== undefined)
+              requireCondition(
+                listValue(srcRuntime, "has", [srcSlot, idx], only),
+                "TypeError",
+                "array hole is not a value of the declared element type",
+                only,
+              );
+            const item = listValue(srcRuntime, "read", [srcSlot, idx], only);
+            const numericVal = nextValue++;
+            emitUnwrap(numericVal, load(item, only), "number", only);
+            emit({
+              kind: "array-store",
+              array: load(arraySlot, only),
+              index: load(idx, only),
+              value: numericVal,
+              start: only.start,
+              end: only.end,
+            });
+            store(
+              idx,
+              load(binarySlot("+", idx, numberSlot(1, only), only), only),
+              only,
+            );
+            jump(head.id, only);
+            current = done;
+            return listValue(runtime, "wrap", [arraySlot], node);
+          }
+          const list = listValue(runtime, "create", [lengthSlot], node);
+          const idx = numberSlot(0, only),
+            head = block(),
+            body = block(),
+            done = block();
+          jump(head.id, only);
+          current = head;
+          choose(
+            load(binarySlot("<", idx, lengthSlot, only), only),
+            body,
+            done,
+            only,
+          );
+          current = body;
+          if (srcRuntime.has !== undefined && !rest.admitsUndefined)
+            requireCondition(
+              listValue(srcRuntime, "has", [srcSlot, idx], only),
+              "TypeError",
+              "array hole is not a value of the declared element type",
+              only,
+            );
+          const item = listValue(srcRuntime, "read", [srcSlot, idx], only);
+          listCall(runtime, "push", [list, item], only);
+          store(
+            idx,
+            load(binarySlot("+", idx, numberSlot(1, only), only), only),
+            only,
+          );
+          jump(head.id, only);
+          current = done;
+          return list;
+        }
+      }
+    }
     const list = listValue(
       runtime,
       "create",
-      [numberSlot(Math.max(0, args.length - rest.start), node)],
+      [numberSlot(Math.max(0, count), node)],
       node,
     );
     for (let index = rest.start; index < args.length; index++) {
@@ -6962,6 +7160,9 @@ export function lowerFunction(
         break;
       case "wrap":
         target = runtime.wrap;
+        break;
+      case "empty":
+        target = runtime.empty;
         break;
     }
     if (target === undefined) throw "numeric list runtime invariant";

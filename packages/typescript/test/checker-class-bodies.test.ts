@@ -390,3 +390,32 @@ test("derived class inheritance checks super, new.target, instanceof narrowing a
     assert.notEqual(result.error.preventsFallback, true, source);
   }
 });
+test("private fields track definite initialization separately from unproven early reads", () => {
+  // Base-class private field assigned in constructor before any read or `this`
+  // escape (or where own method called before assignment does not read `#x`)
+  // is proven initialized.
+  assert.deepEqual(
+    unproven("class P{#x:number;constructor(n:number){this.#x=n;}}"),
+    [],
+  );
+  assert.deepEqual(
+    unproven(
+      "class P{#x:number;constructor(n:number){this.probe();this.#x=n;}probe():number{return 0;}}",
+    ),
+    [],
+  );
+  // Private field read before assignment or while `this` escapes to an external
+  // function is recorded as unproven so lowering preserves its pre-init check.
+  assert.deepEqual(
+    unproven(
+      "class P{#x:number;constructor(n:number){this.probe();this.#x=n;}probe():number{return this.#x;}}",
+    ),
+    ["#x"],
+  );
+  assert.deepEqual(
+    unproven(
+      "function leak(p:P):number{return 0;}class P{#x:number;constructor(n:number){leak(this);this.#x=n;}}",
+    ),
+    ["#x"],
+  );
+});
