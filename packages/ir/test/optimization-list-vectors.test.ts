@@ -1038,3 +1038,169 @@ test("counted push loops pre-size fresh lists and omit growth check only when st
     "conditional-step loop must retain the slow growth fallback",
   );
 });
+
+test("nested read-only dense list loops peel hasSlot and emit preheader-guarded unchecked reads", () => {
+  // Outer loop: for (round = 0; round < 10; round++)
+  // Inner loop: for (i = 1; i < list.length; i++) { list[i - 1]; list[i]; }
+  const records = [
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "number" as const, mutable: true },
+        { offset: 16, type: "optional-reference" as const, mutable: true },
+      ],
+    },
+  ];
+  const nestedFn: FunctionIR = {
+    id: 1,
+    name: "nestedReads",
+    exported: true,
+    parameters: [0],
+    // 0: list, 1: round, 2: i, 3: len
+    slots: ["reference", "number", "number", "number"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "constant", id: 2, value: 10, ...s },
+          { kind: "binary", id: 3, operator: "<", left: 1, right: 2, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 2,
+          alternate: 7,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "constant", id: 4, value: 1, ...s },
+          { kind: "store", slot: 2, value: 4, ...s },
+        ],
+        terminator: { kind: "jump", target: 3, ...s },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 5, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          object: 5,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 3,
+          consequent: 4,
+          alternate: 8,
+          ...s,
+        },
+      },
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 6, slot: 2, ...s },
+          { kind: "load", id: 7, slot: 3, ...s },
+          { kind: "unary", id: 8, operator: "uint32", operand: 7, ...s },
+          { kind: "binary", id: 9, operator: "<", left: 6, right: 8, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 9,
+          consequent: 5,
+          alternate: 6,
+          ...s,
+        },
+      },
+      {
+        id: 5,
+        instructions: [
+          { kind: "load", id: 10, slot: 0, ...s },
+          { kind: "load", id: 11, slot: 2, ...s },
+          { kind: "constant", id: 12, value: 1, ...s },
+          { kind: "binary", id: 13, operator: "-", left: 11, right: 12, ...s },
+          { kind: "call", id: 14, target: 0, arguments: [10, 13], ...s },
+          { kind: "call", id: 15, target: 0, arguments: [10, 11], ...s },
+          { kind: "binary", id: 16, operator: "+", left: 11, right: 12, ...s },
+          { kind: "store", slot: 2, value: 16, ...s },
+        ],
+        terminator: { kind: "jump", target: 3, ...s },
+      },
+      {
+        id: 6,
+        instructions: [
+          { kind: "load", id: 17, slot: 1, ...s },
+          { kind: "constant", id: 18, value: 1, ...s },
+          { kind: "binary", id: 19, operator: "+", left: 17, right: 18, ...s },
+          { kind: "store", slot: 1, value: 19, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 7,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+      { id: 8, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  const validReader: FunctionIR = {
+    ...reader(0, 0),
+    blocks: [
+      {
+        ...reader(0, 0).blocks[0]!,
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 1,
+          operation: "read",
+          slot: 2,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      reader(0, 0).blocks[1]!,
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  assert.equal(
+    verify({ records, functions: [validReader, nestedFn] }).ok,
+    true,
+  );
+  const res = cacheListVectors(
+    { records, functions: [validReader, nestedFn] },
+    Number.MAX_SAFE_INTEGER,
+    true,
+  );
+  assert.ok(res !== undefined && res.rewritten > 0);
+  assert.equal(verify(res.module).ok, true, JSON.stringify(verify(res.module)));
+  const out = res.module.functions[1]!;
+  // Inner loop header (block 3) has its isDense check peeled out: plain jump to block 4.
+  assert.equal(out.blocks[3]?.terminator.kind, "jump");
+  assert.equal(out.blocks[3]?.instructions.length, 0);
+  // Hot inner body (block 5) calls unchecked reader for both list[i - 1] and list[i].
+  const uncheckedCalls = calls(
+    { ...out, blocks: [out.blocks[5]!] },
+    "__tint_reference_list_readu$",
+    res.module,
+  );
+  assert.equal(uncheckedCalls.length, 2);
+  // Cold fallback copy still calls the checked vector reader.
+  assert.ok(
+    calls(out, "__tint_reference_list_readv$", res.module).length >= 2,
+    "cold copy retains checked vector reads",
+  );
+});

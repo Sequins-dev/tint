@@ -1453,6 +1453,15 @@ export function cacheListVectors(
           readonly hasSlot: number;
         }[]
       >();
+      const bodyRewrites: {
+        readonly outerLoop: NaturalLoop;
+        readonly blockId: number;
+        readonly consequentId: number;
+        readonly boundValueId: number;
+        readonly vectorSlot: number;
+        readonly lengthSlot: number;
+        readonly hasSlot: number;
+      }[] = [];
       const lengthReplaced = new Map<number, Block>();
       let bodyNextValue = nextValue,
         bodyCount = 0;
@@ -1573,10 +1582,12 @@ export function cacheListVectors(
             loopHoisted.push({ cache, lengthSlot, hasSlot });
           }
           const nextInstructions: Instruction[] = [];
+          let singleBoundValueId = -1;
           for (const op of consequent.instructions) {
             if (op === undefined) continue;
             if (op.kind === "load" && droppedLoads.has(op.id)) continue;
             if (op.kind === "unary" && rewrittenUint.has(op.id)) {
+              if (rewrittenUint.size === 1) singleBoundValueId = op.id;
               nextInstructions.push({
                 kind: "load",
                 id: op.id,
@@ -1615,6 +1626,16 @@ export function cacheListVectors(
             instructions: blockInstructions,
             terminator: branchTerminator,
           });
+          if (singleBoundValueId >= 0)
+            bodyRewrites.push({
+              outerLoop: loop,
+              blockId: block.id,
+              consequentId: consequent.id,
+              boundValueId: singleBoundValueId,
+              vectorSlot: cache.vector,
+              lengthSlot: entrySlot.lengthSlot,
+              hasSlot: entrySlot.hasSlot,
+            });
           bodyCount++;
         }
         if (loopHoisted.length > 0) hoistedLengths.set(loop, loopHoisted);
@@ -1741,6 +1762,76 @@ export function cacheListVectors(
           currentFn = bodyCand;
           nextValue = bodyNextValue;
           count += bodyCount;
+          // For each inner loop whose header was rewritten to branch on
+          // `hasSlot` -> `consequent` (`i < lengthSlot`), guard `hasSlot &&
+          // vector !== none && vector.length >= lengthSlot` once in the inner
+          // loop's preheader so the hot inner loop drops the per-iteration
+          // `isDense` check and uses unchecked vector reads.
+          for (const rw of bodyRewrites) {
+            if (rw === undefined) continue;
+            let innerLoop: NaturalLoop | undefined;
+            for (const cand of forest.loops) {
+              if (
+                cand === undefined ||
+                cand === rw.outerLoop ||
+                cand.header !== rw.blockId ||
+                !rw.outerLoop.body.has(cand.header)
+              )
+                continue;
+              if (
+                innerLoop === undefined ||
+                cand.body.size < innerLoop.body.size
+              )
+                innerLoop = cand;
+            }
+            if (innerLoop === undefined) continue;
+            let entryId = -1,
+              outsideCount = 0;
+            for (const b of currentFn.blocks) {
+              if (b === undefined || innerLoop.body.has(b.id)) continue;
+              let enters = false;
+              for (const succ of blockSuccessors(b))
+                if (succ === innerLoop.header) {
+                  enters = true;
+                  break;
+                }
+              if (enters) {
+                outsideCount++;
+                entryId = b.id;
+              }
+            }
+            if (outsideCount !== 1 || entryId < 0) continue;
+            const entryBlock = currentFn.blocks[entryId];
+            if (entryBlock === undefined || entryBlock.exception !== undefined)
+              continue;
+            const entryTerm = entryBlock.terminator;
+            if (
+              entryTerm.kind !== "jump" ||
+              entryTerm.target !== innerLoop.header
+            )
+              continue;
+            const guarded = tryUncheckedListBounds(
+              currentFn,
+              innerLoop,
+              entryId,
+              rw.consequentId,
+              rw.vectorSlot,
+              rw.lengthSlot,
+              rw.boundValueId,
+              nextValue,
+              cachedOrigin,
+              uncheckedReader,
+              rw.hasSlot,
+            );
+            if (
+              guarded !== undefined &&
+              recordReadsKept(currentFn, guarded.fn)
+            ) {
+              currentFn = guarded.fn;
+              nextValue = guarded.nextValue;
+              count += guarded.rewritten;
+            }
+          }
         }
       }
     }
@@ -1852,6 +1943,7 @@ function tryUncheckedListBounds(
   firstValue: number,
   cachedOrigin: ReadonlyMap<number, number>,
   uncheckedReader: (reader: number) => number,
+  hasSlot?: number,
 ):
   | {
       readonly fn: FunctionIR;
@@ -1860,8 +1952,33 @@ function tryUncheckedListBounds(
     }
   | undefined {
   const condBlock = fn.blocks[condBlockId],
-    freshBlock = fn.blocks[freshId];
-  if (condBlock === undefined || freshBlock === undefined) return undefined;
+    freshBlock = fn.blocks[freshId],
+    headerBlock = fn.blocks[loop.header];
+  if (
+    condBlock === undefined ||
+    freshBlock === undefined ||
+    headerBlock === undefined
+  )
+    return undefined;
+  if (hasSlot !== undefined) {
+    const headerTerm = headerBlock.terminator;
+    if (
+      headerBlock.exception !== undefined ||
+      headerTerm.kind !== "branch" ||
+      headerTerm.consequent !== condBlockId ||
+      loop.header === condBlockId
+    )
+      return undefined;
+    for (const op of headerBlock.instructions) {
+      if (
+        op === undefined ||
+        (op.kind !== "load" &&
+          op.kind !== "constant" &&
+          op.kind !== "reference-value")
+      )
+        return undefined;
+    }
+  }
   const cTerm = condBlock.terminator;
   if (
     cTerm.kind !== "branch" ||
@@ -2113,40 +2230,101 @@ function tryUncheckedListBounds(
     if (orig === undefined) return undefined;
     blocks[id] = { ...orig, instructions };
   }
-  // Guard in freshId: vector !== none && vector.length >= boundSlot.
-  const lenCheckId = blocks.length,
+  if (hasSlot !== undefined) {
+    // Hot inner loop already verified `hasSlot` in its preheader: skip the
+    // per-iteration `isDense` check in `loop.header` (cold copy keeps it).
+    blocks[loop.header] = {
+      id: loop.header,
+      instructions: [],
+      terminator: {
+        kind: "jump",
+        target: condBlockId,
+        start: headerBlock.terminator.start,
+        end: headerBlock.terminator.end,
+      },
+    };
+  }
+  // Guard in freshId: [hasSlot &&] vector !== none && vector.length >= boundSlot.
+  const vecCheckId = hasSlot === undefined ? freshId : blocks.length,
+    lenCheckId = hasSlot === undefined ? blocks.length : vecCheckId + 1,
     hotEntryId = lenCheckId + 1,
     coldEntryId = lenCheckId + 2;
   const vVecOpt = nextValue++,
-    vPresent = nextValue++,
-    freshInsts: Instruction[] = freshBlock.instructions.slice();
-  freshInsts.push({
-    kind: "load",
-    id: vVecOpt,
-    slot: vectorSlot,
-    start: 0,
-    end: 0,
-  });
-  freshInsts.push({
-    kind: "unary",
-    id: vPresent,
-    operator: "truthy",
-    operand: vVecOpt,
-    start: 0,
-    end: 0,
-  });
-  blocks[freshId] = {
-    ...freshBlock,
-    instructions: freshInsts,
-    terminator: {
-      kind: "branch",
-      condition: vPresent,
-      consequent: lenCheckId,
-      alternate: coldEntryId,
+    vPresent = nextValue++;
+  if (hasSlot !== undefined) {
+    const vHas = nextValue++,
+      freshInsts: Instruction[] = freshBlock.instructions.slice();
+    freshInsts.push({
+      kind: "load",
+      id: vHas,
+      slot: hasSlot,
       start: 0,
       end: 0,
-    },
-  };
+    });
+    blocks[freshId] = {
+      ...freshBlock,
+      instructions: freshInsts,
+      terminator: {
+        kind: "branch",
+        condition: vHas,
+        consequent: vecCheckId,
+        alternate: coldEntryId,
+        start: 0,
+        end: 0,
+      },
+    };
+    blocks.push({
+      id: vecCheckId,
+      instructions: [
+        { kind: "load", id: vVecOpt, slot: vectorSlot, start: 0, end: 0 },
+        {
+          kind: "unary",
+          id: vPresent,
+          operator: "truthy",
+          operand: vVecOpt,
+          start: 0,
+          end: 0,
+        },
+      ],
+      terminator: {
+        kind: "branch",
+        condition: vPresent,
+        consequent: lenCheckId,
+        alternate: coldEntryId,
+        start: 0,
+        end: 0,
+      },
+    });
+  } else {
+    const freshInsts: Instruction[] = freshBlock.instructions.slice();
+    freshInsts.push({
+      kind: "load",
+      id: vVecOpt,
+      slot: vectorSlot,
+      start: 0,
+      end: 0,
+    });
+    freshInsts.push({
+      kind: "unary",
+      id: vPresent,
+      operator: "truthy",
+      operand: vVecOpt,
+      start: 0,
+      end: 0,
+    });
+    blocks[freshId] = {
+      ...freshBlock,
+      instructions: freshInsts,
+      terminator: {
+        kind: "branch",
+        condition: vPresent,
+        consequent: lenCheckId,
+        alternate: coldEntryId,
+        start: 0,
+        end: 0,
+      },
+    };
+  }
   const vVecOpt2 = nextValue++,
     vVec = nextValue++,
     vVecLen = nextValue++,
