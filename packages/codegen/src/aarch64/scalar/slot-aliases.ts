@@ -1,3 +1,4 @@
+import type { NumberIndex } from "@tint/foundation/collections/key-index";
 import {
   instructionResult,
   visitInstructionOperands,
@@ -10,10 +11,12 @@ import {
  * `store` to it before that use and no terminator writing it while the result
  * is still an operand. Slots named by cell or record-cell terminators are
  * excluded entirely, since cell helpers may receive their address. Returns a
- * per-value-id mark (1 = alias), or undefined when `budget` is exceeded. */
+ * per-value-id mark (1 = alias), indexed by `valueIds` when supplied or by raw
+ * value ID otherwise, or undefined when `budget` is exceeded. */
 export function aliasedSlotLoads(
   fn: FunctionIR,
   budget: number,
+  valueIds?: NumberIndex,
 ): Uint8Array | undefined {
   let maximum = -1,
     work = fn.slots.length;
@@ -28,7 +31,10 @@ export function aliasedSlotLoads(
       if (op === undefined) throw "slot alias instruction invariant";
       if (++work > budget) return undefined;
       const id = instructionResult(op);
-      if (id !== undefined && id > maximum) maximum = id;
+      if (id !== undefined) {
+        const key = valueIds === undefined ? id : valueIds.intern(id);
+        if (key > maximum) maximum = key;
+      }
     }
   }
   // Dense per-id tables: sparse ids beyond the budget fall back to no aliases.
@@ -39,7 +45,7 @@ export function aliasedSlotLoads(
     pending = new Uint32Array(maximum + 1);
   for (const block of fn.blocks) {
     if (block === undefined) throw "slot alias block invariant";
-    // Candidate loads of this block: value id -> slot. A store to the slot
+    // Candidate loads of this block: value key -> slot. A store to the slot
     // while a candidate is still to be used cancels that candidate.
     const open: number[] = [];
     let index = 0;
@@ -50,8 +56,9 @@ export function aliasedSlotLoads(
       // the instruction stores the slot (it reads its operands first).
       const used: number[] = [];
       visitInstructionOperands(op, (operand) => {
-        if (operand >= 0 && operand <= maximum && (pending[operand] ?? 0) !== 0)
-          used.push(operand);
+        const key = valueIds === undefined ? operand : valueIds.lookup(operand);
+        if (key >= 0 && key <= maximum && (pending[key] ?? 0) !== 0)
+          used.push(key);
       });
       if (op.kind === "store") {
         for (let i = 0; i < open.length; i++) {
@@ -73,17 +80,19 @@ export function aliasedSlotLoads(
         if (aliases[candidate] === 2) aliases[candidate] = 3;
       }
       if (op.kind === "load" && exposed[op.slot] !== 1) {
-        pending[op.id] = op.slot + 1;
-        aliases[op.id] = 1;
-        open.push(op.id);
+        const key = valueIds === undefined ? op.id : valueIds.intern(op.id);
+        pending[key] = op.slot + 1;
+        aliases[key] = 1;
+        open.push(key);
       }
       index++;
     }
     const term = block.terminator;
     const termUses: number[] = [];
     visitTerminatorOperands(term, (operand) => {
-      if (operand >= 0 && operand <= maximum && (pending[operand] ?? 0) !== 0)
-        termUses.push(operand);
+      const key = valueIds === undefined ? operand : valueIds.lookup(operand);
+      if (key >= 0 && key <= maximum && (pending[key] ?? 0) !== 0)
+        termUses.push(key);
     });
     const writes = term.kind === "record" ? term.slot : undefined;
     for (const candidate of termUses) {

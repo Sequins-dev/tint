@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createNumberIndex } from "@tint/foundation/collections/key-index";
 import type { FunctionIR, Instruction } from "@tint/ir/scalar";
 import { temporaryRegisters } from "../src/aarch64/scalar/temporary-registers.ts";
 const s = { start: 0, end: 0 };
@@ -134,4 +135,99 @@ test("nonleaf emission keeps eligible scalar temporaries in registers", async ()
     assert.equal(promoted, 1);
     assert.ok(saved >= 1, "x19 is saved in the prologue");
   }
+});
+
+test("compact valueIds handles sparse SSA IDs with identical plans and emitted code", async () => {
+  const { emitModule } = await import("@tint/codegen/aarch64/scalar");
+  const dense = fixture(
+    [
+      { kind: "constant", id: 0, value: 1, ...s },
+      { kind: "unary", id: 1, operator: "~", operand: 0, ...s },
+      { kind: "unary", id: 2, operator: "~", operand: 1, ...s },
+    ],
+    2,
+  );
+  const sparse = fixture(
+    [
+      { kind: "constant", id: 3_000_000, value: 1, ...s },
+      { kind: "unary", id: 3_000_050, operator: "~", operand: 3_000_000, ...s },
+      { kind: "unary", id: 3_000_100, operator: "~", operand: 3_000_050, ...s },
+    ],
+    3_000_100,
+  );
+  const valueIds = createNumberIndex();
+  const c0 = valueIds.intern(3_000_000);
+  const c1 = valueIds.intern(3_000_050);
+  const c2 = valueIds.intern(3_000_100);
+  const densePlan = temporaryRegisters(dense, new Uint8Array([1, 1, 1]))!;
+  const sparsePlan = temporaryRegisters(
+    sparse,
+    new Uint8Array([1, 1, 1]),
+    1_000_000,
+    10,
+    undefined,
+    undefined,
+    valueIds,
+  )!;
+  assert.ok(sparsePlan);
+  assert.equal(sparsePlan.length, 3);
+  assert.deepEqual(
+    [sparsePlan[c0], sparsePlan[c1], sparsePlan[c2]],
+    [densePlan[0], densePlan[1], densePlan[2]],
+  );
+  // Missing interned result ID returns undefined cleanly.
+  assert.equal(
+    temporaryRegisters(
+      sparse,
+      new Uint8Array([1, 1]),
+      1_000_000,
+      10,
+      undefined,
+      undefined,
+      createNumberIndex(),
+    ),
+    undefined,
+  );
+  // Full emission produces byte-identical code for dense and sparse SSA IDs in
+  // non-leaf bounded mode (even when raw SSA IDs exceed the 1,000,000 budget).
+  const callee: FunctionIR = {
+    ...fixture([], 0),
+    id: 1,
+    name: "callee",
+    returnType: "void",
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+  const denseCaller = fixture(
+    [
+      { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+      { kind: "constant", id: 0, value: 1, ...s },
+      { kind: "unary", id: 1, operator: "~", operand: 0, ...s },
+    ],
+    1,
+  );
+  const sparseCaller = fixture(
+    [
+      { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+      { kind: "constant", id: 3_000_000, value: 1, ...s },
+      { kind: "unary", id: 3_000_050, operator: "~", operand: 3_000_000, ...s },
+    ],
+    3_000_050,
+  );
+  const opts = {
+    maxByteLength: 0xffffffff,
+    debugSpans: false,
+    linearAllocation: false,
+    generationalBarriers: false,
+  };
+  const denseEmit = emitModule({ functions: [denseCaller, callee] }, opts);
+  const sparseEmit = emitModule({ functions: [sparseCaller, callee] }, opts);
+  assert.ok(denseEmit.ok, JSON.stringify(denseEmit));
+  assert.ok(sparseEmit.ok, JSON.stringify(sparseEmit));
+  assert.deepEqual(sparseEmit.value.code, denseEmit.value.code);
 });

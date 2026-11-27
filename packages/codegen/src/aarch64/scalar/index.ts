@@ -8365,7 +8365,7 @@ function emitModuleForms(
         const slotAliases =
           options.aliasSlotLoads === false
             ? undefined
-            : aliasedSlotLoads(fn, work(1000000));
+            : aliasedSlotLoads(fn, work(1000000), valueIds);
         // A load aliasing a register-homed reference slot keeps the reference
         // in that register, which is refreshed after a safepoint only while
         // the slot itself is live: such a load needs its own home unless no
@@ -8378,7 +8378,9 @@ function emitModuleForms(
             for (let index = 0; index < instructions.length; index++) {
               const op = instructions[index];
               if (op === undefined) throw "alias instruction invariant";
-              if (op.kind !== "load" || slotAliases[op.id] !== 1) continue;
+              if (op.kind !== "load") continue;
+              const compact = valueIds.intern(op.id);
+              if (slotAliases[compact] !== 1) continue;
               const type = fn.slots[op.slot];
               if (
                 slotRegister(op.slot) < 32 ||
@@ -8426,7 +8428,7 @@ function emitModuleForms(
                       term.kind !== "return" &&
                       term.kind !== "record")))
               )
-                slotAliases[op.id] = 0;
+                slotAliases[compact] = 0;
             }
           }
         // A double-valued load of an integer slot converts its int64 word.
@@ -8435,16 +8437,16 @@ function emitModuleForms(
             if (block === undefined) throw "alias block invariant";
             for (const op of block.instructions) {
               if (op === undefined) throw "alias instruction invariant";
-              if (
-                op.kind === "load" &&
-                integerSlots[op.slot] === 1 &&
-                integerUses[valueIds.intern(op.id)] !== 1
-              )
-                slotAliases[op.id] = 0;
+              if (op.kind === "load" && integerSlots[op.slot] === 1) {
+                const compact = valueIds.intern(op.id);
+                if (integerUses[compact] !== 1) slotAliases[compact] = 0;
+              }
             }
           }
         function aliasedLoad(id: number): boolean {
-          return slotAliases !== undefined && slotAliases[id] === 1;
+          return (
+            slotAliases !== undefined && slotAliases[valueIds.intern(id)] === 1
+          );
         }
         // Leaf functions map each frame word to one register for the whole
         // function (see leafStorageRegisters), so values whose block-local
@@ -8833,30 +8835,23 @@ function emitModuleForms(
         }
         let transientRegisters: Uint8Array | undefined;
         if (!leafRegisters && maximumCursor <= 8000000) {
-          // Candidates are indexed by raw value ID, which may be sparse.
-          let maximumId = 0;
+          // Candidates and returned register homes are indexed by compact
+          // `valueIds` rather than sparse raw SSA result IDs.
+          const candidates = new Uint8Array(values.length);
           for (const block of fn.blocks) {
             if (block === undefined) throw "temporary block invariant";
             for (const op of block.instructions) {
               if (op === undefined) throw "temporary instruction invariant";
               const id = instructionResult(op);
-              if (id !== undefined && id > maximumId) maximumId = id;
-            }
-          }
-          const candidates = new Uint8Array(maximumId + 1);
-          for (const block of fn.blocks) {
-            if (block === undefined) throw "temporary block invariant";
-            for (const op of block.instructions) {
-              if (op === undefined) throw "temporary instruction invariant";
-              const id = instructionResult(op);
+              if (id === undefined) continue;
+              const compact = valueIds.intern(id);
               if (
-                id !== undefined &&
-                id < candidates.length &&
+                compact < candidates.length &&
                 !aliasedLoad(id) &&
-                foldedConstants[valueIds.intern(id)] !== 1 &&
+                foldedConstants[compact] !== 1 &&
                 !(
-                  deferredImmediateConst[valueIds.intern(id)] === 1 &&
-                  (valueUses[valueIds.intern(id)] ?? 0) === 1
+                  deferredImmediateConst[compact] === 1 &&
+                  (valueUses[compact] ?? 0) === 1
                 )
               ) {
                 const type = value(id).type;
@@ -8864,21 +8859,21 @@ function emitModuleForms(
                 // wants an integer live in GP homes (x19..x28): no bank moves.
                 if (
                   type === "boolean" ||
-                  lengthOnlySlices[valueIds.intern(id)] === 1 ||
+                  lengthOnlySlices[compact] === 1 ||
                   (type === "number" &&
-                    integerUses[valueIds.intern(id)] === 1 &&
+                    integerUses[compact] === 1 &&
                     !floatWords.has(id) &&
                     !(
                       op.kind === "optional-value-or" &&
-                      fusedDefaults[valueIds.intern(id)] !== 1
+                      fusedDefaults[compact] !== 1
                     ))
                 )
-                  candidates[id] = 3;
+                  candidates[compact] = 3;
                 // NaN-boxed optional numbers are single FP words too.
                 else if (type === "number" || type === "optional-number")
-                  candidates[id] = 1;
+                  candidates[compact] = 1;
                 else if (managed(type) && type !== "primitive" && !callsBack)
-                  candidates[id] = 2;
+                  candidates[compact] = 2;
               }
             }
           }
@@ -8898,6 +8893,7 @@ function emitModuleForms(
             floatSaveBytes === 0
               ? undefined
               : (op: IRInstruction): boolean => op.kind === "record-new",
+            valueIds,
           );
         }
         // FP temporaries a record constructor's slow path saves: every
@@ -8905,13 +8901,14 @@ function emitModuleForms(
         let floatTemporaryMask = 0;
         const floatTemporaries = transientRegisters;
         if (floatSaveBytes !== 0 && floatTemporaries !== undefined)
-          for (let id = 0; id < floatTemporaries.length; id++) {
-            const register = floatTemporaries[id] ?? 0;
+          for (let compact = 0; compact < floatTemporaries.length; compact++) {
+            const register = floatTemporaries[compact] ?? 0;
+            const entry = values[compact];
             if (
               register >= 16 &&
               register <= 31 &&
-              (value(id).type === "number" ||
-                value(id).type === "optional-number")
+              entry !== undefined &&
+              (entry.type === "number" || entry.type === "optional-number")
             )
               floatTemporaryMask |= 1 << (register - 16);
           }
@@ -8921,7 +8918,7 @@ function emitModuleForms(
         function referenceTemporary(id: number): number {
           const type = value(id).type;
           return isManagedValue(id, type) && type !== "primitive"
-            ? (transientRegisters?.[id] ?? 0)
+            ? (transientRegisters?.[valueIds.intern(id)] ?? 0)
             : 0;
         }
         const temporaryRoots: number[] = [],
@@ -14828,7 +14825,7 @@ function emitModuleForms(
                   }
                   const res = instructionResult(op);
                   if (res !== undefined && transientRegisters !== undefined) {
-                    const tr = transientRegisters[res] ?? 0;
+                    const tr = transientRegisters[valueIds.intern(res)] ?? 0;
                     if (tr >= 32) usedGP.add(tr - 32);
                   }
                   if (op.kind === "store") {
@@ -15199,8 +15196,10 @@ function emitModuleForms(
             for (const op of b.instructions) {
               if (op === undefined) throw "temporary instruction invariant";
               const id = instructionResult(op);
-              if (id !== undefined && transient[id] !== 0)
-                storage[value(id).offset / 8] = transient[id] ?? 0;
+              if (id !== undefined) {
+                const reg = transient[valueIds.intern(id)] ?? 0;
+                if (reg !== 0) storage[value(id).offset / 8] = reg;
+              }
             }
           if (leafReferences !== undefined && storage !== undefined)
             for (const op of b.instructions) {
@@ -33144,7 +33143,10 @@ function emitModuleForms(
             for (const op of b.instructions) {
               if (op === undefined) throw "temporary instruction invariant";
               const id = instructionResult(op);
-              if (id !== undefined && transient[id] !== 0)
+              if (
+                id !== undefined &&
+                (transient[valueIds.intern(id)] ?? 0) !== 0
+              )
                 storage[value(id).offset / 8] = 0;
             }
           if (

@@ -265,7 +265,7 @@ test("guards far apart share trap islands between blocks instead of long branche
   ];
   // Three ~470 KB blocks between two guards: over 1 MiB in total, with block
   // boundaries where an island can sit.
-  const body = oversized().map((op) =>
+  const body = oversized(90000).map((op) =>
     op.kind === "store" ? { ...op, slot: 2 } : op,
   );
   const third = Math.floor(body.length / 6) * 2;
@@ -404,12 +404,12 @@ test("functions within conditional reach place no islands", () => {
     { kind: "general-value", id: id + 1, value: id, type: "number", ...s },
     { kind: "store", slot: 2, value: id + 1, ...s },
   ];
-  // About 700 KB in five blocks, so a block boundary lies past half a
+  // About 720 KB in five blocks, so a block boundary lies past half a
   // conditional range from the first guard while the function stays in reach.
-  const body = oversized()
-    .slice(0, 56000)
-    .map((op) => (op.kind === "store" ? { ...op, slot: 2 } : op));
-  const step = 11200;
+  const body = oversized(45000).map((op) =>
+    op.kind === "store" ? { ...op, slot: 2 } : op,
+  );
+  const step = 18000;
   const blocks: Block[] = [];
   for (let index = 0; index < 5; index++) {
     const chunk = body.slice(index * step, (index + 1) * step);
