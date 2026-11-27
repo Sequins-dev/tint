@@ -145,11 +145,10 @@ export function viewTypedFfiCall(value: unknown): TypedFfiCall | undefined {
 /** Small pointer BigInts fit exactly in the typed address representation. */
 export function projectFfiPointerAddress(input: unknown): number | undefined {
   const value = viewBigIntValue(input);
-  if (value === undefined || value.integer.negative) return undefined;
-  const integer = value.integer;
-  const high = integer.d2;
-  if (integer.len > 3 || high > 1) return undefined;
-  return integer.d0 + integer.d1 * 67108864 + high * 4503599627370496;
+  if (value === undefined || value.negative) return undefined;
+  const high = value.d2;
+  if (value.len > 3 || high > 1) return undefined;
+  return value.d0 + value.d1 * 67108864 + high * 4503599627370496;
 }
 
 export function readTypedFfiNumber(bytes: Uint8Array, kind: number): number {
@@ -277,13 +276,12 @@ export function writeFfiBigInt(
 ): boolean {
   const value = viewBigIntValue(input);
   if (value === undefined) return false;
-  const integer = value.integer;
-  const negative = integer.negative;
-  if (integer.len > 3 || (negative && !signed)) return false;
-  const third = integer.d2;
+  const negative = value.negative;
+  if (value.len > 3 || (negative && !signed)) return false;
+  const third = value.d2;
   if (third >= 4096) return false;
-  const second = integer.d1;
-  const low = integer.d0 + (second % 64) * 67108864;
+  const second = value.d1;
+  const low = value.d0 + (second % 64) * 67108864;
   const high = Math.floor(second / 64) + third * 1048576;
   if (
     signed &&

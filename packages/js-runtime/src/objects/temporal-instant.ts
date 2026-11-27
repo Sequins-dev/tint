@@ -21,7 +21,11 @@ import {
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "./errors.ts";
-import { createBigIntValue, type BigIntValue } from "./bigints.ts";
+import {
+  bigIntInteger,
+  createBigIntValue,
+  type BigIntValue,
+} from "./bigints.ts";
 import { coerceBigInt } from "./bigint-coercion.ts";
 import { numberValue } from "./coercion.ts";
 import {
@@ -55,7 +59,7 @@ export function installTemporalInstant(
 ): void {
   const prototype = realm.temporalInstantPrototype;
   function valid(epoch: BigIntValue): BigIntValue {
-    if (!validTemporalEpoch(epoch.integer))
+    if (!validTemporalEpoch(bigIntInteger(epoch)))
       throw createRuntimeError(realm, "range");
     return epoch;
   }
@@ -100,8 +104,8 @@ export function installTemporalInstant(
         (receiver, args): unknown => {
           if (name === "compare")
             return compare(
-              instantFrom(args[0], realm, hooks).integer,
-              instantFrom(args[1], realm, hooks).integer,
+              bigIntInteger(instantFrom(args[0], realm, hooks)),
+              bigIntInteger(instantFrom(args[1], realm, hooks)),
             );
           if (name === "from")
             return createTemporalInstantObject(
@@ -145,7 +149,7 @@ export function installTemporalInstant(
           const epoch = requireInstant(receiver, realm);
           return name === "epochNanoseconds"
             ? epoch
-            : temporalEpochMilliseconds(epoch.integer);
+            : temporalEpochMilliseconds(bigIntInteger(epoch));
         },
         hooks,
       ),
@@ -164,7 +168,7 @@ export function installTemporalInstant(
         const epoch = requireInstant(receiver, realm);
         const options = instantRoundingOptions(args[0], realm, hooks);
         const rounded = roundIntegerAsIfPositive(
-          epoch.integer,
+          bigIntInteger(epoch),
           options.increment,
           options.mode,
         );
@@ -214,8 +218,8 @@ export function installTemporalInstant(
         1,
         (receiver, args): unknown => {
           const epoch = requireInstant(receiver, realm);
-          const other = instantFrom(args[0], realm, hooks).integer;
-          const own = epoch.integer;
+          const other = bigIntInteger(instantFrom(args[0], realm, hooks));
+          const own = bigIntInteger(epoch);
           const delta =
             name === "until" ? subtract(other, own) : subtract(own, other);
           const duration = temporalTimeDifference(
@@ -262,8 +266,8 @@ export function installTemporalInstant(
             valid(
               createBigIntValue(
                 name === "add"
-                  ? add(epoch.integer, delta)
-                  : subtract(epoch.integer, delta),
+                  ? add(bigIntInteger(epoch), delta)
+                  : subtract(bigIntInteger(epoch), delta),
               ),
             ),
             prototype,
@@ -286,8 +290,10 @@ export function installTemporalInstant(
       (receiver, args): unknown => {
         const epoch = requireInstant(receiver, realm);
         return (
-          compare(epoch.integer, instantFrom(args[0], realm, hooks).integer) ===
-          0
+          compare(
+            bigIntInteger(epoch),
+            bigIntInteger(instantFrom(args[0], realm, hooks)),
+          ) === 0
         );
       },
       hooks,

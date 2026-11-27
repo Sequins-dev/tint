@@ -3,6 +3,7 @@ import { compare, type Integer } from "@tint/foundation/numeric/big-integer";
 import { epochDayFromGregorian } from "@tint/foundation/chrono/gregorian-calendar";
 import type { TemporalRelativeTo } from "./temporal-relative-to.ts";
 import { zonedDateTimeArithmetic } from "./temporal-zoned-arithmetic.ts";
+import { compareBigIntValues } from "./bigints.ts";
 import {
   add,
   negate,
@@ -102,7 +103,7 @@ export function compareDurations(
     const zoned = relative.value;
     const a = zonedDateTimeArithmetic(zoned, one, false, "constrain", realm),
       b = zonedDateTimeArithmetic(zoned, two, false, "constrain", realm);
-    return compare(a.integer, b.integer);
+    return compareBigIntValues(a, b);
   }
   if (calendar && relative.kind !== "plain")
     throw createRuntimeError(realm, "range");

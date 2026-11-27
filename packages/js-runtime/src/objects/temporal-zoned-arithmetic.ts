@@ -14,7 +14,11 @@ import {
 } from "@tint/foundation/chrono/temporal-duration";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import { validTemporalEpoch } from "./temporal-epoch.ts";
-import { createBigIntValue, type BigIntValue } from "./bigints.ts";
+import {
+  bigIntInteger,
+  createBigIntValue,
+  type BigIntValue,
+} from "./bigints.ts";
 import { roundTemporalDateTime } from "./temporal-date-time-rounding.ts";
 import { interpretZonedOffset } from "./temporal-zoned-conversion.ts";
 import type { TemporalRounding } from "./temporal-rounding.ts";
@@ -28,7 +32,7 @@ export function zonedDateTimeArithmetic(
   policy: string,
   realm: ErrorRealm,
 ): BigIntValue {
-  let intermediate = data.epoch.integer;
+  let intermediate = bigIntInteger(data.epoch);
   if (
     duration.years !== 0 ||
     duration.months !== 0 ||
@@ -47,13 +51,9 @@ export function zonedDateTimeArithmetic(
     );
     if (date === undefined) throw createRuntimeError(realm, "range");
     const local = combineTemporalDateTime(date, data.dateTime, realm);
-    intermediate = interpretZonedOffset(
-      local,
-      data.zone,
-      undefined,
-      "ignore",
-      realm,
-    ).epoch.integer;
+    intermediate = bigIntInteger(
+      interpretZonedOffset(local, data.zone, undefined, "ignore", realm).epoch,
+    );
   }
   const delta = durationTimeNanoseconds(duration);
   const result = add(intermediate, subtract ? negate(delta) : delta);
@@ -74,7 +74,7 @@ export function roundTemporalZonedDateTime(
     const length = subtractInteger(bounds.end, bounds.start);
     const order = compareNumber(length, 0);
     if (order === undefined || order <= 0) throw "ZONED_DAY_LENGTH_INVARIANT";
-    const elapsed = subtractInteger(data.epoch.integer, bounds.start);
+    const elapsed = subtractInteger(bigIntInteger(data.epoch), bounds.start);
     // A backward transition can revisit this date after the next date first
     // began. Rounding still selects its two calendar boundaries, never a later
     // multiple of the first interval's length.

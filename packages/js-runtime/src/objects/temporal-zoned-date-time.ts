@@ -25,7 +25,11 @@ import {
 } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { coerceBigInt } from "./bigint-coercion.ts";
-import { compareBigIntValues, type BigIntValue } from "./bigints.ts";
+import {
+  bigIntInteger,
+  compareBigIntValues,
+  type BigIntValue,
+} from "./bigints.ts";
 import {
   temporalEpochMilliseconds,
   validTemporalEpoch,
@@ -78,7 +82,7 @@ export function installTemporalZonedDateTime(
     (args, target): unknown => {
       const epoch = coerceBigInt(args[0], false, realm, hooks);
       // Epoch range validation precedes all time-zone/calendar validation.
-      if (!validTemporalEpoch(epoch.integer))
+      if (!validTemporalEpoch(bigIntInteger(epoch)))
         throw createRuntimeError(realm, "range");
       const zone = temporalTimeZone(args[1], realm);
       const calendar = requireCalendarAlgorithms(args[2], realm);
@@ -172,7 +176,7 @@ export function installTemporalZonedDateTime(
           if (name === "offsetNanoseconds") return d.offsetNanoseconds;
           if (name === "hoursInDay")
             return temporalZonedHoursInDay(d.dateTime.date, d.zone, realm);
-          return temporalEpochMilliseconds(d.epoch.integer);
+          return temporalEpochMilliseconds(bigIntInteger(d.epoch));
         },
         hooks,
       ),

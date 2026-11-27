@@ -2,6 +2,7 @@ import { formatNumberForLocale } from "./intl-number-format.ts";
 import { coerceBigInt } from "./bigint-coercion.ts";
 import { truncateInteger } from "@tint/foundation/numeric/big-integer";
 import {
+  bigIntInteger,
   createBigIntValue,
   bigIntToString,
   viewBigIntValue,
@@ -146,7 +147,7 @@ export function installBigIntIntrinsics(
           if (!(bits >= 0 && bits <= 9007199254740991)) return fail("range");
           const value = coerceBigInt(args[1], false, realm, hooks);
           const result = truncateInteger(
-            value.integer,
+            bigIntInteger(value),
             bits,
             signed,
             realm.bigIntMaxDigits,

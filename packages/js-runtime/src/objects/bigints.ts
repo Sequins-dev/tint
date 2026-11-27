@@ -1,5 +1,6 @@
 import {
   parseInteger,
+  parseIntegerSlice,
   formatInteger,
   add,
   subtract,
@@ -13,56 +14,124 @@ import {
   power,
   compare,
   compareNumber,
-  integerZero,
   type Integer,
 } from "@tint/foundation/numeric/big-integer";
 
-/** A Script primitive value, distinct from ordinary objects and boxed BigInts. */
+/** A Script primitive value, distinct from ordinary objects and boxed BigInts.
+ * Stores the canonical base-2^26 Integer fields flat in a single heap record. */
 export interface BigIntValue {
   readonly bigintBrand: "bigint";
-  readonly integer: Integer;
+  readonly negative: boolean;
+  readonly len: number;
+  readonly d0: number;
+  readonly d1: number;
+  readonly d2: number;
+  readonly d3: number;
+  readonly digits: readonly number[] | undefined;
 }
 export interface BigIntOperationResult {
   readonly error: "none" | "type" | "range" | "unsupported";
   readonly value: BigIntValue | undefined;
 }
 export function createBigIntValue(integer: Integer): BigIntValue {
-  return { bigintBrand: "bigint", integer };
+  return {
+    bigintBrand: "bigint",
+    negative: integer.negative,
+    len: integer.len,
+    d0: integer.d0,
+    d1: integer.d1,
+    d2: integer.d2,
+    d3: integer.d3,
+    digits: integer.digits,
+  };
+}
+export function bigIntInteger(value: BigIntValue): Integer {
+  return {
+    negative: value.negative,
+    len: value.len,
+    d0: value.d0,
+    d1: value.d1,
+    d2: value.d2,
+    d3: value.d3,
+    digits: value.digits,
+  };
 }
 /** Native-only checked view, authorized explicitly by the embedding build. */
 export function viewBigIntValue(value: unknown): BigIntValue | undefined {
   throw "UNBOUND_BIGINT_VIEW";
 }
+function isAsciiWhitespace(code: number): boolean {
+  return (
+    code === 32 ||
+    code === 9 ||
+    code === 10 ||
+    code === 13 ||
+    code === 11 ||
+    code === 12
+  );
+}
 /** StringIntegerLiteral grammar. Unlike source literals, separators and suffixes
  * are forbidden, decimal leading zeros are allowed, and empty text denotes zero. */
 export function bigIntFromString(input: string): BigIntValue | undefined {
-  const text = input.trim();
-  const length = text.length;
-  if (length === 0) return createBigIntValue(integerZero());
+  let text = input;
+  let start = 0;
+  let end = text.length;
+  while (start < end && isAsciiWhitespace(text.charCodeAt(start))) start++;
+  while (end > start && isAsciiWhitespace(text.charCodeAt(end - 1))) end--;
+  if (
+    start < end &&
+    (text.charCodeAt(start) > 127 || text.charCodeAt(end - 1) > 127)
+  ) {
+    text = text.trim();
+    start = 0;
+    end = text.length;
+  }
+  const length = end - start;
+  if (length === 0)
+    return {
+      bigintBrand: "bigint",
+      negative: false,
+      len: 0,
+      d0: 0,
+      d1: 0,
+      d2: 0,
+      d3: 0,
+      digits: undefined,
+    };
   let radix = 10;
-  let digits = text;
-  if (length >= 2 && text.charCodeAt(0) === 48) {
-    const prefix = text.charCodeAt(1);
+  if (length >= 2 && text.charCodeAt(start) === 48) {
+    const prefix = text.charCodeAt(start + 1);
     if (prefix === 120 || prefix === 88) radix = 16;
     else if (prefix === 98 || prefix === 66) radix = 2;
     else if (prefix === 111 || prefix === 79) radix = 8;
     if (radix !== 10) {
-      digits = text.slice(2);
-      const first = digits.charCodeAt(0);
+      start += 2;
+      if (start >= end) return undefined;
+      const first = text.charCodeAt(start);
       if (first === 43 || first === 45) return undefined;
     }
   }
-  const value = parseInteger(digits, radix);
-  return value === undefined ? undefined : createBigIntValue(value);
+  const value = parseIntegerSlice(text, start, end, radix);
+  if (value === undefined) return undefined;
+  return {
+    bigintBrand: "bigint",
+    negative: value.negative,
+    len: value.len,
+    d0: value.d0,
+    d1: value.d1,
+    d2: value.d2,
+    d3: value.d3,
+    digits: value.digits,
+  };
 }
 export function bigIntToString(
   value: BigIntValue,
   radix: number,
 ): string | undefined {
-  return formatInteger(value.integer, radix);
+  return formatInteger(bigIntInteger(value), radix);
 }
 export function bigIntToBoolean(value: BigIntValue): boolean {
-  return value.integer.len !== 0;
+  return value.len !== 0;
 }
 /** The parser supplies a validated, canonical decimal literal. */
 export function createBigIntLiteral(text: string): BigIntValue {
@@ -74,14 +143,14 @@ export function compareBigIntValues(
   left: BigIntValue,
   right: BigIntValue,
 ): number {
-  return compare(left.integer, right.integer);
+  return compare(bigIntInteger(left), bigIntInteger(right));
 }
 /** Mixed numeric comparisons must not round the BigInt through binary64. */
 export function compareBigIntNumber(
   left: BigIntValue,
   right: number,
 ): number | undefined {
-  return compareNumber(left.integer, right);
+  return compareNumber(bigIntInteger(left), right);
 }
 /** Invalid StringIntegerLiteral text is unordered, rather than a numeric NaN cast. */
 export function compareBigIntString(
@@ -115,8 +184,8 @@ export function bigIntBinaryOperation(
   maxDigits: number,
 ): BigIntOperationResult {
   if (!validCapacity(maxDigits)) return { error: "range", value: undefined };
-  const a = left.integer,
-    b = right.integer;
+  const a = bigIntInteger(left),
+    b = bigIntInteger(right);
   if (operator === "+") return finish(add(a, b), maxDigits);
   if (operator === "-") return finish(subtract(a, b), maxDigits);
   if (operator === "*") {
@@ -142,7 +211,8 @@ export function bigIntUnaryOperation(
 ): BigIntOperationResult {
   if (operator === "+") return { error: "type", value: undefined };
   if (!validCapacity(maxDigits)) return { error: "range", value: undefined };
-  if (operator === "-") return finish(negate(value.integer), maxDigits);
-  if (operator === "~") return finish(bitwiseNot(value.integer), maxDigits);
+  if (operator === "-") return finish(negate(bigIntInteger(value)), maxDigits);
+  if (operator === "~")
+    return finish(bitwiseNot(bigIntInteger(value)), maxDigits);
   return { error: "unsupported", value: undefined };
 }

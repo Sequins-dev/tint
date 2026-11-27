@@ -4,7 +4,7 @@ import {
   parseInteger,
   formatInteger,
 } from "@tint/foundation/numeric/big-integer";
-import { createBigIntValue } from "../src/objects/bigints.ts";
+import { bigIntInteger, createBigIntValue } from "../src/objects/bigints.ts";
 import * as codec from "../src/objects/bigint-bytes.ts";
 
 test("BigInt byte codecs preserve signed limits and truncate modulo 64 bits", () => {
@@ -41,7 +41,7 @@ test("BigInt byte codecs preserve signed limits and truncate modulo 64 bits", ()
           signed,
         );
         assert.equal(
-          formatInteger(decoded.integer, 10),
+          formatInteger(bigIntInteger(decoded), 10),
           String(
             signed ? view.getBigInt64(0, little) : view.getBigUint64(0, little),
           ),

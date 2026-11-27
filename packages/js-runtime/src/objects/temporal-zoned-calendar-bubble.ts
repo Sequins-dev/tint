@@ -5,6 +5,7 @@ import {
 } from "@tint/foundation/chrono/temporal-duration";
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
 import { zonedDateTimeArithmetic } from "./temporal-zoned-arithmetic.ts";
+import { bigIntInteger } from "./bigints.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 /** BubbleRelativeDuration compares actual epoch boundaries for each permitted
  * larger calendar unit. Crossing one discards the fields below that boundary. */
@@ -47,7 +48,7 @@ export function bubbleZonedCalendarDuration(
       "constrain",
       realm,
     );
-    if (compare(nudged, boundary.integer) === -sign) break;
+    if (compare(nudged, bigIntInteger(boundary)) === -sign) break;
     result = candidate;
   }
   return result;

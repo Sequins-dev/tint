@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { createTzifZone } from "@tint/foundation/chrono/tzif";
 import { createDuration } from "@tint/foundation/chrono/temporal-duration";
 import {
+  bigIntInteger,
   createBigIntLiteral,
   type BigIntValue,
 } from "../src/objects/bigints.ts";
@@ -35,7 +36,7 @@ const zone = {
   model: parsed.value,
 };
 function epochText(value: BigIntValue): string {
-  const text = formatInteger(value.integer, 10);
+  const text = formatInteger(bigIntInteger(value), 10);
   assert.ok(text !== undefined);
   return text;
 }
@@ -128,8 +129,8 @@ test("calendar differences reconstruct endpoints across month ends and non-hour 
             realm,
           );
           assert.equal(
-            formatInteger(reconstructed.integer, 10),
-            formatInteger(end.integer, 10),
+            formatInteger(bigIntInteger(reconstructed), 10),
+            formatInteger(bigIntInteger(end), 10),
             identifier + " " + iso + " " + hours + " " + largest,
           );
         }

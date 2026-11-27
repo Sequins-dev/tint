@@ -14,7 +14,7 @@ import {
   temporalTimeZoneOffsetTextRounded,
 } from "./temporal-time-zone.ts";
 import { temporalEpochDateTime, validTemporalEpoch } from "./temporal-epoch.ts";
-import type { BigIntValue } from "./bigints.ts";
+import { bigIntInteger, type BigIntValue } from "./bigints.ts";
 import {
   createRuntimeError,
   rejectUnsupportedExecution,
@@ -35,7 +35,7 @@ export function instantText(
       : temporalTimeZoneLike(zoneValue, realm);
   const precision = resolveTemporalPrecision(settings, realm);
   const rounded = roundIntegerAsIfPositive(
-    epoch.integer,
+    bigIntInteger(epoch),
     precision.increment,
     settings.mode,
   );

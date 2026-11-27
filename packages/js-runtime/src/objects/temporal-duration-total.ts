@@ -31,6 +31,7 @@ import { temporalStringOption } from "./temporal-options.ts";
 import { optionValue } from "./options.ts";
 import { temporalTimeUnitNanoseconds } from "./temporal-rounding.ts";
 import { zonedDateTimeArithmetic } from "./temporal-zoned-arithmetic.ts";
+import { bigIntInteger } from "./bigints.ts";
 import { temporalEpochDateTime } from "./temporal-epoch.ts";
 import { plainDateTimeDifference } from "./temporal-date-time-difference.ts";
 import {
@@ -187,25 +188,24 @@ export function durationTotal(
       "constrain",
       realm,
     );
+    const endInt = bigIntInteger(end),
+      relEpochInt = bigIntInteger(relative.value.epoch);
     if (relative.value.zone.kind === "named") {
       if (
         factor !== undefined &&
         temporalTimeUnitNanoseconds(unit) !== undefined
       )
-        return ratio(
-          subtract(end.integer, relative.value.epoch.integer),
-          integer(factor),
-        );
+        return ratio(subtract(endInt, relEpochInt), integer(factor));
       return totalZonedCalendarDifference(relative.value, end, unit, realm);
     }
     const local = temporalEpochDateTime(
-      end.integer,
+      endInt,
       relative.value.offsetNanoseconds,
     );
     if (local === undefined) throw "DURATION_TOTAL_ZONED_INVARIANT";
     one = relative.value.dateTime;
     two = local;
-    total = subtract(end.integer, relative.value.epoch.integer);
+    total = subtract(endInt, relEpochInt);
     if (unit === "day" || unit === "week") {
       const daysPerUnit = unit === "week" ? 7 : 1;
       const split = divide(total, integer(daysPerUnit * nsPerDay));

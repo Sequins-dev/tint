@@ -30,7 +30,7 @@ import {
   zonedDateTimeFrom,
   type TemporalZonedPosition,
 } from "./temporal-zoned-conversion.ts";
-import { compareBigIntValues } from "./bigints.ts";
+import { bigIntInteger, compareBigIntValues } from "./bigints.ts";
 import {
   createRuntimeError,
   rejectUnsupportedExecution,
@@ -49,8 +49,8 @@ export function zonedDateTimeDifference(
 ): Duration {
   if (temporalTimeUnitNanoseconds(settings.largestUnit) !== undefined) {
     const delta = since
-      ? subtract(own.epoch.integer, other.epoch.integer)
-      : subtract(other.epoch.integer, own.epoch.integer);
+      ? subtract(bigIntInteger(own.epoch), bigIntInteger(other.epoch))
+      : subtract(bigIntInteger(other.epoch), bigIntInteger(own.epoch));
     return balanceTemporalTimeDifference(delta, settings, realm);
   }
   if (!temporalTimeZonesEqual(own.zone, other.zone, realm))

@@ -503,6 +503,7 @@ export {
 } from "./async-iteration.ts";
 export {
   createBigIntValue,
+  bigIntInteger,
   viewBigIntValue,
   bigIntFromString,
   bigIntToString,

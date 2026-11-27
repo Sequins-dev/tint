@@ -12,6 +12,7 @@ import {
   dateTimeValueParts,
   dateTimeInstantParts,
 } from "./intl-date-time-value.ts";
+import { bigIntInteger } from "./bigints.ts";
 import { exoticSlots } from "./operations.ts";
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 export function installTemporalLocaleStrings(
@@ -74,7 +75,11 @@ export function installTemporalLocaleStrings(
             )
               throw createRuntimeError(realm, "range");
             return dateTimePartsText(
-              dateTimeInstantParts(formatter, zoned.epoch.integer, realm),
+              dateTimeInstantParts(
+                formatter,
+                bigIntInteger(zoned.epoch),
+                realm,
+              ),
             );
           }
           return dateTimePartsText(

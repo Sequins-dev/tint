@@ -26,6 +26,7 @@ import {
 import type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
 import { dateTimeTemporalPattern } from "./date-time-temporal-pattern.ts";
 import { splitTemporalEpochSecond } from "./temporal-epoch.ts";
+import { bigIntInteger } from "./bigints.ts";
 import { exoticSlots } from "./operations.ts";
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 export interface DateTimeFormatValue {
@@ -92,7 +93,12 @@ function prepared(
   const instant = exoticSlots(object).internalTemporalInstant;
   if (value.kind === 5) {
     if (instant === undefined) throw "DATE_TIME_INSTANT_INVARIANT";
-    const input = instantInput(formatter, pattern, instant.integer, realm);
+    const input = instantInput(
+      formatter,
+      pattern,
+      bigIntInteger(instant),
+      realm,
+    );
     return { input, pattern };
   }
   const time = exoticSlots(object).internalTemporalPlainTime,
