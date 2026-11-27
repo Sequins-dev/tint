@@ -183,7 +183,15 @@ import {
   sharedMemoryPrimitive,
   type SharedMemoryPrimitive,
 } from "./shared-memory.ts";
-import { memoryFiller, memoryMover } from "./memory.ts";
+import {
+  emitBytesLoad,
+  emitBytesStore,
+  emitBytesWord64Load,
+  emitBytesWord64Store,
+  memoryFiller,
+  memoryMover,
+  type BytesEmitContext,
+} from "./memory.ts";
 import { externalMemoryCapability } from "./external-memory.ts";
 import {
   emitDualMappingMap,
@@ -13719,378 +13727,44 @@ function emitModuleForms(
             displacement: (instructions.length - invalid) * 4,
           });
         }
-        function bytesDataAndOffset(
-          array: number,
-          offset: number,
-          hoistedBase: number | undefined,
-        ): { readonly dataReg: number; readonly index: number } {
-          const fact = valueIds.intern(offset);
-          let index = 12;
-          if (storedAsInteger(offset)) index = intRegister(offset, 12);
-          else if (wordKinds[fact] === 3) imm(12, wordConstants[fact] ?? 0);
-          else {
-            floatLoad(0, offset);
-            emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
+        let cachedBytesCtx: BytesEmitContext | undefined = undefined;
+        function bytesCtx(): BytesEmitContext {
+          if (cachedBytesCtx === undefined) {
+            cachedBytesCtx = {
+              wordKinds,
+              wordConstants,
+              jsConvert,
+              resultOffset,
+              internValue: (id) => valueIds.intern(id),
+              emit,
+              imm,
+              storedAsInteger,
+              storedAsWord,
+              wantsInteger,
+              booleanConstant,
+              intRegister,
+              intTarget,
+              rawRegister,
+              rawValue,
+              rawLoad,
+              rawStore: (rt, offset) => rawStore(rt, offset),
+              saveRaw,
+              markInteger,
+              materializeInteger,
+              wordValue,
+              floatLoad: (rt, id) => floatLoad(rt, id),
+              floatOperand,
+              floatTarget,
+              floatStore,
+              getCachedArrayDataVal: () => cachedArrayDataVal,
+              getCachedArrayDataReg: () => cachedArrayDataReg,
+              setCachedArrayData: (reg, val) => {
+                cachedArrayDataReg = reg;
+                cachedArrayDataVal = val;
+              },
+            };
           }
-          let dataReg = 10;
-          if (hoistedBase !== undefined) {
-            dataReg = hoistedBase;
-          } else if (cachedArrayDataVal === array) {
-            dataReg = 15;
-          } else {
-            const arrReg = rawRegister(array, 10);
-            if (arrReg >= 19) {
-              dataReg = 15;
-              if (cachedArrayDataReg !== arrReg) {
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 15,
-                  rn: arrReg,
-                  offset: nativeArrayDataOffset,
-                });
-                cachedArrayDataReg = arrReg;
-                cachedArrayDataVal = -1;
-              }
-            } else {
-              emit({
-                op: "ldr",
-                width: 64,
-                rt: 10,
-                rn: arrReg,
-                offset: nativeArrayDataOffset,
-              });
-            }
-          }
-          return { dataReg, index };
-        }
-        function emitSwapOp(
-          swapOp: "rev16" | "rev32" | "rev",
-          rd: number,
-          rn: number,
-        ): void {
-          if (swapOp === "rev16") emit({ op: "rev16", rd, rn });
-          else if (swapOp === "rev32") emit({ op: "rev32", rd, rn });
-          else emit({ op: "rev", rd, rn });
-        }
-        function emitByteSwap(
-          swapOp: "rev16" | "rev32" | "rev",
-          reg: number,
-          littleEndian: number,
-        ): void {
-          const constLe = booleanConstant(littleEndian);
-          if (constLe === true) return;
-          if (constLe === false) {
-            emitSwapOp(swapOp, reg, reg);
-            return;
-          }
-          rawValue(13, littleEndian);
-          emit({ op: "cbnz", width: 32, rt: 13, displacement: 8 });
-          emitSwapOp(swapOp, reg, reg);
-        }
-        function bytesLoad(
-          op: {
-            readonly id: number;
-            readonly array: number;
-            readonly offset: number;
-            readonly element:
-              | "i8"
-              | "u8"
-              | "i16"
-              | "u16"
-              | "i32"
-              | "u32"
-              | "f16"
-              | "f32"
-              | "f64";
-            readonly littleEndian: number;
-          },
-          hoistedBase: number | undefined,
-        ): void {
-          const { dataReg, index } = bytesDataAndOffset(
-            op.array,
-            op.offset,
-            hoistedBase,
-          );
-          const el = op.element,
-            constLe = booleanConstant(op.littleEndian);
-          if (el === "f16" || el === "f32" || el === "f64") {
-            const target = floatTarget(op.id, 0);
-            const size: 1 | 2 | 3 = el === "f16" ? 1 : el === "f32" ? 2 : 3;
-            if (constLe === true) {
-              emit({
-                op: "ldr-indexed",
-                size,
-                fp: true,
-                rt: target,
-                rn: dataReg,
-                rm: index,
-                scaled: false,
-              });
-              if (el === "f16")
-                emit({ op: "fcvt-d-h", rd: target, rn: target });
-              else if (el === "f32")
-                emit({ op: "fcvt-d-s", rd: target, rn: target });
-            } else {
-              emit({
-                op: "ldr-indexed",
-                size,
-                fp: false,
-                rt: 11,
-                rn: dataReg,
-                rm: index,
-                scaled: false,
-              });
-              emitByteSwap(
-                el === "f16" ? "rev16" : el === "f32" ? "rev32" : "rev",
-                11,
-                op.littleEndian,
-              );
-              if (el === "f16") {
-                emit({ op: "fmov-s-w", rd: target, rn: 11 });
-                emit({ op: "fcvt-d-h", rd: target, rn: target });
-              } else if (el === "f32") {
-                emit({ op: "fmov-s-w", rd: target, rn: 11 });
-                emit({ op: "fcvt-d-s", rd: target, rn: target });
-              } else {
-                emit({ op: "fmov-d-x", rd: target, rn: 11 });
-              }
-            }
-            floatStore(target, op.id);
-            return;
-          }
-          const signed = el === "i8" || el === "i16" || el === "i32";
-          const size: 0 | 1 | 2 =
-            el === "i8" || el === "u8"
-              ? 0
-              : el === "i16" || el === "u16"
-                ? 1
-                : 2;
-          const intOut = wantsInteger(op.id);
-          const dst =
-            intOut && (size === 0 || constLe !== undefined)
-              ? intTarget(op.id, 11)
-              : 11;
-          if (size === 0 || constLe === true) {
-            emit({
-              op: "ldr-indexed",
-              size,
-              fp: false,
-              rt: dst,
-              rn: dataReg,
-              rm: index,
-              scaled: false,
-              signed,
-            });
-          } else {
-            emit({
-              op: "ldr-indexed",
-              size,
-              fp: false,
-              rt: dst,
-              rn: dataReg,
-              rm: index,
-              scaled: false,
-              signed: false,
-            });
-            emitByteSwap(size === 1 ? "rev16" : "rev32", dst, op.littleEndian);
-            if (signed) {
-              if (size === 1) emit({ op: "sxth", rd: dst, rn: dst });
-              else emit({ op: "sxtw", rd: dst, rn: dst });
-            }
-          }
-          if (intOut) {
-            saveRaw(dst, op.id);
-            markInteger(op.id);
-          } else {
-            const target = floatTarget(op.id, 0);
-            if (signed) emit({ op: "scvtf-d-x", rd: target, rn: dst });
-            else emit({ op: "ucvtf-d-w", rd: target, rn: dst });
-            floatStore(target, op.id);
-          }
-        }
-        function bytesStore(
-          op: {
-            readonly array: number;
-            readonly offset: number;
-            readonly value: number;
-            readonly element:
-              | "i8"
-              | "u8"
-              | "i16"
-              | "u16"
-              | "i32"
-              | "u32"
-              | "f16"
-              | "f32"
-              | "f64";
-            readonly littleEndian: number;
-          },
-          hoistedBase: number | undefined,
-        ): void {
-          const el = op.element,
-            constLe = booleanConstant(op.littleEndian);
-          const isFloat = el === "f16" || el === "f32" || el === "f64";
-          const storeVal = op.value;
-          materializeInteger(storeVal);
-          const directWord =
-            !isFloat && (storedAsInteger(storeVal) || storedAsWord(storeVal));
-          if (!isFloat && !directWord) {
-            wordValue(storeVal);
-            rawStore(9, resultOffset + 24);
-            if (!jsConvert) {
-              cachedArrayDataReg = -1;
-              cachedArrayDataVal = -1;
-            }
-          }
-          const { dataReg, index } = bytesDataAndOffset(
-            op.array,
-            op.offset,
-            hoistedBase,
-          );
-          if (isFloat) {
-            const size: 1 | 2 | 3 = el === "f16" ? 1 : el === "f32" ? 2 : 3;
-            let fVal = 0;
-            if (storedAsInteger(storeVal)) floatLoad(0, storeVal);
-            else fVal = floatOperand(storeVal, 0);
-            if (el === "f16") {
-              emit({ op: "fcvt-h-d", rd: 0, rn: fVal });
-              fVal = 0;
-            } else if (el === "f32") {
-              emit({ op: "fcvt-s-d", rd: 0, rn: fVal });
-              fVal = 0;
-            }
-            if (constLe === true) {
-              emit({
-                op: "str-indexed",
-                size,
-                fp: true,
-                rt: fVal,
-                rn: dataReg,
-                rm: index,
-                scaled: false,
-              });
-            } else {
-              if (el === "f64") emit({ op: "fmov-x-d", rd: 11, rn: fVal });
-              else emit({ op: "fmov-w-s", rd: 11, rn: fVal });
-              emitByteSwap(
-                el === "f16" ? "rev16" : el === "f32" ? "rev32" : "rev",
-                11,
-                op.littleEndian,
-              );
-              emit({
-                op: "str-indexed",
-                size,
-                fp: false,
-                rt: 11,
-                rn: dataReg,
-                rm: index,
-                scaled: false,
-              });
-            }
-            return;
-          }
-          const size: 0 | 1 | 2 =
-            el === "i8" || el === "u8"
-              ? 0
-              : el === "i16" || el === "u16"
-                ? 1
-                : 2;
-          let word = 11;
-          if (directWord)
-            word = storedAsInteger(storeVal)
-              ? intRegister(storeVal, 11)
-              : rawRegister(storeVal, 11);
-          else rawLoad(11, resultOffset + 24);
-          if (size !== 0 && constLe !== true) {
-            const swapOp = size === 1 ? "rev16" : "rev32";
-            if (constLe === false) {
-              emitSwapOp(swapOp, 11, word);
-              word = 11;
-            } else {
-              if (word !== 11)
-                emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: word });
-              emitByteSwap(swapOp, 11, op.littleEndian);
-              word = 11;
-            }
-          }
-          emit({
-            op: "str-indexed",
-            size,
-            fp: false,
-            rt: word,
-            rn: dataReg,
-            rm: index,
-            scaled: false,
-          });
-        }
-        function bytesWord64Load(
-          op: {
-            readonly array: number;
-            readonly offset: number;
-            readonly scratch: number;
-            readonly littleEndian: number;
-          },
-          hoistedBase: number | undefined,
-        ): void {
-          const { dataReg, index } = bytesDataAndOffset(
-            op.array,
-            op.offset,
-            hoistedBase,
-          );
-          emit({
-            op: "ldr-indexed",
-            size: 3,
-            fp: false,
-            rt: 11,
-            rn: dataReg,
-            rm: index,
-            scaled: false,
-          });
-          emitByteSwap("rev", 11, op.littleEndian);
-          rawValue(12, op.scratch);
-          emit({
-            op: "ldr",
-            width: 64,
-            rt: 12,
-            rn: 12,
-            offset: nativeArrayDataOffset,
-          });
-          emit({ op: "str", width: 64, rt: 11, rn: 12, offset: 0 });
-        }
-        function bytesWord64Store(
-          op: {
-            readonly array: number;
-            readonly offset: number;
-            readonly scratch: number;
-            readonly littleEndian: number;
-          },
-          hoistedBase: number | undefined,
-        ): void {
-          const { dataReg, index } = bytesDataAndOffset(
-            op.array,
-            op.offset,
-            hoistedBase,
-          );
-          rawValue(11, op.scratch);
-          emit({
-            op: "ldr",
-            width: 64,
-            rt: 11,
-            rn: 11,
-            offset: nativeArrayDataOffset,
-          });
-          emit({ op: "ldr", width: 64, rt: 11, rn: 11, offset: 0 });
-          emitByteSwap("rev", 11, op.littleEndian);
-          emit({
-            op: "str-indexed",
-            size: 3,
-            fp: false,
-            rt: 11,
-            rn: dataReg,
-            rm: index,
-            scaled: false,
-          });
+          return cachedBytesCtx;
         }
         function arrayWord64Fill(op: {
           readonly array: number;
@@ -18319,16 +17993,32 @@ function emitModuleForms(
                 arrayAtomicWord64(op);
                 break;
               case "bytes-load":
-                bytesLoad(op, hoistedArrayDataValues.get(op.array));
+                emitBytesLoad(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
                 break;
               case "bytes-store":
-                bytesStore(op, hoistedArrayDataValues.get(op.array));
+                emitBytesStore(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
                 break;
               case "bytes-word64-load":
-                bytesWord64Load(op, hoistedArrayDataValues.get(op.array));
+                emitBytesWord64Load(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
                 break;
               case "bytes-word64-store":
-                bytesWord64Store(op, hoistedArrayDataValues.get(op.array));
+                emitBytesWord64Store(
+                  bytesCtx(),
+                  op,
+                  hoistedArrayDataValues.get(op.array),
+                );
                 break;
               case "array-buffer-byte-length":
                 rawValue(10, op.buffer);
@@ -34080,6 +33770,42 @@ function emitModuleForms(
             temporaries.set(blockId, found);
             return found;
           }
+          let baseUniqueRoots: readonly number[] | undefined,
+            baseUniqueGenerals: readonly number[] | undefined,
+            baseRootSet: Set<number> | undefined,
+            sharedFallbackMaps: Map<number, number[]> | undefined;
+          if (liveSlots === undefined) {
+            const sortedRoots = rootSlots.slice();
+            sortedRoots.sort((left, right) => left - right);
+            const dedupRoots: number[] = [];
+            const rootSet = new Set<number>();
+            for (const offset of sortedRoots)
+              if (
+                offset !== undefined &&
+                dedupRoots[dedupRoots.length - 1] !== offset
+              ) {
+                dedupRoots.push(offset);
+                rootSet.add(offset);
+              }
+            const sortedGenerals = generalSlots.slice();
+            if (fn.scriptEntry === true && !elideActivation) {
+              sortedGenerals.push(activationOffset + activationCalleeOffset);
+              for (let i = 0; i < scriptActualRegisterPairs; i++)
+                sortedGenerals.push(scriptArgumentsOffset + i * 16);
+            }
+            sortedGenerals.sort((left, right) => left - right);
+            const dedupGenerals: number[] = [];
+            for (const offset of sortedGenerals)
+              if (
+                offset !== undefined &&
+                dedupGenerals[dedupGenerals.length - 1] !== offset
+              )
+                dedupGenerals.push(offset);
+            baseUniqueRoots = dedupRoots;
+            baseUniqueGenerals = dedupGenerals;
+            baseRootSet = rootSet;
+            sharedFallbackMaps = new Map<number, number[]>();
+          }
           let collectingIndex = 0;
           for (let index = 0; index < callSites.length; index++) {
             const site = callSites[index];
@@ -34087,61 +33813,6 @@ function emitModuleForms(
             if (collecting[index] !== true) {
               safepoints.push({ offset: site.offset, start, map: empty });
               continue;
-            }
-            const references: number[] = [],
-              generals: number[] = [];
-            if (liveSlots === undefined) {
-              for (const offset of rootSlots)
-                if (offset !== undefined) references.push(offset);
-              for (const offset of generalSlots)
-                if (offset !== undefined) generals.push(offset);
-            } else {
-              const live = liveSlots[collectingIndex++];
-              if (live === undefined) throw "safepoint live invariant";
-              if (fn.closureEnvironment !== undefined)
-                references.push(environmentOffset);
-              for (const slot of live) {
-                if (slot === undefined) throw "safepoint slot invariant";
-                if (fn.slots[slot] === "general")
-                  generals.push(slotOffset(slot));
-                else references.push(slotOffset(slot));
-              }
-              const found = temporariesOf(site.block);
-              for (let at = 0; at < found.length; at += 4)
-                if (
-                  (found[at] ?? 0) < site.index &&
-                  (found[at + 1] ?? 0) >= site.index
-                ) {
-                  const offset = found[at + 2] ?? 0;
-                  if (found[at + 3] === 1) generals.push(offset);
-                  else references.push(offset);
-                }
-            }
-            for (const offset of siteReferences.get(index) ?? []) {
-              if (offset === undefined) throw "site reference invariant";
-              references.push(offset);
-            }
-            if (fn.scriptEntry === true && !elideActivation) {
-              generals.push(activationOffset + activationCalleeOffset);
-              for (let i = 0; i < scriptActualRegisterPairs; i++)
-                generals.push(scriptArgumentsOffset + i * 16);
-            }
-            const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
-            for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
-            const map: number[] = [frameBytes];
-            for (const list of [references, generals]) {
-              if (list === undefined) throw "safepoint map invariant";
-              list.sort((left, right) => left - right);
-              const unique: number[] = [];
-              for (const offset of list)
-                if (
-                  offset !== undefined &&
-                  unique[unique.length - 1] !== offset
-                )
-                  unique.push(offset);
-              map.push(unique.length);
-              for (const offset of unique)
-                if (offset !== undefined) map.push(offset);
             }
             // Register-homed references: the walk finds each where the
             // nearest callee saved its register.
@@ -34172,6 +33843,100 @@ function emitModuleForms(
               siteOp.call.mayCallback === true
             )
               throw "register root across a may-callback call";
+            const extraSiteRefs = siteReferences.get(index);
+            const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
+            if (
+              liveSlots === undefined &&
+              baseUniqueRoots !== undefined &&
+              baseUniqueGenerals !== undefined &&
+              baseRootSet !== undefined &&
+              sharedFallbackMaps !== undefined &&
+              scriptOverflow === 0
+            ) {
+              let hasNewRef = false;
+              if (extraSiteRefs !== undefined) {
+                for (const offset of extraSiteRefs) {
+                  if (offset === undefined) throw "site reference invariant";
+                  if (!baseRootSet.has(offset)) {
+                    hasNewRef = true;
+                    break;
+                  }
+                }
+              }
+              if (!hasNewRef) {
+                let shared = sharedFallbackMaps.get(held);
+                if (shared === undefined) {
+                  shared = [frameBytes, baseUniqueRoots.length];
+                  for (const offset of baseUniqueRoots)
+                    if (offset !== undefined) shared.push(offset);
+                  shared.push(baseUniqueGenerals.length);
+                  for (const offset of baseUniqueGenerals)
+                    if (offset !== undefined) shared.push(offset);
+                  registerSection(shared, held);
+                  sharedFallbackMaps.set(held, shared);
+                }
+                safepoints.push({ offset: site.offset, start, map: shared });
+                continue;
+              }
+            }
+            const references: number[] = [],
+              generals: number[] = [];
+            if (liveSlots === undefined) {
+              for (const offset of baseUniqueRoots ?? rootSlots)
+                if (offset !== undefined) references.push(offset);
+              for (const offset of baseUniqueGenerals ?? generalSlots)
+                if (offset !== undefined) generals.push(offset);
+            } else {
+              const live = liveSlots[collectingIndex++];
+              if (live === undefined) throw "safepoint live invariant";
+              if (fn.closureEnvironment !== undefined)
+                references.push(environmentOffset);
+              for (const slot of live) {
+                if (slot === undefined) throw "safepoint slot invariant";
+                if (fn.slots[slot] === "general")
+                  generals.push(slotOffset(slot));
+                else references.push(slotOffset(slot));
+              }
+              const found = temporariesOf(site.block);
+              for (let at = 0; at < found.length; at += 4)
+                if (
+                  (found[at] ?? 0) < site.index &&
+                  (found[at + 1] ?? 0) >= site.index
+                ) {
+                  const offset = found[at + 2] ?? 0;
+                  if (found[at + 3] === 1) generals.push(offset);
+                  else references.push(offset);
+                }
+            }
+            for (const offset of extraSiteRefs ?? []) {
+              if (offset === undefined) throw "site reference invariant";
+              references.push(offset);
+            }
+            if (
+              liveSlots !== undefined &&
+              fn.scriptEntry === true &&
+              !elideActivation
+            ) {
+              generals.push(activationOffset + activationCalleeOffset);
+              for (let i = 0; i < scriptActualRegisterPairs; i++)
+                generals.push(scriptArgumentsOffset + i * 16);
+            }
+            for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
+            const map: number[] = [frameBytes];
+            for (const list of [references, generals]) {
+              if (list === undefined) throw "safepoint map invariant";
+              list.sort((left, right) => left - right);
+              const unique: number[] = [];
+              for (const offset of list)
+                if (
+                  offset !== undefined &&
+                  unique[unique.length - 1] !== offset
+                )
+                  unique.push(offset);
+              map.push(unique.length);
+              for (const offset of unique)
+                if (offset !== undefined) map.push(offset);
+            }
             registerSection(map, held);
             safepoints.push({ offset: site.offset, start, map });
           }
