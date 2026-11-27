@@ -40,14 +40,14 @@ export function canonicalCombiningClass(point: number): number {
   return combining(point);
 }
 interface PointBuffer {
-  data: Int32Array;
+  data: Uint32Array;
   length: number;
 }
 function pushPoint(buf: PointBuffer, point: number): void {
   const len = buf.length;
   let data = buf.data;
   if (len >= data.length) {
-    const next = new Int32Array(data.length << 1);
+    const next = new Uint32Array(data.length << 1);
     next.set(data);
     data = next;
     buf.data = next;
@@ -110,7 +110,7 @@ function hasDecomposition(point: number, compatibility: boolean): boolean {
 }
 /** Short runs use bounded insertion; larger runs use stable counting over the
  * 256 canonical classes. Long unbounded sequences remain intact, without CGJs. */
-function orderRun(points: Int32Array, start: number, end: number): void {
+function orderRun(points: Uint32Array, start: number, end: number): void {
   const length = end - start;
   if (length < 16) {
     for (let at = start + 1; at < end; at++) {
@@ -141,7 +141,7 @@ function orderRun(points: Int32Array, start: number, end: number): void {
     counts[order] = offset;
     offset += count;
   }
-  const ordered = new Int32Array(length);
+  const ordered = new Uint32Array(length);
   for (let at = 0; at < length; at++) {
     const order = classes[at] ?? 0,
       destination = counts[order] ?? 0;
@@ -150,7 +150,7 @@ function orderRun(points: Int32Array, start: number, end: number): void {
   }
   for (let at = 0; at < length; at++) points[start + at] = ordered[at] ?? 0;
 }
-function canonicalOrder(points: Int32Array, length: number): void {
+function canonicalOrder(points: Uint32Array, length: number): void {
   let start = 0,
     previous = 0,
     ordered = true;
@@ -195,7 +195,7 @@ function composite(left: number, right: number): number | undefined {
   }
   return undefined;
 }
-function composeInPlace(points: Int32Array, length: number): number {
+function composeInPlace(points: Uint32Array, length: number): number {
   let write = 0,
     starter = 0,
     starterIndex = -1,
@@ -230,7 +230,7 @@ function composeInPlace(points: Int32Array, length: number): number {
 }
 function stringFromPoints(
   prefix: string,
-  points: Int32Array,
+  points: Uint32Array,
   count: number,
 ): string {
   let out = prefix;
@@ -394,7 +394,7 @@ export function normalizeUnicode(
   const prefixEnd = firstNonAscii > 0 ? firstNonAscii - 1 : 0;
   const tailLength = length - prefixEnd;
   const buf: PointBuffer = {
-    data: new Int32Array(tailLength + (tailLength >>> 1) + 16),
+    data: new Uint32Array(tailLength + (tailLength >>> 1) + 16),
     length: 0,
   };
   for (let offset = prefixEnd; offset < length;) {
