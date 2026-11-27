@@ -269,14 +269,16 @@ test(
     const early = BigInt(Date.UTC(2024, 10, 3, 5, 30)) * 1000000n;
     assert.equal(
       formatInteger(
-        interpretZonedOffset(
-          local("2024-11-03T01:30"),
-          zone,
-          undefined,
-          "reject",
-          realm,
-          "later",
-        ).epoch.integer,
+        objects.bigIntInteger(
+          interpretZonedOffset(
+            local("2024-11-03T01:30"),
+            zone,
+            undefined,
+            "reject",
+            realm,
+            "later",
+          ).epoch,
+        ),
         10,
       ),
       String(early + 3600000000000n),
@@ -294,15 +296,17 @@ test(
     const historical = local("1880-01-01T00:00");
     assert.equal(
       formatInteger(
-        interpretZonedOffset(
-          historical,
-          zone,
-          -17760000000000,
-          "reject",
-          realm,
-          "compatible",
-          true,
-        ).epoch.integer,
+        objects.bigIntInteger(
+          interpretZonedOffset(
+            historical,
+            zone,
+            -17760000000000,
+            "reject",
+            realm,
+            "compatible",
+            true,
+          ).epoch,
+        ),
         10,
       ),
       String(BigInt(Date.UTC(1880, 0, 1)) * 1000000n + 17762000000000n),
@@ -359,8 +363,9 @@ test(
     const march9 = value("2024-03-09T12:00-05:00");
     assert.equal(
       formatInteger(
-        zonedDateTimeArithmetic(march9, oneDay, false, "constrain", realm)
-          .integer,
+        objects.bigIntInteger(
+          zonedDateTimeArithmetic(march9, oneDay, false, "constrain", realm),
+        ),
         10,
       ),
       String(BigInt(Date.parse("2024-03-10T12:00-04:00")) * 1000000n),
@@ -368,7 +373,9 @@ test(
     const gap = value("2024-03-09T02:30-05:00");
     assert.equal(
       formatInteger(
-        zonedDateTimeArithmetic(gap, oneDay, false, "constrain", realm).integer,
+        objects.bigIntInteger(
+          zonedDateTimeArithmetic(gap, oneDay, false, "constrain", realm),
+        ),
         10,
       ),
       String(BigInt(Date.parse("2024-03-10T03:30-04:00")) * 1000000n),
@@ -376,11 +383,13 @@ test(
     const start = value("2024-03-10T12:15-04:00");
     assert.equal(
       formatInteger(
-        roundTemporalZonedDateTime(
-          start,
-          { increment: day, mode: "halfExpand" },
-          realm,
-        ).integer,
+        objects.bigIntInteger(
+          roundTemporalZonedDateTime(
+            start,
+            { increment: day, mode: "halfExpand" },
+            realm,
+          ),
+        ),
         10,
       ),
       String(BigInt(Date.parse("2024-03-10T00:00-05:00")) * 1000000n),
@@ -388,11 +397,13 @@ test(
     const after = value("2024-03-10T12:45-04:00");
     assert.equal(
       formatInteger(
-        roundTemporalZonedDateTime(
-          after,
-          { increment: day, mode: "halfExpand" },
-          realm,
-        ).integer,
+        objects.bigIntInteger(
+          roundTemporalZonedDateTime(
+            after,
+            { increment: day, mode: "halfExpand" },
+            realm,
+          ),
+        ),
         10,
       ),
       String(BigInt(Date.parse("2024-03-11T00:00-04:00")) * 1000000n),
@@ -400,11 +411,13 @@ test(
     const lateFold = value("2024-11-03T01:40-05:00");
     assert.equal(
       formatInteger(
-        roundTemporalZonedDateTime(
-          lateFold,
-          { increment: hour, mode: "floor" },
-          realm,
-        ).integer,
+        objects.bigIntInteger(
+          roundTemporalZonedDateTime(
+            lateFold,
+            { increment: hour, mode: "floor" },
+            realm,
+          ),
+        ),
         10,
       ),
       String(BigInt(Date.parse("2024-11-03T01:00-05:00")) * 1000000n),
@@ -526,8 +539,9 @@ test(
               : nearest;
         assert.equal(
           formatInteger(
-            roundTemporalZonedDateTime(value, { increment, mode }, realm)
-              .integer,
+            objects.bigIntInteger(
+              roundTemporalZonedDateTime(value, { increment, mode }, realm),
+            ),
             10,
           ),
           epoch(expected),

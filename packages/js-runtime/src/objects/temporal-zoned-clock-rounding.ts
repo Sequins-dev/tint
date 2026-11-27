@@ -16,7 +16,7 @@ import {
   balanceTimeDuration,
   type Duration,
 } from "@tint/foundation/chrono/temporal-duration";
-import type { BigIntValue } from "./bigints.ts";
+import { bigIntInteger, type BigIntValue } from "./bigints.ts";
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
 import type { TemporalDifferenceSettings } from "./temporal-time-difference.ts";
 import { unroundedZonedCalendarDifference } from "./temporal-zoned-calendar-difference.ts";
@@ -91,16 +91,15 @@ export function roundZonedClockDifference(
     "ignore",
     realm,
   );
-  const span = subtract(finish.epoch.integer, start.epoch.integer);
+  const startInt = bigIntInteger(start.epoch),
+    finishInt = bigIntInteger(finish.epoch);
+  const span = subtract(finishInt, startInt);
   if (compare(span, zero) !== sign) throw "ZONED_CLOCK_DAY_SPAN_INVARIANT";
   let clock = rounded(durationTimeNanoseconds(raw));
   const beyond = subtract(clock, span),
     expanded = compare(beyond, zero) !== -sign;
   if (expanded) clock = rounded(beyond);
-  const nudged = add(
-    expanded ? finish.epoch.integer : start.epoch.integer,
-    clock,
-  );
+  const nudged = add(expanded ? finishInt : startInt, clock);
   if (!validTemporalEpoch(nudged)) throw createRuntimeError(realm, "range");
   const time = balanceTimeDuration(clock, 0);
   if (time === undefined) throw createRuntimeError(realm, "range");

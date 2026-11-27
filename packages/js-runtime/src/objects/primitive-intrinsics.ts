@@ -26,7 +26,7 @@ import {
 } from "@tint/foundation/numeric/number-text";
 import { scriptBoolean, viewObjectValue } from "./values.ts";
 import { installBigIntIntrinsics } from "./bigint-intrinsics.ts";
-import { viewBigIntValue } from "./bigints.ts";
+import { bigIntInteger, viewBigIntValue } from "./bigints.ts";
 import { toNumber } from "@tint/foundation/numeric/big-integer";
 import { viewSymbolValue, symbolDescriptiveString } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
@@ -70,7 +70,9 @@ export function installPrimitiveIntrinsics(
       return rejectUnsupportedExecution(realm);
     if (converted.error !== "none") throw createRuntimeError(realm, "type");
     const bigint = viewBigIntValue(converted.value);
-    return bigint === undefined ? converted.value : toNumber(bigint.integer);
+    return bigint === undefined
+      ? converted.value
+      : toNumber(bigIntInteger(bigint));
   }
   function number(value: unknown): number {
     const converted = numberValue(value, hooks, realm);

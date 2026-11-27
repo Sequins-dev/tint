@@ -409,6 +409,118 @@ export function multiply(a: Integer, b: Integer): Integer {
     const r2 = p11 - r3 * base;
     return inline4(negative, r0, r1, r2, r3);
   }
+  if (aLen <= 4 && bLen <= 4) {
+    const a0 = a.d0,
+      a1 = a.d1,
+      a2 = a.d2,
+      a3 = a.d3;
+    const b0 = b.d0,
+      b1 = b.d1,
+      b2 = b.d2,
+      b3 = b.d3;
+    // Row 0: a0 * b[0..3]
+    let t = a0 * b0;
+    let c = Math.floor(t * invBase);
+    const r0 = t - c * base;
+    t = a0 * b1 + c;
+    c = Math.floor(t * invBase);
+    let r1 = t - c * base;
+    t = a0 * b2 + c;
+    c = Math.floor(t * invBase);
+    let r2 = t - c * base;
+    t = a0 * b3 + c;
+    let r4 = Math.floor(t * invBase);
+    let r3 = t - r4 * base;
+    // Row 1: a1 * b[0..3]
+    let r5 = 0,
+      r6 = 0,
+      r7 = 0;
+    if (a1 !== 0) {
+      t = a1 * b0 + r1;
+      c = Math.floor(t * invBase);
+      r1 = t - c * base;
+      t = a1 * b1 + r2 + c;
+      c = Math.floor(t * invBase);
+      r2 = t - c * base;
+      t = a1 * b2 + r3 + c;
+      c = Math.floor(t * invBase);
+      r3 = t - c * base;
+      t = a1 * b3 + r4 + c;
+      r5 = Math.floor(t * invBase);
+      r4 = t - r5 * base;
+    }
+    // Row 2: a2 * b[0..3]
+    if (a2 !== 0) {
+      t = a2 * b0 + r2;
+      c = Math.floor(t * invBase);
+      r2 = t - c * base;
+      t = a2 * b1 + r3 + c;
+      c = Math.floor(t * invBase);
+      r3 = t - c * base;
+      t = a2 * b2 + r4 + c;
+      c = Math.floor(t * invBase);
+      r4 = t - c * base;
+      t = a2 * b3 + r5 + c;
+      r6 = Math.floor(t * invBase);
+      r5 = t - r6 * base;
+    }
+    // Row 3: a3 * b[0..3]
+    if (a3 !== 0) {
+      t = a3 * b0 + r3;
+      c = Math.floor(t * invBase);
+      r3 = t - c * base;
+      t = a3 * b1 + r4 + c;
+      c = Math.floor(t * invBase);
+      r4 = t - c * base;
+      t = a3 * b2 + r5 + c;
+      c = Math.floor(t * invBase);
+      r5 = t - c * base;
+      t = a3 * b3 + r6 + c;
+      r7 = Math.floor(t * invBase);
+      r6 = t - r7 * base;
+    }
+    if (r7 !== 0)
+      return {
+        negative,
+        len: 8,
+        d0: r0,
+        d1: r1,
+        d2: r2,
+        d3: r3,
+        digits: [r0, r1, r2, r3, r4, r5, r6, r7],
+      };
+    if (r6 !== 0)
+      return {
+        negative,
+        len: 7,
+        d0: r0,
+        d1: r1,
+        d2: r2,
+        d3: r3,
+        digits: [r0, r1, r2, r3, r4, r5, r6],
+      };
+    if (r5 !== 0)
+      return {
+        negative,
+        len: 6,
+        d0: r0,
+        d1: r1,
+        d2: r2,
+        d3: r3,
+        digits: [r0, r1, r2, r3, r4, r5],
+      };
+    if (r4 !== 0)
+      return {
+        negative,
+        len: 5,
+        d0: r0,
+        d1: r1,
+        d2: r2,
+        d3: r3,
+        digits: [r0, r1, r2, r3, r4],
+      };
+    return inline4(negative, r0, r1, r2, r3);
+  }
   const totalLen = aLen + bLen;
   const digits: number[] = [];
   for (let i = 0; i < totalLen; i++) digits.push(0);
@@ -640,6 +752,23 @@ export function divideRemainder(a: Integer, b: Integer): Integer | undefined {
   }
   if (bLen === 1) {
     const divisor = b.d0;
+    if (aLen <= 4) {
+      let rem = 0;
+      if (aLen >= 4) {
+        rem = a.d3 - Math.floor(a.d3 / divisor) * divisor;
+      }
+      if (aLen >= 3) {
+        const div2 = rem * base + a.d2;
+        rem = div2 - Math.floor(div2 / divisor) * divisor;
+      }
+      if (aLen >= 2) {
+        const div1 = rem * base + a.d1;
+        rem = div1 - Math.floor(div1 / divisor) * divisor;
+      }
+      const div0 = rem * base + a.d0;
+      rem = div0 - Math.floor(div0 / divisor) * divisor;
+      return inline1(a.negative, rem);
+    }
     let rem = 0;
     for (let i = aLen - 1; i >= 0; i--) {
       const dividend = rem * base + integerDigit(a, i);
@@ -659,19 +788,23 @@ function charToDigit(code: number): number {
   if (code >= 97 && code <= 122) return code - 87;
   return -1;
 }
-/** Plain signed radix text; no prefixes, whitespace, separators or suffixes.
- * Language adapters apply their own lexical and StringToBigInt grammar. */
-export function parseInteger(text: string, radix: number): Integer | undefined {
-  const length = text.length;
-  if (!validRadix(radix) || length === 0) return undefined;
-  const firstCode = text.charCodeAt(0);
+/** Plain signed radix text over `text[start..end)`; no prefixes, whitespace,
+ * separators or suffixes. */
+export function parseIntegerSlice(
+  text: string,
+  start: number,
+  end: number,
+  radix: number,
+): Integer | undefined {
+  if (!validRadix(radix) || start >= end) return undefined;
+  const firstCode = text.charCodeAt(start);
   const negative = firstCode === 45;
-  let index = negative || firstCode === 43 ? 1 : 0;
-  if (index === length) return undefined;
+  let index = negative || firstCode === 43 ? start + 1 : start;
+  if (index === end) return undefined;
   // Skip leading zeros so short numbers with padding hit fast paths.
-  while (index < length && text.charCodeAt(index) === 48) index++;
-  if (index === length) return integerZero();
-  const remaining = length - index;
+  while (index < end && text.charCodeAt(index) === 48) index++;
+  if (index === end) return integerZero();
+  const remaining = end - index;
   if (
     (radix === 10 && remaining <= 15) ||
     (radix === 16 && remaining <= 13) ||
@@ -679,27 +812,106 @@ export function parseInteger(text: string, radix: number): Integer | undefined {
     (radix === 2 && remaining <= 52)
   ) {
     let acc = 0;
-    for (; index < length; index++) {
+    for (; index < end; index++) {
       const digit = charToDigit(text.charCodeAt(index));
       if (digit < 0 || digit >= radix) return undefined;
       acc = acc * radix + digit;
     }
     return fromMagnitude(negative, acc);
   }
-  if (radix === 16 && remaining <= 26) {
-    // Up to 104 bits packed directly into 4 inline 26-bit limbs (zero arrays).
+  if (radix === 10 && remaining <= 31) {
+    // Up to 31 decimal digits (< 10^31 < 2^104) fit in 4 inline 26-bit limbs.
+    let d0 = 0,
+      d1 = 0,
+      d2 = 0,
+      d3 = 0;
+    while (index < end) {
+      const chunkEnd = index + 7 <= end ? index + 7 : end;
+      let chunkVal = 0;
+      let factor = 1;
+      for (; index < chunkEnd; index++) {
+        const c = text.charCodeAt(index);
+        if (c < 48 || c > 57) return undefined;
+        chunkVal = chunkVal * 10 + (c - 48);
+        factor *= 10;
+      }
+      const p0 = d0 * factor + chunkVal;
+      const c0 = Math.floor(p0 * invBase);
+      d0 = p0 - c0 * base;
+      const p1 = d1 * factor + c0;
+      const c1 = Math.floor(p1 * invBase);
+      d1 = p1 - c1 * base;
+      const p2 = d2 * factor + c1;
+      const c2 = Math.floor(p2 * invBase);
+      d2 = p2 - c2 * base;
+      d3 = d3 * factor + c2;
+    }
+    return inline4(negative, d0, d1, d2, d3);
+  }
+  if (radix === 16) {
+    if (remaining <= 26) {
+      // Up to 104 bits packed directly into 4 inline 26-bit limbs (zero arrays).
+      let d0 = 0,
+        d1 = 0,
+        d2 = 0,
+        d3 = 0;
+      let bitPos = 0;
+      for (let i = end - 1; i >= index; i--) {
+        const nib = charToDigit(text.charCodeAt(i));
+        if (nib < 0 || nib >= 16) return undefined;
+        const limb = Math.floor(bitPos / 26);
+        const shiftBits = bitPos - limb * 26;
+        const loPart = (nib << shiftBits) & baseMask;
+        const hiPart = shiftBits > 22 ? nib >>> (26 - shiftBits) : 0;
+        if (limb === 0) {
+          d0 |= loPart;
+          if (hiPart !== 0) d1 |= hiPart;
+        } else if (limb === 1) {
+          d1 |= loPart;
+          if (hiPart !== 0) d2 |= hiPart;
+        } else if (limb === 2) {
+          d2 |= loPart;
+          if (hiPart !== 0) d3 |= hiPart;
+        } else {
+          d3 |= loPart;
+        }
+        bitPos += 4;
+      }
+      return inline4(negative, d0, d1, d2, d3);
+    }
+    // Pack arbitrary hex directly into 26-bit limbs from right to left (zero division).
+    const digits: number[] = [];
+    let limb = 0;
+    let bits = 0;
+    for (let i = end - 1; i >= index; i--) {
+      const nib = charToDigit(text.charCodeAt(i));
+      if (nib < 0 || nib >= 16) return undefined;
+      limb |= (nib << bits) & baseMask;
+      bits += 4;
+      if (bits >= 26) {
+        digits.push(limb);
+        bits -= 26;
+        limb = bits > 0 ? nib >>> (4 - bits) : 0;
+      }
+    }
+    if (limb !== 0) digits.push(limb);
+    return canonical(negative, digits);
+  }
+  if (radix === 8 && remaining <= 34) {
+    // Up to 102 bits packed directly into 4 inline 26-bit limbs (zero arrays).
     let d0 = 0,
       d1 = 0,
       d2 = 0,
       d3 = 0;
     let bitPos = 0;
-    for (let i = length - 1; i >= index; i--) {
-      const nib = charToDigit(text.charCodeAt(i));
-      if (nib < 0 || nib >= 16) return undefined;
+    for (let i = end - 1; i >= index; i--) {
+      const c = text.charCodeAt(i);
+      if (c < 48 || c > 55) return undefined;
+      const oct = c - 48;
       const limb = Math.floor(bitPos / 26);
       const shiftBits = bitPos - limb * 26;
-      const loPart = (nib << shiftBits) & baseMask;
-      const hiPart = shiftBits > 22 ? nib >>> (26 - shiftBits) : 0;
+      const loPart = (oct << shiftBits) & baseMask;
+      const hiPart = shiftBits > 23 ? oct >>> (26 - shiftBits) : 0;
       if (limb === 0) {
         d0 |= loPart;
         if (hiPart !== 0) d1 |= hiPart;
@@ -712,26 +924,47 @@ export function parseInteger(text: string, radix: number): Integer | undefined {
       } else {
         d3 |= loPart;
       }
-      bitPos += 4;
+      bitPos += 3;
     }
     return inline4(negative, d0, d1, d2, d3);
   }
   if (radix === 2) {
+    if (remaining <= 104) {
+      let d0 = 0,
+        d1 = 0,
+        d2 = 0,
+        d3 = 0;
+      let bitPos = 0;
+      for (let i = end - 1; i >= index; i--) {
+        const c = text.charCodeAt(i);
+        if (c !== 48 && c !== 49) return undefined;
+        if (c === 49) {
+          const limb = Math.floor(bitPos / 26);
+          const bit = 1 << (bitPos - limb * 26);
+          if (limb === 0) d0 |= bit;
+          else if (limb === 1) d1 |= bit;
+          else if (limb === 2) d2 |= bit;
+          else d3 |= bit;
+        }
+        bitPos++;
+      }
+      return inline4(negative, d0, d1, d2, d3);
+    }
     // Validate all characters and pack 26 bits per limb directly from right to left.
-    for (let i = index; i < length; i++) {
+    for (let i = index; i < end; i++) {
       const c = text.charCodeAt(i);
       if (c !== 48 && c !== 49) return undefined;
     }
     const digits: number[] = [];
-    let end = length;
-    while (end > index) {
-      const start = end - 26 > index ? end - 26 : index;
+    let pos = end;
+    while (pos > index) {
+      const chunkStart = pos - 26 > index ? pos - 26 : index;
       let limb = 0;
-      for (let i = start; i < end; i++) {
+      for (let i = chunkStart; i < pos; i++) {
         limb = (limb << 1) | (text.charCodeAt(i) - 48);
       }
       digits.push(limb);
-      end = start;
+      pos = chunkStart;
     }
     return canonical(negative, digits);
   }
@@ -743,9 +976,8 @@ export function parseInteger(text: string, radix: number): Integer | undefined {
     chunkDigits++;
   }
   const digits: number[] = [];
-  while (index < length) {
-    const chunkEnd =
-      index + chunkDigits <= length ? index + chunkDigits : length;
+  while (index < end) {
+    const chunkEnd = index + chunkDigits <= end ? index + chunkDigits : end;
     let chunkVal = 0;
     let factor = 1;
     for (; index < chunkEnd; index++) {
@@ -757,6 +989,11 @@ export function parseInteger(text: string, radix: number): Integer | undefined {
     scaleAndAddInPlace(digits, factor, chunkVal);
   }
   return canonical(negative, digits);
+}
+/** Plain signed radix text; no prefixes, whitespace, separators or suffixes.
+ * Language adapters apply their own lexical and StringToBigInt grammar. */
+export function parseInteger(text: string, radix: number): Integer | undefined {
+  return parseIntegerSlice(text, 0, text.length, radix);
 }
 export function formatInteger(
   value: Integer,

@@ -1,5 +1,6 @@
 import { integerHash } from "@tint/foundation/numeric/big-integer";
 import {
+  bigIntInteger,
   viewBigIntValue,
   compareBigIntValues,
   type BigIntValue,
@@ -13,7 +14,7 @@ function hashMapString(value: string): number {
 }
 
 function hashBigIntValue(value: BigIntValue): number {
-  return integerHash(value.integer);
+  return integerHash(bigIntInteger(value));
 }
 
 function sameOtherKey(left: unknown, right: unknown): boolean {

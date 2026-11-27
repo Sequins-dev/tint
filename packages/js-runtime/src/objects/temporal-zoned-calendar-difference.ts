@@ -23,7 +23,7 @@ import {
   createDuration,
   type Duration,
 } from "@tint/foundation/chrono/temporal-duration";
-import type { BigIntValue } from "./bigints.ts";
+import { bigIntInteger, type BigIntValue } from "./bigints.ts";
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
 import { zonedDateTimeArithmetic } from "./temporal-zoned-arithmetic.ts";
 import { temporalZonedData } from "./temporal-zoned-construction.ts";
@@ -50,7 +50,9 @@ export function unroundedZonedCalendarDifference(
   const target = temporalZonedData(end, own.zone, realm),
     zero = fromNumber(0);
   if (zero === undefined) throw "ZONED_CALENDAR_ZERO_INVARIANT";
-  const direction = compare(end.integer, own.epoch.integer);
+  const endInt = bigIntInteger(end),
+    ownInt = bigIntInteger(own.epoch);
+  const direction = compare(endInt, ownInt);
   function result(date: GregorianDate, time: Integer): Duration {
     const dates = calendarDateUntil(
         own.dateTime.calendar ?? "iso8601",
@@ -84,7 +86,7 @@ export function unroundedZonedCalendarDifference(
       first.month === last.month &&
       first.day === last.day)
   )
-    return result(first, subtract(end.integer, own.epoch.integer));
+    return result(first, subtract(endInt, ownInt));
   const correctionSign = -direction;
   const clockSign = compare(
     subtract(clockNanoseconds(target.dateTime), clockNanoseconds(own.dateTime)),
@@ -111,7 +113,7 @@ export function unroundedZonedCalendarDifference(
       "ignore",
       realm,
     );
-    const time = subtract(end.integer, candidate.epoch.integer);
+    const time = subtract(endInt, bigIntInteger(candidate.epoch));
     if (compare(time, zero) !== correctionSign) return result(date, time);
     correction++;
   }
@@ -153,7 +155,8 @@ function zonedCalendarFraction(
     years = unit === "year" ? 0 : raw.years,
     months = unit === "week" || unit === "day" ? raw.months : 0,
     weeks = unit === "day" ? raw.weeks : 0;
-  const direction = compare(end.integer, own.epoch.integer) < 0 ? -1 : 1;
+  const endInt = bigIntInteger(end);
+  const direction = compare(endInt, bigIntInteger(own.epoch)) < 0 ? -1 : 1;
   const step = direction * increment;
   function endpoint(value: number): BigIntValue {
     const data = createDuration([
@@ -167,17 +170,18 @@ function zonedCalendarFraction(
   }
   let start = endpoint(count),
     finish = endpoint(count + step);
-  while (compare(start.integer, end.integer) === direction) {
+  while (compare(bigIntInteger(start), endInt) === direction) {
     count -= step;
     finish = start;
     start = endpoint(count);
   }
-  while (compare(finish.integer, end.integer) === -direction) {
+  while (compare(bigIntInteger(finish), endInt) === -direction) {
     count += step;
     start = finish;
     finish = endpoint(count + step);
   }
-  const signedSpan = subtract(finish.integer, start.integer),
+  const startInt = bigIntInteger(start);
+  const signedSpan = subtract(bigIntInteger(finish), startInt),
     span = signedSpan.negative ? negate(signedSpan) : signedSpan,
     whole = fromNumber(count),
     size = fromNumber(increment);
@@ -186,7 +190,7 @@ function zonedCalendarFraction(
   if (span.len === 0) throw createRuntimeError(realm, "range");
   const numerator = add(
     multiply(whole, span),
-    multiply(subtract(end.integer, start.integer), size),
+    multiply(subtract(endInt, startInt), size),
   );
   return {
     numerator,
@@ -255,7 +259,7 @@ export function roundZonedCalendarUnit(
     result = bubbleZonedCalendarDuration(
       own,
       result,
-      (expanded ? fraction.finish : fraction.start).integer,
+      bigIntInteger(expanded ? fraction.finish : fraction.start),
       largest,
       unit,
       fraction.direction,

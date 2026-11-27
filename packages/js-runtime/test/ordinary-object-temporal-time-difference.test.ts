@@ -4,7 +4,7 @@ import {
   readTemporalDifferenceSettings,
   balanceTemporalTimeDifference,
 } from "../src/objects/temporal-time-difference.ts";
-import { createBigIntLiteral } from "../src/objects/bigints.ts";
+import { bigIntInteger, createBigIntLiteral } from "../src/objects/bigints.ts";
 import { createObject, type ObjectHooks } from "../src/objects/operations.ts";
 import { createErrorRealm } from "../src/objects/errors.ts";
 import type { ScriptPropertyKey } from "../src/objects/symbols.ts";
@@ -51,7 +51,7 @@ test("validated clock settings balance exact fields and signed rounding independ
     hooks,
   );
   const result = balanceTemporalTimeDifference(
-    createBigIntLiteral("3661002003004").integer,
+    bigIntInteger(createBigIntLiteral("3661002003004")),
     settings,
     realm,
   );
@@ -73,7 +73,7 @@ test("validated clock settings balance exact fields and signed rounding independ
     ["halfTrunc", -1],
   ] as const) {
     const rounded = balanceTemporalTimeDifference(
-      createBigIntLiteral("-1500000000").integer,
+      bigIntInteger(createBigIntLiteral("-1500000000")),
       { ...settings, largestUnit: "second", smallestUnit: "second", mode },
       realm,
     );

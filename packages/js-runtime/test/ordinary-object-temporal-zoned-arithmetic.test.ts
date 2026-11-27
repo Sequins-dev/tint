@@ -12,6 +12,7 @@ import {
 import { temporalZonedData } from "../src/objects/temporal-zoned-construction.ts";
 import { temporalTimeZoneOffsetText } from "../src/objects/temporal-time-zone.ts";
 import {
+  bigIntInteger,
   createBigIntLiteral,
   type BigIntValue,
 } from "../src/objects/bigints.ts";
@@ -62,7 +63,11 @@ test("clock-only zoned arithmetic preserves nanosecond precision across offsets 
               realm,
             );
           if (expected < -limit || expected > limit) assert.throws(run);
-          else assert.equal(formatInteger(run().integer, 10), String(expected));
+          else
+            assert.equal(
+              formatInteger(bigIntInteger(run()), 10),
+              String(expected),
+            );
         }
       }
 });
@@ -78,7 +83,7 @@ test("calendar arithmetic precedes the exact time portion with independent overf
     "constrain",
     realm,
   );
-  assert.equal(formatInteger(result.integer, 10), "1583006400000000000");
+  assert.equal(formatInteger(bigIntInteger(result), 10), "1583006400000000000");
   assert.throws(() =>
     zonedDateTimeArithmetic(original, duration, false, "reject", realm),
   );
@@ -109,22 +114,26 @@ test("day rounding validates both bounds and uses the local day's tie origin", (
   const noon = data(129600000000000n, 0);
   assert.equal(
     formatInteger(
-      roundTemporalZonedDateTime(
-        noon,
-        { increment: day, mode: "halfEven" },
-        realm,
-      ).integer,
+      bigIntInteger(
+        roundTemporalZonedDateTime(
+          noon,
+          { increment: day, mode: "halfEven" },
+          realm,
+        ),
+      ),
       10,
     ),
     "86400000000000",
   );
   assert.equal(
     formatInteger(
-      roundTemporalZonedDateTime(
-        noon,
-        { increment: day, mode: "halfExpand" },
-        realm,
-      ).integer,
+      bigIntInteger(
+        roundTemporalZonedDateTime(
+          noon,
+          { increment: day, mode: "halfExpand" },
+          realm,
+        ),
+      ),
       10,
     ),
     "172800000000000",

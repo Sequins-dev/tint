@@ -120,3 +120,106 @@ test("null boxes preserve JavaScript equality, typeof and nullish behavior", () 
   assert.equal(isNullish(fromBoolean(false)), false);
   assert.equal(isNullish(fromString("")), false);
 });
+
+test("flat BigIntValue runtime ops match ECMAScript BigInt across 1 to 6 limbs and negative XOR", async () => {
+  const bi = await import("../src/values/bigint.ts");
+  const { bigIntFromString } = await import("@tint/js-runtime/objects");
+  const samples = [
+    0n,
+    1n,
+    -1n,
+    7n,
+    -7n,
+    (1n << 26n) - 1n,
+    1n << 26n,
+    -(1n << 26n),
+    (1n << 52n) - 1n,
+    -(1n << 52n) + 1n,
+    (1n << 64n) - 1n,
+    -(1n << 63n),
+    (1n << 78n) - 1n,
+    (1n << 96n) - 1n,
+    (1n << 104n) - 1n,
+    -((1n << 104n) - 1n),
+    (1n << 130n) + 123456789n,
+    -((1n << 130n) + 123456789n),
+    (1n << 155n) - 1n,
+    -((1n << 155n) - 1n),
+  ];
+  const parsed = samples.map((n) => bi.literal(String(n)));
+  for (let i = 0; i < samples.length; i++) {
+    const a = samples[i]!;
+    const av = parsed[i]!;
+    assert.equal(bi.bigIntToString(av), String(a));
+    for (let j = 0; j < samples.length; j++) {
+      const b = samples[j]!;
+      const bv = parsed[j]!;
+      assert.equal(
+        bi.bigIntToString(bi.addBigInt(av, bv)),
+        String(a + b),
+        `${a} + ${b}`,
+      );
+      assert.equal(
+        bi.bigIntToString(bi.subtractBigInt(av, bv)),
+        String(a - b),
+        `${a} - ${b}`,
+      );
+      assert.equal(
+        bi.bigIntToString(bi.multiplyBigInt(av, bv)),
+        String(a * b),
+        `${a} * ${b}`,
+      );
+      assert.equal(
+        bi.bigIntToString(bi.andBigInt(av, bv)),
+        String(a & b),
+        `${a} & ${b}`,
+      );
+      assert.equal(
+        bi.bigIntToString(bi.orBigInt(av, bv)),
+        String(a | b),
+        `${a} | ${b}`,
+      );
+      assert.equal(
+        bi.bigIntToString(bi.xorBigInt(av, bv)),
+        String(a ^ b),
+        `${a} ^ ${b}`,
+      );
+      if (b !== 0n) {
+        assert.equal(
+          bi.bigIntToString(bi.divideBigInt(av, bv)),
+          String(a / b),
+          `${a} / ${b}`,
+        );
+        assert.equal(
+          bi.bigIntToString(bi.remainderBigInt(av, bv)),
+          String(a % b),
+          `${a} % ${b}`,
+        );
+      }
+    }
+    for (const s of [0n, 1n, 3n, 25n, 26n, 27n, 32n, 52n, 64n, 78n, 104n]) {
+      const sv = bi.literal(String(s));
+      assert.equal(
+        bi.bigIntToString(bi.leftShiftBigInt(av, sv)),
+        String(a << s),
+        `${a} << ${s}`,
+      );
+      assert.equal(
+        bi.bigIntToString(bi.rightShiftBigInt(av, sv)),
+        String(a >> s),
+        `${a} >> ${s}`,
+      );
+    }
+  }
+  for (const raw of [
+    "  +123456789012345678901234567890  ",
+    "\t-987654321098765432109876543210\n",
+    " 0xdeadbeefcafebabe1234567890abcdef ",
+    " 0o765432107654321076543210 ",
+    " 0b1010101010101010101010101010101010101010101010101010101010101010 ",
+  ]) {
+    const parsedRaw = bigIntFromString(raw);
+    assert.ok(parsedRaw, raw);
+    assert.equal(bi.bigIntToString(parsedRaw), String(BigInt(raw)));
+  }
+});

@@ -74,7 +74,7 @@ test("Temporal.Now.instant floors the supplied clock before exact nanosecond con
     const instantSlot = objects.exoticSlots(value).internalTemporalInstant;
     assert.ok(instantSlot !== undefined);
     assert.equal(
-      formatInteger(instantSlot.integer, 10),
+      formatInteger(objects.bigIntInteger(instantSlot), 10),
       String(
         BigInt(
           Math.floor(
@@ -149,7 +149,10 @@ test("Temporal.Now provides every ISO clock view using intrinsic prototypes and 
         assert.equal(value.prototype, realm.temporalZonedDateTimePrototype);
         const zoned = objects.exoticSlots(value).internalTemporalZonedDateTime;
         assert.ok(zoned !== undefined);
-        assert.equal(formatInteger(zoned.epoch.integer, 10), "-1000000");
+        assert.equal(
+          formatInteger(objects.bigIntInteger(zoned.epoch), 10),
+          "-1000000",
+        );
       } else if (name === "plainDateISO") {
         assert.equal(value.prototype, realm.temporalPlainDatePrototype);
         assert.deepEqual(objects.exoticSlots(value).internalTemporalPlainDate, {

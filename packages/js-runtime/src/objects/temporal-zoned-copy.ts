@@ -28,7 +28,11 @@ import {
 import { plainTimeFrom } from "./temporal-time-conversion.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import { temporalStartOfDay } from "./temporal-zone-local.ts";
-import { compareBigIntValues, createBigIntValue } from "./bigints.ts";
+import {
+  bigIntInteger,
+  compareBigIntValues,
+  createBigIntValue,
+} from "./bigints.ts";
 import { temporalTimeZoneLike } from "./temporal-time-zone.ts";
 import { createTemporalZonedObject } from "./temporal-zoned-construction.ts";
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
@@ -90,7 +94,7 @@ export function installZonedCopyMethods(
               throw createRuntimeError(realm, "range");
             const zone = data.zone;
             if (zone.kind === "fixed") return null;
-            const split = splitTemporalEpochSecond(data.epoch.integer);
+            const split = splitTemporalEpochSecond(bigIntInteger(data.epoch));
             if (split === undefined) throw "ZONED_TRANSITION_EPOCH_INVARIANT";
             const result = findTzifTransition(zone.model, {
               epochSeconds: split.seconds,

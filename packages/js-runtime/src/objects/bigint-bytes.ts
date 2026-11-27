@@ -61,13 +61,12 @@ export function writeBigIntBytes(
   endian: Endian,
 ): void {
   if (!(offset >= 0 && offset + 8 <= bytes.length)) throw "BIGINT_WRITE_BOUNDS";
-  const integer = value.integer;
-  const d0 = integer.d0;
-  const d1 = integer.d1;
-  const d2 = integer.d2;
+  const d0 = value.d0;
+  const d1 = value.d1;
+  const d2 = value.d2;
   let lo = (d0 | ((d1 & 63) << 26)) >>> 0;
   let hi = ((d1 >>> 6) | ((d2 & 4095) << 20)) >>> 0;
-  if (integer.negative && (lo !== 0 || hi !== 0)) {
+  if (value.negative && (lo !== 0 || hi !== 0)) {
     if (lo === 0) hi = -hi >>> 0;
     else {
       lo = -lo >>> 0;

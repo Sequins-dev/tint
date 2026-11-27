@@ -2,7 +2,7 @@ import {
   roundIntegerAsIfPositive,
   type RoundingMode,
 } from "@tint/foundation/numeric/integer-rounding";
-import type { BigIntValue } from "./bigints.ts";
+import { bigIntInteger, type BigIntValue } from "./bigints.ts";
 import {
   temporalTimeZoneOffsetNanoseconds,
   temporalTimeZoneOffsetTextRounded,
@@ -84,7 +84,7 @@ export function formatZonedDateTime(
   calendar: string = "iso8601",
 ): string {
   const rounded = roundIntegerAsIfPositive(
-    epoch.integer,
+    bigIntInteger(epoch),
     options.precision.increment,
     options.mode,
   );

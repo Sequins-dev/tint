@@ -5,7 +5,7 @@ import {
   type OrdinaryObject,
 } from "./operations.ts";
 import { temporalEpochDateTime } from "./temporal-epoch.ts";
-import type { BigIntValue } from "./bigints.ts";
+import { bigIntInteger, type BigIntValue } from "./bigints.ts";
 import {
   temporalTimeZoneOffsetNanoseconds,
   temporalTimeZoneOffsetText,
@@ -39,9 +39,10 @@ export function temporalZonedData(
   realm: ErrorRealm,
   calendar: string = "iso8601",
 ): TemporalZonedDateTime {
-  const offset = temporalTimeZoneOffsetNanoseconds(zone, epoch.integer);
+  const epochInt = bigIntInteger(epoch);
+  const offset = temporalTimeZoneOffsetNanoseconds(zone, epochInt);
   if (offset === undefined) return rejectUnsupportedExecution(realm);
-  const dateTime = temporalEpochDateTime(epoch.integer, offset, calendar);
+  const dateTime = temporalEpochDateTime(epochInt, offset, calendar);
   if (dateTime === undefined) throw "TEMPORAL_ZONED_RANGE_INVARIANT";
   return {
     epoch,

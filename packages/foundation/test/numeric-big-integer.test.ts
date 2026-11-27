@@ -439,3 +439,90 @@ test("inline 4-limb representation transitions cleanly across 104-bit boundaries
     assert.equal(integer.integerHash(a), integer.integerHash(b), `hash ${v}`);
   }
 });
+test("parseIntegerSlice and 4x4 multiply preserve exact multi-limb values", () => {
+  // Decimal inline <= 31 digits, overflow at 32+ digits, and non-zero slices.
+  const decimalCases: readonly [string, number, number, bigint][] = [
+    ["  0  ", 2, 3, 0n],
+    [
+      "__-987654321098765432109876543210__",
+      2,
+      33,
+      -987654321098765432109876543210n,
+    ],
+    ["+123456789012345678901234567890", 0, 31, 123456789012345678901234567890n],
+    ["9".repeat(31), 0, 31, BigInt("9".repeat(31))],
+    ["9".repeat(32), 0, 32, BigInt("9".repeat(32))],
+    ["1" + "0".repeat(40), 0, 41, 10n ** 40n],
+  ];
+  for (const [src, start, end, expected] of decimalCases) {
+    const parsed = integer.parseIntegerSlice(src, start, end, 10);
+    assert.ok(parsed, src);
+    assert.equal(text(parsed), String(expected), src);
+    if (expected < 1n << 104n && expected > -(1n << 104n)) {
+      assert.equal(parsed.digits, undefined, `inline decimal ${src}`);
+    }
+  }
+
+  // Hex (26-digit inline & 27-64 digit direct 26-bit packing), octal (34-digit), binary (104-bit).
+  const hexStrings = [
+    "0",
+    "deadbeefcafebabe",
+    "f".repeat(26),
+    "1" + "0".repeat(26),
+    "fedcba9876543210deadbeefcafebabe1234567890abcdef",
+  ];
+  for (const hex of hexStrings) {
+    const wrapped = `0x${hex}!`;
+    const parsed = integer.parseIntegerSlice(
+      wrapped,
+      2,
+      wrapped.length - 1,
+      16,
+    );
+    assert.ok(parsed, hex);
+    assert.equal(text(parsed), String(BigInt(`0x${hex}`)), hex);
+  }
+  for (const oct of [
+    "7".repeat(34),
+    "1" + "0".repeat(34),
+    "76543210".repeat(6),
+  ]) {
+    const parsed = integer.parseIntegerSlice(`0o${oct}`, 2, oct.length + 2, 8);
+    assert.ok(parsed, oct);
+    assert.equal(text(parsed), String(BigInt(`0o${oct}`)), oct);
+  }
+  for (const bin of [
+    "1".repeat(104),
+    "1" + "0".repeat(104),
+    "10110".repeat(30),
+  ]) {
+    const parsed = integer.parseIntegerSlice(`0b${bin}`, 2, bin.length + 2, 2);
+    assert.ok(parsed, bin);
+    assert.equal(text(parsed), String(BigInt(`0b${bin}`)), bin);
+  }
+  assert.equal(integer.parseIntegerSlice("0x12g4", 2, 6, 16), undefined);
+  assert.equal(integer.parseIntegerSlice("0b102", 2, 5, 2), undefined);
+  assert.equal(integer.parseIntegerSlice("0o78", 2, 4, 8), undefined);
+
+  // 3x3, 4x3, and 4x4 schoolbook multiply carry boundaries.
+  const mulValues = [
+    0n,
+    1n,
+    -1n,
+    (1n << 26n) - 1n,
+    1n << 26n,
+    (1n << 52n) - 1n,
+    6364136223846793005n,
+    (1n << 64n) - 1n,
+    (1n << 78n) - 1n,
+    (1n << 96n) - 1n,
+    (1n << 104n) - 1n,
+    -((1n << 104n) - 1n),
+  ];
+  for (const a of mulValues) {
+    for (const b of mulValues) {
+      const prod = integer.multiply(parse(a), parse(b));
+      assert.equal(text(prod), String(a * b), `${a} * ${b}`);
+    }
+  }
+});
