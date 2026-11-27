@@ -14700,6 +14700,26 @@ function emitModuleForms(
           const loopForest = naturalLoops(fn, work(100000));
           if (loopForest !== undefined && loopForest.loops.length > 0) {
             const loops = loopForest.loops;
+            // Collect every GP/FP home assigned anywhere in the function
+            // (including pointer transients in x4..x8 live across loops).
+            const funcUsedGP = new Set<number>();
+            const funcUsedFP = new Set<number>();
+            const sRegs = scalarRegisters;
+            if (sRegs !== undefined) {
+              for (let ri = 0; ri < sRegs.length; ri++) {
+                const reg = sRegs[ri] ?? 0;
+                if (reg >= 32) funcUsedGP.add(reg - 32);
+                else if (reg > 0) funcUsedFP.add(reg);
+              }
+            }
+            const tRegs = transientRegisters;
+            if (tRegs !== undefined) {
+              for (let ri = 0; ri < tRegs.length; ri++) {
+                const reg = tRegs[ri] ?? 0;
+                if (reg >= 32) funcUsedGP.add(reg - 32);
+                else if (reg > 0) funcUsedFP.add(reg);
+              }
+            }
             // Build predecessor map for unique-preheader detection.
             const preds: number[][] = [];
             for (let i = 0; i < fn.blocks.length; i++) preds.push([]);
@@ -14939,16 +14959,35 @@ function emitModuleForms(
               }
               if (!pureLoop) continue;
               // Allocate free GP scratch registers from x4..x8 (never clobbered
-              // by pure numeric/array instructions and not a GC root).
+              // by pure numeric/array instructions, never assigned as any
+              // function-wide transient/slot home, and not a GC root).
               const freeGP: number[] = [];
               const gpCandidates = [4, 5, 6, 7, 8];
               for (let gi = 0; gi < gpCandidates.length; gi++) {
                 const r = gpCandidates[gi];
-                if (r !== undefined && !usedGP.has(r)) freeGP.push(r);
+                if (r !== undefined && !usedGP.has(r) && !funcUsedGP.has(r))
+                  freeGP.push(r);
               }
               const arraySlots: HoistedArraySlot[] = [];
               const imulConsts: HoistedImulConst[] = [];
               const floatConsts: HoistedFloatConst[] = [];
+              // Exclude any loop-defined array load used outside the loop body
+              // (so a later loop cannot clobber its hoisted data pointer).
+              if (loopLoadSlot.size > 0) {
+                for (let bi = 0; bi < fn.blocks.length; bi++) {
+                  const blk = fn.blocks[bi];
+                  if (blk === undefined || loop.body.has(blk.id)) continue;
+                  visitTerminatorOperands(blk.terminator, (id) => {
+                    loopLoadSlot.delete(id);
+                  });
+                  for (const op of blk.instructions) {
+                    if (op === undefined) continue;
+                    visitInstructionOperands(op, (id) => {
+                      loopLoadSlot.delete(id);
+                    });
+                  }
+                }
+              }
               // Rank loop-invariant TypedArray slots by use count (selection
               // picks up to freeGP.length highest-use slots without sorting).
               const assignedArraySlots = new Map<number, number>();
@@ -15006,9 +15045,21 @@ function emitModuleForms(
                 }
                 const invalidFloatCands = new Set<number>();
                 const usedFloatCands = new Set<number>();
-                for (const bid of loop.body) {
-                  const blk = fn.blocks[bid];
+                for (let bi = 0; bi < fn.blocks.length; bi++) {
+                  const blk = fn.blocks[bi];
                   if (blk === undefined) continue;
+                  if (!loop.body.has(blk.id)) {
+                    visitTerminatorOperands(blk.terminator, (id) => {
+                      if (candIds.has(id)) invalidFloatCands.add(id);
+                    });
+                    for (const op of blk.instructions) {
+                      if (op === undefined) continue;
+                      visitInstructionOperands(op, (id) => {
+                        if (candIds.has(id)) invalidFloatCands.add(id);
+                      });
+                    }
+                    continue;
+                  }
                   visitTerminatorOperands(blk.terminator, (id) => {
                     if (candIds.has(id)) invalidFloatCands.add(id);
                   });
@@ -15059,7 +15110,12 @@ function emitModuleForms(
                     });
                   }
                 }
-                const freeFP = [3, 4, 5, 6, 7];
+                const freeFP: number[] = [];
+                const fpCandidates = [3, 4, 5, 6, 7];
+                for (let fi = 0; fi < fpCandidates.length; fi++) {
+                  const r = fpCandidates[fi];
+                  if (r !== undefined && !funcUsedFP.has(r)) freeFP.push(r);
+                }
                 let fpCursor = 0;
                 const fpRegByBits = new Map<string, number>();
                 for (let ci = 0; ci < floatCandOps.length; ci++) {

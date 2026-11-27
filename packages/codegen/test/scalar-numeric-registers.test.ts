@@ -473,3 +473,188 @@ test("loop with a call safepoint does not hoist raw TypedArray data pointer", ()
     "must never hoist raw backing pointer across safepoint",
   );
 });
+
+test("preheader hoisting never clobbers a pointer transient register live across sequential loops", () => {
+  const output = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "twoLoopsLiveArray",
+        exported: true,
+        parameters: [0],
+        slots: ["Float64Array", "number", "number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              // Load array once before both loops so transientRegisters assigns
+              // it a pointer home in x4..x8 that stays live across loop 1.
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "array-length", id: 1, array: 0, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              { kind: "store", slot: 1, value: 2, ...span },
+              { kind: "store", slot: 2, value: 2, ...span },
+              { kind: "store", slot: 3, value: 1, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 3, slot: 1, ...span },
+              { kind: "load", id: 4, slot: 3, ...span },
+              {
+                kind: "binary",
+                id: 5,
+                operator: "<",
+                left: 3,
+                right: 4,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 5,
+              consequent: 2,
+              alternate: 3,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 6, slot: 0, ...span },
+              { kind: "load", id: 7, slot: 1, ...span },
+              {
+                kind: "array-element",
+                id: 8,
+                array: 6,
+                index: 7,
+                ...span,
+              },
+              { kind: "load", id: 9, slot: 2, ...span },
+              {
+                kind: "binary",
+                id: 10,
+                operator: "+",
+                left: 9,
+                right: 8,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 10, ...span },
+              { kind: "constant", id: 11, value: 1, ...span },
+              {
+                kind: "binary",
+                id: 12,
+                operator: "+",
+                left: 7,
+                right: 11,
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 12, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 3,
+            instructions: [
+              { kind: "load", id: 26, slot: 0, ...span },
+              { kind: "array-length", id: 13, array: 26, ...span },
+              { kind: "constant", id: 14, value: 0, ...span },
+              { kind: "store", slot: 1, value: 14, ...span },
+              { kind: "store", slot: 3, value: 13, ...span },
+            ],
+            terminator: { kind: "jump", target: 4, ...span },
+          },
+          {
+            id: 4,
+            instructions: [
+              { kind: "load", id: 15, slot: 1, ...span },
+              { kind: "load", id: 16, slot: 3, ...span },
+              {
+                kind: "binary",
+                id: 17,
+                operator: "<",
+                left: 15,
+                right: 16,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 17,
+              consequent: 5,
+              alternate: 6,
+              ...span,
+            },
+          },
+          {
+            id: 5,
+            instructions: [
+              { kind: "load", id: 18, slot: 0, ...span },
+              { kind: "load", id: 19, slot: 1, ...span },
+              {
+                kind: "array-element",
+                id: 20,
+                array: 18,
+                index: 19,
+                ...span,
+              },
+              { kind: "load", id: 21, slot: 2, ...span },
+              {
+                kind: "binary",
+                id: 22,
+                operator: "+",
+                left: 21,
+                right: 20,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 22, ...span },
+              { kind: "constant", id: 23, value: 1, ...span },
+              {
+                kind: "binary",
+                id: 24,
+                operator: "+",
+                left: 19,
+                right: 23,
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 24, ...span },
+            ],
+            terminator: { kind: "jump", target: 4, ...span },
+          },
+          {
+            id: 6,
+            instructions: [{ kind: "load", id: 25, slot: 2, ...span }],
+            terminator: { kind: "return", value: 25, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(output.ok, JSON.stringify(output));
+  const view = new DataView(output.value.code.buffer);
+  let selfClobberDataLdr = 0;
+  let hoistedDataLdr = 0;
+  for (let offset = 0; offset < output.value.code.length; offset += 4) {
+    const word = view.getUint32(offset, true);
+    // 64-bit unsigned-offset `ldr xt, [xn, #16]`: top 10 bits 0xf9400000, imm12=2
+    if ((word & 0xfffffc00) >>> 0 === 0xf9400800) {
+      const rt = word & 31;
+      const rn = (word >>> 5) & 31;
+      if (rt >= 4 && rt <= 8 && rn === rt) selfClobberDataLdr++;
+      if (rt >= 4 && rt <= 8 && rn !== rt) hoistedDataLdr++;
+    }
+  }
+  assert.equal(
+    selfClobberDataLdr,
+    0,
+    "preheader hoist must never overwrite a live pointer register in place",
+  );
+  assert.ok(
+    hoistedDataLdr >= 2,
+    `expected both sequential loops to hoist into a free register, got ${hoistedDataLdr}`,
+  );
+});
