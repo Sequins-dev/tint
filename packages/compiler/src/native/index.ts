@@ -1416,6 +1416,7 @@ function missingBuiltinRuntimes(
   helpers: ReadonlyMap<string, string>,
 ): readonly string[] {
   let needMath = false;
+  let needNumberFormat = false;
   let needDataView = false;
   let needStringBuiltins = false;
   let needCasing = false;
@@ -1488,10 +1489,18 @@ function missingBuiltinRuntimes(
       case "string-normalize":
         needNormalization = true;
         break;
+      case "number-to-fixed":
+      case "number-to-exponential":
+      case "number-to-precision":
+      case "number-to-string-radix":
+        needNumberFormat = true;
+        break;
     }
   });
   const missing: string[] = [];
   if (needMath && !helpers.has("math:mathPow")) missing.push("math");
+  if (needNumberFormat && !helpers.has("number-format:formatNumberFixed"))
+    missing.push("number-format");
   if (needDataView && !helpers.has("data-view:dataViewCreate"))
     missing.push("data-view");
   if (needStringBuiltins && !helpers.has("string-builtins:stringReplace"))

@@ -35,6 +35,7 @@ function facts(parameters: number = 1): PipelineFacts {
     ["find", "indexed-find"],
     ["findIndex", "indexed-find-index"],
     ["forEach", "indexed-for-each"],
+    ["reduce", "indexed-reduce"],
   ]);
   return {
     builtin: (node) => {
@@ -123,4 +124,35 @@ test("purity admits reads, arithmetic and Math, and rejects effects", () => {
   assert.ok(!pureCallback(expression("(o) => f(o)")));
   assert.ok(!pureCallback(expression("(o) => { log(o); return o; }")));
   assert.ok(!pureCallback(expression("check")));
+});
+
+test("reduce fuses with pure callback and pure initial value", () => {
+  assert.equal(
+    describe(
+      "xs.map((x) => x * 2).filter((x) => x > 2).reduce((a, b) => a + b, 0)",
+      2,
+    ),
+    "map > filter > reduce",
+  );
+  assert.equal(
+    describe("xs.filter((x) => x > 0).reduce((a, b, i) => a + b + i)", 3),
+    "filter > reduce",
+  );
+  // 4th parameter observes the intermediate array: must stay unfused.
+  assert.equal(
+    describe(
+      "xs.filter((x) => x > 0).reduce((a, b, i, arr) => a + arr.length, 0)",
+      4,
+    ),
+    undefined,
+  );
+  // Impure initial value or callback must stay unfused to preserve order.
+  assert.equal(
+    describe("xs.map((x) => x * 2).reduce((a, b) => a + b, init())", 2),
+    undefined,
+  );
+  assert.equal(
+    describe("xs.map((x) => x * 2).reduce((a, b) => log(a + b), 0)", 2),
+    undefined,
+  );
 });

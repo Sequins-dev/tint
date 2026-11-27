@@ -147,6 +147,8 @@ export type ClosureIntrinsic =
   | "indexed-find-last"
   | "indexed-find-index"
   | "indexed-find"
+  | "indexed-reduce"
+  | "indexed-reduce-right"
   | "list-splice"
   | "list-slice"
   | "list-index-of"
@@ -313,6 +315,11 @@ export type ClosureIntrinsic =
   | "string-normalize"
   | "string-is-well-formed"
   | "string-to-well-formed"
+  | "number-to-fixed"
+  | "number-to-exponential"
+  | "number-to-precision"
+  | "number-to-string"
+  | "number-to-string-radix"
   | "string-substring"
   | "string-slice"
   | "string-read"
@@ -1274,6 +1281,11 @@ function checkClosureModuleLayout(
           break;
         }
         case "call":
+          if (node.typeArguments !== undefined)
+            for (const argument of node.typeArguments) {
+              if (argument === undefined) throw "missing type argument";
+              annotations.push(argument);
+            }
           collect(node.callee);
           for (const a of node.arguments) collect(a);
           break;
@@ -7853,7 +7865,15 @@ function checkClosureModuleLayout(
           break;
         }
         case "call": {
-          if (node.typeArguments?.length)
+          const callCallee = ungroup(node.callee);
+          if (
+            node.typeArguments?.length &&
+            !(
+              callCallee.kind === "member" &&
+              (callCallee.property === "reduce" ||
+                callCallee.property === "reduceRight")
+            )
+          )
             fail(node, "UNSUPPORTED", "generic calls require specialization");
           if (
             isOptionalChain(node) &&
@@ -8928,6 +8948,42 @@ function checkClosureModuleLayout(
               break;
             }
             if (
+              system.assignable(obj, number) &&
+              (target.property === "toFixed" ||
+                target.property === "toExponential" ||
+                target.property === "toPrecision" ||
+                target.property === "toString")
+            ) {
+              if (node.arguments.length > 1)
+                fail(
+                  node,
+                  "ARITY",
+                  target.property +
+                    " accepts zero or one optional numeric argument",
+                );
+              const formatArg = node.arguments[0];
+              if (formatArg !== undefined)
+                requireType(
+                  expression(formatArg, owner),
+                  optionalNumber,
+                  formatArg,
+                );
+              intrinsics.set(
+                node,
+                target.property === "toFixed"
+                  ? "number-to-fixed"
+                  : target.property === "toExponential"
+                    ? "number-to-exponential"
+                    : target.property === "toPrecision"
+                      ? "number-to-precision"
+                      : formatArg === undefined
+                        ? "number-to-string"
+                        : "number-to-string-radix",
+              );
+              result = string;
+              break;
+            }
+            if (
               system.assignable(obj, string) &&
               (target.property === "replace" ||
                 target.property === "replaceAll")
@@ -9057,6 +9113,159 @@ function checkClosureModuleLayout(
                   : boolean;
               break;
             }
+            if (
+              (isList(obj) || isArray(obj)) &&
+              (target.property === "reduce" ||
+                target.property === "reduceRight")
+            ) {
+              if (node.arguments.length < 1 || node.arguments.length > 2)
+                fail(
+                  node,
+                  "ARITY",
+                  target.property +
+                    " requires a callback and an optional initial value",
+                );
+              const typeArgs = node.typeArguments;
+              if (typeArgs !== undefined && typeArgs.length > 1)
+                fail(
+                  node,
+                  "ARITY",
+                  target.property + " accepts at most one type argument",
+                );
+              const argument = node.arguments[0];
+              if (argument === undefined) throw "reduce argument invariant";
+              const callback = ungroup(argument);
+              const initialArg = node.arguments[1];
+              const typed = isArray(obj);
+              const elementType = typed
+                ? number
+                : listElement(obj, target.object);
+              const firstTypeArg =
+                typeArgs !== undefined && typeArgs.length === 1
+                  ? typeArgs[0]
+                  : undefined;
+              const explicitAcc =
+                firstTypeArg !== undefined ? typeOf(firstTypeArg) : undefined;
+              const firstParam =
+                explicitAcc === undefined &&
+                (callback.kind === "arrow" ||
+                  callback.kind === "function-expression")
+                  ? callback.parameters[0]
+                  : undefined;
+              const firstParamType = firstParam?.type;
+              const annotatedParamAcc =
+                firstParamType !== undefined
+                  ? typeOf(firstParamType)
+                  : undefined;
+              let accumulatorType: number;
+              if (initialArg !== undefined) {
+                const rawInitial = expression(
+                  initialArg,
+                  owner,
+                  explicitAcc ?? annotatedParamAcc ?? expected,
+                );
+                if (explicitAcc !== undefined) {
+                  requireType(rawInitial, explicitAcc, initialArg);
+                  accumulatorType = explicitAcc;
+                } else if (annotatedParamAcc !== undefined) {
+                  requireType(rawInitial, annotatedParamAcc, initialArg);
+                  accumulatorType = annotatedParamAcc;
+                } else {
+                  const initialKind = types[rawInitial];
+                  accumulatorType =
+                    initialKind?.kind === "literal"
+                      ? typeof initialKind.value === "number"
+                        ? number
+                        : typeof initialKind.value === "string"
+                          ? string
+                          : boolean
+                      : rawInitial;
+                }
+              } else {
+                accumulatorType = explicitAcc ?? elementType;
+                if (explicitAcc !== undefined)
+                  requireType(elementType, explicitAcc, target.object);
+              }
+              const inputs = [accumulatorType, elementType, number, obj];
+              let callbackType: number;
+              if (
+                callback.kind === "arrow" ||
+                callback.kind === "function-expression"
+              ) {
+                if (callback.parameters.length > inputs.length)
+                  fail(
+                    callback,
+                    "ARITY",
+                    "reduce callback accepts at most four parameters",
+                  );
+                if (
+                  callback.parameters.some(
+                    (p) => p.initializer !== undefined || p.optional,
+                  )
+                )
+                  unsupported(
+                    callback,
+                    "default-parameter-layout",
+                    "array callback defaults and optional parameters require adapted call signatures",
+                  );
+                const output =
+                  callback.returnType === undefined
+                    ? accumulatorType
+                    : typeOf(callback.returnType);
+                const parameters = inputs.slice(0, callback.parameters.length);
+                const provisional = functionOf(parameters, output, callback);
+                const returned = checkFunction(
+                  callback,
+                  callback.parameters,
+                  callback.returnType,
+                  callback.body,
+                  provisional,
+                  false,
+                  true,
+                );
+                const accepted = callback.parameters.map((p): number => {
+                  if (p === undefined) throw "missing callback parameter";
+                  const type = bindingTypes[binding(p).id];
+                  if (type === undefined)
+                    throw "reduce parameter type invariant";
+                  return type;
+                });
+                callbackType = functionOf(accepted, returned, callback);
+                expressions.set(callback, callbackType);
+                expressions.set(argument, callbackType);
+              } else callbackType = expression(argument, owner);
+              const signature = types[callbackType];
+              if (signature?.kind !== "function")
+                fail(
+                  argument,
+                  "TYPE_MISMATCH",
+                  "array callback must be a function",
+                );
+              if (signature.parameters.length > inputs.length)
+                fail(
+                  argument,
+                  "ARITY",
+                  "reduce callback accepts at most four parameters",
+                );
+              for (let i = 0; i < signature.parameters.length; i++) {
+                const input = inputs[i],
+                  parameter = signature.parameters[i];
+                if (input === undefined || parameter === undefined)
+                  throw "reduce signature invariant";
+                requireType(input, parameter, argument);
+              }
+              requireType(signature.result, accumulatorType, argument);
+              result = accumulatorType;
+              intrinsics.set(
+                node,
+                target.property === "reduce"
+                  ? "indexed-reduce"
+                  : "indexed-reduce-right",
+              );
+              break;
+            }
+            if (node.typeArguments?.length)
+              fail(node, "UNSUPPORTED", "generic calls require specialization");
             if (
               (isList(obj) ||
                 (isArray(obj) &&
