@@ -476,6 +476,23 @@ function stringHelperKey(intrinsic: string | undefined): string | undefined {
       return undefined;
   }
 }
+function numberFormatHelperKey(
+  intrinsic: string | undefined,
+): string | undefined {
+  if (intrinsic === undefined) return undefined;
+  switch (intrinsic) {
+    case "number-to-fixed":
+      return "number-format:formatNumberFixed";
+    case "number-to-exponential":
+      return "number-format:formatNumberExponential";
+    case "number-to-precision":
+      return "number-format:formatNumberPrecision";
+    case "number-to-string-radix":
+      return "number-format:formatNumberToString";
+    default:
+      return undefined;
+  }
+}
 function dataViewGetHelperKey(
   intrinsic: string | undefined,
 ): string | undefined {
@@ -3630,7 +3647,9 @@ function lowerEntries(
                 intrinsic === "indexed-find" ||
                 intrinsic === "indexed-find-index" ||
                 intrinsic === "indexed-find-last" ||
-                intrinsic === "indexed-find-last-index"
+                intrinsic === "indexed-find-last-index" ||
+                intrinsic === "indexed-reduce" ||
+                intrinsic === "indexed-reduce-right"
               ) {
                 builtin = intrinsic;
                 let target = node.callee;
@@ -3690,6 +3709,13 @@ function lowerEntries(
                 callee = callbackSignature(parameters, result, callbackType);
                 expr(target.object);
                 expr(callback);
+                if (
+                  intrinsic === "indexed-reduce" ||
+                  intrinsic === "indexed-reduce-right"
+                ) {
+                  const initialArg = node.arguments[1];
+                  if (initialArg !== undefined) expr(initialArg);
+                }
                 break;
               }
               if (
@@ -3854,6 +3880,25 @@ function lowerEntries(
                 while (target.kind === "group" || target.kind === "satisfies")
                   target = target.expression;
                 if (target.kind !== "member") fail("invalid string receiver");
+                expr(target.object);
+              } else if (intrinsic === "number-to-string") {
+                builtin = "number-to-string";
+                callee = numberFormatter();
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid number receiver");
+                expr(target.object);
+              } else if (numberFormatHelperKey(intrinsic) !== undefined) {
+                const key = numberFormatHelperKey(intrinsic);
+                if (key === undefined)
+                  fail("number format helper key invariant");
+                builtin = "number-format";
+                callee = builtinHelper(key);
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid number receiver");
                 expr(target.object);
               } else if (dataViewGetHelperKey(intrinsic) !== undefined) {
                 const key = dataViewGetHelperKey(intrinsic);

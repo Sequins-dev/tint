@@ -342,7 +342,14 @@ export function specializeModule(
           const template =
             binding === undefined ? undefined : templates.get(binding);
           if (template === undefined) {
-            if (mapped.typeArguments?.length)
+            if (
+              mapped.typeArguments?.length &&
+              !(
+                callee.kind === "member" &&
+                (callee.property === "reduce" ||
+                  callee.property === "reduceRight")
+              )
+            )
               unsupported(
                 original,
                 "type arguments require a direct generic function",

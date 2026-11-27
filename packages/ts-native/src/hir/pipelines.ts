@@ -25,7 +25,14 @@ import type { Expression, Statement } from "@tint/typescript/syntax";
 
 export type PipelineStageKind = "filter" | "map";
 export type PipelineSinkKind =
-  "collect" | "count" | "some" | "every" | "find" | "find-index" | "for-each";
+  | "collect"
+  | "count"
+  | "some"
+  | "every"
+  | "find"
+  | "find-index"
+  | "for-each"
+  | "reduce";
 export interface PipelineStage {
   readonly kind: PipelineStageKind;
   /** The `filter`/`map` call (its checker facts give the callback signature
@@ -42,6 +49,7 @@ export interface PipelinePlan {
      * stage's call: its output list type). */
     readonly call: Expression;
     readonly callback: Expression | undefined;
+    readonly initialValue?: Expression | undefined;
   };
 }
 /** What the lowering knows about calls: checker builtins and the declared
@@ -167,6 +175,8 @@ function sinkBuiltin(builtin: string): PipelineSinkKind | undefined {
       return "find-index";
     case "indexed-for-each":
       return "for-each";
+    case "indexed-reduce":
+      return "reduce";
     default:
       return undefined;
   }
@@ -299,8 +309,18 @@ function buildChain(
       ops.push(op);
     }
   } else {
-    const callbackNode = callback(outer);
+    const callbackNode =
+      sinkKind === "reduce"
+        ? outer.kind === "call" &&
+          (outer.arguments.length === 1 || outer.arguments.length === 2)
+          ? outer.arguments[0]
+          : undefined
+        : callback(outer);
     if (callbackNode === undefined) return undefined;
+    const initialNode =
+      sinkKind === "reduce" && outer.kind === "call"
+        ? outer.arguments[1]
+        : undefined;
     const result = newValue(graph, "value");
     const op = createOp("pipeline." + sinkKind, {
       operands: [stream],
@@ -308,6 +328,12 @@ function buildChain(
     });
     op.numbers.set("call", remember(outer));
     op.numbers.set("callback", remember(callbackNode));
+    if (initialNode !== undefined)
+      op.numbers.set("initial", remember(initialNode));
+    op.numbers.set(
+      "initialPure",
+      initialNode === undefined || pureExpression(initialNode) ? 1 : 0,
+    );
     op.numbers.set("pure", pureCallback(callbackNode) ? 1 : 0);
     op.numbers.set("parameters", facts.callbackParameters(outer));
     ops.push(op);
@@ -325,6 +351,7 @@ const sinkKinds: readonly PipelineSinkKind[] = [
   "find",
   "find-index",
   "for-each",
+  "reduce",
 ];
 
 /** HIR patterns. `.length` of a collected stream counts it without building
@@ -368,7 +395,14 @@ function pipelinePatterns(definitions: Map<number, Op>): Pattern[] {
       match: (op: Op, context: PatternContext): boolean => {
         if (op.numbers.get("fused") === 1) return false;
         // The sink's callback, like a later stage's, sees the fused stream.
-        if ((op.numbers.get("parameters") ?? 0) > 2) return false;
+        const maxSinkParameters = sink === "reduce" ? 3 : 2;
+        if ((op.numbers.get("parameters") ?? 0) > maxSinkParameters)
+          return false;
+        if (
+          sink === "reduce" &&
+          (op.numbers.get("pure") !== 1 || op.numbers.get("initialPure") !== 1)
+        )
+          return false;
         const shortCircuit =
           sink === "some" ||
           sink === "every" ||
@@ -522,6 +556,9 @@ export function planPipeline(
         call: nodeAt(op, "call"),
         callback: op.numbers.has("callback")
           ? nodeAt(op, "callback")
+          : undefined,
+        initialValue: op.numbers.has("initial")
+          ? nodeAt(op, "initial")
           : undefined,
       };
     }

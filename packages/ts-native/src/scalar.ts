@@ -7250,6 +7250,91 @@ export function lowerFunction(
       return !isNativeTypedArray(type);
     },
   };
+  /** Unwraps an optional slot value when the destination expects its present
+   * payload type, then coerces to `targetType`. */
+  function unwrapSlotValue(
+    slot: number,
+    targetType: ScalarType,
+    node: Span,
+  ): number {
+    let id = load(slot, node);
+    if (
+      (slots[slot] === "optional-number" && targetType === "number") ||
+      (slots[slot] === "optional-string" && targetType === "string") ||
+      (slots[slot] === "optional-reference" && targetType === "reference")
+    ) {
+      const extracted = nextValue++;
+      emitUnwrap(extracted, id, targetType, node);
+      id = extracted;
+    }
+    return coerce(id, targetType, node);
+  }
+  /** Allocates an accumulator slot initialized on entry so loop-carried
+   * phis and GC root slots are always defined on every path. */
+  function allocateAccumulatorSlot(
+    accType: ScalarType,
+    initial: number | undefined,
+    node: Span,
+  ): { readonly slot: number; readonly storageType: ScalarType } {
+    if (initial !== undefined) {
+      const slot = temporary(accType);
+      store(slot, unwrapSlotValue(initial, accType, node), node);
+      return { slot, storageType: accType };
+    }
+    if (accType === "reference" || isNativeTypedArray(accType)) {
+      const slot = temporary("optional-reference");
+      const none = nextValue++;
+      emit({
+        kind: "reference-none",
+        id: none,
+        start: node.start,
+        end: node.end,
+      });
+      store(slot, none, node);
+      return { slot, storageType: "optional-reference" };
+    }
+    const slot = temporary(accType);
+    const id = nextValue++;
+    if (accType === "number")
+      emit({
+        kind: "constant",
+        id,
+        value: 0,
+        start: node.start,
+        end: node.end,
+      });
+    else if (accType === "boolean")
+      emit({
+        kind: "constant",
+        id,
+        value: false,
+        start: node.start,
+        end: node.end,
+      });
+    else if (accType === "string")
+      emit({
+        kind: "string-literal",
+        id,
+        value: "",
+        start: node.start,
+        end: node.end,
+      });
+    else if (accType === "optional-number")
+      emit({ kind: "undefined", id, start: node.start, end: node.end });
+    else if (accType === "optional-boolean")
+      emit({ kind: "boolean-none", id, start: node.start, end: node.end });
+    else if (accType === "optional-string")
+      emit({ kind: "string-none", id, start: node.start, end: node.end });
+    else if (accType === "optional-reference")
+      emit({ kind: "reference-none", id, start: node.start, end: node.end });
+    else {
+      emit({ kind: "undefined", id, start: node.start, end: node.end });
+      store(slot, coerce(id, accType, node), node);
+      return { slot, storageType: accType };
+    }
+    store(slot, id, node);
+    return { slot, storageType: accType };
+  }
   /** Arguments for a callback from (item, index, list) slots, unwrapping
    * optional slots the callback declares as present. */
   function callbackArguments(
@@ -7263,17 +7348,7 @@ export function lowerFunction(
         slot = args[i];
       if (parameter === undefined || slot === undefined)
         throw "callback argument invariant";
-      let id = load(slot, node);
-      if (
-        (slots[slot] === "optional-number" && parameter === "number") ||
-        (slots[slot] === "optional-string" && parameter === "string") ||
-        (slots[slot] === "optional-reference" && parameter === "reference")
-      ) {
-        const extracted = nextValue++;
-        emitUnwrap(extracted, id, parameter, node);
-        id = extracted;
-      }
-      values.push(coerce(id, parameter, node));
+      values.push(unwrapSlotValue(slot, parameter, node));
     }
     return values;
   }
@@ -7318,9 +7393,16 @@ export function lowerFunction(
     }
     const sink = plan.sink,
       sinkCallback =
-        sink.callback === undefined ? undefined : value(sink.callback);
+        sink.callback === undefined ? undefined : value(sink.callback),
+      sinkInitial =
+        sink.kind === "reduce" && sink.initialValue !== undefined
+          ? value(sink.initialValue)
+          : undefined;
     const length = listValue(input, "length", [receiver], node);
-    let output: ListRuntime | undefined, result: number;
+    let output: ListRuntime | undefined,
+      result: number,
+      hasAccumulator: number | undefined,
+      reduceResultType: ScalarType | undefined;
     if (sink.kind === "collect") {
       // Without filters the output has exactly the source's length: reserve
       // it once. Filtered output grows as elements arrive.
@@ -7345,6 +7427,15 @@ export function lowerFunction(
       const id = nextValue++;
       emit({ kind: "undefined", id, start: node.start, end: node.end });
       result = save(id, "optional-number", node);
+    } else if (sink.kind === "reduce") {
+      reduceResultType = scalarType(sink.call);
+      const allocated = allocateAccumulatorSlot(
+        reduceResultType,
+        sinkInitial,
+        node,
+      );
+      result = allocated.slot;
+      if (sinkInitial === undefined) hasAccumulator = booleanSlot(false, node);
     } else {
       const id = nextValue++;
       emit({
@@ -7462,7 +7553,44 @@ export function lowerFunction(
         load(binarySlot("+", result, numberSlot(1, node), node), node),
         node,
       );
-    else {
+    else if (sink.kind === "reduce") {
+      if (sinkCallback === undefined) throw "pipeline sink callback invariant";
+      const witness = info(sink.call).callee;
+      const signature = witness === undefined ? undefined : signatures[witness];
+      const at =
+        signature !== undefined && signature.parameters.length >= 3
+          ? reached(plan.stages.length)
+          : undefined;
+      const accType = slots[result];
+      if (accType === undefined) throw "pipeline reduce invariant";
+      if (hasAccumulator === undefined) {
+        const returned = callCallback(
+          sink.call,
+          sinkCallback,
+          at === undefined ? [result, item] : [result, item, at],
+          node,
+        );
+        if (returned === undefined) throw "pipeline reduce result invariant";
+        store(result, unwrapSlotValue(returned, accType, node), node);
+      } else {
+        const initAcc = block(),
+          callReduce = block();
+        choose(load(hasAccumulator, node), callReduce, initAcc, node);
+        current = initAcc;
+        store(result, unwrapSlotValue(item, accType, node), node);
+        store(hasAccumulator, load(booleanSlot(true, node), node), node);
+        jump(advance.id, node);
+        current = callReduce;
+        const returned = callCallback(
+          sink.call,
+          sinkCallback,
+          at === undefined ? [result, item] : [result, item, at],
+          node,
+        );
+        if (returned === undefined) throw "pipeline reduce result invariant";
+        store(result, unwrapSlotValue(returned, accType, node), node);
+      }
+    } else {
       if (sinkCallback === undefined) throw "pipeline sink callback invariant";
       const at =
         sink.kind === "find-index" || callbackNeedsIndex(sink.call)
@@ -7515,6 +7643,24 @@ export function lowerFunction(
     );
     jump(head.id, node);
     current = done;
+    if (hasAccumulator !== undefined) {
+      const ready = block(),
+        empty = block();
+      choose(load(hasAccumulator, node), ready, empty, node);
+      current = empty;
+      throwNativeError(
+        "TypeError",
+        "Reduce of empty array with no initial value",
+        node,
+      );
+      current = ready;
+      if (reduceResultType !== undefined && slots[result] !== reduceResultType)
+        return save(
+          unwrapSlotValue(result, reduceResultType, node),
+          reduceResultType,
+          node,
+        );
+    }
     return result;
   }
   let localUseCounts: Map<number, number> | undefined;
@@ -11259,10 +11405,144 @@ export function lowerFunction(
             builtin === "indexed-some" ||
             builtin === "indexed-every" ||
             builtin === "indexed-find" ||
-            builtin === "indexed-find-index"
+            builtin === "indexed-find-index" ||
+            builtin === "indexed-reduce"
           ) {
             const plan = planPipeline(node, pipelineFacts);
             if (plan !== undefined) return lowerPipeline(plan, node);
+          }
+          if (
+            builtin === "indexed-reduce" ||
+            builtin === "indexed-reduce-right"
+          ) {
+            const reverse = builtin === "indexed-reduce-right";
+            const receiver = value(target.object);
+            const callbackArg = node.arguments[0];
+            if (callbackArg === undefined) throw "reduce callback invariant";
+            const callback = value(callbackArg);
+            const initialArg = node.arguments[1];
+            const initial =
+              initialArg === undefined ? undefined : value(initialArg);
+            const receiverType = slots[receiver];
+            const typed = isNativeTypedArray(receiverType);
+            if (typed) rejectDetachedReceiver(receiver, node);
+            const input = typed ? undefined : listRuntime(target.object);
+            const length =
+              input === undefined
+                ? arrayLength(receiver, node)
+                : listValue(input, "length", [receiver], node);
+            const accType = scalarType(node);
+            const allocated = allocateAccumulatorSlot(accType, initial, node);
+            const result = allocated.slot;
+            const storageType = allocated.storageType;
+            let hasAccumulator: number | undefined;
+            if (initial === undefined)
+              hasAccumulator = booleanSlot(false, node);
+            const zero = numberSlot(0, node),
+              index = reverse
+                ? binarySlot("-", length, numberSlot(1, node), node)
+                : numberSlot(0, node),
+              head = block(),
+              visit = block(),
+              invoke = block(),
+              advance = block(),
+              done = block();
+            jump(head.id, node);
+            current = head;
+            choose(
+              load(
+                binarySlot(
+                  reverse ? ">=" : "<",
+                  index,
+                  reverse ? zero : length,
+                  node,
+                ),
+                node,
+              ),
+              visit,
+              done,
+              node,
+            );
+            current = visit;
+            if (typed) jump(invoke.id, node);
+            else {
+              if (input === undefined) throw "list reduce runtime invariant";
+              choose(
+                load(listValue(input, "has", [receiver, index], node), node),
+                invoke,
+                advance,
+                node,
+              );
+            }
+            current = invoke;
+            const item =
+              input === undefined
+                ? readArrayElement(receiver, index, node)
+                : listValue(input, "read", [receiver, index], node);
+            if (hasAccumulator === undefined) {
+              const returned = callCallback(
+                node,
+                callback,
+                [result, item, index, receiver],
+                node,
+              );
+              if (returned === undefined) throw "reduce result invariant";
+              store(result, unwrapSlotValue(returned, storageType, node), node);
+              jump(advance.id, node);
+            } else {
+              const initAcc = block(),
+                callReduce = block();
+              choose(load(hasAccumulator, node), callReduce, initAcc, node);
+              current = initAcc;
+              store(result, unwrapSlotValue(item, storageType, node), node);
+              store(hasAccumulator, load(booleanSlot(true, node), node), node);
+              jump(advance.id, node);
+              current = callReduce;
+              const returned = callCallback(
+                node,
+                callback,
+                [result, item, index, receiver],
+                node,
+              );
+              if (returned === undefined) throw "reduce result invariant";
+              store(result, unwrapSlotValue(returned, storageType, node), node);
+              jump(advance.id, node);
+            }
+            current = advance;
+            store(
+              index,
+              load(
+                binarySlot(
+                  reverse ? "-" : "+",
+                  index,
+                  numberSlot(1, node),
+                  node,
+                ),
+                node,
+              ),
+              node,
+            );
+            jump(head.id, node);
+            current = done;
+            if (hasAccumulator !== undefined) {
+              const ready = block(),
+                empty = block();
+              choose(load(hasAccumulator, node), ready, empty, node);
+              current = empty;
+              throwNativeError(
+                "TypeError",
+                "Reduce of empty array with no initial value",
+                node,
+              );
+              current = ready;
+              if (storageType !== accType)
+                return save(
+                  unwrapSlotValue(result, accType, node),
+                  accType,
+                  node,
+                );
+            }
+            return result;
           }
           if (
             builtin === "indexed-for-each" ||
@@ -13600,6 +13880,32 @@ export function lowerFunction(
             }
             const result = runtimeCall(helper, [receiver, form], node);
             if (result === undefined) throw "string normalize result invariant";
+            return result;
+          }
+          if (builtin === "number-to-string") {
+            return stringOperand(value(target.object), node);
+          }
+          if (builtin === "number-format") {
+            const helper = info(node).callee;
+            if (helper === undefined) throw "number format callee invariant";
+            const receiver = value(target.object);
+            let argument: number;
+            if (node.arguments.length === 0) {
+              const none = nextValue++;
+              emit({
+                kind: "undefined",
+                id: none,
+                start: node.start,
+                end: node.end,
+              });
+              argument = save(none, "optional-number", node);
+            } else {
+              const arg = node.arguments[0];
+              if (arg === undefined) throw "number format argument invariant";
+              argument = value(arg);
+            }
+            const result = runtimeCall(helper, [receiver, argument], node);
+            if (result === undefined) throw "number format result invariant";
             return result;
           }
           if (builtin === "data-view-get" || builtin === "data-view-set") {

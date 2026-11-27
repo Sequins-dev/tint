@@ -41,6 +41,10 @@ export const nativeArrayDetachModule =
 export const optionalBuiltinRuntimes: readonly RuntimeSource[] = [
   { module: "packages/foundation/src/numeric/math.ts", namespace: "math" },
   {
+    module: "packages/foundation/src/numeric/number-format.ts",
+    namespace: "number-format",
+  },
+  {
     module: "packages/foundation/src/binary/data-view.ts",
     namespace: "data-view",
   },

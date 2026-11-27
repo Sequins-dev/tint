@@ -506,3 +506,243 @@ test("typed String builtins and optional templates match Node natively", async (
   assert.equal(await runInNode(stringBuiltinsSource), 42);
   verifyHostedFixture(stringBuiltinsSource, "typed-string-builtins");
 });
+
+export const reduceAndNumberFormattingSource = `function catchType(fn: () => void): boolean {
+  try {
+    fn();
+    return false;
+  } catch (e) {
+    return e instanceof TypeError;
+  }
+}
+
+function catchRange(fn: () => void): boolean {
+  try {
+    fn();
+    return false;
+  } catch (e) {
+    return e instanceof RangeError;
+  }
+}
+
+export function run(): number {
+  // 1. Array.prototype.reduce & reduceRight (dense, with & without initialValue)
+  const nums: number[] = [1, 2, 3, 4];
+  if (nums.reduce((a, b) => a + b, 0) !== 10) return 1;
+  if (nums.reduce((a, b) => a + b) !== 10) return 2;
+  if (nums.reduce((a, b) => a - b) !== -8) return 3;
+  if (nums.reduceRight((a, b) => a - b) !== -2) return 4;
+  if (nums.reduceRight((a, b) => a - b, 20) !== 10) return 5;
+
+  const words: string[] = ["a", "b", "c"];
+  if (words.reduce((acc, w) => acc + w, "") !== "abc") return 6;
+  if (words.reduceRight((acc, w) => acc + w, "") !== "cba") return 7;
+  if (words.reduce((acc, w) => acc + "-" + w) !== "a-b-c") return 8;
+  if (words.reduceRight((acc, w) => acc + "-" + w) !== "c-b-a") return 9;
+
+  // Explicit type argument & callback-annotated accumulator
+  const doubled = nums.reduce<number[]>((acc, x) => {
+    acc.push(x * 2);
+    return acc;
+  }, []);
+  if (doubled.length !== 4 || doubled[0] !== 2 || doubled[3] !== 8) return 10;
+
+  const tripled = nums.reduce((acc: number[], x) => {
+    acc.push(x * 3);
+    return acc;
+  }, []);
+  if (tripled.length !== 4 || tripled[0] !== 3 || tripled[3] !== 12) return 11;
+
+  // Single-element without initialValue: callback must NOT be invoked
+  let singleCalls = 0;
+  const single: number[] = [99];
+  if (single.reduce((a, b) => { singleCalls++; return a + b; }) !== 99) return 12;
+  if (single.reduceRight((a, b) => { singleCalls++; return a + b; }) !== 99) return 13;
+  if (singleCalls !== 0) return 14;
+
+  // Empty array: with initialValue returns initialValue; without throws TypeError
+  const empty: number[] = [];
+  let emptyCalls = 0;
+  if (empty.reduce((a, b) => { emptyCalls++; return a + b; }, 7) !== 7) return 15;
+  if (empty.reduceRight((a, b) => { emptyCalls++; return a + b; }, 8) !== 8) return 16;
+  if (emptyCalls !== 0) return 17;
+  if (!catchType(() => { empty.reduce((a, b) => a + b); })) return 18;
+  if (!catchType(() => { empty.reduceRight((a, b) => a + b); })) return 19;
+
+  // Callback 4-argument order (acc, item, index, array)
+  const traceFwd: string[] = [];
+  const fwd = nums.reduce((acc, item, idx, arr) => {
+    traceFwd.push(String(idx) + ":" + String(item) + "/" + String(arr.length));
+    return acc + item;
+  });
+  if (fwd !== 10 || traceFwd.join(",") !== "1:2/4,2:3/4,3:4/4") return 20;
+
+  const traceRev: string[] = [];
+  const rev = nums.reduceRight((acc, item, idx, arr) => {
+    traceRev.push(String(idx) + ":" + String(item) + "/" + String(arr.length));
+    return acc + item;
+  });
+  if (rev !== 10 || traceRev.join(",") !== "2:3/4,1:2/4,0:1/4") return 21;
+
+  // Sparse arrays: holes skipped in both directions; all-holes without init throws TypeError
+  const sparse: number[] = [];
+  sparse[1] = 10;
+  sparse[3] = 20;
+  const sparseIdx: number[] = [];
+  if (sparse.reduce((acc, x, i) => { sparseIdx.push(i); return acc + x; }, 5) !== 35) return 22;
+  if (sparseIdx.length !== 2 || sparseIdx[0] !== 1 || sparseIdx[1] !== 3) return 23;
+  if (sparse.reduce((acc, x) => acc + x) !== 30) return 24;
+  if (sparse.reduceRight((acc, x) => acc - x) !== 10) return 25;
+  const allHoles: number[] = [];
+  allHoles.length = 3;
+  if (!catchType(() => { allHoles.reduce((a, b) => a + b); })) return 26;
+  if (!catchType(() => { allHoles.reduceRight((a, b) => a + b); })) return 27;
+
+  // Fused pipelines: map().filter().reduce() with & without initialValue & virtual index
+  const fused1 = nums
+    .map((x) => x * 2)
+    .filter((x) => x > 2)
+    .reduce((a, b) => a + b, 0);
+  if (fused1 !== 18) return 28;
+
+  const fused2 = nums
+    .filter((x) => x > 1)
+    .reduce((a, b, i) => a + b * (i + 1));
+  // Filtered elements: [2, 3, 4]; init=2, i=1 => 2 + 3*2 = 8, i=2 => 8 + 4*3 = 20
+  if (fused2 !== 20) return 29;
+
+  if (!catchType(() => {
+    nums.filter((x) => x > 100).reduce((a, b) => a + b);
+  })) return 30;
+
+  // Unfused order preservation when reduce callback or initialValue has side effects
+  const orderLog: string[] = [];
+  function makeInit(): number {
+    orderLog.push("init");
+    return 0;
+  }
+  const unfused = nums
+    .map((x) => {
+      orderLog.push("m" + String(x));
+      return x;
+    })
+    .reduce((a, b) => {
+      orderLog.push("r" + String(b));
+      return a + b;
+    }, makeInit());
+  if (
+    unfused !== 10 ||
+    orderLog.join(",") !== "m1,m2,m3,m4,init,r1,r2,r3,r4"
+  )
+    return 31;
+
+  // TypedArray reduce / reduceRight
+  const ta = new Float64Array(4);
+  ta[0] = 1.5;
+  ta[1] = 2.5;
+  ta[2] = 3.0;
+  ta[3] = 4.0;
+  if (ta.reduce((a, b) => a + b, 0) !== 11) return 32;
+  if (ta.reduce((a, b) => a + b) !== 11) return 33;
+  if (ta.reduceRight((a, b) => a - b) !== -3) return 34;
+  const emptyTa = new Int32Array(0);
+  if (!catchType(() => { emptyTa.reduce((a, b) => a + b); })) return 35;
+
+  // Object reference array reduce without initialValue (tests reference accumulator slot init)
+  const boxes: { readonly v: number }[] = [{ v: 3 }, { v: 9 }, { v: 4 }];
+  const maxBox = boxes.reduce((best, cur) => (cur.v > best.v ? cur : best));
+  if (maxBox.v !== 9) return 36;
+
+  // 2. Number.prototype.toFixed / toExponential / toPrecision / toString(radix?)
+  const pi = 3.14159;
+  const negZero = -0;
+  const nan = NaN;
+  const inf = Infinity;
+  const negInf = -Infinity;
+  const optUndef: number | undefined = undefined;
+  const optTwo: number | undefined = 2;
+
+  // toFixed
+  if (pi.toFixed() !== "3") return 50;
+  if (pi.toFixed(optUndef) !== "3") return 51;
+  if (pi.toFixed(0) !== "3") return 52;
+  if (pi.toFixed(1) !== "3.1") return 53;
+  if (pi.toFixed(optTwo) !== "3.14") return 54;
+  if (pi.toFixed(2.9) !== "3.14") return 55;
+  if (pi.toFixed(NaN) !== "3") return 56;
+  if (negZero.toFixed(2) !== "0.00") return 57;
+  if (nan.toFixed(2) !== "NaN") return 58;
+  if (inf.toFixed(2) !== "Infinity") return 59;
+  if (negInf.toFixed(2) !== "-Infinity") return 60;
+  if ((1e21).toFixed(2) !== "1e+21") return 61;
+  if ((0).toFixed(100).length !== 102) return 62;
+  // Range check precedes finite check in toFixed!
+  if (!catchRange(() => { pi.toFixed(-1); })) return 63;
+  if (!catchRange(() => { pi.toFixed(101); })) return 64;
+  if (!catchRange(() => { nan.toFixed(-1); })) return 65;
+  if (!catchRange(() => { inf.toFixed(101); })) return 66;
+
+  // toExponential
+  if ((123.45).toExponential() !== "1.2345e+2") return 67;
+  if ((123.45).toExponential(optUndef) !== "1.2345e+2") return 68;
+  if ((123.45).toExponential(2) !== "1.23e+2") return 69;
+  if ((123.45).toExponential(0) !== "1e+2") return 70;
+  if ((123.45).toExponential(NaN) !== "1e+2") return 71;
+  if (negZero.toExponential(2) !== "0.00e+0") return 72;
+  // Non-finite precedes range check in toExponential!
+  if (nan.toExponential(101) !== "NaN") return 73;
+  if (inf.toExponential(-1) !== "Infinity") return 74;
+  if (negInf.toExponential(200) !== "-Infinity") return 75;
+  if (!catchRange(() => { pi.toExponential(-1); })) return 76;
+  if (!catchRange(() => { pi.toExponential(101); })) return 77;
+
+  // toPrecision
+  if ((123.456).toPrecision() !== "123.456") return 78;
+  if ((123.456).toPrecision(optUndef) !== "123.456") return 79;
+  if ((123.456).toPrecision(1) !== "1e+2") return 80;
+  if ((123.456).toPrecision(4) !== "123.5") return 81;
+  if ((0.0000005).toPrecision(2) !== "5.0e-7") return 82;
+  if (negZero.toPrecision(3) !== "0.00") return 83;
+  // Non-finite precedes range check in toPrecision!
+  if (nan.toPrecision(0) !== "NaN") return 84;
+  if (inf.toPrecision(101) !== "Infinity") return 85;
+  if (negInf.toPrecision(-5) !== "-Infinity") return 86;
+  if (!catchRange(() => { pi.toPrecision(0); })) return 87;
+  if (!catchRange(() => { pi.toPrecision(101); })) return 88;
+  if (!catchRange(() => { pi.toPrecision(NaN); })) return 89;
+
+  // toString & toString(radix)
+  if ((42).toString() !== "42") return 90;
+  if (negZero.toString() !== "0") return 91;
+  if (nan.toString() !== "NaN") return 92;
+  if (inf.toString() !== "Infinity") return 93;
+  if (negInf.toString() !== "-Infinity") return 94;
+  if ((42).toString(optUndef) !== "42") return 95;
+  if ((42).toString(10) !== "42") return 96;
+  if ((255).toString(16) !== "ff") return 97;
+  if ((-42).toString(2) !== "-101010") return 98;
+  if ((35).toString(36) !== "z") return 99;
+  if ((10.625).toString(16) !== "a.a") return 100;
+  if ((0.5).toString(2) !== "0.1") return 101;
+  if ((0.5).toString(3) !== "0.1111111111111111111111111111111112") return 102;
+  if (nan.toString(16) !== "NaN") return 103;
+  if (negInf.toString(2) !== "-Infinity") return 104;
+  if (negZero.toString(16) !== "0") return 105;
+  // Range check precedes finite/zero check in toString(radix)!
+  if (!catchRange(() => { (42).toString(1); })) return 106;
+  if (!catchRange(() => { (42).toString(37); })) return 107;
+  if (!catchRange(() => { nan.toString(1); })) return 108;
+  if (!catchRange(() => { (0).toString(37); })) return 109;
+  if (!catchRange(() => { (42).toString(NaN); })) return 110;
+
+  return 42;
+}
+`;
+
+test("typed Array.prototype.reduce/reduceRight and Number formatting match Node natively", async () => {
+  assert.equal(await runInNode(reduceAndNumberFormattingSource), 42);
+  verifyHostedFixture(
+    reduceAndNumberFormattingSource,
+    "typed-reduce-and-number-formatting",
+  );
+});

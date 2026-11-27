@@ -675,6 +675,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/numeric/number-format.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/numeric/number-string-cache.ts",
       packageId: "foundation",
     },
@@ -3758,6 +3762,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -4140,6 +4149,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/numeric/math",
       target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
     },
     {
       packageId: "compiler",
@@ -4793,6 +4807,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -5085,6 +5104,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/numeric/math",
       target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
     },
     {
       packageId: "ir",
@@ -5415,6 +5439,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/numeric/math",
       target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
     },
     {
       packageId: "js-engine",
@@ -5843,6 +5872,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -6135,6 +6169,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/numeric/math",
       target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
     },
     {
       packageId: "native-runtime",
@@ -6493,6 +6532,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -6848,6 +6892,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/numeric/number-text",
       target: "packages/foundation/src/numeric/number-text/index.ts",
     },
@@ -7175,6 +7224,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/numeric/math",
       target: "packages/foundation/src/numeric/math.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/numeric/number-format",
+      target: "packages/foundation/src/numeric/number-format.ts",
     },
     {
       packageId: "typescript",
