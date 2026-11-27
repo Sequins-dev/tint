@@ -406,43 +406,61 @@ export function scriptEntryCalleeValues(
   return proven;
 }
 
-/** Property-load / property-store instruction IDs whose receiver value is
- * already proven to carry the general object tag (tag === 5) on every path
- * reaching the instruction, allowing codegen to load the payload directly and
- * skip the redundant tag test (and string-primitive cold stub). Undefined when
- * `fn` contains no `property-load` or `property-store`. */
-export function knownObjectTagAccesses(
+/** Forward dataflow facts for general object receivers:
+ * - `tagKnown`: `property-load` / `property-store` IDs whose `object` is
+ *   proven to carry tag === 5 on every reaching path (skip tag test & string
+ *   cold stub).
+ * - `boolKnownTrue` / `boolKnownFalse`: `general-record-is` and `general-is`
+ *   IDs whose boolean result is statically proven on every reaching path. */
+export interface KnownObjectFacts {
+  readonly tagKnown: ReadonlySet<number>;
+  readonly boolKnownTrue: ReadonlySet<number>;
+  readonly boolKnownFalse: ReadonlySet<number>;
+}
+
+// Per-slot lattice state: -3 = proven non-object (undefined/null), -2 = unknown,
+// -1 = object tag 5 (record unknown), >= 0 = proven non-null object with that
+// exact record descriptor ID.
+const objectNotObject = -3,
+  objectUnknown = -2,
+  objectTagOnly = -1;
+
+export function knownObjectFacts(
   fn: FunctionIR,
   fusedAccesses: ReadonlyMap<number, FusedPropertyAccess> | undefined,
-): ReadonlySet<number> | undefined {
-  let hasPropertyAccess = false;
+): KnownObjectFacts | undefined {
+  let hasTarget = false;
   for (const block of fn.blocks) {
     if (block === undefined) throw "known object tag block invariant";
     for (const op of block.instructions) {
       if (
         op !== undefined &&
-        (op.kind === "property-load" || op.kind === "property-store")
+        (op.kind === "property-load" ||
+          op.kind === "property-store" ||
+          op.kind === "general-record-is")
       ) {
-        hasPropertyAccess = true;
+        hasTarget = true;
         break;
       }
     }
-    if (hasPropertyAccess) break;
+    if (hasTarget) break;
   }
-  if (!hasPropertyAccess) return undefined;
+  if (!hasTarget) return undefined;
   const generalSlots = new Map<number, number>();
   for (let slot = 0; slot < fn.slots.length; slot++) {
     if (fn.slots[slot] === "general") generalSlots.set(slot, generalSlots.size);
   }
   const slotCount = generalSlots.size;
   const blockCount = fn.blocks.length;
-  const inKnown: (Uint8Array | undefined)[] = [];
+  const inKnown: (Int32Array | undefined)[] = [];
   for (let index = 0; index < blockCount; index++) inKnown.push(undefined);
-  inKnown[fn.entry] = new Uint8Array(slotCount);
+  const entryKnown = new Int32Array(slotCount);
+  entryKnown.fill(objectUnknown);
+  inKnown[fn.entry] = entryKnown;
   const worklist: number[] = [fn.entry];
   const queued = new Uint8Array(blockCount);
   queued[fn.entry] = 1;
-  function propagate(target: number, edgeOut: Uint8Array): void {
+  function propagate(target: number, edgeOut: Int32Array): void {
     if (target === fn.entry) return;
     const existing = inKnown[target];
     if (existing === undefined) {
@@ -455,8 +473,15 @@ export function knownObjectTagAccesses(
     }
     let changed = false;
     for (let i = 0; i < slotCount; i++) {
-      if (existing[i] === 1 && edgeOut[i] === 0) {
-        existing[i] = 0;
+      const a = existing[i] ?? objectUnknown,
+        b = edgeOut[i] ?? objectUnknown;
+      if (a === objectUnknown || a === b) continue;
+      const next =
+        a >= objectTagOnly && b >= objectTagOnly
+          ? objectTagOnly
+          : objectUnknown;
+      if (next !== a) {
+        existing[i] = next;
         changed = true;
       }
     }
@@ -467,14 +492,47 @@ export function knownObjectTagAccesses(
   }
   const maxSteps = Math.max(256, blockCount * 16);
   let steps = 0;
-  const valueKnown = new Set<number>();
+  const valueState = new Map<number, number>();
+  const valueRecord = new Map<number, number>();
   const valueSlot = new Map<number, number>();
   const valueSlotVersion = new Map<number, number>();
   const recordIsSlot = new Map<number, number>();
   const recordIsVersion = new Map<number, number>();
+  const recordIsState = new Map<number, number>();
   const recordIsNegated = new Set<number>();
   const slotVersion = new Uint32Array(slotCount);
   const storedSlots = new Uint8Array(slotCount);
+  // Block-local copy relation: slotAliasOf[dst] = src when dst was assigned
+  // from an unmodified load of src in this block (e.g. boundReceiver = rawReceiver
+  // right before `if (!isOrdinaryObject(rawReceiver))`).
+  const slotAliasOf = new Int32Array(slotCount);
+  function invalidateAliases(written: number): void {
+    slotAliasOf[written] = -1;
+    for (let k = 0; k < slotCount; k++)
+      if (slotAliasOf[k] === written) slotAliasOf[k] = -1;
+  }
+  function markSlotAndAliases(
+    slots: Int32Array,
+    target: number,
+    state: number,
+  ): void {
+    const cur = slots[target] ?? objectUnknown;
+    if (state === objectTagOnly && cur >= 0) return;
+    slots[target] = state;
+    const src = slotAliasOf[target] ?? -1;
+    if (
+      src >= 0 &&
+      !(state === objectTagOnly && (slots[src] ?? objectUnknown) >= 0)
+    )
+      slots[src] = state;
+    for (let k = 0; k < slotCount; k++) {
+      const alias = slotAliasOf[k] ?? -1;
+      if (alias === target || (src >= 0 && alias === src)) {
+        if (!(state === objectTagOnly && (slots[k] ?? objectUnknown) >= 0))
+          slots[k] = state;
+      }
+    }
+  }
   while (worklist.length > 0) {
     if (++steps > maxSteps) return undefined;
     const blockId = worklist.pop();
@@ -484,31 +542,52 @@ export function knownObjectTagAccesses(
     const entry = inKnown[blockId];
     if (block === undefined || entry === undefined) continue;
     const knownSlots = entry.slice();
-    valueKnown.clear();
+    valueState.clear();
+    valueRecord.clear();
     valueSlot.clear();
     valueSlotVersion.clear();
     recordIsSlot.clear();
     recordIsVersion.clear();
+    recordIsState.clear();
     recordIsNegated.clear();
     slotVersion.fill(0);
     storedSlots.fill(0);
+    slotAliasOf.fill(-1);
     const fusion = fusedAccesses?.get(blockId);
-    let missOut: Uint8Array | undefined = undefined;
+    let missOut: Int32Array | undefined = undefined;
     for (const op of block.instructions) {
       if (op === undefined) throw "known object tag instruction invariant";
-      if (op.kind === "load") {
+      if (op.kind === "general-none" || op.kind === "general-null") {
+        valueState.set(op.id, objectNotObject);
+      } else if (op.kind === "record-new") {
+        valueRecord.set(op.id, op.record);
+      } else if (op.kind === "general-wrap") {
+        const rec = valueRecord.get(op.value);
+        if (rec !== undefined) valueState.set(op.id, rec);
+      } else if (op.kind === "load") {
         const idx = generalSlots.get(op.slot);
         if (idx !== undefined) {
           valueSlot.set(op.id, idx);
           valueSlotVersion.set(op.id, slotVersion[idx] ?? 0);
-          if (knownSlots[idx] === 1) valueKnown.add(op.id);
+          const st = knownSlots[idx] ?? objectUnknown;
+          if (st !== objectUnknown) valueState.set(op.id, st);
         }
       } else if (op.kind === "store") {
         const idx = generalSlots.get(op.slot);
         if (idx !== undefined) {
           storedSlots[idx] = 1;
           slotVersion[idx] = (slotVersion[idx] ?? 0) + 1;
-          knownSlots[idx] = valueKnown.has(op.value) ? 1 : 0;
+          invalidateAliases(idx);
+          const srcIdx = valueSlot.get(op.value);
+          if (
+            srcIdx !== undefined &&
+            srcIdx !== idx &&
+            valueSlotVersion.get(op.value) === (slotVersion[srcIdx] ?? 0)
+          ) {
+            const root = slotAliasOf[srcIdx] ?? -1;
+            slotAliasOf[idx] = root >= 0 ? root : srcIdx;
+          }
+          knownSlots[idx] = valueState.get(op.value) ?? objectUnknown;
         }
       } else if (op.kind === "general-record-is") {
         const idx = valueSlot.get(op.value);
@@ -517,15 +596,32 @@ export function knownObjectTagAccesses(
           if (ver !== undefined && ver === (slotVersion[idx] ?? 0)) {
             recordIsSlot.set(op.id, idx);
             recordIsVersion.set(op.id, ver);
+            recordIsState.set(op.id, op.record);
+          }
+        }
+      } else if (op.kind === "general-is" && op.type === "object") {
+        const idx = valueSlot.get(op.value);
+        if (idx !== undefined) {
+          const ver = valueSlotVersion.get(op.value);
+          if (ver !== undefined && ver === (slotVersion[idx] ?? 0)) {
+            recordIsSlot.set(op.id, idx);
+            recordIsVersion.set(op.id, ver);
+            recordIsState.set(op.id, objectTagOnly);
           }
         }
       } else if (op.kind === "unary" && op.operator === "!") {
         const idx = recordIsSlot.get(op.operand);
         if (idx !== undefined) {
           const ver = recordIsVersion.get(op.operand);
-          if (ver !== undefined && ver === (slotVersion[idx] ?? 0)) {
+          const st = recordIsState.get(op.operand);
+          if (
+            ver !== undefined &&
+            st !== undefined &&
+            ver === (slotVersion[idx] ?? 0)
+          ) {
             recordIsSlot.set(op.id, idx);
             recordIsVersion.set(op.id, ver);
+            recordIsState.set(op.id, st);
             if (!recordIsNegated.has(op.operand)) recordIsNegated.add(op.id);
           }
         }
@@ -535,14 +631,22 @@ export function knownObjectTagAccesses(
         fusion.access === op.id
       ) {
         missOut = knownSlots.slice();
-        if (op.kind === "property-store" || !op.inherited) {
-          valueKnown.add(op.object);
+        // Own loads and stores always require tag === 5 and OrdinaryObject
+        // shape match (`op.record`). Inherited loads accept string primitives
+        // (tag === 3) unless `op.object` is already proven to hold tag === 5.
+        const prior = valueState.get(op.object) ?? objectUnknown;
+        if (
+          op.kind === "property-store" ||
+          !op.inherited ||
+          prior >= objectTagOnly
+        ) {
+          valueState.set(op.object, op.record);
           const idx = valueSlot.get(op.object);
           if (
             idx !== undefined &&
             valueSlotVersion.get(op.object) === (slotVersion[idx] ?? 0)
           )
-            knownSlots[idx] = 1;
+            markSlotAndAliases(knownSlots, idx, op.record);
         }
       }
     }
@@ -550,9 +654,9 @@ export function knownObjectTagAccesses(
     if (exception !== undefined) {
       const exOut = entry.slice();
       for (let i = 0; i < slotCount; i++)
-        if (storedSlots[i] === 1) exOut[i] = 0;
+        if (storedSlots[i] === 1) exOut[i] = objectUnknown;
       const exIdx = generalSlots.get(exception.slot);
-      if (exIdx !== undefined) exOut[exIdx] = 0;
+      if (exIdx !== undefined) exOut[exIdx] = objectUnknown;
       propagate(exception.target, exOut);
     }
     const t = block.terminator;
@@ -561,7 +665,10 @@ export function knownObjectTagAccesses(
       t.operation === "read"
     ) {
       const idx = generalSlots.get(t.slot);
-      if (idx !== undefined) knownSlots[idx] = 0;
+      if (idx !== undefined) {
+        knownSlots[idx] = objectUnknown;
+        invalidateAliases(idx);
+      }
     }
     if (
       fusion !== undefined &&
@@ -581,14 +688,16 @@ export function knownObjectTagAccesses(
       } else {
         const recSlot = recordIsSlot.get(t.condition);
         const recVer = recordIsVersion.get(t.condition);
+        const recState = recordIsState.get(t.condition);
         if (
           recSlot !== undefined &&
           recVer !== undefined &&
+          recState !== undefined &&
           recVer === (slotVersion[recSlot] ?? 0)
         ) {
           const negated = recordIsNegated.has(t.condition);
           const proved = knownSlots.slice();
-          proved[recSlot] = 1;
+          markSlotAndAliases(proved, recSlot, recState);
           propagate(negated ? t.alternate : t.consequent, proved);
           propagate(negated ? t.consequent : t.alternate, knownSlots);
         } else {
@@ -607,51 +716,113 @@ export function knownObjectTagAccesses(
       propagate(t.alternate, knownSlots);
     }
   }
-  const proven = new Set<number>();
+  const tagKnown = new Set<number>();
+  const boolKnownTrue = new Set<number>();
+  const boolKnownFalse = new Set<number>();
   for (let blockId = 0; blockId < blockCount; blockId++) {
     const block = fn.blocks[blockId];
     const entry = inKnown[blockId];
     if (block === undefined || entry === undefined) continue;
     const knownSlots = entry.slice();
-    valueKnown.clear();
+    valueState.clear();
+    valueRecord.clear();
     valueSlot.clear();
     valueSlotVersion.clear();
     slotVersion.fill(0);
+    slotAliasOf.fill(-1);
     const fusion = fusedAccesses?.get(blockId);
     for (const op of block.instructions) {
       if (op === undefined) throw "known object tag instruction invariant";
-      if (op.kind === "load") {
+      if (op.kind === "general-none" || op.kind === "general-null") {
+        valueState.set(op.id, objectNotObject);
+      } else if (op.kind === "record-new") {
+        valueRecord.set(op.id, op.record);
+      } else if (op.kind === "general-wrap") {
+        const rec = valueRecord.get(op.value);
+        if (rec !== undefined) valueState.set(op.id, rec);
+      } else if (op.kind === "load") {
         const idx = generalSlots.get(op.slot);
         if (idx !== undefined) {
           valueSlot.set(op.id, idx);
           valueSlotVersion.set(op.id, slotVersion[idx] ?? 0);
-          if (knownSlots[idx] === 1) valueKnown.add(op.id);
+          const st = knownSlots[idx] ?? objectUnknown;
+          if (st !== objectUnknown) valueState.set(op.id, st);
         }
       } else if (op.kind === "store") {
         const idx = generalSlots.get(op.slot);
         if (idx !== undefined) {
           slotVersion[idx] = (slotVersion[idx] ?? 0) + 1;
-          knownSlots[idx] = valueKnown.has(op.value) ? 1 : 0;
+          invalidateAliases(idx);
+          const srcIdx = valueSlot.get(op.value);
+          if (
+            srcIdx !== undefined &&
+            srcIdx !== idx &&
+            valueSlotVersion.get(op.value) === (slotVersion[srcIdx] ?? 0)
+          ) {
+            const root = slotAliasOf[srcIdx] ?? -1;
+            slotAliasOf[idx] = root >= 0 ? root : srcIdx;
+          }
+          knownSlots[idx] = valueState.get(op.value) ?? objectUnknown;
+        }
+      } else if (op.kind === "general-record-is") {
+        const st = valueState.get(op.value) ?? objectUnknown;
+        if (st === op.record) boolKnownTrue.add(op.id);
+        else if (st === objectNotObject) boolKnownFalse.add(op.id);
+      } else if (op.kind === "general-is") {
+        const st = valueState.get(op.value) ?? objectUnknown;
+        if (op.type === "object") {
+          if (st >= objectTagOnly) boolKnownTrue.add(op.id);
+          else if (st === objectNotObject) boolKnownFalse.add(op.id);
+        } else if (
+          st >= objectTagOnly &&
+          (op.type === "undefined" ||
+            op.type === "null" ||
+            op.type === "nullish" ||
+            op.type === "number" ||
+            op.type === "boolean" ||
+            op.type === "string")
+        ) {
+          boolKnownFalse.add(op.id);
         }
       } else if (op.kind === "property-load" || op.kind === "property-store") {
-        if (valueKnown.has(op.object)) proven.add(op.id);
+        const prior = valueState.get(op.object) ?? objectUnknown;
+        if (prior >= objectTagOnly) tagKnown.add(op.id);
         if (
           fusion !== undefined &&
           fusion.access === op.id &&
-          (op.kind === "property-store" || !op.inherited)
+          (op.kind === "property-store" ||
+            !op.inherited ||
+            prior >= objectTagOnly)
         ) {
-          valueKnown.add(op.object);
+          valueState.set(op.object, op.record);
           const idx = valueSlot.get(op.object);
           if (
             idx !== undefined &&
             valueSlotVersion.get(op.object) === (slotVersion[idx] ?? 0)
           )
-            knownSlots[idx] = 1;
+            markSlotAndAliases(knownSlots, idx, op.record);
         }
       }
     }
   }
-  return proven.size === 0 ? undefined : proven;
+  return tagKnown.size === 0 &&
+    boolKnownTrue.size === 0 &&
+    boolKnownFalse.size === 0
+    ? undefined
+    : { tagKnown, boolKnownTrue, boolKnownFalse };
+}
+
+/** Forward dataflow analysis returning the set of `property-load` and
+ * `property-store` instruction IDs whose `object` operand is already proven
+ * to carry the general object tag (tag === 5) on every reaching path. */
+export function knownObjectTagAccesses(
+  fn: FunctionIR,
+  fusedAccesses: ReadonlyMap<number, FusedPropertyAccess> | undefined,
+): ReadonlySet<number> | undefined {
+  const facts = knownObjectFacts(fn, fusedAccesses);
+  return facts === undefined || facts.tagKnown.size === 0
+    ? undefined
+    : facts.tagKnown;
 }
 
 /** Block-local known general tag codes (`0`=undefined, `1`=number, `2`=boolean,

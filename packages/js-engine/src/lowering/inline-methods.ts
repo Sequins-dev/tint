@@ -1987,6 +1987,7 @@ export function emitInlineCandidates(
   outerTx: TransactionState | undefined = undefined,
   outerWrittenProps: ReadonlySet<string> | undefined = undefined,
   mergedWrittenOut: Set<string> | undefined = undefined,
+  receiverIsOrdinaryObject: boolean = false,
 ): Statement[] | undefined {
   if (depth > maxInlineDepth || candidates.length === 0) return undefined;
 
@@ -2034,6 +2035,7 @@ export function emitInlineCandidates(
       outerTx,
       outerWrittenProps,
       candWritten,
+      receiverIsOrdinaryObject,
     );
     activeSpans.delete(cand.spanStart);
     if (bodyStmts === undefined) {
@@ -2221,6 +2223,7 @@ function emitSingleCandidate(
   outerTx: TransactionState | undefined = undefined,
   outerWrittenProps: ReadonlySet<string> | undefined = undefined,
   writtenPropsOut: Set<string> | undefined = undefined,
+  receiverIsOrdinaryObject: boolean = false,
 ): Statement[] | undefined {
   const isRootTransaction = outerTx === undefined;
   const returnLabel = ctx.freshName("$inl");
@@ -2480,7 +2483,16 @@ function emitSingleCandidate(
   }
 
   // Sloppy functions using `this` require an OrdinaryObject receiver to skip boxing.
-  if (constructSpec === undefined && !cand.strict && cand.usesThis) {
+  const thisIsOrdinaryObject: boolean =
+    constructSpec !== undefined ||
+    (!cand.strict && cand.usesThis) ||
+    receiverIsOrdinaryObject;
+  if (
+    constructSpec === undefined &&
+    !cand.strict &&
+    cand.usesThis &&
+    !receiverIsOrdinaryObject
+  ) {
     stmts.push({
       ...atSpan(callSpan),
       kind: "if",
@@ -3862,6 +3874,8 @@ function emitSingleCandidate(
               tx,
               writtenProps,
               subWritten,
+              unwrapGroup(callee.object).kind === "this" &&
+                thisIsOrdinaryObject,
             );
             if (subStmts !== undefined) {
               for (const p of subWritten) {

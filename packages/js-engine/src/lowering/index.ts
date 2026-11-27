@@ -1762,6 +1762,7 @@ function lowerScriptEntry(
       : entryKind === "direct-eval"
         ? member(id("$site"), "thisValue")
         : member(id("$global"), "thisValue");
+  let receiverIsOrdinary: boolean = false;
   const scriptStrict = entryKind === "module" || script.strict !== false;
   let strict: boolean = scriptStrict;
   let home: Expression | undefined =
@@ -7624,7 +7625,8 @@ function lowerScriptEntry(
     const start = statements.length;
     const outerScope = scope,
       outerLexical = lexical,
-      outerReceiver = receiver;
+      outerReceiver = receiver,
+      outerReceiverIsOrdinary = receiverIsOrdinary;
     const outerVariableScope = variableScope,
       outerCatchRecords = catchRecords,
       outerInheritedCatches = inheritedCatches;
@@ -8258,8 +8260,10 @@ function lowerScriptEntry(
       // second, conservative guard; extra `arguments` uses only keep it.
       !observesArguments(span);
     if (!arrow) {
-      if (strict || unobservedReceiver) receiver = id(receiverName, span);
-      else {
+      if (strict || unobservedReceiver) {
+        receiver = id(receiverName, span);
+        receiverIsOrdinary = false;
+      } else {
         // An ordinary object receiver is its own ToObject; nullish receivers
         // bind to the realm's global thisValue; only primitives box via the
         // cold sloppyCallReceiver helper.
@@ -8320,6 +8324,7 @@ function lowerScriptEntry(
           alternate: undefined,
         });
         receiver = boundReceiver;
+        receiverIsOrdinary = true;
       }
     }
 
@@ -9044,6 +9049,7 @@ function lowerScriptEntry(
     scope = outerScope;
     lexical = outerLexical;
     receiver = outerReceiver;
+    receiverIsOrdinary = outerReceiverIsOrdinary;
     variableScope = outerVariableScope;
     catchRecords = outerCatchRecords;
     inheritedCatches = outerInheritedCatches;
@@ -11207,6 +11213,15 @@ function lowerScriptEntry(
               0,
               activeInlineSpans,
               makeInlineEmitterContext(),
+              false,
+              undefined,
+              undefined,
+              undefined,
+              target.kind === "member" &&
+                !target.optional &&
+                target.object.kind === "this" &&
+                receiverIsOrdinary &&
+                derivedContext === undefined,
             );
             const emittedNodes =
               inlStmts !== undefined && inlStmts.length > 0
