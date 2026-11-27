@@ -9,7 +9,7 @@ export function unicodePropertyRanges(
   let low = 0,
     high = propertyNames.length;
   while (low < high) {
-    const mid = Math.floor((low + high) / 2),
+    const mid = (low + high) >>> 1,
       name = propertyNames[mid];
     if (name === undefined) throw "UNICODE_PROPERTY_INVARIANT";
     if (name < key) low = mid + 1;
@@ -25,14 +25,14 @@ export function containsUnicodeRangeSet(
 ): boolean {
   if (!Number.isInteger(point) || point < 0 || point > 0x10ffff) return false;
   let low = 0,
-    high = ranges.length / 4;
+    high = ranges.length >>> 2;
   while (low < high) {
-    const mid = Math.floor((low + high) / 2),
-      offset = mid * 4;
+    const mid = (low + high) >>> 1,
+      offset = mid << 2;
     const start =
-      ranges.charCodeAt(offset) * 65536 + ranges.charCodeAt(offset + 1);
+      (ranges.charCodeAt(offset) << 16) | ranges.charCodeAt(offset + 1);
     const end =
-      ranges.charCodeAt(offset + 2) * 65536 + ranges.charCodeAt(offset + 3);
+      (ranges.charCodeAt(offset + 2) << 16) | ranges.charCodeAt(offset + 3);
     if (point < start) high = mid;
     else if (point > end) low = mid + 1;
     else return true;

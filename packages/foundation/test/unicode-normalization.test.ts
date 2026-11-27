@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { normalizeUnicode } from "../src/unicode/normalization/index.ts";
+import {
+  canonicalCombiningClass,
+  normalizeUnicode,
+} from "../src/unicode/normalization/index.ts";
 
 test("normalization covers recursive decomposition, exclusion, ordering, Hangul and UTF-16", () => {
   const sample = "\u1e9b\u0323";
@@ -44,4 +47,31 @@ test("normalization preserves blocking, equal-class order and leading marks", ()
   assert.equal(normalizeUnicode("A\u034f\u030a"), "A\u034f\u030a");
   assert.equal(normalizeUnicode("\u0301\u0327a", "NFD"), "\u0327\u0301a");
   assert.equal(normalizeUnicode("A\u0305\u030a"), "A\u0305\u030a");
+});
+
+test("normalization quick-check boundaries, prefix slicing, and chunked output match host", () => {
+  const cases = [
+    "",
+    "plain_ascii_123",
+    "a".repeat(64) + "e\u0301" + "b".repeat(64),
+    "cafe\u0301 na\u00efve re\u0301sume\u0301 \u1100\u1161",
+    "caf\u00e9 na\u00efve r\u00e9sum\u00e9 \uac00",
+    "\ufb01le \u212bngstrom \u2460",
+    "\u009f\u00a0\u00bf\u00c0\u02ff\u0300\u034f\u0350\u036f",
+    "\ud834\udd5e\ud834\udd5f",
+    "\ufdfa",
+  ];
+  for (const form of ["NFC", "NFD", "NFKC", "NFKD"])
+    for (const sample of cases)
+      assert.equal(
+        normalizeUnicode(sample, form),
+        sample.normalize(form),
+        `${form} ${JSON.stringify(sample)}`,
+      );
+  // Combining-class fast table boundaries around 0x0300..0x036f (with CGJ at 0x034f).
+  assert.equal(canonicalCombiningClass(0x02ff), 0);
+  assert.equal(canonicalCombiningClass(0x0300), 230);
+  assert.equal(canonicalCombiningClass(0x034f), 0);
+  assert.equal(canonicalCombiningClass(0x0350), 230);
+  assert.equal(canonicalCombiningClass(0x036f), 230);
 });
