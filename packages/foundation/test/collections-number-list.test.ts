@@ -9,6 +9,7 @@ import {
   resizeNumberList,
   hasNumberList,
   deleteNumberList,
+  isDenseNumberList,
 } from "@tint/foundation/collections/number-list";
 test("numeric lists preserve holes and Number values across growth, shrink and reuse", () => {
   const list = createNumberList(0),
@@ -158,4 +159,20 @@ test("reads outside the live, integral index range are absent", () => {
   writeNumberList(list, 3, 7);
   assert.equal(readNumberList(list, 2), undefined, "a hole stays absent");
   assert.equal(readNumberList(list, 3), 7);
+});
+
+test("isDenseNumberList reflects whether explicit presence storage is absent", () => {
+  const list = createNumberList(0);
+  assert.equal(isDenseNumberList(list), true);
+  pushNumberList(list, 1);
+  pushNumberList(list, 2);
+  assert.equal(isDenseNumberList(list), true);
+  resizeNumberList(list, 1);
+  assert.equal(isDenseNumberList(list), true);
+  resizeNumberList(list, 3);
+  assert.equal(isDenseNumberList(list), false);
+  resizeNumberList(list, 0);
+  assert.equal(isDenseNumberList(list), true);
+  pushNumberList(list, undefined);
+  assert.equal(isDenseNumberList(list), false);
 });

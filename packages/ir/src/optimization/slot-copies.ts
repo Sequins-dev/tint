@@ -170,6 +170,29 @@ function propagationRound(
         fn.slots[op.slot] !== "optional-reference"
       )
         return -1;
+    } else if (op !== undefined && op.kind === "general-wrap") {
+      const at = positions[op.id] ?? -1;
+      if (block.instructions[at] !== op) return -1;
+      op = definitions[op.value];
+      if (op === undefined || op.kind !== "load") return -1;
+      const srcType = fn.slots[op.slot];
+      if (
+        srcType !== "reference" &&
+        srcType !== "number" &&
+        srcType !== "boolean" &&
+        srcType !== "string"
+      )
+        return -1;
+    } else if (op !== undefined && op.kind === "reference-wrap") {
+      const at = positions[op.id] ?? -1;
+      if (block.instructions[at] !== op) return -1;
+      op = definitions[op.value];
+      if (
+        op === undefined ||
+        op.kind !== "load" ||
+        fn.slots[op.slot] !== "reference"
+      )
+        return -1;
     }
     if (op === undefined || op.kind !== "load") return -1;
     const at = positions[op.id] ?? -1;
@@ -213,12 +236,51 @@ function propagationRound(
       fn.slots[source] === "optional-reference"
     );
   }
+  /** Whether copies of `source` stored in `slot` are `general-wrap` boxes. */
+  function wrappedGeneralCopy(slot: number, source: number): boolean {
+    if (fn.slots[slot] !== "general") return false;
+    const srcType = fn.slots[source];
+    return (
+      srcType === "reference" ||
+      srcType === "number" ||
+      srcType === "boolean" ||
+      srcType === "string"
+    );
+  }
+  /** Whether copies of `source` stored in `slot` are `reference-wrap` boxes. */
+  function wrappedReferenceCopy(slot: number, source: number): boolean {
+    return (
+      fn.slots[slot] === "optional-reference" &&
+      fn.slots[source] === "reference"
+    );
+  }
   // A refined copy's load becomes an unwrap of the source (a null test,
   // and a new value): worth it only where facts shared with the source
   // can remove a layout test, i.e. for the object of a checked field read.
+  // Similarly, a wrapped copy's load is rewritten only when consumed by an
+  // unwrap or tag test in the same block, eliminating cross-block box/unbox
+  // chains (such as inlined method/constructor receivers).
   const guarded = new Uint8Array(maximum + 1);
+  const unwrapped = new Uint8Array(maximum + 1);
   for (const block of fn.blocks) {
     if (block === undefined) throw "copy block invariant";
+    for (const op of block.instructions) {
+      if (op === undefined) throw "copy instruction invariant";
+      if (op.kind === "general-value") unwrapped[op.value] = 1;
+      else if (
+        op.kind === "general-is" &&
+        (op.type === "object" ||
+          op.type === "number" ||
+          op.type === "boolean" ||
+          op.type === "string" ||
+          op.type === "undefined" ||
+          op.type === "null" ||
+          op.type === "nullish")
+      )
+        unwrapped[op.value] = 1;
+      else if (op.kind === "reference-value" && op.type === undefined)
+        unwrapped[op.value] = 1;
+    }
     const term = block.terminator;
     if (term.kind === "record" && term.operation === "read")
       guarded[term.object] = 1;
@@ -237,7 +299,10 @@ function propagationRound(
     const source = (sources[slot] ?? 0) - 1;
     if (
       edgeWritten[source] !== 1 &&
-      (fn.slots[slot] === fn.slots[source] || refinedCopy(slot, source))
+      (fn.slots[slot] === fn.slots[source] ||
+        refinedCopy(slot, source) ||
+        wrappedGeneralCopy(slot, source) ||
+        wrappedReferenceCopy(slot, source))
     )
       candidates.push(slot);
   }
@@ -443,7 +508,9 @@ function propagationRound(
   for (const slot of candidates) {
     if (slot === undefined) throw "copy candidate invariant";
     const source = (sources[slot] ?? 0) - 1,
-      refined = refinedCopy(slot, source);
+      refined = refinedCopy(slot, source),
+      wrapped =
+        wrappedGeneralCopy(slot, source) || wrappedReferenceCopy(slot, source);
     generation++;
     // Blocks reading the slot: its own loads and loads rewritten to it.
     const loadList: number[] = [];
@@ -476,6 +543,7 @@ function propagationRound(
         if (op === undefined) throw "copy instruction invariant";
         if (op.kind !== "load" || loaded(op.id, op.slot) !== slot) continue;
         if (refined && guarded[op.id] !== 1) continue;
+        if (wrapped && unwrapped[op.id] !== 1) continue;
         const state =
           storeStamp[id] === generation
             ? scan(block, index, slot, source)
@@ -573,12 +641,101 @@ function propagationRound(
     debug !== undefined && debug.slots.length > 0
       ? new Int32Array(fn.slots.length).fill(-1)
       : undefined;
+  const wrappedGeneralSources = new Map<number, number>(),
+    wrappedReferenceSources = new Map<number, number>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "copy block invariant";
     let instructions: Instruction[] | undefined;
+    wrappedGeneralSources.clear();
+    wrappedReferenceSources.clear();
     for (let index = 0; index < block.instructions.length; index++) {
       const op = block.instructions[index];
       if (op === undefined) throw "copy instruction invariant";
+      if (op.kind === "store") {
+        if (wrappedGeneralSources.size > 0) {
+          for (const [k, s] of wrappedGeneralSources)
+            if (s === op.slot) wrappedGeneralSources.delete(k);
+        }
+        if (wrappedReferenceSources.size > 0) {
+          for (const [k, s] of wrappedReferenceSources)
+            if (s === op.slot) wrappedReferenceSources.delete(k);
+        }
+      }
+      if (op.kind === "general-value" && wrappedGeneralSources.has(op.value)) {
+        const srcSlot = wrappedGeneralSources.get(op.value);
+        if (srcSlot !== undefined && fn.slots[srcSlot] === op.type) {
+          if (instructions === undefined)
+            instructions = block.instructions.slice(0, index);
+          const inline = op.inline;
+          instructions.push({
+            kind: "load",
+            id: op.id,
+            slot: srcSlot,
+            start: op.start,
+            end: op.end,
+            ...(inline === undefined ? {} : { inline }),
+          });
+          chained = true;
+          continue;
+        }
+      }
+      if (op.kind === "general-is" && wrappedGeneralSources.has(op.value)) {
+        const srcSlot = wrappedGeneralSources.get(op.value);
+        const srcType = srcSlot === undefined ? undefined : fn.slots[srcSlot];
+        const knownTag =
+          srcType === "reference"
+            ? "object"
+            : srcType === "number" ||
+                srcType === "boolean" ||
+                srcType === "string"
+              ? srcType
+              : undefined;
+        if (
+          knownTag !== undefined &&
+          (op.type === "object" ||
+            op.type === "number" ||
+            op.type === "boolean" ||
+            op.type === "string" ||
+            op.type === "undefined" ||
+            op.type === "null" ||
+            op.type === "nullish")
+        ) {
+          if (instructions === undefined)
+            instructions = block.instructions.slice(0, index);
+          const inline = op.inline;
+          instructions.push({
+            kind: "constant",
+            id: op.id,
+            value: op.type === knownTag,
+            start: op.start,
+            end: op.end,
+            ...(inline === undefined ? {} : { inline }),
+          });
+          continue;
+        }
+      }
+      if (
+        op.kind === "reference-value" &&
+        op.type === undefined &&
+        wrappedReferenceSources.has(op.value)
+      ) {
+        const srcSlot = wrappedReferenceSources.get(op.value);
+        if (srcSlot !== undefined && fn.slots[srcSlot] === "reference") {
+          if (instructions === undefined)
+            instructions = block.instructions.slice(0, index);
+          const inline = op.inline;
+          instructions.push({
+            kind: "load",
+            id: op.id,
+            slot: srcSlot,
+            start: op.start,
+            end: op.end,
+            ...(inline === undefined ? {} : { inline }),
+          });
+          chained = true;
+          continue;
+        }
+      }
       const replacement = op.kind === "load" ? (replacements[op.id] ?? 0) : 0;
       if (replacement === 0) {
         if (instructions !== undefined) instructions.push(op);
@@ -606,6 +763,32 @@ function propagationRound(
           end: op.end,
           ...(inline === undefined ? {} : { inline }),
         });
+      } else if (wrappedGeneralCopy(op.slot, sourceSlot)) {
+        const loaded = nextValue++,
+          inline = op.inline;
+        instructions.push({ ...op, id: loaded, slot: sourceSlot });
+        instructions.push({
+          kind: "general-wrap",
+          id: op.id,
+          value: loaded,
+          start: op.start,
+          end: op.end,
+          ...(inline === undefined ? {} : { inline }),
+        });
+        wrappedGeneralSources.set(op.id, sourceSlot);
+      } else if (wrappedReferenceCopy(op.slot, sourceSlot)) {
+        const loaded = nextValue++,
+          inline = op.inline;
+        instructions.push({ ...op, id: loaded, slot: sourceSlot });
+        instructions.push({
+          kind: "reference-wrap",
+          id: op.id,
+          value: loaded,
+          start: op.start,
+          end: op.end,
+          ...(inline === undefined ? {} : { inline }),
+        });
+        wrappedReferenceSources.set(op.id, sourceSlot);
       } else instructions.push({ ...op, slot: sourceSlot });
     }
     blocks.push(

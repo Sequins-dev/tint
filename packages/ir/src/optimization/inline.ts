@@ -52,6 +52,8 @@ function crossingType(
     case "reference-value":
       return "reference";
     case "general-is":
+    case "general-record-is":
+    case "record-has":
       return "boolean";
     case "general-value":
       return op.type;
@@ -177,6 +179,7 @@ function supported(
     // sequences (a mismatched checked view traps).
     case "general-is":
     case "general-record-is":
+    case "record-has":
     case "general-value":
     case "record-slot-read":
     case "property-load":
@@ -475,9 +478,23 @@ export function inlineSmallFunctions(
     costs: number[] = [];
   let hasScriptEntries = false;
   for (const fn of module.functions) {
-    if (fn !== undefined && fn.scriptEntry === true) {
-      hasScriptEntries = true;
-      break;
+    if (fn === undefined) continue;
+    if (fn.scriptEntry === true) hasScriptEntries = true;
+    const isForwardingThunk =
+      fn.blocks.length === 1 &&
+      (fn.closureEnvironment !== undefined || fn.receiverSlot !== undefined);
+    for (const block of fn.blocks) {
+      if (block === undefined) continue;
+      for (const op of block.instructions) {
+        if (op !== undefined && op.kind === "call" && op.target !== fn.id) {
+          if (
+            isForwardingThunk &&
+            module.functions[op.target]?.name === fn.name + "$direct"
+          )
+            continue;
+          directCallers[op.target] = (directCallers[op.target] ?? 0) + 1;
+        }
+      }
     }
   }
   let visited = 0,
@@ -532,7 +549,23 @@ export function inlineSmallFunctions(
       hasScriptEntries &&
       fn.scriptEntry !== true &&
       isScriptObjectAllocator(fn, module);
-    const limit = isAllocator ? 256 : maxExpansion;
+    // Loop-free single-caller internal helpers (such as devirtualized `$direct`
+    // method twins called from one loop, ignoring their own 1-block forwarding
+    // thunk) add zero net code size when inlined and unlock receiver/guard/LICM
+    // cleanup across the call boundary without turning loop-bearing callers
+    // into `keepInlineable` wrappers.
+    let isSingleCallerInternal = false;
+    if (
+      !incremental &&
+      !fn.exported &&
+      fn.scriptEntry !== true &&
+      directCallers[fn.id] === 1 &&
+      fn.blocks.length <= 48
+    ) {
+      const loops = naturalLoops(fn, 100000);
+      isSingleCallerInternal = loops !== undefined && loops.loops.length === 0;
+    }
+    const limit = isAllocator || isSingleCallerInternal ? 256 : maxExpansion;
     for (let slot = 0; slot < fn.slots.length; slot++) {
       if (incremental) {
         if (visited >= budget) return exhausted();
@@ -590,8 +623,6 @@ export function inlineSmallFunctions(
           op.kind === "reference-vector-new"
         )
           effectful[fn.id] = 1;
-        if (op.kind === "call" && op.target !== fn.id)
-          directCallers[op.target] = (directCallers[op.target] ?? 0) + 1;
         // Recursive callees keep their calls (each round would unroll one
         // more level).
         if (op.kind === "call" && op.target === fn.id) good = false;
@@ -705,6 +736,7 @@ export function inlineSmallFunctions(
       keepInlineable =
         !incremental &&
         eligible[fn.id] !== 0 &&
+        selfCost <= maxExpansion &&
         (directCallers[fn.id] ?? 0) > 0;
     let allowance = incremental
         ? 128
@@ -823,6 +855,10 @@ export function inlineSmallFunctions(
             effectful[callee.id] === 1) ||
           callee.id === fn.id ||
           op.environment !== undefined ||
+          (fn.blocks.length === 1 &&
+            (fn.closureEnvironment !== undefined ||
+              fn.receiverSlot !== undefined) &&
+            callee.name === fn.name + "$direct") ||
           separated(fn, callee.id) ||
           (!isIntrinsic && cost > allowance) ||
           (shapeRecognized(fn) && effectful[callee.id] === 1) ||
@@ -1500,6 +1536,7 @@ export function inlineSmallFunctions(
                 });
                 break;
               case "record-read":
+              case "record-has":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),

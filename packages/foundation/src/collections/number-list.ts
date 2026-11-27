@@ -182,6 +182,10 @@ export function lengthNumberList(list: NumberList): number {
   return list.length;
 }
 
+export function isDenseNumberList(list: NumberList): boolean {
+  return list.present === undefined;
+}
+
 export function hasNumberList(list: NumberList, index: number): boolean {
   const present = list.present;
   if (present === undefined)

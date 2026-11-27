@@ -126,17 +126,30 @@ export function scalarReplaceRecords(
         if (
           field === undefined ||
           (field.type !== "number" &&
+            field.type !== "optional-number" &&
             field.type !== "boolean" &&
+            field.type !== "optional-boolean" &&
             field.type !== "reference" &&
             field.type !== "optional-reference" &&
             field.type !== "string" &&
             field.type !== "optional-string") ||
-          field.presenceOffset !== undefined ||
-          (field.stateOffset === undefined &&
-            op.arguments[index] === undefined) ||
           op.presence?.[index] !== undefined
-        )
+        ) {
           supported = false;
+          continue;
+        }
+        if (field.presenceOffset !== undefined) {
+          // Optional/deletable fields (such as class inherited-method override
+          // slots) are supported when uninitialized at allocation and never
+          // accessed on the candidate (checked below).
+          if (op.arguments[index] !== undefined) supported = false;
+        } else if (
+          field.stateOffset === undefined &&
+          field.deferred !== true &&
+          op.arguments[index] === undefined
+        ) {
+          supported = false;
+        }
       }
       if (!supported) continue;
       const candidate: Candidate = {
@@ -240,6 +253,25 @@ export function scalarReplaceRecords(
         owners[op.slot] === aliases[op.value]
       )
         continue;
+      if (op.kind === "record-read" && aliases[op.object] !== undefined) {
+        const candidate = aliases[op.object];
+        if (
+          candidate !== undefined &&
+          op.record === candidate.instruction.record &&
+          module.records?.[op.record]?.fields[op.field]?.presenceOffset ===
+            undefined
+        ) {
+          candidate.accesses = candidate.accesses + 1;
+          continue;
+        }
+      }
+      if (op.kind === "record-has" && aliases[op.object] !== undefined) {
+        const candidate = aliases[op.object];
+        if (candidate !== undefined) {
+          candidate.accesses = candidate.accesses + 1;
+          continue;
+        }
+      }
       visitInstructionOperands(op, escape);
     }
     const term = block.terminator;
@@ -249,7 +281,13 @@ export function scalarReplaceRecords(
     ) {
       const candidate = aliases[term.object];
       if (candidate === undefined) throw "record alias invariant";
-      candidate.accesses = candidate.accesses + 1;
+      if (
+        term.record === candidate.instruction.record &&
+        module.records?.[term.record]?.fields[term.field]?.presenceOffset !==
+          undefined
+      )
+        candidate.escaped = true;
+      else candidate.accesses = candidate.accesses + 1;
     } else if (term.kind === "return" && term.value !== undefined) {
       const candidate = aliases[term.value];
       if (candidate !== undefined) candidate.returned = true;
@@ -288,7 +326,11 @@ export function scalarReplaceRecords(
     for (let index = 0; index < layout.fields.length; index++) {
       const field = layout.fields[index];
       if (field === undefined) throw "record field invariant";
-      if (field.stateOffset !== undefined) {
+      if (field.presenceOffset !== undefined) {
+        candidate.optionalCarriers.push(false);
+        candidate.fields.push(-1);
+        candidate.stateFields.push(undefined);
+      } else if (field.stateOffset !== undefined) {
         const optionalCarrier =
           field.type === "reference" &&
           candidate.instruction.arguments[index] === undefined;
@@ -298,9 +340,12 @@ export function scalarReplaceRecords(
         candidate.stateFields.push(slots.length);
         slots.push("boolean");
       } else {
-        candidate.optionalCarriers.push(false);
+        const optionalCarrier =
+          field.type === "reference" &&
+          candidate.instruction.arguments[index] === undefined;
+        candidate.optionalCarriers.push(optionalCarrier);
         candidate.fields.push(slots.length);
-        slots.push(field.type);
+        slots.push(optionalCarrier ? "optional-reference" : field.type);
         candidate.stateFields.push(undefined);
       }
     }
@@ -347,25 +392,28 @@ export function scalarReplaceRecords(
               field = layout.fields[index];
             if (slot === undefined || field === undefined)
               throw "record initializer invariant";
+            if (slot < 0) continue;
             const opInline = op.inline;
-            if (stateSlot !== undefined) {
-              const initId = nextValue++;
-              instructions.push({
-                kind: "constant",
-                id: initId,
-                value: value !== undefined,
-                start: op.start,
-                end: op.end,
-                ...(opInline === undefined ? {} : { inline: opInline }),
-              });
-              instructions.push({
-                kind: "store",
-                slot: stateSlot,
-                value: initId,
-                start: op.start,
-                end: op.end,
-                ...(opInline === undefined ? {} : { inline: opInline }),
-              });
+            if (stateSlot !== undefined || value === undefined) {
+              if (stateSlot !== undefined) {
+                const initId = nextValue++;
+                instructions.push({
+                  kind: "constant",
+                  id: initId,
+                  value: value !== undefined,
+                  start: op.start,
+                  end: op.end,
+                  ...(opInline === undefined ? {} : { inline: opInline }),
+                });
+                instructions.push({
+                  kind: "store",
+                  slot: stateSlot,
+                  value: initId,
+                  start: op.start,
+                  end: op.end,
+                  ...(opInline === undefined ? {} : { inline: opInline }),
+                });
+              }
               if (value !== undefined) {
                 instructions.push({
                   kind: "store",
@@ -386,11 +434,27 @@ export function scalarReplaceRecords(
                     end: op.end,
                     ...(opInline === undefined ? {} : { inline: opInline }),
                   });
+                else if (field.type === "optional-number")
+                  instructions.push({
+                    kind: "undefined",
+                    id: defaultId,
+                    start: op.start,
+                    end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
+                  });
                 else if (field.type === "boolean")
                   instructions.push({
                     kind: "constant",
                     id: defaultId,
                     value: false,
+                    start: op.start,
+                    end: op.end,
+                    ...(opInline === undefined ? {} : { inline: opInline }),
+                  });
+                else if (field.type === "optional-boolean")
+                  instructions.push({
+                    kind: "boolean-none",
+                    id: defaultId,
                     start: op.start,
                     end: op.end,
                     ...(opInline === undefined ? {} : { inline: opInline }),
@@ -431,7 +495,6 @@ export function scalarReplaceRecords(
               }
               continue;
             }
-            if (value === undefined) throw "record initializer invariant";
             instructions.push({
               kind: "store",
               slot,
@@ -446,6 +509,65 @@ export function scalarReplaceRecords(
       }
       if (op.kind === "load" && active(op.id) !== undefined) continue;
       if (op.kind === "store" && active(op.value) !== undefined) continue;
+      if (op.kind === "record-read") {
+        const candidate = active(op.object);
+        if (candidate !== undefined) {
+          const fieldSlot = candidate.fields[op.field];
+          if (fieldSlot === undefined || fieldSlot < 0)
+            throw "record field slot invariant";
+          const optionalCarrier = candidate.optionalCarriers[op.field] === true;
+          const opInline = op.inline;
+          if (optionalCarrier) {
+            const loaded = nextValue++;
+            instructions.push({
+              kind: "load",
+              id: loaded,
+              slot: fieldSlot,
+              start: op.start,
+              end: op.end,
+              ...(opInline === undefined ? {} : { inline: opInline }),
+            });
+            instructions.push({
+              kind: "reference-value",
+              id: op.id,
+              value: loaded,
+              start: op.start,
+              end: op.end,
+              ...(opInline === undefined ? {} : { inline: opInline }),
+            });
+          } else {
+            instructions.push({
+              kind: "load",
+              id: op.id,
+              slot: fieldSlot,
+              start: op.start,
+              end: op.end,
+              ...(opInline === undefined ? {} : { inline: opInline }),
+            });
+          }
+          continue;
+        }
+      }
+      if (op.kind === "record-has") {
+        const candidate = active(op.object);
+        if (candidate !== undefined) {
+          const field = module.records?.[op.record]?.fields[op.field];
+          const present =
+            candidate.instruction.record === op.record &&
+            field !== undefined &&
+            field.presenceOffset === undefined;
+          const opInline = op.inline;
+          instructions.push({
+            kind: "constant",
+            id: op.id,
+            value: present,
+            start: op.start,
+            end: op.end,
+            ...(opInline === undefined ? {} : { inline: opInline }),
+          });
+          continue;
+        }
+      }
       instructions.push(op);
     }
     let terminator = block.terminator;
@@ -456,20 +578,45 @@ export function scalarReplaceRecords(
         const matches = candidate.instruction.record === terminator.record;
         if (matches) {
           const fieldSlot = candidate.fields[terminator.field];
-          if (fieldSlot === undefined) throw "record field slot invariant";
-          const id = nextValue++;
+          if (fieldSlot === undefined || fieldSlot < 0)
+            throw "record field slot invariant";
+          const optionalCarrier =
+            candidate.optionalCarriers[terminator.field] === true;
+          const loaded = nextValue++;
           instructions.push({
             kind: "load",
-            id,
+            id: loaded,
             slot: terminator.operation === "read" ? fieldSlot : terminator.slot,
             start: terminator.start,
             end: terminator.end,
             ...(termInline === undefined ? {} : { inline: termInline }),
           });
+          let transfer = loaded;
+          if (optionalCarrier) {
+            transfer = nextValue++;
+            if (terminator.operation === "read")
+              instructions.push({
+                kind: "reference-value",
+                id: transfer,
+                value: loaded,
+                start: terminator.start,
+                end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
+              });
+            else
+              instructions.push({
+                kind: "reference-wrap",
+                id: transfer,
+                value: loaded,
+                start: terminator.start,
+                end: terminator.end,
+                ...(termInline === undefined ? {} : { inline: termInline }),
+              });
+          }
           instructions.push({
             kind: "store",
             slot: terminator.operation === "read" ? terminator.slot : fieldSlot,
-            value: id,
+            value: transfer,
             start: terminator.start,
             end: terminator.end,
             ...(termInline === undefined ? {} : { inline: termInline }),

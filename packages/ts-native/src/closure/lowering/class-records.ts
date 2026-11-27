@@ -5,7 +5,7 @@ import {
   classPrivateSlot,
   type ClassContract,
 } from "@tint/typescript/checker";
-import type { ClassElement } from "@tint/typescript/syntax";
+import type { ClassElement, Expression } from "@tint/typescript/syntax";
 import type { Type } from "@tint/typescript/types";
 import type { RecordLayout, ScalarType } from "@tint/ir/scalar";
 import type { LayoutPlanner } from "@tint/foundation/layout";
@@ -327,13 +327,42 @@ export function planClassRecords(
     if (type === "reference") return "optional-reference";
     return "general";
   }
+  function isPureStaticLiteral(expr: Expression | undefined): boolean {
+    if (expr === undefined) return false;
+    switch (expr.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "bigint":
+        return true;
+      case "group":
+        return isPureStaticLiteral(expr.expression);
+      case "unary":
+        return (
+          (expr.operator === "-" ||
+            expr.operator === "+" ||
+            expr.operator === "~" ||
+            expr.operator === "!") &&
+          isPureStaticLiteral(expr.operand)
+        );
+      default:
+        return false;
+    }
+  }
   const privateMembers = contract.privateMembers ?? [];
-  const needsPrivateBrand = privateMembers.some(
-    (entry) =>
-      entry !== undefined &&
-      !entry.static &&
-      (entry.kind === "method" || entry.kind === "accessor"),
-  );
+  // Base classes install their private brand unconditionally before any field
+  // initializer or constructor body runs, so record-layout membership in the
+  // base family proves the brand with no per-instance brand cell. Derived
+  // classes keep a runtime brand cell so pre-super() accesses throw TypeError.
+  const needsPrivateBrand =
+    base !== undefined &&
+    privateMembers.some(
+      (entry) =>
+        entry !== undefined &&
+        !entry.static &&
+        (entry.kind === "method" || entry.kind === "accessor"),
+    );
   let privateBrandField: number | undefined;
   if (needsPrivateBrand) {
     privateBrandField = baseFields + instanceFields.length;
@@ -423,6 +452,25 @@ export function planClassRecords(
       deferred: deferredStatic,
     });
   }
+  // A static private field whose own initializer and all preceding static steps
+  // are pure literals cannot be observed uninitialized (the class binding is
+  // published only after static initialization completes), so it needs no
+  // runtime state byte.
+  const pureStaticPrivateFields = new Set<ClassElement>();
+  let staticInitPureSoFar = true;
+  for (const member of contract.members) {
+    if (member === undefined) continue;
+    const element = member.node;
+    if (element.kind === "static-block") {
+      staticInitPureSoFar = false;
+    } else if (element.kind === "field" && element.static) {
+      if (staticInitPureSoFar && isPureStaticLiteral(element.initializer)) {
+        if (element.private === true) pureStaticPrivateFields.add(element);
+      } else {
+        staticInitPureSoFar = false;
+      }
+    }
+  }
   // Private methods, private accessors (instance & static), and static private
   // fields live on the declaring class's constructorState (immune to prototype
   // mutation).
@@ -435,12 +483,14 @@ export function planClassRecords(
       const pmNode = pm.node;
       if (pmNode.kind === "field" && pmNode.initializer === undefined)
         type = widenForUninitializedPrivate(type);
+      const provenStaticPrivate = pureStaticPrivateFields.has(pmNode);
       constructorNames.push(classPrivateSlot(contract.instance, pm.name));
       constructorFields.push({
         type,
         mutable: true,
         optional: false,
-        initialized: true,
+        initialized: !provenStaticPrivate,
+        deferred: provenStaticPrivate,
       });
     } else if (pm.kind === "method") {
       constructorNames.push(classPrivateSlot(contract.instance, pm.name));

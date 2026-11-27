@@ -1630,19 +1630,21 @@ export function optimizeModuleVersion(
     );
     let spent =
       visited + storeVisited + deadVisited + recordVisited + inlineVisited;
-    for (let phase = 0; phase < 5; phase++) {
+    for (let phase = 0; phase < 6; phase++) {
       const pass: PassStatistics["pass"] =
         phase === 0
           ? "fold-constants"
           : phase === 1
-            ? "forward-local-loads"
+            ? "simplify-control-flow"
             : phase === 2
-              ? "propagate-slot-copies"
+              ? "forward-local-loads"
               : phase === 3
-                ? "remove-unread-stores"
-                : "remove-dead-scalars";
+                ? "propagate-slot-copies"
+                : phase === 4
+                  ? "remove-unread-stores"
+                  : "remove-dead-scalars";
       const copyLayoutsEarly =
-        phase === 2 ? stableDescriptors(version.module) : false;
+        phase === 3 ? stableDescriptors(version.module) : false;
       const cleaned = rewriteFunctions(
         version,
         maxInstructions - spent,
@@ -1651,34 +1653,92 @@ export function optimizeModuleVersion(
         phase === 0
           ? foldConstantsRewrite
           : phase === 1
-            ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
-                forwardLoadsRewrite(fn, budget, undefined)
+            ? controlFlowRewrite
             : phase === 2
-              ? (
-                  fn: FunctionIR,
-                  budget: number,
-                ): FunctionRewrite | undefined => {
-                  const result = propagateSlotCopies(
-                    fn,
-                    budget,
-                    copyLayoutsEarly,
-                  );
-                  return result === undefined
-                    ? undefined
-                    : {
-                        fn: result.fn,
-                        visited: result.visited,
-                        rewritten: result.rewritten,
-                        refused: result.refused,
-                      };
-                }
+              ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+                  forwardLoadsRewrite(fn, budget, undefined)
               : phase === 3
-                ? unreadStoresRewrite
-                : deadScalarsRewrite,
+                ? (
+                    fn: FunctionIR,
+                    budget: number,
+                  ): FunctionRewrite | undefined => {
+                    const result = propagateSlotCopies(
+                      fn,
+                      budget,
+                      copyLayoutsEarly,
+                    );
+                    return result === undefined
+                      ? undefined
+                      : {
+                          fn: result.fn,
+                          visited: result.visited,
+                          rewritten: result.rewritten,
+                          refused: result.refused,
+                        };
+                  }
+                : phase === 4
+                  ? unreadStoresRewrite
+                  : deadScalarsRewrite,
       );
       if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
-      if (completed(pass, cleaned, phase === 2)) return stop();
+      if (completed(pass, cleaned, phase === 3)) return stop();
       spent += cleaned.visited;
+    }
+    // Post-cleanup copy/dead-code removal exposes newly dead closure-environment
+    // lookups (such as private-method reads from a class constructor's state
+    // after the method inlined without an environment). Run one closed-world
+    // pass to drop those dead reads before SROA and LICM.
+    if (
+      options.devirtualizeClosures === true &&
+      options.closedRecords === true
+    ) {
+      const postDevirtChanges: number[] = [];
+      const postDevirtBudget = maxInstructions - spent;
+      const postDevirt = rewriteModuleVersion(
+        version,
+        postDevirtChanges,
+        (module: ModuleIR): ModuleRewrite | undefined =>
+          devirtualizeClosureCalls(
+            module,
+            postDevirtBudget,
+            true,
+            remarks,
+            options.openRecords,
+          ),
+      );
+      if (postDevirt.exhausted)
+        return exhausted("devirtualize-closures", postDevirtBudget);
+      if (completed("devirtualize-closures", postDevirt, false)) return stop();
+      spent += postDevirt.visited;
+      if (postDevirt.rewritten > 0) {
+        for (const id of postDevirtChanges) inlineChanges.push(id);
+        const postTargets = changedFunctions(
+          postDevirtChanges,
+          version.module.functions.length,
+        );
+        for (let p = 0; p < 3; p++) {
+          const pass: PassStatistics["pass"] =
+            p === 0
+              ? "simplify-control-flow"
+              : p === 1
+                ? "remove-unread-stores"
+                : "remove-dead-scalars";
+          const res = rewriteFunctions(
+            version,
+            maxInstructions - spent,
+            postTargets,
+            undefined,
+            p === 0
+              ? controlFlowRewrite
+              : p === 1
+                ? unreadStoresRewrite
+                : deadScalarsRewrite,
+          );
+          if (res.exhausted) return exhausted(pass, maxInstructions - spent);
+          if (completed(pass, res, false)) return stop();
+          spent += res.visited;
+        }
+      }
     }
     // Inlining exposes callee allocations to their callers: replace the
     // records that no longer escape, then clean up the scalar copies.
@@ -1871,6 +1931,116 @@ export function optimizeModuleVersion(
         used += cfgAfterPrune.visited;
         if (completed("simplify-control-flow", cfgAfterPrune, false))
           return stop();
+        // Propagate slot constants exposed by dead override pruning (such as
+        // a method-lookup dispatch tag that became constant 0) and drop the
+        // dead fallback call-indirect branch before SROA and LICM run.
+        const ssaAfterPrune = foldModuleSSAConstants(
+          version,
+          maxInstructions,
+          used,
+          prunedFunctions,
+        );
+        if (ssaAfterPrune.exhausted)
+          return exhausted("ssa-constants", maxInstructions - used);
+        used += ssaAfterPrune.visited;
+        if (completed("ssa-constants", ssaAfterPrune, true)) return stop();
+        if (ssaAfterPrune.rewritten > 0) {
+          const cfgAfterSsa = rewriteFunctions(
+            version,
+            maxInstructions - used,
+            prunedFunctions,
+            sweepChanges,
+            controlFlowRewrite,
+          );
+          if (cfgAfterSsa.exhausted)
+            return exhausted("simplify-control-flow", maxInstructions - used);
+          used += cfgAfterSsa.visited;
+          if (completed("simplify-control-flow", cfgAfterSsa, false))
+            return stop();
+        }
+        // Pruning dead own-property-override branches often removes the only
+        // escaping uses of local class instances (`new C(...)` whose method
+        // dispatch fell back to a dead override call). Re-run scalar record
+        // replacement on the pruned functions so those instances scalarize.
+        const prunedRecordChanges: number[] = [];
+        const sroaAfterPrune = rewriteFunctions(
+          version,
+          maxInstructions - used,
+          prunedFunctions,
+          prunedRecordChanges,
+          (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+            recordReplacementRewrite(fn, version.module, budget, remarks),
+        );
+        if (sroaAfterPrune.exhausted)
+          return exhausted("scalar-replace-records", maxInstructions - used);
+        used += sroaAfterPrune.visited;
+        if (completed("scalar-replace-records", sroaAfterPrune, false))
+          return stop();
+        if (sroaAfterPrune.rewritten > 0) {
+          for (const id of prunedRecordChanges) sweepChanges.push(id);
+          const sroaTargets = changedFunctions(
+            prunedRecordChanges,
+            version.module.functions.length,
+          );
+          for (let phase = 0; phase < 6; phase++) {
+            const pass: PassStatistics["pass"] =
+              phase === 0
+                ? "fold-constants"
+                : phase === 1
+                  ? "simplify-control-flow"
+                  : phase === 2
+                    ? "forward-local-loads"
+                    : phase === 3
+                      ? "propagate-slot-copies"
+                      : phase === 4
+                        ? "remove-unread-stores"
+                        : "remove-dead-scalars";
+            const copyLayoutsPruned =
+              phase === 3 ? stableDescriptors(version.module) : false;
+            const cleaned = rewriteFunctions(
+              version,
+              maxInstructions - used,
+              sroaTargets,
+              sweepChanges,
+              phase === 0
+                ? foldConstantsRewrite
+                : phase === 1
+                  ? controlFlowRewrite
+                  : phase === 2
+                    ? (
+                        fn: FunctionIR,
+                        budget: number,
+                      ): FunctionRewrite | undefined =>
+                        forwardLoadsRewrite(fn, budget, undefined)
+                    : phase === 3
+                      ? (
+                          fn: FunctionIR,
+                          budget: number,
+                        ): FunctionRewrite | undefined => {
+                          const result = propagateSlotCopies(
+                            fn,
+                            budget,
+                            copyLayoutsPruned,
+                          );
+                          return result === undefined
+                            ? undefined
+                            : {
+                                fn: result.fn,
+                                visited: result.visited,
+                                rewritten: result.rewritten,
+                                refused: result.refused,
+                              };
+                        }
+                      : phase === 4
+                        ? unreadStoresRewrite
+                        : deadScalarsRewrite,
+            );
+            if (cleaned.exhausted)
+              return exhausted(pass, maxInstructions - used);
+            used += cleaned.visited;
+            if (completed(pass, cleaned, phase === 3)) return stop();
+          }
+        }
       }
     }
   }
@@ -2680,8 +2850,11 @@ function removable(op: Instruction): boolean {
     // Reads selected as in bounds cannot fail.
     case "array-element":
     case "bytes-load":
-    // Proven record reads cannot fail or throw.
+    // Proven record reads and pure tag/descriptor tests cannot fail or throw.
     case "record-read":
+    case "record-has":
+    case "general-is":
+    case "general-record-is":
     // An unused closure is an unobservable allocation.
     case "function-new":
       return true;

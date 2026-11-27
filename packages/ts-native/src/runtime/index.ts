@@ -747,6 +747,9 @@ function prepareCollectionPass(
           empty: helpers.has("number-list:emptyNumberList")
             ? functionId(helper("number-list", "emptyNumberList"))
             : undefined,
+          isDense: helpers.has("number-list:isDenseNumberList")
+            ? functionId(helper("number-list", "isDenseNumberList"))
+            : undefined,
         };
       } else {
         const element = preparedElement(list.element);
