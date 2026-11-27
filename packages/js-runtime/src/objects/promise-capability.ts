@@ -25,7 +25,10 @@ export function newPromiseCapability(
   hooks: ObjectHooks<unknown>,
 ): ScriptPromiseCapability {
   const target = viewObjectValue(constructor, realm.objectPrototype);
-  if (target === undefined || target.internalConstruct === undefined)
+  if (
+    target === undefined ||
+    target.internalRareSlots?.internalConstruct === undefined
+  )
     throw createRuntimeError(realm, "type");
   const captured: { resolve: unknown; reject: unknown } = {
     resolve: undefined,

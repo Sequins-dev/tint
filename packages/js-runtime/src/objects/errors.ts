@@ -697,7 +697,7 @@ export function createErrorRealm(
     0,
     (receiver, args): unknown => {
       const fn = viewObjectValue(receiver, realm.objectPrototype);
-      if (fn === undefined || fn.internalCall === undefined)
+      if (fn === undefined || fn.internalRareSlots?.internalCall === undefined)
         throw createRuntimeError(realm, "type");
       const source = exoticSlots(fn).internalSourceText;
       if (source !== undefined) return source;
@@ -765,7 +765,10 @@ export function realmErrorOperation(
   // Retained: it reads the exotic slot directly instead of calling
   // exoticSlots in another module.
   const object = viewTypeofObject(value);
-  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  const exotic =
+    object === undefined
+      ? undefined
+      : object.internalRareSlots?.internalExoticSlots;
   const access =
     exotic === undefined ? undefined : exotic.internalTypedErrorAccess;
   return access === undefined ? undefined : access(operation);

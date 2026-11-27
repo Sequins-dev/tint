@@ -30,8 +30,8 @@ test("typed-array constructors share an abstract base and per-kind prototypes", 
       .value as o.OrdinaryObject<o.ScriptPropertyKey, unknown>;
     const prototype = o.getOwnProperty(constructor, "prototype")!
       .value as o.OrdinaryObject<o.ScriptPropertyKey, unknown>;
-    assert.ok(constructor.internalConstruct);
-    assert.ok(constructor.internalCall);
+    assert.ok(constructor.internalRareSlots?.internalConstruct);
+    assert.ok(constructor.internalRareSlots?.internalCall);
     assert.equal(o.getOwnProperty(constructor, "length")?.value, 3);
     assert.equal(o.getOwnProperty(constructor, "name")?.value, name + "Array");
     assert.equal(
@@ -72,7 +72,7 @@ test("TypedArray.from and of are inherited nonconstructible builtins", () => {
     >;
     assert.equal(o.getOwnProperty(method, "length")?.value, length);
     assert.equal(o.getOwnProperty(method, "name")?.value, name);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });
 const prototypeMethods = [
@@ -117,7 +117,7 @@ for (const [name, length] of prototypeMethods) {
     >;
     assert.equal(o.getOwnProperty(method, "length")?.value, length);
     assert.equal(o.getOwnProperty(method, "name")?.value, name);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   });
 }
 test("typed-array toString shares the Array intrinsic", () => {
@@ -146,7 +146,7 @@ test("hex codecs belong to the concrete Uint8Array with standard metadata", () =
     const fn = property.value as o.OrdinaryObject<o.ScriptPropertyKey, unknown>;
     assert.equal(o.getOwnProperty(fn, "name")?.value, name);
     assert.equal(o.getOwnProperty(fn, "length")?.value, length);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
     assert.equal(o.getOwnProperty(realm.typedArrayPrototype, name), undefined);
   }
   assert.equal(o.getOwnProperty(constructor.prototype!, "fromHex"), undefined);
@@ -170,7 +170,7 @@ test("base64 codecs expose concrete Uint8Array metadata without shared inheritan
     const fn = property.value as o.OrdinaryObject<o.ScriptPropertyKey, unknown>;
     assert.equal(o.getOwnProperty(fn, "length")?.value, length);
     assert.equal(o.getOwnProperty(fn, "name")?.value, name);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
     assert.equal(o.getOwnProperty(realm.typedArrayPrototype, name), undefined);
   }
 });

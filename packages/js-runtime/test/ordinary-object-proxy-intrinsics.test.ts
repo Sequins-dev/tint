@@ -17,12 +17,12 @@ test("Proxy is callable with a throwing call entry and has no prototype property
   assert.equal(object.getOwnProperty(proxy, "name")?.value, "Proxy");
   assert.equal(object.getOwnProperty(proxy, "length")?.value, 2);
   assert.equal(object.getOwnProperty(proxy, "prototype"), undefined);
-  assert.equal(typeof proxy.internalCall, "function");
-  assert.throws(() => proxy.internalCall!(undefined, []));
+  assert.equal(typeof proxy.internalRareSlots?.internalCall, "function");
+  assert.throws(() => proxy.internalRareSlots!.internalCall!(undefined, []));
   const revocable = object.getOwnProperty(proxy, "revocable")
     ?.value as object.OrdinaryObject<object.ScriptPropertyKey, unknown>;
   assert.equal(object.getOwnProperty(revocable, "length")?.value, 2);
-  assert.equal(revocable.internalConstruct, undefined);
+  assert.equal(revocable.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("Proxy revocation errors use the active realm, not the creation realm", async () => {

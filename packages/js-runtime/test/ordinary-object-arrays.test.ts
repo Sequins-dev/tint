@@ -307,7 +307,7 @@ test("packed elements keep array indices and length out of the property map", ()
   const a = packed(100);
   const b = array();
   assert.notEqual(a.internalArrayElements, undefined);
-  assert.equal(a.properties, undefined);
+  assert.equal(a.internalRareSlots?.properties, undefined);
   assert.equal(a.internalMethods, b.internalMethods);
   assert.equal(length(a), 100);
   assert.deepEqual(data(a, "42"), [false, 42, true, true, true]);
@@ -316,7 +316,7 @@ test("packed elements keep array indices and length out of the property map", ()
   assert.deepEqual(keys(a).slice(0, 3), ["0", "1", "2"]);
   assert.equal(keys(a).at(-1), "length");
   assert.equal(objects.createDataProperty(a, "100", 100, hooks), true);
-  assert.equal(a.properties, undefined);
+  assert.equal(a.internalRareSlots?.properties, undefined);
 });
 
 test("storing a non-number switches number elements to values once", () => {
@@ -339,7 +339,7 @@ test("storing a non-number switches number elements to values once", () => {
   assert.equal(get(a, "3"), "three");
   put(a, "4", 4);
   assert.equal(get(a, "4"), 4);
-  assert.equal(a.properties, undefined);
+  assert.equal(a.internalRareSlots?.properties, undefined);
   assert.equal(length(a), 5);
 });
 
@@ -655,7 +655,7 @@ test("inline length honors descriptor invariants, freezing, sealing, and prototy
     "accepted",
   );
   assert.notEqual(empty.internalArrayElements, undefined);
-  assert.equal(empty.properties, undefined);
+  assert.equal(empty.internalRareSlots?.properties, undefined);
   assert.equal(
     define(empty, "length", {
       fields: 2 | 32,
@@ -665,7 +665,7 @@ test("inline length honors descriptor invariants, freezing, sealing, and prototy
     "accepted",
   );
   assert.notEqual(empty.internalArrayElements, undefined);
-  assert.equal(empty.properties, undefined);
+  assert.equal(empty.internalRareSlots?.properties, undefined);
   assert.deepEqual(data(empty, "length"), [false, 0, false, false, false]);
   assert.equal(
     define(empty, "length", { fields: 2, writable: true }),
@@ -699,7 +699,7 @@ test("fixed-arity small array builders produce packed number and value arrays", 
   const a0 = objects.createArray0(realm);
   assert.equal(length(a0), 0);
   assert.equal(a0.prototype, realm.arrayPrototype);
-  assert.equal(a0.properties, undefined);
+  assert.equal(a0.internalRareSlots?.properties, undefined);
   assert.equal(a0.internalArrayElements?.generalCount, 0);
 
   const a1 = objects.createArray1(-0, realm);
@@ -741,7 +741,7 @@ test("fixed-arity object literal builders share fast shapes and fall back safely
   const o1 = objects.createLiteralObject1(proto, s1, 1, hooks);
   const o1b = objects.createLiteralObject1(proto, s1, 2, hooks);
   assert.equal(o1.internalShape, o1b.internalShape);
-  assert.equal(o1.properties, undefined);
+  assert.equal(o1.internalRareSlots?.properties, undefined);
   assert.equal(get(o1, "a"), 1);
   assert.equal(get(o1b, "a"), 2);
 

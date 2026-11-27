@@ -47,16 +47,16 @@ test("bound functions preserve arguments, receiver and construction target seman
   );
   assert.equal(bound.prototype, prototype);
   assert.equal(bound.internalRareSlots?.internalBoundTarget, target);
-  assert.equal(bound.internalCall!(99, [3]), 42);
+  assert.equal(bound.internalRareSlots!.internalCall!(99, [3]), 42);
   assert.deepEqual(seen, [7, 1, 2, 3]);
-  assert.equal(bound.internalConstruct!([4], bound), target);
+  assert.equal(bound.internalRareSlots!.internalConstruct!([4], bound), target);
   assert.deepEqual(seen, [target, 1, 2, 4]);
   const other = objects.createConstructorObject<ScriptPropertyKey, unknown>(
     prototype,
     () => 0,
     () => 0,
   );
-  assert.equal(bound.internalConstruct!([5], other), other);
+  assert.equal(bound.internalRareSlots!.internalConstruct!([5], other), other);
   assert.deepEqual(seen, [other, 1, 2, 5]);
   const nested = objects.createBoundFunction(
     bound,
@@ -66,7 +66,7 @@ test("bound functions preserve arguments, receiver and construction target seman
     (object) => object,
     Object.is,
   );
-  nested.internalCall!(99, [7]);
+  nested.internalRareSlots!.internalCall!(99, [7]);
   assert.deepEqual(seen, [7, 1, 2, 6, 7]);
   const callable = objects.createCallableObject<ScriptPropertyKey, unknown>(
     prototype,
@@ -80,7 +80,7 @@ test("bound functions preserve arguments, receiver and construction target seman
       undefined,
       (object) => object,
       Object.is,
-    ).internalConstruct,
+    ).internalRareSlots?.internalConstruct,
     undefined,
   );
 });

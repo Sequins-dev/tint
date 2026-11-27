@@ -82,18 +82,18 @@ test("async module evaluation remains pending until its completion job and reuse
   assert.deepEqual(f.log, ["root:start"]);
   assert.equal(root.status, "evaluating-async");
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   assert.equal(modules.evaluateModule(root, f.hooks), promise);
   f.finish("root");
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   f.drain();
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(root.status, "evaluated");
@@ -107,14 +107,14 @@ test("a suspended dependency does not block its sibling and delays its parent", 
     promise = f.evaluate(root);
   assert.deepEqual(f.log, ["a:start", "b"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   f.finish("a");
   f.drain();
   assert.deepEqual(f.log, ["a:start", "b", "a:finish", "root"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
 });
@@ -130,7 +130,7 @@ test("available ancestors of a diamond execute in async evaluation order", () =>
   f.drain();
   assert.deepEqual(f.log, ["leaf:start", "leaf:finish", "a", "b", "root"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
 });
@@ -149,11 +149,11 @@ test("async rejection preserves undefined and prevents every waiting ancestor fr
     assert.deepEqual(module.evaluationError, { error: undefined });
   }
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.result,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
     undefined,
   );
   assert.equal(modules.evaluateModule(root, f.hooks), promise);
@@ -170,7 +170,7 @@ test("an async cycle shares its root capability with already executed members", 
   f.finish("a");
   f.drain();
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(b.cycleRoot, a);
@@ -194,10 +194,13 @@ test("a synchronous ancestor error rejects later available ancestors without run
   f.drain();
   assert.deepEqual(f.log, ["leaf:start", "leaf:finish", "a", "b"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
-  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
+  assert.equal(
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
+    error,
+  );
 });
 
 test("a five-module async cycle respects dependency order as independent leaves finish", () => {
@@ -235,13 +238,13 @@ test("a five-module async cycle respects dependency order as independent leaves 
   f.drain();
   assert.deepEqual(f.log.slice(-2), ["b:finish", "a:start"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   f.finish("a");
   f.drain();
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(modules.evaluateModule(b, f.hooks), promise);
@@ -268,10 +271,13 @@ test("a rejected async cycle remains rejected when another member later succeeds
   f.finish("c", { value: error });
   f.drain();
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
-  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, error);
+  assert.equal(
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
+    error,
+  );
   f.finish("b");
   f.drain();
   assert.equal(b.status, "evaluated");

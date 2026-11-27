@@ -264,7 +264,7 @@ export function createDynamicFunctionCompiler(
       callee: unknown,
       newTarget: unknown,
     ): unknown => {
-      const call = carrier.internalCall;
+      const call = carrier.internalRareSlots?.internalCall;
       if (call === undefined) throw "DYNAMIC_BODY_CARRIER_INVARIANT";
       const packed: unknown[] = [callee, newTarget];
       for (const value of args) packed.push(value);

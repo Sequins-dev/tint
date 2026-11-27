@@ -157,7 +157,7 @@ export function scriptAtomicsInt32View(
 ): Uint32Array | undefined {
   const object = viewObjectValue(target, realm.objectPrototype);
   if (object === undefined) return undefined;
-  const exotic = object.internalExoticSlots;
+  const exotic = object.internalRareSlots?.internalExoticSlots;
   if (exotic === undefined) return undefined;
   const data = exotic.internalTypedArrayData;
   if (data === undefined || data.kind !== "Int32") return undefined;
@@ -175,7 +175,7 @@ export function scriptAtomicsAddFast(
 ): number {
   const object = viewObjectValue(target, realm.objectPrototype);
   if (object === undefined) return atomicsFastMiss;
-  const exotic = object.internalExoticSlots;
+  const exotic = object.internalRareSlots?.internalExoticSlots;
   if (exotic === undefined) return atomicsFastMiss;
   const data = exotic.internalTypedArrayData;
   if (data === undefined) return atomicsFastMiss;
@@ -198,7 +198,7 @@ export function scriptAtomicsLoadFast(
 ): number {
   const object = viewObjectValue(target, realm.objectPrototype);
   if (object === undefined) return atomicsFastMiss;
-  const exotic = object.internalExoticSlots;
+  const exotic = object.internalRareSlots?.internalExoticSlots;
   if (exotic === undefined) return atomicsFastMiss;
   const data = exotic.internalTypedArrayData;
   if (data === undefined) return atomicsFastMiss;
@@ -225,7 +225,7 @@ export function scriptAtomicsStoreFast(
   if (intValue !== operand) return atomicsFastMiss;
   const object = viewObjectValue(target, realm.objectPrototype);
   if (object === undefined) return atomicsFastMiss;
-  const exotic = object.internalExoticSlots;
+  const exotic = object.internalRareSlots?.internalExoticSlots;
   if (exotic === undefined) return atomicsFastMiss;
   const data = exotic.internalTypedArrayData;
   if (data === undefined) return atomicsFastMiss;

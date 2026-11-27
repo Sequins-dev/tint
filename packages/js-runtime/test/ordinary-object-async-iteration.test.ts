@@ -28,7 +28,7 @@ test("async-from-sync objects retain a private iterator and shared methods", () 
     realm.asyncFromSyncIteratorPrototype.prototype ===
       realm.asyncIteratorPrototype,
   );
-  assert.equal(wrapper.properties?.size ?? 0, 0);
+  assert.equal(wrapper.internalRareSlots?.properties?.size ?? 0, 0);
   assert.equal(
     object.exoticSlots(realm.asyncFromSyncIteratorPrototype)
       .internalSyncIteratorData,
@@ -80,5 +80,5 @@ test("async iterator disposal has standard method metadata", () => {
     "[Symbol.asyncDispose]",
   );
   assert.equal(object.getOwnProperty(method, "length")?.value, 0);
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });

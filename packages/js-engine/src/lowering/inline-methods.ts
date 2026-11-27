@@ -3996,6 +3996,65 @@ function emitSingleCandidate(
    * `createConstructedObjectN` call with the final field values, avoiding redundant
    * initial writes and post-allocation `cachedPropertyStore` calls. Returns the
    * last consumed statement index, or -1 if the pattern does not apply. */
+  function isEpochPureExpr(expr: Expression): boolean {
+    const raw = unwrapGroup(expr);
+    switch (raw.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "this":
+      case "identifier":
+        return true;
+      case "unary":
+        return isEpochPureExpr(raw.operand);
+      case "binary":
+        return isEpochPureExpr(raw.left) && isEpochPureExpr(raw.right);
+      case "conditional":
+        return (
+          isEpochPureExpr(raw.test) &&
+          isEpochPureExpr(raw.consequent) &&
+          isEpochPureExpr(raw.alternate)
+        );
+      case "member":
+        return isEpochPureExpr(raw.object);
+      case "index":
+        return isEpochPureExpr(raw.object) && isEpochPureExpr(raw.index);
+      default:
+        return false;
+    }
+  }
+
+  function isEpochPureStmt(stmt: Statement | undefined): boolean {
+    if (stmt === undefined || stmt.kind === "empty") return true;
+    if (stmt.kind === "block") {
+      for (const child of stmt.statements) {
+        if (!isEpochPureStmt(child)) return false;
+      }
+      return true;
+    }
+    if (stmt.kind === "variable") {
+      for (const decl of stmt.declarations) {
+        if (
+          decl !== undefined &&
+          decl.initializer !== undefined &&
+          !isEpochPureExpr(decl.initializer)
+        )
+          return false;
+      }
+      return true;
+    }
+    if (stmt.kind === "expression") return isEpochPureExpr(stmt.expression);
+    if (stmt.kind === "if") {
+      return (
+        isEpochPureExpr(stmt.test) &&
+        isEpochPureStmt(stmt.consequent) &&
+        isEpochPureStmt(stmt.alternate)
+      );
+    }
+    return false;
+  }
+
   function tryEmitCoalescedConstruct(
     out: Statement[],
     blockStmts: readonly (Statement | undefined)[],
@@ -4188,9 +4247,25 @@ function emitSingleCandidate(
       fieldValues[ov.index] = emitIntoTemp(out, v, ov.expr);
     }
 
+    let recheckEpoch = false;
+    for (const f of ctor.fields) {
+      if (!isEpochPureExpr(f.value)) {
+        recheckEpoch = true;
+        break;
+      }
+    }
+    if (!recheckEpoch) {
+      for (const ov of overrides) {
+        if (!isEpochPureExpr(ov.expr)) {
+          recheckEpoch = true;
+          break;
+        }
+      }
+    }
     const ctorHelper = "createConstructedObject" + String(ctor.fields.length);
     const ctorArgs: Expression[] = [siteExpr];
     for (const fv of fieldValues) ctorArgs.push(fv);
+    ctorArgs.push(bool(recheckEpoch, initExpr));
     const instName = ctx.freshName("$cin");
     out.push(
       constVar(instName, callHelper(ctorHelper, ctorArgs, initExpr), initExpr),
@@ -4441,10 +4516,20 @@ function emitSingleCandidate(
       if (v === undefined) return undefined;
       fieldValues.push(emitIntoTemp(stmts, v, field.value));
     }
+    let recheckEpoch = !isEpochPureStmt(cand.body);
+    if (!recheckEpoch) {
+      for (const field of constructSpec.fields) {
+        if (!isEpochPureExpr(field.value)) {
+          recheckEpoch = true;
+          break;
+        }
+      }
+    }
     const ctorHelper =
       "createConstructedObject" + String(constructSpec.fields.length);
     const ctorArgs: Expression[] = [constructSpec.siteExpr];
     for (const fv of fieldValues) ctorArgs.push(fv);
+    ctorArgs.push(bool(recheckEpoch, callSpan));
     const instName = ctx.freshName("$iin");
     stmts.push(
       constVar(instName, callHelper(ctorHelper, ctorArgs, callSpan), callSpan),

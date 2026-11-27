@@ -63,18 +63,21 @@ test("dynamic import creates fresh promises, passes the Script referrer and eval
   assert.equal(executions(), 0);
   for (const promise of promises)
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.state,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       "pending",
     );
   objects.drainScriptJobs(realm.agent, () => assert.fail("job failed"));
   assert.equal(executions(), 1);
   for (const promise of promises) {
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.state,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       "fulfilled",
     );
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.result,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.result,
       modules.getModuleNamespace(target),
     );
   }
@@ -90,11 +93,13 @@ test("invalid options and with values reject with TypeError without calling the 
       realm,
     );
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.state,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       "rejected",
     );
     const error = objects.viewObjectValue(
-      promise.internalExoticSlots?.internalPromiseData?.result,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.result,
       realm.objectPrototype,
     );
     assert.equal(error?.prototype, realm.prototypes.get("type"));
@@ -112,7 +117,8 @@ test("invalid options and with values reject with TypeError without calling the 
       realm,
     );
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.state,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       "rejected",
     );
   }
@@ -140,11 +146,11 @@ test("specifier coercion failures reject before reading options", () => {
   );
   const promise = modules.evaluateImportCall(specifier, 42, hooks, realm);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.result,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
     marker,
   );
 });
@@ -168,12 +174,14 @@ test("non-string or unsupported import attributes reject before host loading", (
       realm,
     );
     assert.equal(
-      promise.internalExoticSlots?.internalPromiseData?.state,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       "rejected",
     );
     assert.equal(
       objects.viewObjectValue(
-        promise.internalExoticSlots?.internalPromiseData?.result,
+        promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+          ?.result,
         realm.objectPrototype,
       )?.prototype,
       realm.prototypes.get("type"),
@@ -235,7 +243,7 @@ test("attribute descriptors and values are read in per-key order", () => {
     "descriptor:hidden",
   ]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
 });
@@ -254,11 +262,12 @@ test("options getters reject with the original value while host faults escape", 
   });
   const rejected = modules.evaluateImportCall("target", options, hooks, realm);
   assert.equal(
-    rejected.internalExoticSlots?.internalPromiseData?.state,
+    rejected.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
   assert.equal(
-    rejected.internalExoticSlots?.internalPromiseData?.result,
+    rejected.internalRareSlots?.internalExoticSlots?.internalPromiseData
+      ?.result,
     marker,
   );
   realm.moduleLoader = () => {
@@ -285,7 +294,8 @@ test("dynamic promises and options TypeErrors use the active caller realm", () =
       assert.equal(rejected.prototype, caller.promisePrototype);
       assert.equal(
         objects.viewObjectValue(
-          rejected.internalExoticSlots?.internalPromiseData?.result,
+          rejected.internalRareSlots?.internalExoticSlots?.internalPromiseData
+            ?.result,
           realm.objectPrototype,
         )?.prototype,
         caller.prototypes.get("type"),

@@ -106,17 +106,12 @@ function createMarkedPackedArrayObject(
     internalShape: shape,
     prototype,
     internalFlags: objectFlagsPackedArray,
-    properties: undefined,
     internalPropertyEpoch: 0,
-    internalChildShape: undefined,
     internalValues: undefined,
-    internalCall: undefined,
     internalRegisterCall: undefined,
-    internalConstruct: undefined,
     internalArrayElements: elements,
     internalMethods: methods,
     internalRareSlots: undefined,
-    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,
@@ -138,17 +133,12 @@ function createMarkedOrdinaryObject(
     internalShape: shape,
     prototype,
     internalFlags: objectFlagExtensible,
-    properties: undefined,
     internalPropertyEpoch: epoch,
-    internalChildShape: undefined,
     internalValues: undefined,
-    internalCall: undefined,
     internalRegisterCall: undefined,
-    internalConstruct: undefined,
     internalArrayElements: undefined,
     internalMethods: undefined,
     internalRareSlots: undefined,
-    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,
@@ -199,12 +189,12 @@ export function throwWorkerCloneError(
 function unsupportedObject(object: ScriptObject): boolean {
   const rare = object.internalRareSlots;
   if (
-    object.internalCall !== undefined ||
-    object.internalConstruct !== undefined ||
+    object.internalRareSlots?.internalCall !== undefined ||
+    object.internalRareSlots?.internalConstruct !== undefined ||
     (rare !== undefined && rare.internalArgumentsData)
   )
     return true;
-  const exotic = object.internalExoticSlots;
+  const exotic = object.internalRareSlots?.internalExoticSlots;
   if (exotic === undefined) return false;
   return (
     exotic.internalPromiseData !== undefined ||
@@ -728,7 +718,7 @@ function serializeWorkerGraph(
     const hasExpando =
       (object.internalFlags & objectFlagDictionary) !== 0 ||
       object.internalMethods !== undefined ||
-      object.properties !== undefined ||
+      object.internalRareSlots?.properties !== undefined ||
       (arrayShape !== undefined && arrayShape.keys.length > 0);
     const rest = hasExpando
       ? propertyMapKeys<ScriptPropertyKey, unknown>(
@@ -784,7 +774,7 @@ function serializeWorkerGraph(
     if (
       (object.internalFlags & objectFlagDictionary) === 0 &&
       object.internalMethods === undefined &&
-      object.properties === undefined &&
+      object.internalRareSlots?.properties === undefined &&
       shape !== undefined
     ) {
       const shapeKeys = shape.keys;
@@ -850,7 +840,7 @@ function serializeWorkerGraph(
             if (
               object.internalShape === shape &&
               (object.internalFlags & objectFlagDictionary) === 0 &&
-              object.properties === undefined
+              object.internalRareSlots?.properties === undefined
             )
               encode(object.internalValue1);
             else encodeMutatedSlot(object, keys, 1);
@@ -859,7 +849,7 @@ function serializeWorkerGraph(
             if (
               object.internalShape === shape &&
               (object.internalFlags & objectFlagDictionary) === 0 &&
-              object.properties === undefined
+              object.internalRareSlots?.properties === undefined
             )
               encode(object.internalValue2);
             else encodeMutatedSlot(object, keys, 2);
@@ -868,7 +858,7 @@ function serializeWorkerGraph(
             if (
               object.internalShape === shape &&
               (object.internalFlags & objectFlagDictionary) === 0 &&
-              object.properties === undefined
+              object.internalRareSlots?.properties === undefined
             )
               encode(object.internalValue3);
             else encodeMutatedSlot(object, keys, 3);
@@ -879,7 +869,7 @@ function serializeWorkerGraph(
           if (
             object.internalShape === shape &&
             (object.internalFlags & objectFlagDictionary) === 0 &&
-            object.properties === undefined
+            object.internalRareSlots?.properties === undefined
           ) {
             let raw: unknown;
             switch (index) {
@@ -919,7 +909,7 @@ function serializeWorkerGraph(
         if (
           object.internalShape === shape &&
           (object.internalFlags & objectFlagDictionary) === 0 &&
-          object.properties === undefined
+          object.internalRareSlots?.properties === undefined
         ) {
           const slot = slots[index];
           if (slot === undefined) throw "WORKER_CLONE_SHAPE_SLOT";
@@ -1056,7 +1046,7 @@ function serializeWorkerGraph(
           return varint(seenIndex);
         }
       }
-      const exoticFast = object.internalExoticSlots;
+      const exoticFast = object.internalRareSlots?.internalExoticSlots;
       if (
         exoticFast === undefined &&
         (object.internalFlags & objectFlagDictionary) === 0 &&
@@ -1071,8 +1061,8 @@ function serializeWorkerGraph(
         object.internalPropertyEpoch = -(fastMarkBase + slot);
         const rare = object.internalRareSlots;
         if (
-          object.internalCall !== undefined ||
-          object.internalConstruct !== undefined ||
+          object.internalRareSlots?.internalCall !== undefined ||
+          object.internalRareSlots?.internalConstruct !== undefined ||
           (rare !== undefined && rare.internalArgumentsData)
         )
           return throwWorkerCloneError(realm, "The object could not be cloned");
@@ -1081,7 +1071,7 @@ function serializeWorkerGraph(
         return encodeOrdinaryObject(object);
       }
     }
-    const existingExotic = object.internalExoticSlots;
+    const existingExotic = object.internalRareSlots?.internalExoticSlots;
     let identity =
       existingExotic === undefined ? 0 : existingExotic.internalIdentity;
     if (identity === 0) {
@@ -1232,8 +1222,8 @@ function serializeWorkerGraph(
     } else {
       const rare = object.internalRareSlots;
       if (
-        object.internalCall !== undefined ||
-        object.internalConstruct !== undefined ||
+        object.internalRareSlots?.internalCall !== undefined ||
+        object.internalRareSlots?.internalConstruct !== undefined ||
         (rare !== undefined && rare.internalArgumentsData)
       )
         return throwWorkerCloneError(realm, "The object could not be cloned");
@@ -1502,7 +1492,7 @@ function deserializeWorkerGraph(
     if (
       targetShape !== undefined &&
       root !== undefined &&
-      objectPrototype.internalChildShape === root
+      objectPrototype.internalRareSlots?.internalChildShape === root
     ) {
       const object = remember(
         createMarkedOrdinaryObject(objectPrototype, root, 0),
@@ -1583,7 +1573,7 @@ function deserializeWorkerGraph(
     const object = remember(
       createMarkedOrdinaryObject(
         objectPrototype,
-        objectPrototype.internalChildShape,
+        objectPrototype.internalRareSlots?.internalChildShape,
         0,
       ),
     );
@@ -1606,7 +1596,7 @@ function deserializeWorkerGraph(
       reached.shared &&
       reached.keys.length === count
     ) {
-      site.root = objectPrototype.internalChildShape;
+      site.root = objectPrototype.internalRareSlots?.internalChildShape;
       site.shape = reached;
     }
     return object;
@@ -1785,7 +1775,7 @@ function deserializeWorkerGraph(
         remember(
           createMarkedOrdinaryObject(
             objectPrototype,
-            objectPrototype.internalChildShape,
+            objectPrototype.internalRareSlots?.internalChildShape,
             0,
           ),
         ),

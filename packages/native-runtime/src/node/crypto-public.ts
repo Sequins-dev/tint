@@ -136,7 +136,7 @@ function unavailableDigest(
  * synchronous step without projecting a range record. Other views (DataView,
  * shared, length-tracking, detached or out of bounds) return undefined. */
 function typedArrayBytes(object: RealmObject): Uint8Array | undefined {
-  const exotic = object.internalExoticSlots;
+  const exotic = object.internalRareSlots?.internalExoticSlots;
   const data = exotic === undefined ? undefined : exotic.internalTypedArrayData;
   if (data === undefined) return undefined;
   const storage = data.storage;

@@ -41,14 +41,19 @@ function setup() {
     return result;
   };
   const make = (locale: unknown, fields: Record<string, unknown> | undefined) =>
-    constructor.internalConstruct!(
+    constructor.internalRareSlots!.internalConstruct!(
       [locale, fields === undefined ? undefined : options(fields)],
       constructor,
     ) as Obj;
   const of = (names: Obj, code: unknown) =>
-    (get(prototype, "of") as Obj).internalCall!(names, [code]);
+    (get(prototype, "of") as Obj).internalRareSlots!.internalCall!(names, [
+      code,
+    ]);
   const resolved = (names: Obj) =>
-    (get(prototype, "resolvedOptions") as Obj).internalCall!(names, []) as Obj;
+    (get(prototype, "resolvedOptions") as Obj).internalRareSlots!.internalCall!(
+      names,
+      [],
+    ) as Obj;
   const isError = (kind: string) => (e: unknown) =>
     (e as Obj).prototype === realm.prototypes.get(kind);
   return {
@@ -70,7 +75,7 @@ test("DisplayNames requires new, an options object and a type", () => {
   assert.equal(r.get(r.constructor, "length"), 2);
   assert.throws(
     () =>
-      r.constructor.internalCall!(undefined, [
+      r.constructor.internalRareSlots!.internalCall!(undefined, [
         "en",
         r.options({ type: "region" }),
       ]),
@@ -79,7 +84,11 @@ test("DisplayNames requires new, an options object and a type", () => {
   assert.throws(() => r.make("en", undefined), r.isError("type"));
   assert.throws(() => r.make("en", {}), r.isError("type"));
   assert.throws(
-    () => r.constructor.internalConstruct!(["en", "region"], r.constructor),
+    () =>
+      r.constructor.internalRareSlots!.internalConstruct!(
+        ["en", "region"],
+        r.constructor,
+      ),
     r.isError("type"),
   );
   assert.throws(
@@ -131,7 +140,10 @@ test("DisplayNames reads options in specification order", () => {
       },
       r.hooks,
     );
-  r.constructor.internalConstruct!(["en", opts], r.constructor);
+  r.constructor.internalRareSlots!.internalConstruct!(
+    ["en", opts],
+    r.constructor,
+  );
   assert.deepEqual(seen, [
     "localeMatcher",
     "style",
@@ -237,10 +249,13 @@ test("methods require DisplayNames receivers; resolvedOptions keeps key order", 
   const r = setup();
   const of = r.get(r.prototype, "of") as Obj;
   assert.throws(
-    () => of.internalCall!(r.options({}), ["GB"]),
+    () => of.internalRareSlots!.internalCall!(r.options({}), ["GB"]),
     r.isError("type"),
   );
-  assert.throws(() => of.internalCall!(r.prototype, ["GB"]), r.isError("type"));
+  assert.throws(
+    () => of.internalRareSlots!.internalCall!(r.prototype, ["GB"]),
+    r.isError("type"),
+  );
   const region = r.resolved(r.make("en-US", { type: "region" }));
   assert.deepEqual(o.ownKeys(region, keyOrder), [
     "locale",

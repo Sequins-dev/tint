@@ -80,7 +80,7 @@ test("wrapped calls have fresh identities and wrap callable arguments, receiver 
   ) as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.notEqual(objects.getShadowRealmWrappedValue(outer, target), wrapped);
   assert.equal(wrapped.prototype, outer.functionPrototype);
-  assert.equal(wrapped.internalConstruct, undefined);
+  assert.equal(wrapped.internalRareSlots?.internalConstruct, undefined);
   assert.equal(get(wrapped, "name"), "target");
   assert.equal(get(wrapped, "length"), 2);
   const returned = objects.viewObjectValue(
@@ -278,11 +278,11 @@ test("importValue uses the child module loader and returns an outer intrinsic pr
   assert.equal(result.prototype, outer.promisePrototype);
   objects.drainScriptJobs(outer.agent, (error) => assert.fail(String(error)));
   assert.equal(
-    result.internalExoticSlots?.internalPromiseData?.state,
+    result.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
-  const wrapped = result.internalExoticSlots?.internalPromiseData
-    ?.result as OrdinaryObject<ScriptPropertyKey, unknown>;
+  const wrapped = result.internalRareSlots?.internalExoticSlots
+    ?.internalPromiseData?.result as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(wrapped.prototype, outer.functionPrototype);
   assert.notEqual(wrapped, target);
   assert.equal(hooks.call(wrapped, undefined, []), 42);
@@ -293,12 +293,14 @@ test("importValue uses the child module loader and returns an outer intrinsic pr
     ]) as OrdinaryObject<ScriptPropertyKey, unknown>;
     objects.drainScriptJobs(outer.agent, (error) => assert.fail(String(error)));
     assert.equal(
-      rejected.internalExoticSlots?.internalPromiseData?.state,
+      rejected.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state,
       "rejected",
     );
     assert.ok(
       typeError(outer)(
-        rejected.internalExoticSlots?.internalPromiseData?.result,
+        rejected.internalRareSlots?.internalExoticSlots?.internalPromiseData
+          ?.result,
       ),
     );
   }

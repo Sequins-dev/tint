@@ -20,7 +20,7 @@ test("Date exposes a realm-local constructor and unbranded prototype", () => {
     unknown
   >;
   assert.equal(objects.getOwnProperty(constructor, "length")?.value, 7);
-  assert.ok(constructor.internalConstruct);
+  assert.ok(constructor.internalRareSlots?.internalConstruct);
   assert.ok(
     objects.getOwnProperty(constructor, "parse"),
     "Date.parse installed",
@@ -55,7 +55,7 @@ test("Date exposes a realm-local constructor and unbranded prototype", () => {
   const utc = objects.getOwnProperty(prototype, "getUTCFullYear")!
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(utc, "length")?.value, 0);
-  assert.equal(utc.internalConstruct, undefined);
+  assert.equal(utc.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("Date.now reads the embedding's wall clock, independently of its receiver", () => {
@@ -78,7 +78,7 @@ test("Date.now reads the embedding's wall clock, independently of its receiver",
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
   const now = objects.getOwnProperty(constructor, "now")!
     .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
-  assert.equal(now.internalCall!(null, []), 1234);
+  assert.equal(now.internalRareSlots!.internalCall!(null, []), 1234);
   assert.equal(reads, 1);
 });
 
@@ -104,7 +104,7 @@ test("Date toTemporalInstant exposes a zero-argument non-constructor method", ()
   >;
   assert.equal(objects.getOwnProperty(fn, "length")?.value, 0);
   assert.equal(objects.getOwnProperty(fn, "name")?.value, "toTemporalInstant");
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.equal(descriptor.writable, true);
   assert.equal(descriptor.enumerable, false);
   assert.equal(descriptor.configurable, true);

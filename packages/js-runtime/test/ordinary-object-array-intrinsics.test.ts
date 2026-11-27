@@ -26,20 +26,20 @@ test("Array intrinsic constructs sparse lengths and dense element lists with rea
     objects.getOwnProperty(realm.arrayPrototype, "constructor")?.value,
     array,
   );
-  const sparse = array.internalCall!(undefined, [3]) as objects.OrdinaryObject<
-    string,
-    unknown
-  >;
+  const sparse = array.internalRareSlots!.internalCall!(
+    undefined,
+    [3],
+  ) as objects.OrdinaryObject<string, unknown>;
   assert.equal((sparse.internalFlags & 8) !== 0, true);
   assert.equal(sparse.prototype, realm.arrayPrototype);
   assert.equal(objects.getOwnProperty(sparse, "length")?.value, 3);
   assert.equal(objects.getOwnProperty(sparse, "0"), undefined);
-  const dense = array.internalCall!(
+  const dense = array.internalRareSlots!.internalCall!(
     undefined,
     [1, 42, 3],
   ) as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(dense, "1")?.value, 42);
-  const single = array.internalCall!(undefined, [
+  const single = array.internalRareSlots!.internalCall!(undefined, [
     "3",
   ]) as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(objects.getOwnProperty(single, "length")?.value, 1);

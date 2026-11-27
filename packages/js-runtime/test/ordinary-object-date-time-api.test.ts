@@ -32,7 +32,10 @@ function setup() {
   const get = (object: Obj, key: string) =>
     o.getProperty(object, key, object, hooks);
   const call = (name: string, receiver: unknown, args: unknown[] = []) =>
-    (get(prototype, name) as Obj).internalCall!(receiver, args);
+    (get(prototype, name) as Obj).internalRareSlots!.internalCall!(
+      receiver,
+      args,
+    );
   const options = (fields: Record<string, unknown>) => {
     const result = o.createObject<ScriptPropertyKey, unknown>(undefined);
     for (const [k, v] of Object.entries(fields))
@@ -40,7 +43,10 @@ function setup() {
     return result;
   };
   const make = (locale: unknown = "en", input: unknown = undefined) => {
-    return constructor.internalConstruct!([locale, input], constructor) as Obj;
+    return constructor.internalRareSlots!.internalConstruct!(
+      [locale, input],
+      constructor,
+    ) as Obj;
   };
   const type = (run: () => unknown, kind: string) =>
     assert.throws(
@@ -68,7 +74,7 @@ function formatted(
   value: unknown = 0,
 ): string {
   const bound = r.get(formatter, "format") as Obj;
-  return bound.internalCall!(undefined, [value]) as string;
+  return bound.internalRareSlots!.internalCall!(undefined, [value]) as string;
 }
 function records(
   r: ReturnType<typeof setup>,
@@ -93,10 +99,16 @@ test("DateTimeFormat installs metadata, a cached bound format and usable default
   assert.equal(bound, r.get(f, "format"));
   assert.equal(r.get(bound, "name"), "");
   assert.equal(r.get(bound, "length"), 1);
-  assert.equal(bound.internalConstruct, undefined);
+  assert.equal(bound.internalRareSlots?.internalConstruct, undefined);
   assert.equal(formatted(r, f), "1/1/1970");
-  assert.equal(bound.internalCall!(r.options({}), []), "1/1/1970");
-  const plain = r.constructor.internalCall!(undefined, []) as Obj;
+  assert.equal(
+    bound.internalRareSlots!.internalCall!(r.options({}), []),
+    "1/1/1970",
+  );
+  const plain = r.constructor.internalRareSlots!.internalCall!(
+    undefined,
+    [],
+  ) as Obj;
   assert.equal(formatted(r, plain), "1/1/1970");
 });
 test("parts and resolved options are fresh records from the method realm", () => {
@@ -197,7 +209,10 @@ test("range validation rejects missing endpoints before coercion and preserves r
 test("legacy chaining unwraps only the format getter and resolvedOptions", () => {
   const r = setup(),
     receiver = o.createObject<ScriptPropertyKey, unknown>(r.prototype);
-  assert.equal(r.constructor.internalCall!(receiver, ["en"]), receiver);
+  assert.equal(
+    r.constructor.internalRareSlots!.internalCall!(receiver, ["en"]),
+    receiver,
+  );
   assert.equal(formatted(r, receiver), "1/1/1970");
   assert.equal(
     r.get(r.call("resolvedOptions", receiver) as Obj, "calendar"),
@@ -205,7 +220,10 @@ test("legacy chaining unwraps only the format getter and resolvedOptions", () =>
   );
   r.type(() => r.call("formatToParts", receiver, [0]), "type");
   r.type(() => r.call("formatRange", receiver, [0, 1]), "type");
-  r.type(() => r.constructor.internalCall!(receiver, ["en"]), "type");
+  r.type(
+    () => r.constructor.internalRareSlots!.internalCall!(receiver, ["en"]),
+    "type",
+  );
 });
 test("options are read once in specification order, including overridden hourCycle", () => {
   const r = setup(),
@@ -383,13 +401,15 @@ test("supportedLocalesOf uses shipped lookup data without consulting clock or ti
     2: "en",
     length: 3,
   });
-  const result = method.internalCall!(undefined, [requested]) as Obj;
+  const result = method.internalRareSlots!.internalCall!(undefined, [
+    requested,
+  ]) as Obj;
   assert.equal(r.get(result, "length"), 2);
   assert.equal(r.get(result, "0"), "fr-CA-u-ca-hebrew");
   assert.equal(r.get(result, "1"), "en");
   r.type(
     () =>
-      method.internalCall!(undefined, [
+      method.internalRareSlots!.internalCall!(undefined, [
         requested,
         r.options({ localeMatcher: "invalid" }),
       ]),
@@ -432,7 +452,10 @@ test("newTarget prototype is selected before locale list access", () => {
       },
       r.hooks,
     );
-  const result = r.constructor.internalConstruct!([locales], target) as Obj;
+  const result = r.constructor.internalRareSlots!.internalConstruct!(
+    [locales],
+    target,
+  ) as Obj;
   assert.equal(result.prototype, prototype);
   assert.deepEqual(seen, ["prototype", "locales"]);
 });

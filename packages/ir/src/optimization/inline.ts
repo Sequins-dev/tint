@@ -292,7 +292,7 @@ function isScriptInlineIntrinsic(fn: FunctionIR): boolean {
  * (`createLiteralObject1..4`, `createConstructedObject1..8`): recognized by
  * their IR shape (returns an object reference, takes at least one `general`
  * field value parameter, allocates one wide `OrdinaryObject` record with at
- * least 20 fields, and has at most one fallback `call`). Exempt from the small
+ * least 16 fields, and has at most one fallback `call`). Exempt from the small
  * `maxExpansion`/`referenceAllowance` caps so hot allocation sites expand
  * directly to bump-pointer allocation. */
 function isScriptObjectAllocator(fn: FunctionIR, module: ModuleIR): boolean {
@@ -317,7 +317,7 @@ function isScriptObjectAllocator(fn: FunctionIR, module: ModuleIR): boolean {
       if (op === undefined) return false;
       if (op.kind === "record-new") {
         const fields = records[op.record]?.fields;
-        if (fields !== undefined && fields.length >= 20) wideRecordNew++;
+        if (fields !== undefined && fields.length >= 16) wideRecordNew++;
         else otherRecordNew++;
       } else if (op.kind === "call") {
         calls++;
@@ -446,7 +446,9 @@ export function inlineSmallFunctions(
     return loopFree[callee] !== 1;
   }
   const eligible = new Uint8Array(module.functions.length),
-    // Callees that call or allocate (kept out of shape-recognized helpers).
+    // Callees that call or allocate (kept out of shape-recognized helpers, and
+    // out of scriptEntry callers unless recognized as an object allocator so
+    // cold runtime fallbacks and sparse-list builders are not duplicated).
     effectful = new Uint8Array(module.functions.length),
     directCallers = new Uint32Array(module.functions.length),
     intrinsic = new Uint8Array(module.functions.length),
@@ -562,6 +564,7 @@ export function inlineSmallFunctions(
         cost++;
         if (
           op.kind === "call" ||
+          op.kind === "call-indirect" ||
           op.kind === "record-new" ||
           op.kind === "reference-vector-new"
         )
@@ -677,10 +680,63 @@ export function inlineSmallFunctions(
         ? 128
         : keepInlineable
           ? Math.min(originalCount + 128, Math.max(0, maxExpansion - selfCost))
-          : originalCount + 128,
+          : fn.scriptEntry === true
+            ? Math.min(originalCount + 128, 768)
+            : originalCount + 128,
       referenceAllowance = 384,
       allocatorInlines = 0,
       changed = false;
+    // For JS script entries, identify blocks that can reach a return terminator.
+    // Blocks that only terminate in throw/trap (guard failure paths) stay cold
+    // and only inline single-instruction script intrinsics.
+    let reachesReturn: Uint8Array | undefined;
+    if (fn.scriptEntry === true) {
+      const preds: (number[] | undefined)[] = [];
+      const queue: number[] = [];
+      reachesReturn = new Uint8Array(nextBlock);
+      const addPred = (targetId: number, predId: number): void => {
+        let list = preds[targetId];
+        if (list === undefined) {
+          list = [];
+          preds[targetId] = list;
+        }
+        list.push(predId);
+      };
+      for (const block of fn.blocks) {
+        if (block === undefined) continue;
+        const term = block.terminator;
+        if (term.kind === "return") {
+          if (reachesReturn[block.id] === 0) {
+            reachesReturn[block.id] = 1;
+            queue.push(block.id);
+          }
+        } else if (term.kind === "jump") {
+          addPred(term.target, block.id);
+        } else if (
+          term.kind === "branch" ||
+          term.kind === "record" ||
+          term.kind === "record-cell" ||
+          term.kind === "cell"
+        ) {
+          addPred(term.consequent, block.id);
+          addPred(term.alternate, block.id);
+        }
+        if (block.exception !== undefined)
+          addPred(block.exception.target, block.id);
+      }
+      for (let head = 0; head < queue.length; head++) {
+        const id = queue[head];
+        if (id === undefined) continue;
+        const incoming = preds[id];
+        if (incoming === undefined) continue;
+        for (const pred of incoming) {
+          if (pred !== undefined && reachesReturn[pred] === 0) {
+            reachesReturn[pred] = 1;
+            queue.push(pred);
+          }
+        }
+      }
+    }
     const slots: ScalarType[] = fn.slots.slice(),
       blocks: Block[] = [],
       originalValues = nextValue;
@@ -695,6 +751,8 @@ export function inlineSmallFunctions(
         callerDebug === undefined ? undefined : callerDebug.values.slice();
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
+      const coldScriptBlock =
+        reachesReturn !== undefined && reachesReturn[block.id] === 0;
       let current = block.id,
         instructions: Instruction[] = [],
         // Values rematerialized after a CFG expansion (replacement ID + 1).
@@ -715,19 +773,24 @@ export function inlineSmallFunctions(
           cost = callee === undefined ? 0 : (costs[callee.id] ?? 0),
           isAllocatorCallee =
             callee !== undefined && allocator[callee.id] === 1,
+          isScriptIntrinsic =
+            callee !== undefined && intrinsic[callee.id] === 1,
           allowAllocator =
             isAllocatorCallee &&
             fn.scriptEntry === true &&
+            !coldScriptBlock &&
             fn.blocks.length <= 8000 &&
             allocatorInlines < 48,
-          isIntrinsic =
-            (callee !== undefined && intrinsic[callee.id] === 1) ||
-            allowAllocator;
+          isIntrinsic = isScriptIntrinsic || allowAllocator;
         if (
           op.kind !== "call" ||
           callee === undefined ||
           !eligible[callee.id] ||
           (isAllocatorCallee && !allowAllocator) ||
+          (coldScriptBlock && !isScriptIntrinsic) ||
+          (fn.scriptEntry === true &&
+            !isIntrinsic &&
+            effectful[callee.id] === 1) ||
           callee.id === fn.id ||
           op.environment !== undefined ||
           separated(fn, callee.id) ||

@@ -19,8 +19,8 @@ const hooks: objectTypes.ObjectHooks<unknown> = {
   sameValue: Object.is,
   call: (callee, receiver, arguments_) => {
     const fn = objects.viewObjectValue(callee, realmWitness);
-    assert.ok(fn?.internalCall);
-    return fn.internalCall(receiver, arguments_);
+    assert.ok(fn?.internalRareSlots?.internalCall);
+    return fn.internalRareSlots?.internalCall(receiver, arguments_);
   },
 };
 function fixture() {
@@ -69,12 +69,13 @@ test("source import of JavaScript rejects with SyntaxError without linking or ev
   );
   objects.drainScriptJobs(realm.agent, () => assert.fail("job failed"));
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "rejected",
   );
   assert.equal(
     objects.viewObjectValue(
-      promise.internalExoticSlots?.internalPromiseData?.result,
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.result,
       realm.objectPrototype,
     )?.prototype,
     realm.prototypes.get("syntax"),
@@ -104,11 +105,11 @@ test("source phase reaches the loader after coercion and preserves its host sour
     "source",
   );
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.result,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
     source,
   );
   assert.deepEqual(log, []);
@@ -146,7 +147,7 @@ test("static source edges load only their target and initialize an immutable sou
   };
   const loading = modules.loadRequestedModules(importer, hooks, undefined);
   assert.equal(
-    loading.internalExoticSlots?.internalPromiseData?.state,
+    loading.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
   assert.deepEqual(loads, ["target"]);
@@ -230,9 +231,12 @@ test("AbstractModuleSource has realm-owned constructor and prototype descriptors
   const typeError = (error: unknown) =>
     objects.viewObjectValue(error, realm.objectPrototype)?.prototype ===
     realm.prototypes.get("type");
-  assert.throws(() => constructor.internalCall!(undefined, []), typeError);
   assert.throws(
-    () => constructor.internalConstruct!([], constructor),
+    () => constructor.internalRareSlots!.internalCall!(undefined, []),
+    typeError,
+  );
+  assert.throws(
+    () => constructor.internalRareSlots!.internalConstruct!([], constructor),
     typeError,
   );
 });

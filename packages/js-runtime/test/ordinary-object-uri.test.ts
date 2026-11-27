@@ -31,6 +31,6 @@ test("URI globals have non-enumerable standard function metadata", () => {
     >;
     assert.equal(objects.getOwnProperty(method, "name")?.value, name);
     assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });

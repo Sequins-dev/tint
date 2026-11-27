@@ -25,6 +25,6 @@ test("Array.fromAsync exposes intrinsic factory metadata without being construct
   >;
   assert.equal(objects.getOwnProperty(fn, "name")?.value, "fromAsync");
   assert.equal(objects.getOwnProperty(fn, "length")?.value, 1);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   assert.equal(objects.getOwnProperty(fn, "prototype"), undefined);
 });

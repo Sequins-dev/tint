@@ -107,7 +107,7 @@ export function run():number {
  realm.availableTimeZoneIdentifiers=():readonly string[]=>primary;
  installIntlIntrinsics(root,realm,hooks);
  const intl=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(root,"Intl")?.value,root);if(intl===undefined)return 23;
- const method=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(intl,"supportedValuesOf")?.value,root),invoke=method?.internalCall;if(invoke===undefined)return 24;
+ const method=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(intl,"supportedValuesOf")?.value,root),invoke=method?.internalRareSlots?.internalCall;if(invoke===undefined)return 24;
  const names=viewObjectValue(invoke(null,["timeZone"]),root);if(names===undefined||names.prototype!==realm.arrayPrototype||getOwnProperty<ScriptPropertyKey,unknown>(names,"length")?.value!==primary.length||invoke(null,["timeZone"])===names)return 25;
  for(let i=0;i<primary.length;i++)if(getOwnProperty<ScriptPropertyKey,unknown>(names,String(i))?.value!==primary[i])return 26;
  let invalid=false;try{invoke(null,["unknown"]);}catch(error){const object=viewObjectValue(error,root);invalid=object!==undefined&&object.prototype===realm.prototypes.get("range");}if(!invalid)return 27;

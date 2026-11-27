@@ -220,7 +220,7 @@ export function getShadowRealmWrappedValue(
 ): unknown {
   const target = viewObjectValue(value, realm.objectPrototype);
   if (target === undefined) return value;
-  if (target.internalCall === undefined)
+  if (target.internalRareSlots?.internalCall === undefined)
     throw createRuntimeError(realm, "type");
   const hooks = realm.objectHooks;
   const wrapped = createCallableObject<ScriptPropertyKey, unknown>(

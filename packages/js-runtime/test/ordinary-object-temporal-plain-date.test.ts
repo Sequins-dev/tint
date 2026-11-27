@@ -84,6 +84,6 @@ test("Temporal.PlainDate supplies slot-based equality, calendar copy and partial
       unknown
     >;
     assert.equal(objects.getOwnProperty(fn, "length")!.value, length);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   }
 });

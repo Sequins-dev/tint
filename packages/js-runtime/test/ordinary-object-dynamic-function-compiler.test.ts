@@ -39,16 +39,23 @@ test("dynamic constructor compilation receives coerced source, kind and construc
     const constructor = object.getOwnProperty(prototype, "constructor")!
       .value as object.OrdinaryObject<object.ScriptPropertyKey, unknown>;
     assert.equal(
-      constructor.internalCall!(undefined, ["a", 2, undefined]),
+      constructor.internalRareSlots!.internalCall!(undefined, [
+        "a",
+        2,
+        undefined,
+      ]),
       created,
     );
     assert.deepEqual(received, [kind, ["a", "2"], "undefined", constructor]);
     assert.equal(
-      constructor.internalConstruct!(["return 1;"], target),
+      constructor.internalRareSlots!.internalConstruct!(["return 1;"], target),
       created,
     );
     assert.deepEqual(received, [kind, [], "return 1;", target]);
-    assert.equal(constructor.internalCall!(undefined, []), created);
+    assert.equal(
+      constructor.internalRareSlots!.internalCall!(undefined, []),
+      created,
+    );
     assert.deepEqual(received, [kind, [], "", constructor]);
   }
   assert.equal(realm.unsupported, false);
@@ -58,7 +65,7 @@ test("dynamic constructor compilation receives coerced source, kind and construc
   const constructor = object.getOwnProperty(root, "Function")!
     .value as object.OrdinaryObject<object.ScriptPropertyKey, unknown>;
   assert.throws(
-    () => constructor.internalCall!(undefined, []),
+    () => constructor.internalRareSlots!.internalCall!(undefined, []),
     (error) => error === 42,
   );
   assert.equal(realm.unsupported, false);

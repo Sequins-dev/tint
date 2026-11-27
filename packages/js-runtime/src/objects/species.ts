@@ -31,7 +31,10 @@ export function speciesConstructor(
   );
   if (species === undefined || species === null) return fallback;
   const target = viewObjectValue(species, realm.objectPrototype);
-  if (target === undefined || target.internalConstruct === undefined)
+  if (
+    target === undefined ||
+    target.internalRareSlots?.internalConstruct === undefined
+  )
     throw createRuntimeError(realm, "type");
   return target;
 }

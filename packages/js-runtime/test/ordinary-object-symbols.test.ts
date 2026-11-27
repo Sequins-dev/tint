@@ -103,16 +103,21 @@ test("Symbol intrinsic has a throwing construct capability and exposes registry 
   object.installSymbolIntrinsics(global, realm, hooks);
   const constructor = object.getOwnProperty(global, "Symbol")!
     .value as object.OrdinaryObject<object.ScriptPropertyKey, unknown>;
-  assert.equal(typeof constructor.internalCall, "function");
-  assert.equal(typeof constructor.internalConstruct, "function");
-  assert.throws(() => constructor.internalConstruct!([], constructor));
+  assert.equal(typeof constructor.internalRareSlots?.internalCall, "function");
+  assert.equal(
+    typeof constructor.internalRareSlots?.internalConstruct,
+    "function",
+  );
+  assert.throws(() =>
+    constructor.internalRareSlots!.internalConstruct!([], constructor),
+  );
   assert.equal(object.getOwnProperty(constructor, "length")?.value, 0);
   assert.equal(
     object.getOwnProperty(constructor, "prototype")?.value,
     realm.symbolPrototype,
   );
-  const a = constructor.internalCall!(undefined, []),
-    b = constructor.internalCall!(undefined, []);
+  const a = constructor.internalRareSlots!.internalCall!(undefined, []),
+    b = constructor.internalRareSlots!.internalCall!(undefined, []);
   assert.notEqual(a, b);
   for (const name of ["for", "keyFor"]) {
     const fn = object.getOwnProperty(constructor, name)!
@@ -160,7 +165,7 @@ test("realms sharing an explicit registry share registered and well-known symbol
     unknown
   >;
   assert.equal(
-    af.internalCall!(a, ["shared"]),
-    bf.internalCall!(b, ["shared"]),
+    af.internalRareSlots!.internalCall!(a, ["shared"]),
+    bf.internalRareSlots!.internalCall!(b, ["shared"]),
   );
 });

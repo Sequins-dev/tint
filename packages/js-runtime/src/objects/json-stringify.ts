@@ -130,7 +130,7 @@ function objectSkipsToJSON(
   if (object.internalArrayElements !== undefined) {
     if (!arrayProtoClean || object.prototype !== realm.arrayPrototype)
       return false;
-    const props = object.properties;
+    const props = object.internalRareSlots?.properties;
     return props === undefined || !props.has("toJSON");
   }
   if (object.internalMethods !== undefined) return false;
@@ -140,7 +140,7 @@ function objectSkipsToJSON(
     const shape = object.internalShape;
     return shape === undefined || !shapeHasToJSON(shape);
   }
-  const props = object.properties;
+  const props = object.internalRareSlots?.properties;
   return props === undefined || !props.has("toJSON");
 }
 
@@ -330,7 +330,7 @@ export function stringifyJSON(
     }
     let object = viewObjectValue(current, realm.objectPrototype);
     if (object !== undefined) {
-      const exotic = object.internalExoticSlots;
+      const exotic = object.internalRareSlots?.internalExoticSlots;
       const data =
         exotic === undefined ? undefined : exotic.internalPrimitiveData;
       if (data !== undefined) {
@@ -364,7 +364,7 @@ export function stringifyJSON(
         throw createRuntimeError(realm, "type");
       return false;
     }
-    const exotic = object.internalExoticSlots;
+    const exotic = object.internalRareSlots?.internalExoticSlots;
     const raw = exotic === undefined ? undefined : exotic.internalRawJSON;
     if (raw !== undefined) {
       out.push(raw);
@@ -433,7 +433,7 @@ export function stringifyJSON(
       out.push("]");
       return;
     }
-    const props = object.properties;
+    const props = object.internalRareSlots?.properties;
     if (
       !hasReplacer &&
       packed === undefined &&
@@ -456,7 +456,10 @@ export function stringifyJSON(
         for (let i = 0; i < length; i++) {
           if (i > 0) out.push(sep);
           const key = indexKey(i);
-          const desc = object.properties === props ? props.get(key) : undefined;
+          const desc =
+            object.internalRareSlots?.properties === props
+              ? props.get(key)
+              : undefined;
           let elem: unknown;
           if (desc !== undefined && !desc.accessor) elem = desc.value;
           else elem = getPropertyChecked(object, key, realm, hooks);
@@ -556,7 +559,7 @@ export function stringifyJSON(
     }
 
     if (plain && (object.internalFlags & objectFlagDictionary) !== 0) {
-      const props = object.properties;
+      const props = object.internalRareSlots?.properties;
       if (props === undefined || props.size === 0) {
         out.push("}");
         return;

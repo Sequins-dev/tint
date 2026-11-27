@@ -21,7 +21,8 @@ function logarithm(name: string): (value: number) => number {
     objects.ScriptPropertyKey,
     unknown
   >;
-  return (value) => method.internalCall!(undefined, [value]) as number;
+  return (value) =>
+    method.internalRareSlots!.internalCall!(undefined, [value]) as number;
 }
 
 for (const name of ["log", "log2", "log10", "log1p"] as const) {

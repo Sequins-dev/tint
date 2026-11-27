@@ -124,7 +124,10 @@ export function classHeritage(
       prototypeParent: undefined,
     };
   const constructor = viewObjectValue(value, realm.objectPrototype);
-  if (constructor === undefined || constructor.internalConstruct === undefined)
+  if (
+    constructor === undefined ||
+    constructor.internalRareSlots?.internalConstruct === undefined
+  )
     throw createRuntimeError(realm, "type");
   const prototypeValue = getProperty<ScriptPropertyKey, unknown>(
     constructor,

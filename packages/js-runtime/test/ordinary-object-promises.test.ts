@@ -9,15 +9,17 @@ test("promise state is a private capability and does not leak through inheritanc
   );
   const promise = promises.createPromiseObject(prototype);
   assert.ok(
-    promise.internalExoticSlots?.internalPromiseData?.promise === promise,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+      ?.promise === promise,
   );
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
-  assert.equal(promise.properties?.size ?? 0, 0);
+  assert.equal(promise.internalRareSlots?.properties?.size ?? 0, 0);
   assert.equal(
-    object.createObject(promise).internalExoticSlots?.internalPromiseData,
+    object.createObject(promise).internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData,
     undefined,
   );
 });
@@ -91,7 +93,8 @@ test("Promise intrinsics expose stable constructor and prototype identities", ()
     constructor,
   );
   assert.equal(
-    realm.promisePrototype.internalExoticSlots?.internalPromiseData,
+    realm.promisePrototype.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData,
     undefined,
   );
   for (const name of ["then", "catch", "finally"]) {
@@ -177,5 +180,5 @@ test("Promise.withResolvers exposes a non-constructible zero-argument method", (
     ?.value as object.OrdinaryObject<object.ScriptPropertyKey, unknown>;
   assert.ok(method);
   assert.equal(object.getOwnProperty(method, "length")?.value, 0);
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });

@@ -37,7 +37,10 @@ function protocolMethod(
   if (result.error !== "none") throw createRuntimeError(realm, "type");
   if (result.value === null || result.value === undefined) return undefined;
   const method = viewObjectValue(result.value, realm.objectPrototype);
-  if (method === undefined || method.internalCall === undefined)
+  if (
+    method === undefined ||
+    method.internalRareSlots?.internalCall === undefined
+  )
     throw createRuntimeError(realm, "type");
   return method;
 }
@@ -173,7 +176,8 @@ export function installStringRegExpMethods(
           const needle = regexpString(search, realm, hooks);
           const callable = viewObjectValue(replacer, realm.objectPrototype);
           const functional =
-            callable !== undefined && callable.internalCall !== undefined;
+            callable !== undefined &&
+            callable.internalRareSlots?.internalCall !== undefined;
           const template = functional
             ? ""
             : regexpString(replacer, realm, hooks);

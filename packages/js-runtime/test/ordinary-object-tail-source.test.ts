@@ -157,9 +157,9 @@ test("a direct internal invocation uses the same driver and thrown identity", ()
     realm,
     hooks,
   );
-  assert.ok(fn.internalCall);
+  assert.ok(fn.internalRareSlots?.internalCall);
   assert.throws(
-    () => fn.internalCall!(undefined, []),
+    () => fn.internalRareSlots!.internalCall!(undefined, []),
     (error) => error === failure,
   );
   assert.equal(realm.agent.activeContext, undefined);

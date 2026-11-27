@@ -21,7 +21,8 @@ function cubeRoot(): (value: number) => number {
     objects.ScriptPropertyKey,
     unknown
   >;
-  return (value) => method.internalCall!(undefined, [value]) as number;
+  return (value) =>
+    method.internalRareSlots!.internalCall!(undefined, [value]) as number;
 }
 
 test("cube roots preserve exceptional values and exact integer cubes", () => {

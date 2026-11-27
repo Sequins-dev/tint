@@ -127,8 +127,8 @@ test("NumberFormat installer exposes callable constructor, format accessor and s
   const constructor = getOwnProperty(root, "NumberFormat")!
     .value as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(getOwnProperty(constructor, "length")!.value, 0);
-  assert.ok(constructor.internalCall);
-  assert.ok(constructor.internalConstruct);
+  assert.ok(constructor.internalRareSlots?.internalCall);
+  assert.ok(constructor.internalRareSlots?.internalConstruct);
   assert.equal(
     getOwnProperty(constructor, "prototype")!.value,
     realm.numberFormatPrototype,
@@ -140,7 +140,7 @@ test("NumberFormat installer exposes callable constructor, format accessor and s
   const getter = format.get as OrdinaryObject<ScriptPropertyKey, unknown>;
   assert.equal(getOwnProperty(getter, "name")!.value, "get format");
   assert.equal(getOwnProperty(getter, "length")!.value, 0);
-  assert.equal(getter.internalConstruct, undefined);
+  assert.equal(getter.internalRareSlots?.internalConstruct, undefined);
   for (const [name, length] of [
     ["formatToParts", 1],
     ["resolvedOptions", 0],
@@ -148,7 +148,7 @@ test("NumberFormat installer exposes callable constructor, format accessor and s
     const method = getOwnProperty(realm.numberFormatPrototype, name)!
       .value as OrdinaryObject<ScriptPropertyKey, unknown>;
     assert.equal(getOwnProperty(method, "length")!.value, length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
   }
 });
 

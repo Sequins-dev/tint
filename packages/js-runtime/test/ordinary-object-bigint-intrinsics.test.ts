@@ -30,5 +30,5 @@ test("BigInt toString exposes zero required parameters and standard descriptors"
   assert.equal(length.enumerable, false);
   assert.equal(length.configurable, true);
   assert.equal(objects.getOwnProperty(method, "name")?.value, "toString");
-  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalRareSlots?.internalConstruct, undefined);
 });

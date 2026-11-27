@@ -210,7 +210,7 @@ function validateObject(
         }
         return true;
       }
-      const props = object.properties;
+      const props = object.internalRareSlots?.properties;
       const fields = rule.fields;
       for (let i = 0; i < fields.length; i++) {
         const field = fields[i];
@@ -291,7 +291,7 @@ function validateObject(
           }
         }
       }
-      const props = object.properties;
+      const props = object.internalRareSlots?.properties;
       if (props !== undefined) {
         for (const [key, desc] of props) {
           if (!validateDescriptor(key, desc, schema, pending, realm, false))
@@ -300,7 +300,7 @@ function validateObject(
       }
       return true;
     }
-    const props = object.properties;
+    const props = object.internalRareSlots?.properties;
     if (props !== undefined) {
       pending.push({ object, schema });
       for (const [key, desc] of props) {

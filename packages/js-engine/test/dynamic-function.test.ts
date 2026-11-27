@@ -93,25 +93,31 @@ test("engine creation leaves realm installation to the embedder and compilation 
   assert.equal(realm.dynamicFunctionCompiler, undefined);
   const fn = compiler("normal", ["value"], "return value", target);
   assert.deepEqual(events, []);
-  assert.equal(fn.internalCall!(undefined, [19]), 19);
-  assert.equal(fn.internalCall!(undefined, [23]), 23);
+  assert.equal(fn.internalRareSlots!.internalCall!(undefined, [19]), 19);
+  assert.equal(fn.internalRareSlots!.internalCall!(undefined, [23]), 23);
   assert.deepEqual(events, ["publish", "invoke", "invoke"]);
   assert.equal(runtime.getOwnProperty(fn, "length")?.value, 1);
-  assert.match(fn.internalExoticSlots!.internalSourceText!, /return value/);
+  assert.match(
+    fn.internalRareSlots!.internalExoticSlots!.internalSourceText!,
+    /return value/,
+  );
 });
 test("engine preserves strict receivers and sloppy global receivers", () => {
   const { object, compiler, target } = fixture();
   const strict = compiler("normal", [], '"use strict";return this', target);
-  assert.equal(strict.internalCall!(undefined, []), undefined);
-  assert.equal(strict.internalCall!(42, []), 42);
+  assert.equal(
+    strict.internalRareSlots!.internalCall!(undefined, []),
+    undefined,
+  );
+  assert.equal(strict.internalRareSlots!.internalCall!(42, []), 42);
   const sloppy = compiler("normal", [], "return this", target);
-  assert.equal(sloppy.internalCall!(undefined, []), object);
+  assert.equal(sloppy.internalRareSlots!.internalCall!(undefined, []), object);
 });
 test("unsupported parameter initialization is rejected on call before publication", () => {
   const { compiler, realm, events, target } = fixture();
   const fn = compiler("normal", ["value=19"], "return value", target);
   assert.equal(realm.unsupported, false);
-  assert.throws(() => fn.internalCall!(undefined, []));
+  assert.throws(() => fn.internalRareSlots!.internalCall!(undefined, []));
   assert.equal(realm.unsupported, true);
   assert.deepEqual(events, []);
 });
@@ -164,12 +170,12 @@ test("managed receiver writes use fresh invocation receivers across recursive se
         assert.equal(value, true);
         assert.equal(receiver.object, outer);
         calls++;
-        assert.equal(fn.internalCall!(inner, []), inner);
+        assert.equal(fn.internalRareSlots!.internalCall!(inner, []), inner);
         return true;
       },
     },
   );
-  assert.equal(fn.internalCall!(outer, []), outer);
+  assert.equal(fn.internalRareSlots!.internalCall!(outer, []), outer);
   assert.equal(calls, 1);
   assert.equal(runtime.getOwnProperty(inner, "touched")?.value, true);
 });
@@ -183,7 +189,9 @@ test("dynamic code rejects foreign context compilation and cached invocation bef
       first.target,
     );
   first.domain.value = 19;
-  assert.throws(() => uncompiled.internalCall!(undefined, [42]));
+  assert.throws(() =>
+    uncompiled.internalRareSlots!.internalCall!(undefined, [42]),
+  );
   assert.deepEqual(first.events, []);
   const second = fixture(),
     compiled = second.compiler(
@@ -192,10 +200,12 @@ test("dynamic code rejects foreign context compilation and cached invocation bef
       "return value",
       second.target,
     );
-  assert.equal(compiled.internalCall!(undefined, [42]), 42);
+  assert.equal(compiled.internalRareSlots!.internalCall!(undefined, [42]), 42);
   const before = [...second.events];
   second.domain.value = 19;
-  assert.throws(() => compiled.internalCall!(undefined, [23]));
+  assert.throws(() =>
+    compiled.internalRareSlots!.internalCall!(undefined, [23]),
+  );
   assert.deepEqual(second.events, before);
 });
 
@@ -220,8 +230,8 @@ test("general ordinary bodies compile lazily once and receive packed call state"
   );
   assert.equal(seen.length, 0);
   assert.deepEqual(f.events, []);
-  assert.equal(fn.internalCall!(7, [42]), 42);
-  assert.equal(fn.internalCall!(undefined, [19]), 19);
+  assert.equal(fn.internalRareSlots!.internalCall!(7, [42]), 42);
+  assert.equal(fn.internalRareSlots!.internalCall!(undefined, [19]), 19);
   assert.equal(seen.length, 1);
   assert.ok(seen[0]?.identity === identity);
   assert.equal(calls[0]?.receiver, 7);
@@ -246,9 +256,12 @@ test("general fallback covers arguments and closed profiles with missing inputs"
     "return arguments.length",
     f.target,
   );
-  assert.equal(unsupported.internalCall!(undefined, [1, 2]), 42);
+  assert.equal(
+    unsupported.internalRareSlots!.internalCall!(undefined, [1, 2]),
+    42,
+  );
   const closed = f.compiler("normal", [], "return arguments[0]", f.target);
-  assert.equal(closed.internalCall!(undefined, []), 42);
+  assert.equal(closed.internalRareSlots!.internalCall!(undefined, []), 42);
   assert.equal(compilations, 2);
   assert.equal(f.realm.unsupported, false);
 });
@@ -259,7 +272,10 @@ test("simple fast paths stay ahead of the general fallback", () => {
     throw "GENERAL_UNEXPECTED";
   });
   const simple = f.compiler("normal", [], "return this", f.target);
-  assert.equal(simple.internalCall!(undefined, []), f.object);
+  assert.equal(
+    simple.internalRareSlots!.internalCall!(undefined, []),
+    f.object,
+  );
   assert.equal(calls, 0);
 });
 
@@ -431,8 +447,8 @@ test("general generator initialization is cached and precedes outer prototype se
   });
   const fn = f.compiler("generator", ["a=1"], "yield a", f.target);
   assert.equal(compilations, 0);
-  const first = fn.internalCall!(7, [42]);
-  const second = fn.internalCall!(7, [43]);
+  const first = fn.internalRareSlots!.internalCall!(7, [42]);
+  const second = fn.internalRareSlots!.internalCall!(7, [43]);
   assert.equal(compilations, 1);
   assert.equal(initializations, 2);
   assert.deepEqual(packed, [
@@ -455,11 +471,13 @@ test("async generator carriers transfer only an idle unstarted continuation", ()
   const hidden = make(),
     start = runtime.takeAsyncGeneratorStart(hidden, f.realm);
   assert.equal(
-    hidden.internalExoticSlots?.internalAsyncGeneratorData?.record.state,
+    hidden.internalRareSlots?.internalExoticSlots?.internalAsyncGeneratorData
+      ?.record.state,
     "completed",
   );
   assert.equal(
-    hidden.internalExoticSlots?.internalAsyncGeneratorData?.record.continuation,
+    hidden.internalRareSlots?.internalExoticSlots?.internalAsyncGeneratorData
+      ?.record.continuation,
     undefined,
   );
   assert.deepEqual(start("next", undefined), { kind: "return", value: 42 });
@@ -469,11 +487,13 @@ test("async generator carriers transfer only an idle unstarted continuation", ()
   );
   for (const field of ["running", "waiting"] as const) {
     const g = make();
-    g.internalExoticSlots!.internalAsyncGeneratorData!.record[field] = true;
+    g.internalRareSlots!.internalExoticSlots!.internalAsyncGeneratorData!.record[
+      field
+    ] = true;
     assert.throws(() => runtime.takeAsyncGeneratorStart(g, f.realm));
   }
   const g = make();
-  g.internalExoticSlots!.internalAsyncGeneratorData!.record.state =
+  g.internalRareSlots!.internalExoticSlots!.internalAsyncGeneratorData!.record.state =
     "suspended-yield";
   assert.throws(() => runtime.takeAsyncGeneratorStart(g, f.realm));
   for (const value of [undefined, 1, {}, f.object])
@@ -503,8 +523,8 @@ test("general async generator bodies initialize synchronously and cache the hidd
   });
   const fn = f.compiler("async-generator", ["a=1"], "yield a", f.target);
   assert.equal(compilations, 0);
-  const first = fn.internalCall!(undefined, [19]);
-  const second = fn.internalCall!(undefined, [23]);
+  const first = fn.internalRareSlots!.internalCall!(undefined, [19]);
+  const second = fn.internalRareSlots!.internalCall!(undefined, [23]);
   assert.notEqual(first, second);
   assert.equal(compilations, 1);
   assert.equal(initializations, 2);
@@ -513,7 +533,7 @@ test("general async generator bodies initialize synchronously and cache the hidd
     [fn, undefined, 23],
   ]);
   assert.throws(
-    () => fn.internalCall!(undefined, [marker]),
+    () => fn.internalRareSlots!.internalCall!(undefined, [marker]),
     (e) => e === marker,
   );
   assert.equal(compilations, 1);
@@ -559,7 +579,7 @@ test("dynamic generator prototypes are selected after carrier parameter effects"
     );
     const fn = f.compiler(kind, ["a=1"], "yield a", f.target);
     const generator = runtime.viewObjectValue(
-      fn.internalCall!(undefined, []),
+      fn.internalRareSlots!.internalCall!(undefined, []),
       f.object,
     );
     assert.ok(generator);
@@ -586,7 +606,9 @@ test("async generator transfer rejects queued requests and pending resumptions",
   };
   for (const field of ["head", "tail"] as const) {
     const g = make(),
-      record = g.internalExoticSlots!.internalAsyncGeneratorData!.record;
+      record =
+        g.internalRareSlots!.internalExoticSlots!.internalAsyncGeneratorData!
+          .record;
     record[field] = request;
     assert.throws(
       () => runtime.takeAsyncGeneratorStart(g, f.realm),
@@ -596,17 +618,18 @@ test("async generator transfer rejects queued requests and pending resumptions",
     assert.ok(record.continuation);
   }
   const pending = make();
-  pending.internalExoticSlots!.internalAsyncGeneratorData!.record.pending = {
-    target: "body",
-    kind: "next",
-    value: 42,
-  };
+  pending.internalRareSlots!.internalExoticSlots!.internalAsyncGeneratorData!.record.pending =
+    {
+      target: "body",
+      kind: "next",
+      value: 42,
+    };
   assert.throws(
     () => runtime.takeAsyncGeneratorStart(pending, f.realm),
     (e) => e === "DYNAMIC_ASYNC_GENERATOR_CARRIER_INVARIANT",
   );
   const empty = make();
-  empty.internalExoticSlots!.internalAsyncGeneratorData!.record.continuation =
+  empty.internalRareSlots!.internalExoticSlots!.internalAsyncGeneratorData!.record.continuation =
     undefined;
   assert.throws(
     () => runtime.takeAsyncGeneratorStart(empty, f.realm),

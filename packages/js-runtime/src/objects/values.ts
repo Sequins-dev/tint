@@ -151,20 +151,15 @@ export function createSourceInstance(
   if ((proto.internalFlags & objectFlagUsedAsPrototype) === 0)
     markPrototype<ScriptPropertyKey, unknown>(proto);
   const instance: OrdinaryObject<ScriptPropertyKey, unknown> = {
-    internalShape: proto.internalChildShape,
+    internalShape: proto.internalRareSlots?.internalChildShape,
     prototype: proto,
     internalFlags: objectFlagExtensible,
-    properties: undefined,
     internalPropertyEpoch: 0,
-    internalChildShape: undefined,
     internalValues: undefined,
-    internalCall: undefined,
     internalRegisterCall: undefined,
-    internalConstruct: undefined,
     internalArrayElements: undefined,
     internalMethods: undefined,
     internalRareSlots: undefined,
-    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,
@@ -282,7 +277,7 @@ export function warmConstructSite(
     return false;
   site.constructCtor = target;
   site.constructProto = proto;
-  site.constructRoot = proto.internalChildShape;
+  site.constructRoot = proto.internalRareSlots?.internalChildShape;
   site.constructShape = reached;
   site.constructEpoch = propertyEpoch.value;
   return true;
@@ -290,37 +285,30 @@ export function warmConstructSite(
 
 /** Direct fixed-arity final-shape constructor allocators (1..8 own fields).
  * Callers guard with `warmConstructSite` (or its inline epoch/ctor fast check)
- * before evaluating constructor field values; these helpers check the cached
- * shape/epoch one final time and allocate directly in the final shape. */
+ * before evaluating constructor field values. When `recheckEpoch` is false,
+ * the caller already proved no intervening code could mutate `propertyEpoch`. */
 export function createConstructedObject1(
   site: ConstructSite,
   v0: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 1,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: undefined,
       internalValue2: undefined,
@@ -336,32 +324,25 @@ export function createConstructedObject2(
   site: ConstructSite,
   v0: unknown,
   v1: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 2,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: undefined,
@@ -378,32 +359,25 @@ export function createConstructedObject3(
   v0: unknown,
   v1: unknown,
   v2: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 3,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -421,32 +395,25 @@ export function createConstructedObject4(
   v1: unknown,
   v2: unknown,
   v3: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 4,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -465,32 +432,25 @@ export function createConstructedObject5(
   v2: unknown,
   v3: unknown,
   v4: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 5,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -510,32 +470,25 @@ export function createConstructedObject6(
   v3: unknown,
   v4: unknown,
   v5: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 6,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -556,32 +509,25 @@ export function createConstructedObject7(
   v4: unknown,
   v5: unknown,
   v6: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 7,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -603,32 +549,25 @@ export function createConstructedObject8(
   v5: unknown,
   v6: unknown,
   v7: unknown,
+  recheckEpoch: boolean,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   const proto = site.constructProto;
   const shape = site.constructShape;
-  const root = site.constructRoot;
   if (
     proto !== undefined &&
     shape !== undefined &&
-    root !== undefined &&
-    proto.internalChildShape === root &&
-    site.constructEpoch === site.constructEpochRef.value
+    (!recheckEpoch || site.constructEpoch === site.constructEpochRef.value)
   )
     return {
       internalShape: shape,
       prototype: proto,
       internalFlags: objectFlagExtensible,
-      properties: undefined,
       internalPropertyEpoch: 8,
-      internalChildShape: undefined,
       internalValues: undefined,
-      internalCall: undefined,
       internalRegisterCall: undefined,
-      internalConstruct: undefined,
       internalArrayElements: undefined,
       internalMethods: undefined,
       internalRareSlots: undefined,
-      internalExoticSlots: undefined,
       internalValue0: v0,
       internalValue1: v1,
       internalValue2: v2,
@@ -999,7 +938,7 @@ export function viewWeakRegistryOwner(
 export function isArrayValue(value: unknown, realm: ErrorRealm): boolean {
   let object = viewObjectValue(value, realm.objectPrototype);
   while (object !== undefined) {
-    const exotic = object.internalExoticSlots;
+    const exotic = object.internalRareSlots?.internalExoticSlots;
     const proxy = exotic === undefined ? undefined : exotic.internalProxyData;
     if (proxy === undefined)
       return (object.internalFlags & objectFlagArrayData) !== 0;
@@ -1025,9 +964,15 @@ export function objectTypeof(
   // Retained typeof helpers reach this classifier, and retained code may
   // not call into other modules, so it reads the exotic slot directly
   // instead of through exoticSlots.
-  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  const exotic =
+    object === undefined
+      ? undefined
+      : object.internalRareSlots?.internalExoticSlots;
   if (exotic !== undefined && exotic.internalIsHTMLDDA) return "undefined";
-  if (object !== undefined && object.internalCall !== undefined)
+  if (
+    object !== undefined &&
+    object.internalRareSlots?.internalCall !== undefined
+  )
     return "function";
   // Runtime internals use raw typeof. In particular this fallback recognizes
   // primitives and native closures without recursing through this classifier.
@@ -1050,7 +995,10 @@ export function scriptIsHTMLDDA(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  const exotic =
+    object === undefined
+      ? undefined
+      : object.internalRareSlots?.internalExoticSlots;
   return exotic !== undefined && exotic.internalIsHTMLDDA;
 }
 
@@ -1081,7 +1029,10 @@ export function scriptBoolean(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): boolean {
   const object = viewObjectValue(value, witness);
-  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  const exotic =
+    object === undefined
+      ? undefined
+      : object.internalRareSlots?.internalExoticSlots;
   if (exotic !== undefined && exotic.internalIsHTMLDDA) return false;
   const bigint = viewBigIntValue(value);
   return bigint === undefined ? !!value : bigIntToBoolean(bigint);

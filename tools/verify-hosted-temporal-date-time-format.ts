@@ -7,8 +7,8 @@ verifyHostedFixture(
   `import {createObject,createErrorRealm,installIntlIntrinsics,installTemporalIntrinsics,installPrimitiveIntrinsics,viewObjectValue,getProperty,createDataProperty,createBigIntLiteral,type OrdinaryObject,type ObjectHooks,type ScriptPropertyKey} from "objects";
 type Obj=OrdinaryObject<ScriptPropertyKey,unknown>;
 function object(value:unknown,root:Obj):Obj {const result=viewObjectValue(value,root);if(result===undefined)throw "OBJECT";return result;}
-function invoke(fn:Obj,receiver:unknown,args:readonly unknown[]):unknown {const call=fn.internalCall;if(call===undefined)throw "CALL";return call(receiver,args);}
-function construct(ctor:Obj,args:readonly unknown[],root:Obj):Obj {const call=ctor.internalConstruct;if(call===undefined)throw "CONSTRUCT";return object(call(args,ctor),root);}
+function invoke(fn:Obj,receiver:unknown,args:readonly unknown[]):unknown {const call=fn.internalRareSlots?.internalCall;if(call===undefined)throw "CALL";return call(receiver,args);}
+function construct(ctor:Obj,args:readonly unknown[],root:Obj):Obj {const call=ctor.internalRareSlots?.internalConstruct;if(call===undefined)throw "CONSTRUCT";return object(call(args,ctor),root);}
 function get(value:Obj,key:string,hooks:ObjectHooks<unknown>):unknown {return getProperty<ScriptPropertyKey,unknown>(value,key,value,hooks);}
 function set(value:Obj,key:string,item:unknown,hooks:ObjectHooks<unknown>):void {if(!createDataProperty<ScriptPropertyKey,unknown>(value,key,item,hooks))throw "PROPERTY";}
 function format(formatter:Obj,value:unknown,root:Obj,hooks:ObjectHooks<unknown>):unknown {return invoke(object(get(formatter,"format",hooks),root),undefined,[value]);}

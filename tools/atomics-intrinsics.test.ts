@@ -52,8 +52,8 @@ async function fixture(pauseHint?: () => void, canSuspend = false) {
 test("Atomics namespace and query methods have standard descriptors", async () => {
   const f = await fixture();
   assert.ok(f.atomics.prototype === f.realm.objectPrototype);
-  assert.equal(f.atomics.internalCall, undefined);
-  assert.equal(f.atomics.internalConstruct, undefined);
+  assert.equal(f.atomics.internalRareSlots?.internalCall, undefined);
+  assert.equal(f.atomics.internalRareSlots?.internalConstruct, undefined);
   assert.equal(
     f.get(f.atomics, o.wellKnownSymbol(f.realm.symbolRegistry, "toStringTag")),
     "Atomics",
@@ -65,7 +65,7 @@ test("Atomics namespace and query methods have standard descriptors", async () =
     const method = f.get(f.atomics, name) as ObjectValue;
     assert.equal(f.get(method, "name"), name);
     assert.equal(f.get(method, "length"), length);
-    assert.equal(method.internalConstruct, undefined);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined);
     const property = o.getOwnProperty(f.atomics, name)!;
     assert.equal(property.enumerable, false);
     assert.equal(property.writable, true);
@@ -1209,15 +1209,18 @@ test("positive waitAsync installs an owner-local intrinsic Promise and same-agen
   const promise = f.get(result, "value") as ObjectValue;
   assert.equal(promise.prototype, f.realm.promisePrototype);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   assert.equal(f.invoke("notify", [view, 0, 1]), 1);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
-  assert.equal(promise.internalExoticSlots?.internalPromiseData?.result, "ok");
+  assert.equal(
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
+    "ok",
+  );
 });
 test("an unrelated same-agent notify does not synchronously resolve an externally notified Promise", async () => {
   const f = await asynchronousWaitFixture(),
@@ -1230,14 +1233,14 @@ test("an unrelated same-agent notify does not synchronously resolve an externall
   });
   assert.equal(f.invoke("notify", [view, 2, 1]), 0);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "pending",
   );
   const { processAtomicWaitEvents } =
     await import("../packages/js-runtime/src/objects/atomics-wait.ts");
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 1);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.state,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.state,
     "fulfilled",
   );
 });
@@ -1289,7 +1292,7 @@ test("owner timeout processing settles once and removes the waiter before a late
   f.setNow(1);
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 1);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.result,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
     "timed-out",
   );
   assert.equal(f.invoke("notify", [view, 0, 1]), 0);
@@ -1329,7 +1332,8 @@ test("continuous Promise jobs do not starve owner waitAsync timeouts", async () 
     events.push("poll" + polls);
     f.setNow(polls);
     if (
-      promise.internalExoticSlots?.internalPromiseData?.state === "pending" &&
+      promise.internalRareSlots?.internalExoticSlots?.internalPromiseData
+        ?.state === "pending" &&
       polls < 5
     )
       o.enqueueScriptJob(f.realm.agent, poll, undefined);
@@ -1361,7 +1365,7 @@ test("continuous Promise jobs do not starve owner waitAsync timeouts", async () 
   );
   assert.deepEqual(events, ["poll1", "queued", "poll2", "reaction"]);
   assert.equal(
-    promise.internalExoticSlots?.internalPromiseData?.result,
+    promise.internalRareSlots?.internalExoticSlots?.internalPromiseData?.result,
     "timed-out",
   );
   assert.equal(f.realm.agent.pendingAtomicWaits.length, 0);

@@ -38,7 +38,7 @@ function setup() {
     return result;
   };
   const make = (locale: string, fields: Record<string, unknown>) =>
-    constructor.internalConstruct!(
+    constructor.internalRareSlots!.internalConstruct!(
       [locale, options(fields)],
       constructor,
     ) as Obj;
@@ -49,10 +49,10 @@ function setup() {
   ) => {
     const nf = make(locale, fields);
     const fn = get(nf, "format") as Obj;
-    return fn.internalCall!(undefined, [value]);
+    return fn.internalRareSlots!.internalCall!(undefined, [value]);
   };
   const resolved = (locale: string, fields: Record<string, unknown>) =>
-    (get(prototype, "resolvedOptions") as Obj).internalCall!(
+    (get(prototype, "resolvedOptions") as Obj).internalRareSlots!.internalCall!(
       make(locale, fields),
       [],
     ) as Obj;

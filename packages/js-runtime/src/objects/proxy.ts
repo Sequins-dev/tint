@@ -268,7 +268,7 @@ export function createProxy(
     },
   };
   const invoke: ObjectCall<unknown> | undefined =
-    target.internalCall === undefined
+    target.internalRareSlots?.internalCall === undefined
       ? undefined
       : (receiver, args): unknown => {
           const realm = proxyRealm(creationRealm);
@@ -298,7 +298,7 @@ export function createProxy(
           ]);
         };
   const construct: ObjectConstruct<unknown> | undefined =
-    target.internalConstruct === undefined
+    target.internalRareSlots?.internalConstruct === undefined
       ? undefined
       : (args, newTarget): unknown => {
           const realm = proxyRealm(creationRealm);

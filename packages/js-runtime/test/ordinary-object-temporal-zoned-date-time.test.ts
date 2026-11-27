@@ -42,7 +42,7 @@ test("Temporal.ZonedDateTime exposes constructor and clock accessors", () => {
       unknown
     >;
     assert.equal(objects.getOwnProperty(method, "length")!.value, length, name);
-    assert.equal(method.internalConstruct, undefined, name);
+    assert.equal(method.internalRareSlots?.internalConstruct, undefined, name);
     assert.equal(descriptor.enumerable, false, name);
     assert.equal(descriptor.writable, true, name);
     assert.equal(descriptor.configurable, true, name);
@@ -65,7 +65,7 @@ test("Temporal.ZonedDateTime exposes constructor and clock accessors", () => {
       unknown
     >;
     assert.equal(objects.getOwnProperty(fn, "length")!.value, length);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
   }
   for (const name of [
     "year",

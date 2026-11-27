@@ -34,7 +34,7 @@ test("Temporal.Now owns its tagged namespace and non-constructor instant method"
   >;
   assert.equal(objects.getOwnProperty(fn, "name")?.value, "instant");
   assert.equal(objects.getOwnProperty(fn, "length")?.value, 0);
-  assert.equal(fn.internalConstruct, undefined);
+  assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
 });
 
 test("Temporal.Now.instant floors the supplied clock before exact nanosecond conversion", () => {
@@ -65,10 +65,10 @@ test("Temporal.Now.instant floors the supplied clock before exact nanosecond con
       reads++;
       return ms;
     };
-    const value = instant.internalCall!(null, []) as objects.OrdinaryObject<
-      objects.ScriptPropertyKey,
-      unknown
-    >;
+    const value = instant.internalRareSlots!.internalCall!(
+      null,
+      [],
+    ) as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
     assert.equal(reads, 1);
     assert.equal(value.prototype, realm.temporalInstantPrototype);
     const instantSlot = objects.exoticSlots(value).internalTemporalInstant;
@@ -83,7 +83,10 @@ test("Temporal.Now.instant floors the supplied clock before exact nanosecond con
         ) * 1000000n,
       ),
     );
-    assert.notEqual(instant.internalCall!(undefined, []), value);
+    assert.notEqual(
+      instant.internalRareSlots!.internalCall!(undefined, []),
+      value,
+    );
   }
 });
 
@@ -130,8 +133,8 @@ test("Temporal.Now provides every ISO clock view using intrinsic prototypes and 
     >;
     assert.equal(objects.getOwnProperty(fn, "length")!.value, 0);
     assert.equal(objects.getOwnProperty(fn, "name")!.value, name);
-    assert.equal(fn.internalConstruct, undefined);
-    const result = fn.internalCall!(null, []);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
+    const result = fn.internalRareSlots!.internalCall!(null, []);
     assert.equal(zones, 1);
     if (name === "timeZoneId") {
       assert.equal(result, "UTC");

@@ -7,7 +7,8 @@ import * as awaiting from "../src/objects/await.ts";
 test("native await operations resume in the job that completes their work", () => {
   const capability = awaiting.createNativeAwaitOperation();
   const operation =
-    capability.value.internalExoticSlots?.internalAwaitOperation;
+    capability.value.internalRareSlots?.internalExoticSlots
+      ?.internalAwaitOperation;
   assert.ok(operation);
   const log: unknown[] = [];
   operation.subscribe(
@@ -25,7 +26,8 @@ test("native await operations preserve settled rejection including undefined", (
   const capability = awaiting.createNativeAwaitOperation();
   capability.reject(undefined);
   const operation =
-    capability.value.internalExoticSlots?.internalAwaitOperation;
+    capability.value.internalRareSlots?.internalExoticSlots
+      ?.internalAwaitOperation;
   assert.ok(operation);
   let rejected = false;
   operation.subscribe(
@@ -37,7 +39,8 @@ test("native await operations preserve settled rejection including undefined", (
   );
   assert.equal(rejected, true);
   assert.equal(
-    capability.value.internalExoticSlots?.internalPromiseData,
+    capability.value.internalRareSlots?.internalExoticSlots
+      ?.internalPromiseData,
     undefined,
   );
 });

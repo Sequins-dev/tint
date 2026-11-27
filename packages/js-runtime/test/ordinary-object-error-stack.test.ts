@@ -53,8 +53,8 @@ test("Error stack accessor metadata is realm-local and not constructible", () =>
     [d.set, "set stack", 1],
   ] as const) {
     const fn = value as ObjectValue;
-    assert.ok(fn.internalCall);
-    assert.equal(fn.internalConstruct, undefined);
+    assert.ok(fn.internalRareSlots?.internalCall);
+    assert.equal(fn.internalRareSlots?.internalConstruct, undefined);
     assert.equal(o.getOwnProperty(fn, "name")?.value, name);
     assert.equal(o.getOwnProperty(fn, "length")?.value, length);
     assert.equal(o.getOwnProperty(fn, "name")?.writable, false);

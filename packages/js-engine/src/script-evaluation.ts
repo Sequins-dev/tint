@@ -255,7 +255,10 @@ export function createDynamicFunctionBodyCompiler(
     const done = runner.run(lowered.value, identity, false, "function-body");
     if (done.error !== "none") return runner.fault("completion-kind");
     const carrier = viewObjectValue(done.value, context.global.object);
-    if (carrier === undefined || carrier.internalCall === undefined)
+    if (
+      carrier === undefined ||
+      carrier.internalRareSlots?.internalCall === undefined
+    )
       return runner.fault("completion-view");
     return carrier;
   };
