@@ -145,7 +145,7 @@ export function roundCalendarDifference(
   );
   if (rounded === undefined) throw "CALENDAR_ROUND_RESULT_INVARIANT";
   const split = divide(rounded, width);
-  if (split === undefined || split.remainder.digits.length !== 0)
+  if (split === undefined || split.remainder.len !== 0)
     throw "CALENDAR_ROUND_DIVISION_INVARIANT";
   const value = (since ? -1 : 1) * toNumber(split.quotient);
   let y = unit === "year" ? value : years,

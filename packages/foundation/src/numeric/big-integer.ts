@@ -1,9 +1,17 @@
-/** Canonical signed magnitude: little-endian base-2^26 digits, no leading zero.
- * Zero has an empty digit array and is never negative. Treat digits as immutable;
- * construct values through this module rather than fabricating records. */
+/** Canonical signed magnitude: little-endian base-2^26 limbs, no leading zero.
+ * Zero has len === 0 and is never negative. Values up to 4 limbs (104 bits,
+ * covering all signed/unsigned 64-bit values and 96-bit arithmetic) store all
+ * limbs inline in d0..d3 with `digits: undefined` (zero array or typed-array
+ * allocation). Multi-limb values (len >= 5) also mirror their low 4 limbs into
+ * d0..d3 so low-word extraction never branches on len. */
 export interface Integer {
   readonly negative: boolean;
-  readonly digits: readonly number[];
+  readonly len: number;
+  readonly d0: number;
+  readonly d1: number;
+  readonly d2: number;
+  readonly d3: number;
+  readonly digits: readonly number[] | undefined;
 }
 export interface Division {
   readonly quotient: Integer;
@@ -17,43 +25,214 @@ const baseMask = 67108863;
 const invBase = 0.000000014901161193847656;
 const twoLimbLimit = 4503599627370496;
 
-function canonical(negative: boolean, digits: number[]): Integer {
+export function integerZero(): Integer {
+  return {
+    negative: false,
+    len: 0,
+    d0: 0,
+    d1: 0,
+    d2: 0,
+    d3: 0,
+    digits: undefined,
+  };
+}
+export function integerOne(): Integer {
+  return {
+    negative: false,
+    len: 1,
+    d0: 1,
+    d1: 0,
+    d2: 0,
+    d3: 0,
+    digits: undefined,
+  };
+}
+
+export function createInlineInteger(
+  negative: boolean,
+  len: number,
+  d0: number,
+  d1: number,
+  d2: number,
+  d3: number,
+): Integer {
+  if (len === 0) return integerZero();
+  return { negative, len, d0, d1, d2, d3, digits: undefined };
+}
+function inline1(negative: boolean, d0: number): Integer {
+  if (d0 === 0) return integerZero();
+  return { negative, len: 1, d0, d1: 0, d2: 0, d3: 0, digits: undefined };
+}
+function inline2(negative: boolean, d0: number, d1: number): Integer {
+  if (d1 !== 0)
+    return { negative, len: 2, d0, d1, d2: 0, d3: 0, digits: undefined };
+  if (d0 !== 0)
+    return { negative, len: 1, d0, d1: 0, d2: 0, d3: 0, digits: undefined };
+  return integerZero();
+}
+function inline3(
+  negative: boolean,
+  d0: number,
+  d1: number,
+  d2: number,
+): Integer {
+  if (d2 !== 0)
+    return { negative, len: 3, d0, d1, d2, d3: 0, digits: undefined };
+  if (d1 !== 0)
+    return { negative, len: 2, d0, d1, d2: 0, d3: 0, digits: undefined };
+  if (d0 !== 0)
+    return { negative, len: 1, d0, d1: 0, d2: 0, d3: 0, digits: undefined };
+  return integerZero();
+}
+function inline4(
+  negative: boolean,
+  d0: number,
+  d1: number,
+  d2: number,
+  d3: number,
+): Integer {
+  if (d3 !== 0) return { negative, len: 4, d0, d1, d2, d3, digits: undefined };
+  if (d2 !== 0)
+    return { negative, len: 3, d0, d1, d2, d3: 0, digits: undefined };
+  if (d1 !== 0)
+    return { negative, len: 2, d0, d1, d2: 0, d3: 0, digits: undefined };
+  if (d0 !== 0)
+    return { negative, len: 1, d0, d1: 0, d2: 0, d3: 0, digits: undefined };
+  return integerZero();
+}
+export function integerLength(value: Integer): number {
+  return value.len;
+}
+export function integerDigit(value: Integer, index: number): number {
+  if (index === 0) return value.d0;
+  if (index === 1) return value.d1;
+  if (index === 2) return value.d2;
+  if (index === 3) return value.d3;
+  const digits = value.digits;
+  return digits === undefined ? 0 : (digits[index] ?? 0);
+}
+export function integerTopDigit(value: Integer): number {
+  const len = value.len;
+  if (len === 0) return 0;
+  return integerDigit(value, len - 1);
+}
+export function integerHash(value: Integer): number {
+  const len = value.len;
+  let hash = value.negative ? 0x811c9dc5 : 0x9e3779b1;
+  if (len === 0) return hash;
+  hash = Math.imul(hash ^ value.d0, 0x01000193) >>> 0;
+  if (len === 1) return hash;
+  hash = Math.imul(hash ^ value.d1, 0x01000193) >>> 0;
+  if (len === 2) return hash;
+  hash = Math.imul(hash ^ value.d2, 0x01000193) >>> 0;
+  if (len === 3) return hash;
+  hash = Math.imul(hash ^ value.d3, 0x01000193) >>> 0;
+  if (len === 4) return hash;
+  const digits = value.digits;
+  if (digits !== undefined) {
+    for (let i = 4; i < len; i++) {
+      hash = Math.imul(hash ^ (digits[i] ?? 0), 0x01000193) >>> 0;
+    }
+  }
+  return hash;
+}
+export function integerFromDigits(
+  negative: boolean,
+  digits: number[],
+): Integer {
   while (digits.length !== 0 && digits[digits.length - 1] === 0) digits.pop();
-  return { negative: negative && digits.length !== 0, digits };
+  const len = digits.length;
+  if (len === 0) return integerZero();
+  const d0 = digits[0] ?? 0,
+    d1 = digits[1] ?? 0,
+    d2 = digits[2] ?? 0,
+    d3 = digits[3] ?? 0;
+  if (len <= 4) return { negative, len, d0, d1, d2, d3, digits: undefined };
+  return { negative, len, d0, d1, d2, d3, digits };
+}
+function canonical(negative: boolean, digits: number[]): Integer {
+  return integerFromDigits(negative, digits);
 }
 function fromMagnitude(negative: boolean, magnitude: number): Integer {
-  if (magnitude === 0) return { negative: false, digits: [] };
-  if (magnitude < base) return { negative, digits: [magnitude] };
+  if (magnitude === 0) return integerZero();
+  if (magnitude < base)
+    return {
+      negative,
+      len: 1,
+      d0: magnitude,
+      d1: 0,
+      d2: 0,
+      d3: 0,
+      digits: undefined,
+    };
   const hi = Math.floor(magnitude * invBase);
   const lo = magnitude - hi * base;
-  if (hi < base) return { negative, digits: [lo, hi] };
+  if (hi < base)
+    return {
+      negative,
+      len: 2,
+      d0: lo,
+      d1: hi,
+      d2: 0,
+      d3: 0,
+      digits: undefined,
+    };
   const d2 = Math.floor(hi * invBase);
-  return { negative, digits: [lo, hi - d2 * base, d2] };
+  return {
+    negative,
+    len: 3,
+    d0: lo,
+    d1: hi - d2 * base,
+    d2,
+    d3: 0,
+    digits: undefined,
+  };
 }
-function magnitudeCompare(a: readonly number[], b: readonly number[]): number {
+function magnitudeCompare(a: Integer, b: Integer): number {
+  const aLen = a.len,
+    bLen = b.len;
+  if (aLen !== bLen) return aLen < bLen ? -1 : 1;
+  if (aLen === 0) return 0;
+  if (aLen <= 4) {
+    if (aLen === 4 && a.d3 !== b.d3) return a.d3 < b.d3 ? -1 : 1;
+    if (aLen >= 3 && a.d2 !== b.d2) return a.d2 < b.d2 ? -1 : 1;
+    if (aLen >= 2 && a.d1 !== b.d1) return a.d1 < b.d1 ? -1 : 1;
+    return a.d0 === b.d0 ? 0 : a.d0 < b.d0 ? -1 : 1;
+  }
+  const ad = a.digits,
+    bd = b.digits;
+  if (ad === undefined || bd === undefined) return 0;
+  for (let i = aLen - 1; i >= 0; i--) {
+    const x = ad[i] ?? 0,
+      y = bd[i] ?? 0;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+function arrayMagnitudeCompare(a: readonly number[], b: Integer): number {
   const aLen = a.length,
-    bLen = b.length;
+    bLen = b.len;
   if (aLen !== bLen) return aLen < bLen ? -1 : 1;
   for (let i = aLen - 1; i >= 0; i--) {
     const x = a[i] ?? 0,
-      y = b[i] ?? 0;
+      y = integerDigit(b, i);
     if (x !== y) return x < y ? -1 : 1;
   }
   return 0;
 }
 export function compare(a: Integer, b: Integer): number {
   if (a.negative !== b.negative) return a.negative ? -1 : 1;
-  const order = magnitudeCompare(a.digits, b.digits);
+  const order = magnitudeCompare(a, b);
   return order === 0 ? 0 : a.negative ? -order : order;
 }
-function magnitudeAdd(a: readonly number[], b: readonly number[]): number[] {
-  const aLen = a.length,
-    bLen = b.length,
+function magnitudeAdd(a: Integer, b: Integer): number[] {
+  const aLen = a.len,
+    bLen = b.len,
     maxLen = aLen > bLen ? aLen : bLen;
   const digits: number[] = [];
   let carry = 0;
   for (let i = 0; i < maxLen; i++) {
-    const sum = (a[i] ?? 0) + (b[i] ?? 0) + carry;
+    const sum = integerDigit(a, i) + integerDigit(b, i) + carry;
     digits.push(sum & baseMask);
     carry = sum >>> 26;
   }
@@ -61,15 +240,12 @@ function magnitudeAdd(a: readonly number[], b: readonly number[]): number[] {
   return digits;
 }
 /** Requires |a| >= |b|. */
-function magnitudeSubtract(
-  a: readonly number[],
-  b: readonly number[],
-): number[] {
-  const aLen = a.length;
+function magnitudeSubtract(a: Integer, b: Integer): number[] {
+  const aLen = a.len;
   const digits: number[] = [];
   let borrow = 0;
   for (let i = 0; i < aLen; i++) {
-    const difference = (a[i] ?? 0) - (b[i] ?? 0) - borrow;
+    const difference = integerDigit(a, i) - integerDigit(b, i) - borrow;
     if (difference < 0) {
       digits.push(difference + base);
       borrow = 1;
@@ -81,56 +257,96 @@ function magnitudeSubtract(
   return digits;
 }
 export function negate(value: Integer): Integer {
+  if (value.len === 0) return integerZero();
   return {
-    negative: value.digits.length !== 0 && !value.negative,
+    negative: !value.negative,
+    len: value.len,
+    d0: value.d0,
+    d1: value.d1,
+    d2: value.d2,
+    d3: value.d3,
     digits: value.digits,
   };
 }
 function addWithSign(a: Integer, b: Integer, bNeg: boolean): Integer {
-  const aDigits = a.digits,
-    bDigits = b.digits,
-    aLen = aDigits.length,
-    bLen = bDigits.length;
+  const aLen = a.len,
+    bLen = b.len;
   if (aLen === 0) {
-    if (bLen === 0) return { negative: false, digits: [] };
-    return bNeg === b.negative ? b : { negative: bNeg, digits: bDigits };
+    if (bLen === 0) return integerZero();
+    return bNeg === b.negative
+      ? b
+      : {
+          negative: bNeg,
+          len: bLen,
+          d0: b.d0,
+          d1: b.d1,
+          d2: b.d2,
+          d3: b.d3,
+          digits: b.digits,
+        };
   }
   if (bLen === 0) return a;
   if (aLen <= 2 && bLen <= 2) {
-    const am = (aDigits[0] ?? 0) + (aLen === 2 ? (aDigits[1] ?? 0) * base : 0);
-    const bm = (bDigits[0] ?? 0) + (bLen === 2 ? (bDigits[1] ?? 0) * base : 0);
+    const am = a.d0 + (aLen === 2 ? a.d1 * base : 0);
+    const bm = b.d0 + (bLen === 2 ? b.d1 * base : 0);
     if (a.negative === bNeg) return fromMagnitude(a.negative, am + bm);
-    if (am === bm) return { negative: false, digits: [] };
+    if (am === bm) return integerZero();
     return am > bm
       ? fromMagnitude(a.negative, am - bm)
       : fromMagnitude(bNeg, bm - am);
   }
-  if (a.negative === bNeg) {
-    if (aLen <= 3 && bLen <= 3) {
-      const s0 = (aDigits[0] ?? 0) + (bDigits[0] ?? 0);
+  if (aLen <= 4 && bLen <= 4) {
+    if (a.negative === bNeg) {
+      const s0 = a.d0 + b.d0;
       const r0 = s0 & baseMask;
-      const s1 = (aDigits[1] ?? 0) + (bDigits[1] ?? 0) + (s0 >>> 26);
+      const s1 = a.d1 + b.d1 + (s0 >>> 26);
       const r1 = s1 & baseMask;
-      const s2 = (aDigits[2] ?? 0) + (bDigits[2] ?? 0) + (s1 >>> 26);
+      const s2 = a.d2 + b.d2 + (s1 >>> 26);
       const r2 = s2 & baseMask;
-      const c2 = s2 >>> 26;
-      const digits =
-        c2 !== 0
-          ? [r0, r1, r2, c2]
-          : r2 !== 0
-            ? [r0, r1, r2]
-            : r1 !== 0
-              ? [r0, r1]
-              : [r0];
-      return { negative: a.negative, digits };
+      const s3 = a.d3 + b.d3 + (s2 >>> 26);
+      const r3 = s3 & baseMask;
+      const c3 = s3 >>> 26;
+      if (c3 === 0) return inline4(a.negative, r0, r1, r2, r3);
+      return {
+        negative: a.negative,
+        len: 5,
+        d0: r0,
+        d1: r1,
+        d2: r2,
+        d3: r3,
+        digits: [r0, r1, r2, r3, c3],
+      };
     }
-    return canonical(a.negative, magnitudeAdd(aDigits, bDigits));
+    const cmp = magnitudeCompare(a, b);
+    if (cmp === 0) return integerZero();
+    const hi = cmp > 0 ? a : b;
+    const lo = cmp > 0 ? b : a;
+    const neg = cmp > 0 ? a.negative : bNeg;
+    let d0 = hi.d0 - lo.d0;
+    let borrow = 0;
+    if (d0 < 0) {
+      d0 += base;
+      borrow = 1;
+    }
+    let d1 = hi.d1 - lo.d1 - borrow;
+    if (d1 < 0) {
+      d1 += base;
+      borrow = 1;
+    } else borrow = 0;
+    let d2 = hi.d2 - lo.d2 - borrow;
+    if (d2 < 0) {
+      d2 += base;
+      borrow = 1;
+    } else borrow = 0;
+    const d3 = hi.d3 - lo.d3 - borrow;
+    return inline4(neg, d0, d1, d2, d3);
   }
-  const cmp = magnitudeCompare(aDigits, bDigits);
-  if (cmp === 0) return { negative: false, digits: [] };
+  if (a.negative === bNeg) return canonical(a.negative, magnitudeAdd(a, b));
+  const cmp = magnitudeCompare(a, b);
+  if (cmp === 0) return integerZero();
   return cmp > 0
-    ? canonical(a.negative, magnitudeSubtract(aDigits, bDigits))
-    : canonical(bNeg, magnitudeSubtract(bDigits, aDigits));
+    ? canonical(a.negative, magnitudeSubtract(a, b))
+    : canonical(bNeg, magnitudeSubtract(b, a));
 }
 export function add(a: Integer, b: Integer): Integer {
   return addWithSign(a, b, b.negative);
@@ -138,28 +354,70 @@ export function add(a: Integer, b: Integer): Integer {
 export function subtract(a: Integer, b: Integer): Integer {
   return addWithSign(a, b, !b.negative);
 }
+function multiplyInlineByOne(
+  negative: boolean,
+  a: Integer,
+  factor: number,
+): Integer {
+  const p0 = a.d0 * factor;
+  const c0 = Math.floor(p0 * invBase);
+  const r0 = p0 - c0 * base;
+  const p1 = a.d1 * factor + c0;
+  const c1 = Math.floor(p1 * invBase);
+  const r1 = p1 - c1 * base;
+  const p2 = a.d2 * factor + c1;
+  const c2 = Math.floor(p2 * invBase);
+  const r2 = p2 - c2 * base;
+  const p3 = a.d3 * factor + c2;
+  const c3 = Math.floor(p3 * invBase);
+  const r3 = p3 - c3 * base;
+  if (c3 === 0) return inline4(negative, r0, r1, r2, r3);
+  return {
+    negative,
+    len: 5,
+    d0: r0,
+    d1: r1,
+    d2: r2,
+    d3: r3,
+    digits: [r0, r1, r2, r3, c3],
+  };
+}
 export function multiply(a: Integer, b: Integer): Integer {
-  const aDigits = a.digits,
-    bDigits = b.digits,
-    aLen = aDigits.length,
-    bLen = bDigits.length;
-  if (aLen === 0 || bLen === 0) return { negative: false, digits: [] };
+  const aLen = a.len,
+    bLen = b.len;
+  if (aLen === 0 || bLen === 0) return integerZero();
   const negative = a.negative !== b.negative;
   if (aLen === 1 && bLen === 1) {
-    const product = (aDigits[0] ?? 0) * (bDigits[0] ?? 0);
+    const product = a.d0 * b.d0;
     const hi = Math.floor(product * invBase);
-    const lo = product - hi * base;
-    return { negative, digits: hi !== 0 ? [lo, hi] : [lo] };
+    return inline2(negative, product - hi * base, hi);
+  }
+  if (bLen === 1 && aLen <= 4) return multiplyInlineByOne(negative, a, b.d0);
+  if (aLen === 1 && bLen <= 4) return multiplyInlineByOne(negative, b, a.d0);
+  if (aLen <= 2 && bLen <= 2) {
+    const p00 = a.d0 * b.d0;
+    const c0 = Math.floor(p00 * invBase);
+    const r0 = p00 - c0 * base;
+    const p01 = a.d0 * b.d1 + c0;
+    const c01 = Math.floor(p01 * invBase);
+    const t1 = p01 - c01 * base;
+    const p10 = a.d1 * b.d0 + t1;
+    const c10 = Math.floor(p10 * invBase);
+    const r1 = p10 - c10 * base;
+    const p11 = a.d1 * b.d1 + c01 + c10;
+    const r3 = Math.floor(p11 * invBase);
+    const r2 = p11 - r3 * base;
+    return inline4(negative, r0, r1, r2, r3);
   }
   const totalLen = aLen + bLen;
   const digits: number[] = [];
   for (let i = 0; i < totalLen; i++) digits.push(0);
   for (let i = 0; i < aLen; i++) {
-    const ai = aDigits[i] ?? 0;
+    const ai = integerDigit(a, i);
     if (ai === 0) continue;
     let carry = 0;
     for (let j = 0; j < bLen; j++) {
-      const product = ai * (bDigits[j] ?? 0) + (digits[i + j] ?? 0) + carry;
+      const product = ai * integerDigit(b, j) + (digits[i + j] ?? 0) + carry;
       const hi = Math.floor(product * invBase);
       digits[i + j] = product - hi * base;
       carry = hi;
@@ -188,11 +446,11 @@ function scaleAndAddInPlace(
   }
 }
 /** Mutate `a` in place: `a -= b`, requiring `a >= b`. */
-function subtractInPlace(a: number[], b: readonly number[]): void {
+function subtractInPlace(a: number[], b: Integer): void {
   const aLen = a.length;
   let borrow = 0;
   for (let i = 0; i < aLen; i++) {
-    const difference = (a[i] ?? 0) - (b[i] ?? 0) - borrow;
+    const difference = (a[i] ?? 0) - integerDigit(b, i) - borrow;
     if (difference < 0) {
       a[i] = difference + base;
       borrow = 1;
@@ -203,23 +461,48 @@ function subtractInPlace(a: number[], b: readonly number[]): void {
   }
   while (a.length !== 0 && a[a.length - 1] === 0) a.pop();
 }
-function divideDigit(value: readonly number[], divisor: number): Division {
-  const len = value.length;
+function divideDigit(value: Integer, divisor: number): Division {
+  const len = value.len;
+  if (len <= 4) {
+    let rem = 0;
+    let q3 = 0;
+    if (len >= 4) {
+      const div3 = value.d3;
+      q3 = Math.floor(div3 / divisor);
+      rem = div3 - q3 * divisor;
+    }
+    let q2 = 0;
+    if (len >= 3) {
+      const div2 = rem * base + value.d2;
+      q2 = Math.floor(div2 / divisor);
+      rem = div2 - q2 * divisor;
+    }
+    let q1 = 0;
+    if (len >= 2) {
+      const div1 = rem * base + value.d1;
+      q1 = Math.floor(div1 / divisor);
+      rem = div1 - q1 * divisor;
+    }
+    const div0 = rem * base + value.d0;
+    const q0 = Math.floor(div0 / divisor);
+    rem = div0 - q0 * divisor;
+    return {
+      quotient: inline4(false, q0, q1, q2, q3),
+      remainder: inline1(false, rem),
+    };
+  }
   const digits: number[] = [];
   for (let i = 0; i < len; i++) digits.push(0);
   let remainder = 0;
   for (let i = len - 1; i >= 0; i--) {
-    const dividend = remainder * base + (value[i] ?? 0);
+    const dividend = remainder * base + integerDigit(value, i);
     const digit = Math.floor(dividend / divisor);
     digits[i] = digit;
     remainder = dividend - digit * divisor;
   }
   return {
     quotient: canonical(false, digits),
-    remainder:
-      remainder === 0
-        ? { negative: false, digits: [] }
-        : { negative: false, digits: [remainder] },
+    remainder: inline1(false, remainder),
   };
 }
 /** Divide `work` in place by `divisor`, returning the remainder. */
@@ -236,20 +519,14 @@ function divideInPlace(work: number[], divisor: number): number {
 }
 /** Truncates toward zero; undefined denotes division by zero. */
 export function divide(a: Integer, b: Integer): Division | undefined {
-  const aDigits = a.digits,
-    bDigits = b.digits,
-    aLen = aDigits.length,
-    bLen = bDigits.length;
+  const aLen = a.len,
+    bLen = b.len;
   if (bLen === 0) return undefined;
   const qNeg = a.negative !== b.negative;
-  if (aLen === 0)
-    return {
-      quotient: { negative: false, digits: [] },
-      remainder: { negative: false, digits: [] },
-    };
+  if (aLen === 0) return { quotient: integerZero(), remainder: integerZero() };
   if (aLen <= 2 && bLen <= 2) {
-    const av = (aDigits[0] ?? 0) + (aLen === 2 ? (aDigits[1] ?? 0) * base : 0);
-    const bv = (bDigits[0] ?? 0) + (bLen === 2 ? (bDigits[1] ?? 0) * base : 0);
+    const av = a.d0 + (aLen === 2 ? a.d1 * base : 0);
+    const bv = b.d0 + (bLen === 2 ? b.d1 * base : 0);
     const q = Math.floor(av / bv);
     const r = av - q * bv;
     return {
@@ -259,24 +536,20 @@ export function divide(a: Integer, b: Integer): Division | undefined {
   }
   let result: Division;
   if (bLen === 1) {
-    result = divideDigit(aDigits, bDigits[0] ?? 1);
+    result = divideDigit(a, b.d0);
   } else {
-    const cmp = magnitudeCompare(aDigits, bDigits);
-    if (cmp < 0)
-      return {
-        quotient: { negative: false, digits: [] },
-        remainder: a,
-      };
+    const cmp = magnitudeCompare(a, b);
+    if (cmp < 0) return { quotient: integerZero(), remainder: a };
     if (cmp === 0)
       return {
-        quotient: { negative: qNeg, digits: [1] },
-        remainder: { negative: false, digits: [] },
+        quotient: inline1(qNeg, 1),
+        remainder: integerZero(),
       };
     const digits: number[] = [];
     for (let i = 0; i < aLen; i++) digits.push(0);
     const rem: number[] = [];
     for (let i = aLen - 1; i >= 0; i--) {
-      const digit = aDigits[i] ?? 0;
+      const digit = integerDigit(a, i);
       let quotientDigit = 0;
       for (let shiftBit = 25; shiftBit >= 0; shiftBit--) {
         let carry = (digit >>> shiftBit) & 1;
@@ -286,8 +559,8 @@ export function divide(a: Integer, b: Integer): Division | undefined {
           carry = doubled >>> 26;
         }
         if (carry !== 0) rem.push(carry);
-        if (magnitudeCompare(rem, bDigits) >= 0) {
-          subtractInPlace(rem, bDigits);
+        if (arrayMagnitudeCompare(rem, b) >= 0) {
+          subtractInPlace(rem, b);
           quotientDigit |= 1 << shiftBit;
         }
       }
@@ -302,6 +575,80 @@ export function divide(a: Integer, b: Integer): Division | undefined {
     quotient: qNeg ? negate(result.quotient) : result.quotient,
     remainder: a.negative ? negate(result.remainder) : result.remainder,
   };
+}
+/** Quotient-only division, avoiding remainder/Division allocations on 1-limb divisors. */
+export function divideQuotient(a: Integer, b: Integer): Integer | undefined {
+  const aLen = a.len,
+    bLen = b.len;
+  if (bLen === 0) return undefined;
+  if (aLen === 0) return integerZero();
+  const qNeg = a.negative !== b.negative;
+  if (aLen <= 2 && bLen <= 2) {
+    const av = a.d0 + (aLen === 2 ? a.d1 * base : 0);
+    const bv = b.d0 + (bLen === 2 ? b.d1 * base : 0);
+    return fromMagnitude(qNeg, Math.floor(av / bv));
+  }
+  if (bLen === 1) {
+    const divisor = b.d0;
+    if (aLen <= 4) {
+      let rem = 0;
+      let q3 = 0;
+      if (aLen >= 4) {
+        q3 = Math.floor(a.d3 / divisor);
+        rem = a.d3 - q3 * divisor;
+      }
+      let q2 = 0;
+      if (aLen >= 3) {
+        const div2 = rem * base + a.d2;
+        q2 = Math.floor(div2 / divisor);
+        rem = div2 - q2 * divisor;
+      }
+      let q1 = 0;
+      if (aLen >= 2) {
+        const div1 = rem * base + a.d1;
+        q1 = Math.floor(div1 / divisor);
+        rem = div1 - q1 * divisor;
+      }
+      const q0 = Math.floor((rem * base + a.d0) / divisor);
+      return inline4(qNeg, q0, q1, q2, q3);
+    }
+    const digits: number[] = [];
+    for (let i = 0; i < aLen; i++) digits.push(0);
+    let rem = 0;
+    for (let i = aLen - 1; i >= 0; i--) {
+      const dividend = rem * base + integerDigit(a, i);
+      const q = Math.floor(dividend / divisor);
+      digits[i] = q;
+      rem = dividend - q * divisor;
+    }
+    return canonical(qNeg, digits);
+  }
+  const result = divide(a, b);
+  return result === undefined ? undefined : result.quotient;
+}
+/** Remainder-only division, avoiding quotient array allocations on 1-limb divisors. */
+export function divideRemainder(a: Integer, b: Integer): Integer | undefined {
+  const aLen = a.len,
+    bLen = b.len;
+  if (bLen === 0) return undefined;
+  if (aLen === 0) return integerZero();
+  if (aLen <= 2 && bLen <= 2) {
+    const av = a.d0 + (aLen === 2 ? a.d1 * base : 0);
+    const bv = b.d0 + (bLen === 2 ? b.d1 * base : 0);
+    const q = Math.floor(av / bv);
+    return fromMagnitude(a.negative, av - q * bv);
+  }
+  if (bLen === 1) {
+    const divisor = b.d0;
+    let rem = 0;
+    for (let i = aLen - 1; i >= 0; i--) {
+      const dividend = rem * base + integerDigit(a, i);
+      rem = dividend - Math.floor(dividend / divisor) * divisor;
+    }
+    return inline1(a.negative, rem);
+  }
+  const result = divide(a, b);
+  return result === undefined ? undefined : result.remainder;
 }
 function validRadix(radix: number): boolean {
   return radix >= 2 && radix <= 36 && Math.floor(radix) === radix;
@@ -323,7 +670,7 @@ export function parseInteger(text: string, radix: number): Integer | undefined {
   if (index === length) return undefined;
   // Skip leading zeros so short numbers with padding hit fast paths.
   while (index < length && text.charCodeAt(index) === 48) index++;
-  if (index === length) return { negative: false, digits: [] };
+  if (index === length) return integerZero();
   const remaining = length - index;
   if (
     (radix === 10 && remaining <= 15) ||
@@ -338,6 +685,36 @@ export function parseInteger(text: string, radix: number): Integer | undefined {
       acc = acc * radix + digit;
     }
     return fromMagnitude(negative, acc);
+  }
+  if (radix === 16 && remaining <= 26) {
+    // Up to 104 bits packed directly into 4 inline 26-bit limbs (zero arrays).
+    let d0 = 0,
+      d1 = 0,
+      d2 = 0,
+      d3 = 0;
+    let bitPos = 0;
+    for (let i = length - 1; i >= index; i--) {
+      const nib = charToDigit(text.charCodeAt(i));
+      if (nib < 0 || nib >= 16) return undefined;
+      const limb = Math.floor(bitPos / 26);
+      const shiftBits = bitPos - limb * 26;
+      const loPart = (nib << shiftBits) & baseMask;
+      const hiPart = shiftBits > 22 ? nib >>> (26 - shiftBits) : 0;
+      if (limb === 0) {
+        d0 |= loPart;
+        if (hiPart !== 0) d1 |= hiPart;
+      } else if (limb === 1) {
+        d1 |= loPart;
+        if (hiPart !== 0) d2 |= hiPart;
+      } else if (limb === 2) {
+        d2 |= loPart;
+        if (hiPart !== 0) d3 |= hiPart;
+      } else {
+        d3 |= loPart;
+      }
+      bitPos += 4;
+    }
+    return inline4(negative, d0, d1, d2, d3);
   }
   if (radix === 2) {
     // Validate all characters and pack 26 bits per limb directly from right to left.
@@ -386,21 +763,20 @@ export function formatInteger(
   radix: number,
 ): string | undefined {
   if (!validRadix(radix)) return undefined;
-  const src = value.digits,
-    len = src.length;
+  const len = value.len;
   if (len === 0) return "0";
   if (radix === 10) {
     if (len === 1) {
-      const text = String(src[0] ?? 0);
+      const text = String(value.d0);
       return value.negative ? "-" + text : text;
     }
     if (len === 2) {
-      const n = (src[0] ?? 0) + (src[1] ?? 0) * base;
+      const n = value.d0 + value.d1 * base;
       const text = String(n);
       return value.negative ? "-" + text : text;
     }
     const work: number[] = [];
-    for (let i = 0; i < len; i++) work.push(src[i] ?? 0);
+    for (let i = 0; i < len; i++) work.push(integerDigit(value, i));
     const chunks: number[] = [];
     while (work.length !== 0) {
       chunks.push(divideInPlace(work, 10000000));
@@ -424,7 +800,7 @@ export function formatInteger(
   }
   const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
   const work: number[] = [];
-  for (let i = 0; i < len; i++) work.push(src[i] ?? 0);
+  for (let i = 0; i < len; i++) work.push(integerDigit(value, i));
   const characters: string[] = [];
   while (work.length !== 0) {
     const rem = divideInPlace(work, radix);
@@ -441,15 +817,29 @@ export function formatInteger(
 
 /** Fixed-width two's complement, including one extra sign digit. */
 function extendOrComplement(
-  value: readonly number[],
+  value: Integer,
   complement: boolean,
   width: number,
 ): number[] {
   const digits: number[] = [];
   let carry = complement ? 1 : 0;
   for (let i = 0; i < width; i++) {
-    const digit = value[i] ?? 0;
+    const digit = integerDigit(value, i);
     const next = (complement ? baseMask - digit : digit) + carry;
+    digits.push(next & baseMask);
+    carry = next >>> 26;
+  }
+  return digits;
+}
+function extendArrayComplement(
+  value: readonly number[],
+  width: number,
+): number[] {
+  const digits: number[] = [];
+  let carry = 1;
+  for (let i = 0; i < width; i++) {
+    const digit = value[i] ?? 0;
+    const next = baseMask - digit + carry;
     digits.push(next & baseMask);
     carry = next >>> 26;
   }
@@ -460,129 +850,144 @@ export function bitwise(
   b: Integer,
   operator: "&" | "|" | "^",
 ): Integer {
-  const aDigits = a.digits,
-    bDigits = b.digits,
-    aLen = aDigits.length,
-    bLen = bDigits.length;
+  const aLen = a.len,
+    bLen = b.len;
   const aNeg = a.negative,
     bNeg = b.negative;
   if (!aNeg && !bNeg) {
     if (operator === "&") {
       const len = aLen < bLen ? aLen : bLen;
-      if (len === 0) return { negative: false, digits: [] };
-      if (len === 1) {
-        const r0 = (aDigits[0] ?? 0) & (bDigits[0] ?? 0);
-        return { negative: false, digits: r0 !== 0 ? [r0] : [] };
-      }
-      if (len === 2) {
-        const r0 = (aDigits[0] ?? 0) & (bDigits[0] ?? 0);
-        const r1 = (aDigits[1] ?? 0) & (bDigits[1] ?? 0);
-        return {
-          negative: false,
-          digits: r1 !== 0 ? [r0, r1] : r0 !== 0 ? [r0] : [],
-        };
-      }
-      if (len === 3) {
-        const r0 = (aDigits[0] ?? 0) & (bDigits[0] ?? 0);
-        const r1 = (aDigits[1] ?? 0) & (bDigits[1] ?? 0);
-        const r2 = (aDigits[2] ?? 0) & (bDigits[2] ?? 0);
-        return {
-          negative: false,
-          digits:
-            r2 !== 0
-              ? [r0, r1, r2]
-              : r1 !== 0
-                ? [r0, r1]
-                : r0 !== 0
-                  ? [r0]
-                  : [],
-        };
+      if (len === 0) return integerZero();
+      if (len <= 4) {
+        const r0 = a.d0 & b.d0;
+        if (len === 1) return inline1(false, r0);
+        const r1 = a.d1 & b.d1;
+        if (len === 2) return inline2(false, r0, r1);
+        const r2 = a.d2 & b.d2;
+        if (len === 3) return inline3(false, r0, r1, r2);
+        return inline4(false, r0, r1, r2, a.d3 & b.d3);
       }
       const digits: number[] = [];
       for (let i = 0; i < len; i++)
-        digits.push((aDigits[i] ?? 0) & (bDigits[i] ?? 0));
+        digits.push(integerDigit(a, i) & integerDigit(b, i));
       return canonical(false, digits);
     }
     const len = aLen > bLen ? aLen : bLen;
-    if (len === 0) return { negative: false, digits: [] };
-    if (operator === "|") {
-      if (len === 1) {
-        const r0 = (aDigits[0] ?? 0) | (bDigits[0] ?? 0);
-        return { negative: false, digits: r0 !== 0 ? [r0] : [] };
+    if (len === 0) return integerZero();
+    if (len <= 4) {
+      if (operator === "|") {
+        const r0 = a.d0 | b.d0;
+        if (len === 1) return inline1(false, r0);
+        const r1 = a.d1 | b.d1;
+        if (len === 2) return inline2(false, r0, r1);
+        const r2 = a.d2 | b.d2;
+        if (len === 3) return inline3(false, r0, r1, r2);
+        return inline4(false, r0, r1, r2, a.d3 | b.d3);
       }
-      if (len === 2) {
-        const r0 = (aDigits[0] ?? 0) | (bDigits[0] ?? 0);
-        const r1 = (aDigits[1] ?? 0) | (bDigits[1] ?? 0);
-        return {
-          negative: false,
-          digits: r1 !== 0 ? [r0, r1] : r0 !== 0 ? [r0] : [],
-        };
-      }
-      if (len === 3) {
-        const r0 = (aDigits[0] ?? 0) | (bDigits[0] ?? 0);
-        const r1 = (aDigits[1] ?? 0) | (bDigits[1] ?? 0);
-        const r2 = (aDigits[2] ?? 0) | (bDigits[2] ?? 0);
-        return {
-          negative: false,
-          digits:
-            r2 !== 0
-              ? [r0, r1, r2]
-              : r1 !== 0
-                ? [r0, r1]
-                : r0 !== 0
-                  ? [r0]
-                  : [],
-        };
-      }
-      const digits: number[] = [];
-      for (let i = 0; i < len; i++)
-        digits.push((aDigits[i] ?? 0) | (bDigits[i] ?? 0));
-      return canonical(false, digits);
-    }
-    if (len === 1) {
-      const r0 = (aDigits[0] ?? 0) ^ (bDigits[0] ?? 0);
-      return { negative: false, digits: r0 !== 0 ? [r0] : [] };
-    }
-    if (len === 2) {
-      const r0 = (aDigits[0] ?? 0) ^ (bDigits[0] ?? 0);
-      const r1 = (aDigits[1] ?? 0) ^ (bDigits[1] ?? 0);
-      return {
-        negative: false,
-        digits: r1 !== 0 ? [r0, r1] : r0 !== 0 ? [r0] : [],
-      };
-    }
-    if (len === 3) {
-      const r0 = (aDigits[0] ?? 0) ^ (bDigits[0] ?? 0);
-      const r1 = (aDigits[1] ?? 0) ^ (bDigits[1] ?? 0);
-      const r2 = (aDigits[2] ?? 0) ^ (bDigits[2] ?? 0);
-      return {
-        negative: false,
-        digits:
-          r2 !== 0 ? [r0, r1, r2] : r1 !== 0 ? [r0, r1] : r0 !== 0 ? [r0] : [],
-      };
+      const r0 = a.d0 ^ b.d0;
+      if (len === 1) return inline1(false, r0);
+      const r1 = a.d1 ^ b.d1;
+      if (len === 2) return inline2(false, r0, r1);
+      const r2 = a.d2 ^ b.d2;
+      if (len === 3) return inline3(false, r0, r1, r2);
+      return inline4(false, r0, r1, r2, a.d3 ^ b.d3);
     }
     const digits: number[] = [];
-    for (let i = 0; i < len; i++)
-      digits.push((aDigits[i] ?? 0) ^ (bDigits[i] ?? 0));
+    if (operator === "|") {
+      for (let i = 0; i < len; i++)
+        digits.push(integerDigit(a, i) | integerDigit(b, i));
+    } else {
+      for (let i = 0; i < len; i++)
+        digits.push(integerDigit(a, i) ^ integerDigit(b, i));
+    }
     return canonical(false, digits);
   }
-  const width = (aLen > bLen ? aLen : bLen) + 1;
   const negative =
     operator === "&"
       ? aNeg && bNeg
       : operator === "|"
         ? aNeg || bNeg
         : aNeg !== bNeg;
+  if (aLen <= 4 && bLen <= 4) {
+    let carryA = aNeg ? 1 : 0;
+    let carryB = bNeg ? 1 : 0;
+    let carryOut = negative ? 1 : 0;
+    let x = aNeg ? baseMask - a.d0 + carryA : a.d0;
+    carryA = x >>> 26;
+    x &= baseMask;
+    let y = bNeg ? baseMask - b.d0 + carryB : b.d0;
+    carryB = y >>> 26;
+    y &= baseMask;
+    let r0 = operator === "&" ? x & y : operator === "|" ? x | y : x ^ y;
+    if (negative) {
+      r0 = baseMask - r0 + carryOut;
+      carryOut = r0 >>> 26;
+      r0 &= baseMask;
+    }
+    x = aNeg ? baseMask - a.d1 + carryA : a.d1;
+    carryA = x >>> 26;
+    x &= baseMask;
+    y = bNeg ? baseMask - b.d1 + carryB : b.d1;
+    carryB = y >>> 26;
+    y &= baseMask;
+    let r1 = operator === "&" ? x & y : operator === "|" ? x | y : x ^ y;
+    if (negative) {
+      r1 = baseMask - r1 + carryOut;
+      carryOut = r1 >>> 26;
+      r1 &= baseMask;
+    }
+    x = aNeg ? baseMask - a.d2 + carryA : a.d2;
+    carryA = x >>> 26;
+    x &= baseMask;
+    y = bNeg ? baseMask - b.d2 + carryB : b.d2;
+    carryB = y >>> 26;
+    y &= baseMask;
+    let r2 = operator === "&" ? x & y : operator === "|" ? x | y : x ^ y;
+    if (negative) {
+      r2 = baseMask - r2 + carryOut;
+      carryOut = r2 >>> 26;
+      r2 &= baseMask;
+    }
+    x = aNeg ? baseMask - a.d3 + carryA : a.d3;
+    carryA = x >>> 26;
+    x &= baseMask;
+    y = bNeg ? baseMask - b.d3 + carryB : b.d3;
+    carryB = y >>> 26;
+    y &= baseMask;
+    let r3 = operator === "&" ? x & y : operator === "|" ? x | y : x ^ y;
+    if (negative) {
+      r3 = baseMask - r3 + carryOut;
+      carryOut = r3 >>> 26;
+      r3 &= baseMask;
+    }
+    x = aNeg ? (baseMask + carryA) & baseMask : 0;
+    y = bNeg ? (baseMask + carryB) & baseMask : 0;
+    let r4 = operator === "&" ? x & y : operator === "|" ? x | y : x ^ y;
+    if (negative) {
+      r4 = (baseMask - r4 + carryOut) & baseMask;
+    }
+    if (r4 === 0) return inline4(negative, r0, r1, r2, r3);
+    return {
+      negative,
+      len: 5,
+      d0: r0,
+      d1: r1,
+      d2: r2,
+      d3: r3,
+      digits: [r0, r1, r2, r3, r4],
+    };
+  }
+  const width = (aLen > bLen ? aLen : bLen) + 1;
   let carryA = aNeg ? 1 : 0;
   let carryB = bNeg ? 1 : 0;
   let carryOut = negative ? 1 : 0;
   const digits: number[] = [];
   for (let i = 0; i < width; i++) {
-    const ad = aDigits[i] ?? 0;
+    const ad = integerDigit(a, i);
     let x = aNeg ? baseMask - ad + carryA : ad;
     carryA = x >>> 26;
     x &= baseMask;
-    const bd = bDigits[i] ?? 0;
+    const bd = integerDigit(b, i);
     let y = bNeg ? baseMask - bd + carryB : bd;
     carryB = y >>> 26;
     y &= baseMask;
@@ -597,7 +1002,7 @@ export function bitwise(
   return canonical(negative, digits);
 }
 export function bitwiseNot(value: Integer): Integer {
-  return addWithSign(negate(value), { negative: false, digits: [1] }, true);
+  return addWithSign(negate(value), integerOne(), true);
 }
 
 /** Retain low bits with signed or unsigned interpretation. Capacity bounds the
@@ -614,9 +1019,8 @@ export function truncateInteger(
     Math.floor(bits) !== bits
   )
     return undefined;
-  if (bits === 0 || value.digits.length === 0)
-    return { negative: false, digits: [] };
-  const magnitude = magnitudeBits(value.digits);
+  if (bits === 0 || value.len === 0) return integerZero();
+  const magnitude = magnitudeBits(value);
   if (
     (signed && bits > magnitude) ||
     (!signed && !value.negative && bits >= magnitude)
@@ -626,13 +1030,13 @@ export function truncateInteger(
   const width = Math.floor(bits / 26) + (partial === 0 ? 0 : 1);
   if (width > maxDigits) return undefined;
   const mask = partial === 0 ? baseMask : (1 << partial) - 1;
-  const digits = extendOrComplement(value.digits, value.negative, width);
+  const digits = extendOrComplement(value, value.negative, width);
   digits[width - 1] = (digits[width - 1] ?? 0) & mask;
   const negative =
     signed &&
     (digits[width - 1] ?? 0) >= 1 << (partial === 0 ? 25 : partial - 1);
   if (!negative) return canonical(false, digits);
-  const absolute = extendOrComplement(digits, true, width);
+  const absolute = extendArrayComplement(digits, width);
   absolute[width - 1] = (absolute[width - 1] ?? 0) & mask;
   return canonical(true, absolute);
 }
@@ -645,13 +1049,10 @@ function validCapacity(maxDigits: number): boolean {
   );
 }
 /** Convert only when the nonnegative magnitude fits the supplied exact bound. */
-function boundedCount(
-  digits: readonly number[],
-  limit: number,
-): number | undefined {
+function boundedCount(value: Integer, limit: number): number | undefined {
   let count = 0;
-  for (let i = digits.length - 1; i >= 0; i--) {
-    const digit = digits[i] ?? 0;
+  for (let i = value.len - 1; i >= 0; i--) {
+    const digit = integerDigit(value, i);
     if (count > Math.floor((limit - digit) * invBase)) return undefined;
     count = count * base + digit;
   }
@@ -661,7 +1062,177 @@ function withinCapacity(
   value: Integer,
   maxDigits: number,
 ): Integer | undefined {
-  return value.digits.length <= maxDigits ? value : undefined;
+  return value.len <= maxDigits ? value : undefined;
+}
+/** Shift by `count` (or `-count` when `negateCount` is true) without allocating
+ * a negated `Integer` on right shifts. */
+export function shiftSigned(
+  value: Integer,
+  count: Integer,
+  negateCount: boolean,
+  maxDigits: number,
+): Integer | undefined {
+  if (!validCapacity(maxDigits)) return undefined;
+  const vLen = value.len;
+  if (vLen === 0) return integerZero();
+  const cLen = count.len;
+  if (cLen === 0) return withinCapacity(value, maxDigits);
+  const isRight = negateCount ? !count.negative : count.negative;
+  const limit = (isRight ? vLen : maxDigits) * 26;
+  let distance: number | undefined;
+  if (cLen === 1) {
+    const d0 = count.d0;
+    distance = d0 <= limit ? d0 : undefined;
+  } else {
+    distance = boundedCount(count, limit);
+  }
+  if (distance === undefined) {
+    if (!isRight) return undefined;
+    return withinCapacity(
+      value.negative ? inline1(true, 1) : integerZero(),
+      maxDigits,
+    );
+  }
+  const whole = Math.floor(distance / 26),
+    partial = distance - whole * 26;
+  if (!isRight) {
+    if (vLen <= 4 && whole === 0 && partial !== 0) {
+      const sr = 26 - partial;
+      const r0 = (value.d0 << partial) & baseMask;
+      const r1 = ((value.d1 << partial) & baseMask) | (value.d0 >>> sr);
+      const r2 = ((value.d2 << partial) & baseMask) | (value.d1 >>> sr);
+      const r3 = ((value.d3 << partial) & baseMask) | (value.d2 >>> sr);
+      const r4 = value.d3 >>> sr;
+      if (r4 === 0) {
+        const outLen = r3 !== 0 ? 4 : r2 !== 0 ? 3 : r1 !== 0 ? 2 : 1;
+        if (outLen > maxDigits) return undefined;
+        return {
+          negative: value.negative,
+          len: outLen,
+          d0: r0,
+          d1: r1,
+          d2: r2,
+          d3: r3,
+          digits: undefined,
+        };
+      }
+      if (5 > maxDigits) return undefined;
+      return {
+        negative: value.negative,
+        len: 5,
+        d0: r0,
+        d1: r1,
+        d2: r2,
+        d3: r3,
+        digits: [r0, r1, r2, r3, r4],
+      };
+    }
+    if (partial === 0) {
+      if (vLen + whole > maxDigits) return undefined;
+      if (vLen + whole <= 4) {
+        if (whole === 1)
+          return inline4(value.negative, 0, value.d0, value.d1, value.d2);
+        if (whole === 2)
+          return inline4(value.negative, 0, 0, value.d0, value.d1);
+        return inline4(value.negative, 0, 0, 0, value.d0);
+      }
+      const digits: number[] = [];
+      for (let i = 0; i < whole; i++) digits.push(0);
+      for (let i = 0; i < vLen; i++) digits.push(integerDigit(value, i));
+      return canonical(value.negative, digits);
+    }
+    const shiftRight = 26 - partial;
+    const top = integerDigit(value, vLen - 1);
+    const overflow = top >>> shiftRight !== 0 ? 1 : 0;
+    if (vLen + whole + overflow > maxDigits) return undefined;
+    const digits: number[] = [];
+    for (let i = 0; i < whole; i++) digits.push(0);
+    let carry = 0;
+    for (let i = 0; i < vLen; i++) {
+      const d = integerDigit(value, i);
+      digits.push(((d << partial) & baseMask) | carry);
+      carry = d >>> shiftRight;
+    }
+    if (carry !== 0) digits.push(carry);
+    return canonical(value.negative, digits);
+  }
+  if (vLen - whole - 1 > maxDigits) return undefined;
+  if (vLen <= 4 && whole < 4) {
+    let discarded = false;
+    if (value.negative) {
+      if (whole >= 1 && value.d0 !== 0) discarded = true;
+      if (whole >= 2 && value.d1 !== 0) discarded = true;
+      if (whole >= 3 && value.d2 !== 0) discarded = true;
+    }
+    let s0 =
+      whole === 0
+        ? value.d0
+        : whole === 1
+          ? value.d1
+          : whole === 2
+            ? value.d2
+            : value.d3;
+    let s1 =
+      whole === 0
+        ? value.d1
+        : whole === 1
+          ? value.d2
+          : whole === 2
+            ? value.d3
+            : 0;
+    let s2 = whole === 0 ? value.d2 : whole === 1 ? value.d3 : 0;
+    let s3 = whole === 0 ? value.d3 : 0;
+    if (partial !== 0) {
+      const sl = 26 - partial;
+      const lowMask = (1 << partial) - 1;
+      if (value.negative && !discarded && (s0 & lowMask) !== 0)
+        discarded = true;
+      s0 = (s0 >>> partial) | ((s1 & lowMask) << sl);
+      s1 = (s1 >>> partial) | ((s2 & lowMask) << sl);
+      s2 = (s2 >>> partial) | ((s3 & lowMask) << sl);
+      s3 = s3 >>> partial;
+    }
+    if (value.negative && discarded) {
+      const a0 = s0 + 1;
+      s0 = a0 & baseMask;
+      const a1 = s1 + (a0 >>> 26);
+      s1 = a1 & baseMask;
+      const a2 = s2 + (a1 >>> 26);
+      s2 = a2 & baseMask;
+      s3 = s3 + (a2 >>> 26);
+    }
+    return withinCapacity(inline4(value.negative, s0, s1, s2, s3), maxDigits);
+  }
+  let discarded = false;
+  if (value.negative) {
+    for (let i = 0; i < whole && i < vLen; i++)
+      if (integerDigit(value, i) !== 0) {
+        discarded = true;
+        break;
+      }
+  }
+  const digits: number[] = [];
+  if (partial === 0) {
+    for (let i = whole; i < vLen; i++) digits.push(integerDigit(value, i));
+  } else {
+    const shiftLeft = 26 - partial;
+    const lowMask = (1 << partial) - 1;
+    if (value.negative && !discarded && whole < vLen) {
+      if ((integerDigit(value, whole) & lowMask) !== 0) discarded = true;
+    }
+    for (let i = whole; i < vLen; i++) {
+      const low = integerDigit(value, i),
+        high = i + 1 < vLen ? integerDigit(value, i + 1) : 0;
+      digits.push((low >>> partial) | ((high & lowMask) << shiftLeft));
+    }
+  }
+  const truncated = canonical(value.negative, digits);
+  // Magnitude truncation needs one additional unit for negative nonintegral results.
+  const result =
+    value.negative && discarded
+      ? addWithSign(truncated, integerOne(), true)
+      : truncated;
+  return withinCapacity(result, maxDigits);
 }
 /** Positive counts shift left; negative counts shift right with sign extension.
  * The caller supplies its result allocation limit in base-2^26 digits. */
@@ -670,102 +1241,14 @@ export function shift(
   count: Integer,
   maxDigits: number,
 ): Integer | undefined {
-  if (!validCapacity(maxDigits)) return undefined;
-  const vDigits = value.digits,
-    vLen = vDigits.length;
-  if (vLen === 0) return { negative: false, digits: [] };
-  const cDigits = count.digits,
-    cLen = cDigits.length;
-  if (cLen === 0) return withinCapacity(value, maxDigits);
-  const limit = (count.negative ? vLen : maxDigits) * 26;
-  let distance: number | undefined;
-  if (cLen === 1) {
-    const d0 = cDigits[0] ?? 0;
-    distance = d0 <= limit ? d0 : undefined;
-  } else {
-    distance = boundedCount(cDigits, limit);
-  }
-  if (distance === undefined) {
-    if (!count.negative) return undefined;
-    return withinCapacity(
-      value.negative
-        ? { negative: true, digits: [1] }
-        : { negative: false, digits: [] },
-      maxDigits,
-    );
-  }
-  const whole = Math.floor(distance / 26),
-    partial = distance - whole * 26;
-  if (!count.negative) {
-    if (partial === 0) {
-      if (vLen + whole > maxDigits) return undefined;
-      const digits: number[] = [];
-      for (let i = 0; i < whole; i++) digits.push(0);
-      for (let i = 0; i < vLen; i++) digits.push(vDigits[i] ?? 0);
-      return { negative: value.negative, digits };
-    }
-    const shiftRight = 26 - partial;
-    const top = vDigits[vLen - 1] ?? 0;
-    const overflow = top >>> shiftRight !== 0 ? 1 : 0;
-    if (vLen + whole + overflow > maxDigits) return undefined;
-    if (whole === 0 && vLen === 1) {
-      const d0 = vDigits[0] ?? 0;
-      const lo = (d0 << partial) & baseMask;
-      const hi = d0 >>> shiftRight;
-      return {
-        negative: value.negative,
-        digits: hi !== 0 ? [lo, hi] : [lo],
-      };
-    }
-    const digits: number[] = [];
-    for (let i = 0; i < whole; i++) digits.push(0);
-    let carry = 0;
-    for (let i = 0; i < vLen; i++) {
-      const d = vDigits[i] ?? 0;
-      digits.push(((d << partial) & baseMask) | carry);
-      carry = d >>> shiftRight;
-    }
-    if (carry !== 0) digits.push(carry);
-    return canonical(value.negative, digits);
-  }
-  if (vLen - whole - 1 > maxDigits) return undefined;
-  let discarded = false;
-  if (value.negative) {
-    for (let i = 0; i < whole && i < vLen; i++)
-      if ((vDigits[i] ?? 0) !== 0) {
-        discarded = true;
-        break;
-      }
-  }
-  const digits: number[] = [];
-  if (partial === 0) {
-    for (let i = whole; i < vLen; i++) digits.push(vDigits[i] ?? 0);
-  } else {
-    const shiftLeft = 26 - partial;
-    const lowMask = (1 << partial) - 1;
-    if (value.negative && !discarded && whole < vLen) {
-      if (((vDigits[whole] ?? 0) & lowMask) !== 0) discarded = true;
-    }
-    for (let i = whole; i < vLen; i++) {
-      const low = vDigits[i] ?? 0,
-        high = vDigits[i + 1] ?? 0;
-      digits.push((low >>> partial) | ((high & lowMask) << shiftLeft));
-    }
-  }
-  const truncated = canonical(value.negative, digits);
-  // Magnitude truncation needs one additional unit for negative nonintegral results.
-  const result =
-    value.negative && discarded
-      ? addWithSign(truncated, { negative: false, digits: [1] }, true)
-      : truncated;
-  return withinCapacity(result, maxDigits);
+  return shiftSigned(value, count, false, maxDigits);
 }
 function boundedMultiply(
   a: Integer,
   b: Integer,
   maxDigits: number,
 ): Integer | undefined {
-  if (a.digits.length + b.digits.length - 1 > maxDigits) return undefined;
+  if (a.len + b.len - 1 > maxDigits) return undefined;
   return withinCapacity(multiply(a, b), maxDigits);
 }
 /** Undefined denotes a negative exponent, invalid capacity or oversized result.
@@ -776,20 +1259,19 @@ export function power(
   maxDigits: number,
 ): Integer | undefined {
   if (!validCapacity(maxDigits) || exponent.negative) return undefined;
-  const one: Integer = { negative: false, digits: [1] };
-  if (exponent.digits.length === 0) return withinCapacity(one, maxDigits);
-  if (value.digits.length === 0) return { negative: false, digits: [] };
-  if (value.digits.length === 1 && value.digits[0] === 1)
+  if (exponent.len === 0) return withinCapacity(integerOne(), maxDigits);
+  if (value.len === 0) return integerZero();
+  if (value.len === 1 && value.d0 === 1)
     return withinCapacity(
-      value.negative && ((exponent.digits[0] ?? 0) & 1) !== 0
-        ? negate(one)
-        : one,
+      value.negative && (exponent.d0 & 1) !== 0
+        ? negate(integerOne())
+        : integerOne(),
       maxDigits,
     );
-  const count = boundedCount(exponent.digits, maxDigits * 26 - 1);
-  if (count === undefined || value.digits.length > maxDigits) return undefined;
+  const count = boundedCount(exponent, maxDigits * 26 - 1);
+  if (count === undefined || value.len > maxDigits) return undefined;
   let remaining = count;
-  let result = one,
+  let result = integerOne(),
     factor = value;
   while (remaining !== 0) {
     if (remaining % 2 !== 0) {
@@ -816,13 +1298,13 @@ export function fromNumber(value: number): Integer | undefined {
     Math.floor(value) !== value
   )
     return undefined;
-  if (value === 0) return { negative: false, digits: [] };
+  if (value === 0) return integerZero();
   const negative = value < 0;
   let remaining = negative ? -value : value;
-  if (remaining < base) return { negative, digits: [remaining] };
+  if (remaining < base) return inline1(negative, remaining);
   if (remaining < twoLimbLimit) {
     const hi = Math.floor(remaining * invBase);
-    return { negative, digits: [remaining - hi * base, hi] };
+    return inline2(negative, remaining - hi * base, hi);
   }
   const digits: number[] = [];
   while (remaining !== 0) {
@@ -832,18 +1314,17 @@ export function fromNumber(value: number): Integer | undefined {
   }
   return canonical(negative, digits);
 }
-function magnitudeBits(value: readonly number[]): number {
-  if (value.length === 0) return 0;
-  let top = value[value.length - 1] ?? 0,
-    bits = (value.length - 1) * 26;
+function magnitudeBits(value: Integer): number {
+  const len = value.len;
+  if (len === 0) return 0;
+  let top = integerDigit(value, len - 1),
+    bits = (len - 1) * 26;
   while (top !== 0) {
     top >>>= 1;
     bits++;
   }
   return bits;
 }
-/** Binary64 rounding to nearest, ties to even. Discarded bits are examined before
- * converting the retained 53 bits, avoiding repeated limb-accumulation rounding. */
 /** Exact powers used only within binary64's representable exponent range. */
 function binaryPower(exponent: number): number {
   let factor = 1,
@@ -856,19 +1337,17 @@ function binaryPower(exponent: number): number {
   }
   return factor;
 }
+/** Binary64 rounding to nearest, ties to even. Discarded bits are examined before
+ * converting the retained 53 bits, avoiding repeated limb-accumulation rounding. */
 export function toNumber(value: Integer): number {
-  const digits = value.digits,
-    len = digits.length;
+  const len = value.len;
   if (len === 0) return 0;
-  if (len === 1) {
-    const n = digits[0] ?? 0;
-    return value.negative ? -n : n;
-  }
+  if (len === 1) return value.negative ? -value.d0 : value.d0;
   if (len === 2) {
-    const n = (digits[0] ?? 0) + (digits[1] ?? 0) * base;
+    const n = value.d0 + value.d1 * base;
     return value.negative ? -n : n;
   }
-  const bits = magnitudeBits(digits);
+  const bits = magnitudeBits(value);
   if (bits > 1024) return value.negative ? -Infinity : Infinity;
   const discard = Math.max(0, bits - 53);
   const whole = Math.floor(discard / 26),
@@ -877,8 +1356,8 @@ export function toNumber(value: Integer): number {
   const lowMask = (1 << partial) - 1;
   let retained = 0;
   for (let i = len - 1; i >= whole; i--) {
-    const low = digits[i] ?? 0;
-    const high = digits[i + 1] ?? 0;
+    const low = integerDigit(value, i);
+    const high = i + 1 < len ? integerDigit(value, i + 1) : 0;
     const digit =
       partial === 0 ? low : (low >>> partial) | ((high & lowMask) << shiftLeft);
     retained = retained * base + digit;
@@ -886,10 +1365,10 @@ export function toNumber(value: Integer): number {
   if (discard !== 0) {
     const guardWord = Math.floor((discard - 1) / 26);
     const guardBit = discard - 1 - guardWord * 26;
-    const guardDigit = digits[guardWord] ?? 0;
+    const guardDigit = integerDigit(value, guardWord);
     let sticky = (guardDigit & ((1 << guardBit) - 1)) !== 0;
     for (let i = 0; i < guardWord && !sticky; i++)
-      if ((digits[i] ?? 0) !== 0) sticky = true;
+      if (integerDigit(value, i) !== 0) sticky = true;
     if (((guardDigit >>> guardBit) & 1) !== 0 && (sticky || retained % 2 !== 0))
       retained++;
   }
@@ -902,15 +1381,15 @@ export function divideToNumber(
   numerator: Integer,
   denominator: Integer,
 ): number | undefined {
-  if (denominator.digits.length === 0) return undefined;
-  if (numerator.digits.length === 0) return 0;
+  if (denominator.len === 0) return undefined;
+  if (numerator.len === 0) return 0;
   const negative = numerator.negative !== denominator.negative;
   const n = numerator.negative ? negate(numerator) : numerator,
     d = denominator.negative ? negate(denominator) : denominator;
-  let exponent = magnitudeBits(n.digits) - magnitudeBits(d.digits);
+  let exponent = magnitudeBits(n) - magnitudeBits(d);
   if (exponent > 1024) return negative ? -Infinity : Infinity;
   if (exponent < -1075) return negative ? -0 : 0;
-  const capacity = Math.max(n.digits.length, d.digits.length) + 43;
+  const capacity = Math.max(n.len, d.len) + 43;
   function shifted(value: Integer, bits: number): Integer {
     const count = fromNumber(bits);
     if (count === undefined) throw "RATIO_SHIFT_COUNT_INVARIANT";
@@ -948,13 +1427,9 @@ export function compareNumber(
   if (number !== number) return undefined;
   if (number === Infinity) return -1;
   if (number === -Infinity) return 1;
-  const digits = value.digits,
-    len = digits.length;
+  const len = value.len;
   if (len <= 2 && number > -twoLimbLimit && number < twoLimbLimit) {
-    const mag =
-      len === 0
-        ? 0
-        : (digits[0] ?? 0) + (len === 2 ? (digits[1] ?? 0) * base : 0);
+    const mag = len === 0 ? 0 : value.d0 + (len === 2 ? value.d1 * base : 0);
     const av = value.negative ? -mag : mag;
     return av < number ? -1 : av > number ? 1 : 0;
   }

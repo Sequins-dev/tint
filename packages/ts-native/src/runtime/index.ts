@@ -1084,6 +1084,7 @@ function prepareCollectionPass(
     const bigints: BigIntRuntime | undefined = input.hasBigInt
       ? {
           literal: bigIntHelper("literal"),
+          literalInline: bigIntHelper("literalInline"),
           binary: {
             "+": bigIntHelper("addBigInt"),
             "-": bigIntHelper("subtractBigInt"),

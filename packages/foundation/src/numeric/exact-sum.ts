@@ -7,6 +7,7 @@ import {
   fromNumber,
   toNumber,
   shift,
+  integerTopDigit,
   type Integer,
 } from "./big-integer.ts";
 
@@ -24,7 +25,7 @@ function integer(value: number): Integer {
   return result;
 }
 function shifted(value: Integer, count: number): Integer {
-  const capacity = value.digits.length + Math.ceil(Math.max(0, count) / 26) + 1;
+  const capacity = value.len + Math.ceil(Math.max(0, count) / 26) + 1;
   const result = shift(value, integer(count), capacity);
   if (result === undefined) throw "SUM_SHIFT_INVARIANT";
   return result;
@@ -76,10 +77,10 @@ export function finishExactSum(state: ExactSum): number {
   if (state.positiveInfinity) return Infinity;
   if (state.negativeInfinity) return -Infinity;
   const total = state.units;
-  if (total.digits.length === 0) return state.negativeZero ? -0 : 0;
+  if (total.len === 0) return state.negativeZero ? -0 : 0;
   const magnitude = total.negative ? negate(total) : total;
-  let top = magnitude.digits[magnitude.digits.length - 1] ?? 0;
-  let bits = (magnitude.digits.length - 1) * 26;
+  let top = integerTopDigit(magnitude);
+  let bits = (magnitude.len - 1) * 26;
   while (top !== 0) {
     bits++;
     top = Math.floor(top / 2);

@@ -1256,6 +1256,11 @@ function lowerEntries(
       const binary = sources.binary;
       return {
         literal: helper(sources.literal, ["string"], "reference"),
+        literalInline: helper(
+          sources.literalInline,
+          ["boolean", "number", "number", "number", "number", "number"],
+          "reference",
+        ),
         binary: {
           "+": pair(binary["+"]),
           "-": pair(binary["-"]),

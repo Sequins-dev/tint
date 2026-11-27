@@ -15,6 +15,21 @@ import {
   createKeyIndex,
   type ReadonlyKeyIndex,
 } from "@tint/foundation/collections/key-index";
+import {
+  add as addBigInteger,
+  bitwise as bitwiseBigInteger,
+  bitwiseNot as bitwiseNotBigInteger,
+  divideQuotient as divideQuotientBigInteger,
+  divideRemainder as divideRemainderBigInteger,
+  formatInteger as formatBigInteger,
+  multiply as multiplyBigInteger,
+  negate as negateBigInteger,
+  parseInteger as parseBigInteger,
+  power as powerBigInteger,
+  shiftSigned as shiftSignedBigInteger,
+  subtract as subtractBigInteger,
+  type Integer as BigInteger,
+} from "@tint/foundation/numeric/big-integer";
 import type {
   CheckedModule,
   CheckedFunction,
@@ -252,6 +267,8 @@ export interface PrimitiveRuntime {
 export interface BigIntRuntime {
   /** (decimal text) => bigint, for source literals. */
   readonly literal: number;
+  /** (negative, len, d0, d1, d2, d3) => bigint, for compile-time-parsed inline literals. */
+  readonly literalInline: number;
   /** (bigint, bigint) => bigint, by binary operator. */
   readonly binary: {
     readonly "+": number;
@@ -656,6 +673,98 @@ export function lowerFunction(
     slots.push("Uint32Array");
     word64ScratchSlot = slot;
     return slot;
+  }
+  const bigIntConstantSlots = new Map<string, number>();
+  const bigIntConstants: {
+    readonly slot: number;
+    readonly integer: BigInteger;
+  }[] = [];
+  function bigIntConstantSlot(integer: BigInteger): number {
+    const key =
+      integer.len <= 4
+        ? (integer.negative ? "-" : "+") +
+          String(integer.len) +
+          ":" +
+          String(integer.d0) +
+          ":" +
+          String(integer.d1) +
+          ":" +
+          String(integer.d2) +
+          ":" +
+          String(integer.d3)
+        : (formatBigInteger(integer, 10) ?? "");
+    const existing = bigIntConstantSlots.get(key);
+    if (existing !== undefined) return existing;
+    const slot = slots.length;
+    slots.push("reference");
+    bigIntSlots[slot] = 1;
+    bigIntConstantSlots.set(key, slot);
+    bigIntConstants.push({ slot, integer });
+    return slot;
+  }
+  function evalConstantBigInt(expr: Expression): BigInteger | undefined {
+    const maxFoldLimbs = 64;
+    const node = ungroup(expr);
+    if (node.kind === "bigint") {
+      if (node.value.length > 200) return undefined;
+      const parsed = parseBigInteger(node.value, 10);
+      return parsed !== undefined && parsed.len <= maxFoldLimbs
+        ? parsed
+        : undefined;
+    }
+    if (node.kind === "unary") {
+      if (node.operator !== "-" && node.operator !== "~") return undefined;
+      const operand = evalConstantBigInt(node.operand);
+      if (operand === undefined) return undefined;
+      const result =
+        node.operator === "-"
+          ? negateBigInteger(operand)
+          : bitwiseNotBigInteger(operand);
+      return result.len <= maxFoldLimbs ? result : undefined;
+    }
+    if (node.kind === "binary") {
+      const op = node.operator;
+      if (
+        op !== "+" &&
+        op !== "-" &&
+        op !== "*" &&
+        op !== "/" &&
+        op !== "%" &&
+        op !== "&" &&
+        op !== "|" &&
+        op !== "^" &&
+        op !== "<<" &&
+        op !== ">>" &&
+        op !== "**"
+      )
+        return undefined;
+      const left = evalConstantBigInt(node.left);
+      if (left === undefined) return undefined;
+      const right = evalConstantBigInt(node.right);
+      if (right === undefined) return undefined;
+      let result: BigInteger | undefined;
+      if (op === "+") result = addBigInteger(left, right);
+      else if (op === "-") result = subtractBigInteger(left, right);
+      else if (op === "*")
+        result =
+          left.len + right.len <= maxFoldLimbs
+            ? multiplyBigInteger(left, right)
+            : undefined;
+      else if (op === "/") result = divideQuotientBigInteger(left, right);
+      else if (op === "%") result = divideRemainderBigInteger(left, right);
+      else if (op === "&" || op === "|" || op === "^")
+        result = bitwiseBigInteger(left, right, op);
+      else if (op === "<<" || op === ">>")
+        result = shiftSignedBigInteger(left, right, op === ">>", maxFoldLimbs);
+      else if (op === "**")
+        result = right.negative
+          ? undefined
+          : powerBigInteger(left, right, maxFoldLimbs);
+      return result !== undefined && result.len <= maxFoldLimbs
+        ? result
+        : undefined;
+    }
+    return undefined;
   }
   const callReceivers = createKeyIndex<Expression, number>(syntaxHash);
   let exception: { readonly target: number; readonly slot: number } | undefined;
@@ -9529,6 +9638,8 @@ export function lowerFunction(
         return save(id, "primitive", node);
       }
       case "bigint": {
+        const constant = evalConstantBigInt(node);
+        if (constant !== undefined) return bigIntConstantSlot(constant);
         const text = nextValue++;
         emit({
           kind: "string-literal",
@@ -9693,6 +9804,10 @@ export function lowerFunction(
       case "group":
         return expression(node.expression);
       case "unary": {
+        if (node.operator === "-" || node.operator === "~") {
+          const constant = evalConstantBigInt(node);
+          if (constant !== undefined) return bigIntConstantSlot(constant);
+        }
         if (info(node).builtin === "property-delete") {
           // Clears the presence byte and stores undefined: later reads see
           // undefined, `in` and own-key enumeration no longer see the field.
@@ -10181,6 +10296,9 @@ export function lowerFunction(
         return result;
       }
       case "binary": {
+        const constantBigInt = evalConstantBigInt(node);
+        if (constantBigInt !== undefined)
+          return bigIntConstantSlot(constantBigInt);
         if (info(node).builtin === "list-has") {
           const index = value(node.left),
             receiver = value(node.right);
@@ -16089,6 +16207,118 @@ export function lowerFunction(
   hoistFunctions(undefined);
   statement(fn.node.body, undefined);
   if (current !== undefined) requireSuperCalled(fn.node);
+  if (bigIntConstants.length > 0) {
+    const entryBlock = blocks[0];
+    if (entryBlock === undefined) throw "entry block invariant";
+    const runtime = bigIntRuntime();
+    const hoisted: Instruction[] = [];
+    for (let i = 0; i < bigIntConstants.length; i++) {
+      const item = bigIntConstants[i];
+      if (item === undefined) continue;
+      const integer = item.integer;
+      const callId = nextValue++;
+      if (integer.len <= 4) {
+        const negId = nextValue++,
+          lenId = nextValue++,
+          d0Id = nextValue++,
+          d1Id = nextValue++,
+          d2Id = nextValue++,
+          d3Id = nextValue++;
+        hoisted.push(
+          {
+            kind: "constant",
+            id: negId,
+            value: integer.negative,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "constant",
+            id: lenId,
+            value: integer.len,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "constant",
+            id: d0Id,
+            value: integer.d0,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "constant",
+            id: d1Id,
+            value: integer.d1,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "constant",
+            id: d2Id,
+            value: integer.d2,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "constant",
+            id: d3Id,
+            value: integer.d3,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "call",
+            id: callId,
+            target: runtime.literalInline,
+            arguments: [negId, lenId, d0Id, d1Id, d2Id, d3Id],
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "store",
+            slot: item.slot,
+            value: callId,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+        );
+      } else {
+        const text = formatBigInteger(integer, 10);
+        if (text === undefined) throw "BigInt constant format invariant";
+        const textId = nextValue++;
+        hoisted.push(
+          {
+            kind: "string-literal",
+            id: textId,
+            value: text,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "call",
+            id: callId,
+            target: runtime.literal,
+            arguments: [textId],
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+          {
+            kind: "store",
+            slot: item.slot,
+            value: callId,
+            start: fn.node.start,
+            end: fn.node.end,
+          },
+        );
+      }
+    }
+    for (let i = hoisted.length - 1; i >= 0; i--) {
+      const instruction = hoisted[i];
+      if (instruction !== undefined)
+        entryBlock.instructions.unshift(instruction);
+    }
+  }
   if (word64ScratchSlot !== undefined) {
     const entryBlock = blocks[0];
     if (entryBlock === undefined) throw "entry block invariant";

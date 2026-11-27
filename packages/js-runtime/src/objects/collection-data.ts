@@ -1,3 +1,4 @@
+import { integerHash } from "@tint/foundation/numeric/big-integer";
 import {
   viewBigIntValue,
   compareBigIntValues,
@@ -12,13 +13,7 @@ function hashMapString(value: string): number {
 }
 
 function hashBigIntValue(value: BigIntValue): number {
-  const integer = value.integer;
-  const digits = integer.digits;
-  let hash = integer.negative ? 0x811c9dc5 : 0x9e3779b1;
-  for (let i = 0; i < digits.length; i++) {
-    hash = Math.imul(hash ^ (digits[i] ?? 0), 0x01000193) >>> 0;
-  }
-  return hash;
+  return integerHash(value.integer);
 }
 
 function sameOtherKey(left: unknown, right: unknown): boolean {
