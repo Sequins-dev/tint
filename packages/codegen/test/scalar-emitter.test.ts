@@ -4544,3 +4544,97 @@ test("unsigned-zero integer increments fold into 32-bit add-imm and keep hoisted
     "expected `__tint_spec_loop_` containing `>>>` to keep Float64Array base hoisted in x14",
   );
 });
+
+test("directIntTarget keeps secondary integer stores, left-immediate subtractions, and word-only bitwise targets exact", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "directIntEdgeCases",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "number", "number"],
+          integerSlots: [1, 2],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 2,
+                  operator: "|",
+                  left: 0,
+                  right: 1,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 2, ...span },
+                // `(10 - x) >>> 0`: immediate on LHS must not flip operand order.
+                { kind: "load", id: 3, slot: 1, ...span },
+                { kind: "constant", id: 4, value: 10, ...span },
+                {
+                  kind: "binary",
+                  id: 5,
+                  operator: "-",
+                  left: 4,
+                  right: 3,
+                  ...span,
+                },
+                { kind: "constant", id: 6, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 7,
+                  operator: ">>>",
+                  left: 5,
+                  right: 6,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 7, ...span },
+                // Multi-use integer value stored to two distinct integer slots.
+                { kind: "load", id: 8, slot: 1, ...span },
+                { kind: "constant", id: 9, value: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 10,
+                  operator: "+",
+                  left: 8,
+                  right: 9,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 10, ...span },
+                { kind: "store", slot: 2, value: 10, ...span },
+                { kind: "load", id: 11, slot: 2, ...span },
+              ],
+              terminator: { kind: "return", value: 11, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const code = result.value.code;
+  const words: number[] = [];
+  for (let off = 0; off + 4 <= code.length; off += 4)
+    words.push(
+      (code[off]! |
+        (code[off + 1]! << 8) |
+        (code[off + 2]! << 16) |
+        (code[off + 3]! << 24)) >>>
+        0,
+    );
+  // `(10 - x) >>> 0` must NOT emit 32-bit `sub Wd, Wn, #10` (0x51002800).
+  const hasSubWImm10 = words.some((w) => (w & 0xfffffc00) === 0x51002800);
+  assert.ok(
+    !hasSubWImm10,
+    "expected `(10 - x) >>> 0` not to flip into `sub Wd, Wn, #10`",
+  );
+  // 32-bit `sub Wd, Wn, Wm` has top bits 0x4b000000 (mask 0xffe0fc00).
+  const hasSubWReg = words.some((w) => (w & 0xffe0fc00) >>> 0 === 0x4b000000);
+  assert.ok(hasSubWReg, "expected `(10 - x) >>> 0` to emit 32-bit SUB reg");
+});

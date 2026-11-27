@@ -15729,6 +15729,16 @@ function emitModuleForms(
           directFloatAlias.clear();
           if (tracker === undefined && scalarRegisters !== undefined) {
             const regs = scalarRegisters;
+            const claimedUntil = new Map<number, number>();
+            function directTargetOf(id: number): number {
+              const src = storeBypassCandidate.get(id) ?? id,
+                idx = valueIds.intern(src),
+                dInt = directIntTarget[idx] ?? 0;
+              if (dInt !== 0) return dInt - 1 + 32;
+              const dFloat = directFloatTarget[idx] ?? 0;
+              if (dFloat !== 0) return dFloat - 1;
+              return 0;
+            }
             for (let sIdx = 0; sIdx < b.instructions.length; sIdx++) {
               const sOp = b.instructions[sIdx];
               if (
@@ -15737,6 +15747,7 @@ function emitModuleForms(
                 fn.slots[sOp.slot] !== "number"
               )
                 continue;
+              if ((reciprocalStoreOffsets[sOp.slot] ?? 0) > 0) continue;
               const isIntSlot = integerSlots[sOp.slot] === 1;
               const destReg = regs[slotOffset(sOp.slot) / 8] ?? 0;
               if (isIntSlot ? destReg < 32 : destReg === 0 || destReg >= 32)
@@ -15746,6 +15757,8 @@ function emitModuleForms(
               if (useTotal < 1) continue;
               if (isIntSlot && directIntTarget[valIdx] !== 0) continue;
               if (!isIntSlot && directFloatTarget[valIdx] !== 0) continue;
+              if (isIntSlot && useTotal > 1 && wordOnlySlots[sOp.slot] === 1)
+                continue;
               let defIdx = -1,
                 safe = true;
               for (let k = sIdx - 1; k >= 0; k--) {
@@ -15990,8 +16003,11 @@ function emitModuleForms(
               // For multi-use FP or GP integer values, every other consumer
               // must read directly from the register home and no write to
               // `destReg` (or call) may occur before the last use of `sOp.value`.
+              if (defIdx <= (claimedUntil.get(destReg) ?? -1)) continue;
+              if (isIntSlot && useTotal > 1 && !wantsInteger(targetValId))
+                continue;
+              let lastUse = sIdx;
               if (useTotal > 1) {
-                let lastUse = sIdx;
                 for (let k = defIdx + 1; k < b.instructions.length; k++) {
                   const later = b.instructions[k];
                   if (later === undefined) {
@@ -16011,9 +16027,6 @@ function emitModuleForms(
                           (later.kind === "array-store" &&
                             later.index === sOp.value &&
                             later.value !== sOp.value) ||
-                          (later.kind === "store" &&
-                            integerSlots[later.slot] === 1 &&
-                            later.value === sOp.value) ||
                           (later.kind === "binary" &&
                             ((wantsInteger(later.id) &&
                               zeroSignResults[valueIds.intern(later.id)] !==
@@ -16085,7 +16098,7 @@ function emitModuleForms(
                 if (
                   id !== sOp.value &&
                   id !== targetValId &&
-                  homeOf(id) === destReg
+                  (homeOf(id) === destReg || directTargetOf(id) === destReg)
                 )
                   safe = false;
               };
@@ -16101,11 +16114,15 @@ function emitModuleForms(
                 storeBypassCandidate.set(sOp.value, targetValId);
                 if (bypassTruncatedSum)
                   unsignedTruncateCandidate[targetValIdx] = 1;
-                if (wordOnlySlots[sOp.slot] === 1)
+                if (useTotal === 1 && wordOnlySlots[sOp.slot] === 1)
                   lowWordStoreValues[targetValIdx] = 1;
               }
               if (isIntSlot) directIntTarget[targetValIdx] = destReg - 32 + 1;
               else directFloatTarget[targetValIdx] = destReg + 1;
+              claimedUntil.set(
+                destReg,
+                Math.max(claimedUntil.get(destReg) ?? -1, lastUse),
+              );
             }
           }
           const directGeneralTarget =
@@ -29837,12 +29854,30 @@ function emitModuleForms(
                   fusion.skipped.indexOf(operationIndex) >= 0
                 )
                   break;
-                const storeSrc = elidedStoreSource.get(op.value) ?? op.value;
-                if (emittedDirectStore[valueIds.intern(storeSrc)] === 1) break;
+                const storeSrc = elidedStoreSource.get(op.value) ?? op.value,
+                  storeSrcIdx = valueIds.intern(storeSrc);
+                if (emittedDirectStore[storeSrcIdx] === 1) {
+                  const dInt = directIntTarget[storeSrcIdx] ?? 0,
+                    dFloat = directFloatTarget[storeSrcIdx] ?? 0,
+                    slotReg =
+                      scalarRegisters === undefined
+                        ? 0
+                        : (scalarRegisters[slotOffset(op.slot) / 8] ?? 0);
+                  if (dInt !== 0) {
+                    if (slotReg === dInt - 1 + 32) break;
+                  } else if (dFloat !== 0) {
+                    if (slotReg === dFloat - 1) break;
+                  } else {
+                    break;
+                  }
+                }
                 if (integerSlots[op.slot] === 1) {
-                  const constant = deferredIntegers.get(storeSrc);
+                  const constant = deferredIntegers.get(storeSrc),
+                    aliasedInt = directIntAlias.get(storeSrc);
                   if (constant !== undefined)
                     writeInteger(constant, slotOffset(op.slot));
+                  else if (aliasedInt !== undefined)
+                    rawStore(aliasedInt, slotOffset(op.slot));
                   else if (storedAsInteger(storeSrc))
                     copyRawWord(value(storeSrc).offset, slotOffset(op.slot));
                   else {
@@ -29997,7 +30032,7 @@ function emitModuleForms(
                       directIntTarget[valueIds.intern(bypass)] ?? 0;
                     if (bypassDirect !== 0) {
                       directIntAlias.set(op.id, bypassDirect - 1);
-                      markInteger(op.id);
+                      if (storedAsInteger(bypass)) markInteger(op.id);
                     }
                   } else if (wantsInteger(op.id)) {
                     const target = intTarget(op.id, 9);
@@ -30465,7 +30500,10 @@ function emitModuleForms(
                   const opIdx = valueIds.intern(op.id),
                     direct = directIntTarget[opIdx] ?? 0,
                     target = direct !== 0 ? direct - 1 : intTarget(op.id, 9);
-                  if (immediate !== undefined) {
+                  if (
+                    immediate !== undefined &&
+                    (op.operator === "+" || immediate === op.right)
+                  ) {
                     const constant = deferredIntegers.get(immediate);
                     if (constant === undefined) throw "immediate invariant";
                     const source = intRegister(
@@ -31074,7 +31112,7 @@ function emitModuleForms(
                       directIntTarget[valueIds.intern(bypass)] ?? 0;
                     if (bypassDirect !== 0) {
                       directIntAlias.set(op.id, bypassDirect - 1);
-                      markInteger(op.id);
+                      if (storedAsInteger(bypass)) markInteger(op.id);
                     }
                     break;
                   }
@@ -31501,9 +31539,14 @@ function emitModuleForms(
                     truncatedSums[valueIds.intern(sum.id)] = 1;
                     extended = true;
                   }
-                  if (direct === 0 && storedAsWord(op.id))
-                    saveRaw(target, op.id);
-                  else if (wantsInteger(op.id)) {
+                  if (storedAsWord(op.id)) {
+                    if (direct === 0) saveRaw(target, op.id);
+                    else {
+                      emittedDirectStore[opIdx] = 1;
+                      if ((valueUses[opIdx] ?? 0) > 1)
+                        directIntAlias.set(op.id, target);
+                    }
+                  } else if (wantsInteger(op.id)) {
                     // A W-register result is zero-extended: right for >>>,
                     // and integer typed-array stores read only low bits.
                     if (
