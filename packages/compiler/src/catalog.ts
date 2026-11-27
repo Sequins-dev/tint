@@ -583,6 +583,18 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/collections/compact-map.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/collections/compact-number-map.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/collections/compact-set.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/collections/indexed-sort.ts",
       packageId: "foundation",
     },
@@ -3662,6 +3674,21 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "codegen",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/collections/indexed-sort",
       target: "packages/foundation/src/collections/indexed-sort.ts",
     },
@@ -4049,6 +4076,21 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/collections/bit-vector",
       target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
     },
     {
       packageId: "compiler",
@@ -4707,6 +4749,21 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "image",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/collections/indexed-sort",
       target: "packages/foundation/src/collections/indexed-sort.ts",
     },
@@ -5004,6 +5061,21 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/collections/bit-vector",
       target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
     },
     {
       packageId: "ir",
@@ -5339,6 +5411,21 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/collections/bit-vector",
       target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
     },
     {
       packageId: "js-engine",
@@ -5772,6 +5859,21 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
+    },
+    {
+      packageId: "js-runtime",
       specifier: "@tint/foundation/collections/indexed-sort",
       target: "packages/foundation/src/collections/indexed-sort.ts",
     },
@@ -6069,6 +6171,21 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/collections/bit-vector",
       target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
     },
     {
       packageId: "native-runtime",
@@ -6432,6 +6549,21 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/foundation/collections/indexed-sort",
       target: "packages/foundation/src/collections/indexed-sort.ts",
     },
@@ -6792,6 +6924,21 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/collections/indexed-sort",
       target: "packages/foundation/src/collections/indexed-sort.ts",
     },
@@ -7124,6 +7271,21 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/collections/bit-vector",
       target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/collections/compact-map",
+      target: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/collections/compact-number-map",
+      target: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/collections/compact-set",
+      target: "packages/foundation/src/collections/compact-set.ts",
     },
     {
       packageId: "typescript",

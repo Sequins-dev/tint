@@ -46,6 +46,14 @@ test("runtime providers preserve stable namespaces independently of package path
       module: "packages/foundation/src/collections/linked-map.ts",
     },
     {
+      namespace: "compact-map",
+      module: "packages/foundation/src/collections/compact-map.ts",
+    },
+    {
+      namespace: "compact-number-map",
+      module: "packages/foundation/src/collections/compact-number-map.ts",
+    },
+    {
       namespace: "number-key-map",
       module: "packages/foundation/src/collections/number-key-map.ts",
     },
@@ -68,6 +76,10 @@ test("runtime providers preserve stable namespaces independently of package path
     {
       namespace: "linked-set",
       module: "packages/foundation/src/collections/linked-set.ts",
+    },
+    {
+      namespace: "compact-set",
+      module: "packages/foundation/src/collections/compact-set.ts",
     },
     {
       namespace: "number-key-set",

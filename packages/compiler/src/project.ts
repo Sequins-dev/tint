@@ -39,6 +39,14 @@ export function runtimeSources(): RuntimeSource[] {
       namespace: "linked-map",
     },
     {
+      module: "packages/foundation/src/collections/compact-map.ts",
+      namespace: "compact-map",
+    },
+    {
+      module: "packages/foundation/src/collections/compact-number-map.ts",
+      namespace: "compact-number-map",
+    },
+    {
       module: "packages/foundation/src/collections/number-key-map.ts",
       namespace: "number-key-map",
     },
@@ -61,6 +69,10 @@ export function runtimeSources(): RuntimeSource[] {
     {
       module: "packages/foundation/src/collections/linked-set.ts",
       namespace: "linked-set",
+    },
+    {
+      module: "packages/foundation/src/collections/compact-set.ts",
+      namespace: "compact-set",
     },
     {
       module: "packages/foundation/src/collections/number-key-set.ts",
