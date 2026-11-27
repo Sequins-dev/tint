@@ -1,0 +1,491 @@
+{
+  "version": 1,
+  "description": "Deterministic category-balanced selection of 95 unchanged synchronous Test262 semantic tests across 34 language and built-ins families for batch-throughput execution benchmarking.",
+  "harnesses": ["assert.js", "sta.js", "compareArray.js"],
+  "defaultIterations": 120,
+  "quickIterations": 30,
+  "cases": [
+    {
+      "group": "expressions",
+      "family": "language/expressions/addition",
+      "path": "language/expressions/addition/coerce-symbol-to-prim-err.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/addition",
+      "path": "language/expressions/addition/coerce-symbol-to-prim-invocation.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/addition",
+      "path": "language/expressions/addition/coerce-symbol-to-prim-return-obj.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/arrow-function",
+      "path": "language/expressions/arrow-function/ArrowFunction_restricted-properties.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/arrow-function",
+      "path": "language/expressions/arrow-function/cannot-override-this-with-thisArg.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/coalesce",
+      "path": "language/expressions/coalesce/abrupt-is-a-short-circuit.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/coalesce",
+      "path": "language/expressions/coalesce/chainable.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/coalesce",
+      "path": "language/expressions/coalesce/short-circuit-number-0.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/conditional",
+      "path": "language/expressions/conditional/coalesce-expr-ternary.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/conditional",
+      "path": "language/expressions/conditional/in-branch-1.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/conditional",
+      "path": "language/expressions/conditional/S11.12_A2.1_T1.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/optional-chaining",
+      "path": "language/expressions/optional-chaining/call-expression.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/optional-chaining",
+      "path": "language/expressions/optional-chaining/iteration-statement-do.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/optional-chaining",
+      "path": "language/expressions/optional-chaining/iteration-statement-for-in.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/template-literal",
+      "path": "language/expressions/template-literal/evaluation-order.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/template-literal",
+      "path": "language/expressions/template-literal/literal-expr-abrupt.js"
+    },
+    {
+      "group": "expressions",
+      "family": "language/expressions/template-literal",
+      "path": "language/expressions/template-literal/literal-expr-function.js"
+    },
+
+    {
+      "group": "statements",
+      "family": "language/statements/for-of",
+      "path": "language/statements/for-of/array-contract-expand.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/for-of",
+      "path": "language/statements/for-of/array-contract.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/for-of",
+      "path": "language/statements/for-of/array-expand-contract.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/switch",
+      "path": "language/statements/switch/S12.11_A4_T1.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/try",
+      "path": "language/statements/try/12.14-10.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/try",
+      "path": "language/statements/try/12.14-11.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/try",
+      "path": "language/statements/try/12.14-12.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/generators",
+      "path": "language/statements/generators/default-proto.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/generators",
+      "path": "language/statements/generators/declaration.js"
+    },
+    {
+      "group": "statements",
+      "family": "language/statements/generators",
+      "path": "language/statements/generators/has-instance.js"
+    },
+
+    {
+      "group": "destructuring-classes",
+      "family": "language/statements/class",
+      "path": "language/statements/class/arguments/default-constructor.js"
+    },
+    {
+      "group": "destructuring-classes",
+      "family": "language/destructuring",
+      "path": "language/destructuring/binding/initialization-returns-normal-completion-for-empty-objects.js"
+    },
+    {
+      "group": "destructuring-classes",
+      "family": "language/destructuring",
+      "path": "language/destructuring/binding/syntax/destructuring-array-parameters-function-arguments-length.js"
+    },
+    {
+      "group": "destructuring-classes",
+      "family": "language/destructuring",
+      "path": "language/destructuring/binding/syntax/destructuring-object-parameters-function-arguments-length.js"
+    },
+
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/map",
+      "path": "built-ins/Array/prototype/map/15.4.4.19-2-2.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/map",
+      "path": "built-ins/Array/prototype/map/15.4.4.19-4-1.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/map",
+      "path": "built-ins/Array/prototype/map/15.4.4.19-4-12.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/reduce",
+      "path": "built-ins/Array/prototype/reduce/15.4.4.21-10-1.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/reduce",
+      "path": "built-ins/Array/prototype/reduce/15.4.4.21-10-2.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/reduce",
+      "path": "built-ins/Array/prototype/reduce/15.4.4.21-10-3.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/sort",
+      "path": "built-ins/Array/prototype/sort/bug_596_1.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/sort",
+      "path": "built-ins/Array/prototype/sort/bug_596_2.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/Array/prototype/sort",
+      "path": "built-ins/Array/prototype/sort/call-with-primitive.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/ArrayBuffer",
+      "path": "built-ins/ArrayBuffer/isView/arg-is-arraybuffer.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/ArrayBuffer",
+      "path": "built-ins/ArrayBuffer/negative-length-throws.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/ArrayBuffer",
+      "path": "built-ins/ArrayBuffer/init-zero.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/DataView",
+      "path": "built-ins/DataView/buffer-does-not-have-arraybuffer-data-throws.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/DataView",
+      "path": "built-ins/DataView/buffer-not-object-throws.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/DataView",
+      "path": "built-ins/DataView/buffer-reference.js"
+    },
+    {
+      "group": "arrays-binary",
+      "family": "built-ins/TypedArray",
+      "path": "built-ins/TypedArray/from/from-array-mapper-makes-result-out-of-bounds.js"
+    },
+
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/BigInt",
+      "path": "built-ins/BigInt/asIntN/order-of-steps.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/BigInt",
+      "path": "built-ins/BigInt/asUintN/order-of-steps.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/BigInt",
+      "path": "built-ins/BigInt/infinity-throws-rangeerror.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/Date",
+      "path": "built-ins/Date/15.9.1.15-1.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/Date",
+      "path": "built-ins/Date/UTC/time-clip.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/Date",
+      "path": "built-ins/Date/UTC/non-integer-values.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/Math",
+      "path": "built-ins/Math/abs/absolute-value.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/Math",
+      "path": "built-ins/Math/abs/S15.8.2.1_A3.js"
+    },
+    {
+      "group": "numbers-math-date",
+      "family": "built-ins/Math",
+      "path": "built-ins/Math/acos/S15.8.2.2_A2.js"
+    },
+
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/JSON/parse",
+      "path": "built-ins/JSON/parse/15.12.1.1-0-1.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/JSON/parse",
+      "path": "built-ins/JSON/parse/15.12.1.1-0-2.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/JSON/parse",
+      "path": "built-ins/JSON/parse/15.12.1.1-0-3.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/JSON/stringify",
+      "path": "built-ins/JSON/stringify/property-order.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/JSON/stringify",
+      "path": "built-ins/JSON/stringify/replacer-array-abrupt.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/JSON/stringify",
+      "path": "built-ins/JSON/stringify/replacer-array-duplicates.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/RegExp",
+      "path": "built-ins/RegExp/15.10.2.15-6-1.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/RegExp",
+      "path": "built-ins/RegExp/15.10.2.5-3-1.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/RegExp",
+      "path": "built-ins/RegExp/15.10.4.1-1.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/String/prototype/replace",
+      "path": "built-ins/String/prototype/replace/cstm-replace-get-err.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/String/prototype/replace",
+      "path": "built-ins/String/prototype/replace/cstm-replace-invocation.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/String/prototype/replace",
+      "path": "built-ins/String/prototype/replace/cstm-replace-is-null.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/String/prototype/normalize",
+      "path": "built-ins/String/prototype/normalize/form-is-not-valid-throws.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/String/prototype/normalize",
+      "path": "built-ins/String/prototype/normalize/return-abrupt-from-form-as-symbol.js"
+    },
+    {
+      "group": "json-strings-regexp",
+      "family": "built-ins/String/prototype/normalize",
+      "path": "built-ins/String/prototype/normalize/return-abrupt-from-form.js"
+    },
+
+    {
+      "group": "collections",
+      "family": "built-ins/Map",
+      "path": "built-ins/Map/bigint-number-same-value.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Map",
+      "path": "built-ins/Map/constructor.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Map",
+      "path": "built-ins/Map/groupBy/callback-throws.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Set",
+      "path": "built-ins/Set/bigint-number-same-value.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Set",
+      "path": "built-ins/Set/prototype/add/does-not-have-setdata-internal-slot-array.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Set",
+      "path": "built-ins/Set/prototype/add/does-not-have-setdata-internal-slot-map.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Error",
+      "path": "built-ins/Error/cause_abrupt.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Error",
+      "path": "built-ins/Error/error-message-tostring-symbol.js"
+    },
+    {
+      "group": "collections",
+      "family": "built-ins/Error",
+      "path": "built-ins/Error/error-message-tostring-toprimitive.js"
+    },
+
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Object/assign",
+      "path": "built-ins/Object/assign/ObjectOverride-sameproperty.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Object/assign",
+      "path": "built-ins/Object/assign/OnlyOneArgument.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Object/assign",
+      "path": "built-ins/Object/assign/Override-notstringtarget.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Object/entries",
+      "path": "built-ins/Object/entries/exception-during-enumeration.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Object/entries",
+      "path": "built-ins/Object/entries/exception-not-object-coercible.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Object/entries",
+      "path": "built-ins/Object/entries/getter-making-future-key-nonenumerable.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Proxy",
+      "path": "built-ins/Proxy/apply/call-result.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Proxy",
+      "path": "built-ins/Proxy/apply/null-handler.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Proxy",
+      "path": "built-ins/Proxy/apply/return-abrupt.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Reflect",
+      "path": "built-ins/Reflect/apply/return-target-call-result.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Reflect",
+      "path": "built-ins/Reflect/apply/target-is-not-callable-throws.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Reflect",
+      "path": "built-ins/Reflect/construct/arguments-list-is-not-array-like.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Symbol",
+      "path": "built-ins/Symbol/constructor.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Symbol",
+      "path": "built-ins/Symbol/desc-to-string.js"
+    },
+    {
+      "group": "objects-proxy-symbol",
+      "family": "built-ins/Symbol",
+      "path": "built-ins/Symbol/for/create-value.js"
+    }
+  ]
+}

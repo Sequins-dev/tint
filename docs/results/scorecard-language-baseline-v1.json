@@ -1,0 +1,2097 @@
+{
+  "kind": "tint-holistic-scorecard",
+  "version": 1,
+  "label": "language-baseline-v1",
+  "profile": "quick",
+  "recordedAt": "2026-11-27T03:24:07.236Z",
+  "head": "dbf0054b4caeba3235aa345ef8ca5ae53f4b09bd",
+  "platform": "darwin-arm64",
+  "cpu": "Apple M5 Max",
+  "node": "/opt/homebrew/bin/node",
+  "nodeVersion": "v26.13.1",
+  "rounds": 2,
+  "steady": 2,
+  "suites": [
+    {
+      "suite": "language-typed",
+      "status": "completed",
+      "measurements": 35
+    },
+    {
+      "suite": "language-untyped",
+      "status": "completed",
+      "measurements": 33
+    },
+    {
+      "suite": "language-general",
+      "status": "completed",
+      "measurements": 9
+    },
+    {
+      "suite": "language-async",
+      "status": "completed",
+      "measurements": 3
+    },
+    {
+      "suite": "test262-canary",
+      "status": "completed",
+      "measurements": 8
+    }
+  ],
+  "summary": {
+    "totalMeasurements": 88,
+    "typedCount": 35,
+    "untypedCount": 53,
+    "overallGeomean": 7.285669552878077,
+    "typedGeomean": 2.9684507681338776,
+    "untypedGeomean": 13.181862135726421,
+    "typedVsUntypedSpeedupGeomean": 6.851480894665202,
+    "byCategory": [
+      {
+        "key": "async-promises",
+        "count": 3,
+        "geomean": 22.258183545140923,
+        "minRatio": 16.072776776968347,
+        "maxRatio": 26.534740544894536,
+        "bestKernel": "language-async:asyncAwaitMicrotasks",
+        "worstKernel": "language-async:promiseAllBatch",
+        "fasterThanNode": 0,
+        "withinParity": 0,
+        "slowDeficits": 3
+      },
+      {
+        "key": "classes-oop",
+        "count": 10,
+        "geomean": 6.631594411153841,
+        "minRatio": 0.6050693459255103,
+        "maxRatio": 104.20449587777529,
+        "bestKernel": "language-typed:classAccessorsInstanceof",
+        "worstKernel": "language-untyped:classAccessorsInstanceof",
+        "fasterThanNode": 3,
+        "withinParity": 3,
+        "slowDeficits": 6
+      },
+      {
+        "key": "collections-objects",
+        "count": 10,
+        "geomean": 12.200443812022407,
+        "minRatio": 1.3782235997076986,
+        "maxRatio": 30.230144252135148,
+        "bestKernel": "language-typed:mapSetDeleteRehash",
+        "worstKernel": "language-untyped:mapSetDeleteRehash",
+        "fasterThanNode": 0,
+        "withinParity": 0,
+        "slowDeficits": 9
+      },
+      {
+        "key": "control-flow-syntax",
+        "count": 20,
+        "geomean": 3.146107996035436,
+        "minRatio": 0.24570598179135095,
+        "maxRatio": 60.444615414388295,
+        "bestKernel": "language-typed:destructuringPatterns",
+        "worstKernel": "language-untyped:spreadArrayObjectCall",
+        "fasterThanNode": 9,
+        "withinParity": 9,
+        "slowDeficits": 10
+      },
+      {
+        "key": "math-builtins",
+        "count": 6,
+        "geomean": 42.509767428953694,
+        "minRatio": 1.3743865145256744,
+        "maxRatio": 2083.6985834690904,
+        "bestKernel": "language-typed:mathBitwiseRounding",
+        "worstKernel": "language-untyped:mathTranscendental",
+        "fasterThanNode": 0,
+        "withinParity": 0,
+        "slowDeficits": 5
+      },
+      {
+        "key": "serialization-binary",
+        "count": 16,
+        "geomean": 16.355629653015626,
+        "minRatio": 0.7686813672973684,
+        "maxRatio": 494.6877619247208,
+        "bestKernel": "language-typed:atomicsOps",
+        "worstKernel": "language-untyped:bigintTypedArrays",
+        "fasterThanNode": 1,
+        "withinParity": 1,
+        "slowDeficits": 15
+      },
+      {
+        "key": "stdlib-builtins",
+        "count": 6,
+        "geomean": 3.157654861813203,
+        "minRatio": 0.5200577867321354,
+        "maxRatio": 42.443704186955365,
+        "bestKernel": "language-typed:errorConstruction",
+        "worstKernel": "language-general:regexpMatchExecReplace",
+        "fasterThanNode": 2,
+        "withinParity": 2,
+        "slowDeficits": 4
+      },
+      {
+        "key": "string-builtins",
+        "count": 9,
+        "geomean": 7.272468896104491,
+        "minRatio": 0.9210258989253173,
+        "maxRatio": 32.939363274307624,
+        "bestKernel": "language-typed:stringTrimPadSearch",
+        "worstKernel": "language-untyped:stringNormalizeUnicode",
+        "fasterThanNode": 1,
+        "withinParity": 2,
+        "slowDeficits": 6
+      },
+      {
+        "key": "test262-canary",
+        "count": 8,
+        "geomean": 2.289880339158052,
+        "minRatio": 1.106528594561473,
+        "maxRatio": 6.46198968218296,
+        "bestKernel": "test262-canary:arrays-binary",
+        "worstKernel": "test262-canary:statements",
+        "fasterThanNode": 0,
+        "withinParity": 1,
+        "slowDeficits": 4
+      }
+    ],
+    "bySuite": [
+      {
+        "key": "language-async",
+        "count": 3,
+        "geomean": 22.258183545140923,
+        "minRatio": 16.072776776968347,
+        "maxRatio": 26.534740544894536,
+        "bestKernel": "language-async:asyncAwaitMicrotasks",
+        "worstKernel": "language-async:promiseAllBatch",
+        "fasterThanNode": 0,
+        "withinParity": 0,
+        "slowDeficits": 3
+      },
+      {
+        "key": "language-general",
+        "count": 9,
+        "geomean": 10.914396967261348,
+        "minRatio": 2.3744030224117076,
+        "maxRatio": 42.443704186955365,
+        "bestKernel": "language-general:dateOperations",
+        "worstKernel": "language-general:regexpMatchExecReplace",
+        "fasterThanNode": 0,
+        "withinParity": 0,
+        "slowDeficits": 9
+      },
+      {
+        "key": "language-typed",
+        "count": 35,
+        "geomean": 2.9684507681338776,
+        "minRatio": 0.24570598179135095,
+        "maxRatio": 1782.603308295355,
+        "bestKernel": "language-typed:destructuringPatterns",
+        "worstKernel": "language-typed:mathTranscendental",
+        "fasterThanNode": 14,
+        "withinParity": 15,
+        "slowDeficits": 16
+      },
+      {
+        "key": "language-untyped",
+        "count": 33,
+        "geomean": 20.22708570411205,
+        "minRatio": 0.7371182909597758,
+        "maxRatio": 2083.6985834690904,
+        "bestKernel": "language-untyped:errorConstruction",
+        "worstKernel": "language-untyped:mathTranscendental",
+        "fasterThanNode": 2,
+        "withinParity": 2,
+        "slowDeficits": 30
+      },
+      {
+        "key": "test262-canary",
+        "count": 8,
+        "geomean": 2.289880339158052,
+        "minRatio": 1.106528594561473,
+        "maxRatio": 6.46198968218296,
+        "bestKernel": "test262-canary:arrays-binary",
+        "worstKernel": "test262-canary:statements",
+        "fasterThanNode": 0,
+        "withinParity": 1,
+        "slowDeficits": 4
+      }
+    ],
+    "deficitsOver2x": [
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "math-builtins",
+        "kernel": "mathTranscendental",
+        "typedStatus": "native",
+        "nodeMs": 0.04410425000000018,
+        "tintMs": 91.89807277917862,
+        "ratio": 2083.6985834690904,
+        "scale": 300
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "math-builtins",
+        "kernel": "mathTranscendental",
+        "typedStatus": "native",
+        "nodeMs": 0.05181249999999693,
+        "tintMs": 89.94730192422867,
+        "ratio": 1782.603308295355,
+        "scale": 300
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "bigintTypedArrays",
+        "typedStatus": "native",
+        "nodeMs": 0.22565600000000074,
+        "tintMs": 111.42349994182587,
+        "ratio": 494.6877619247208,
+        "scale": 300
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "bigintTypedArrays",
+        "typedStatus": "native",
+        "nodeMs": 0.27216675000000023,
+        "tintMs": 46.15263569355011,
+        "ratio": 173.50594337772492,
+        "scale": 300
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "classes-oop",
+        "kernel": "classAccessorsInstanceof",
+        "typedStatus": "native",
+        "nodeMs": 0.4461875000000006,
+        "tintMs": 46.43212503194809,
+        "ratio": 104.20449587777529,
+        "scale": 3000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "classes-oop",
+        "kernel": "privateFieldsMethods",
+        "typedStatus": "native",
+        "nodeMs": 0.1625935000000016,
+        "tintMs": 9.948906242847443,
+        "ratio": 61.18801575395503,
+        "scale": 15000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "spreadArrayObjectCall",
+        "typedStatus": "native",
+        "nodeMs": 0.7184375000000003,
+        "tintMs": 43.416916728019714,
+        "ratio": 60.444615414388295,
+        "scale": 5000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "defaultRestParams",
+        "typedStatus": "native",
+        "nodeMs": 0.20997925000000173,
+        "tintMs": 12.643572747707367,
+        "ratio": 60.36752750391933,
+        "scale": 8000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "dataViewEndian",
+        "typedStatus": "native",
+        "nodeMs": 0.3720107499999994,
+        "tintMs": 20.55257272720337,
+        "ratio": 55.54308503387939,
+        "scale": 3000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "forOfCollections",
+        "typedStatus": "native",
+        "nodeMs": 0.935562749999999,
+        "tintMs": 50.0288747549057,
+        "ratio": 53.49885049020862,
+        "scale": 4000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "classes-oop",
+        "kernel": "staticBlocksExpressions",
+        "typedStatus": "native",
+        "nodeMs": 0.20160425000000082,
+        "tintMs": 9.564864575862885,
+        "ratio": 47.49267323988187,
+        "scale": 10000
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "stdlib-builtins",
+        "kernel": "regexpMatchExecReplace",
+        "typedStatus": "fallback",
+        "nodeMs": 0.2269167500000009,
+        "tintMs": 9.626031279563904,
+        "ratio": 42.443704186955365,
+        "scale": 250
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "destructuringPatterns",
+        "typedStatus": "native",
+        "nodeMs": 0.7051042499999998,
+        "tintMs": 29.128927052021027,
+        "ratio": 41.31856705111794,
+        "scale": 8000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "classes-oop",
+        "kernel": "deepInheritanceSuper",
+        "typedStatus": "native",
+        "nodeMs": 0.452239500000001,
+        "tintMs": 17.569906294345856,
+        "ratio": 38.853031349308466,
+        "scale": 6000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "string-builtins",
+        "kernel": "stringNormalizeUnicode",
+        "typedStatus": "native",
+        "nodeMs": 0.33715600000000023,
+        "tintMs": 11.057905972003937,
+        "ratio": 32.939363274307624,
+        "scale": 600
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "string-builtins",
+        "kernel": "stringNormalizeUnicode",
+        "typedStatus": "native",
+        "nodeMs": 0.32658349999999814,
+        "tintMs": 10.73411476612091,
+        "ratio": 32.86514015434277,
+        "scale": 600
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "collections-objects",
+        "kernel": "mapSetDeleteRehash",
+        "typedStatus": "native",
+        "nodeMs": 1.7183957499999991,
+        "tintMs": 51.93963545560837,
+        "ratio": 30.230144252135148,
+        "scale": 300
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "collections-objects",
+        "kernel": "arrayHofsFull",
+        "typedStatus": "fallback",
+        "nodeMs": 0.7136557500000009,
+        "tintMs": 20.67652076482773,
+        "ratio": 28.974303027795933,
+        "scale": 200
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "string-builtins",
+        "kernel": "stringCaseAsciiUnicode",
+        "typedStatus": "native",
+        "nodeMs": 0.24682274999999976,
+        "tintMs": 6.5858330726623535,
+        "ratio": 26.730945095745245,
+        "scale": 800
+      },
+      {
+        "suite": "language-async",
+        "mode": "async",
+        "category": "async-promises",
+        "kernel": "promiseAllBatch",
+        "typedStatus": "fallback",
+        "nodeMs": 0.29615625000000056,
+        "tintMs": 7.856875002384186,
+        "ratio": 26.534740544894536,
+        "scale": 150
+      },
+      {
+        "suite": "language-async",
+        "mode": "async",
+        "category": "async-promises",
+        "kernel": "promiseChains",
+        "typedStatus": "fallback",
+        "nodeMs": 0.15734400000000015,
+        "tintMs": 4.070823013782501,
+        "ratio": 25.856122665672252,
+        "scale": 500
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "string-builtins",
+        "kernel": "stringCaseAsciiUnicode",
+        "typedStatus": "native",
+        "nodeMs": 0.2563957499999976,
+        "tintMs": 6.2279579639434814,
+        "ratio": 24.30770562155287,
+        "scale": 800
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "math-builtins",
+        "kernel": "mathHypotPowLog",
+        "typedStatus": "native",
+        "nodeMs": 0.23291650000000175,
+        "tintMs": 5.438416481018066,
+        "ratio": 23.349306681423247,
+        "scale": 6000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "collections-objects",
+        "kernel": "mapSetObjectKeys",
+        "typedStatus": "native",
+        "nodeMs": 0.9909999999999997,
+        "tintMs": 21.674166798591614,
+        "ratio": 21.887127077565257,
+        "scale": 400
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "control-flow-syntax",
+        "kernel": "generatorsYield",
+        "typedStatus": "fallback",
+        "nodeMs": 0.2866249999999999,
+        "tintMs": 6.2448959946632385,
+        "ratio": 21.802375538598746,
+        "scale": 300
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "bigintParse",
+        "typedStatus": "native",
+        "nodeMs": 0.14376049999999996,
+        "tintMs": 3.0711042284965515,
+        "ratio": 21.388230768199758,
+        "scale": 2500
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "collections-objects",
+        "kernel": "mapSetBigIntKeys",
+        "typedStatus": "native",
+        "nodeMs": 1.1770207500000005,
+        "tintMs": 24.16780197620392,
+        "ratio": 20.534445599086148,
+        "scale": 150
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "float16Array",
+        "typedStatus": "native",
+        "nodeMs": 3.7937917500000005,
+        "tintMs": 72.19095826148987,
+        "ratio": 19.0287034596357,
+        "scale": 400
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "bigintArithmetic",
+        "typedStatus": "native",
+        "nodeMs": 0.35156224999999974,
+        "tintMs": 6.649479508399963,
+        "ratio": 18.918626925948725,
+        "scale": 2500
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "nestedClosures",
+        "typedStatus": "native",
+        "nodeMs": 0.26554125000000006,
+        "tintMs": 4.903552234172821,
+        "ratio": 18.475115462569025,
+        "scale": 10000
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "sharedArrayBufferViews",
+        "typedStatus": "native",
+        "nodeMs": 0.2250519999999998,
+        "tintMs": 3.9479585886001587,
+        "ratio": 17.66527966170596,
+        "scale": 5000
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "jsonRoundtrip",
+        "typedStatus": "native",
+        "nodeMs": 0.6500105000000005,
+        "tintMs": 11.372791826725006,
+        "ratio": 17.49817338724894,
+        "scale": 400
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "collections-objects",
+        "kernel": "mapSetBigIntKeys",
+        "typedStatus": "native",
+        "nodeMs": 1.1385209999999972,
+        "tintMs": 19.221260488033295,
+        "ratio": 16.88411872291593,
+        "scale": 150
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "classes-oop",
+        "kernel": "privateBrandChecks",
+        "typedStatus": "native",
+        "nodeMs": 0.7718019999999992,
+        "tintMs": 12.636906266212463,
+        "ratio": 16.373248482769093,
+        "scale": 4000
+      },
+      {
+        "suite": "language-async",
+        "mode": "async",
+        "category": "async-promises",
+        "kernel": "asyncAwaitMicrotasks",
+        "typedStatus": "fallback",
+        "nodeMs": 0.1273957499999998,
+        "tintMs": 1.9723020195960999,
+        "ratio": 16.072776776968347,
+        "scale": 500
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "collections-objects",
+        "kernel": "objectAssignFromEntries",
+        "typedStatus": "fallback",
+        "nodeMs": 0.13667699999999927,
+        "tintMs": 2.1900417804718018,
+        "ratio": 16.02640876420218,
+        "scale": 400
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "dataViewEndian",
+        "typedStatus": "native",
+        "nodeMs": 0.38329150000000034,
+        "tintMs": 5.923291802406311,
+        "ratio": 15.490505130617247,
+        "scale": 3000
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "bigintParse",
+        "typedStatus": "native",
+        "nodeMs": 0.140239750000001,
+        "tintMs": 2.155239462852478,
+        "ratio": 15.375047719259406,
+        "scale": 2500
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "bigintArithmetic",
+        "typedStatus": "native",
+        "nodeMs": 0.3314585000000001,
+        "tintMs": 4.979875206947327,
+        "ratio": 15.032908458961018,
+        "scale": 2500
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "switchDenseSparseString",
+        "typedStatus": "native",
+        "nodeMs": 0.13943700000000092,
+        "tintMs": 1.7303122282028198,
+        "ratio": 12.410005035742916,
+        "scale": 15000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "math-builtins",
+        "kernel": "mathBitwiseRounding",
+        "typedStatus": "native",
+        "nodeMs": 0.22716674999999853,
+        "tintMs": 2.573385536670685,
+        "ratio": 11.32859719462235,
+        "scale": 10000
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "control-flow-syntax",
+        "kernel": "customIterators",
+        "typedStatus": "fallback",
+        "nodeMs": 0.3603752499999997,
+        "tintMs": 3.9185628294944763,
+        "ratio": 10.873615988425303,
+        "scale": 500
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "collections-objects",
+        "kernel": "objectDynamicOps",
+        "typedStatus": "native",
+        "nodeMs": 0.553260250000001,
+        "tintMs": 5.824854254722595,
+        "ratio": 10.545803767133316,
+        "scale": 400
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "jsonRoundtrip",
+        "typedStatus": "native",
+        "nodeMs": 0.6553435000000007,
+        "tintMs": 6.4004687666893005,
+        "ratio": 9.766344215383644,
+        "scale": 400
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "string-builtins",
+        "kernel": "taggedTemplates",
+        "typedStatus": "fallback",
+        "nodeMs": 0.2519057499999997,
+        "tintMs": 1.9428749680519104,
+        "ratio": 7.720963968053368,
+        "scale": 2000
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "stdlib-builtins",
+        "kernel": "proxyReflect",
+        "typedStatus": "fallback",
+        "nodeMs": 0.1789372500000006,
+        "tintMs": 1.3800519704818726,
+        "ratio": 7.713965603092024,
+        "scale": 500
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "collections-objects",
+        "kernel": "objectDynamicOps",
+        "typedStatus": "native",
+        "nodeMs": 0.5490519999999997,
+        "tintMs": 3.8088752031326294,
+        "ratio": 6.937243777521564,
+        "scale": 400
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "collections-objects",
+        "kernel": "mapSetObjectKeys",
+        "typedStatus": "native",
+        "nodeMs": 0.9262809999999959,
+        "tintMs": 6.302145957946777,
+        "ratio": 6.803468774500477,
+        "scale": 400
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "serialization-binary",
+        "kernel": "jsonEscapeStrings",
+        "typedStatus": "native",
+        "nodeMs": 0.28867699999999896,
+        "tintMs": 1.891812801361084,
+        "ratio": 6.55373400862986,
+        "scale": 2000
+      },
+      {
+        "suite": "test262-canary",
+        "mode": "canary",
+        "category": "test262-canary",
+        "kernel": "statements",
+        "nodeMs": 0.049812750000000516,
+        "tintMs": 0.32212531566619873,
+        "ratio": 6.46198968218296,
+        "scale": 300
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "jsonEscapeStrings",
+        "typedStatus": "native",
+        "nodeMs": 0.2887497499999996,
+        "tintMs": 1.6229480504989624,
+        "ratio": 5.621324402595906,
+        "scale": 2000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "string-builtins",
+        "kernel": "stringTrimPadSearch",
+        "typedStatus": "native",
+        "nodeMs": 0.7859687499999986,
+        "tintMs": 4.041354179382324,
+        "ratio": 5.151640625876562,
+        "scale": 4000
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "math-builtins",
+        "kernel": "mathHypotPowLog",
+        "typedStatus": "native",
+        "nodeMs": 0.23585400000000156,
+        "tintMs": 1.0298752784729004,
+        "ratio": 4.370023367805812,
+        "scale": 6000
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "tryCatchNoThrow",
+        "typedStatus": "native",
+        "nodeMs": 0.14412474999999958,
+        "tintMs": 0.6047812700271606,
+        "ratio": 4.196491233996378,
+        "scale": 20000
+      },
+      {
+        "suite": "test262-canary",
+        "mode": "canary",
+        "category": "test262-canary",
+        "kernel": "destructuring-classes",
+        "nodeMs": 0.11748974999999984,
+        "tintMs": 0.4826355576515198,
+        "ratio": 4.107821206385969,
+        "scale": 120
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "stdlib-builtins",
+        "kernel": "symbolKeysRegistry",
+        "typedStatus": "fallback",
+        "nodeMs": 0.20070799999999966,
+        "tintMs": 0.6676459908485413,
+        "ratio": 3.3262412805381505,
+        "scale": 600
+      },
+      {
+        "suite": "language-untyped",
+        "mode": "untyped",
+        "category": "control-flow-syntax",
+        "kernel": "optionalChainingNullish",
+        "typedStatus": "native",
+        "nodeMs": 0.12210424999999958,
+        "tintMs": 0.3535624146461487,
+        "ratio": 2.8967035859318404,
+        "scale": 10000
+      },
+      {
+        "suite": "language-general",
+        "mode": "general",
+        "category": "stdlib-builtins",
+        "kernel": "dateOperations",
+        "typedStatus": "fallback",
+        "nodeMs": 0.17961425000000109,
+        "tintMs": 0.42644768953323364,
+        "ratio": 2.3744030224117076,
+        "scale": 400
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "serialization-binary",
+        "kernel": "float16Array",
+        "typedStatus": "native",
+        "nodeMs": 3.8075105000000002,
+        "tintMs": 8.886395812034607,
+        "ratio": 2.3339038350078507,
+        "scale": 400
+      },
+      {
+        "suite": "test262-canary",
+        "mode": "canary",
+        "category": "test262-canary",
+        "kernel": "expressions",
+        "nodeMs": 0.5697604999999997,
+        "tintMs": 1.2728127241134644,
+        "ratio": 2.233951719997569,
+        "scale": 510
+      },
+      {
+        "suite": "language-typed",
+        "mode": "typed",
+        "category": "classes-oop",
+        "kernel": "privateFieldsMethods",
+        "typedStatus": "native",
+        "nodeMs": 0.16162474999999787,
+        "tintMs": 0.3362605571746826,
+        "ratio": 2.0805417869339506,
+        "scale": 15000
+      },
+      {
+        "suite": "test262-canary",
+        "mode": "canary",
+        "category": "test262-canary",
+        "kernel": "objects-proxy-symbol",
+        "nodeMs": 0.47617699999999985,
+        "tintMs": 0.9536455273628235,
+        "ratio": 2.004628674875746,
+        "scale": 450
+      }
+    ],
+    "typedTwins": [
+      {
+        "kernel": "forOfCollections",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.2856017406810226,
+        "untypedRatio": 53.49885049020862,
+        "typedSpeedupOverUntyped": 192.82030336834987
+      },
+      {
+        "kernel": "classAccessorsInstanceof",
+        "category": "classes-oop",
+        "typedRatio": 0.6050693459255103,
+        "untypedRatio": 104.20449587777529,
+        "typedSpeedupOverUntyped": 181.2944137710827
+      },
+      {
+        "kernel": "destructuringPatterns",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.24570598179135095,
+        "untypedRatio": 41.31856705111794,
+        "typedSpeedupOverUntyped": 174.66422809818465
+      },
+      {
+        "kernel": "spreadArrayObjectCall",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.7254547834760614,
+        "untypedRatio": 60.444615414388295,
+        "typedSpeedupOverUntyped": 82.13990921719594
+      },
+      {
+        "kernel": "deepInheritanceSuper",
+        "category": "classes-oop",
+        "typedRatio": 0.7132307700471141,
+        "untypedRatio": 38.853031349308466,
+        "typedSpeedupOverUntyped": 53.66397340159524
+      },
+      {
+        "kernel": "defaultRestParams",
+        "category": "control-flow-syntax",
+        "typedRatio": 1.480444586014757,
+        "untypedRatio": 60.36752750391933,
+        "typedSpeedupOverUntyped": 37.27374500854423
+      },
+      {
+        "kernel": "staticBlocksExpressions",
+        "category": "classes-oop",
+        "typedRatio": 1.3437192125757553,
+        "untypedRatio": 47.49267323988187,
+        "typedSpeedupOverUntyped": 36.72465582034757
+      },
+      {
+        "kernel": "privateFieldsMethods",
+        "category": "classes-oop",
+        "typedRatio": 2.0805417869339506,
+        "untypedRatio": 61.18801575395503,
+        "typedSpeedupOverUntyped": 29.586896323612304
+      },
+      {
+        "kernel": "switchDenseSparseString",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.435088073293463,
+        "untypedRatio": 12.410005035742916,
+        "typedSpeedupOverUntyped": 28.43370928484326
+      },
+      {
+        "kernel": "privateBrandChecks",
+        "category": "classes-oop",
+        "typedRatio": 0.7078156700150064,
+        "untypedRatio": 16.373248482769093,
+        "typedSpeedupOverUntyped": 22.940559211288015
+      },
+      {
+        "kernel": "nestedClosures",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.90158939800032,
+        "untypedRatio": 18.475115462569025,
+        "typedSpeedupOverUntyped": 22.868160264006367
+      },
+      {
+        "kernel": "mapSetDeleteRehash",
+        "category": "collections-objects",
+        "typedRatio": 1.3782235997076986,
+        "untypedRatio": 30.230144252135148,
+        "typedSpeedupOverUntyped": 21.96798398565253
+      },
+      {
+        "kernel": "tryCatchNoThrow",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.43254055564287286,
+        "untypedRatio": 4.196491233996378,
+        "typedSpeedupOverUntyped": 9.703986013852255
+      },
+      {
+        "kernel": "optionalChainingNullish",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.31351916975715854,
+        "untypedRatio": 2.8967035859318404,
+        "typedSpeedupOverUntyped": 9.230940290912374
+      },
+      {
+        "kernel": "float16Array",
+        "category": "serialization-binary",
+        "typedRatio": 2.3339038350078507,
+        "untypedRatio": 19.0287034596357,
+        "typedSpeedupOverUntyped": 8.123761285055927
+      },
+      {
+        "kernel": "mathBitwiseRounding",
+        "category": "math-builtins",
+        "typedRatio": 1.3743865145256744,
+        "untypedRatio": 11.32859719462235,
+        "typedSpeedupOverUntyped": 7.764797255664939
+      },
+      {
+        "kernel": "stringTrimPadSearch",
+        "category": "string-builtins",
+        "typedRatio": 0.9210258989253173,
+        "untypedRatio": 5.151640625876562,
+        "typedSpeedupOverUntyped": 5.65314958486423
+      },
+      {
+        "kernel": "mathHypotPowLog",
+        "category": "math-builtins",
+        "typedRatio": 4.370023367805812,
+        "untypedRatio": 23.349306681423247,
+        "typedSpeedupOverUntyped": 5.280655429541093
+      },
+      {
+        "kernel": "dataViewEndian",
+        "category": "serialization-binary",
+        "typedRatio": 15.490505130617247,
+        "untypedRatio": 55.54308503387939,
+        "typedSpeedupOverUntyped": 3.469788997876819
+      },
+      {
+        "kernel": "mapSetObjectKeys",
+        "category": "collections-objects",
+        "typedRatio": 6.803468774500477,
+        "untypedRatio": 21.887127077565257,
+        "typedSpeedupOverUntyped": 3.4391724570043123
+      },
+      {
+        "kernel": "bigintTypedArrays",
+        "category": "serialization-binary",
+        "typedRatio": 173.50594337772492,
+        "untypedRatio": 494.6877619247208,
+        "typedSpeedupOverUntyped": 2.4142391494533313
+      },
+      {
+        "kernel": "stringReplaceAll",
+        "category": "string-builtins",
+        "typedRatio": 1.1365209339240967,
+        "untypedRatio": 1.9429495070291662,
+        "typedSpeedupOverUntyped": 1.637817571691464
+      },
+      {
+        "kernel": "bigintParse",
+        "category": "serialization-binary",
+        "typedRatio": 15.375047719259406,
+        "untypedRatio": 21.388230768199758,
+        "typedSpeedupOverUntyped": 1.4249480308011429
+      },
+      {
+        "kernel": "errorConstruction",
+        "category": "stdlib-builtins",
+        "typedRatio": 0.5200577867321354,
+        "untypedRatio": 0.7371182909597758,
+        "typedSpeedupOverUntyped": 1.384478522925702
+      },
+      {
+        "kernel": "tryCatchThrowError",
+        "category": "control-flow-syntax",
+        "typedRatio": 0.5512991906649791,
+        "untypedRatio": 0.7662159159702981,
+        "typedSpeedupOverUntyped": 1.3396952303382845
+      },
+      {
+        "kernel": "bigintArithmetic",
+        "category": "serialization-binary",
+        "typedRatio": 15.032908458961018,
+        "untypedRatio": 18.918626925948725,
+        "typedSpeedupOverUntyped": 1.3352703094092406
+      },
+      {
+        "kernel": "jsonEscapeStrings",
+        "category": "serialization-binary",
+        "typedRatio": 5.621324402595906,
+        "untypedRatio": 6.55373400862986,
+        "typedSpeedupOverUntyped": 1.1656644220863763
+      },
+      {
+        "kernel": "stringCaseAsciiUnicode",
+        "category": "string-builtins",
+        "typedRatio": 24.30770562155287,
+        "untypedRatio": 26.730945095745245,
+        "typedSpeedupOverUntyped": 1.0574626724828229
+      },
+      {
+        "kernel": "stringNormalizeUnicode",
+        "category": "string-builtins",
+        "typedRatio": 32.86514015434277,
+        "untypedRatio": 32.939363274307624,
+        "typedSpeedupOverUntyped": 1.0301646864168974
+      },
+      {
+        "kernel": "mathTranscendental",
+        "category": "math-builtins",
+        "typedRatio": 1782.603308295355,
+        "untypedRatio": 2083.6985834690904,
+        "typedSpeedupOverUntyped": 1.0216879307463083
+      },
+      {
+        "kernel": "mapSetBigIntKeys",
+        "category": "collections-objects",
+        "typedRatio": 20.534445599086148,
+        "untypedRatio": 16.88411872291593,
+        "typedSpeedupOverUntyped": 0.7953251399096581
+      },
+      {
+        "kernel": "objectDynamicOps",
+        "category": "collections-objects",
+        "typedRatio": 10.545803767133316,
+        "untypedRatio": 6.937243777521564,
+        "typedSpeedupOverUntyped": 0.6539005160591824
+      },
+      {
+        "kernel": "jsonRoundtrip",
+        "category": "serialization-binary",
+        "typedRatio": 17.49817338724894,
+        "untypedRatio": 9.766344215383644,
+        "typedSpeedupOverUntyped": 0.562787824151392
+      }
+    ]
+  },
+  "entries": [
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "jsonRoundtrip",
+      "typedStatus": "native",
+      "nodeMs": 0.6500105000000005,
+      "tintMs": 11.372791826725006,
+      "ratio": 17.49817338724894,
+      "scale": 400
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "jsonEscapeStrings",
+      "typedStatus": "native",
+      "nodeMs": 0.2887497499999996,
+      "tintMs": 1.6229480504989624,
+      "ratio": 5.621324402595906,
+      "scale": 2000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "dataViewEndian",
+      "typedStatus": "native",
+      "nodeMs": 0.38329150000000034,
+      "tintMs": 5.923291802406311,
+      "ratio": 15.490505130617247,
+      "scale": 3000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "sharedArrayBufferViews",
+      "typedStatus": "native",
+      "nodeMs": 0.2250519999999998,
+      "tintMs": 3.9479585886001587,
+      "ratio": 17.66527966170596,
+      "scale": 5000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "bigintArithmetic",
+      "typedStatus": "native",
+      "nodeMs": 0.3314585000000001,
+      "tintMs": 4.979875206947327,
+      "ratio": 15.032908458961018,
+      "scale": 2500
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "bigintParse",
+      "typedStatus": "native",
+      "nodeMs": 0.140239750000001,
+      "tintMs": 2.155239462852478,
+      "ratio": 15.375047719259406,
+      "scale": 2500
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "bigintTypedArrays",
+      "typedStatus": "native",
+      "nodeMs": 0.27216675000000023,
+      "tintMs": 46.15263569355011,
+      "ratio": 173.50594337772492,
+      "scale": 300
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "float16Array",
+      "typedStatus": "native",
+      "nodeMs": 3.8075105000000002,
+      "tintMs": 8.886395812034607,
+      "ratio": 2.3339038350078507,
+      "scale": 400
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "serialization-binary",
+      "kernel": "atomicsOps",
+      "typedStatus": "native",
+      "nodeMs": 0.3563649999999985,
+      "tintMs": 0.2739168405532837,
+      "ratio": 0.7686813672973684,
+      "scale": 8000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "classes-oop",
+      "kernel": "privateFieldsMethods",
+      "typedStatus": "native",
+      "nodeMs": 0.16162474999999787,
+      "tintMs": 0.3362605571746826,
+      "ratio": 2.0805417869339506,
+      "scale": 15000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "classes-oop",
+      "kernel": "privateBrandChecks",
+      "typedStatus": "native",
+      "nodeMs": 0.778280999999998,
+      "tintMs": 0.5508543252944946,
+      "ratio": 0.7078156700150064,
+      "scale": 4000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "classes-oop",
+      "kernel": "staticBlocksExpressions",
+      "typedStatus": "native",
+      "nodeMs": 0.19383324999999907,
+      "tintMs": 0.26044803857803345,
+      "ratio": 1.3437192125757553,
+      "scale": 10000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "classes-oop",
+      "kernel": "deepInheritanceSuper",
+      "typedStatus": "native",
+      "nodeMs": 0.45904174999999725,
+      "tintMs": 0.32740598917007446,
+      "ratio": 0.7132307700471141,
+      "scale": 6000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "classes-oop",
+      "kernel": "classAccessorsInstanceof",
+      "typedStatus": "native",
+      "nodeMs": 0.4232812499999987,
+      "tintMs": 0.25611448287963867,
+      "ratio": 0.6050693459255103,
+      "scale": 3000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "math-builtins",
+      "kernel": "mathTranscendental",
+      "typedStatus": "native",
+      "nodeMs": 0.05181249999999693,
+      "tintMs": 89.94730192422867,
+      "ratio": 1782.603308295355,
+      "scale": 300
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "math-builtins",
+      "kernel": "mathBitwiseRounding",
+      "typedStatus": "native",
+      "nodeMs": 0.24105199999999982,
+      "tintMs": 0.3314169645309448,
+      "ratio": 1.3743865145256744,
+      "scale": 10000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "math-builtins",
+      "kernel": "mathHypotPowLog",
+      "typedStatus": "native",
+      "nodeMs": 0.23585400000000156,
+      "tintMs": 1.0298752784729004,
+      "ratio": 4.370023367805812,
+      "scale": 6000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "string-builtins",
+      "kernel": "stringReplaceAll",
+      "typedStatus": "native",
+      "nodeMs": 0.8631670000000007,
+      "tintMs": 0.9806879758834839,
+      "ratio": 1.1365209339240967,
+      "scale": 2500
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "string-builtins",
+      "kernel": "stringNormalizeUnicode",
+      "typedStatus": "native",
+      "nodeMs": 0.32658349999999814,
+      "tintMs": 10.73411476612091,
+      "ratio": 32.86514015434277,
+      "scale": 600
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "string-builtins",
+      "kernel": "stringCaseAsciiUnicode",
+      "typedStatus": "native",
+      "nodeMs": 0.2563957499999976,
+      "tintMs": 6.2279579639434814,
+      "ratio": 24.30770562155287,
+      "scale": 800
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "string-builtins",
+      "kernel": "stringTrimPadSearch",
+      "typedStatus": "native",
+      "nodeMs": 0.7762605000000011,
+      "tintMs": 0.714885413646698,
+      "ratio": 0.9210258989253173,
+      "scale": 4000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "destructuringPatterns",
+      "typedStatus": "native",
+      "nodeMs": 0.6787604999999992,
+      "tintMs": 0.16677099466323853,
+      "ratio": 0.24570598179135095,
+      "scale": 8000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "spreadArrayObjectCall",
+      "typedStatus": "native",
+      "nodeMs": 0.7286357500000005,
+      "tintMs": 0.5285727381706238,
+      "ratio": 0.7254547834760614,
+      "scale": 5000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "switchDenseSparseString",
+      "typedStatus": "native",
+      "nodeMs": 0.13986449999999984,
+      "tintMs": 0.06085425615310669,
+      "ratio": 0.435088073293463,
+      "scale": 15000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "tryCatchNoThrow",
+      "typedStatus": "native",
+      "nodeMs": 0.14413524999999971,
+      "tintMs": 0.06232297420501709,
+      "ratio": 0.43254055564287286,
+      "scale": 20000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "tryCatchThrowError",
+      "typedStatus": "native",
+      "nodeMs": 0.49157274999999956,
+      "tintMs": 0.27077049016952515,
+      "ratio": 0.5512991906649791,
+      "scale": 1500
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "optionalChainingNullish",
+      "typedStatus": "native",
+      "nodeMs": 0.12223949999999739,
+      "tintMs": 0.03830188512802124,
+      "ratio": 0.31351916975715854,
+      "scale": 10000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "defaultRestParams",
+      "typedStatus": "native",
+      "nodeMs": 0.22928124999999788,
+      "tintMs": 0.33920854330062866,
+      "ratio": 1.480444586014757,
+      "scale": 8000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "nestedClosures",
+      "typedStatus": "native",
+      "nodeMs": 0.2378645000000006,
+      "tintMs": 0.21442705392837524,
+      "ratio": 0.90158939800032,
+      "scale": 10000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "control-flow-syntax",
+      "kernel": "forOfCollections",
+      "typedStatus": "native",
+      "nodeMs": 0.9085834999999989,
+      "tintMs": 0.2594585418701172,
+      "ratio": 0.2856017406810226,
+      "scale": 4000
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "collections-objects",
+      "kernel": "mapSetDeleteRehash",
+      "typedStatus": "native",
+      "nodeMs": 1.7155832499999981,
+      "tintMs": 2.3643332719802856,
+      "ratio": 1.3782235997076986,
+      "scale": 300
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "collections-objects",
+      "kernel": "mapSetBigIntKeys",
+      "typedStatus": "native",
+      "nodeMs": 1.1770207500000005,
+      "tintMs": 24.16780197620392,
+      "ratio": 20.534445599086148,
+      "scale": 150
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "collections-objects",
+      "kernel": "mapSetObjectKeys",
+      "typedStatus": "native",
+      "nodeMs": 0.9262809999999959,
+      "tintMs": 6.302145957946777,
+      "ratio": 6.803468774500477,
+      "scale": 400
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "collections-objects",
+      "kernel": "objectDynamicOps",
+      "typedStatus": "native",
+      "nodeMs": 0.553260250000001,
+      "tintMs": 5.824854254722595,
+      "ratio": 10.545803767133316,
+      "scale": 400
+    },
+    {
+      "suite": "language-typed",
+      "mode": "typed",
+      "category": "stdlib-builtins",
+      "kernel": "errorConstruction",
+      "typedStatus": "native",
+      "nodeMs": 1.7877397500000036,
+      "tintMs": 0.9294790029525757,
+      "ratio": 0.5200577867321354,
+      "scale": 800
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "jsonRoundtrip",
+      "typedStatus": "native",
+      "nodeMs": 0.6553435000000007,
+      "tintMs": 6.4004687666893005,
+      "ratio": 9.766344215383644,
+      "scale": 400
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "jsonEscapeStrings",
+      "typedStatus": "native",
+      "nodeMs": 0.28867699999999896,
+      "tintMs": 1.891812801361084,
+      "ratio": 6.55373400862986,
+      "scale": 2000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "dataViewEndian",
+      "typedStatus": "native",
+      "nodeMs": 0.3720107499999994,
+      "tintMs": 20.55257272720337,
+      "ratio": 55.54308503387939,
+      "scale": 3000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "bigintArithmetic",
+      "typedStatus": "native",
+      "nodeMs": 0.35156224999999974,
+      "tintMs": 6.649479508399963,
+      "ratio": 18.918626925948725,
+      "scale": 2500
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "bigintParse",
+      "typedStatus": "native",
+      "nodeMs": 0.14376049999999996,
+      "tintMs": 3.0711042284965515,
+      "ratio": 21.388230768199758,
+      "scale": 2500
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "bigintTypedArrays",
+      "typedStatus": "native",
+      "nodeMs": 0.22565600000000074,
+      "tintMs": 111.42349994182587,
+      "ratio": 494.6877619247208,
+      "scale": 300
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "serialization-binary",
+      "kernel": "float16Array",
+      "typedStatus": "native",
+      "nodeMs": 3.7937917500000005,
+      "tintMs": 72.19095826148987,
+      "ratio": 19.0287034596357,
+      "scale": 400
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "classes-oop",
+      "kernel": "privateFieldsMethods",
+      "typedStatus": "native",
+      "nodeMs": 0.1625935000000016,
+      "tintMs": 9.948906242847443,
+      "ratio": 61.18801575395503,
+      "scale": 15000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "classes-oop",
+      "kernel": "privateBrandChecks",
+      "typedStatus": "native",
+      "nodeMs": 0.7718019999999992,
+      "tintMs": 12.636906266212463,
+      "ratio": 16.373248482769093,
+      "scale": 4000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "classes-oop",
+      "kernel": "staticBlocksExpressions",
+      "typedStatus": "native",
+      "nodeMs": 0.20160425000000082,
+      "tintMs": 9.564864575862885,
+      "ratio": 47.49267323988187,
+      "scale": 10000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "classes-oop",
+      "kernel": "deepInheritanceSuper",
+      "typedStatus": "native",
+      "nodeMs": 0.452239500000001,
+      "tintMs": 17.569906294345856,
+      "ratio": 38.853031349308466,
+      "scale": 6000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "classes-oop",
+      "kernel": "classAccessorsInstanceof",
+      "typedStatus": "native",
+      "nodeMs": 0.4461875000000006,
+      "tintMs": 46.43212503194809,
+      "ratio": 104.20449587777529,
+      "scale": 3000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "math-builtins",
+      "kernel": "mathTranscendental",
+      "typedStatus": "native",
+      "nodeMs": 0.04410425000000018,
+      "tintMs": 91.89807277917862,
+      "ratio": 2083.6985834690904,
+      "scale": 300
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "math-builtins",
+      "kernel": "mathBitwiseRounding",
+      "typedStatus": "native",
+      "nodeMs": 0.22716674999999853,
+      "tintMs": 2.573385536670685,
+      "ratio": 11.32859719462235,
+      "scale": 10000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "math-builtins",
+      "kernel": "mathHypotPowLog",
+      "typedStatus": "native",
+      "nodeMs": 0.23291650000000175,
+      "tintMs": 5.438416481018066,
+      "ratio": 23.349306681423247,
+      "scale": 6000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "string-builtins",
+      "kernel": "stringReplaceAll",
+      "typedStatus": "native",
+      "nodeMs": 0.8266769999999983,
+      "tintMs": 1.6061879992485046,
+      "ratio": 1.9429495070291662,
+      "scale": 2500
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "string-builtins",
+      "kernel": "stringNormalizeUnicode",
+      "typedStatus": "native",
+      "nodeMs": 0.33715600000000023,
+      "tintMs": 11.057905972003937,
+      "ratio": 32.939363274307624,
+      "scale": 600
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "string-builtins",
+      "kernel": "stringCaseAsciiUnicode",
+      "typedStatus": "native",
+      "nodeMs": 0.24682274999999976,
+      "tintMs": 6.5858330726623535,
+      "ratio": 26.730945095745245,
+      "scale": 800
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "string-builtins",
+      "kernel": "stringTrimPadSearch",
+      "typedStatus": "native",
+      "nodeMs": 0.7859687499999986,
+      "tintMs": 4.041354179382324,
+      "ratio": 5.151640625876562,
+      "scale": 4000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "destructuringPatterns",
+      "typedStatus": "native",
+      "nodeMs": 0.7051042499999998,
+      "tintMs": 29.128927052021027,
+      "ratio": 41.31856705111794,
+      "scale": 8000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "spreadArrayObjectCall",
+      "typedStatus": "native",
+      "nodeMs": 0.7184375000000003,
+      "tintMs": 43.416916728019714,
+      "ratio": 60.444615414388295,
+      "scale": 5000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "switchDenseSparseString",
+      "typedStatus": "native",
+      "nodeMs": 0.13943700000000092,
+      "tintMs": 1.7303122282028198,
+      "ratio": 12.410005035742916,
+      "scale": 15000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "tryCatchNoThrow",
+      "typedStatus": "native",
+      "nodeMs": 0.14412474999999958,
+      "tintMs": 0.6047812700271606,
+      "ratio": 4.196491233996378,
+      "scale": 20000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "tryCatchThrowError",
+      "typedStatus": "native",
+      "nodeMs": 0.47384375000000034,
+      "tintMs": 0.36274993419647217,
+      "ratio": 0.7662159159702981,
+      "scale": 1500
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "optionalChainingNullish",
+      "typedStatus": "native",
+      "nodeMs": 0.12210424999999958,
+      "tintMs": 0.3535624146461487,
+      "ratio": 2.8967035859318404,
+      "scale": 10000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "defaultRestParams",
+      "typedStatus": "native",
+      "nodeMs": 0.20997925000000173,
+      "tintMs": 12.643572747707367,
+      "ratio": 60.36752750391933,
+      "scale": 8000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "nestedClosures",
+      "typedStatus": "native",
+      "nodeMs": 0.26554125000000006,
+      "tintMs": 4.903552234172821,
+      "ratio": 18.475115462569025,
+      "scale": 10000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "control-flow-syntax",
+      "kernel": "forOfCollections",
+      "typedStatus": "native",
+      "nodeMs": 0.935562749999999,
+      "tintMs": 50.0288747549057,
+      "ratio": 53.49885049020862,
+      "scale": 4000
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "collections-objects",
+      "kernel": "mapSetDeleteRehash",
+      "typedStatus": "native",
+      "nodeMs": 1.7183957499999991,
+      "tintMs": 51.93963545560837,
+      "ratio": 30.230144252135148,
+      "scale": 300
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "collections-objects",
+      "kernel": "mapSetBigIntKeys",
+      "typedStatus": "native",
+      "nodeMs": 1.1385209999999972,
+      "tintMs": 19.221260488033295,
+      "ratio": 16.88411872291593,
+      "scale": 150
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "collections-objects",
+      "kernel": "mapSetObjectKeys",
+      "typedStatus": "native",
+      "nodeMs": 0.9909999999999997,
+      "tintMs": 21.674166798591614,
+      "ratio": 21.887127077565257,
+      "scale": 400
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "collections-objects",
+      "kernel": "objectDynamicOps",
+      "typedStatus": "native",
+      "nodeMs": 0.5490519999999997,
+      "tintMs": 3.8088752031326294,
+      "ratio": 6.937243777521564,
+      "scale": 400
+    },
+    {
+      "suite": "language-untyped",
+      "mode": "untyped",
+      "category": "stdlib-builtins",
+      "kernel": "errorConstruction",
+      "typedStatus": "native",
+      "nodeMs": 1.7485417500000011,
+      "tintMs": 1.286843717098236,
+      "ratio": 0.7371182909597758,
+      "scale": 800
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "string-builtins",
+      "kernel": "taggedTemplates",
+      "typedStatus": "fallback",
+      "nodeMs": 0.2519057499999997,
+      "tintMs": 1.9428749680519104,
+      "ratio": 7.720963968053368,
+      "scale": 2000
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "control-flow-syntax",
+      "kernel": "generatorsYield",
+      "typedStatus": "fallback",
+      "nodeMs": 0.2866249999999999,
+      "tintMs": 6.2448959946632385,
+      "ratio": 21.802375538598746,
+      "scale": 300
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "control-flow-syntax",
+      "kernel": "customIterators",
+      "typedStatus": "fallback",
+      "nodeMs": 0.3603752499999997,
+      "tintMs": 3.9185628294944763,
+      "ratio": 10.873615988425303,
+      "scale": 500
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "collections-objects",
+      "kernel": "objectAssignFromEntries",
+      "typedStatus": "fallback",
+      "nodeMs": 0.13667699999999927,
+      "tintMs": 2.1900417804718018,
+      "ratio": 16.02640876420218,
+      "scale": 400
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "collections-objects",
+      "kernel": "arrayHofsFull",
+      "typedStatus": "fallback",
+      "nodeMs": 0.7136557500000009,
+      "tintMs": 20.67652076482773,
+      "ratio": 28.974303027795933,
+      "scale": 200
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "stdlib-builtins",
+      "kernel": "regexpMatchExecReplace",
+      "typedStatus": "fallback",
+      "nodeMs": 0.2269167500000009,
+      "tintMs": 9.626031279563904,
+      "ratio": 42.443704186955365,
+      "scale": 250
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "stdlib-builtins",
+      "kernel": "dateOperations",
+      "typedStatus": "fallback",
+      "nodeMs": 0.17961425000000109,
+      "tintMs": 0.42644768953323364,
+      "ratio": 2.3744030224117076,
+      "scale": 400
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "stdlib-builtins",
+      "kernel": "symbolKeysRegistry",
+      "typedStatus": "fallback",
+      "nodeMs": 0.20070799999999966,
+      "tintMs": 0.6676459908485413,
+      "ratio": 3.3262412805381505,
+      "scale": 600
+    },
+    {
+      "suite": "language-general",
+      "mode": "general",
+      "category": "stdlib-builtins",
+      "kernel": "proxyReflect",
+      "typedStatus": "fallback",
+      "nodeMs": 0.1789372500000006,
+      "tintMs": 1.3800519704818726,
+      "ratio": 7.713965603092024,
+      "scale": 500
+    },
+    {
+      "suite": "language-async",
+      "mode": "async",
+      "category": "async-promises",
+      "kernel": "promiseChains",
+      "typedStatus": "fallback",
+      "nodeMs": 0.15734400000000015,
+      "tintMs": 4.070823013782501,
+      "ratio": 25.856122665672252,
+      "scale": 500
+    },
+    {
+      "suite": "language-async",
+      "mode": "async",
+      "category": "async-promises",
+      "kernel": "promiseAllBatch",
+      "typedStatus": "fallback",
+      "nodeMs": 0.29615625000000056,
+      "tintMs": 7.856875002384186,
+      "ratio": 26.534740544894536,
+      "scale": 150
+    },
+    {
+      "suite": "language-async",
+      "mode": "async",
+      "category": "async-promises",
+      "kernel": "asyncAwaitMicrotasks",
+      "typedStatus": "fallback",
+      "nodeMs": 0.1273957499999998,
+      "tintMs": 1.9723020195960999,
+      "ratio": 16.072776776968347,
+      "scale": 500
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "expressions",
+      "nodeMs": 0.5697604999999997,
+      "tintMs": 1.2728127241134644,
+      "ratio": 2.233951719997569,
+      "scale": 510
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "statements",
+      "nodeMs": 0.049812750000000516,
+      "tintMs": 0.32212531566619873,
+      "ratio": 6.46198968218296,
+      "scale": 300
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "destructuring-classes",
+      "nodeMs": 0.11748974999999984,
+      "tintMs": 0.4826355576515198,
+      "ratio": 4.107821206385969,
+      "scale": 120
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "arrays-binary",
+      "nodeMs": 0.9094792500000004,
+      "tintMs": 1.0062392950057983,
+      "ratio": 1.106528594561473,
+      "scale": 480
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "numbers-math-date",
+      "nodeMs": 0.09961450000000038,
+      "tintMs": 0.17719829082489014,
+      "ratio": 1.7789244946278733,
+      "scale": 270
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "json-strings-regexp",
+      "nodeMs": 0.5331979999999978,
+      "tintMs": 0.8817293047904968,
+      "ratio": 1.657403360801485,
+      "scale": 450
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "collections",
+      "nodeMs": 0.2632502499999996,
+      "tintMs": 0.5131042003631592,
+      "ratio": 1.9492539390556431,
+      "scale": 270
+    },
+    {
+      "suite": "test262-canary",
+      "mode": "canary",
+      "category": "test262-canary",
+      "kernel": "objects-proxy-symbol",
+      "nodeMs": 0.47617699999999985,
+      "tintMs": 0.9536455273628235,
+      "ratio": 2.004628674875746,
+      "scale": 450
+    }
+  ]
+}
