@@ -14,4 +14,18 @@ export {
   packedFunctionVersion,
   type PackedVocabulary,
 } from "./codec.ts";
-export { createByteWriter, writtenBytes, type ByteWriter } from "./bytes.ts";
+export {
+  createByteReader,
+  createByteWriter,
+  readByte,
+  readSigned,
+  readString,
+  readUnsigned,
+  writeByte,
+  writeSigned,
+  writeString,
+  writeUnsigned,
+  writtenBytes,
+  type ByteReader,
+  type ByteWriter,
+} from "./bytes.ts";

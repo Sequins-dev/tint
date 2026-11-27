@@ -431,3 +431,134 @@ test("long fused chains test membership with one bitset lookup", () => {
     assert.equal(view.getBigUint64(descriptor.offset - 24, true), 0n);
   }
 });
+
+test("placing typed fragments preserves dispatch families and cross-range calls", async () => {
+  const { emitModuleInFragments } =
+    await import("../src/aarch64/scalar/index.ts");
+  const definition = chain();
+  const functions: FunctionIR[] = [
+    definition,
+    { ...chain(candidate(1, 3, 2)), id: 1, name: "readOther" },
+    {
+      id: 2,
+      name: "caller",
+      exported: true,
+      parameters: [0],
+      slots: ["reference"],
+      returnType: "number",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "load", id: 0, slot: 0, ...s },
+            { kind: "call", id: 1, target: 0, arguments: [0], ...s },
+            { kind: "call", id: 2, target: 1, arguments: [0], ...s },
+          ],
+          terminator: { kind: "return", value: 2, ...s },
+        },
+      ],
+    },
+  ];
+  const module: ModuleIR = { records, functions };
+  const expected = emitModule(module, { operationRanges: true });
+  assert.ok(expected.ok);
+  for (const ranges of [
+    [{ first: 0, end: 3 }],
+    [
+      { first: 2, end: 3 },
+      { first: 0, end: 2 },
+    ],
+    [
+      { first: 1, end: 2 },
+      { first: 0, end: 1 },
+      { first: 2, end: 3 },
+    ],
+  ]) {
+    assert.deepEqual(
+      emitModuleInFragments(module, ranges, { operationRanges: true }),
+      expected,
+    );
+  }
+});
+
+test("fragment packet decoding rejects an incomplete header", async () => {
+  const { decodeFragment } = await import("../src/aarch64/scalar/fragments.ts");
+  assert.throws(() => decodeFragment(new Uint8Array(0), [], []));
+});
+
+test("a detached backend opens prepared bytes once and answers out of order", async () => {
+  const { emitModuleFromStore, openFragmentActor } =
+    await import("../src/aarch64/scalar/index.ts");
+  const functions = [chain(), { ...chain(), id: 1, name: "other" }];
+  const module: ModuleIR = { records, functions };
+  const options = { operationRanges: true, closedRoots: [0, 1] };
+  let sessions = 0;
+  const result = emitModuleFromStore(
+    module,
+    {
+      get: (id: number) => functions[id]!,
+      put: (fn: FunctionIR) => {
+        functions[fn.id] = fn;
+      },
+      release: () => {},
+    },
+    options,
+    {
+      ranges: [
+        { first: 0, end: 1 },
+        { first: 1, end: 2 },
+      ],
+      execute: (input, forms, ranges, publish) => {
+        sessions++;
+        const actor = openFragmentActor(input, options);
+        for (const range of ranges.slice().reverse()) {
+          const packet = actor(forms, range);
+          assert.ok(packet);
+          publish(packet);
+        }
+        return true;
+      },
+    },
+  );
+  assert.deepEqual(result, emitModule(module, options));
+  assert.equal(sessions, 1);
+});
+
+test("fragment placement loads and releases spilled packets in canonical order", async () => {
+  const { emitModuleInFragments } =
+    await import("../src/aarch64/scalar/index.ts");
+  const { createMemorySpillBackend } = await import("@tint/ir/storage");
+  const module: ModuleIR = {
+    records,
+    functions: [chain(), { ...chain(), id: 1, name: "other" }],
+  };
+  const backing = createMemorySpillBackend();
+  const events: string[] = [];
+  const result = emitModuleInFragments(
+    module,
+    [
+      { first: 1, end: 2 },
+      { first: 0, end: 1 },
+    ],
+    {},
+    {
+      write(bytes: Uint8Array): number {
+        return backing.write(bytes);
+      },
+      read(id: number): Uint8Array {
+        events.push("read " + id);
+        return backing.read(id);
+      },
+      release(id: number): void {
+        backing.release(id);
+        events.push("release " + id);
+      },
+      close(): void {
+        backing.close();
+      },
+    },
+  );
+  assert.deepEqual(result, emitModule(module));
+  assert.deepEqual(events, ["read 1", "release 1", "read 0", "release 0"]);
+});

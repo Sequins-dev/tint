@@ -8,7 +8,11 @@ import {
   type ReturnType,
 } from "@tint/ir/scalar";
 import type { CType } from "@tint/abi/c";
-import { emitModule } from "@tint/codegen/aarch64/scalar";
+import {
+  emitModule,
+  emitModuleFromStore,
+  openFragmentActor,
+} from "@tint/codegen/aarch64/scalar";
 import { emitModule as emitX64Module } from "@tint/codegen/x86_64/scalar";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { linuxX86_64HostFacts } from "@tint/platform/linux/host-abi";
@@ -106,6 +110,50 @@ test("c-calls import their symbol, capture errno and emit no safepoints", () => 
     "number",
   );
   assert.deepEqual(imports(write), ["_write", "___error"]);
+});
+
+test("typed fragment packets preserve near and far foreign relocations", () => {
+  const module = bound(
+    {
+      symbol: "write",
+      signature: {
+        parameters: [s("i32"), pointer, s("u64")],
+        result: s("i64"),
+        fixedParameters: 3,
+        callClass: "leaf",
+        errno: "negated-result",
+      },
+      operands: ["number", "bytes", "number"],
+      result: "number",
+    },
+    ["number", "Uint8Array", "number"],
+    "number",
+  );
+  for (const farAddresses of [false, true]) {
+    const options = { hostABI: darwinHostABI(), farAddresses };
+    const functions = module.functions.slice();
+    const emitted = emitModuleFromStore(
+      module,
+      {
+        get: (id) => functions[id]!,
+        put: (fn) => {
+          functions[fn.id] = fn;
+        },
+        release: () => {},
+      },
+      options,
+      {
+        ranges: [{ first: 0, end: 1 }],
+        execute: (input, forms, ranges, publish) => {
+          const packet = openFragmentActor(input, options)(forms, ranges[0]!);
+          assert.ok(packet);
+          publish(packet);
+          return true;
+        },
+      },
+    );
+    assert.deepEqual(emitted, emitModule(module, options));
+  }
 });
 
 test("every argument class and record result lowers on the target ABI", () => {

@@ -190,6 +190,8 @@ import {
 import {
   emitModule,
   emitModuleFromStore,
+  type EmissionBodies,
+  type FragmentPlan,
   type CodegenAnalysis,
   type Emission,
   type EmissionOptions,
@@ -4458,6 +4460,54 @@ function moduleIRSize(module: ModuleIR): number {
   return size;
 }
 
+/** Retire decoded bodies only after the shared analyses have consumed them.
+ * A later branch-form retry reads the same normalized bodies from the store. */
+function emitPreparedFragments(
+  program: ModuleVersion,
+  store: FunctionStore,
+  options: EmissionOptions,
+  plan: FragmentPlan,
+): Emission {
+  let decoded = program.module.functions.slice();
+  program.module = {
+    ...program.module,
+    functions: decoded.map(functionHeader),
+  };
+  let packed = false;
+  const bodies: EmissionBodies = {
+    get: (id: number): FunctionIR => {
+      if (packed) return store.get(id);
+      const fn = decoded[id];
+      if (fn === undefined) throw "emission function invariant";
+      return fn;
+    },
+    put: (fn: FunctionIR): void => {
+      if (packed) store.put(fn);
+      else decoded[fn.id] = fn;
+    },
+    release: (id: number): void => {
+      if (packed) store.release(id);
+    },
+  };
+  return emitModuleFromStore(program.module, bodies, options, {
+    ranges: plan.ranges,
+    packets: plan.packets,
+    execute: plan.execute,
+    afterPreparation: (): void => {
+      if (packed) return;
+      for (const fn of decoded) {
+        if (fn === undefined) throw "emission function invariant";
+        store.put(fn);
+      }
+      store.seal();
+      decoded = [];
+      store.releaseAll();
+      packed = true;
+      plan.afterPreparation?.();
+    },
+  });
+}
+
 function emitProgram(
   program: ModuleVersion,
   storage: BuildStorage | undefined,
@@ -4469,6 +4519,14 @@ function emitProgram(
   if (selected === undefined) return emitModule(program.module, options);
   const store = createEmissionStore(selected);
   try {
+    const planFragments = selected.planFragments;
+    if (planFragments !== undefined)
+      return emitPreparedFragments(
+        program,
+        store,
+        options,
+        planFragments(program.module),
+      );
     packEmissionIR(program, store);
     return emitModuleFromStore(program.module, store, options);
   } finally {

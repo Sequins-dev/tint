@@ -90,3 +90,58 @@ test("emission packs automatically only above the IR size threshold", () => {
   const budget = { policy: "budget" as const, byteBudget: 1024 };
   assert.equal(emissionStorage(budget, 1), budget);
 });
+
+test("fragment compilation seals prepared bodies before the caller's collection hook", async () => {
+  const { compileNativeProgram } = await import("@tint/compiler/native");
+  const { createSourceTextView } = await import("@tint/source/text");
+  const { parseModule } = await import("@tint/typescript/syntax");
+  const text =
+    "function leaf(value: number): number { return value + 1; }" +
+    "export function run(): number { return leaf(41); }";
+  const parsed = parseModule(createSourceTextView(text));
+  assert.ok(parsed.ok);
+  const input = {
+    modules: [
+      { id: "entry.ts", module: parsed.value, dependencies: new Map() },
+    ],
+    entry: "entry.ts",
+    exports: ["run"],
+    start: "run",
+    runtimes: [],
+  };
+  const serial = compileNativeProgram(input);
+  assert.ok(serial.ok, JSON.stringify(serial));
+  const directory = mkdtempSync(join(tmpdir(), "tint-late-spill-"));
+  try {
+    let handoffs = 0;
+    const candidate = compileNativeProgram({
+      ...input,
+      storage: {
+        policy: "all",
+        directory,
+        files: createNodeFileHost(),
+        planFragments: (module) => ({
+          ranges: module.functions
+            .map((fn) => ({
+              first: fn.id,
+              end: fn.id + 1,
+            }))
+            .reverse(),
+          afterPreparation: () => {
+            handoffs++;
+            assert.ok(
+              readdirSync(directory).length > 0,
+              "prepared bodies have been packed",
+            );
+          },
+        }),
+      },
+    });
+    assert.ok(candidate.ok, JSON.stringify(candidate));
+    assert.deepEqual(candidate.value.native, serial.value.native);
+    assert.equal(handoffs, 1);
+    assert.deepEqual(readdirSync(directory), []);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
