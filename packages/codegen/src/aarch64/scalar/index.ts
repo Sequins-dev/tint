@@ -754,6 +754,23 @@ interface ListReadShape {
    * is proven non-null with length > index. */
   readonly mode: "read" | "has" | "cached" | "unchecked";
 }
+interface HoistedArraySlot {
+  readonly slot: number;
+  readonly reg: number;
+}
+interface HoistedImulConst {
+  readonly u32: number;
+  readonly reg: number;
+}
+interface HoistedFloatConst {
+  readonly value: number;
+  readonly reg: number;
+}
+interface PreheaderHoistPlan {
+  readonly arraySlots: readonly HoistedArraySlot[];
+  readonly imulConsts: readonly HoistedImulConst[];
+  readonly floatConsts: readonly HoistedFloatConst[];
+}
 function listReadShape(fn: FunctionIR): ListReadShape | undefined {
   if (fn.import === true) return undefined;
   if (fn.name.startsWith(uncheckedListReadPrefix))
@@ -10714,12 +10731,20 @@ function emitModuleForms(
         /** Block-local FP values computed directly into a slot's FP register
          * home (multi-use `directFloatTarget`). */
         const directFloatAlias = new Map<number, number>();
+        /** FP constants hoisted into d3..d7 across a pure safepoint-free loop. */
+        const hoistedFloatConst = new Map<number, number>();
         function floatLoad(
           rt: number,
           id: number,
           byteOffset: number = 0,
         ): void {
           if (byteOffset === 0) {
+            const hoistedFp = hoistedFloatConst.get(id);
+            if (hoistedFp !== undefined) {
+              if (hoistedFp !== rt)
+                emit({ op: "fmov-d-d", rd: rt, rn: hoistedFp });
+              return;
+            }
             const aliased = directFloatAlias.get(id);
             if (aliased !== undefined) {
               if (aliased !== rt) emit({ op: "fmov-d-d", rd: rt, rn: aliased });
@@ -10918,6 +10943,8 @@ function emitModuleForms(
         /** Ordinary numeric ALU operands may name their existing FP homes. Only
          * stack-backed values need a scratch load; no conversion or guard changes. */
         function floatOperand(id: number, scratch: number): number {
+          const hoistedFp = hoistedFloatConst.get(id);
+          if (hoistedFp !== undefined) return hoistedFp;
           const aliased = directFloatAlias.get(id);
           if (aliased !== undefined) return aliased;
           if (deferredIntegers.has(id)) {
@@ -14658,6 +14685,471 @@ function emitModuleForms(
                 const reg = hoistedSlots.get(s);
                 if (reg !== undefined) hoistedArrayDataValues.set(id, reg);
               }
+            }
+          }
+        }
+        /** Multi-instruction `imul` constants hoisted into x4..x8 across a
+         * pure safepoint-free innermost loop. */
+        const hoistedImulConst = new Map<number, number>();
+        const loopPreheaderHoists = new Map<number, PreheaderHoistPlan>();
+        if (
+          !hasScriptOps &&
+          fn.scriptEntry !== true &&
+          !(debugSpans && fn.debug !== undefined)
+        ) {
+          const loopForest = naturalLoops(fn, work(100000));
+          if (loopForest !== undefined && loopForest.loops.length > 0) {
+            const loops = loopForest.loops;
+            // Collect every GP/FP home assigned anywhere in the function
+            // (including pointer transients in x4..x8 live across loops).
+            const funcUsedGP = new Set<number>();
+            const funcUsedFP = new Set<number>();
+            const sRegs = scalarRegisters;
+            if (sRegs !== undefined) {
+              for (let ri = 0; ri < sRegs.length; ri++) {
+                const reg = sRegs[ri] ?? 0;
+                if (reg >= 32) funcUsedGP.add(reg - 32);
+                else if (reg > 0) funcUsedFP.add(reg);
+              }
+            }
+            const tRegs = transientRegisters;
+            if (tRegs !== undefined) {
+              for (let ri = 0; ri < tRegs.length; ri++) {
+                const reg = tRegs[ri] ?? 0;
+                if (reg >= 32) funcUsedGP.add(reg - 32);
+                else if (reg > 0) funcUsedFP.add(reg);
+              }
+            }
+            // Build predecessor map for unique-preheader detection.
+            const preds: number[][] = [];
+            for (let i = 0; i < fn.blocks.length; i++) preds.push([]);
+            for (const block of fn.blocks) {
+              if (block === undefined) continue;
+              for (const succ of blockSuccessors(block))
+                preds[succ]?.push(block.id);
+            }
+            const pureWordInline = (
+              id: number,
+              intSlotLoads: ReadonlySet<number>,
+            ): boolean => {
+              if (jsConvert || storedAsWord(id) || intSlotLoads.has(id))
+                return true;
+              const idx = valueIds.intern(id),
+                kind = wordKinds[idx] ?? 0;
+              return (
+                nanSentinelWords[idx] === 1 ||
+                kind === 1 ||
+                kind === 2 ||
+                kind === 3 ||
+                kind === 5 ||
+                kind === 6 ||
+                kind === 7
+              );
+            };
+            for (let li = 0; li < loops.length; li++) {
+              const loop = loops[li];
+              if (loop === undefined) continue;
+              if (loop.header === fn.entry) continue;
+              // Innermost loops only so hoisted scratch registers never nest.
+              let hasInner = false;
+              for (let lj = 0; lj < loops.length; lj++) {
+                if (lj === li) continue;
+                const other = loops[lj];
+                if (
+                  other !== undefined &&
+                  other.header !== loop.header &&
+                  loop.body.has(other.header)
+                ) {
+                  hasInner = true;
+                  break;
+                }
+              }
+              if (hasInner) continue;
+              // Unique jump-only preheader outside the loop.
+              const headerPreds = preds[loop.header] ?? [];
+              let preId = -1,
+                preCount = 0;
+              for (const p of headerPreds) {
+                if (p !== undefined && !loop.body.has(p)) {
+                  preId = p;
+                  preCount++;
+                }
+              }
+              if (preCount !== 1 || preId < 0) continue;
+              const preBlock = fn.blocks[preId];
+              if (
+                preBlock === undefined ||
+                preBlock.exception !== undefined ||
+                dispatch?.fused[preId] === 1 ||
+                selects.fused[preId] === 1 ||
+                loopPreheaderHoists.has(preId)
+              )
+                continue;
+              const preTerm = preBlock.terminator;
+              if (preTerm.kind !== "jump" || preTerm.target !== loop.header)
+                continue;
+              // Verify the loop body is strictly safepoint-free and helper-free
+              // (preserving x4..x8 and d3..d7 across every instruction).
+              let pureLoop = true;
+              const writtenSlots = new Set<number>();
+              const usedGP = new Set<number>();
+              const loopLoadSlot = new Map<number, number>();
+              const intSlotLoads = new Set<number>();
+              const arraySlotUses = new Map<number, number>();
+              const imulOps: { readonly opId: number; readonly u32: number }[] =
+                [];
+              const floatCandOps: {
+                readonly opId: number;
+                readonly value: number;
+                readonly blockId: number;
+              }[] = [];
+              for (const bid of loop.body) {
+                const blk = fn.blocks[bid];
+                if (
+                  blk === undefined ||
+                  blk.exception !== undefined ||
+                  pollHeaders.has(bid) ||
+                  dispatch?.fused[bid] === 1 ||
+                  selects.fused[bid] === 1 ||
+                  (blk.terminator.kind !== "jump" &&
+                    blk.terminator.kind !== "branch")
+                ) {
+                  pureLoop = false;
+                  break;
+                }
+                for (const op of blk.instructions) {
+                  if (op === undefined || mayCollect(op)) {
+                    pureLoop = false;
+                    break;
+                  }
+                  const res = instructionResult(op);
+                  if (res !== undefined && transientRegisters !== undefined) {
+                    const tr = transientRegisters[res] ?? 0;
+                    if (tr >= 32) usedGP.add(tr - 32);
+                  }
+                  if (op.kind === "store") {
+                    writtenSlots.add(op.slot);
+                  } else if (op.kind === "load") {
+                    if (integerSlots[op.slot] === 1) intSlotLoads.add(op.id);
+                    const slotType = fn.slots[op.slot];
+                    if (
+                      slotType !== undefined &&
+                      isNativeTypedArray(slotType) &&
+                      !hoistedArrayDataValues.has(op.id)
+                    )
+                      loopLoadSlot.set(op.id, op.slot);
+                  } else if (op.kind === "constant") {
+                    const cVal = op.value;
+                    if (
+                      typeof cVal === "number" &&
+                      Number.isFinite(cVal) &&
+                      cVal !== 0 &&
+                      !wantsInteger(op.id) &&
+                      foldedConstants[valueIds.intern(op.id)] !== 1
+                    )
+                      floatCandOps.push({
+                        opId: op.id,
+                        value: cVal,
+                        blockId: bid,
+                      });
+                  } else if (op.kind === "array-element") {
+                    const s = loopLoadSlot.get(op.array);
+                    if (s !== undefined)
+                      arraySlotUses.set(s, (arraySlotUses.get(s) ?? 0) + 1);
+                  } else if (op.kind === "array-store") {
+                    const arrType = value(op.array).type,
+                      elem = typedArrayLayout(typedArrayType(arrType)).element,
+                      sv = elidedStoreSource.get(op.value) ?? op.value;
+                    if (
+                      elem !== "float" &&
+                      elem !== "clamped" &&
+                      !pureWordInline(sv, intSlotLoads)
+                    ) {
+                      pureLoop = false;
+                      break;
+                    }
+                    const s = loopLoadSlot.get(op.array);
+                    if (s !== undefined)
+                      arraySlotUses.set(s, (arraySlotUses.get(s) ?? 0) + 1);
+                  } else if (
+                    op.kind === "array-length" ||
+                    op.kind === "array-valid" ||
+                    op.kind === "optional-value" ||
+                    op.kind === "reference-value" ||
+                    op.kind === "record-read"
+                  ) {
+                    // Pure inline instructions; preserve x4..x8 and d3..d7.
+                  } else if (op.kind === "unary") {
+                    if (
+                      op.operator === "~"
+                        ? !pureWordInline(op.operand, intSlotLoads)
+                        : op.operator !== "-" &&
+                          op.operator !== "+" &&
+                          op.operator !== "!" &&
+                          op.operator !== "truthy" &&
+                          op.operator !== "ceil" &&
+                          op.operator !== "trunc" &&
+                          op.operator !== "sqrt" &&
+                          op.operator !== "uint32" &&
+                          op.operator !== "boolean-number" &&
+                          op.operator !== "is-integer"
+                    ) {
+                      pureLoop = false;
+                      break;
+                    }
+                  } else if (op.kind === "binary") {
+                    const lt = value(op.left).type,
+                      rt = value(op.right).type;
+                    if (
+                      (lt !== "number" && lt !== "boolean") ||
+                      (rt !== "number" && rt !== "boolean")
+                    ) {
+                      pureLoop = false;
+                      break;
+                    }
+                    if (
+                      op.operator === "imul" ||
+                      op.operator === "&" ||
+                      op.operator === "|" ||
+                      op.operator === "^" ||
+                      op.operator === "<<" ||
+                      op.operator === ">>" ||
+                      op.operator === ">>>"
+                    ) {
+                      const rf =
+                          foldedConstants[valueIds.intern(op.right)] === 1,
+                        lf = foldedConstants[valueIds.intern(op.left)] === 1;
+                      if (
+                        (!lf && !pureWordInline(op.left, intSlotLoads)) ||
+                        (!rf && !pureWordInline(op.right, intSlotLoads))
+                      ) {
+                        pureLoop = false;
+                        break;
+                      }
+                      if (op.operator === "imul" && (rf || lf)) {
+                        const cv = numberConstant(rf ? op.right : op.left);
+                        if (cv !== undefined) {
+                          const u32 = cv >>> 0;
+                          if (u32 > 0xffff) imulOps.push({ opId: op.id, u32 });
+                        }
+                      }
+                    } else if (
+                      op.operator !== "+" &&
+                      op.operator !== "-" &&
+                      op.operator !== "*" &&
+                      op.operator !== "/" &&
+                      op.operator !== "min" &&
+                      op.operator !== "max" &&
+                      op.operator !== "<" &&
+                      op.operator !== "<=" &&
+                      op.operator !== ">" &&
+                      op.operator !== ">=" &&
+                      op.operator !== "===" &&
+                      op.operator !== "!=="
+                    ) {
+                      pureLoop = false;
+                      break;
+                    }
+                  } else {
+                    pureLoop = false;
+                    break;
+                  }
+                }
+                if (!pureLoop) break;
+              }
+              if (!pureLoop) continue;
+              // Allocate free GP scratch registers from x4..x8 (never clobbered
+              // by pure numeric/array instructions, never assigned as any
+              // function-wide transient/slot home, and not a GC root).
+              const freeGP: number[] = [];
+              const gpCandidates = [4, 5, 6, 7, 8];
+              for (let gi = 0; gi < gpCandidates.length; gi++) {
+                const r = gpCandidates[gi];
+                if (r !== undefined && !usedGP.has(r) && !funcUsedGP.has(r))
+                  freeGP.push(r);
+              }
+              const arraySlots: HoistedArraySlot[] = [];
+              const imulConsts: HoistedImulConst[] = [];
+              const floatConsts: HoistedFloatConst[] = [];
+              // Exclude any loop-defined array load used outside the loop body
+              // (so a later loop cannot clobber its hoisted data pointer).
+              if (loopLoadSlot.size > 0) {
+                for (let bi = 0; bi < fn.blocks.length; bi++) {
+                  const blk = fn.blocks[bi];
+                  if (blk === undefined || loop.body.has(blk.id)) continue;
+                  visitTerminatorOperands(blk.terminator, (id) => {
+                    loopLoadSlot.delete(id);
+                  });
+                  for (const op of blk.instructions) {
+                    if (op === undefined) continue;
+                    visitInstructionOperands(op, (id) => {
+                      loopLoadSlot.delete(id);
+                    });
+                  }
+                }
+              }
+              // Rank loop-invariant TypedArray slots by use count (selection
+              // picks up to freeGP.length highest-use slots without sorting).
+              const assignedArraySlots = new Map<number, number>();
+              let gpCursor = 0;
+              while (gpCursor < freeGP.length) {
+                let bestSlot = -1,
+                  bestCount = 0;
+                for (const [slot, count] of arraySlotUses) {
+                  if (
+                    !writtenSlots.has(slot) &&
+                    !assignedArraySlots.has(slot) &&
+                    count > bestCount
+                  ) {
+                    bestSlot = slot;
+                    bestCount = count;
+                  }
+                }
+                if (bestSlot < 0) break;
+                const reg = freeGP[gpCursor++];
+                if (reg === undefined) break;
+                arraySlots.push({ slot: bestSlot, reg });
+                assignedArraySlots.set(bestSlot, reg);
+              }
+              if (assignedArraySlots.size > 0) {
+                for (const [loadId, slot] of loopLoadSlot) {
+                  const reg = assignedArraySlots.get(slot);
+                  if (reg !== undefined)
+                    hoistedArrayDataValues.set(loadId, reg);
+                }
+              }
+              // Hoist distinct multi-instruction `imul` constants into remaining GP regs.
+              if (imulOps.length > 0 && gpCursor < freeGP.length) {
+                const imulRegByConst = new Map<number, number>();
+                for (let ii = 0; ii < imulOps.length; ii++) {
+                  const item = imulOps[ii];
+                  if (item === undefined) continue;
+                  let reg = imulRegByConst.get(item.u32);
+                  if (reg === undefined && gpCursor < freeGP.length) {
+                    const nextReg = freeGP[gpCursor++];
+                    if (nextReg !== undefined) {
+                      reg = nextReg;
+                      imulRegByConst.set(item.u32, reg);
+                      imulConsts.push({ u32: item.u32, reg });
+                    }
+                  }
+                  if (reg !== undefined) hoistedImulConst.set(item.opId, reg);
+                }
+              }
+              // Hoist pure FP constants into d3..d7 (never touched by pure ops).
+              if (floatCandOps.length > 0) {
+                const candIds = new Set<number>();
+                for (let ci = 0; ci < floatCandOps.length; ci++) {
+                  const c = floatCandOps[ci];
+                  if (c !== undefined) candIds.add(c.opId);
+                }
+                const invalidFloatCands = new Set<number>();
+                const usedFloatCands = new Set<number>();
+                for (let bi = 0; bi < fn.blocks.length; bi++) {
+                  const blk = fn.blocks[bi];
+                  if (blk === undefined) continue;
+                  if (!loop.body.has(blk.id)) {
+                    visitTerminatorOperands(blk.terminator, (id) => {
+                      if (candIds.has(id)) invalidFloatCands.add(id);
+                    });
+                    for (const op of blk.instructions) {
+                      if (op === undefined) continue;
+                      visitInstructionOperands(op, (id) => {
+                        if (candIds.has(id)) invalidFloatCands.add(id);
+                      });
+                    }
+                    continue;
+                  }
+                  visitTerminatorOperands(blk.terminator, (id) => {
+                    if (candIds.has(id)) invalidFloatCands.add(id);
+                  });
+                  for (const op of blk.instructions) {
+                    if (op === undefined) continue;
+                    const pureFloatConsumer =
+                      (op.kind === "binary" &&
+                        (op.operator === "+" ||
+                          op.operator === "-" ||
+                          op.operator === "*" ||
+                          op.operator === "/" ||
+                          op.operator === "min" ||
+                          op.operator === "max") &&
+                        !wantsInteger(op.id)) ||
+                      (op.kind === "unary" &&
+                        (op.operator === "-" ||
+                          op.operator === "sqrt" ||
+                          op.operator === "ceil" ||
+                          op.operator === "trunc") &&
+                        !wantsInteger(op.id));
+                    const pureFloatStore =
+                      op.kind === "array-store" &&
+                      typedArrayLayout(typedArrayType(value(op.array).type))
+                        .element === "float";
+                    const storeValId =
+                      pureFloatStore && op.kind === "array-store"
+                        ? op.value
+                        : -1;
+                    const storeIdxId =
+                      pureFloatStore && op.kind === "array-store"
+                        ? op.index
+                        : -1;
+                    const storeArrId =
+                      pureFloatStore && op.kind === "array-store"
+                        ? op.array
+                        : -1;
+                    visitInstructionOperands(op, (id) => {
+                      if (!candIds.has(id)) return;
+                      if (
+                        pureFloatConsumer ||
+                        (pureFloatStore &&
+                          storeValId === id &&
+                          storeIdxId !== id &&
+                          storeArrId !== id)
+                      )
+                        usedFloatCands.add(id);
+                      else invalidFloatCands.add(id);
+                    });
+                  }
+                }
+                const freeFP: number[] = [];
+                const fpCandidates = [3, 4, 5, 6, 7];
+                for (let fi = 0; fi < fpCandidates.length; fi++) {
+                  const r = fpCandidates[fi];
+                  if (r !== undefined && !funcUsedFP.has(r)) freeFP.push(r);
+                }
+                let fpCursor = 0;
+                const fpRegByBits = new Map<string, number>();
+                for (let ci = 0; ci < floatCandOps.length; ci++) {
+                  const c = floatCandOps[ci];
+                  if (
+                    c === undefined ||
+                    invalidFloatCands.has(c.opId) ||
+                    !usedFloatCands.has(c.opId)
+                  )
+                    continue;
+                  const bits = encodeFloat64(c.value);
+                  const key = String(bits.lo) + ":" + String(bits.hi);
+                  let reg = fpRegByBits.get(key);
+                  if (reg === undefined && fpCursor < freeFP.length) {
+                    const nextReg = freeFP[fpCursor++];
+                    if (nextReg !== undefined) {
+                      reg = nextReg;
+                      fpRegByBits.set(key, reg);
+                      floatConsts.push({ value: c.value, reg });
+                    }
+                  }
+                  if (reg !== undefined) hoistedFloatConst.set(c.opId, reg);
+                }
+              }
+              if (
+                arraySlots.length > 0 ||
+                imulConsts.length > 0 ||
+                floatConsts.length > 0
+              )
+                loopPreheaderHoists.set(preId, {
+                  arraySlots,
+                  imulConsts,
+                  floatConsts,
+                });
             }
           }
         }
@@ -20963,7 +21455,11 @@ function emitModuleForms(
                 break;
               }
               case "constant": {
-                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
+                if (
+                  foldedConstants[valueIds.intern(op.id)] === 1 ||
+                  hoistedFloatConst.has(op.id)
+                )
+                  break;
                 const constant = op.value,
                   home = value(op.id).offset,
                   register = scalarRegisters?.[home / 8] ?? 0;
@@ -30429,13 +30925,16 @@ function emitModuleForms(
                       );
                     if (constVal === undefined) throw "imul constant invariant";
                     const left = wordOperand(other, 13);
-                    imm(10, constVal >>> 0);
+                    const hoisted = hoistedImulConst.get(op.id);
+                    let mulReg = 10;
+                    if (hoisted !== undefined) mulReg = hoisted;
+                    else imm(10, constVal >>> 0);
                     emit({
                       op: "madd",
                       width: 32,
                       rd: target,
                       rn: left,
-                      rm: 10,
+                      rm: mulReg,
                       ra: "zr",
                     });
                   } else {
@@ -31894,6 +32393,54 @@ function emitModuleForms(
             imm(0, 2);
             exceptionalBranch({ op: "b" });
           } else if (t.kind === "jump") {
+            const preheaderHoists = loopPreheaderHoists.get(b.id);
+            if (preheaderHoists !== undefined) {
+              for (let hi = 0; hi < preheaderHoists.arraySlots.length; hi++) {
+                const item = preheaderHoists.arraySlots[hi];
+                if (item === undefined) continue;
+                const offset = slotOffset(item.slot);
+                const home = scalarRegisters?.[offset / 8] ?? 0;
+                if (home >= 32)
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: item.reg,
+                    rn: home - 32,
+                    offset: nativeArrayDataOffset,
+                  });
+                else {
+                  rawLoad(item.reg, offset);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: item.reg,
+                    rn: item.reg,
+                    offset: nativeArrayDataOffset,
+                  });
+                }
+              }
+              for (let hi = 0; hi < preheaderHoists.imulConsts.length; hi++) {
+                const item = preheaderHoists.imulConsts[hi];
+                if (item === undefined) continue;
+                imm(item.reg, item.u32);
+              }
+              for (let hi = 0; hi < preheaderHoists.floatConsts.length; hi++) {
+                const item = preheaderHoists.floatConsts[hi];
+                if (item === undefined) continue;
+                const immediate = float64Immediate(item.value);
+                if (immediate !== undefined)
+                  emit({
+                    op: "fmov-d-imm",
+                    rd: item.reg,
+                    imm8: immediate,
+                  });
+                else {
+                  const bits = encodeFloat64(item.value);
+                  imm64(17, bits.lo, bits.hi);
+                  emit({ op: "fmov-d-x", rd: item.reg, rn: 17 });
+                }
+              }
+            }
             if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
           } else if (
             t.kind === "branch" &&
