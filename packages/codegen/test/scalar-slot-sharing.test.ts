@@ -337,3 +337,81 @@ test("deferred packed bit-row owner lookup matches exact liveness on dense share
     assert.equal(sharing.otherLiveIn(2, block), false, `slot 2 block ${block}`);
   }
 });
+
+test("dense occupancy bit-row promotion preserves exact coloring across >1024 blocks and bit-31 boundaries", () => {
+  // 1,100 blocks spans 35 bit-row words and 2 summary words (including word 31
+  // = bit 31 of summary word 0). With 12 densely live slots (~6,000+ entries),
+  // sparse Uint16Array growth exceeds dense bit-row bytes (~1.8 KiB) and
+  // promotes mid-run to dense occupancy bit rows with active-word probing.
+  const blockCount = 1100;
+  const shapes: BlockShape[] = [];
+  for (let block = 0; block < blockCount; block++) {
+    const ops: Instruction[] = [];
+    // Slots 0..5 are live across the entire 1,100-block chain (must stay
+    // distinct and force promotion).
+    if (block === 0) for (let s = 0; s < 6; s++) ops.push(store(s));
+    if (block === blockCount - 1) for (let s = 0; s < 6; s++) ops.push(load(s));
+    // Slot 6 lives in blocks 0..500; slot 7 lives in blocks 501..1099 -> must share!
+    if (block === 0) ops.push(store(6));
+    if (block === 500) ops.push(load(6));
+    if (block === 501) ops.push(store(7));
+    if (block === 1099) ops.push(load(7));
+    // Slot 8 lives across word-31 boundary (blocks 990..1030); slot 9 lives
+    // in blocks 0..989 -> must share! Slot 10 touches block 1024 -> conflicts
+    // with slot 8 (summary word 1, bit 0), so shares with slot 9 instead? No,
+    // slot 10 lives 1024..1099 (disjoint from slot 9: 0..989) -> shares with 9!
+    if (block === 990) ops.push(store(8));
+    if (block === 1030) ops.push(load(8));
+    if (block === 0) ops.push(store(9));
+    if (block === 989) ops.push(load(9));
+    if (block === 1024) ops.push(store(10));
+    if (block === 1099) ops.push(load(10));
+    // Slot 11 is ineligible (private).
+    if (block === 10) ops.push(store(11));
+    if (block === 1080) ops.push(load(11));
+    shapes.push({
+      ops,
+      term: block === blockCount - 1 ? end : jump(block + 1),
+    });
+  }
+  const types = Array.from({ length: 12 }, () => "number" as const);
+  const ir = fn(types, shapes);
+  const withOwners = shareFrameSlots(
+    ir,
+    (s) => s !== 11,
+    10_000_000,
+    undefined,
+    true,
+  );
+  const withoutOwners = shareFrameSlots(
+    ir,
+    (s) => s !== 11,
+    10_000_000,
+    undefined,
+    false,
+  );
+  assert.ok(withOwners);
+  assert.ok(withoutOwners);
+  assert.equal(withOwners.colors, withoutOwners.colors);
+  assert.deepEqual(withOwners.color, withoutOwners.color);
+  // Ineligible slot stays private.
+  assert.equal(withOwners.color[11], 0);
+  // Slots 0..5 all mutually overlap -> 6 distinct groups.
+  const firstSix = new Set(
+    Array.from({ length: 6 }, (_, s) => withOwners.color[s]),
+  );
+  assert.equal(firstSix.size, 6);
+  // Disjoint pairs share groups.
+  assert.equal(withOwners.color[6], withOwners.color[7]);
+  assert.equal(withOwners.color[8], withOwners.color[9]);
+  assert.notEqual(withOwners.color[8], withOwners.color[10]);
+  assert.equal(withOwners.color[9], withOwners.color[8]);
+  assert.notEqual(withOwners.color[6], withOwners.color[8]);
+  // Owner lookup agrees across the entire 1,100-block range.
+  assert.equal(withOwners.otherLiveIn(6, 502), true);
+  assert.equal(withOwners.otherLiveIn(6, 500), false);
+  assert.equal(withOwners.otherLiveIn(7, 100), true);
+  assert.equal(withOwners.otherLiveIn(7, 501), false);
+  assert.equal(withOwners.otherLiveIn(8, 500), true);
+  assert.equal(withOwners.otherLiveIn(9, 1024), true);
+});
