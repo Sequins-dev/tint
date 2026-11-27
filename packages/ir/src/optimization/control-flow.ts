@@ -60,8 +60,9 @@ export function simplifyControlFlow(
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
   let visited = 0,
     rewritten = 0;
-  const candidates: Block[] = [];
-  for (const block of fn.blocks) {
+  let candidates: Block[] | undefined;
+  for (let index = 0; index < fn.blocks.length; index++) {
+    const block = fn.blocks[index];
     if (block === undefined || ++visited > budget) return undefined;
     let term = block.terminator;
     if (term.kind === "branch") {
@@ -84,13 +85,15 @@ export function simplifyControlFlow(
         }
       }
     }
-    candidates.push(
-      term === block.terminator ? block : { ...block, terminator: term },
-    );
+    if (term !== block.terminator) {
+      if (candidates === undefined) candidates = fn.blocks.slice(0, index);
+      candidates.push({ ...block, terminator: term });
+    } else if (candidates !== undefined) candidates.push(block);
   }
-  if (hasScriptOperations(fn) && candidates.length > 1) {
-    const preds = new Uint32Array(candidates.length);
-    for (const block of candidates) {
+  const sourceBlocks = candidates ?? fn.blocks;
+  if (hasScriptOperations(fn) && sourceBlocks.length > 1) {
+    const preds = new Uint32Array(sourceBlocks.length);
+    for (const block of sourceBlocks) {
       if (block === undefined || ++visited > budget) return undefined;
       const term = block.terminator;
       if (term.kind === "jump")
@@ -108,10 +111,10 @@ export function simplifyControlFlow(
         preds[block.exception.target] =
           (preds[block.exception.target] ?? 0) + 1;
     }
-    const merged = new Uint8Array(candidates.length);
-    for (let id = 0; id < candidates.length; id++) {
+    const merged = new Uint8Array(sourceBlocks.length);
+    for (let id = 0; id < sourceBlocks.length; id++) {
       if (merged[id] === 1) continue;
-      const startBlock = candidates[id];
+      const startBlock = (candidates ?? sourceBlocks)[id];
       if (startBlock === undefined || hasRecordRead(startBlock)) continue;
       let block: Block = startBlock;
       let instructions: Instruction[] | undefined;
@@ -126,7 +129,7 @@ export function simplifyControlFlow(
           preds[nextId] !== 1
         )
           break;
-        const next: Block | undefined = candidates[nextId];
+        const next: Block | undefined = (candidates ?? sourceBlocks)[nextId];
         if (
           next === undefined ||
           hasRecordRead(next) ||
@@ -157,11 +160,18 @@ export function simplifyControlFlow(
                 exception: ex,
               };
       }
-      if (instructions !== undefined) candidates[id] = block;
+      if (instructions !== undefined) {
+        if (candidates === undefined) candidates = sourceBlocks.slice();
+        candidates[id] = block;
+      }
     }
   }
   if (rewritten === 0) return { fn, visited, rewritten };
-  const compacted = compactReachableBlocks(fn, candidates, budget - visited);
+  const compacted = compactReachableBlocks(
+    fn,
+    candidates ?? fn.blocks,
+    budget - visited,
+  );
   if (compacted === undefined) return undefined;
   return {
     fn: compacted.fn,
@@ -218,39 +228,75 @@ export function compactReachableBlocks(
     if (mapped === 0) throw "CFG removed target";
     return mapped - 1;
   }
-  const blocks: Block[] = [];
-  for (const block of candidates) {
+  let blocks: Block[] | undefined;
+  for (let index = 0; index < candidates.length; index++) {
+    const block = candidates[index];
     if (block === undefined || ++visited > budget) return undefined;
     if (live[block.id] === 0) {
+      if (blocks === undefined) blocks = candidates.slice(0, index);
       removed++;
       continue;
     }
+    const mappedId = target(block.id);
     const before = block.terminator;
     let terminator: Terminator = before;
-    if (before.kind === "jump")
-      terminator = { ...before, target: target(before.target) };
-    else if (
+    if (before.kind === "jump") {
+      const mappedTarget = target(before.target);
+      if (mappedTarget !== before.target)
+        terminator = { ...before, target: mappedTarget };
+    } else if (
       before.kind === "branch" ||
       before.kind === "record" ||
       before.kind === "record-cell" ||
       before.kind === "cell"
-    )
-      terminator = {
-        ...before,
-        consequent: target(before.consequent),
-        alternate: target(before.alternate),
-      };
+    ) {
+      const mappedConsequent = target(before.consequent),
+        mappedAlternate = target(before.alternate);
+      if (
+        mappedConsequent !== before.consequent ||
+        mappedAlternate !== before.alternate
+      )
+        terminator = {
+          ...before,
+          consequent: mappedConsequent,
+          alternate: mappedAlternate,
+        };
+    }
     const handler = block.exception;
-    blocks.push(
-      handler === undefined
-        ? { ...block, id: target(block.id), terminator }
-        : {
-            ...block,
-            id: target(block.id),
-            terminator,
-            exception: { target: target(handler.target), slot: handler.slot },
-          },
-    );
+    let next: Block = block;
+    if (handler === undefined) {
+      if (mappedId !== block.id || terminator !== before)
+        next = { ...block, id: mappedId, terminator };
+    } else {
+      const mappedHandlerTarget = target(handler.target);
+      if (
+        mappedId !== block.id ||
+        terminator !== before ||
+        mappedHandlerTarget !== handler.target
+      )
+        next = {
+          ...block,
+          id: mappedId,
+          terminator,
+          exception:
+            mappedHandlerTarget === handler.target
+              ? handler
+              : { target: mappedHandlerTarget, slot: handler.slot },
+        };
+    }
+    if (next !== block) {
+      if (blocks === undefined) blocks = candidates.slice(0, index);
+      blocks.push(next);
+    } else if (blocks !== undefined) blocks.push(block);
   }
-  return { fn: { ...fn, entry: target(fn.entry), blocks }, visited, removed };
+  const entry = target(fn.entry),
+    resultBlocks = blocks ?? candidates;
+  return {
+    fn:
+      resultBlocks === fn.blocks && entry === fn.entry
+        ? fn
+        : { ...fn, entry, blocks: resultBlocks },
+    visited,
+    removed,
+  };
 }
