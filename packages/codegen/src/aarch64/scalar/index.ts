@@ -5498,6 +5498,18 @@ function emitModuleForms(
       rawStore(9, target);
     }
   }
+  function copyFloatWord(source: number, target: number): void {
+    if (source === target) return;
+    const registers = scalarRegisters,
+      from = registers === undefined ? 0 : (registers[source / 8] ?? 0),
+      to = registers === undefined ? 0 : (registers[target / 8] ?? 0);
+    if (from === 0 && to === 0) {
+      emit({ op: "ldr-d", rt: 0, rn: "sp", offset: source });
+      emit({ op: "str-d", rt: 0, rn: "sp", offset: target });
+      return;
+    }
+    copyRawWord(source, target);
+  }
   const conditions: Condition[] = [
     "eq",
     "ne",
@@ -20980,18 +20992,32 @@ function emitModuleForms(
                 }
                 const bits = encodeFloat64(constant);
                 if (bits.lo === 0 && bits.hi === 0) {
-                  // +0: no materialized bits in either register class.
-                  rawStore("zr", home);
+                  // +0: store in FP domain when stack-backed to avoid GP->FP STLF stalls.
+                  if (register === 0) {
+                    emit({ op: "fmov-d-x", rd: 0, rn: "zr" });
+                    emit({ op: "str-d", rt: 0, rn: "sp", offset: home });
+                  } else rawStore("zr", home);
                   if (tracker !== undefined)
                     tracker.saved(op.id, instructions.length * 4);
                   break;
                 }
                 const immediate =
-                  register > 0 && register < 32
-                    ? float64Immediate(constant)
-                    : undefined;
+                  register < 32 ? float64Immediate(constant) : undefined;
                 if (immediate !== undefined) {
-                  emit({ op: "fmov-d-imm", rd: register, imm8: immediate });
+                  if (register > 0)
+                    emit({ op: "fmov-d-imm", rd: register, imm8: immediate });
+                  else {
+                    emit({ op: "fmov-d-imm", rd: 0, imm8: immediate });
+                    emit({ op: "str-d", rt: 0, rn: "sp", offset: home });
+                  }
+                  if (tracker !== undefined)
+                    tracker.saved(op.id, instructions.length * 4);
+                  break;
+                }
+                if (register === 0) {
+                  imm64(9, bits.lo, bits.hi);
+                  emit({ op: "fmov-d-x", rd: 0, rn: 9 });
+                  emit({ op: "str-d", rt: 0, rn: "sp", offset: home });
                   if (tracker !== undefined)
                     tracker.saved(op.id, instructions.length * 4);
                   break;
@@ -28866,6 +28892,8 @@ function emitModuleForms(
                     value(op.id).type === "optional-boolean")
                 ) {
                   copyGeneralPair(slotOffset(op.slot), value(op.id).offset);
+                } else if (value(op.id).type === "number") {
+                  copyFloatWord(slotOffset(op.slot), value(op.id).offset);
                 } else {
                   copyRawWord(slotOffset(op.slot), value(op.id).offset);
                   if (
@@ -28916,6 +28944,13 @@ function emitModuleForms(
                   value(storeSrc).type === "optional-boolean"
                 ) {
                   copyGeneralPair(value(storeSrc).offset, slotOffset(op.slot));
+                  break;
+                }
+                if (
+                  value(storeSrc).type === "number" &&
+                  !storedAsInteger(storeSrc)
+                ) {
+                  copyFloatWord(value(storeSrc).offset, slotOffset(op.slot));
                   break;
                 }
                 copyRawWord(value(storeSrc).offset, slotOffset(op.slot));
