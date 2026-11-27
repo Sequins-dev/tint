@@ -4410,3 +4410,137 @@ test("bytes-load folds constant littleEndian and omits byte swaps on LE", () => 
     "dynamic LE f64 should conditionally skip REV",
   );
 });
+
+test("unsigned-zero integer increments fold into 32-bit add-imm and keep hoisted spec-loop arrays", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "__tint_spec_loop_inc",
+          exported: true,
+          parameters: [0, 1],
+          slots: ["Float64Array", "number", "number", "number"],
+          integerSlots: [2],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "constant", id: 0, value: 0, ...span },
+                { kind: "store", slot: 2, value: 0, ...span },
+                { kind: "store", slot: 3, value: 0, ...span },
+              ],
+              terminator: { kind: "jump", target: 1, ...span },
+            },
+            {
+              id: 1,
+              instructions: [
+                { kind: "load", id: 1, slot: 2, ...span },
+                { kind: "load", id: 2, slot: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 3,
+                  operator: "<",
+                  left: 1,
+                  right: 2,
+                  ...span,
+                },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 3,
+                consequent: 2,
+                alternate: 3,
+                ...span,
+              },
+            },
+            {
+              id: 2,
+              instructions: [
+                { kind: "load", id: 4, slot: 2, ...span },
+                { kind: "constant", id: 5, value: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 6,
+                  operator: "+",
+                  left: 4,
+                  right: 5,
+                  ...span,
+                },
+                { kind: "constant", id: 7, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 8,
+                  operator: ">>>",
+                  left: 6,
+                  right: 7,
+                  ...span,
+                },
+                { kind: "store", slot: 2, value: 8, ...span },
+                { kind: "load", id: 9, slot: 0, ...span },
+                {
+                  kind: "array-element",
+                  id: 10,
+                  array: 9,
+                  index: 8,
+                  ...span,
+                },
+                { kind: "load", id: 11, slot: 3, ...span },
+                {
+                  kind: "binary",
+                  id: 12,
+                  operator: "+",
+                  left: 11,
+                  right: 10,
+                  ...span,
+                },
+                { kind: "store", slot: 3, value: 12, ...span },
+              ],
+              terminator: { kind: "jump", target: 1, ...span },
+            },
+            {
+              id: 3,
+              instructions: [{ kind: "load", id: 13, slot: 3, ...span }],
+              terminator: { kind: "return", value: 13, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const code = result.value.code;
+  const words: number[] = [];
+  for (let off = 0; off + 4 <= code.length; off += 4)
+    words.push(
+      (code[off]! |
+        (code[off + 1]! << 8) |
+        (code[off + 2]! << 16) |
+        (code[off + 3]! << 24)) >>>
+        0,
+    );
+  // 32-bit ADD Wd, Wn, #1 has top bits 0x11000400 (sf=0, op=0, S=0, imm12=1).
+  const hasAddWImm1 = words.some((w) => (w & 0xfffffc00) === 0x11000400);
+  assert.ok(
+    hasAddWImm1,
+    "expected `(i + 1) >>> 0` to lower to 32-bit ADD Wd, Wn, #1",
+  );
+  // LSR Wd, Wn, #0 is UBFM Wd, Wn, #0, #31 (0x53007c00).
+  const hasLsrW0 = words.some((w) => (w & 0xfffffc00) === 0x53007c00);
+  assert.ok(
+    !hasLsrW0,
+    "expected `(i + 1) >>> 0` not to emit redundant LSR Wd, Wn, #0",
+  );
+  // LDR Dt, [x14, Xm, lsl #3] (hoisted Float64Array data pointer in x14):
+  // size=11, V=1, opc=01, option=011, S=1, Rn=14 -> 0xfc6079c0.
+  const hasHoistedX14Load = words.some(
+    (w) => (w & 0xffe0ffe0) >>> 0 === 0xfc6079c0,
+  );
+  assert.ok(
+    hasHoistedX14Load,
+    "expected `__tint_spec_loop_` containing `>>>` to keep Float64Array base hoisted in x14",
+  );
+});

@@ -1815,6 +1815,82 @@ export function selectArrayAccesses(
         });
         continue;
       }
+      if (op.kind === "binary") {
+        // Fold identity `x | 0` / `x ^ 0` (when x is already a proven signed
+        // int32 without -0) and `x >>> 0` (when x is already a proven uint32
+        // without -0).
+        if (op.operator === "|" || op.operator === "^") {
+          const left = values.get(op.left),
+            right = values.get(op.right);
+          const rightZero =
+            right !== undefined &&
+            right.integer &&
+            right.lo === 0 &&
+            right.hi === 0;
+          const leftZero =
+            left !== undefined &&
+            left.integer &&
+            left.lo === 0 &&
+            left.hi === 0;
+          if (rightZero || leftZero) {
+            const srcId = rightZero ? op.left : op.right,
+              srcInt = rightZero ? left : right;
+            if (
+              srcInt !== undefined &&
+              srcInt.integer &&
+              !srcInt.negativeZero &&
+              srcInt.lo >= -2147483648 &&
+              srcInt.hi <= 2147483647
+            ) {
+              replaced.set(op.id, replaced.get(srcId) ?? srcId);
+              rewritten++;
+              changed = true;
+              continue;
+            }
+          }
+        } else if (op.operator === ">>>") {
+          const left = values.get(op.left),
+            right = values.get(op.right);
+          if (
+            right !== undefined &&
+            right.integer &&
+            right.lo === 0 &&
+            right.hi === 0 &&
+            left !== undefined &&
+            left.integer &&
+            !left.negativeZero &&
+            left.lo >= 0 &&
+            left.hi <= 4294967295
+          ) {
+            replaced.set(op.id, replaced.get(op.left) ?? op.left);
+            rewritten++;
+            changed = true;
+            continue;
+          }
+        } else if (isComparisonOperator(op.operator)) {
+          const leftId = replaced.get(op.left) ?? op.left,
+            rightId = replaced.get(op.right) ?? op.right;
+          const outcome = decide(
+            leftId === op.left && rightId === op.right
+              ? op
+              : { ...op, left: leftId, right: rightId },
+            values,
+          );
+          if (outcome !== undefined) {
+            instructions.push({
+              kind: "constant",
+              id: op.id,
+              value: outcome,
+              start: op.start,
+              end: op.end,
+              ...(op.inline === undefined ? {} : { inline: op.inline }),
+            });
+            rewritten++;
+            changed = true;
+            continue;
+          }
+        }
+      }
       // An exact safe-integer product whose every use only observes its low
       // 32 bits (bitwise ops) equals Math.imul(left, right) modulo 2^32.
       if (

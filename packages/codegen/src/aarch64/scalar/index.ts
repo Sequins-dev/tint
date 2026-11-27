@@ -7202,7 +7202,8 @@ function emitModuleForms(
         const soleConsumers: (IRInstruction | undefined)[] = [],
           useCounts = new Uint32Array(resultBound),
           low32UseCounts = new Uint32Array(resultBound),
-          truncatedSums = new Uint8Array(resultBound);
+          truncatedSums = new Uint8Array(resultBound),
+          unsignedTruncateCandidate = new Uint8Array(resultBound);
         for (const block of fn.blocks) {
           if (block === undefined) throw "truncation block invariant";
           visitTerminatorOperands(block.terminator, (id) => {
@@ -10607,6 +10608,9 @@ function emitModuleForms(
           nanSentinelWords = new Uint8Array(values.length),
           nanSentinelMagnitudes = new Float64Array(values.length),
           nanSentinelNonNegative = new Uint8Array(values.length);
+        /** Block-local GP integer values computed directly into a slot's GP
+         * register home (multi-use `directIntTarget`). */
+        const directIntAlias: Map<number, number> = new Map<number, number>();
         function storedAsInteger(id: number): boolean {
           return integerStorage[valueIds.intern(id)] === 1;
         }
@@ -10615,6 +10619,12 @@ function emitModuleForms(
         }
         /** An exact integer operand as an int64 in rt (see exactInteger). */
         function intOperand(id: number, rt: number): void {
+          const aliased = directIntAlias.get(id);
+          if (aliased !== undefined) {
+            if (rt !== aliased)
+              emit({ op: "orr-reg", width: 64, rd: rt, rn: "zr", rm: aliased });
+            return;
+          }
           if (storedAsInteger(id)) rawValue(rt, id);
           else {
             const index = valueIds.intern(id);
@@ -10799,6 +10809,8 @@ function emitModuleForms(
             });
             return scratch;
           }
+          const aliasedWord = directIntAlias.get(id);
+          if (aliasedWord !== undefined) return aliasedWord;
           if (storedAsWord(id) || storedAsInteger(id)) {
             const home = homeOf(id);
             if (home >= 32) return home - 32;
@@ -10954,6 +10966,8 @@ function emitModuleForms(
         /** A GP register holding int64 operand `id`: its GP home, else
          * `scratch` loaded with it (see intOperand). */
         function intRegister(id: number, scratch: number): number {
+          const aliased = directIntAlias.get(id);
+          if (aliased !== undefined) return aliased;
           if (storedAsInteger(id)) {
             const home = homeOf(id);
             if (home >= 32) return home - 32;
@@ -11045,6 +11059,12 @@ function emitModuleForms(
           return scratch;
         }
         function rawValue(rt: number, id: number): void {
+          const aliased = directIntAlias.get(id);
+          if (aliased !== undefined) {
+            if (rt !== aliased)
+              emit({ op: "orr-reg", width: 64, rd: rt, rn: "zr", rm: aliased });
+            return;
+          }
           rawLoad(rt, value(id).offset);
         }
         /** The GP register a word result is computed into: its GP home, else
@@ -11056,6 +11076,8 @@ function emitModuleForms(
         /** A GP register holding the word of `id` for reading only: its GP
          * home, else `scratch` loaded with it. */
         function rawRegister(id: number, scratch: number): number {
+          const aliased = directIntAlias.get(id);
+          if (aliased !== undefined) return aliased;
           const home = homeOf(id);
           if (home >= 32) return home - 32;
           rawValue(scratch, id);
@@ -14699,9 +14721,7 @@ function emitModuleForms(
                 storedSlots[op.slot] = 1;
               } else if (
                 op.kind === "binary" &&
-                (op.operator === "%" ||
-                  op.operator === ">>>" ||
-                  op.operator === "**")
+                (op.operator === "%" || op.operator === "**")
               ) {
                 pureLeaf = false;
                 break;
@@ -15705,6 +15725,7 @@ function emitModuleForms(
           // nothing between them touches that register or throws, compute
           // directly into the slot register (eliminating 2-cycle FP fmov on
           // loop-carried sums/stencils and redundant GP mov on loop counters).
+          directIntAlias.clear();
           directFloatAlias.clear();
           if (tracker === undefined && scalarRegisters !== undefined) {
             const regs = scalarRegisters;
@@ -15722,7 +15743,8 @@ function emitModuleForms(
                 continue;
               const valIdx = valueIds.intern(sOp.value),
                 useTotal = valueUses[valIdx] ?? 0;
-              if (useTotal < 1 || (isIntSlot && useTotal !== 1)) continue;
+              if (useTotal < 1) continue;
+              if (isIntSlot && directIntTarget[valIdx] !== 0) continue;
               if (!isIntSlot && directFloatTarget[valIdx] !== 0) continue;
               let defIdx = -1,
                 safe = true;
@@ -15840,24 +15862,35 @@ function emitModuleForms(
                 pendingFusedAdd.has(ins.id)
               )
                 continue;
-              // When storing `(x | 0)` or `(x ^ 0)` to an integer slot where `x`
-              // is already a single-use signed 32-bit bitwise op in this block,
-              // elide the redundant `| 0` and target `x` directly into `destReg`.
-              if (
+              // When storing `(x | 0)` / `(x ^ 0)` (with a signed 32-bit
+              // bitwise `x`) or `(x >>> 0)` (with an exact integer `+`/`-` `x`)
+              // to an integer slot, elide the identity mask/shift and compute
+              // `x` directly into `destReg` (32-bit `add`/`sub` for `>>> 0`).
+              let bypassTruncatedSum = false;
+              const isBitwiseZero =
                 isIntSlot &&
                 (ins.operator === "|" || ins.operator === "^") &&
                 !pendingFusedAdd.has(ins.left) &&
                 !pendingFusedAdd.has(ins.right) &&
                 !storeBypassCandidate.has(ins.id) &&
                 (zeroConstants[valueIds.intern(ins.right)] === 1 ||
-                  zeroConstants[valueIds.intern(ins.left)] === 1)
-              ) {
-                const innerId =
-                    zeroConstants[valueIds.intern(ins.right)] === 1
+                  zeroConstants[valueIds.intern(ins.left)] === 1);
+              const isUnsignedZero =
+                isIntSlot &&
+                ins.operator === ">>>" &&
+                !storeBypassCandidate.has(ins.id) &&
+                zeroConstants[valueIds.intern(ins.right)] === 1;
+              if (isBitwiseZero || isUnsignedZero) {
+                const innerId = isUnsignedZero
+                    ? ins.left
+                    : zeroConstants[valueIds.intern(ins.right)] === 1
                       ? ins.left
                       : ins.right,
                   innerIdx = valueIds.intern(innerId);
-                if ((valueUses[innerIdx] ?? 0) === 1) {
+                if (
+                  (valueUses[innerIdx] ?? 0) === 1 &&
+                  directIntTarget[innerIdx] === 0
+                ) {
                   let innerDef = -1,
                     innerSafe = true;
                   for (let k = defIdx - 1; k >= 0; k--) {
@@ -15893,6 +15926,7 @@ function emitModuleForms(
                       ? b.instructions[innerDef]
                       : undefined;
                   if (
+                    isBitwiseZero &&
                     innerOp !== undefined &&
                     innerOp.kind === "binary" &&
                     ["&", "|", "^", "<<", ">>", "imul"].includes(
@@ -15904,6 +15938,22 @@ function emitModuleForms(
                     !pendingFusedAdd.has(innerOp.id)
                   ) {
                     bypassOrIdx = defIdx;
+                    defIdx = innerDef;
+                    ins = innerOp;
+                    targetValId = innerId;
+                    targetValIdx = innerIdx;
+                  } else if (
+                    isUnsignedZero &&
+                    innerOp !== undefined &&
+                    innerOp.kind === "binary" &&
+                    (innerOp.operator === "+" || innerOp.operator === "-") &&
+                    wantsInteger(innerOp.id) &&
+                    zeroSignResults[innerIdx] !== 1 &&
+                    !storeBypassCandidate.has(innerOp.id) &&
+                    !pendingFusedAdd.has(innerOp.id)
+                  ) {
+                    bypassOrIdx = defIdx;
+                    bypassTruncatedSum = true;
                     defIdx = innerDef;
                     ins = innerOp;
                     targetValId = innerId;
@@ -15937,10 +15987,10 @@ function emitModuleForms(
                 integerUses[targetValIdx] === 1
               )
                 continue;
-              // For multi-use FP values, every other consumer must read via
-              // floatOperand/floatLoad and no write to `destReg` (or call) may
-              // occur before the last use of `sOp.value`.
-              if (!isIntSlot && useTotal > 1) {
+              // For multi-use FP or GP integer values, every other consumer
+              // must read directly from the register home and no write to
+              // `destReg` (or call) may occur before the last use of `sOp.value`.
+              if (useTotal > 1) {
                 let lastUse = sIdx;
                 for (let k = defIdx + 1; k < b.instructions.length; k++) {
                   const later = b.instructions[k];
@@ -15955,17 +16005,46 @@ function emitModuleForms(
                   if (usesVal) {
                     if (k > lastUse) lastUse = k;
                     if (k !== sIdx) {
-                      const okConsumer =
-                        (later.kind === "array-store" &&
-                          later.value === sOp.value &&
-                          later.index !== sOp.value &&
-                          (value(later.array).type === "Float64Array" ||
-                            value(later.array).type === "Float32Array" ||
-                            value(later.array).type === "Float16Array")) ||
-                        (later.kind === "binary" &&
-                          ["+", "-", "*", "/", "min", "max"].includes(
-                            later.operator,
-                          ));
+                      const okConsumer = isIntSlot
+                        ? (later.kind === "array-element" &&
+                            later.index === sOp.value) ||
+                          (later.kind === "array-store" &&
+                            later.index === sOp.value &&
+                            later.value !== sOp.value) ||
+                          (later.kind === "store" &&
+                            integerSlots[later.slot] === 1 &&
+                            later.value === sOp.value) ||
+                          (later.kind === "binary" &&
+                            ((wantsInteger(later.id) &&
+                              zeroSignResults[valueIds.intern(later.id)] !==
+                                1) ||
+                              [
+                                "&",
+                                "|",
+                                "^",
+                                "<<",
+                                ">>",
+                                ">>>",
+                                "imul",
+                                "===",
+                                "!==",
+                                "==",
+                                "!=",
+                                "<",
+                                "<=",
+                                ">",
+                                ">=",
+                              ].includes(later.operator)))
+                        : (later.kind === "array-store" &&
+                            later.value === sOp.value &&
+                            later.index !== sOp.value &&
+                            (value(later.array).type === "Float64Array" ||
+                              value(later.array).type === "Float32Array" ||
+                              value(later.array).type === "Float16Array")) ||
+                          (later.kind === "binary" &&
+                            ["+", "-", "*", "/", "min", "max"].includes(
+                              later.operator,
+                            ));
                       if (!okConsumer) {
                         safe = false;
                         break;
@@ -15977,7 +16056,7 @@ function emitModuleForms(
                   if (id === sOp.value) safe = false;
                 });
                 for (let k = defIdx + 1; safe && k <= lastUse; k++) {
-                  if (k === sIdx) continue;
+                  if (k === sIdx || k === bypassOrIdx) continue;
                   const later = b.instructions[k];
                   if (
                     later === undefined ||
@@ -16020,6 +16099,8 @@ function emitModuleForms(
               if (!safe) continue;
               if (bypassOrIdx >= 0) {
                 storeBypassCandidate.set(sOp.value, targetValId);
+                if (bypassTruncatedSum)
+                  unsignedTruncateCandidate[targetValIdx] = 1;
                 if (wordOnlySlots[sOp.slot] === 1)
                   lowWordStoreValues[targetValIdx] = 1;
               }
@@ -29912,6 +29993,12 @@ function emitModuleForms(
                   const bypass = storeBypassCandidate.get(op.id);
                   if (bypass !== undefined && storedAsInteger(bypass)) {
                     elidedStoreSource.set(op.id, bypass);
+                    const bypassDirect =
+                      directIntTarget[valueIds.intern(bypass)] ?? 0;
+                    if (bypassDirect !== 0) {
+                      directIntAlias.set(op.id, bypassDirect - 1);
+                      markInteger(op.id);
+                    }
                   } else if (wantsInteger(op.id)) {
                     const target = intTarget(op.id, 9);
                     intOperand(op.operand, target);
@@ -30368,10 +30455,16 @@ function emitModuleForms(
                     break;
                   }
                 }
-                if (truncatedSums[valueIds.intern(op.id)] === 1) {
-                  // A product's only use, read only in its low word: a
-                  // 32-bit add (the product was left unextended), of an add
-                  // immediate when the other addend is one.
+                if (
+                  truncatedSums[valueIds.intern(op.id)] === 1 ||
+                  (unsignedTruncateCandidate[valueIds.intern(op.id)] === 1 &&
+                    integerArithmetic(op))
+                ) {
+                  // A 32-bit add/sub (either a product's low-word sum or an
+                  // elided `(x +/- y) >>> 0`): width 32 zero-extends into x_rd.
+                  const opIdx = valueIds.intern(op.id),
+                    direct = directIntTarget[opIdx] ?? 0,
+                    target = direct !== 0 ? direct - 1 : intTarget(op.id, 9);
                   if (immediate !== undefined) {
                     const constant = deferredIntegers.get(immediate);
                     if (constant === undefined) throw "immediate invariant";
@@ -30379,11 +30472,11 @@ function emitModuleForms(
                         immediate === op.right ? op.left : op.right,
                         9,
                       ),
-                      target = intTarget(op.id, 9),
-                      magnitude = Math.abs(constant),
+                      addend = op.operator === "-" ? -constant : constant,
+                      magnitude = Math.abs(addend),
                       shifted = magnitude > 4095;
                     emit({
-                      op: constant < 0 ? "sub-imm" : "add-imm",
+                      op: addend < 0 ? "sub-imm" : "add-imm",
                       width: 32,
                       rd: target,
                       rn: source,
@@ -30391,13 +30484,11 @@ function emitModuleForms(
                       shift: shifted ? 12 : 0,
                       setFlags: false,
                     });
-                    saveRaw(target, op.id);
                   } else {
                     const left = intRegister(op.left, 9),
-                      right = intRegister(op.right, 10),
-                      target = intTarget(op.id, 9);
+                      right = intRegister(op.right, 10);
                     emit({
-                      op: "add-reg",
+                      op: op.operator === "-" ? "sub-reg" : "add-reg",
                       width: 32,
                       rd: target,
                       rn: left,
@@ -30406,7 +30497,12 @@ function emitModuleForms(
                       amount: 0,
                       setFlags: false,
                     });
-                    saveRaw(target, op.id);
+                  }
+                  if (direct === 0) saveRaw(target, op.id);
+                  else {
+                    emittedDirectStore[opIdx] = 1;
+                    if ((valueUses[opIdx] ?? 0) > 1)
+                      directIntAlias.set(op.id, target);
                   }
                   markInteger(op.id);
                 } else if (integerArithmetic(op) && immediate !== undefined) {
@@ -30460,7 +30556,11 @@ function emitModuleForms(
                     });
                   }
                   if (direct === 0) saveRaw(target, op.id);
-                  else emittedDirectStore[opIdx] = 1;
+                  else {
+                    emittedDirectStore[opIdx] = 1;
+                    if ((valueUses[opIdx] ?? 0) > 1)
+                      directIntAlias.set(op.id, target);
+                  }
                   markInteger(op.id);
                 } else if (integerArithmetic(op)) {
                   // Bounded below 2^53 (kind 6), so the int64 result is
@@ -30522,7 +30622,11 @@ function emitModuleForms(
                           },
                   );
                   if (direct === 0) saveRaw(target, op.id);
-                  else emittedDirectStore[opIdx] = 1;
+                  else {
+                    emittedDirectStore[opIdx] = 1;
+                    if ((valueUses[opIdx] ?? 0) > 1)
+                      directIntAlias.set(op.id, target);
+                  }
                   markInteger(op.id);
                 } else if (
                   ["+", "-", "*", "/", "min", "max"].includes(op.operator)
@@ -30966,6 +31070,12 @@ function emitModuleForms(
                     (storedAsInteger(bypass) || storedAsWord(bypass))
                   ) {
                     elidedStoreSource.set(op.id, bypass);
+                    const bypassDirect =
+                      directIntTarget[valueIds.intern(bypass)] ?? 0;
+                    if (bypassDirect !== 0) {
+                      directIntAlias.set(op.id, bypassDirect - 1);
+                      markInteger(op.id);
+                    }
                     break;
                   }
                   const rightIndex = valueIds.intern(op.right),
@@ -31403,7 +31513,11 @@ function emitModuleForms(
                     )
                       emit({ op: "sxtw", rd: target, rn: target });
                     if (direct === 0) saveRaw(target, op.id);
-                    else emittedDirectStore[opIdx] = 1;
+                    else {
+                      emittedDirectStore[opIdx] = 1;
+                      if ((valueUses[opIdx] ?? 0) > 1)
+                        directIntAlias.set(op.id, target);
+                    }
                     markInteger(op.id);
                   } else {
                     const ftarget = floatTarget(op.id, 0);

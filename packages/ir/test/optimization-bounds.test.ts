@@ -1558,3 +1558,58 @@ test("reused substitution table resets per block and handles empty-replacement r
     selected.blocks[3]!.instructions.some((op) => op.kind === "array-element"),
   );
 });
+
+test("bounds folds identity >>> 0 and decided (idx >>> 0) !== idx comparisons", () => {
+  const fn: FunctionIR = {
+    id: 0,
+    name: "uint32IdentityFold",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "number"],
+    returnType: "boolean",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "constant", id: 1, value: 0x3fff, ...span },
+          { kind: "binary", id: 2, operator: "&", left: 0, right: 1, ...span },
+          { kind: "store", slot: 1, value: 2, ...span },
+          { kind: "load", id: 3, slot: 1, ...span },
+          { kind: "constant", id: 4, value: 0, ...span },
+          {
+            kind: "binary",
+            id: 5,
+            operator: ">>>",
+            left: 3,
+            right: 4,
+            ...span,
+          },
+          {
+            kind: "binary",
+            id: 6,
+            operator: "!==",
+            left: 5,
+            right: 3,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 6, ...span },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const selected = select(fn);
+  const ops = selected.blocks[0]!.instructions;
+  assert.ok(
+    !ops.some((op) => op.kind === "binary" && op.operator === ">>>"),
+    "expected proven uint32 `idx >>> 0` to fold away",
+  );
+  assert.ok(
+    ops.some(
+      (op) => op.kind === "constant" && op.id === 6 && op.value === false,
+    ),
+    "expected `(idx >>> 0) !== idx` to fold to constant false",
+  );
+});
