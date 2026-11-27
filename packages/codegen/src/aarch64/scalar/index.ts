@@ -8242,6 +8242,32 @@ function emitModuleForms(
           homesKnown = true;
         }
         homes = cachedHomes;
+        // Precise stack maps: each safepoint lists only the root words live
+        // across it (slot liveness here, block-local temporaries by their
+        // uses), so no root word needs entry zeroing or clearing for the
+        // collector: only slots that may be read before any store are zeroed,
+        // as the program itself observes them. Computing this before frame-slot
+        // sharing lets `shareFrameSlots` skip live-in owner buffers whenever
+        // precise maps succeed (dead-slot clearing is only used without them).
+        if (!safepointLivenessKnown) {
+          const tracked: number[] = [];
+          for (let slot = 0; slot < fn.slots.length; slot++) {
+            const type = fn.slots[slot];
+            if (type !== undefined && (managed(type) || type === "general"))
+              tracked.push(slot);
+          }
+          cachedSafepointLiveness =
+            hasRoots && options.preciseStackMaps !== false
+              ? limited<SlotLiveness>(
+                  "safepoint-liveness",
+                  fn,
+                  analyzeLiveSlotsPrecisely(fn, work(50000000), tracked),
+                )
+              : undefined;
+          safepointLivenessKnown = true;
+        }
+        const safepointLiveness = cachedSafepointLiveness,
+          preciseRoots = safepointLiveness !== undefined;
         if (!sharingKnown) {
           cachedSharing =
             slotBytes > 64 && !leafRegisters
@@ -8266,6 +8292,7 @@ function emitModuleForms(
                       ? "integer"
                       : (fn.slots[slot] ?? "");
                   },
+                  hasRoots && !preciseRoots,
                 )
               : undefined;
           sharingKnown = true;
@@ -9078,32 +9105,6 @@ function emitModuleForms(
             generalSlots.push(offset);
           }
         }
-        // Precise stack maps: each safepoint lists only the root words live
-        // across it (slot liveness here, block-local temporaries by their
-        // uses), so no root word needs entry zeroing or clearing for the
-        // collector: only slots that may be read before any store are zeroed,
-        // as the program itself observes them. When the liveness budget runs
-        // out, every root word is listed at each collecting call and kept
-        // valid as before (entry zeroing, dead-slot and pool clears).
-        if (!safepointLivenessKnown) {
-          const tracked: number[] = [];
-          for (let slot = 0; slot < fn.slots.length; slot++) {
-            const type = fn.slots[slot];
-            if (type !== undefined && (managed(type) || type === "general"))
-              tracked.push(slot);
-          }
-          cachedSafepointLiveness =
-            hasRoots && options.preciseStackMaps !== false
-              ? limited<SlotLiveness>(
-                  "safepoint-liveness",
-                  fn,
-                  analyzeLiveSlotsPrecisely(fn, work(50000000), tracked),
-                )
-              : undefined;
-          safepointLivenessKnown = true;
-        }
-        const safepointLiveness = cachedSafepointLiveness,
-          preciseRoots = safepointLiveness !== undefined;
         let deferredRootBlocks =
           hasRoots &&
           !preciseRoots &&

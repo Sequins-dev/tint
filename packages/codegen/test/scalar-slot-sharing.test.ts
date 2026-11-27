@@ -296,3 +296,44 @@ test("shared owners match per-slot liveness across many groups and blocks", () =
     /owner tracking disabled/,
   );
 });
+
+test("deferred packed bit-row owner lookup matches exact liveness on dense shared groups", () => {
+  // Two slots share one group over a long chain so packed bit rows are strictly
+  // smaller than an open-addressed hash table (12 bytes/entry vs 2 bits/block).
+  const blockCount = 128;
+  const shapes: BlockShape[] = [];
+  for (let block = 0; block < blockCount; block++) {
+    const ops: Instruction[] = [];
+    if (block === 0) ops.push(store(0));
+    if (block === 60) ops.push(load(0));
+    if (block === 64) ops.push(store(1));
+    if (block === 127) ops.push(load(1));
+    // Slot 2 is live across the entire function -> singleton group.
+    if (block === 0) ops.push(store(2));
+    if (block === 127) ops.push(load(2));
+    shapes.push({
+      ops,
+      term: block === blockCount - 1 ? end : jump(block + 1),
+    });
+  }
+  const ir = fn(["reference", "reference", "reference"], shapes);
+  const sharing = shareFrameSlots(ir, () => true, 10_000_000);
+  assert.ok(sharing);
+  assert.equal(sharing.color[0], sharing.color[1]);
+  assert.notEqual(sharing.color[2], sharing.color[0]);
+  for (let block = 0; block < blockCount; block++) {
+    // Slot 0 is live-in on blocks 1..60; slot 1 is live-in on blocks 65..127.
+    assert.equal(
+      sharing.otherLiveIn(0, block),
+      block >= 65 && block <= 127,
+      `slot 0 block ${block}`,
+    );
+    assert.equal(
+      sharing.otherLiveIn(1, block),
+      block >= 1 && block <= 60,
+      `slot 1 block ${block}`,
+    );
+    // Singleton group never has another live-in slot.
+    assert.equal(sharing.otherLiveIn(2, block), false, `slot 2 block ${block}`);
+  }
+});
