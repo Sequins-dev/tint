@@ -132,19 +132,87 @@ export function shareFrameSlots(
   }
   // Per-slot liveness; slot + 1 stamps avoid clearing per-block scratch.
   // Flat typed buffers avoid per-slot managed NumberList overhead on large functions.
+  // Start in a sparse block list (Uint16Array when blockCount <= 65536) and
+  // promote once to dense occupancy bit rows with an active-word summary when
+  // growing the sparse buffer would exceed the dense bit-row footprint.
   const liveStamp = new Uint32Array(blockCount),
     defStamp = new Uint32Array(blockCount),
     stack = new Uint32Array(blockCount),
+    eligibleRow = new Uint32Array(slotCount),
+    first = new Uint32Array(slotCount).fill(blockCount),
+    last = new Uint32Array(slotCount),
     occStart = new Uint32Array(slotCount + 1),
     liveStart = new Uint32Array(trackOwners ? slotCount + 1 : 0);
-  let occData = new Uint32Array(Math.max(64, slotCount * 2)),
+  let eligibleCount = 0;
+  for (let slot = 0; slot < slotCount; slot++)
+    if (eligible(slot)) eligibleRow[slot] = ++eligibleCount;
+  const blockWords = (blockCount + 31) >>> 5,
+    summaryWords = (blockWords + 31) >>> 5,
+    narrowBlocks = blockCount <= 65536,
+    denseEligibleWords = eligibleCount * blockWords,
+    denseSummaryWords = eligibleCount * summaryWords,
+    canUseDense =
+      blockWords > 0 &&
+      eligibleCount > 0 &&
+      denseEligibleWords <= 0x1fffffff &&
+      denseSummaryWords <= 0x1fffffff,
+    denseBytes = (denseEligibleWords + denseSummaryWords) * 4,
+    initialOccCapacity = Math.max(64, slotCount * 2);
+  let dense = false,
+    occ16 = new Uint16Array(narrowBlocks ? initialOccCapacity : 0),
+    occ32 = new Uint32Array(narrowBlocks ? 0 : initialOccCapacity),
+    occBits = new Uint32Array(0),
+    occSummary = new Uint32Array(0),
     occLength = 0,
     liveData = new Uint32Array(trackOwners ? Math.max(64, slotCount * 2) : 0),
     liveLength = 0;
-  function growOcc(): void {
-    const next = new Uint32Array(occData.length * 2);
-    next.set(occData);
-    occData = next;
+  function setOccBit(row: number, block: number): void {
+    const word = block >>> 5,
+      wordPos = row * blockWords + word,
+      summaryPos = row * summaryWords + (word >>> 5);
+    occBits[wordPos] = (occBits[wordPos] ?? 0) | (1 << (block & 31));
+    occSummary[summaryPos] = (occSummary[summaryPos] ?? 0) | (1 << (word & 31));
+  }
+  function promoteOccToDense(currentSlot: number): void {
+    occBits = new Uint32Array(denseEligibleWords);
+    occSummary = new Uint32Array(denseSummaryWords);
+    for (let s = 0; s <= currentSlot; s++) {
+      const row = (eligibleRow[s] ?? 0) - 1;
+      if (row < 0) continue;
+      const start = occStart[s] ?? 0,
+        end = s === currentSlot ? occLength : (occStart[s + 1] ?? 0);
+      for (let at = start; at < end; at++)
+        setOccBit(row, narrowBlocks ? (occ16[at] ?? 0) : (occ32[at] ?? 0));
+    }
+    occ16 = new Uint16Array(0);
+    occ32 = new Uint32Array(0);
+    dense = true;
+  }
+  function recordOcc(slot: number, row: number, block: number): void {
+    if (dense) {
+      setOccBit(row, block);
+      return;
+    }
+    const capacity = narrowBlocks ? occ16.length : occ32.length;
+    if (occLength === capacity) {
+      const nextBytes = capacity * 2 * (narrowBlocks ? 2 : 4);
+      if (canUseDense && nextBytes > denseBytes) {
+        promoteOccToDense(slot);
+        setOccBit(row, block);
+        return;
+      }
+      if (narrowBlocks) {
+        const next = new Uint16Array(capacity * 2);
+        next.set(occ16);
+        occ16 = next;
+      } else {
+        const next = new Uint32Array(capacity * 2);
+        next.set(occ32);
+        occ32 = next;
+      }
+    }
+    if (narrowBlocks) occ16[occLength++] = block;
+    else occ32[occLength++] = block;
   }
   function growLive(): void {
     const next = new Uint32Array(liveData.length * 2);
@@ -154,13 +222,17 @@ export function shareFrameSlots(
   for (let slot = 0; slot < slotCount; slot++) {
     occStart[slot] = occLength;
     if (trackOwners) liveStart[slot] = liveLength;
-    if (!eligible(slot)) {
+    const row = (eligibleRow[slot] ?? 0) - 1;
+    if (row < 0) {
       occStart[slot + 1] = occLength;
       if (trackOwners) liveStart[slot + 1] = liveLength;
       continue;
     }
     const stamp = slot + 1;
-    let stackTop = 0;
+    let stackTop = 0,
+      slotOccupied = 0,
+      minBlock = blockCount,
+      maxBlock = 0;
     for (const block of defs[slot] ?? []) {
       if (block === undefined) throw "slot sharing def invariant";
       defStamp[block] = stamp;
@@ -169,8 +241,10 @@ export function shareFrameSlots(
       if (block === undefined) throw "slot sharing seed invariant";
       if (liveStamp[block] === stamp) continue;
       liveStamp[block] = stamp;
-      if (occLength === occData.length) growOcc();
-      occData[occLength++] = block;
+      recordOcc(slot, row, block);
+      slotOccupied++;
+      if (block < minBlock) minBlock = block;
+      if (block > maxBlock) maxBlock = block;
       if (trackOwners) {
         if (liveLength === liveData.length) growLive();
         liveData[liveLength++] = block;
@@ -188,8 +262,10 @@ export function shareFrameSlots(
         if (linkExceptional[at] !== 1 && defStamp[source] === stamp) continue;
         if (liveStamp[source] === stamp) continue;
         liveStamp[source] = stamp;
-        if (occLength === occData.length) growOcc();
-        occData[occLength++] = source;
+        recordOcc(slot, row, source);
+        slotOccupied++;
+        if (source < minBlock) minBlock = source;
+        if (source > maxBlock) maxBlock = source;
         if (trackOwners) {
           if (liveLength === liveData.length) growLive();
           liveData[liveLength++] = source;
@@ -200,31 +276,26 @@ export function shareFrameSlots(
     for (const block of refs[slot] ?? []) {
       if (block === undefined) throw "slot sharing reference invariant";
       if (liveStamp[block] !== stamp) {
-        if (occLength === occData.length) growOcc();
-        occData[occLength++] = block;
+        recordOcc(slot, row, block);
+        slotOccupied++;
+        if (block < minBlock) minBlock = block;
+        if (block > maxBlock) maxBlock = block;
       }
     }
-    const occupiedCount = occLength - (occStart[slot] ?? 0);
+    first[slot] = minBlock;
+    last[slot] = maxBlock;
     occStart[slot + 1] = occLength;
     if (trackOwners) liveStart[slot + 1] = liveLength;
-    work += occupiedCount;
+    work += slotOccupied;
     if (work > budget) return undefined;
   }
   // Greedy grouping by type in order of first occupied block (counting sort
   // preserves ascending slot tie-breaking in linear time).
-  const first = new Uint32Array(slotCount).fill(blockCount),
-    firstCounts = new Uint32Array(blockCount + 1);
+  const firstCounts = new Uint32Array(blockCount + 1);
   let orderCount = 0;
   for (let slot = 0; slot < slotCount; slot++) {
-    const start = occStart[slot] ?? 0,
-      end = occStart[slot + 1] ?? 0;
-    if (start === end || !eligible(slot)) continue;
-    let minimum = blockCount;
-    for (let at = start; at < end; at++) {
-      const block = occData[at] ?? 0;
-      if (block < minimum) minimum = block;
-    }
-    first[slot] = minimum;
+    const minimum = first[slot] ?? blockCount;
+    if (minimum >= blockCount) continue;
     firstCounts[minimum + 1] = (firstCounts[minimum + 1] ?? 0) + 1;
     orderCount++;
   }
@@ -239,8 +310,7 @@ export function shareFrameSlots(
     firstCounts[minimum] = position + 1;
     order[position] = slot;
   }
-  const color = new Uint32Array(slotCount),
-    blockWords = (blockCount + 31) >>> 5;
+  const color = new Uint32Array(slotCount);
   // Probe at most the first 64 groups of each kind; groups past that cap are
   // never probed again and need no occupancy bitset.
   let groupCount = 0;
@@ -252,7 +322,12 @@ export function shareFrameSlots(
     const slot = order[orderIndex] ?? 0;
     const type = kind === undefined ? (fn.slots[slot] ?? "") : kind(slot);
     const start = occStart[slot] ?? 0,
-      end = occStart[slot + 1] ?? 0;
+      end = occStart[slot + 1] ?? 0,
+      row = (eligibleRow[slot] ?? 0) - 1,
+      rBase = row * blockWords,
+      sBase = row * summaryWords,
+      minSummary = (first[slot] ?? 0) >>> 10,
+      maxSummary = (last[slot] ?? 0) >>> 10;
     let candidates = probedByType.get(type);
     if (candidates === undefined) {
       candidates = [];
@@ -265,12 +340,31 @@ export function shareFrameSlots(
       if (candidate === undefined) throw "slot sharing candidate invariant";
       const bits = candidate.bits;
       let free = true;
-      for (let at = start; at < end; at++) {
-        if (++work > budget) return undefined;
-        const block = occData[at] ?? 0;
-        if (((bits[block >>> 5] ?? 0) & (1 << (block & 31))) !== 0) {
-          free = false;
-          break;
+      if (dense) {
+        for (let sw = minSummary; sw <= maxSummary; sw++) {
+          let mask = occSummary[sBase + sw] ?? 0;
+          if (mask === 0) continue;
+          const wordBase = sw << 5;
+          while (mask !== 0) {
+            const low = mask & -mask;
+            const word = wordBase + (31 - Math.clz32(low));
+            if (++work > budget) return undefined;
+            if (((bits[word] ?? 0) & (occBits[rBase + word] ?? 0)) !== 0) {
+              free = false;
+              break;
+            }
+            mask ^= low;
+          }
+          if (!free) break;
+        }
+      } else {
+        for (let at = start; at < end; at++) {
+          if (++work > budget) return undefined;
+          const block = narrowBlocks ? (occ16[at] ?? 0) : (occ32[at] ?? 0);
+          if (((bits[block >>> 5] ?? 0) & (1 << (block & 31))) !== 0) {
+            free = false;
+            break;
+          }
         }
       }
       if (free) {
@@ -288,17 +382,36 @@ export function shareFrameSlots(
       work += blockCount >>> 3;
       if (work > budget) return undefined;
     }
-    if (chosenBits !== undefined)
-      for (let at = start; at < end; at++) {
-        const block = occData[at] ?? 0;
-        const word = block >>> 5;
-        chosenBits[word] = (chosenBits[word] ?? 0) | (1 << (block & 31));
+    if (chosenBits !== undefined) {
+      if (dense) {
+        for (let sw = minSummary; sw <= maxSummary; sw++) {
+          let mask = occSummary[sBase + sw] ?? 0;
+          if (mask === 0) continue;
+          const wordBase = sw << 5;
+          while (mask !== 0) {
+            const low = mask & -mask;
+            const word = wordBase + (31 - Math.clz32(low));
+            chosenBits[word] =
+              (chosenBits[word] ?? 0) | (occBits[rBase + word] ?? 0);
+            mask ^= low;
+          }
+        }
+      } else {
+        for (let at = start; at < end; at++) {
+          const block = narrowBlocks ? (occ16[at] ?? 0) : (occ32[at] ?? 0);
+          const word = block >>> 5;
+          chosenBits[word] = (chosenBits[word] ?? 0) | (1 << (block & 31));
+        }
       }
+    }
     color[slot] = chosen + 1;
   }
   // Release occupancy scratch before returning so no temporary coloring buffers
   // stay live if the caller later queries `otherLiveIn`.
-  occData = new Uint32Array(0);
+  occ16 = new Uint16Array(0);
+  occ32 = new Uint32Array(0);
+  occBits = new Uint32Array(0);
+  occSummary = new Uint32Array(0);
   probedByType.clear();
   return {
     color,
