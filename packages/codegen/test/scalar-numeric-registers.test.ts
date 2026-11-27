@@ -204,3 +204,272 @@ test("doubles whose uses want integers keep FP homes instead of GP round trips",
   assert.equal(fadds, 2);
   assert.deepEqual(moves, []);
 });
+
+test("safepoint-free innermost loop hoists TypedArray data pointer, imul constant, and FP constant to preheader", () => {
+  const output = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "hoistLoop",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["Float64Array", "number", "number", "number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 0, ...span },
+              { kind: "store", slot: 2, value: 0, ...span },
+              { kind: "store", slot: 3, value: 0, ...span },
+              { kind: "constant", id: 1, value: 1, ...span },
+              { kind: "store", slot: 4, value: 1, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 2, ...span },
+              { kind: "load", id: 3, slot: 1, ...span },
+              {
+                kind: "binary",
+                id: 4,
+                operator: "<",
+                left: 2,
+                right: 3,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 4,
+              consequent: 2,
+              alternate: 3,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 5, slot: 0, ...span },
+              { kind: "load", id: 6, slot: 2, ...span },
+              { kind: "array-element", id: 7, array: 5, index: 6, ...span },
+              { kind: "constant", id: 8, value: 0.25, ...span },
+              {
+                kind: "binary",
+                id: 9,
+                operator: "*",
+                left: 7,
+                right: 8,
+                ...span,
+              },
+              { kind: "load", id: 10, slot: 3, ...span },
+              {
+                kind: "binary",
+                id: 11,
+                operator: "+",
+                left: 10,
+                right: 9,
+                ...span,
+              },
+              { kind: "store", slot: 3, value: 11, ...span },
+              { kind: "load", id: 12, slot: 4, ...span },
+              { kind: "constant", id: 13, value: 0x2c1b3c6d, ...span },
+              {
+                kind: "binary",
+                id: 14,
+                operator: "imul",
+                left: 12,
+                right: 13,
+                ...span,
+              },
+              { kind: "store", slot: 4, value: 14, ...span },
+              { kind: "constant", id: 15, value: 1, ...span },
+              {
+                kind: "binary",
+                id: 16,
+                operator: "+",
+                left: 6,
+                right: 15,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 16, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 3,
+            instructions: [
+              { kind: "load", id: 17, slot: 3, ...span },
+              { kind: "load", id: 18, slot: 4, ...span },
+              {
+                kind: "binary",
+                id: 19,
+                operator: "+",
+                left: 17,
+                right: 18,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 19, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(output.ok, JSON.stringify(output));
+  const view = new DataView(output.value.code.buffer);
+  let hoistedArrayLdr = 0;
+  let hoistedFmulD3 = 0;
+  let hoistedImulReg = 0;
+  for (let offset = 0; offset < output.value.code.length; offset += 4) {
+    const word = view.getUint32(offset, true);
+    // LDR Dt, [Xn, Xm, lsl #3] where Xn is x4..x8 (0xfc607800 mask 0xffe0fc00)
+    if (
+      (word & 0xffe0fc00) >>> 0 === 0xfc607800 &&
+      ((word >>> 5) & 31) >= 4 &&
+      ((word >>> 5) & 31) <= 8
+    )
+      hoistedArrayLdr++;
+    // FMUL Dd, Dn, Dm where Dm is d3..d7
+    if (
+      (word & 0xffe0fc00) >>> 0 === 0x1e600800 &&
+      ((word >>> 16) & 31) >= 3 &&
+      ((word >>> 16) & 31) <= 7
+    )
+      hoistedFmulD3++;
+    // MADD Wd, Wn, Wm, WZR (0x1b007c00 mask 0xffe0fc00) where Wm is w4..w8
+    if (
+      (word & 0xffe0fc00) >>> 0 === 0x1b007c00 &&
+      ((word >>> 16) & 31) >= 4 &&
+      ((word >>> 16) & 31) <= 8
+    )
+      hoistedImulReg++;
+  }
+  assert.equal(
+    hoistedArrayLdr,
+    1,
+    "expected hoisted TypedArray data pointer in x4..x8",
+  );
+  assert.equal(hoistedFmulD3, 1, "expected hoisted FP constant 0.25 in d3..d7");
+  assert.equal(hoistedImulReg, 1, "expected hoisted imul constant in w4..w8");
+});
+
+test("loop with a call safepoint does not hoist raw TypedArray data pointer", () => {
+  const output = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "safepointLoop",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["Float64Array", "number", "number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 0, ...span },
+              { kind: "store", slot: 2, value: 0, ...span },
+              { kind: "store", slot: 3, value: 0, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 1, slot: 2, ...span },
+              { kind: "load", id: 2, slot: 1, ...span },
+              {
+                kind: "binary",
+                id: 3,
+                operator: "<",
+                left: 1,
+                right: 2,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 3,
+              consequent: 2,
+              alternate: 3,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "call", id: 4, target: 1, arguments: [], ...span },
+              { kind: "load", id: 5, slot: 0, ...span },
+              { kind: "load", id: 6, slot: 2, ...span },
+              { kind: "array-element", id: 7, array: 5, index: 6, ...span },
+              { kind: "load", id: 8, slot: 3, ...span },
+              {
+                kind: "binary",
+                id: 9,
+                operator: "+",
+                left: 8,
+                right: 7,
+                ...span,
+              },
+              { kind: "store", slot: 3, value: 9, ...span },
+              { kind: "constant", id: 10, value: 1, ...span },
+              {
+                kind: "binary",
+                id: 11,
+                operator: "+",
+                left: 6,
+                right: 10,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 11, ...span },
+            ],
+            terminator: { kind: "jump", target: 1, ...span },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "load", id: 12, slot: 3, ...span }],
+            terminator: { kind: "return", value: 12, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "callee",
+        exported: false,
+        parameters: [],
+        slots: [],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "constant", id: 0, value: 1, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(output.ok, JSON.stringify(output));
+  const view = new DataView(output.value.code.buffer);
+  let hoistedArrayLdr = 0;
+  for (let offset = 0; offset < output.value.code.length; offset += 4) {
+    const word = view.getUint32(offset, true);
+    if (
+      (word & 0xffe0fc00) >>> 0 === 0xfc607800 &&
+      ((word >>> 5) & 31) >= 4 &&
+      ((word >>> 5) & 31) <= 8
+    )
+      hoistedArrayLdr++;
+  }
+  assert.equal(
+    hoistedArrayLdr,
+    0,
+    "must never hoist raw backing pointer across safepoint",
+  );
+});
