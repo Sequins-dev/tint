@@ -131,7 +131,7 @@ import {
 import {
   fusedPropertyAccesses,
   knownGeneralEqualTags,
-  knownObjectTagAccesses,
+  knownObjectFacts,
   scriptEntryCalleeValues,
 } from "../../scalar/property-fusion.ts";
 import {
@@ -4152,9 +4152,59 @@ function emitModuleForms(
           stackWords.set(offset, rt);
           return;
         }
+        if (
+          currentHasScriptOps &&
+          typeof rt === "number" &&
+          stackWords.get(offset) === rt &&
+          lastJoin < instructions.length
+        )
+          return;
         emitWord(i);
         if (typeof rt === "number") stackWords.set(offset, rt);
         else stackWords.delete(offset);
+        return;
+      }
+    }
+    if (
+      currentHasScriptOps &&
+      (i.op === "ldp" || i.op === "stp") &&
+      i.width === 64 &&
+      i.rn === "sp" &&
+      i.mode === "offset" &&
+      i.offset >= 0 &&
+      i.offset <= 504
+    ) {
+      const rt = i.rt,
+        rt2 = i.rt2,
+        offset = i.offset;
+      if (i.op === "ldp" && typeof rt === "number" && typeof rt2 === "number") {
+        const held0 = stackWords.get(offset),
+          held1 = stackWords.get(offset + 8);
+        if (held0 === rt && held1 === rt2 && lastJoin < instructions.length)
+          return;
+        forgetRegister(rt);
+        forgetRegister(rt2);
+        emitWord(i);
+        stackWords.set(offset, rt);
+        stackWords.set(offset + 8, rt2);
+        return;
+      }
+      if (i.op === "stp") {
+        if (
+          typeof rt === "number" &&
+          typeof rt2 === "number" &&
+          stackWords.get(offset) === rt &&
+          stackWords.get(offset + 8) === rt2 &&
+          lastJoin < instructions.length
+        )
+          return;
+        lastFloatSpillOffset = -1;
+        lastFloatSpillReg = -1;
+        emitWord(i);
+        if (typeof rt === "number") stackWords.set(offset, rt);
+        else stackWords.delete(offset);
+        if (typeof rt2 === "number") stackWords.set(offset + 8, rt2);
+        else stackWords.delete(offset + 8);
         return;
       }
     }
@@ -5322,7 +5372,7 @@ function emitModuleForms(
       });
   }
   let scalarRegisters: Uint8Array | undefined;
-  let currentHasScriptOps = false;
+  let currentHasScriptOps: boolean = false;
   function rawLoad(rt: number, offset: number): void {
     const registers = scalarRegisters,
       register = registers === undefined ? 0 : (registers[offset / 8] ?? 0);
@@ -14528,7 +14578,12 @@ function emitModuleForms(
           if (exception !== undefined) viewEntries.set(exception.target, -1);
         }
         // Cached property misses use `fusedAccesses` computed before block ordering.
-        const knownObjectTag = knownObjectTagAccesses(fn, fusedAccesses);
+        const knownObjects = knownObjectFacts(fn, fusedAccesses);
+        const knownObjectTag = knownObjects?.tagKnown;
+        const knownBoolTrue = knownObjects?.boolKnownTrue;
+        const knownBoolFalse = knownObjects?.boolKnownFalse;
+        const knownTrueBool = new Set<number>();
+        const knownFalseBool = new Set<number>();
         const scriptEntryCallees = scriptEntryCalleeValues(fn);
         const generalEqualTags = hasScriptOps
           ? knownGeneralEqualTags(
@@ -15347,6 +15402,8 @@ function emitModuleForms(
           // other values, so its flags can replace a boolean carrier.
           const blockDiamond = selects.diamonds.get(b.id),
             blockTerm = b.terminator;
+          if (knownTrueBool.size > 0) knownTrueBool.clear();
+          if (knownFalseBool.size > 0) knownFalseBool.clear();
           let comparisonValue: number | undefined = undefined,
             comparisonIndex = -1;
           if (blockTerm.kind === "branch") {
@@ -16621,6 +16678,25 @@ function emitModuleForms(
               case "general-record-is":
               case "general-record-descriptor": {
                 const reflection = op.kind === "general-record-descriptor";
+                if (
+                  !reflection &&
+                  (knownBoolTrue?.has(op.id) === true ||
+                    knownBoolFalse?.has(op.id) === true)
+                ) {
+                  const isKnownTrue = knownBoolTrue?.has(op.id) === true;
+                  if (isKnownTrue) knownTrueBool.add(op.id);
+                  else knownFalseBool.add(op.id);
+                  if (
+                    blockTerm.kind === "branch" &&
+                    blockTerm.condition === op.id &&
+                    blockDiamond === undefined &&
+                    (valueUses[valueIds.intern(op.id)] ?? 0) === 1
+                  )
+                    break;
+                  imm(12, isKnownTrue ? 1 : 0);
+                  saveRaw(12, op.id);
+                  break;
+                }
                 rawValue(9, op.value);
                 if (reflection) {
                   imm(12, 1);
@@ -16700,6 +16776,25 @@ function emitModuleForms(
                 break;
               }
               case "general-is": {
+                if (
+                  knownBoolTrue?.has(op.id) === true ||
+                  knownBoolFalse?.has(op.id) === true
+                ) {
+                  const isKnownTrue = knownBoolTrue?.has(op.id) === true;
+                  if (isKnownTrue) knownTrueBool.add(op.id);
+                  else knownFalseBool.add(op.id);
+                  if (
+                    blockTerm.kind === "branch" &&
+                    blockTerm.condition === op.id &&
+                    blockDiamond === undefined &&
+                    (valueUses[valueIds.intern(op.id)] ?? 0) === 1
+                  )
+                    break;
+                  const target = rawTarget(op.id, 12);
+                  imm(target, isKnownTrue ? 1 : 0);
+                  saveRaw(target, op.id);
+                  break;
+                }
                 if (op.type === "absent") {
                   // property-load's miss: undefined's tag with payload 1. A
                   // fused test is the load's own miss branches.
@@ -29731,6 +29826,25 @@ function emitModuleForms(
                     floatStore(0, op.id);
                   }
                 } else if (op.operator === "!" || op.operator === "truthy") {
+                  if (
+                    knownTrueBool.has(op.operand) ||
+                    knownFalseBool.has(op.operand)
+                  ) {
+                    const knownVal = knownTrueBool.has(op.operand),
+                      resultVal = op.operator === "!" ? !knownVal : knownVal;
+                    if (resultVal) knownTrueBool.add(op.id);
+                    else knownFalseBool.add(op.id);
+                    if (
+                      blockTerm.kind === "branch" &&
+                      blockTerm.condition === op.id &&
+                      blockDiamond === undefined &&
+                      (valueUses[valueIds.intern(op.id)] ?? 0) === 1
+                    )
+                      break;
+                    imm(9, resultVal ? 1 : 0);
+                    saveRaw(9, op.id);
+                    break;
+                  }
                   truth(op.operand, op.operator === "!");
                   saveRaw(9, op.id);
                 } else
@@ -32600,6 +32714,15 @@ function emitModuleForms(
             const diamond = selects.diamonds.get(b.id);
             if (comparisonBranch === "emitted") {
               // The final comparison already branched to consequent/alternate.
+            } else if (
+              diamond === undefined &&
+              (knownTrueBool.has(t.condition) ||
+                knownFalseBool.has(t.condition))
+            ) {
+              const target = knownTrueBool.has(t.condition)
+                ? t.consequent
+                : t.alternate;
+              if (target !== nextBlock) branch({ op: "b" }, fn.id, target);
             } else if (diamond !== undefined) {
               const targetSlot = diamond.targetSlot,
                 dstOffset = slotOffset(targetSlot),

@@ -4,6 +4,7 @@ import { verify, type FunctionIR, type ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
 import {
   fusedPropertyAccesses,
+  knownObjectFacts,
   knownObjectTagAccesses,
 } from "../src/scalar/property-fusion.ts";
 import { planDirectGeneralTargets } from "../src/aarch64/scalar/general-elements.ts";
@@ -555,4 +556,151 @@ test("AArch64 emits 8-entry inherited property-load cold stubs, known-tag genera
   const emitted = emitModule(module, { linearAllocation: true });
   assert.ok(emitted.ok, JSON.stringify(emitted));
   assert.ok(emitted.value.code.byteLength > 0);
+});
+
+test("knownObjectFacts folds general-record-is and general-is across own loads, slot aliases, and record-new wraps while staying sound for inherited string hits", () => {
+  const propLoad = (
+    id: number,
+    object: number,
+    site: number,
+    inherited: boolean,
+  ) => ({
+    kind: "property-load" as const,
+    id,
+    object,
+    site,
+    record: 0,
+    field: 0,
+    count: 4,
+    siteRecord: 1,
+    siteField: 0,
+    entries: 4,
+    inherited,
+    epochRecord: 0,
+    epochField: 0,
+    ...span,
+  });
+  // Block 0: copy slot 0 -> slot 2, branch on !general-record-is(slot 0, rec 0).
+  // Block 1 (alternate, proven rec 0): slot 2 (alias!) is proven rec 0 -> folds
+  //   general-record-is(slot 2, rec 0) = true, general-is(slot 2, "null") = false,
+  //   general-is(slot 2, "object") = true, and general-record-is(general-none, rec 0) = false;
+  //   also tests record-new(0) + general-wrap -> general-record-is = true.
+  // Block 2 (consequent, unproved): general-record-is(slot 2, rec 0) must NOT fold.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "aliasAndFold",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["general", "reference", "general"],
+    returnType: "boolean",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "store", slot: 2, value: 0, ...span },
+          { kind: "general-record-is", id: 1, value: 0, record: 0, ...span },
+          { kind: "unary", id: 2, operator: "!", operand: 1, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 2,
+          consequent: 2,
+          alternate: 1,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 3, slot: 2, ...span },
+          { kind: "general-record-is", id: 4, value: 3, record: 0, ...span },
+          { kind: "general-is", id: 5, value: 3, type: "null", ...span },
+          { kind: "general-is", id: 6, value: 3, type: "object", ...span },
+          { kind: "general-none", id: 7, ...span },
+          { kind: "general-record-is", id: 8, value: 7, record: 0, ...span },
+          { kind: "record-new", id: 9, record: 0, arguments: [], ...span },
+          { kind: "general-wrap", id: 10, value: 9, ...span },
+          { kind: "general-record-is", id: 11, value: 10, record: 0, ...span },
+        ],
+        terminator: { kind: "return", value: 4, ...span },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 12, slot: 2, ...span },
+          { kind: "general-record-is", id: 13, value: 12, record: 0, ...span },
+        ],
+        terminator: { kind: "return", value: 13, ...span },
+      },
+    ],
+  };
+  const facts = knownObjectFacts(fn, fusedPropertyAccesses(fn));
+  assert.ok(facts !== undefined);
+  assert.equal(facts.boolKnownTrue.has(4), true);
+  assert.equal(facts.boolKnownFalse.has(5), true);
+  assert.equal(facts.boolKnownTrue.has(6), true);
+  assert.equal(facts.boolKnownFalse.has(8), true);
+  assert.equal(facts.boolKnownTrue.has(11), true);
+  assert.equal(facts.boolKnownTrue.has(13), false);
+  assert.equal(facts.boolKnownFalse.has(13), false);
+
+  // Own property-load hit proves record 0; inherited property-load hit without
+  // prior tag knowledge must NOT prove record 0 (string primitive negative case).
+  const makeLoadCheck = (inherited: boolean): FunctionIR => ({
+    id: 0,
+    name: "loadCheck",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["general", "reference"],
+    returnType: "boolean",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "load", id: 1, slot: 1, ...span },
+          propLoad(2, 0, 1, inherited),
+          { kind: "general-is", id: 3, value: 2, type: "absent", ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 2,
+          alternate: 1,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 4, slot: 0, ...span },
+          { kind: "general-record-is", id: 5, value: 4, record: 0, ...span },
+        ],
+        terminator: { kind: "return", value: 5, ...span },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "constant", id: 6, value: false, ...span }],
+        terminator: { kind: "return", value: 6, ...span },
+      },
+    ],
+  });
+  const ownFn = makeLoadCheck(false);
+  const ownFacts = knownObjectFacts(ownFn, fusedPropertyAccesses(ownFn));
+  assert.equal(ownFacts?.boolKnownTrue.has(5), true);
+  const inhFn = makeLoadCheck(true);
+  const inhFacts = knownObjectFacts(inhFn, fusedPropertyAccesses(inhFn));
+  assert.equal(inhFacts?.boolKnownTrue.has(5) ?? false, false);
+
+  // Verify AArch64 emitter compiles folded branches cleanly.
+  const mod: ModuleIR = {
+    records: [{ byteLength: 16, fields: [] }],
+    functions: [fn],
+  };
+  assert.ok(verify(mod).ok, JSON.stringify(verify(mod)));
+  const emitted = emitModule(mod);
+  assert.ok(emitted.ok, JSON.stringify(emitted));
 });
