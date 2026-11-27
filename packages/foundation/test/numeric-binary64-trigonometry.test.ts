@@ -58,4 +58,35 @@ for (const [name, operation] of [
       );
     }
   });
+  test(`${name} stays accurate across Cody-Waite, near-multiples of pi/2, and Payne-Hanek handoff`, () => {
+    const samples: number[] = [];
+    // Dense sweep across [0, 100] and near multiples of pi/2 through the handoff boundary.
+    for (let k = 1; k <= 50; k++) {
+      samples.push(
+        k * 0.137,
+        k * (Math.PI / 2),
+        k * (Math.PI / 2) + 1e-12,
+        k * (Math.PI / 2) - 1e-12,
+      );
+    }
+    for (const k of [
+      100, 355, 1000, 10000, 100000, 524280, 524287, 524288, 524289, 524300,
+      1000000,
+    ]) {
+      const base = k * (Math.PI / 2);
+      samples.push(base, base + 1e-9, base - 1e-9, base + 0.5);
+    }
+    for (const value of samples) {
+      const actual = operation(value),
+        expected = Math[name](value);
+      assert.ok(
+        Math.abs(actual - expected) <=
+          4 * Number.EPSILON * Math.abs(expected) + Number.MIN_VALUE,
+        `${name}(${value}): ${actual} vs ${expected}`,
+      );
+      assert.ok(
+        Object.is(operation(-value), name === "cos" ? actual : -actual),
+      );
+    }
+  });
 }
