@@ -152,6 +152,13 @@ interface StringChainLeaf {
   readonly leaf: Expression;
   readonly parent: Expression;
 }
+/** A piece passed to emitStringPieces with static literal/encoding facts. */
+interface StringPiece {
+  readonly slot: number;
+  readonly literal?: string;
+  readonly oneByte: boolean;
+  readonly twoByte: boolean;
+}
 export const nativeClosureCallMessage: string =
   "Calling a native closure through Function requires the slice 2b closure view";
 
@@ -2952,79 +2959,261 @@ export function lowerFunction(
     });
     return id;
   }
-  /** The concatenation of the string slots `pieces` (at least one), in
-   * order: the piece itself, one string-concat for two, and for more one
-   * allocation of the total length and canonical kind (two-byte when some
-   * piece is) with each piece written in turn, as join lowers, instead of
-   * an allocation and a copy of the whole prefix per concatenation. */
+  /** Whether `text` contains a UTF-16 code unit above 0xFF. */
+  function literalHasTwoByte(text: string): boolean {
+    for (let i = 0; i < text.length; i++)
+      if (text.charCodeAt(i) > 0xff) return true;
+    return false;
+  }
+  function stringLiteralPiece(text: string): StringPiece {
+    const wide = literalHasTwoByte(text);
+    return { slot: -1, literal: text, oneByte: !wide, twoByte: wide };
+  }
+  /** Compile-time string text for a pure literal expression, or undefined. */
+  function stringLiteralValue(node: Expression): string | undefined {
+    let current = node;
+    while (current.kind === "group" || current.kind === "satisfies")
+      current = current.expression;
+    if (current.kind === "string") return current.value;
+    if (current.kind === "boolean") return current.value ? "true" : "false";
+    return undefined;
+  }
+  /** Whether converting `node` to a string always produces 1-byte code units. */
+  function isStaticallyOneByteString(node: Expression): boolean {
+    let current = node;
+    while (current.kind === "group" || current.kind === "satisfies")
+      current = current.expression;
+    if (current.kind === "string") return !literalHasTwoByte(current.value);
+    const facts = info(current);
+    if (facts.undefinedValue === true || facts.nullValue === true) return true;
+    if (facts.speculative !== true && facts.bigint !== true) {
+      const type = scalarType(current);
+      if (type === "number" || type === "boolean") return true;
+    }
+    if (current.kind === "call" && facts.builtin === "string-convert") {
+      const argument = current.arguments[0];
+      if (argument === undefined) return true;
+      if (argument.kind !== "spread")
+        return isStaticallyOneByteString(argument);
+    }
+    return false;
+  }
+  function lowerStringPiece(leaf: Expression, parent: Expression): StringPiece {
+    const literal = stringLiteralValue(leaf);
+    if (literal !== undefined) return stringLiteralPiece(literal);
+    const oneByte = isStaticallyOneByteString(leaf);
+    return {
+      slot: stringOperand(value(leaf), parent),
+      oneByte,
+      twoByte: false,
+    };
+  }
+  /** The concatenation of `pieces` (at least one), in order: the piece
+   * itself, one string-concat for two, and for more one allocation of the
+   * total length and canonical kind (two-byte when some piece is) with each
+   * piece written in turn, as join lowers, instead of an allocation and a
+   * copy of the whole prefix per concatenation. Static literal lengths and
+   * 1-byte/2-byte encoding facts fold at compile time. */
   function emitStringPieces(
-    pieces: readonly number[],
+    pieces: readonly StringPiece[],
     node: Expression,
   ): number {
-    const first = pieces[0],
-      second = pieces[1];
-    if (first === undefined) throw "string pieces invariant";
-    if (second === undefined) return first;
-    if (pieces.length === 2)
-      return save(emitStringConcat(first, second, node), "string", node);
-    const lengths: number[] = [];
-    let total = -1,
-      wide = -1;
+    function emitLiteral(text: string): number {
+      const id = nextValue++;
+      emit({
+        kind: "string-literal",
+        id,
+        value: text,
+        start: node.start,
+        end: node.end,
+      });
+      return id;
+    }
+    function materialize(piece: StringPiece): number {
+      const literal = piece.literal;
+      if (literal !== undefined)
+        return save(emitLiteral(literal), "string", node);
+      return piece.slot;
+    }
+    const active: StringPiece[] = [];
     for (const piece of pieces) {
       if (piece === undefined) throw "string piece invariant";
+      if (piece.literal === "") continue;
+      active.push(piece);
+    }
+    const first = active[0];
+    if (first === undefined) return save(emitLiteral(""), "string", node);
+    const second = active[1];
+    if (second === undefined) return materialize(first);
+    if (active.length === 2) {
+      const firstLit = first.literal,
+        secondLit = second.literal;
+      if (firstLit !== undefined && secondLit !== undefined)
+        return save(emitLiteral(firstLit + secondLit), "string", node);
+      return save(
+        emitStringConcat(materialize(first), materialize(second), node),
+        "string",
+        node,
+      );
+    }
+    let allLiterals = true;
+    for (const piece of active) {
+      if (piece === undefined) throw "string piece invariant";
+      if (piece.literal === undefined) {
+        allLiterals = false;
+        break;
+      }
+    }
+    if (allLiterals) {
+      let combined = "";
+      for (const piece of active) {
+        if (piece === undefined || piece.literal === undefined)
+          throw "string piece invariant";
+        combined += piece.literal;
+      }
+      return save(emitLiteral(combined), "string", node);
+    }
+    const lengths: number[] = [];
+    let constantLength = 0,
+      total = -1,
+      knownTwoByte = false;
+    const unknownWidth: number[] = [];
+    for (const piece of active) {
+      if (piece === undefined) throw "string piece invariant";
+      if (piece.twoByte) knownTwoByte = true;
+      const literal = piece.literal;
+      if (literal !== undefined) {
+        constantLength += literal.length;
+        lengths.push(-1);
+        continue;
+      }
       const lengthId = nextValue++;
       emit({
         kind: "string-length",
         id: lengthId,
-        string: load(piece, node),
+        string: load(piece.slot, node),
         start: node.start,
         end: node.end,
       });
       const length = save(lengthId, "number", node);
       lengths.push(length);
-      const twoByteId = nextValue++;
+      total = total < 0 ? length : binarySlot("+", total, length, node);
+      if (!piece.oneByte) unknownWidth.push(piece.slot);
+    }
+    if (constantLength > 0) {
+      const constantSlot = numberSlot(constantLength, node);
+      total =
+        total < 0 ? constantSlot : binarySlot("+", total, constantSlot, node);
+    }
+    let twoByteValue: number;
+    if (knownTwoByte || unknownWidth.length === 0) {
+      twoByteValue = nextValue++;
       emit({
-        kind: "string-two-byte",
-        id: twoByteId,
-        string: load(piece, node),
+        kind: "constant",
+        id: twoByteValue,
+        value: knownTwoByte,
         start: node.start,
         end: node.end,
       });
-      const twoByte = unarySlot(
-        "boolean-number",
-        save(twoByteId, "boolean", node),
-        "number",
+    } else if (unknownWidth.length === 1) {
+      const only = unknownWidth[0];
+      if (only === undefined) throw "string piece invariant";
+      twoByteValue = nextValue++;
+      emit({
+        kind: "string-two-byte",
+        id: twoByteValue,
+        string: load(only, node),
+        start: node.start,
+        end: node.end,
+      });
+    } else {
+      let wide = -1;
+      for (const slot of unknownWidth) {
+        if (slot === undefined) throw "string piece invariant";
+        const twoByteId = nextValue++;
+        emit({
+          kind: "string-two-byte",
+          id: twoByteId,
+          string: load(slot, node),
+          start: node.start,
+          end: node.end,
+        });
+        const flag = unarySlot(
+          "boolean-number",
+          save(twoByteId, "boolean", node),
+          "number",
+          node,
+        );
+        wide = wide < 0 ? flag : binarySlot("|", wide, flag, node);
+      }
+      twoByteValue = load(
+        binarySlot("!==", wide, numberSlot(0, node), node),
         node,
       );
-      total = total < 0 ? length : binarySlot("+", total, length, node);
-      wide = wide < 0 ? twoByte : binarySlot("|", wide, twoByte, node);
     }
     const allocated = nextValue++;
     emit({
       kind: "string-allocate",
       id: allocated,
       length: load(total, node),
-      twoByte: load(binarySlot("!==", wide, numberSlot(0, node), node), node),
+      twoByte: twoByteValue,
       start: node.start,
       end: node.end,
     });
     const result = save(allocated, "string", node);
-    let offset = numberSlot(0, node);
-    for (let index = 0; index < pieces.length; index++) {
-      const piece = pieces[index],
+    let offsetSlot = -1,
+      pendingConstant = 0;
+    for (let index = 0; index < active.length; index++) {
+      const piece = active[index],
         length = lengths[index];
       if (piece === undefined || length === undefined)
         throw "string piece invariant";
+      let offsetValue: number;
+      if (offsetSlot < 0) {
+        offsetValue = nextValue++;
+        emit({
+          kind: "constant",
+          id: offsetValue,
+          value: pendingConstant,
+          start: node.start,
+          end: node.end,
+        });
+      } else {
+        if (pendingConstant > 0) {
+          offsetSlot = binarySlot(
+            "+",
+            offsetSlot,
+            numberSlot(pendingConstant, node),
+            node,
+          );
+          pendingConstant = 0;
+        }
+        offsetValue = load(offsetSlot, node);
+      }
+      const literal = piece.literal;
+      const sourceValue =
+        literal !== undefined ? emitLiteral(literal) : load(piece.slot, node);
       emit({
         kind: "string-write",
         target: load(result, node),
-        offset: load(offset, node),
-        source: load(piece, node),
+        offset: offsetValue,
+        source: sourceValue,
         start: node.start,
         end: node.end,
       });
-      if (index + 1 < pieces.length)
-        offset = binarySlot("+", offset, length, node);
+      if (index + 1 < active.length) {
+        if (literal !== undefined) pendingConstant += literal.length;
+        else if (offsetSlot < 0 && pendingConstant === 0) offsetSlot = length;
+        else if (offsetSlot < 0) {
+          offsetSlot = binarySlot(
+            "+",
+            numberSlot(pendingConstant, node),
+            length,
+            node,
+          );
+          pendingConstant = 0;
+        } else offsetSlot = binarySlot("+", offsetSlot, length, node);
+      }
     }
     return result;
   }
@@ -3165,9 +3354,9 @@ export function lowerFunction(
       tail.map((entry) => entry.leaf),
     );
     let first = late ? -1 : stringOperand(value(leaf), head.parent);
-    const rest: number[] = [];
+    const rest: StringPiece[] = [];
     for (const entry of tail)
-      rest.push(stringOperand(value(entry.leaf), entry.parent));
+      rest.push(lowerStringPiece(entry.leaf, entry.parent));
     if (late) first = stringOperand(value(leaf), head.parent);
     return save(
       emitStringConcat(first, emitStringPieces(rest, node), node),
@@ -10038,10 +10227,10 @@ export function lowerFunction(
         ) {
           const leaves: StringChainLeaf[] = [];
           stringChainLeaves(node, leaves);
-          const pieces: number[] = [];
+          const pieces: StringPiece[] = [];
           for (const entry of leaves) {
             if (entry === undefined) throw "string chain leaf invariant";
-            pieces.push(stringOperand(value(entry.leaf), entry.parent));
+            pieces.push(lowerStringPiece(entry.leaf, entry.parent));
           }
           return emitStringPieces(pieces, node);
         }
@@ -10647,22 +10836,25 @@ export function lowerFunction(
         }
         // Empty literal parts add nothing; the pieces are concatenated at
         // once (emitStringPieces).
-        const pieces: number[] = [];
-        if (first.length > 0) pieces.push(part(first));
+        const pieces: StringPiece[] = [];
+        if (first.length > 0) pieces.push(stringLiteralPiece(first));
         for (let i = 0; i < node.substitutions.length; i++) {
           const substitution = node.substitutions[i],
             tail = node.parts[i + 1];
           if (substitution === undefined || tail === undefined)
             throw "template substitution invariant";
           const input = value(substitution);
-          pieces.push(
-            info(substitution).undefinedValue
-              ? part("undefined")
-              : info(substitution).nullValue
-                ? part("null")
-                : stringOperand(input, node),
-          );
-          if (tail.length > 0) pieces.push(part(tail));
+          if (info(substitution).undefinedValue)
+            pieces.push(stringLiteralPiece("undefined"));
+          else if (info(substitution).nullValue)
+            pieces.push(stringLiteralPiece("null"));
+          else
+            pieces.push({
+              slot: stringOperand(input, node),
+              oneByte: isStaticallyOneByteString(substitution),
+              twoByte: false,
+            });
+          if (tail.length > 0) pieces.push(stringLiteralPiece(tail));
         }
         return pieces.length === 0 ? part("") : emitStringPieces(pieces, node);
       }

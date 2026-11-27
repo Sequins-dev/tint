@@ -911,3 +911,187 @@ test("skips irreducible loops so hoisted slots are never read uninitialized", ()
   assert.equal(result.hoisted, 0);
   assert.deepEqual(verify({ functions: [result.fn] }), { ok: true });
 });
+
+test("invariant string-two-byte moves to the preheader", () => {
+  const fn = hoist(
+    loop(
+      [
+        { kind: "load", id: 20, slot: 4, ...span },
+        { kind: "string-two-byte", id: 21, string: 20, ...span },
+        {
+          kind: "unary",
+          id: 22,
+          operator: "boolean-number",
+          operand: 21,
+          ...span,
+        },
+        { kind: "load", id: 23, slot: 3, ...span },
+        { kind: "binary", id: 24, operator: "+", left: 23, right: 22, ...span },
+        { kind: "store", slot: 3, value: 24, ...span },
+      ],
+      { slots: ["string"] },
+    ),
+  );
+  const preheader = fn.blocks.find((block) => block.id === 0);
+  const body = fn.blocks.find((block) => block.id === 2);
+  assert.ok(kinds(preheader).includes("string-two-byte"));
+  assert.ok(!kinds(body).includes("string-two-byte"));
+});
+
+test("loop-invariant number-string-cached diamond hoists to the preheader", () => {
+  function numberFormatter(withCache: boolean): FunctionIR {
+    const ops: Instruction[] = [
+      { kind: "string-literal", id: 0, value: "7", ...span },
+    ];
+    if (withCache) {
+      ops.push(
+        { kind: "load", id: 1, slot: 0, ...span },
+        { kind: "number-string-cache", value: 1, string: 0, ...span },
+      );
+    }
+    return {
+      id: 1,
+      name: "formatNumber",
+      exported: false,
+      parameters: [0],
+      slots: ["number"],
+      returnType: "string",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: ops,
+          terminator: { kind: "return", value: 0, ...span },
+        },
+      ],
+    };
+  }
+  function makeDiamondModule(withCache: boolean): ModuleIR {
+    // Slots: 0 n, 1 k (invariant), 2 i, 3 total, 4 formatted string, 5 argCopy
+    const fn: FunctionIR = {
+      id: 0,
+      name: "run",
+      exported: true,
+      parameters: [0, 1],
+      slots: ["number", "number", "number", "number", "string", "number"],
+      returnType: "number",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "constant", id: 0, value: 0, ...span },
+            { kind: "store", slot: 2, value: 0, ...span },
+            { kind: "store", slot: 3, value: 0, ...span },
+          ],
+          terminator: { kind: "jump", target: 1, ...span },
+        },
+        {
+          id: 1,
+          instructions: [
+            { kind: "load", id: 10, slot: 2, ...span },
+            { kind: "load", id: 11, slot: 0, ...span },
+            {
+              kind: "binary",
+              id: 12,
+              operator: "<",
+              left: 10,
+              right: 11,
+              ...span,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 12,
+            consequent: 2,
+            alternate: 5,
+            ...span,
+          },
+        },
+        {
+          id: 2,
+          instructions: [
+            { kind: "load", id: 20, slot: 1, ...span },
+            { kind: "store", slot: 5, value: 20, ...span },
+            { kind: "number-string-cached", id: 21, value: 20, ...span },
+            { kind: "store", slot: 4, value: 21, ...span },
+            { kind: "string-length", id: 22, string: 21, ...span },
+            { kind: "constant", id: 23, value: 0, ...span },
+            {
+              kind: "binary",
+              id: 24,
+              operator: "===",
+              left: 22,
+              right: 23,
+              ...span,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 24,
+            consequent: 3,
+            alternate: 4,
+            ...span,
+          },
+        },
+        {
+          id: 3,
+          instructions: [
+            { kind: "load", id: 30, slot: 5, ...span },
+            { kind: "call", id: 31, target: 1, arguments: [30], ...span },
+            { kind: "store", slot: 4, value: 31, ...span },
+          ],
+          terminator: { kind: "jump", target: 4, ...span },
+        },
+        {
+          id: 4,
+          instructions: [
+            { kind: "load", id: 40, slot: 4, ...span },
+            { kind: "string-length", id: 41, string: 40, ...span },
+            { kind: "load", id: 42, slot: 3, ...span },
+            {
+              kind: "binary",
+              id: 43,
+              operator: "+",
+              left: 42,
+              right: 41,
+              ...span,
+            },
+            { kind: "store", slot: 3, value: 43, ...span },
+            { kind: "load", id: 44, slot: 2, ...span },
+            { kind: "constant", id: 45, value: 1, ...span },
+            {
+              kind: "binary",
+              id: 46,
+              operator: "+",
+              left: 44,
+              right: 45,
+              ...span,
+            },
+            { kind: "store", slot: 2, value: 46, ...span },
+          ],
+          terminator: { kind: "jump", target: 1, ...span },
+        },
+        {
+          id: 5,
+          instructions: [{ kind: "load", id: 50, slot: 3, ...span }],
+          terminator: { kind: "return", value: 50, ...span },
+        },
+      ],
+    };
+    return { functions: [fn, numberFormatter(withCache)] };
+  }
+  const hoistedFn = hoist(makeDiamondModule(true));
+  const preheader = hoistedFn.blocks.find((block) => block.id === 0);
+  const body = hoistedFn.blocks.find((block) => block.id === 2);
+  assert.ok(kinds(preheader).includes("number-string-cached"));
+  assert.ok(!kinds(body).includes("number-string-cached"));
+  assert.equal(body?.terminator.kind, "jump");
+  // Without `number-string-cache`, an unknown callee stays inside the loop.
+  const keptFn = hoist(makeDiamondModule(false));
+  assert.ok(
+    kinds(keptFn.blocks.find((block) => block.id === 2)).includes(
+      "number-string-cached",
+    ),
+  );
+});

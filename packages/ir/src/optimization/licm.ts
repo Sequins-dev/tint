@@ -46,6 +46,8 @@ function pureType(op: Instruction): ScalarType | undefined {
     case "array-length":
     case "string-length":
       return "number";
+    case "string-two-byte":
+      return "boolean";
     case "function-environment":
       return "optional-reference";
     case "reference-value":
@@ -204,6 +206,7 @@ function hoistRound(
   // next round (they would see stale block contents).
   const touched = new Set<number>();
   let recordProof: RecordProof | undefined;
+  const formatterCache = new Map<number, boolean>();
   for (const loop of forest.loops) {
     if (loop === undefined) throw "licm loop invariant";
     let stale = false;
@@ -293,6 +296,7 @@ function hoistRound(
       loop,
       preheader,
       byId,
+      predecessors,
       slots,
       module,
       fn,
@@ -300,6 +304,7 @@ function hoistRound(
       () => nextBlock++,
       budget - visited,
       proofs,
+      formatterCache,
       remarks,
     );
     if (motion === undefined) return undefined;
@@ -400,6 +405,7 @@ function mustReachBeforeExit(
   loop: NaturalLoop,
   targetId: number,
   byId: ReadonlyMap<number, Block>,
+  allowThrow: boolean = false,
 ): boolean {
   if (targetId === loop.header) return true;
   const header = byId.get(loop.header);
@@ -429,8 +435,9 @@ function mustReachBeforeExit(
     if (seen === 1) return false;
     const block = byId.get(top);
     if (block === undefined) return false;
-    for (const op of block.instructions)
-      if (op !== undefined && instructionMayThrow(op)) return false;
+    if (!allowThrow)
+      for (const op of block.instructions)
+        if (op !== undefined && instructionMayThrow(op)) return false;
     const successors = blockSuccessors(block);
     if (successors.length === 0) return false;
     state.set(top, 1);
@@ -536,10 +543,219 @@ function recordProofs(fn: FunctionIR, readHoists: boolean): RecordProof {
   return { provenOrigins, unknownProven, readHoists };
 }
 
+/** Whether `fn` directly contains a `number-string-cache` instruction. */
+function containsNumberStringCache(fn: FunctionIR): boolean {
+  for (const block of fn.blocks) {
+    if (block === undefined) continue;
+    for (const op of block.instructions)
+      if (op !== undefined && op.kind === "number-string-cache") return true;
+  }
+  return false;
+}
+/** Whether `target` is the runtime's pure number-to-string formatter: takes
+ * one number, returns a string, and populates the internal number-string cache
+ * (`number-string-cache`, directly or through its 1-hop cache wrapper), with
+ * no user-visible side effects. */
+function isNumberFormatter(
+  module: ModuleIR,
+  target: number,
+  cache: Map<number, boolean>,
+): boolean {
+  const cached = cache.get(target);
+  if (cached !== undefined) return cached;
+  let result = false;
+  const callee = module.functions.find(
+    (item) => item !== undefined && item.id === target,
+  );
+  if (
+    callee !== undefined &&
+    callee.import !== true &&
+    callee.parameters.length === 1 &&
+    callee.returnType === "string"
+  ) {
+    const param = callee.parameters[0];
+    if (param !== undefined && callee.slots[param] === "number") {
+      if (containsNumberStringCache(callee)) {
+        result = true;
+      } else {
+        for (const block of callee.blocks) {
+          if (block === undefined) continue;
+          for (const op of block.instructions) {
+            if (op === undefined || op.kind !== "call") continue;
+            const helper = module.functions.find(
+              (item) => item !== undefined && item.id === op.target,
+            );
+            if (
+              helper !== undefined &&
+              helper.import !== true &&
+              containsNumberStringCache(helper)
+            ) {
+              result = true;
+              break;
+            }
+          }
+          if (result) break;
+        }
+      }
+    }
+  }
+  cache.set(target, result);
+  return result;
+}
+/** A loop-invariant `number-string-cached` lookup plus its miss-call block
+ * (`stringOperand` lowering for numbers) that can move as one diamond to the
+ * loop preheader. */
+interface NumberStringDiamond {
+  readonly numId: number;
+  readonly cachedIndex: number;
+  readonly storeIndex: number;
+  readonly lengthIndex: number;
+  readonly condIndex: number;
+  readonly resultSlot: number;
+  readonly target: number;
+  readonly missBlockId: number;
+  readonly doneBlockId: number;
+  readonly start: number;
+  readonly end: number;
+}
+function matchNumberStringDiamond(
+  block: Block,
+  term: Terminator,
+  loop: NaturalLoop,
+  byId: ReadonlyMap<number, Block>,
+  predecessors: ReadonlyMap<number, readonly number[]>,
+  invariant: ReadonlyMap<number, Instruction>,
+  module: ModuleIR,
+  formatterCache: Map<number, boolean>,
+): NumberStringDiamond | undefined {
+  if (block.exception !== undefined || term.kind !== "branch") return undefined;
+  const missId = term.consequent,
+    doneId = term.alternate;
+  if (missId === loop.header || !loop.body.has(missId)) return undefined;
+  const missPreds = predecessors.get(missId);
+  if (missPreds === undefined || missPreds.length !== 1) return undefined;
+  const missBlock = byId.get(missId);
+  if (
+    missBlock === undefined ||
+    missBlock.exception !== undefined ||
+    missBlock.instructions.length !== 3
+  )
+    return undefined;
+  const missTerm = missBlock.terminator;
+  if (missTerm.kind !== "jump" || missTerm.target !== doneId) return undefined;
+  const m0 = missBlock.instructions[0],
+    m1 = missBlock.instructions[1],
+    m2 = missBlock.instructions[2];
+  if (
+    m0 === undefined ||
+    m0.kind !== "load" ||
+    m1 === undefined ||
+    m1.kind !== "call" ||
+    m1.id === undefined ||
+    m1.arguments.length !== 1 ||
+    m1.arguments[0] !== m0.id ||
+    m2 === undefined ||
+    m2.kind !== "store" ||
+    m2.value !== m1.id
+  )
+    return undefined;
+  if (!isNumberFormatter(module, m1.target, formatterCache)) return undefined;
+  const argSlot = m0.slot,
+    resultSlot = m2.slot;
+  const ops = block.instructions;
+  const uses = new Map<number, number>();
+  const countUse = (value: number): void => {
+    uses.set(value, (uses.get(value) ?? 0) + 1);
+  };
+  for (const op of ops)
+    if (op !== undefined) visitInstructionOperands(op, countUse);
+  visitTerminatorOperands(term, countUse);
+  let condIndex = -1;
+  for (let i = 0; i < ops.length; i++) {
+    const op = ops[i];
+    if (op !== undefined && instructionResult(op) === term.condition)
+      condIndex = i;
+  }
+  if (condIndex < 0) return undefined;
+  const condOp = ops[condIndex];
+  if (
+    condOp === undefined ||
+    condOp.kind !== "binary" ||
+    condOp.operator !== "===" ||
+    uses.get(condOp.id) !== 1
+  )
+    return undefined;
+  let lengthIndex = -1,
+    zeroIndex = -1;
+  for (let i = 0; i < condIndex; i++) {
+    const op = ops[i];
+    if (op === undefined) continue;
+    const id = instructionResult(op);
+    if (id === condOp.left || id === condOp.right) {
+      if (op.kind === "string-length") lengthIndex = i;
+      else if (op.kind === "constant" && op.value === 0) zeroIndex = i;
+    }
+  }
+  if (lengthIndex < 0 || zeroIndex < 0) return undefined;
+  const lengthOp = ops[lengthIndex];
+  if (
+    lengthOp === undefined ||
+    lengthOp.kind !== "string-length" ||
+    uses.get(lengthOp.id) !== 1
+  )
+    return undefined;
+  const cachedId = lengthOp.string;
+  let cachedIndex = -1,
+    storeIndex = -1;
+  for (let i = 0; i < ops.length; i++) {
+    const op = ops[i];
+    if (op === undefined) continue;
+    if (op.kind === "number-string-cached" && op.id === cachedId)
+      cachedIndex = i;
+    else if (op.kind === "store" && op.slot === resultSlot) {
+      if (op.value === cachedId && i > cachedIndex) storeIndex = i;
+      else if (storeIndex >= 0) return undefined;
+    }
+  }
+  if (cachedIndex < 0 || storeIndex < 0 || uses.get(cachedId) !== 2)
+    return undefined;
+  const cachedOp = ops[cachedIndex];
+  if (cachedOp === undefined || cachedOp.kind !== "number-string-cached")
+    return undefined;
+  const numId = cachedOp.value;
+  const numDef = invariant.get(numId);
+  if (numDef === undefined) return undefined;
+  // Confirm `missBlock`'s `argSlot` holds the exact same invariant number.
+  let argMatches = numDef.kind === "load" && numDef.slot === argSlot;
+  if (!argMatches) {
+    let lastStoreValue: number | undefined;
+    for (const op of ops)
+      if (op !== undefined && op.kind === "store" && op.slot === argSlot)
+        lastStoreValue = op.value;
+    argMatches = lastStoreValue === numId;
+  }
+  if (!argMatches) return undefined;
+  if (!mustReachBeforeExit(loop, block.id, byId, true)) return undefined;
+  return {
+    numId,
+    cachedIndex,
+    storeIndex,
+    lengthIndex,
+    condIndex,
+    resultSlot,
+    target: m1.target,
+    missBlockId: missId,
+    doneBlockId: doneId,
+    start: cachedOp.start,
+    end: cachedOp.end,
+  };
+}
+
 function hoistLoop(
   loop: NaturalLoop,
   preheader: Block,
   byId: ReadonlyMap<number, Block>,
+  predecessors: ReadonlyMap<number, readonly number[]>,
   slots: ScalarType[],
   module: ModuleIR,
   fn: FunctionIR,
@@ -547,6 +763,7 @@ function hoistLoop(
   newBlock: () => number,
   budget: number,
   proofs: RecordProof,
+  formatterCache: Map<number, boolean>,
   remarks: RemarkSink | undefined,
 ): LoopMotion | undefined {
   let visited = 0;
@@ -556,8 +773,10 @@ function hoistLoop(
   let preheaderTerminator: Terminator = preheader.terminator;
   const added: Block[] = [];
   const blocks: Block[] = [];
+  const repurposed = new Map<number, Block>();
   let hoisted = 0,
-    readHoisted = false;
+    readHoisted = false,
+    preheaderSplit = false;
   const { provenOrigins, unknownProven, readHoists } = proofs;
   let lengthsChange = false;
   for (const id of loop.body) {
@@ -567,6 +786,7 @@ function hoistLoop(
       if (op !== undefined && changesArrayLength(op)) lengthsChange = true;
   }
   for (const id of loop.body) {
+    if (repurposed.has(id)) continue;
     const block = byId.get(id);
     if (block === undefined) throw "licm block invariant";
     // Invariant values of this block: original id -> definition.
@@ -611,6 +831,7 @@ function hoistLoop(
         failure.terminator.kind === "trap";
       const eligible =
         readHoists &&
+        !preheaderSplit &&
         !readHoisted &&
         !unknownProven &&
         objectOrigin !== undefined &&
@@ -652,17 +873,39 @@ function hoistLoop(
             ),
         });
     }
+    const diamond =
+      !readHoist && !preheaderSplit
+        ? matchNumberStringDiamond(
+            block,
+            term,
+            loop,
+            byId,
+            predecessors,
+            invariant,
+            module,
+            formatterCache,
+          )
+        : undefined;
     // Uses outside the invariant set: roots to carry in slots.
     const uses = new Set<number>();
-    for (const op of block.instructions) {
+    for (let i = 0; i < block.instructions.length; i++) {
+      const op = block.instructions[i];
       if (op === undefined) throw "licm instruction invariant";
+      if (
+        diamond !== undefined &&
+        (i === diamond.cachedIndex ||
+          i === diamond.storeIndex ||
+          i === diamond.lengthIndex ||
+          i === diamond.condIndex)
+      )
+        continue;
       const result = instructionResult(op);
       if (result !== undefined && invariant.has(result)) continue;
       visitInstructionOperands(op, (operand: number): void => {
         uses.add(operand);
       });
     }
-    if (!readHoist)
+    if (!readHoist && diamond === undefined)
       visitTerminatorOperands(term, (operand: number): void => {
         uses.add(operand);
       });
@@ -679,7 +922,7 @@ function hoistLoop(
       )
         roots.push(value);
     }
-    if (roots.length === 0 && !readHoist) {
+    if (roots.length === 0 && !readHoist && diamond === undefined) {
       blocks.push(block);
       continue;
     }
@@ -739,6 +982,7 @@ function hoistLoop(
     let readSlot: number | undefined;
     if (readHoist && term.kind === "record") {
       readHoisted = true;
+      preheaderSplit = true;
       // The read's destination type, carried in a fresh slot.
       const type = fn.slots[term.slot];
       if (type === undefined) throw "licm read slot invariant";
@@ -780,6 +1024,137 @@ function hoistLoop(
             String(loop.header),
         });
     }
+    let hoistedStringSlot: number | undefined;
+    if (diamond !== undefined) {
+      preheaderSplit = true;
+      hoistedStringSlot = slots.length;
+      slots.push("string");
+      const numValue = clone(diamond.numId);
+      const numDef = invariant.get(diamond.numId);
+      let preheaderArgSlot: number;
+      if (numDef !== undefined && numDef.kind === "load") {
+        preheaderArgSlot = numDef.slot;
+      } else {
+        preheaderArgSlot = slots.length;
+        slots.push("number");
+        preheaderCode.push({
+          kind: "store",
+          slot: preheaderArgSlot,
+          value: numValue,
+          start: diamond.start,
+          end: diamond.end,
+        });
+      }
+      const cached = newValue(),
+        length = newValue(),
+        zero = newValue(),
+        missCond = newValue();
+      preheaderCode.push(
+        {
+          kind: "number-string-cached",
+          id: cached,
+          value: numValue,
+          start: diamond.start,
+          end: diamond.end,
+        },
+        {
+          kind: "store",
+          slot: hoistedStringSlot,
+          value: cached,
+          start: diamond.start,
+          end: diamond.end,
+        },
+        {
+          kind: "string-length",
+          id: length,
+          string: cached,
+          start: diamond.start,
+          end: diamond.end,
+        },
+        {
+          kind: "constant",
+          id: zero,
+          value: 0,
+          start: diamond.start,
+          end: diamond.end,
+        },
+        {
+          kind: "binary",
+          id: missCond,
+          operator: "===",
+          left: length,
+          right: zero,
+          start: diamond.start,
+          end: diamond.end,
+        },
+      );
+      // Reuse the old in-loop miss block's ID for the preheader miss block so
+      // block IDs remain dense without renumbering.
+      const preheaderMiss = diamond.missBlockId,
+        continuation = newBlock();
+      const missArg = newValue(),
+        missFormatted = newValue();
+      repurposed.set(preheaderMiss, {
+        id: preheaderMiss,
+        instructions: [
+          {
+            kind: "load",
+            id: missArg,
+            slot: preheaderArgSlot,
+            start: diamond.start,
+            end: diamond.end,
+          },
+          {
+            kind: "call",
+            id: missFormatted,
+            target: diamond.target,
+            arguments: [missArg],
+            start: diamond.start,
+            end: diamond.end,
+          },
+          {
+            kind: "store",
+            slot: hoistedStringSlot,
+            value: missFormatted,
+            start: diamond.start,
+            end: diamond.end,
+          },
+        ],
+        terminator: {
+          kind: "jump",
+          target: continuation,
+          start: diamond.start,
+          end: diamond.end,
+        },
+      });
+      added.push({
+        id: continuation,
+        instructions: [],
+        terminator: preheaderTerminator,
+      });
+      preheaderTerminator = {
+        kind: "branch",
+        condition: missCond,
+        consequent: preheaderMiss,
+        alternate: continuation,
+        start: diamond.start,
+        end: diamond.end,
+      };
+      hoisted++;
+      if (remarks !== undefined)
+        remarks({
+          pass: "hoist-loop-invariants",
+          outcome: "applied",
+          function: fn.name,
+          start: diamond.start,
+          end: diamond.end,
+          message:
+            "hoisted number-string-cached conversion out of loop b" +
+            String(loop.header) +
+            " to preheader b" +
+            String(preheader.id),
+        });
+    }
     // The block: roots become loads of their slots; other invariant pure
     // operations they fed are dropped (their loads and constants are left
     // to dead-scalar cleanup); a hoisted read becomes a slot copy.
@@ -787,7 +1162,7 @@ function hoistLoop(
     // non-invariant operations, and invariant ones whose values a kept
     // operation or the terminator uses. Roots become loads of their slots.
     const needed = new Set<number>();
-    if (!readHoist)
+    if (!readHoist && diamond === undefined)
       visitTerminatorOperands(term, (operand) => {
         needed.add(operand);
       });
@@ -795,6 +1170,19 @@ function hoistLoop(
     for (let i = block.instructions.length - 1; i >= 0; i--) {
       const op = block.instructions[i];
       if (op === undefined) throw "licm instruction invariant";
+      if (
+        diamond !== undefined &&
+        (i === diamond.cachedIndex ||
+          i === diamond.lengthIndex ||
+          i === diamond.condIndex)
+      ) {
+        keep[i] = false;
+        continue;
+      }
+      if (diamond !== undefined && i === diamond.storeIndex) {
+        keep[i] = true;
+        continue;
+      }
       const result = instructionResult(op);
       const isRoot = result !== undefined && carried.has(result);
       const droppable =
@@ -814,6 +1202,30 @@ function hoistLoop(
       const op = block.instructions[i];
       if (op === undefined) throw "licm instruction invariant";
       if (keep[i] !== true) continue;
+      if (
+        diamond !== undefined &&
+        hoistedStringSlot !== undefined &&
+        i === diamond.storeIndex
+      ) {
+        const loaded = newValue();
+        instructions.push(
+          {
+            kind: "load",
+            id: loaded,
+            slot: hoistedStringSlot,
+            start: op.start,
+            end: op.end,
+          },
+          {
+            kind: "store",
+            slot: diamond.resultSlot,
+            value: loaded,
+            start: op.start,
+            end: op.end,
+          },
+        );
+        continue;
+      }
       const result = instructionResult(op);
       const slot = result === undefined ? undefined : carried.get(result);
       if (result !== undefined && slot !== undefined) {
@@ -851,10 +1263,18 @@ function hoistLoop(
         start: term.start,
         end: term.end,
       };
+    } else if (diamond !== undefined) {
+      terminator = {
+        kind: "jump",
+        target: diamond.doneBlockId,
+        start: term.start,
+        end: term.end,
+      };
     }
     blocks.push({ ...block, instructions, terminator });
   }
   if (hoisted === 0) return { blocks: [], added: [], hoisted: 0, visited };
+  for (const [, block] of repurposed) blocks.push(block);
   const preheaderInstructions = preheader.instructions.slice();
   for (const op of preheaderCode) {
     if (op === undefined) throw "licm instruction invariant";
@@ -887,6 +1307,7 @@ function renamed(
     case "array-length":
       return { ...op, id, array: at(op.array) };
     case "string-length":
+    case "string-two-byte":
       return { ...op, id, string: at(op.string) };
     case "function-environment":
       return { ...op, id, callee: at(op.callee) };
