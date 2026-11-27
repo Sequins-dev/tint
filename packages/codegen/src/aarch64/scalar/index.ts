@@ -14893,6 +14893,8 @@ function emitModuleForms(
                           op.operator !== "ceil" &&
                           op.operator !== "trunc" &&
                           op.operator !== "sqrt" &&
+                          op.operator !== "fround" &&
+                          op.operator !== "f16round" &&
                           op.operator !== "uint32" &&
                           op.operator !== "boolean-number" &&
                           op.operator !== "is-integer"
@@ -15080,6 +15082,8 @@ function emitModuleForms(
                       (op.kind === "unary" &&
                         (op.operator === "-" ||
                           op.operator === "sqrt" ||
+                          op.operator === "fround" ||
+                          op.operator === "f16round" ||
                           op.operator === "ceil" ||
                           op.operator === "trunc") &&
                         !wantsInteger(op.id));
@@ -16159,6 +16163,8 @@ function emitModuleForms(
                 ["+", "-", "*", "/", "min", "max"].includes(op.operator)) ||
               (op.kind === "unary" &&
                 (op.operator === "sqrt" ||
+                  op.operator === "fround" ||
+                  op.operator === "f16round" ||
                   op.operator === "ceil" ||
                   op.operator === "trunc" ||
                   op.operator === "boolean-number"))
@@ -16462,6 +16468,8 @@ function emitModuleForms(
                   inst.operator === "ceil" ||
                   inst.operator === "abs" ||
                   inst.operator === "sqrt" ||
+                  inst.operator === "fround" ||
+                  inst.operator === "f16round" ||
                   inst.operator === "boolean-number"
                 );
               if (inst.kind === "binary") {
@@ -29602,17 +29610,27 @@ function emitModuleForms(
                 } else if (
                   op.operator === "ceil" ||
                   op.operator === "trunc" ||
-                  op.operator === "sqrt"
+                  op.operator === "sqrt" ||
+                  op.operator === "fround" ||
+                  op.operator === "f16round"
                 ) {
                   const operand = floatOperand(op.operand, 0),
                     target = floatTarget(op.id, 0);
-                  emit(
-                    op.operator === "sqrt"
-                      ? { op: "fsqrt", rd: target, rn: operand }
-                      : op.operator === "ceil"
-                        ? { op: "frintp", rd: target, rn: operand }
-                        : { op: "frintz", rd: target, rn: operand },
-                  );
+                  if (op.operator === "fround") {
+                    emit({ op: "fcvt-s-d", rd: target, rn: operand });
+                    emit({ op: "fcvt-d-s", rd: target, rn: target });
+                  } else if (op.operator === "f16round") {
+                    emit({ op: "fcvt-h-d", rd: target, rn: operand });
+                    emit({ op: "fcvt-d-h", rd: target, rn: target });
+                  } else {
+                    emit(
+                      op.operator === "sqrt"
+                        ? { op: "fsqrt", rd: target, rn: operand }
+                        : op.operator === "ceil"
+                          ? { op: "frintp", rd: target, rn: operand }
+                          : { op: "frintz", rd: target, rn: operand },
+                    );
+                  }
                   floatStore(target, op.id);
                 } else if (op.operator === "is-integer") {
                   const operandKind =

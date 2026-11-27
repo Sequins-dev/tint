@@ -1139,6 +1139,7 @@ function prepareCollectionPass(
       "math:mathAcosh",
       "math:mathAtanh",
       "math:mathHypot2",
+      "math:mathHypot3",
       "math:mathHypot",
       "data-view:dataViewCreate",
       "data-view:dataViewBytes",

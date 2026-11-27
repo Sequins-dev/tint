@@ -1431,8 +1431,6 @@ function missingBuiltinRuntimes(
       case "math-log10":
       case "math-log1p":
       case "math-cbrt":
-      case "math-fround":
-      case "math-f16round":
       case "math-sin":
       case "math-cos":
       case "math-tan":

@@ -49,6 +49,8 @@ function numericUnary(operator: string): boolean {
     operator === "ceil" ||
     operator === "trunc" ||
     operator === "sqrt" ||
+    operator === "fround" ||
+    operator === "f16round" ||
     operator === "uint32" ||
     operator === "boolean-number"
   );

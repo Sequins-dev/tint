@@ -194,6 +194,8 @@ export interface ExpressionInfo {
     | "is-nan"
     | "ceil"
     | "sqrt"
+    | "fround"
+    | "f16round"
     | "round"
     | "clz32"
     | "trunc"
