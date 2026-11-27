@@ -2311,6 +2311,9 @@ function lowerEntries(
                 "projectNativeSharedArrayBuffer",
               ),
               stringConstructor: dynamicAliases.get("stringConstructor"),
+              bigIntFromString: dynamicAliases.get("bigIntFromStringOrThrow"),
+              jsonParse: dynamicAliases.get("jsonParse"),
+              jsonStringify: dynamicAliases.get("jsonStringify"),
             };
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
@@ -3517,6 +3520,29 @@ function lowerEntries(
                   )
                     callee = numberFormatter();
                 }
+                break;
+              }
+              if (intrinsic === "bigint-from-string") {
+                if (bigints === undefined)
+                  fail("BigInt conversion requires the bigint runtime");
+                if (dynamicObjects?.bigIntFromString === undefined)
+                  fail("BigInt(string) requires the program realm");
+                builtin = "bigint-from-string";
+                exprArguments(node.arguments);
+                break;
+              }
+              if (intrinsic === "json-parse") {
+                if (dynamicObjects?.jsonParse === undefined)
+                  fail("JSON.parse requires the program realm");
+                builtin = "json-parse";
+                exprArguments(node.arguments);
+                break;
+              }
+              if (intrinsic === "json-stringify") {
+                if (dynamicObjects?.jsonStringify === undefined)
+                  fail("JSON.stringify requires the program realm");
+                builtin = "json-stringify";
+                exprArguments(node.arguments);
                 break;
               }
               if (

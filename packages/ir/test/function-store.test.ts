@@ -1104,6 +1104,41 @@ test("packed functions round-trip every instruction kind and optional field", ()
   );
 });
 
+test("packed functions preserve every NativeErrorKind in error-new and error-is", () => {
+  const errorKinds = [
+    "TypeError",
+    "RangeError",
+    "Error",
+    "ReferenceError",
+  ] as const;
+  const fn: FunctionIR = {
+    ...minimal(9),
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          ...errorKinds.map((error, index) => ({
+            kind: "error-new" as const,
+            error,
+            id: index + 1,
+            message: 0,
+            ...span,
+          })),
+          ...errorKinds.map((error, index) => ({
+            kind: "error-is" as const,
+            error,
+            id: errorKinds.length + index + 1,
+            value: index + 1,
+            ...span,
+          })),
+        ],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+    ],
+  };
+  assert.deepStrictEqual(withoutUndefined(roundTrip(fn)), withoutUndefined(fn));
+});
+
 function filled(
   policy: SpillPolicy,
   chunkBytes: number,

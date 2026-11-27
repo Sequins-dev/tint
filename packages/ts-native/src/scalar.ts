@@ -10819,6 +10819,71 @@ export function lowerFunction(
           if (slots[input] === "general") return unknownToString(input, node);
           return stringOperand(input, node);
         }
+        if (builtin === "bigint-from-string") {
+          const argument = node.arguments[0];
+          if (argument === undefined || argument.kind === "spread")
+            throw "BigInt conversion argument invariant";
+          const helper = dynamicObjects?.bigIntFromString;
+          if (helper === undefined)
+            throw "BigInt(string) requires the program realm";
+          const slot = dynamicResult(helper, [value(argument)], node);
+          bigIntSlots[slot] = 1;
+          return slot;
+        }
+        if (builtin === "json-parse" || builtin === "json-stringify") {
+          const helper =
+            builtin === "json-parse"
+              ? dynamicObjects?.jsonParse
+              : dynamicObjects?.jsonStringify;
+          if (helper === undefined)
+            throw builtin + " requires the program realm";
+          const args = node.arguments.map(value);
+          function missingArgument(): number {
+            const id = nextValue++;
+            emit({
+              kind: "general-none",
+              id,
+              start: node.start,
+              end: node.end,
+            });
+            return save(id, "general", node);
+          }
+          if (builtin === "json-parse") {
+            const textArg = args[0] ?? missingArgument();
+            const reviverArg = args[1] ?? missingArgument();
+            return dynamicResult(helper, [textArg, reviverArg], node);
+          }
+          const valueArg = args[0] ?? missingArgument();
+          const replacerArg = args[1] ?? missingArgument();
+          const spaceArg = args[2] ?? missingArgument();
+          const raw = dynamicResult(
+            helper,
+            [valueArg, replacerArg, spaceArg],
+            node,
+          );
+          const expected = info(node).type;
+          if (expected === "optional-string" || expected === "void") return raw;
+          if (expected === "string") {
+            const present = nextValue++;
+            emitPresence(present, load(raw, node), true, node);
+            requireCondition(
+              save(present, "boolean", node),
+              "TypeError",
+              "JSON.stringify returned undefined",
+              node,
+            );
+            const unwrapped = nextValue++;
+            emit({
+              kind: "string-value",
+              id: unwrapped,
+              value: load(raw, node),
+              start: node.start,
+              end: node.end,
+            });
+            return save(unwrapped, "string", node);
+          }
+          return save(coerce(load(raw, node), expected, node), expected, node);
+        }
         if (
           builtin === "number-from-bigint" ||
           builtin === "bigint-identity" ||

@@ -3187,6 +3187,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/values/json.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/worker-backing.ts",
       packageId: "native-runtime",
     },

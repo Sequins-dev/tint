@@ -160,6 +160,9 @@ export type ClosureIntrinsic =
   | "bigint-identity"
   | "bigint-from-number"
   | "bigint-from-boolean"
+  | "bigint-from-string"
+  | "json-parse"
+  | "json-stringify"
   | "number-is-integer"
   | "string-convert"
   | "number-is-safe-integer"
@@ -559,6 +562,7 @@ function checkClosureModuleLayout(
     "BigInt",
     "Object",
     "Math",
+    "JSON",
     "Atomics",
     "Uint8Array",
     "Int8Array",
@@ -5352,6 +5356,67 @@ function checkClosureModuleLayout(
     finitePropertyKeys = createKeyIndex<Expression, readonly string[]>(
       syntaxHash,
     );
+  function enrollableRealmContract(id: number, seen: Set<number>): boolean {
+    if (seen.has(id)) return false;
+    const t = types[id];
+    if (t === undefined) return false;
+    switch (t.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "undefined":
+      case "null":
+      case "bigint":
+      case "unknown":
+      case "never":
+      case "literal":
+      case "dynamic-result":
+      case "realm-callable":
+        return true;
+      case "array":
+        if (t.tupleElements !== undefined) return true;
+        seen.add(id);
+        const elemOk = enrollableRealmContract(t.element, seen);
+        seen.delete(id);
+        return elemOk;
+      case "object": {
+        if (t.call !== undefined || t.construct !== undefined) return false;
+        seen.add(id);
+        let ok = true;
+        if (
+          t.stringIndex !== undefined &&
+          !enrollableRealmContract(t.stringIndex.type, seen)
+        )
+          ok = false;
+        if (ok)
+          for (const field of t.properties) {
+            if (field === undefined)
+              throw "enrollable contract field invariant";
+            if (!enrollableRealmContract(field.type, seen)) {
+              ok = false;
+              break;
+            }
+          }
+        seen.delete(id);
+        return ok;
+      }
+      case "union": {
+        seen.add(id);
+        let ok = true;
+        for (const member of t.members) {
+          if (member === undefined) throw "enrollable union invariant";
+          if (!enrollableRealmContract(member, seen)) {
+            ok = false;
+            break;
+          }
+        }
+        seen.delete(id);
+        return ok;
+      }
+      default:
+        return false;
+    }
+  }
   /** Types a checked downcast can test at run time: primitives, 1-byte
    * typed arrays, plain object (record) types, and unions of these. */
   function downcastable(type: number): boolean {
@@ -6150,6 +6215,7 @@ function checkClosureModuleLayout(
     inputExpected?: number,
     preserveContext: boolean = false,
     discarded: boolean = false,
+    deferDynamicProjection: boolean = false,
   ): number {
     const node = input;
     const fromPattern = patternValues.get(node);
@@ -6325,21 +6391,40 @@ function checkClosureModuleLayout(
             owner,
             types[constraint]?.kind === "unknown" ? undefined : constraint,
             true,
+            false,
+            node.assertion === "as",
           );
           if (
             node.assertion === "as" &&
             dynamicObject(presentType(constraint, true) ?? constraint) &&
             (types[result]?.kind === "unknown" ||
+              types[result]?.kind === "dynamic-result" ||
               system.assignable(result, constraint))
           ) {
             intrinsics.set(node, "dynamic-object-enroll");
             result = constraint;
             break;
           }
+          if (
+            node.assertion === "as" &&
+            types[result]?.kind === "dynamic-result" &&
+            aggregatePayload(
+              types,
+              constraint,
+              options.realmImports !== undefined,
+            ) &&
+            enrollableRealmContract(constraint, new Set<number>())
+          ) {
+            const enrolled = realmPayload(constraint, node);
+            intrinsics.set(node, "dynamic-object-enroll");
+            result = enrolled;
+            break;
+          }
           const target = types[constraint];
           if (
             node.assertion === "as" &&
-            types[result]?.kind === "unknown" &&
+            (types[result]?.kind === "unknown" ||
+              types[result]?.kind === "dynamic-result") &&
             target?.kind === "object" &&
             target.iteratorElement !== undefined
           ) {
@@ -6351,7 +6436,8 @@ function checkClosureModuleLayout(
           // throws a TypeError.
           if (
             node.assertion === "as" &&
-            types[result]?.kind === "unknown" &&
+            (types[result]?.kind === "unknown" ||
+              types[result]?.kind === "dynamic-result") &&
             types[constraint]?.kind !== "unknown" &&
             downcastable(constraint)
           ) {
@@ -6488,6 +6574,7 @@ function checkClosureModuleLayout(
               context = arrayOf(firstType, first);
             else if (
               system.assignable(presentType(firstType) ?? firstType, string) ||
+              system.assignable(presentType(firstType) ?? firstType, bigint) ||
               listReferenceElement(presentType(firstType) ?? firstType)
             )
               context = arrayOf(firstType, first);
@@ -8035,9 +8122,8 @@ function checkClosureModuleLayout(
             !references.has(target)
           ) {
             // BigInt(value): integral Numbers convert exactly (others throw
-            // a RangeError) and booleans give 0n/1n. Strings parse as
-            // StringIntegerLiteral and invalid text throws a SyntaxError,
-            // which typed code gains with realm errors (slice 4).
+            // a RangeError), booleans give 0n/1n, and strings parse as
+            // StringIntegerLiteral (invalid text throws a realm SyntaxError).
             if (node.arguments.length !== 1)
               fail(node, "ARITY", "BigInt requires one argument");
             const argument = node.arguments[0];
@@ -8051,11 +8137,7 @@ function checkClosureModuleLayout(
                 : system.assignable(input, number)
                   ? "bigint-from-number"
                   : system.assignable(input, string)
-                    ? fail(
-                        argument,
-                        "UNSUPPORTED",
-                        "BigInt(string) needs realm SyntaxError (slice 4)",
-                      )
+                    ? "bigint-from-string"
                     : system.assignable(input, boolean)
                       ? "bigint-from-boolean"
                       : fail(
@@ -8073,6 +8155,108 @@ function checkClosureModuleLayout(
             ungroup(target.object).kind !== "super"
           ) {
             const receiver = ungroup(target.object);
+            if (
+              receiver.kind === "identifier" &&
+              receiver.name === "JSON" &&
+              !references.has(receiver) &&
+              (target.property === "stringify" || target.property === "parse")
+            ) {
+              for (const argument of node.arguments) {
+                if (argument === undefined || argument.kind === "spread")
+                  unsupported(
+                    node,
+                    "realm-library-member",
+                    "JSON." + target.property + " requires plain arguments",
+                  );
+              }
+              if (target.property === "parse") {
+                const textArg = node.arguments[0];
+                if (textArg !== undefined) {
+                  const textType = expression(textArg, owner);
+                  if (!system.assignable(textType, string))
+                    checkDynamicPayload(textType, textArg, undefined, true);
+                }
+                const reviverArg = node.arguments[1];
+                if (reviverArg !== undefined) {
+                  const reviverType = expression(reviverArg, owner);
+                  if (
+                    types[reviverType]?.kind !== "undefined" &&
+                    types[reviverType]?.kind !== "null"
+                  )
+                    checkDynamicPayload(
+                      reviverType,
+                      reviverArg,
+                      undefined,
+                      true,
+                    );
+                }
+                for (let i = 2; i < node.arguments.length; i++) {
+                  const extra = node.arguments[i];
+                  if (extra !== undefined) expression(extra, owner);
+                }
+                intrinsics.set(node, "json-parse");
+                result = generalFact("dynamic-result", node);
+                break;
+              }
+              const valueArg = node.arguments[0];
+              const valueType =
+                valueArg === undefined
+                  ? undefinedType
+                  : expression(valueArg, owner);
+              if (valueArg !== undefined)
+                checkDynamicPayload(valueType, valueArg, undefined, true);
+              const replacerArg = node.arguments[1];
+              let hasCallableReplacer = false;
+              if (replacerArg !== undefined) {
+                const replacerType = expression(replacerArg, owner);
+                const repKind = types[replacerType]?.kind;
+                if (repKind !== "undefined" && repKind !== "null") {
+                  checkDynamicPayload(
+                    replacerType,
+                    replacerArg,
+                    undefined,
+                    true,
+                  );
+                  if (
+                    repKind === "function" ||
+                    repKind === "unknown" ||
+                    repKind === "dynamic-result" ||
+                    repKind === "realm-callable"
+                  )
+                    hasCallableReplacer = true;
+                }
+              }
+              const spaceArg = node.arguments[2];
+              if (spaceArg !== undefined) {
+                const spaceType = expression(spaceArg, owner);
+                checkDynamicPayload(spaceType, spaceArg, undefined, true);
+              }
+              for (let i = 3; i < node.arguments.length; i++) {
+                const extra = node.arguments[i];
+                if (extra !== undefined) expression(extra, owner);
+              }
+              const valKind = types[valueType]?.kind;
+              const mayBeUndefined =
+                node.arguments.length === 0 ||
+                hasCallableReplacer ||
+                valKind === "undefined" ||
+                valKind === "void" ||
+                valKind === "unknown" ||
+                valKind === "dynamic-result" ||
+                valKind === "function" ||
+                valKind === "realm-callable" ||
+                system.assignable(undefinedType, valueType) ||
+                (expected !== undefined &&
+                  system.assignable(undefinedType, expected));
+              intrinsics.set(node, "json-stringify");
+              result =
+                mayBeUndefined &&
+                (expected === undefined ||
+                  system.assignable(undefinedType, expected))
+                  ? unionSubset([string, undefinedType], node)
+                  : string;
+              break;
+            }
             if (
               receiver.kind === "identifier" &&
               receiver.name === "Atomics" &&
@@ -10797,18 +10981,24 @@ function checkClosureModuleLayout(
       }
       if (
         expected !== undefined &&
+        !deferDynamicProjection &&
         types[result]?.kind === "dynamic-result" &&
         !system.assignable(result, expected)
       ) {
-        if (!downcastable(expected))
-          unsupported(
-            node,
-            "general-result-projection",
-            "general call result requires a checked projection to its declared type",
-            true,
-          );
-        downcasts.set(node, expected);
-        result = expected;
+        if (dynamicObject(presentType(expected, true) ?? expected)) {
+          dynamicEnrollments.set(node, expected);
+          result = expected;
+        } else {
+          if (!downcastable(expected))
+            unsupported(
+              node,
+              "general-result-projection",
+              "general call result requires a checked projection to its declared type",
+              true,
+            );
+          downcasts.set(node, expected);
+          result = expected;
+        }
       }
       const literal = literals.get(ungroup(node));
       if (

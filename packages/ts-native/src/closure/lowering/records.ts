@@ -466,9 +466,15 @@ export function setElement(
   id: number,
 ): CollectionElement | undefined {
   const t = checked.types[id];
-  // Set membership is SameValueZero, which compares BigInts by value; the
-  // set helpers compare references, so BigInt elements have no encoding yet.
-  if (t?.kind !== "set" || mentionsBigInt(checked, t.element)) return undefined;
+  // Pure `bigint` elements specialize `linked-set` with `T = bigint`, which
+  // lowers `===` to `equalBigInt` (SameValueZero value equality). Unions
+  // mixing `bigint` with other types still require general value equality.
+  if (
+    t?.kind !== "set" ||
+    (mentionsBigInt(checked, t.element) &&
+      checked.types[t.element]?.kind !== "bigint")
+  )
+    return undefined;
   return collectionElement(checked, t.element);
 }
 /** Whether the program operates on BigInts: every BigInt value reaches an
@@ -521,8 +527,13 @@ export function mapEncoding(
   id: number,
 ): MapEncoding | undefined {
   const t = checked.types[id];
-  // Map keys compare by SameValueZero (BigInts by value); see setElement.
-  if (t?.kind !== "map" || mentionsBigInt(checked, t.key)) return undefined;
+  // Pure `bigint` keys specialize `linked-map` with `K = bigint` (value
+  // equality via `equalBigInt`); see setElement.
+  if (
+    t?.kind !== "map" ||
+    (mentionsBigInt(checked, t.key) && checked.types[t.key]?.kind !== "bigint")
+  )
+    return undefined;
   const key = collectionElement(checked, t.key),
     value = collectionElement(checked, t.value);
   return key === undefined || value === undefined ? undefined : { key, value };
@@ -574,12 +585,19 @@ export function mapEncodingClass(
   value: CollectionElement,
 ): string | undefined {
   const keyClass =
-    typeof key === "number" ? listElementClass(checked, key) : key;
+    typeof key === "number"
+      ? checked.types[key]?.kind === "bigint"
+        ? "bigint"
+        : listElementClass(checked, key)
+      : key;
   const valueClass =
     typeof value === "number" ? listElementClass(checked, value) : value;
   if (
     valueClass === undefined ||
-    (keyClass !== "reference" && keyClass !== "string" && keyClass !== "number")
+    (keyClass !== "reference" &&
+      keyClass !== "string" &&
+      keyClass !== "number" &&
+      keyClass !== "bigint")
   )
     return undefined;
   return keyClass + "|" + valueClass;
