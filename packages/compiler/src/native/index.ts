@@ -712,12 +712,17 @@ function withForeignRuntimes(
     nodeProcess = false,
     nodeTimers = false,
     nodePathCwd = false;
+  const osDarwin = "packages/native-runtime/src/node/os-darwin-host.ts";
+  const osLinux = "packages/native-runtime/src/node/os-linux-host.ts";
+  let nodeOs: string | undefined = undefined;
   if (
     ids.has(foreignRuntimeModules.nodeFfi) ||
     ids.has(foreignRuntimeModules.nodeBuffer) ||
     ids.has(foreignRuntimeModules.nodeProcess) ||
     ids.has(foreignRuntimeModules.nodeTimers) ||
-    ids.has(foreignRuntimeModules.nodePathCwd)
+    ids.has(foreignRuntimeModules.nodePathCwd) ||
+    ids.has(osDarwin) ||
+    ids.has(osLinux)
   ) {
     // The standalone collector can receive the application's source table
     // too. Authority follows the entry's imports, not source availability.
@@ -736,6 +741,8 @@ function withForeignRuntimes(
     nodeProcess = reachable.includes(foreignRuntimeModules.nodeProcess);
     nodeTimers = reachable.includes(foreignRuntimeModules.nodeTimers);
     nodePathCwd = reachable.includes(foreignRuntimeModules.nodePathCwd);
+    if (reachable.includes(osDarwin)) nodeOs = osDarwin;
+    else if (reachable.includes(osLinux)) nodeOs = osLinux;
   }
   if (
     libraries.length === 0 &&
@@ -743,10 +750,20 @@ function withForeignRuntimes(
     !nodeBuffer &&
     !nodeProcess &&
     !nodeTimers &&
+    nodeOs === undefined &&
     !nodePathCwd
   )
     return request;
   const runtimes: RuntimeSource[] = request.runtimes.slice();
+  if (nodeOs !== undefined) {
+    const host = nodeOs;
+    if (!runtimes.some((runtime) => runtime?.module === host))
+      runtimes.push({
+        module: host,
+        namespace: "node-os-host",
+        retainedExports: [],
+      });
+  }
   if (
     nodePathCwd &&
     !runtimes.some(

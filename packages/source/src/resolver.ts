@@ -84,6 +84,7 @@ export const nodeBuiltins: {
   readonly events: SourceNodeBuiltin;
   readonly ffi: SourceNodeBuiltin;
   readonly fs: NodeBuiltin;
+  readonly os: NodeBuiltin;
   readonly path: SourceNodeBuiltin;
   readonly pathPosix: SourceNodeBuiltin;
   readonly pathWin32: SourceNodeBuiltin;
@@ -171,6 +172,7 @@ export const nodeBuiltins: {
     ],
   },
   fs: { specifier: "node:fs" },
+  os: { specifier: "node:os" },
   path: {
     specifier: "node:path",
     source: "packages/native-runtime/src/node/path.ts",
@@ -223,6 +225,7 @@ export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.events,
   nodeBuiltins.ffi,
   nodeBuiltins.fs,
+  nodeBuiltins.os,
   nodeBuiltins.path,
   nodeBuiltins.pathPosix,
   nodeBuiltins.pathWin32,

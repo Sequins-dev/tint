@@ -3175,7 +3175,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/os-darwin-host.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/os-darwin.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/os-linux-host.ts",
       packageId: "native-runtime",
     },
     {

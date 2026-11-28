@@ -38,6 +38,7 @@ import {
   type DigestLifetime,
 } from "./crypto.ts";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
+import { bufferEncoding, bufferText } from "./buffer-codecs.ts";
 export { closeDigestContexts } from "./crypto.ts";
 
 type RealmObject = OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -606,7 +607,6 @@ const unsupportedCryptoExports: readonly string[] = [
   "getHashes",
   "getMacs",
   "getRandomValues",
-  "hash",
   "hkdf",
   "hkdfSync",
   "parsePKCS12",
@@ -620,7 +620,6 @@ const unsupportedCryptoExports: readonly string[] = [
   "randomFill",
   "randomFillSync",
   "randomInt",
-  "randomUUID",
   "randomUUIDv7",
   "rng",
   "scrypt",
@@ -753,6 +752,107 @@ export function createNodeCryptoModules(
     core.hooks,
   );
   builtinProperty(crypto, "pbkdf2", pbkdf2Fn, true, true, core.hooks);
+  builtinProperty(
+    crypto,
+    "hash",
+    builtinFunction(
+      core.realm.functionPrototype,
+      "hash",
+      2,
+      (_receiver, args): unknown => {
+        const algorithm = args[0];
+        if (typeof algorithm !== "string")
+          return invalid(core, "algorithm", "string", algorithm);
+        let encoding = args[2];
+        if (typeof encoding === "object" && encoding !== null) {
+          const options = viewObjectValue(encoding, core.object);
+          if (options !== undefined)
+            encoding = getProperty<ScriptPropertyKey, unknown>(
+              options,
+              "outputEncoding",
+              options,
+              core.hooks,
+            );
+        }
+        if (encoding === undefined) encoding = "hex";
+        if (typeof encoding !== "string")
+          return invalid(core, "outputEncoding", "string", encoding);
+        if (encoding !== "buffer" && bufferEncoding(encoding) === undefined)
+          return fail(
+            core,
+            "type",
+            "Unknown encoding: " + encoding,
+            "ERR_UNKNOWN_ENCODING",
+          );
+        const data = inputBytes(core, args[1], "data", false);
+        try {
+          const object = createHashInRealm(core, algorithm, undefined);
+          const lifetime = viewDigestState(core, object);
+          updateDigest(lifetime, data, undefined);
+          return digestOfView(core, lifetime, encoding, false);
+        } catch (error) {
+          return adaptError("hash", error);
+        }
+      },
+      core.hooks,
+    ),
+    true,
+    true,
+    core.hooks,
+  );
+  builtinProperty(
+    crypto,
+    "randomUUID",
+    builtinFunction(
+      core.realm.functionPrototype,
+      "randomUUID",
+      1,
+      (_receiver, args): unknown => {
+        const options = args[0];
+        if (options !== undefined) {
+          const object = viewObjectValue(options, core.object);
+          if (object === undefined || isArrayValue(options, core.realm))
+            return invalid(core, "options", "object", options);
+          const disable = getProperty<ScriptPropertyKey, unknown>(
+            object,
+            "disableEntropyCache",
+            object,
+            core.hooks,
+          );
+          if (disable !== undefined && typeof disable !== "boolean")
+            return invalid(
+              core,
+              "options.disableEntropyCache",
+              "boolean",
+              disable,
+            );
+        }
+        try {
+          const bytes = nativeRandomBytes(16);
+          bytes[6] = ((bytes[6] ?? 0) & 15) | 64;
+          bytes[8] = ((bytes[8] ?? 0) & 63) | 128;
+          const hex = bufferText(bytes, "hex");
+          return (
+            hex.slice(0, 8) +
+            "-" +
+            hex.slice(8, 12) +
+            "-" +
+            hex.slice(12, 16) +
+            "-" +
+            hex.slice(16, 20) +
+            "-" +
+            hex.slice(20)
+          );
+        } catch (error) {
+          return adaptError("randomUUID", error);
+        }
+      },
+      core.hooks,
+    ),
+    true,
+    true,
+    core.hooks,
+  );
   for (const key of unsupportedCryptoExports)
     unsupportedProperty(core, crypto, key, key);
   return {

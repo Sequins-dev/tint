@@ -95,6 +95,8 @@ export interface NodeWorkerThreads {
   readonly MessagePort: ScriptObject;
   readonly threadId: number;
   readonly isMainThread: boolean;
+  readonly isInternalThread: boolean;
+  readonly receiveMessageOnPort: ScriptObject;
   readonly parentPort: ScriptObject | null;
   readonly workerData: unknown;
   readonly resourceLimits: ScriptObject;
@@ -840,6 +842,22 @@ export function createNodeWorkerThreads(
     return result.promise;
   });
   const parent = options.control?.claimParentPort(ports);
+  const receiveMessageOnPort = builtinFunction(
+    realm.functionPrototype,
+    "receiveMessageOnPort",
+    1,
+    (_receiver, args): unknown => {
+      const endpoint = ensurePort(args[0]);
+      const entry = endpoint.port.take();
+      if (entry === undefined) return undefined;
+      const result = createObject<ScriptPropertyKey, unknown>(
+        realm.objectPrototype,
+      );
+      property(result, "message", messages.receive(endpoint.port, entry));
+      return result;
+    },
+    hooks,
+  );
   let data: unknown = null;
   let resources = limitsObject(undefined);
   if (parent !== undefined) {
@@ -855,6 +873,8 @@ export function createNodeWorkerThreads(
     MessageChannel,
     threadId: options.threadId,
     isMainThread: options.threadId === 0,
+    isInternalThread: false,
+    receiveMessageOnPort,
     parentPort: parent === undefined ? null : makePort(parent),
     workerData: data,
     resourceLimits: resources,

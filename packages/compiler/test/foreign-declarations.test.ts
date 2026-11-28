@@ -46,13 +46,15 @@ test("the application resolver grants canonical Node built-ins on supported targ
   const buffer = "packages/native-runtime/src/node/buffer.ts";
   const events = "packages/native-runtime/src/node/events.ts";
   const nodeProcess = "packages/native-runtime/src/node/process.ts";
+  const osDarwin = "packages/native-runtime/src/node/os-darwin.ts";
+  const osLinux = "packages/native-runtime/src/node/os-linux.ts";
   const encoder = new TextEncoder();
   const inputs = [
     {
       id: entry,
       packageId: "application",
       bytes: encoder.encode(
-        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer"; import { argv } from "node:process"; import { EventEmitter } from "node:events";',
+        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer"; import { argv } from "node:process"; import { EventEmitter } from "node:events"; import { arch } from "node:os";',
       ),
     },
     {
@@ -75,6 +77,11 @@ test("the application resolver grants canonical Node built-ins on supported targ
       packageId: "native-runtime",
       bytes: encoder.encode("export const argv: string[] = [];"),
     },
+    ...[osDarwin, osLinux].map((id) => ({
+      id,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export function arch(): string { return ''; }"),
+    })),
   ];
   for (const target of [
     darwinArm64CTarget,
@@ -96,6 +103,7 @@ test("the application resolver grants canonical Node built-ins on supported targ
         ["node:buffer", buffer],
         ["node:process", nodeProcess],
         ["node:events", events],
+        ["node:os", target === darwinArm64CTarget ? osDarwin : osLinux],
       ]),
     );
     assert.equal(

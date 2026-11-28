@@ -62,8 +62,8 @@ export const unsafeForeignMemoryModules: readonly string[] = [
   "packages/native-runtime/src/node/zlib.ts",
   "packages/native-runtime/src/node/crypto-jobs.ts",
   "packages/native-runtime/src/node/openssl.ts",
-  "packages/native-runtime/src/node/os-darwin.ts",
-  "packages/native-runtime/src/node/os-linux.ts",
+  "packages/native-runtime/src/node/os-darwin-host.ts",
+  "packages/native-runtime/src/node/os-linux-host.ts",
 ];
 /** Check package contracts. `unsafeModules` lists the source paths that may
  * import `tint:ffi/unsafe` (in packages declaring bindings); a listed path

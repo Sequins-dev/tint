@@ -535,6 +535,15 @@ export function expandForeignInputs(
     }
     for (const packageId of packages) {
       if (packageId === undefined) throw "foreign package invariant";
+      grantForeignRuntime(
+        inputs,
+        mappings,
+        packageId,
+        nodeBuiltins.os.specifier,
+        target.name === "darwin-arm64"
+          ? "packages/native-runtime/src/node/os-darwin.ts"
+          : "packages/native-runtime/src/node/os-linux.ts",
+      );
       for (const builtin of registeredNodeBuiltins) {
         if (builtin.source === undefined) continue;
         grantForeignRuntime(

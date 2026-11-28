@@ -275,6 +275,7 @@ export function installWebEventIntrinsics(
       };
     },
   );
+  realm.constructors.set("dom-exception", domConstructor);
   getter(
     exceptionPrototype,
     "name",

@@ -664,6 +664,7 @@ export {
 } from "./property-contracts.ts";
 export {
   deserializeWorkerValue,
+  installStructuredClone,
   serializeWorkerValue,
   throwWorkerCloneError,
   type WorkerCloneAttachments,

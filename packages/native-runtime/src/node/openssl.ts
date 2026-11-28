@@ -197,20 +197,19 @@ export function systemOpenSSL(): OpenSSL {
   if (loaded !== undefined) return loaded;
   const mac = TARGET_AAPCS64 === 0;
   const candidates: string[] = [];
-  if (mac) {
-    const override = environment("TINT_OPENSSL_LIBRARY");
-    if (override !== undefined) candidates.push(override);
-    else {
-      const brewPrefix = environment("HOMEBREW_PREFIX");
-      if (
-        brewPrefix !== undefined &&
-        brewPrefix !== "/opt/homebrew" &&
-        brewPrefix !== "/usr/local"
-      )
-        candidates.push(brewPrefix + "/opt/openssl@3/lib/libcrypto.3.dylib");
-      candidates.push("/opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib");
-      candidates.push("/usr/local/opt/openssl@3/lib/libcrypto.3.dylib");
-    }
+  const override = environment("TINT_OPENSSL_LIBRARY");
+  if (override !== undefined) candidates.push(override);
+  else if (mac) {
+    const brewPrefix = environment("HOMEBREW_PREFIX");
+    if (
+      brewPrefix !== undefined &&
+      brewPrefix !== "/opt/homebrew" &&
+      brewPrefix !== "/usr/local"
+    )
+      candidates.push(brewPrefix + "/opt/openssl@3/lib/libcrypto.3.dylib");
+    candidates.push("/opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib");
+    candidates.push("/usr/local/opt/openssl@3/lib/libcrypto.3.dylib");
+    candidates.push("/opt/local/libexec/openssl3/lib/libcrypto.3.dylib");
   } else candidates.push("libcrypto.so.3");
   let failures = "";
   for (const path of candidates) {

@@ -31,18 +31,18 @@ verifyHostedFixture(osFixtureSource(), "node-os-other", osFixtureDependencies(${
 test("each target's node:os fails explicitly on the other target", () => {
   // No silent misreading of the other C library's records: resolution
   // rejects the binding import.
-  for (const [module, target, binding] of [
-    ["os-darwin.ts", "linux-aarch64", "darwin-os"],
-    ["os-linux.ts", "darwin-aarch64", "linux-os"],
+  for (const [module, target] of [
+    ["darwin", "linux-aarch64"],
+    ["linux", "darwin-aarch64"],
   ] as const) {
     const result = buildOsFor(
-      "packages/native-runtime/src/node/" + module,
+      "packages/native-runtime/src/node/os-" + module + ".ts",
       target,
     );
     assert.notEqual(result.status, 0, result.stdout);
     assert.ok(
       result.stderr.includes(
-        `"stage":"resolve","module":"packages/native-runtime/src/node/${module}","message":"UNDECLARED_IMPORT: tint:c/${binding}"`,
+        `"stage":"resolve","module":"packages/native-runtime/src/node/os-${module}-host.ts","message":"UNDECLARED_IMPORT: tint:c/${module}-os"`,
       ),
       result.stderr.slice(-2000),
     );

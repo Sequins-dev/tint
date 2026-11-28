@@ -1,6 +1,11 @@
 import { copyLatin1, latin1Text } from "@tint/foundation/text/latin1";
 import { setScriptMap, syncScriptMapNumbers } from "./collection-data.ts";
-import { createByteStorage, byteStorageData } from "../bytes/index.ts";
+import {
+  createByteStorage,
+  byteStorageData,
+  detachByteStorage,
+  type ByteStorage,
+} from "../bytes/index.ts";
 import {
   allocGeneralRefs,
   arrayElementCount,
@@ -23,7 +28,8 @@ import { bufferStorageWindow } from "./buffer-storage.ts";
 import { toObjectValue } from "./boxing.ts";
 import { stringValue } from "./coercion.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
-import { builtinProperty } from "./intrinsics.ts";
+import { constructObjectValueOrThrow } from "./fused-results.ts";
+import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import {
   createObjectLiteralSite,
   ensureExoticSlots,
@@ -38,6 +44,7 @@ import {
   setFastValue,
   storedValue,
   type ObjectInternalMethods,
+  type ObjectHooks,
   type ObjectLiteralSite,
   type OrdinaryObject,
   type OrdinaryPropertyShape,
@@ -57,6 +64,7 @@ import {
   type TypedArrayElementKind,
 } from "./typed-array-data.ts";
 import { viewObjectValue } from "./values.ts";
+import { arrayLikeValues } from "./array-like.ts";
 
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 type ScriptShape = OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
@@ -173,6 +181,14 @@ export function throwWorkerCloneError(
   realm: ErrorRealm,
   message: string,
 ): never {
+  const constructor = realm.constructors.get("dom-exception");
+  if (constructor !== undefined)
+    throw constructObjectValueOrThrow(
+      realm,
+      constructor,
+      [message, "DataCloneError"],
+      realm.objectPrototype,
+    );
   const error = createRuntimeError(realm, "error");
   builtinProperty(
     error,
@@ -1943,4 +1959,128 @@ function deserializeWorkerGraph(
   }
   const result = decode();
   return position === end ? result : invalid();
+}
+
+/** Clone inside one realm using the same graph traversal as worker messages.
+ * Transfer sources remain live until traversal and decoding both succeed. */
+export function installStructuredClone(
+  global: ScriptObject,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): void {
+  const clone = builtinFunction(
+    realm.functionPrototype,
+    "structuredClone",
+    1,
+    (_receiver, args): unknown => {
+      if (args.length === 0) throw createRuntimeError(realm, "type");
+      const transfers: ByteStorage[] = [];
+      const options = args[1];
+      if (options !== undefined && options !== null) {
+        const object = viewObjectValue(options, global);
+        if (object === undefined) throw createRuntimeError(realm, "type");
+        const transfer = getProperty<ScriptPropertyKey, unknown>(
+          object,
+          "transfer",
+          object,
+          hooks,
+        );
+        if (transfer !== undefined) {
+          const list = viewObjectValue(transfer, global);
+          if (
+            list === undefined ||
+            (list.internalFlags & objectFlagArrayData) === 0
+          )
+            throw createRuntimeError(realm, "type");
+          for (const value of arrayLikeValues(list, realm, hooks)) {
+            const item = viewObjectValue(value, global);
+            const storage =
+              item === undefined
+                ? undefined
+                : exoticSlots(item).internalArrayBufferData;
+            if (
+              storage === undefined ||
+              storage.immutable ||
+              storage.data === undefined
+            )
+              return throwWorkerCloneError(
+                realm,
+                "The object cannot be transferred",
+              );
+            if (transfers.includes(storage))
+              return throwWorkerCloneError(
+                realm,
+                "Duplicate object in transfer list",
+              );
+            transfers.push(storage);
+          }
+        }
+      }
+      const float = new Float64Array(1);
+      const floatBytes = new Uint8Array(float.buffer);
+      const sink: WorkerCloneSink = {
+        bytes: new Uint8Array(128),
+        grow: (used, needed): void => {
+          const bytes = new Uint8Array(
+            Math.max(used + needed, sink.bytes.length * 2),
+          );
+          bytes.set(sink.bytes.subarray(0, used));
+          sink.bytes = bytes;
+        },
+        writeFloat64: (offset, value): void => {
+          float[0] = value;
+          sink.bytes.set(floatBytes, offset);
+        },
+        writeString: (offset, value): void => {
+          for (let i = 0; i < value.length; i++) {
+            const unit = value.charCodeAt(i);
+            sink.bytes[offset + i * 2] = unit & 255;
+            sink.bytes[offset + i * 2 + 1] = unit >>> 8;
+          }
+        },
+      };
+      const shared: ScriptObject[] = [];
+      const attachments: WorkerCloneAttachments = {
+        encode: (object): number | undefined => {
+          const storage = exoticSlots(object).internalSharedArrayBufferData;
+          if (storage === undefined) return undefined;
+          const buffer = createObject<ScriptPropertyKey, unknown>(
+            realm.sharedArrayBufferPrototype,
+          );
+          ensureExoticSlots(buffer).internalSharedArrayBufferData = storage;
+          shared.push(buffer);
+          return shared.length - 1;
+        },
+        decode: (index): ScriptObject | undefined => shared[index],
+      };
+      const end = serializeWorkerValue(args[0], realm, sink, 0, attachments);
+      const source: WorkerCloneSource = {
+        bytes: sink.bytes,
+        readFloat64: (offset): number => {
+          floatBytes.set(sink.bytes.subarray(offset, offset + 8));
+          return float[0] ?? 0;
+        },
+        readString: (offset, units): string => {
+          let value = "";
+          for (let i = 0; i < units; i++)
+            value += String.fromCharCode(
+              (sink.bytes[offset + i * 2] ?? 0) +
+                256 * (sink.bytes[offset + i * 2 + 1] ?? 0),
+            );
+          return value;
+        },
+      };
+      const result = deserializeWorkerValue(source, 0, end, realm, attachments);
+      for (const storage of transfers)
+        if (storage.data === undefined)
+          return throwWorkerCloneError(
+            realm,
+            "The ArrayBuffer was detached during cloning",
+          );
+      for (const storage of transfers) detachByteStorage(storage);
+      return result;
+    },
+    hooks,
+  );
+  builtinProperty(global, "structuredClone", clone, true, true, hooks);
 }
