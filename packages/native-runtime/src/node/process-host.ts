@@ -6,7 +6,23 @@ import {
   argumentByteLength,
   argumentCount,
   copyArgument,
+  targetArchitecture,
+  targetOperatingSystem,
 } from "../intrinsics/process.ts";
+import { nativeTargetArchAArch64, nativeTargetOSDarwin } from "@tint/abi/host";
+import { getpid } from "tint:c/libsystem";
+
+export function processPlatform(): string {
+  return targetOperatingSystem() === nativeTargetOSDarwin ? "darwin" : "linux";
+}
+
+export function processArchitecture(): string {
+  return targetArchitecture() === nativeTargetArchAArch64 ? "arm64" : "x64";
+}
+
+export function processId(): number {
+  return getpid();
+}
 
 /** Number of OS process arguments (`argc`), including `argv[0]`. */
 export function processArgumentCount(): number {

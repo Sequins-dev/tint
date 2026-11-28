@@ -710,11 +710,13 @@ function withForeignRuntimes(
   let nodeFfi = false,
     nodeBuffer = false,
     nodeProcess = false,
+    nodeTimers = false,
     nodePathCwd = false;
   if (
     ids.has(foreignRuntimeModules.nodeFfi) ||
     ids.has(foreignRuntimeModules.nodeBuffer) ||
     ids.has(foreignRuntimeModules.nodeProcess) ||
+    ids.has(foreignRuntimeModules.nodeTimers) ||
     ids.has(foreignRuntimeModules.nodePathCwd)
   ) {
     // The standalone collector can receive the application's source table
@@ -732,6 +734,7 @@ function withForeignRuntimes(
     nodeFfi = reachable.includes(foreignRuntimeModules.nodeFfi);
     nodeBuffer = reachable.includes(foreignRuntimeModules.nodeBuffer);
     nodeProcess = reachable.includes(foreignRuntimeModules.nodeProcess);
+    nodeTimers = reachable.includes(foreignRuntimeModules.nodeTimers);
     nodePathCwd = reachable.includes(foreignRuntimeModules.nodePathCwd);
   }
   if (
@@ -739,6 +742,7 @@ function withForeignRuntimes(
     !nodeFfi &&
     !nodeBuffer &&
     !nodeProcess &&
+    !nodeTimers &&
     !nodePathCwd
   )
     return request;
@@ -786,7 +790,8 @@ function withForeignRuntimes(
       retainedExports: retained,
     });
   }
-  if (!nodeFfi && !nodeBuffer && !nodeProcess) return { ...request, runtimes };
+  if (!nodeFfi && !nodeBuffer && !nodeProcess && !nodeTimers)
+    return { ...request, runtimes };
   const included = withNodeRuntimes(
     request,
     ids,
@@ -794,6 +799,7 @@ function withForeignRuntimes(
     nodeFfi,
     nodeBuffer,
     nodeProcess,
+    nodeTimers,
   );
   return nodeFfi ? withStaticFfiRuntimes(included, signedChar) : included;
 }
@@ -933,17 +939,35 @@ function withNodeRuntimes(
   nodeFfi: boolean,
   nodeBuffer: boolean,
   nodeProcess: boolean,
+  nodeTimers: boolean,
 ): CompileRequest {
   function retain(runtime: RuntimeSource): void {
     if (!runtimes.some((existing) => existing?.module === runtime.module))
       runtimes.push(runtime);
   }
   const hostBindings = (request.hostBindings ?? []).slice();
+  if (nodeProcess || nodeTimers)
+    retain({
+      module: "packages/native-runtime/src/node/scheduling.ts",
+      namespace: "node-scheduling",
+      retainedExports: [],
+    });
   if (nodeProcess) {
     const processModule = foreignRuntimeModules.processIntrinsics;
     retain({
+      module: "packages/native-runtime/src/node/process-host.ts",
+      namespace: "node-process-host",
+      retainedExports: [],
+    });
+    retain({
       module: processModule,
       namespace: "native-process",
+    });
+    const clock = "packages/native-runtime/src/intrinsics/clock.ts";
+    retain({
+      module: clock,
+      namespace: "native-clock",
+      retainedExports: ["monotonicMilliseconds"],
     });
     const processBindings: readonly NativeHostBinding[] = [
       {
@@ -960,6 +984,11 @@ function withNodeRuntimes(
         module: processModule,
         name: "copyArgument",
         operation: "argument-copy",
+      },
+      {
+        module: clock,
+        name: "monotonicMilliseconds",
+        operation: "monotonic-time",
       },
     ];
     for (const binding of processBindings) {

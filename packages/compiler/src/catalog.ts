@@ -3119,6 +3119,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/console.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/crypto-host.ts",
       packageId: "native-runtime",
     },
@@ -3219,7 +3223,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/scheduling.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/string-decoder.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/timers-promises.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/timers.ts",
       packageId: "native-runtime",
     },
     {
