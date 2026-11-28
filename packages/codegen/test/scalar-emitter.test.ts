@@ -4410,3 +4410,384 @@ test("bytes-load folds constant littleEndian and omits byte swaps on LE", () => 
     "dynamic LE f64 should conditionally skip REV",
   );
 });
+
+test("unsigned-zero integer increments fold into 32-bit add-imm and keep hoisted spec-loop arrays", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "__tint_spec_loop_inc",
+          exported: true,
+          parameters: [0, 1],
+          slots: ["Float64Array", "number", "number", "number"],
+          integerSlots: [2],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "constant", id: 0, value: 0, ...span },
+                { kind: "store", slot: 2, value: 0, ...span },
+                { kind: "store", slot: 3, value: 0, ...span },
+              ],
+              terminator: { kind: "jump", target: 1, ...span },
+            },
+            {
+              id: 1,
+              instructions: [
+                { kind: "load", id: 1, slot: 2, ...span },
+                { kind: "load", id: 2, slot: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 3,
+                  operator: "<",
+                  left: 1,
+                  right: 2,
+                  ...span,
+                },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 3,
+                consequent: 2,
+                alternate: 3,
+                ...span,
+              },
+            },
+            {
+              id: 2,
+              instructions: [
+                { kind: "load", id: 4, slot: 2, ...span },
+                { kind: "constant", id: 5, value: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 6,
+                  operator: "+",
+                  left: 4,
+                  right: 5,
+                  ...span,
+                },
+                { kind: "constant", id: 7, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 8,
+                  operator: ">>>",
+                  left: 6,
+                  right: 7,
+                  ...span,
+                },
+                { kind: "store", slot: 2, value: 8, ...span },
+                { kind: "load", id: 9, slot: 0, ...span },
+                {
+                  kind: "array-element",
+                  id: 10,
+                  array: 9,
+                  index: 8,
+                  ...span,
+                },
+                { kind: "load", id: 11, slot: 3, ...span },
+                {
+                  kind: "binary",
+                  id: 12,
+                  operator: "+",
+                  left: 11,
+                  right: 10,
+                  ...span,
+                },
+                { kind: "store", slot: 3, value: 12, ...span },
+              ],
+              terminator: { kind: "jump", target: 1, ...span },
+            },
+            {
+              id: 3,
+              instructions: [{ kind: "load", id: 13, slot: 3, ...span }],
+              terminator: { kind: "return", value: 13, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const code = result.value.code;
+  const words: number[] = [];
+  for (let off = 0; off + 4 <= code.length; off += 4)
+    words.push(
+      (code[off]! |
+        (code[off + 1]! << 8) |
+        (code[off + 2]! << 16) |
+        (code[off + 3]! << 24)) >>>
+        0,
+    );
+  // 32-bit ADD Wd, Wn, #1 has top bits 0x11000400 (sf=0, op=0, S=0, imm12=1).
+  const hasAddWImm1 = words.some((w) => (w & 0xfffffc00) === 0x11000400);
+  assert.ok(
+    hasAddWImm1,
+    "expected `(i + 1) >>> 0` to lower to 32-bit ADD Wd, Wn, #1",
+  );
+  // LSR Wd, Wn, #0 is UBFM Wd, Wn, #0, #31 (0x53007c00).
+  const hasLsrW0 = words.some((w) => (w & 0xfffffc00) === 0x53007c00);
+  assert.ok(
+    !hasLsrW0,
+    "expected `(i + 1) >>> 0` not to emit redundant LSR Wd, Wn, #0",
+  );
+  // LDR Dt, [x14, Xm, lsl #3] (hoisted Float64Array data pointer in x14):
+  // size=11, V=1, opc=01, option=011, S=1, Rn=14 -> 0xfc6079c0.
+  const hasHoistedX14Load = words.some(
+    (w) => (w & 0xffe0ffe0) >>> 0 === 0xfc6079c0,
+  );
+  assert.ok(
+    hasHoistedX14Load,
+    "expected `__tint_spec_loop_` containing `>>>` to keep Float64Array base hoisted in x14",
+  );
+});
+
+test("directIntTarget keeps secondary integer stores, left-immediate subtractions, and word-only bitwise targets exact", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "directIntEdgeCases",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "number", "number"],
+          integerSlots: [1, 2],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 2,
+                  operator: "|",
+                  left: 0,
+                  right: 1,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 2, ...span },
+                // `(10 - x) >>> 0`: immediate on LHS must not flip operand order.
+                { kind: "load", id: 3, slot: 1, ...span },
+                { kind: "constant", id: 4, value: 10, ...span },
+                {
+                  kind: "binary",
+                  id: 5,
+                  operator: "-",
+                  left: 4,
+                  right: 3,
+                  ...span,
+                },
+                { kind: "constant", id: 6, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 7,
+                  operator: ">>>",
+                  left: 5,
+                  right: 6,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 7, ...span },
+                // Multi-use integer value stored to two distinct integer slots.
+                { kind: "load", id: 8, slot: 1, ...span },
+                { kind: "constant", id: 9, value: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 10,
+                  operator: "+",
+                  left: 8,
+                  right: 9,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 10, ...span },
+                { kind: "store", slot: 2, value: 10, ...span },
+                { kind: "load", id: 11, slot: 2, ...span },
+              ],
+              terminator: { kind: "return", value: 11, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const code = result.value.code;
+  const words: number[] = [];
+  for (let off = 0; off + 4 <= code.length; off += 4)
+    words.push(
+      (code[off]! |
+        (code[off + 1]! << 8) |
+        (code[off + 2]! << 16) |
+        (code[off + 3]! << 24)) >>>
+        0,
+    );
+  // `(10 - x) >>> 0` must NOT emit 32-bit `sub Wd, Wn, #10` (0x51002800).
+  const hasSubWImm10 = words.some((w) => (w & 0xfffffc00) === 0x51002800);
+  assert.ok(
+    !hasSubWImm10,
+    "expected `(10 - x) >>> 0` not to flip into `sub Wd, Wn, #10`",
+  );
+  // 32-bit `sub Wd, Wn, Wm` has top bits 0x4b000000 (mask 0xffe0fc00).
+  const hasSubWReg = words.some((w) => (w & 0xffe0fc00) >>> 0 === 0x4b000000);
+  assert.ok(hasSubWReg, "expected `(10 - x) >>> 0` to emit 32-bit SUB reg");
+});
+
+test("multi-use directIntTarget guards fused comparisons before slot overwrites and keeps bitwise sign-extension", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "fusedCmpBeforeOverwrite",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "number"],
+          integerSlots: [1],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 2,
+                  operator: "|",
+                  left: 0,
+                  right: 1,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 2, ...span },
+                // Multi-use integer value: stored to slot 1, then compared in a
+                // fused branch AFTER slot 1 is overwritten with 99.
+                { kind: "load", id: 3, slot: 1, ...span },
+                { kind: "constant", id: 4, value: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 5,
+                  operator: "+",
+                  left: 3,
+                  right: 4,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 5, ...span },
+                { kind: "constant", id: 6, value: 10, ...span },
+                {
+                  kind: "binary",
+                  id: 7,
+                  operator: "<",
+                  left: 5,
+                  right: 6,
+                  ...span,
+                },
+                { kind: "constant", id: 8, value: 99, ...span },
+                { kind: "store", slot: 1, value: 8, ...span },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 7,
+                consequent: 1,
+                alternate: 2,
+                ...span,
+              },
+            },
+            {
+              id: 1,
+              instructions: [{ kind: "constant", id: 9, value: 1, ...span }],
+              terminator: { kind: "return", value: 9, ...span },
+            },
+            {
+              id: 2,
+              instructions: [{ kind: "constant", id: 10, value: 0, ...span }],
+              terminator: { kind: "return", value: 10, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  // Also ensure `wordValue` honors `directIntAlias` and `(x | 0)` keeps `sxtw`
+  // when `x` is a word-only bitwise op stored to a non-word-only integer slot.
+  const bitwiseResult = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "bitwiseSignExtend",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "number"],
+          integerSlots: [1],
+          returnType: "boolean",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: -2147483648, ...span },
+                {
+                  kind: "binary",
+                  id: 2,
+                  operator: "|",
+                  left: 0,
+                  right: 1,
+                  ...span,
+                },
+                { kind: "constant", id: 3, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 4,
+                  operator: "|",
+                  left: 2,
+                  right: 3,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 4, ...span },
+                { kind: "load", id: 5, slot: 1, ...span },
+                { kind: "constant", id: 6, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 7,
+                  operator: "<",
+                  left: 5,
+                  right: 6,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 7, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(bitwiseResult.ok, JSON.stringify(bitwiseResult));
+  const bwWords: number[] = [];
+  for (let off = 0; off + 4 <= bitwiseResult.value.code.length; off += 4)
+    bwWords.push(
+      (bitwiseResult.value.code[off]! |
+        (bitwiseResult.value.code[off + 1]! << 8) |
+        (bitwiseResult.value.code[off + 2]! << 16) |
+        (bitwiseResult.value.code[off + 3]! << 24)) >>>
+        0,
+    );
+  // `sxtw Xd, Wn` is `sbfm Xd, Xn, #0, #31` = 0x93407c00 (mask 0xfffffc00).
+  const hasSxtw = bwWords.some((w) => (w & 0xfffffc00) >>> 0 === 0x93407c00);
+  assert.ok(
+    hasSxtw,
+    "expected `(x & -1) | 0` stored to a signed integer slot to retain `sxtw`",
+  );
+});
