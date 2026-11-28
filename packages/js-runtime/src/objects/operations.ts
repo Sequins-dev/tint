@@ -1,4 +1,5 @@
 import type { WeakData } from "./weak-storage.ts";
+import type { WebEventSlots } from "./web-events.ts";
 import { hashString } from "@tint/foundation/collections/key-index";
 import { canonicalNumericIndex } from "./integer-index.ts";
 import type { ShadowRealmHost } from "./shadow-realm.ts";
@@ -223,6 +224,7 @@ export interface ExoticObjectSlots {
   /** Frozen primitive JSON text; presence is the non-proxy-forwarding raw JSON brand. */
   internalRawJSON: string | undefined;
   internalTextEncoder: boolean;
+  internalWebEvents: WebEventSlots | undefined;
   internalTextDecoder:
     | ((operation: string, input: Uint8Array, stream: boolean) => unknown)
     | undefined;
@@ -713,6 +715,7 @@ function createExoticSlots(): ExoticObjectSlots {
     internalArrayIteratorData: undefined,
     internalRawJSON: undefined,
     internalTextEncoder: false,
+    internalWebEvents: undefined,
     internalTextDecoder: undefined,
     internalModuleSourceClassName: undefined,
     internalShadowRealm: undefined,

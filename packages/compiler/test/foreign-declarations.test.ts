@@ -40,10 +40,11 @@ const root = new URL("../../native-runtime/src/c/", import.meta.url);
 const commonCrypto = readFileSync(new URL("commoncrypto.d.ts", root), "utf8");
 const libSystem = readFileSync(new URL("libsystem.d.ts", root), "utf8");
 
-test("the application resolver grants native Node FFI only on supported targets", () => {
+test("the application resolver grants canonical Node built-ins on supported targets", () => {
   const entry = "application/main.ts";
   const ffi = "packages/native-runtime/src/node/ffi.ts";
   const buffer = "packages/native-runtime/src/node/buffer.ts";
+  const events = "packages/native-runtime/src/node/events.ts";
   const nodeProcess = "packages/native-runtime/src/node/process.ts";
   const encoder = new TextEncoder();
   const inputs = [
@@ -51,7 +52,7 @@ test("the application resolver grants native Node FFI only on supported targets"
       id: entry,
       packageId: "application",
       bytes: encoder.encode(
-        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer"; import { argv } from "node:process";',
+        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer"; import { argv } from "node:process"; import { EventEmitter } from "node:events";',
       ),
     },
     {
@@ -63,6 +64,11 @@ test("the application resolver grants native Node FFI only on supported targets"
       id: buffer,
       packageId: "native-runtime",
       bytes: encoder.encode("export const Buffer = 1;"),
+    },
+    {
+      id: events,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export const EventEmitter = 1;"),
     },
     {
       id: nodeProcess,
@@ -89,7 +95,12 @@ test("the application resolver grants native Node FFI only on supported targets"
         ["node:ffi", ffi],
         ["node:buffer", buffer],
         ["node:process", nodeProcess],
+        ["node:events", events],
       ]),
+    );
+    assert.equal(
+      expanded.value.mappings.some((mapping) => mapping.specifier === "events"),
+      false,
     );
   }
   const unsupported = expandForeignInputs(inputs, {

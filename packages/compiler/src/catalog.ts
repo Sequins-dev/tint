@@ -2835,6 +2835,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/web-events.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/promises/index.ts",
       packageId: "js-runtime",
     },
@@ -3035,6 +3039,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/coded-errors.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/crypto-host.ts",
       packageId: "native-runtime",
     },
@@ -3056,6 +3064,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/event-loop-globals.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/events.ts",
       packageId: "native-runtime",
     },
     {

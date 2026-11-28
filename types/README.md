@@ -16,3 +16,8 @@ compiler file adapter. `tsconfig.host.json` checks that adapter with Node ambien
 types disabled, and `pnpm typecheck` runs this check. It does not implement native
 filesystem operations or make Node modules available to portable packages. The
 [host surface](../docs/runtime-host-surface.md) records the implementation boundary.
+
+`runtime-events.d.ts` and `web-events.d.ts` describe Tint's ESM events export
+and Web event globals for TypeScript tooling. Event maps associate emitter event
+names with argument tuples and target event names with event objects. Tint's
+runtime shares one implementation across callers.
