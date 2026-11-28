@@ -676,3 +676,87 @@ test("openPreparedEmission drives out-of-order attempts, retries on one wire, an
   aborted.session.attempt.abort();
   assert.equal(liveSegments.size, 0);
 });
+
+test("openPreparedEmission serial fallback reuses preparation and decodes packed wire bodies without re-reading retired bodies", async () => {
+  const { openPreparedEmission } =
+    await import("../src/aarch64/scalar/index.ts");
+  const functions = [chain(), { ...chain(), id: 1, name: "other" }];
+  const module: ModuleIR = { records, functions };
+  const options = {
+    operationRanges: true,
+    closedRoots: [0, 1],
+    farModuleBytes: 1,
+  };
+  let retired = false;
+  let getsAfterRetire = 0;
+  const started = openPreparedEmission(
+    module,
+    {
+      get: (id: number) => {
+        if (retired) {
+          getsAfterRetire++;
+          throw new Error(
+            "retired body must not be read when packedBodies is passed",
+          );
+        }
+        return functions[id]!;
+      },
+      put: (fn: FunctionIR) => {
+        functions[fn.id] = fn;
+      },
+      release: () => {},
+    },
+    options,
+    [
+      { first: 0, end: 1 },
+      { first: 1, end: 2 },
+    ],
+    undefined,
+    undefined,
+    () => {
+      retired = true;
+    },
+  );
+  assert.equal(started.kind, "ready");
+  assert.equal(retired, true);
+  const packedBodies = new Uint8Array(started.session.input.bodies);
+  started.session.releaseInput();
+  started.session.attempt.abort();
+
+  // Falling back with packedBodies decodes from the wire directly and matches
+  // direct serial emission byte-for-byte, including across a far-model retry.
+  const fallbackFromWire = started.session.emitSerialFallback(packedBodies);
+  assert.equal(getsAfterRetire, 0);
+  assert.deepEqual(fallbackFromWire, emitModule(module, options));
+
+  // Falling back without packedBodies still reuses preparation (1 read per
+  // function per emission pass, with no repeated whole-module analysis reads).
+  let fallbackGets = 0;
+  let inFallback = false;
+  const startedInMemory = openPreparedEmission(
+    module,
+    {
+      get: (id: number) => {
+        if (inFallback) fallbackGets++;
+        return functions[id]!;
+      },
+      put: (fn: FunctionIR) => {
+        functions[fn.id] = fn;
+      },
+      release: () => {},
+    },
+    { operationRanges: true, closedRoots: [0, 1] },
+    [
+      { first: 0, end: 1 },
+      { first: 1, end: 2 },
+    ],
+  );
+  assert.equal(startedInMemory.kind, "ready");
+  inFallback = true;
+  const fallbackInMemory = startedInMemory.session.emitSerialFallback();
+  assert.equal(fallbackGets, functions.length);
+  assert.deepEqual(
+    fallbackInMemory,
+    emitModule(module, { operationRanges: true, closedRoots: [0, 1] }),
+  );
+});

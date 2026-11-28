@@ -5264,16 +5264,18 @@ function openPreparedProgramEmission(
   const program = prepared.program.ir;
   const ranges = plan.planRanges(program.module);
   const rangeWeights = rangeIRWeights(program.module, ranges);
-  const selected: BuildStorage =
+  // Only allocate a separate IR spill store when the caller explicitly requests
+  // one; the parallel emission coordinator already keeps the packed wire bytes
+  // available for serial fallback and otherwise avoids double-encoding bodies.
+  const store: FunctionStore | undefined =
     storage !== undefined && storage.policy !== "memory"
-      ? storage
-      : { policy: "all" };
-  const store = createEmissionStore(selected);
+      ? createEmissionStore(storage)
+      : undefined;
   let closed = false;
   function closeStore(): void {
     if (closed) return;
     closed = true;
-    store.close();
+    if (store !== undefined) store.close();
   }
   try {
     let decoded: (FunctionIR | undefined)[] = [];
@@ -5286,26 +5288,32 @@ function openPreparedProgramEmission(
       retiring = false;
     const bodies: EmissionBodies = {
       get: (id: number): FunctionIR => {
-        if (packed) return store.get(id);
+        if (packed) {
+          if (store !== undefined) return store.get(id);
+          throw "prepared function body already retired";
+        }
         const fn = decoded[id];
         if (fn !== undefined) return fn;
-        return store.get(id);
+        if (store !== undefined) return store.get(id);
+        throw "prepared function body already retired";
       },
       put: (fn: FunctionIR): void => {
-        if (packed || (retiring && decoded[fn.id] === undefined)) store.put(fn);
-        else decoded[fn.id] = fn;
+        if (packed || (retiring && decoded[fn.id] === undefined)) {
+          if (store !== undefined) store.put(fn);
+          else throw "prepared function body already retired";
+        } else decoded[fn.id] = fn;
       },
       release: (id: number): void => {
         if (packed) {
-          store.release(id);
+          if (store !== undefined) store.release(id);
           return;
         }
         if (retiring) {
           const fn = decoded[id];
           if (fn !== undefined) {
-            store.put(fn);
+            if (store !== undefined) store.put(fn);
             decoded[id] = undefined;
-            store.release(id);
+            if (store !== undefined) store.release(id);
           }
         }
       },
@@ -5325,19 +5333,19 @@ function openPreparedProgramEmission(
         for (let id = 0; id < decoded.length; id++) {
           const fn = decoded[id];
           if (fn !== undefined) {
-            store.put(fn);
+            if (store !== undefined) store.put(fn);
             decoded[id] = undefined;
           }
         }
-        store.seal();
+        if (store !== undefined) store.seal();
         decoded = [];
-        store.releaseAll();
+        if (store !== undefined) store.releaseAll();
         retiring = false;
         packed = true;
         if (afterPreparation !== undefined) afterPreparation();
       },
     );
-    if (start.kind === "serial" && !packed) {
+    if (start.kind === "serial" && !packed && store !== undefined) {
       for (let id = 0; id < decoded.length; id++) {
         const fn = decoded[id];
         if (fn !== undefined) {

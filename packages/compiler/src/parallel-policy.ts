@@ -48,6 +48,22 @@ export interface WorkerAdmissionDecision {
   readonly reason: string;
 }
 
+/** Minimum total RSS budget that could possibly admit one worker lane (with
+ * zero coordinator residency and zero wire bytes). Budgets below this bound
+ * always fall back to serial without needing wire packing or residency checks. */
+export function minimumWorkerAdmissionBudgetBytes(
+  workerHeapBytes: number,
+  workerStackBytes: number = defaultWorkerStackBytes,
+  resultCreditBytes: number = defaultResultCreditBytes,
+): number {
+  return (
+    workerHeapBytes +
+    workerStackBytes +
+    workerOverheadReserveBytes +
+    resultCreditBytes
+  );
+}
+
 /** Decide how many worker lanes to launch given coordinator residency, wire
  * size, per-worker scratch/heap reserve, result credit pool, and an optional
  * total RSS budget. Returns 0 workers when the budget cannot admit one lane. */

@@ -126,10 +126,13 @@ import {
   type FamilySite,
 } from "./fragments.ts";
 import {
+  createPackedBodySource,
   openPreparation,
   packPreparation,
+  packPreparationWithIndex,
   type ListReadShape,
   type ListWriteShape,
+  type PackedPreparation,
   type Preparation,
   type PreparedFragments,
 } from "./prepared-fragments.ts";
@@ -677,7 +680,10 @@ export interface PreparedEmissionSession {
   /** Drops the managed wire byte references once published to external storage. */
   readonly releaseInput: () => void;
   readonly attempt: PreparedEmissionAttempt;
-  readonly emitSerialFallback: () => Emission;
+  /** Emit serially reusing the existing module preparation. When `packedBodies`
+   * is supplied (the `bodies` slice of the packed wire), function bodies are
+   * decoded directly from it instead of reading from a separate spill store. */
+  readonly emitSerialFallback: (packedBodies?: Uint8Array) => Emission;
 }
 
 export type PreparedEmissionStart =
@@ -1316,6 +1322,7 @@ export function openPreparedEmission(
   if (options.managedABI !== undefined || options.debugSpans === true)
     return { kind: "serial" };
   const forms = initialBranchForms(module, bodies, options);
+  const initialForms = fragmentForms(forms);
   const facts = emptyEmissionFacts();
   const prepAttempt = emitModuleForms(
     module,
@@ -1332,10 +1339,26 @@ export function openPreparedEmission(
     return { kind: "done", emission: prepAttempt.emission };
   if (prepAttempt.kind !== "prepared") throw "prepared emission invariant";
   const prepared = prepAttempt.preparation;
+  if (prepared.hasForeignCallbacks === true)
+    return {
+      kind: "done",
+      emission: emitPreparedSerial(
+        prepared,
+        bodies,
+        options,
+        initialForms,
+        facts,
+      ),
+    };
   beforePack?.();
-  const input = packPreparation(prepared, bodies);
+  let packed: PackedPreparation | undefined = packPreparationWithIndex(
+    prepared,
+    bodies,
+  );
   afterPreparation?.();
-  if (input === undefined) return { kind: "serial" };
+  if (packed === undefined) return { kind: "serial" };
+  const packedOffsets = packed.offsets;
+  const packedVocabulary = packed.vocabulary;
   const packetStore = packets;
   const farFrom = options.farModuleBytes ?? farModuleBytes;
   function makeAttempt(): PreparedEmissionAttempt {
@@ -1456,7 +1479,7 @@ export function openPreparedEmission(
     };
   }
   const session: PreparedEmissionSession = {
-    input,
+    input: packed.input,
     releaseInput: (): void => {
       session.input = {
         preparation: new Uint8Array(0),
@@ -1464,13 +1487,122 @@ export function openPreparedEmission(
       };
     },
     attempt: makeAttempt(),
-    emitSerialFallback: (): Emission =>
-      emitModuleFromStore(prepared.module, bodies, options),
+    emitSerialFallback: (packedBodies?: Uint8Array): Emission => {
+      if (packedBodies === undefined)
+        return emitPreparedSerial(
+          prepared,
+          bodies,
+          options,
+          initialForms,
+          facts,
+        );
+      const source = createPackedBodySource(
+        packedBodies,
+        packedOffsets,
+        packedVocabulary,
+      );
+      const fallbackBodies: EmissionBodies = {
+        get: source.get,
+        release: source.release,
+        put: (_fn: FunctionIR): void => {
+          throw "attempted to write prepared fallback body";
+        },
+      };
+      return emitPreparedSerial(
+        prepared,
+        fallbackBodies,
+        options,
+        initialForms,
+        facts,
+      );
+    },
   };
+  packed = undefined;
   return {
     kind: "ready",
     session,
   };
+}
+
+function branchFormsFromFragment(initial: FragmentForms): BranchForms {
+  function formSet(ids: readonly number[]): Set<number> {
+    const result = new Set<number>();
+    for (const id of ids) if (id !== undefined) result.add(id);
+    return result;
+  }
+  return {
+    calls: initial.calls,
+    addresses: initial.addresses,
+    far: initial.far,
+    longBranches: formSet(initial.longBranches),
+    longAddresses: formSet(initial.longAddresses),
+    islands: formSet(initial.islands),
+    farBranches: formSet(initial.farBranches),
+  };
+}
+
+/** Emit serially reusing an existing `Preparation` without repeating
+ * verification or whole-module analyses. */
+function emitPreparedSerial(
+  prepared: Preparation,
+  bodies: EmissionBodies,
+  options: EmissionOptions,
+  initialForms: FragmentForms,
+  facts: EmissionFacts,
+): Emission {
+  const forms = branchFormsFromFragment(initialForms);
+  const farFrom = options.farModuleBytes ?? farModuleBytes;
+  while (true) {
+    const before =
+        forms.longBranches.size +
+        forms.longAddresses.size +
+        forms.islands.size +
+        forms.farBranches.size,
+      calls = forms.calls,
+      far = forms.far;
+    const attempt = emitModuleForms(
+      prepared.module,
+      bodies,
+      options,
+      forms,
+      facts,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      prepared,
+    );
+    if (attempt.kind !== "emission") throw "unexpected top-level fragment";
+    const emitted = attempt.emission;
+    if (emitted.ok) {
+      if (
+        !forms.far &&
+        options.farAddresses !== false &&
+        emitted.value.code.length >= farFrom
+      ) {
+        forms.far = true;
+        continue;
+      }
+      return {
+        ok: true,
+        value: {
+          ...emitted.value,
+          formHints: describeForms(prepared.module, forms),
+        },
+      };
+    }
+    if (emitted.error.message !== compactRangeMessage) return emitted;
+    if (
+      forms.calls === calls &&
+      forms.far === far &&
+      forms.longBranches.size +
+        forms.longAddresses.size +
+        forms.islands.size +
+        forms.farBranches.size ===
+        before
+    )
+      return emitted;
+  }
 }
 
 function emptyEmissionFacts(): EmissionFacts {
@@ -1524,11 +1656,6 @@ export function openFragmentActor(
     },
   };
   const facts = emptyEmissionFacts();
-  function formSet(ids: readonly number[]): Set<number> {
-    const result = new Set<number>();
-    for (const id of ids) if (id !== undefined) result.add(id);
-    return result;
-  }
   return (
     initial: FragmentForms,
     range: EmissionRange,
@@ -1541,15 +1668,7 @@ export function openFragmentActor(
       range.end > prepared.module.functions.length
     )
       throw "invalid actor range";
-    const forms: BranchForms = {
-      calls: initial.calls,
-      addresses: initial.addresses,
-      far: initial.far,
-      longBranches: formSet(initial.longBranches),
-      longAddresses: formSet(initial.longAddresses),
-      islands: formSet(initial.islands),
-      farBranches: formSet(initial.farBranches),
-    };
+    const forms = branchFormsFromFragment(initial);
     const attempt = emitModuleForms(
       prepared.module,
       bodies,
@@ -2894,6 +3013,7 @@ function emitModuleForms(
   job?: FragmentJob,
   precollected?: PrecollectedFragments,
   prepareOnly?: boolean,
+  reusedPreparation?: Preparation,
 ): EmissionAttempt {
   /** An analysis work limit: unlimited for ahead-of-time builds. */
   const work = (limit: number): number =>
@@ -5601,7 +5721,8 @@ function emitModuleForms(
         hasResultDiscard = false,
         hasTypeErrors = false,
         hasPlainErrors = false,
-        hasReferenceErrors = false;
+        hasReferenceErrors = false,
+        hasForeignCallbacks = false;
       for (const header of module.functions) {
         if (header === undefined) throw "feature function invariant";
         const fn = bodies.get(header.id);
@@ -5638,7 +5759,18 @@ function emitModuleForms(
                 if (op.kind === "error-new" && op.error === "Error")
                   hasPlainErrors = true;
                 if (op.error === "ReferenceError") hasReferenceErrors = true;
-              }
+              } else if (
+                op.kind === "c-call" &&
+                (op.call.mayCallback === true ||
+                  op.call.callbacks !== undefined ||
+                  op.call.directCallbacks !== undefined)
+              )
+                hasForeignCallbacks = true;
+              else if (
+                op.kind === "c-memory" &&
+                op.access.callback !== undefined
+              )
+                hasForeignCallbacks = true;
             }
           }
         } finally {
@@ -5872,14 +6004,17 @@ function emitModuleForms(
         recordValues: facts.recordFlows,
         localGroups,
         signatureGroups: localSignatures.byFunction,
+        hasForeignCallbacks,
       };
     }
     const prepared =
       precollected !== undefined
         ? precollected.preparation
-        : job === undefined
-          ? prepare()
-          : job.preparation;
+        : reusedPreparation !== undefined
+          ? reusedPreparation
+          : job === undefined
+            ? prepare()
+            : job.preparation;
     if (prepareOnly === true)
       return { kind: "prepared", preparation: prepared };
     module = prepared.module;

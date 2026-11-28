@@ -28,6 +28,7 @@ import {
   encodeJobMessage,
   encodeReplyHeader,
   estimateRangeCreditBytes,
+  minimumWorkerAdmissionBudgetBytes,
   planEmissionRanges,
 } from "../src/parallel-policy.ts";
 
@@ -133,6 +134,25 @@ test("admitEmissionWorkers caps or falls back to serial based on coordinator RSS
       defaultResultCreditBytes / 2,
   );
   assert.ok(estimateRangeCreditBytes(1, defaultResultCreditBytes) >= 65536);
+
+  // Static minimum admission budget matches the zero-RSS, zero-wire boundary.
+  const minimum = minimumWorkerAdmissionBudgetBytes(base.workerHeapBytes);
+  const belowMin = admitEmissionWorkers({
+    ...base,
+    coordinatorRssBytes: 0,
+    wireBytes: 0,
+    memoryBudgetBytes: minimum - 1,
+  });
+  assert.equal(belowMin.workers, 0);
+  assert.equal(belowMin.reason, "budget-exceeded");
+  const atMin = admitEmissionWorkers({
+    ...base,
+    coordinatorRssBytes: 0,
+    wireBytes: 0,
+    memoryBudgetBytes: minimum,
+  });
+  assert.equal(atMin.workers, 1);
+  assert.equal(atMin.reason, "budget-capped");
 });
 
 test("parallel emission wire messages round-trip init, job, reply, and error payloads", () => {

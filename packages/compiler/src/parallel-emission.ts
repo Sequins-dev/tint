@@ -33,6 +33,7 @@ import {
 import type { FileHost } from "@tint/platform/files/service";
 import { createParallelPlatformHost } from "@tint/platform/parallel-host";
 import {
+  buildMacOSProgram,
   openPreparedMacOSBuild,
   type BuildRequest,
   type BuildResult,
@@ -57,6 +58,7 @@ import {
   messageReadyTag,
   messageReplyTag,
   messageShutdownTag,
+  minimumWorkerAdmissionBudgetBytes,
   planEmissionRanges,
 } from "./parallel-policy.ts";
 
@@ -322,13 +324,43 @@ export function buildParallelMacOSProgram(
     };
   const targetOs: "darwin" | "linux" =
     target !== undefined && target.os === "linux" ? "linux" : "darwin";
+  const report = options.report;
+  const reportStats = options.reportStats;
+  const memoryBudgetBytes = options.memoryBudgetBytes;
+  if (
+    memoryBudgetBytes !== undefined &&
+    memoryBudgetBytes <
+      minimumWorkerAdmissionBudgetBytes(options.workerHeapBytes)
+  ) {
+    const rss = platform.residentSetBytes();
+    const admission = admitEmissionWorkers({
+      requestedWorkers: options.workers,
+      rangeCount: 2,
+      coordinatorRssBytes: rss,
+      wireBytes: 0,
+      workerHeapBytes: options.workerHeapBytes,
+      workerStackBytes: defaultWorkerStackBytes,
+      resultCreditBytes: defaultResultCreditBytes,
+      memoryBudgetBytes,
+    });
+    if (reportStats)
+      report(
+        "parallel-emission: wire=0 MiB ranges=0 after-seal=0 MiB after-gc=" +
+          formatMiB(rss) +
+          " admitted=0/" +
+          String(options.workers) +
+          " (" +
+          admission.reason +
+          ") worker-heap=" +
+          formatMiB(options.workerHeapBytes),
+      );
+    return buildMacOSProgram(request);
+  }
   const host: FileHost<number> = options.host;
   const packetSpill = createFileSpillBackend(
     host,
     options.spillDirectory + "/tint-packets",
   );
-  const report = options.report;
-  const reportStats = options.reportStats;
   const memory = nativeSharedMemoryHost(),
     parking = nativeWaiterParkingHost(),
     threads = platform.createWorkerThreadHost(),
@@ -353,24 +385,14 @@ export function buildParallelMacOSProgram(
     packetSpill.release(segment);
   }
   const targetJobs = Math.min(32, Math.max(8, options.workers * 8));
-  const opened = openPreparedMacOSBuild(
-    {
-      ...request,
-      storage: {
-        policy: "all",
-        directory: options.spillDirectory,
-        files: host,
-      },
+  const opened = openPreparedMacOSBuild(request, {
+    planRanges: (module: ModuleIR): readonly EmissionRange[] =>
+      planEmissionRanges(module, targetJobs),
+    packets: packetSpill,
+    afterPreparation: (): void => {
+      afterSealRss = platform.residentSetBytes();
     },
-    {
-      planRanges: (module: ModuleIR): readonly EmissionRange[] =>
-        planEmissionRanges(module, targetJobs),
-      packets: packetSpill,
-      afterPreparation: (): void => {
-        afterSealRss = platform.residentSetBytes();
-      },
-    },
-  );
+  });
   if (!opened.ok) {
     packetSpill.close();
     return opened;
@@ -388,7 +410,9 @@ export function buildParallelMacOSProgram(
     const mapped = memory.mapMemory(wireReservation);
     if (mapped <= 0) {
       session.attempt.abort();
-      return build.finish(session.emitSerialFallback());
+      const fallback = session.emitSerialFallback(session.input.bodies);
+      session.releaseInput();
+      return build.finish(fallback);
     }
     wireBase = mapped;
     const wireView = packetMem.view(wireBase, wireLen);
@@ -408,7 +432,7 @@ export function buildParallelMacOSProgram(
       workerHeapBytes: options.workerHeapBytes,
       workerStackBytes: defaultWorkerStackBytes,
       resultCreditBytes: defaultResultCreditBytes,
-      memoryBudgetBytes: options.memoryBudgetBytes,
+      memoryBudgetBytes,
     });
     if (reportStats)
       report(
@@ -430,9 +454,12 @@ export function buildParallelMacOSProgram(
           formatMiB(options.workerHeapBytes),
       );
     if (admission.workers <= 0) {
-      unmapWire();
       session.attempt.abort();
-      return build.finish(session.emitSerialFallback());
+      const fallback = session.emitSerialFallback(
+        wireView.subarray(prepLen, wireLen),
+      );
+      unmapWire();
+      return build.finish(fallback);
     }
 
     let currentAttempt: PreparedEmissionAttempt = session.attempt;
@@ -456,7 +483,11 @@ export function buildParallelMacOSProgram(
         if (remapped <= 0 || restored.length !== wireLen) {
           if (remapped > 0) memory.unmapMemory(remapped, wireReservation);
           currentAttempt.abort();
-          finalEmission = session.emitSerialFallback();
+          finalEmission = session.emitSerialFallback(
+            restored.length === wireLen
+              ? restored.subarray(prepLen, wireLen)
+              : undefined,
+          );
           break;
         }
         wireBase = remapped;
@@ -725,10 +756,16 @@ export function buildParallelMacOSProgram(
               (failureReason ?? "incomplete ranges") +
               ")",
           );
+        currentAttempt.abort();
+        const fallbackBodies =
+          wireBase !== 0
+            ? packetMem.view(wireBase, wireLen).subarray(prepLen, wireLen)
+            : wireSegment !== undefined
+              ? packetSpill.read(wireSegment).subarray(prepLen, wireLen)
+              : undefined;
+        finalEmission = session.emitSerialFallback(fallbackBodies);
         unmapWire();
         releaseWireSpill();
-        currentAttempt.abort();
-        finalEmission = session.emitSerialFallback();
         break;
       }
 
@@ -760,8 +797,12 @@ export function buildParallelMacOSProgram(
         break;
       }
       if (outcome.kind === "serial") {
+        const fallbackBodies =
+          wireSegment !== undefined
+            ? packetSpill.read(wireSegment).subarray(prepLen, wireLen)
+            : undefined;
+        finalEmission = session.emitSerialFallback(fallbackBodies);
         releaseWireSpill();
-        finalEmission = session.emitSerialFallback();
         break;
       }
       currentAttempt = outcome.attempt;
