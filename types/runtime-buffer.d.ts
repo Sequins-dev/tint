@@ -4,6 +4,7 @@ declare module "node:buffer" {
     toString(encoding?: string, start?: number, end?: number): string;
   }
   const Buffer: {
+    from(value: string, encoding?: string): Buffer;
     from(value: Uint8Array | readonly number[]): Buffer;
     from(value: ArrayBufferLike, byteOffset?: number, length?: number): Buffer;
     isBuffer(value: unknown): value is Buffer;
