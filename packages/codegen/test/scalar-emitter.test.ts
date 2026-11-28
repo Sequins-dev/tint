@@ -601,6 +601,296 @@ test("property-store moves shape transitions to a cold stub and elides write bar
   );
 });
 
+test("fused script-entry pairs context/invoke loads, skips null tag payload check, and fuses the branch", () => {
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "reference", mutable: false }],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
+      },
+      {
+        // Hot fields layout: context (+8), scriptInvoke (+16), constructible (+24)
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "reference", mutable: false },
+          { offset: 16, type: "optional-reference", mutable: false },
+          { offset: 24, type: "boolean", mutable: false },
+        ],
+      },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "reference", mutable: false },
+          { offset: 16, type: "general", mutable: false },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "scriptTarget",
+        exported: false,
+        scriptEntry: true,
+        parameters: [0, 1, 2, 3],
+        slots: ["general", "general", "general", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "general-none", id: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "fusedCaller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference", "optional-reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "script-entry",
+                id: 2,
+                callee: 0,
+                realm: 1,
+                construct: false,
+                realmRecord: 1,
+                agentField: 0,
+                agentRecord: 2,
+                activeField: 0,
+                objectRecord: 3,
+                registerCallField: 0,
+                entryRecord: 4,
+                invokeField: 1,
+                contextField: 0,
+                constructibleField: 2,
+                contextRecord: 5,
+                realmField: 0,
+                scriptOrModuleField: 1,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+              { kind: "reference-none", id: 3, ...span },
+              {
+                kind: "binary",
+                id: 4,
+                operator: "!==",
+                left: 2,
+                right: 3,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 4,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 5, slot: 2, ...span },
+              { kind: "reference-value", id: 6, value: 5, ...span },
+              { kind: "load", id: 7, slot: 0, ...span },
+              { kind: "general-none", id: 8, ...span },
+              { kind: "reference-none", id: 9, ...span },
+              {
+                kind: "call-indirect",
+                id: 10,
+                callee: 6,
+                target: 0,
+                arguments: [7, 8, 8, 9],
+                scriptArguments: [],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 10, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "general-none", id: 11, ...span }],
+            terminator: { kind: "return", value: 11, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[1]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  const ldpEntry = encode({
+    op: "ldp",
+    width: 64,
+    rt: 9,
+    rt2: 11,
+    rn: 12,
+    offset: 8,
+    mode: "offset",
+  });
+  const ldpCall = encode({
+    op: "ldp",
+    width: 64,
+    rt: 16,
+    rt2: 1,
+    rn: 12,
+    offset: 8,
+    mode: "offset",
+  });
+  const cmpZeroX9 = encode({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 9,
+    immediate: 0,
+    shift: 0,
+    setFlags: true,
+  });
+  assert.ok(ldpEntry.ok && ldpCall.ok && cmpZeroX9.ok);
+  assert.equal(words.filter((w) => w === ldpEntry.value).length, 1);
+  assert.equal(words.filter((w) => w === ldpCall.value).length, 1);
+  assert.equal(
+    words.filter((w) => w === cmpZeroX9.value).length,
+    0,
+    "fused script-entry must omit the redundant entry !== undefined compare",
+  );
+  // Only one CBZ x10 (for `active === 0` in the cold context-mismatch stub);
+  // the hot path omits `cbz x10` on `callee.payload` (tag === 5 is non-null).
+  const cbzX10Mask = 0xff00001f;
+  const cbzX10Pattern = 0xb400000a;
+  assert.equal(
+    words.filter((w) => (w & cbzX10Mask) >>> 0 === cbzX10Pattern).length,
+    1,
+  );
+});
+
+test("noLegacyArguments script entries omit unused actual spills while legacy entries elide dead list slots", () => {
+  const buildEntry = (noLegacyArguments: boolean): number[] => {
+    const module: ModuleIR = {
+      records: [{ byteLength: 16, fields: [] }],
+      functions: [
+        {
+          id: 0,
+          name: "helper",
+          exported: false,
+          parameters: [],
+          slots: [],
+          returnType: "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                {
+                  kind: "record-new",
+                  id: 0,
+                  record: 0,
+                  arguments: [],
+                  ...span,
+                },
+                { kind: "general-wrap", id: 1, value: 0, ...span },
+              ],
+              terminator: { kind: "return", value: 1, ...span },
+            },
+          ],
+        },
+        {
+          id: 1,
+          name: "entry",
+          exported: false,
+          scriptEntry: true,
+          ...(noLegacyArguments ? { noLegacyArguments: true } : {}),
+          parameters: [0, 1, 2, 3],
+          slots: ["general", "general", "general", "optional-reference"],
+          returnType: "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "call", id: 0, target: 0, arguments: [], ...span },
+              ],
+              terminator: { kind: "return", value: 0, ...span },
+            },
+          ],
+        },
+      ],
+    };
+    const result = emitModule(module);
+    assert.ok(result.ok, JSON.stringify(result));
+    const view = new DataView(result.value.code.buffer),
+      fn = result.value.functions[1]!;
+    const words: number[] = [];
+    for (
+      let offset = fn.offset;
+      offset < fn.offset + fn.byteLength;
+      offset += 4
+    )
+      words.push(view.getUint32(offset, true));
+    return words;
+  };
+  const legacyWords = buildEntry(false);
+  const strictWords = buildEntry(true);
+  const tstX2 = encode({
+    op: "ands-imm",
+    width: 64,
+    rd: "zr",
+    rn: 2,
+    n: 1,
+    immr: 0,
+    imms: 0,
+  });
+  const cselList = encode({
+    op: "csel",
+    width: 64,
+    rd: 16,
+    rn: 2,
+    rm: "zr",
+    condition: "eq",
+  });
+  const cmpExtra = encode({
+    op: "sub-imm",
+    width: 64,
+    rd: "zr",
+    rn: 17,
+    immediate: 3,
+    shift: 0,
+    setFlags: true,
+  });
+  assert.ok(tstX2.ok && cselList.ok && cmpExtra.ok);
+  // Both elide the unread listSlot spill (param 3 is never read).
+  assert.equal(legacyWords.filter((w) => w === cselList.value).length, 0);
+  assert.equal(strictWords.filter((w) => w === cselList.value).length, 0);
+  // Legacy non-leaf entries still unpack count & extra actuals for fn.arguments;
+  // noLegacyArguments entries omit both completely.
+  assert.equal(legacyWords.filter((w) => w === tstX2.value).length, 1);
+  assert.equal(strictWords.filter((w) => w === tstX2.value).length, 0);
+  assert.ok(legacyWords.filter((w) => w === cmpExtra.value).length >= 1);
+  assert.equal(strictWords.filter((w) => w === cmpExtra.value).length, 0);
+});
 test("call-indirect skips descriptor and signature checks for script-entry callees", () => {
   const module: ModuleIR = {
     records: [

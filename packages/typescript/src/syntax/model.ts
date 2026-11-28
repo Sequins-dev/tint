@@ -132,6 +132,9 @@ export type Expression = Span &
         readonly kind: "arrow";
         /** Compiler-generated native Script body. Never parsed from source. */
         readonly scriptEntry?: true;
+        /** Native Script body whose legacy `fn.arguments` reflection is
+         * forbidden (strict mode, arrow, method, class, or packed entry). */
+        readonly noLegacyArguments?: true;
         readonly typeParameters?: TypeParameters | undefined;
         readonly async?: boolean | undefined;
         readonly strict?: boolean;

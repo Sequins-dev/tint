@@ -1100,6 +1100,14 @@ export function emitFunctionBlocks(ctx: BlockEmitContext): void {
     }
     let comparisonBranch: Condition | "emitted" | undefined = undefined;
     const fusion = fusedAccesses?.get(b.id);
+    if (
+      fusion !== undefined &&
+      fusion.test !== undefined &&
+      comparisonValue === fusion.test
+    ) {
+      comparisonValue = -1;
+      comparisonIndex = -1;
+    }
     const presentOp = trailingStringPresent(b),
       foldedPresentOp =
         presentOp !== undefined &&
@@ -4431,7 +4439,7 @@ export function emitFunctionBlocks(ctx: BlockEmitContext): void {
           break;
         }
         case "script-entry": {
-          emitScriptEntry(objectOpsCtx(), op);
+          emitScriptEntry(objectOpsCtx(), op, fusion);
           break;
         }
         case "global-cell": {
@@ -5545,6 +5553,7 @@ export function emitFunctionBlocks(ctx: BlockEmitContext): void {
           break;
         }
         case "binary": {
+          if (fusion !== undefined && fusion.test === op.id) break;
           comparisonBranch = emitBinaryOp(
             ctx,
             op,

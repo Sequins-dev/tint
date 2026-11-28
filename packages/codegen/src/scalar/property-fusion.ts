@@ -100,10 +100,11 @@ function slotsLiveAt(
  * slots it was stored to) as the block's last instruction. Every slot those
  * stores write must be dead where the miss continues, so skipping them is
  * unobservable. */
-/** A load whose miss is the absent value. */
+/** A load whose miss is the absent value (or a script-entry whose miss is null). */
 function missingLoad(op: Instruction | undefined): boolean {
   return (
     op?.kind === "property-load" ||
+    op?.kind === "script-entry" ||
     op?.kind === "element-load" ||
     op?.kind === "general-element-load" ||
     op?.kind === "element-length"
@@ -192,11 +193,19 @@ export function fusedPropertyAccesses(
     if (
       load === undefined ||
       (load.kind !== "property-load" &&
+        load.kind !== "script-entry" &&
         load.kind !== "element-load" &&
         load.kind !== "general-element-load" &&
         load.kind !== "element-length")
     )
       continue;
+    const isScriptEntry = load.kind === "script-entry";
+    const noneIds = isScriptEntry ? new Set<number>() : undefined;
+    if (noneIds !== undefined) {
+      for (const op of block.instructions)
+        if (op !== undefined && op.kind === "reference-none")
+          noneIds.add(op.id);
+    }
     const uses: LoadUses = {
       aliases: new Set<number>(),
       aliasSlots: [],
@@ -208,6 +217,17 @@ export function fusedPropertyAccesses(
     for (let next = index + 1; next <= last && valid; next++) {
       const op = block.instructions[next];
       if (op === undefined) throw "property fusion instruction invariant";
+      if (
+        isScriptEntry &&
+        op.kind === "binary" &&
+        (op.operator === "===" ||
+          op.operator === "!==" ||
+          op.operator === "==" ||
+          op.operator === "!=") &&
+        ((uses.aliases.has(op.left) && noneIds?.has(op.right) === true) ||
+          (uses.aliases.has(op.right) && noneIds?.has(op.left) === true))
+      )
+        continue;
       if (!followLoad(uses, op) && !skippable(op)) valid = false;
     }
     if (!valid) continue;
@@ -224,9 +244,21 @@ export function fusedPropertyAccesses(
         const op = target.instructions[next];
         if (op === undefined) throw "property fusion instruction invariant";
         if (op.kind === "load") followLoad(uses, op);
+        else if (op.kind === "reference-none") {
+          noneIds?.add(op.id);
+        } else if (
+          isScriptEntry &&
+          op.kind === "binary" &&
+          (op.operator === "===" ||
+            op.operator === "!==" ||
+            op.operator === "==" ||
+            op.operator === "!=") &&
+          ((uses.aliases.has(op.left) && noneIds?.has(op.right) === true) ||
+            (uses.aliases.has(op.right) && noneIds?.has(op.left) === true))
+        )
+          continue;
         else if (
           op.kind !== "constant" &&
-          op.kind !== "reference-none" &&
           op.kind !== "general-none" &&
           !(op.kind === "general-is" && op.type === "absent")
         )
@@ -241,10 +273,13 @@ export function fusedPropertyAccesses(
       continue;
     let testId = -1;
     let testIndex = -1;
+    let hitTarget = branch.alternate;
+    let missTarget = branch.consequent;
     for (let next = testStart; next < testBlock.instructions.length; next++) {
       const op = testBlock.instructions[next];
+      if (op === undefined) continue;
       if (
-        op !== undefined &&
+        !isScriptEntry &&
         op.kind === "general-is" &&
         op.type === "absent" &&
         op.id === branch.condition &&
@@ -252,6 +287,26 @@ export function fusedPropertyAccesses(
       ) {
         testId = op.id;
         testIndex = next;
+        hitTarget = branch.alternate;
+        missTarget = branch.consequent;
+        break;
+      }
+      if (
+        isScriptEntry &&
+        op.kind === "binary" &&
+        (op.operator === "===" ||
+          op.operator === "!==" ||
+          op.operator === "==" ||
+          op.operator === "!=") &&
+        op.id === branch.condition &&
+        ((uses.aliases.has(op.left) && noneIds?.has(op.right) === true) ||
+          (uses.aliases.has(op.right) && noneIds?.has(op.left) === true))
+      ) {
+        testId = op.id;
+        testIndex = next;
+        const hitOnTrue = op.operator === "!==" || op.operator === "!=";
+        hitTarget = hitOnTrue ? branch.consequent : branch.alternate;
+        missTarget = hitOnTrue ? branch.alternate : branch.consequent;
         break;
       }
     }
@@ -270,10 +325,10 @@ export function fusedPropertyAccesses(
         });
     }
     if (usedByOp) continue;
-    // The test is true when the load missed.
+    // Skipping stores after the access on the miss path must be unobservable.
     if (
       uses.stored.length > 0 &&
-      slotsLiveAt(fn, branch.consequent, uses.stored, budget) !== false
+      slotsLiveAt(fn, missTarget, uses.stored, budget) !== false
     )
       continue;
     // A store no later instruction of the block reads, whose slot only
@@ -294,22 +349,22 @@ export function fusedPropertyAccesses(
         }
         const slots: number[] = [];
         slots.push(op.slot);
-        if (!read && slotsLiveAt(fn, branch.alternate, slots, budget) === false)
+        if (!read && slotsLiveAt(fn, hitTarget, slots, budget) === false)
           skipped.push(next);
       }
     fused.set(block.id, {
       access: load.id,
-      miss: branch.consequent,
+      miss: missTarget,
       test: testBlock === block ? testId : undefined,
-      hit: branch.alternate,
+      hit: hitTarget,
       skipped,
     });
     if (testBlock !== block)
       fused.set(testBlock.id, {
         access: undefined,
-        miss: branch.consequent,
+        miss: missTarget,
         test: testId,
-        hit: branch.alternate,
+        hit: hitTarget,
         skipped: [],
       });
   }
@@ -437,6 +492,7 @@ export function knownObjectFacts(
         op !== undefined &&
         (op.kind === "property-load" ||
           op.kind === "property-store" ||
+          op.kind === "script-entry" ||
           op.kind === "general-record-is")
       ) {
         hasTarget = true;
@@ -648,6 +704,19 @@ export function knownObjectFacts(
           )
             markSlotAndAliases(knownSlots, idx, op.record);
         }
+      } else if (
+        op.kind === "script-entry" &&
+        fusion !== undefined &&
+        fusion.access === op.id
+      ) {
+        missOut = knownSlots.slice();
+        valueState.set(op.callee, op.objectRecord);
+        const idx = valueSlot.get(op.callee);
+        if (
+          idx !== undefined &&
+          valueSlotVersion.get(op.callee) === (slotVersion[idx] ?? 0)
+        )
+          markSlotAndAliases(knownSlots, idx, op.objectRecord);
       }
     }
     const exception = block.exception;
@@ -801,6 +870,18 @@ export function knownObjectFacts(
             valueSlotVersion.get(op.object) === (slotVersion[idx] ?? 0)
           )
             markSlotAndAliases(knownSlots, idx, op.record);
+        }
+      } else if (op.kind === "script-entry") {
+        const prior = valueState.get(op.callee) ?? objectUnknown;
+        if (prior >= objectTagOnly) tagKnown.add(op.id);
+        if (fusion !== undefined && fusion.access === op.id) {
+          valueState.set(op.callee, op.objectRecord);
+          const idx = valueSlot.get(op.callee);
+          if (
+            idx !== undefined &&
+            valueSlotVersion.get(op.callee) === (slotVersion[idx] ?? 0)
+          )
+            markSlotAndAliases(knownSlots, idx, op.objectRecord);
         }
       }
     }

@@ -1185,6 +1185,20 @@ test("packed functions round-trip every instruction kind and optional field", ()
     withoutUndefined(roundTrip({ ...everyKind(1), import: true })),
     withoutUndefined({ ...everyKind(1), import: true }),
   );
+  assert.deepStrictEqual(
+    withoutUndefined(
+      roundTrip({
+        ...everyKind(2),
+        scriptEntry: true,
+        noLegacyArguments: true,
+      }),
+    ),
+    withoutUndefined({
+      ...everyKind(2),
+      scriptEntry: true,
+      noLegacyArguments: true,
+    }),
+  );
 });
 
 test("packed functions preserve every NativeErrorKind in error-new and error-is", () => {

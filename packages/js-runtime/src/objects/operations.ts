@@ -439,20 +439,22 @@ export type ObjectWideRegisterCall<Value> = (
   sixth: Value,
 ) => Value;
 export interface ObjectRegisterEntry<Value> {
+  /** Hot dispatch fields first (offsets 8, 16, 24 — cache line 0) so native
+   * `script-entry` loads `context` and `scriptInvoke` with one `ldp`. */
   readonly context: ScriptExecutionContext;
+  readonly scriptInvoke: ObjectScriptCall<Value> | undefined;
+  /** Whether its [[Construct]] is the ordinary one of a base source
+   * function (OrdinaryCreateFromConstructor, then the body). */
+  readonly constructible: boolean;
   /** Stack-trace name and caller policy (SourceCallerPolicy) of the source
    * function, for native activation records naming it as their callee. */
   readonly traceName: string;
   readonly callerPolicy: string;
-  /** Whether its [[Construct]] is the ordinary one of a base source
-   * function (OrdinaryCreateFromConstructor, then the body). */
-  readonly constructible: boolean;
   /** Non-zero when the body is a pure forwarding constructor such as
    * `function() { this.initialize.apply(this, arguments); }` (tag 1). */
   forwardingTag: number;
   readonly invoke: ObjectRegisterCall<Value> | undefined;
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
-  readonly scriptInvoke: ObjectScriptCall<Value> | undefined;
 }
 /** The ordered keys of a fast-mode object's own data properties and the
  * attributes of each (propertyWritable | propertyEnumerable |

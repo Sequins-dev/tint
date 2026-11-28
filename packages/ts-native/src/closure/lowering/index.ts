@@ -5102,7 +5102,14 @@ function lowerEntries(
       // and locals. Captured and environment-owned bindings live in cells.
       let original: FunctionIR =
         body.scriptEntry === true
-          ? { ...lowered, exported: false, scriptEntry: true }
+          ? body.noLegacyArguments === true
+            ? {
+                ...lowered,
+                exported: false,
+                scriptEntry: true,
+                noLegacyArguments: true,
+              }
+            : { ...lowered, exported: false, scriptEntry: true }
           : lowered;
       if (recordTarget?.debug === true) {
         const variables: SourceVariable[] = [],

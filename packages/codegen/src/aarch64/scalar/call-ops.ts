@@ -1020,20 +1020,35 @@ export function emitCallOp(
             }
           }
         }
-        emit({
-          op: "ldr",
-          width: 64,
-          rt: 1,
-          rn: 12,
-          offset: nativeFunctionEnvironmentOffset,
-        });
-        emit({
-          op: "ldr",
-          width: 64,
-          rt: 16,
-          rn: 12,
-          offset: nativeFunctionEntryOffset,
-        });
+        if (
+          actuals !== undefined &&
+          nativeFunctionEnvironmentOffset === nativeFunctionEntryOffset + 8
+        ) {
+          emit({
+            op: "ldp",
+            width: 64,
+            rt: 16,
+            rt2: 1,
+            rn: 12,
+            offset: nativeFunctionEntryOffset,
+            mode: "offset",
+          });
+        } else {
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 1,
+            rn: 12,
+            offset: nativeFunctionEnvironmentOffset,
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 16,
+            rn: 12,
+            offset: nativeFunctionEntryOffset,
+          });
+        }
         if (actuals !== undefined) {
           const layout = scriptArgumentLayout(actuals.length);
           // Overflow words stay in the caller frame. The stack map

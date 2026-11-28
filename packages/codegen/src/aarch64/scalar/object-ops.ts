@@ -1367,6 +1367,7 @@ export function emitPropertyAccess(
 export function emitScriptEntry(
   ctx: ObjectOpsEmitContext,
   instruction: IRInstruction,
+  fusion: FusedPropertyAccess | undefined = undefined,
 ): void {
   const op = instruction;
   const {
@@ -1379,6 +1380,7 @@ export function emitScriptEntry(
     forwardable,
     contextOffset,
     generationalBarriers,
+    knownObjectTag,
     deferRememberSlow,
     value,
     branch,
@@ -1432,32 +1434,51 @@ export function emitScriptEntry(
         scriptOrModule.offset > 496
       )
         throw "script entry layout invariant";
+      const fusedMiss =
+        fusion !== undefined && fusion.access === op.id
+          ? fusion.miss
+          : undefined;
+      const useColdStubs = coldStubsAvailable();
+      if (useColdStubs && fusedMiss !== undefined)
+        forwardable.delete(fusedMiss);
+      const owner = fn.id;
       const neMisses: number[] = [];
       const cbzMisses: {
         readonly index: number;
         readonly rt: number;
       }[] = [];
       function missNe(): void {
-        neMisses.push(instructions.length);
-        emit({ op: "b.cond", condition: "ne", displacement: 0 });
+        if (fusedMiss !== undefined)
+          branch({ op: "b.cond", condition: "ne" }, owner, fusedMiss);
+        else {
+          neMisses.push(instructions.length);
+          emit({ op: "b.cond", condition: "ne", displacement: 0 });
+        }
       }
       function missZero(rt: number): void {
-        cbzMisses.push({ index: instructions.length, rt });
-        emit({ op: "cbz", width: 64, rt, displacement: 0 });
+        if (fusedMiss !== undefined)
+          branch({ op: "cbz", width: 64, rt }, owner, fusedMiss);
+        else {
+          cbzMisses.push({ index: instructions.length, rt });
+          emit({ op: "cbz", width: 64, rt, displacement: 0 });
+        }
       }
-      // x9 = callee.tag, x10 = callee.payload
-      generalPair(9, value(op.callee).offset, true);
-      emit({
-        op: "sub-imm",
-        width: 64,
-        rd: "zr",
-        rn: 9,
-        immediate: 5,
-        shift: 0,
-        setFlags: true,
-      });
-      missNe();
-      missZero(10);
+      // x9 = callee.tag, x10 = callee.payload (tag 5 is always non-null).
+      if (knownObjectTag?.has(op.id) === true) {
+        rawLoad(10, value(op.callee).offset + 8);
+      } else {
+        generalPair(9, value(op.callee).offset, true);
+        emit({
+          op: "sub-imm",
+          width: 64,
+          rd: "zr",
+          rn: 9,
+          immediate: 5,
+          shift: 0,
+          setFlags: true,
+        });
+        missNe();
+      }
       emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
       descriptorPointer(op.objectRecord);
       emit({
@@ -1489,21 +1510,34 @@ export function emitScriptEntry(
         });
         missZero(9);
       }
-      emit({
-        op: "ldr",
-        width: 64,
-        rt: 11,
-        rn: 12,
-        offset: invoke.offset,
-      });
-      missZero(11);
-      emit({
-        op: "ldr",
-        width: 64,
-        rt: 9,
-        rn: 12,
-        offset: context.offset,
-      });
+      if (invoke.offset === context.offset + 8 && context.offset <= 496) {
+        emit({
+          op: "ldp",
+          width: 64,
+          rt: 9,
+          rt2: 11,
+          rn: 12,
+          offset: context.offset,
+          mode: "offset",
+        });
+        missZero(11);
+      } else {
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 11,
+          rn: 12,
+          offset: invoke.offset,
+        });
+        missZero(11);
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 9,
+          rn: 12,
+          offset: context.offset,
+        });
+      }
       const realmReg = rawRegister(op.realm, 10);
       emit({
         op: "ldr",
@@ -1532,7 +1566,7 @@ export function emitScriptEntry(
       });
       const contextCheck = instructions.length;
       emit({ op: "b.cond", condition: "ne", displacement: 0 });
-      if (coldStubsAvailable()) {
+      if (useColdStubs) {
         const doneAt = instructions.length;
         stackWords.clear();
         saveRaw(11, op.id);
@@ -1546,12 +1580,15 @@ export function emitScriptEntry(
           });
           stackWords.clear();
           const slowCbz = instructions.length;
-          emit({
-            op: "cbz",
-            width: 64,
-            rt: active,
-            displacement: 0,
-          });
+          if (fusedMiss !== undefined)
+            branch({ op: "cbz", width: 64, rt: active }, owner, fusedMiss);
+          else
+            emit({
+              op: "cbz",
+              width: 64,
+              rt: active,
+              displacement: 0,
+            });
           emit({
             op: "ldr",
             width: 64,
@@ -1577,7 +1614,9 @@ export function emitScriptEntry(
             setFlags: true,
           });
           const realmNe = instructions.length;
-          emit({ op: "b.cond", condition: "ne", displacement: 0 });
+          if (fusedMiss !== undefined)
+            branch({ op: "b.cond", condition: "ne" }, owner, fusedMiss);
+          else emit({ op: "b.cond", condition: "ne", displacement: 0 });
           emit({
             op: "ldp",
             width: 64,
@@ -1607,7 +1646,9 @@ export function emitScriptEntry(
             setFlags: true,
           });
           const somTagNe = instructions.length;
-          emit({ op: "b.cond", condition: "ne", displacement: 0 });
+          if (fusedMiss !== undefined)
+            branch({ op: "b.cond", condition: "ne" }, owner, fusedMiss);
+          else emit({ op: "b.cond", condition: "ne", displacement: 0 });
           emit({
             op: "sub-reg",
             width: 64,
@@ -1625,6 +1666,10 @@ export function emitScriptEntry(
             condition: "eq",
             displacement: (doneAt - hitSlow) * 4,
           });
+          if (fusedMiss !== undefined) {
+            branch({ op: "b" }, owner, fusedMiss);
+            return;
+          }
           const missAt = instructions.length;
           for (const site of neMisses)
             farBranch(site, {
@@ -1747,27 +1792,31 @@ export function emitScriptEntry(
       });
       const hitSlow = instructions.length;
       emit({ op: "b.cond", condition: "eq", displacement: 0 });
-      const missAt = instructions.length;
-      for (const site of neMisses)
-        patchInstruction(site, {
-          op: "b.cond",
-          condition: "ne",
-          displacement: (missAt - site) * 4,
-        });
-      for (const site of cbzMisses)
-        patchInstruction(site.index, {
-          op: "cbz",
+      if (fusedMiss !== undefined) {
+        branch({ op: "b" }, owner, fusedMiss);
+      } else {
+        const missAt = instructions.length;
+        for (const site of neMisses)
+          patchInstruction(site, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (missAt - site) * 4,
+          });
+        for (const site of cbzMisses)
+          patchInstruction(site.index, {
+            op: "cbz",
+            width: 64,
+            rt: site.rt,
+            displacement: (missAt - site.index) * 4,
+          });
+        emit({
+          op: "orr-reg",
           width: 64,
-          rt: site.rt,
-          displacement: (missAt - site.index) * 4,
+          rd: 11,
+          rn: "zr",
+          rm: "zr",
         });
-      emit({
-        op: "orr-reg",
-        width: 64,
-        rd: 11,
-        rn: "zr",
-        rm: "zr",
-      });
+      }
       const doneAt = instructions.length;
       patchInstruction(hitFast, {
         op: "b",
