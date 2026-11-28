@@ -689,3 +689,4 @@ export { parseJSON, tryParseJSONStringLiteral } from "./json-parse.ts";
 export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
 
 export { installTextEncodingIntrinsics } from "./text-encoding-intrinsics.ts";
+export { installWebEventIntrinsics } from "./web-events.ts";

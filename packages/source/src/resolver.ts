@@ -78,6 +78,7 @@ interface SourceNodeBuiltin extends NodeBuiltin {
 export const nodeBuiltins: {
   readonly buffer: SourceNodeBuiltin;
   readonly crypto: NodeBuiltin;
+  readonly events: SourceNodeBuiltin;
   readonly ffi: SourceNodeBuiltin;
   readonly fs: NodeBuiltin;
   readonly process: SourceNodeBuiltin;
@@ -99,6 +100,10 @@ export const nodeBuiltins: {
     ],
   },
   crypto: { specifier: "node:crypto" },
+  events: {
+    specifier: "node:events",
+    source: "packages/native-runtime/src/node/events.ts",
+  },
   ffi: {
     specifier: "node:ffi",
     source: "packages/native-runtime/src/node/ffi.ts",
@@ -152,6 +157,7 @@ export const nodeBuiltins: {
 export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.buffer,
   nodeBuiltins.crypto,
+  nodeBuiltins.events,
   nodeBuiltins.ffi,
   nodeBuiltins.fs,
   nodeBuiltins.process,

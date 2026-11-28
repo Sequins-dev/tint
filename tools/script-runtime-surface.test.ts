@@ -393,21 +393,23 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Cached property-contract sub-schemas (`ObjectShapeContract.subSchemas`) and
   // flat reusable pending lists (`objects` + `schemas` replacing `Enrollment[]`)
   // add two list anchors (+2 anchors).
-  assert.equal(census.value.anchors.length, 136);
-  assert.equal(census.value.collections.length, 58);
+  // Web event state adds two list classes for listeners and source signals
+  // and two set classes for abort algorithms and dependent signals.
+  assert.equal(census.value.anchors.length, 140);
+  assert.equal(census.value.collections.length, 62);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [49, 2, 7],
+    [51, 4, 7],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    489,
+    525,
   );
 
   assert.ok(
@@ -437,7 +439,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   assert.ok(facts.ok, JSON.stringify(facts));
   // Map buckets and object contract lists reuse existing physical signatures;
   // the shape key index map adds a provider with two new ones.
-  assert.equal(facts.value.runtimes.length, 60);
+  assert.equal(facts.value.runtimes.length, 64);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -453,7 +455,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     (sum, row) => sum + row.operations.length,
     0,
   );
-  assert.equal(operationCount, 512);
+  assert.equal(operationCount, 548);
   assert.ok(
     facts.value.runtimes.every((row) =>
       row.operations.every((operation) => operation.returnType !== undefined),
@@ -639,7 +641,7 @@ test("Script surface instantiations match the real linked export namespaces and 
       // The cache list providers each contribute eight distinct targets, and
       // the shape key index map eleven.
       assert.equal(names.value.providers.length, facts.value.runtimes.length);
-      assert.equal(names.value.targets.length, 464);
+      assert.equal(names.value.targets.length, 500);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
@@ -647,7 +649,7 @@ test("Script surface instantiations match the real linked export namespaces and 
       );
       assert.ok(exported.ok, JSON.stringify(exported));
       assert.equal(exported.value.slots.length, operationCount);
-      assert.equal(exported.value.stubs.declarations.length, 509);
+      assert.equal(exported.value.stubs.declarations.length, 545);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
         names.value.targets.length,
@@ -709,9 +711,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    52,
+    56,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 441);
+  assert.equal(new Set(collectionOperations.flat()).size, 477);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(
