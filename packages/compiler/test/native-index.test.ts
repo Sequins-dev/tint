@@ -417,6 +417,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "inline-small-functions",
       // Cleanup of the inlined function, record replacement and its folds.
       "fold-constants",
+      "simplify-control-flow",
       "forward-local-loads",
       "propagate-slot-copies",
       "remove-unread-stores",
