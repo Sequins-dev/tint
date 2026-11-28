@@ -212,9 +212,9 @@ test("Script service generated modules use captured source bytes", () => {
   // NumberMap, and Set providers, the console provider, the SHA-256
   // rounds intrinsic's portable body, the typed BigInt helpers with the
   // js-runtime BigIntValue module they share, the Latin-1 and UTF-8
-  // primitives the text codec moves text in bulk with, and the
-  // number-string cache behind number formatting).
-  assert.equal(texts.length, 37);
+  // bulk text primitives, the multibyte decoder and both encoding tables,
+  // and the number-string cache behind number formatting).
+  assert.equal(texts.length, 40);
   const first = texts[0]!;
   const changed = {
     ...snapshot,

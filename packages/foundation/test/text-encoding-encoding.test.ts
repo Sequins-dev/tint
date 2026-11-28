@@ -240,3 +240,70 @@ test("native global adapters retain standard UTF-8 options and branded failures"
   );
   assert.equal(decoder.decode(new Uint8Array([0xbf, 65])), "A");
 });
+
+test("TextDecoder preserves UTF-16 sequences and the BOM across chunk boundaries", () => {
+  for (const [label, bytes] of [
+    ["unicodefffe", [0xfe, 0xff, 0xd8, 0x3d, 0xdc, 0xa5, 0, 0x41]],
+    ["utf-16", [0xff, 0xfe, 0x3d, 0xd8, 0xa5, 0xdc, 0x41, 0]],
+  ] as const) {
+    const native = createNativeTextDecoder(label, { fatal: true });
+    const reference = new TextDecoder(label, { fatal: true });
+    assert.equal(native.encoding, reference.encoding);
+    for (const byte of bytes) {
+      const part = Uint8Array.of(byte);
+      assert.equal(
+        native.decode(part, { stream: true }),
+        reference.decode(part, { stream: true }),
+      );
+    }
+    assert.equal(native.decode(), reference.decode());
+    assert.throws(() => native.decode(Uint8Array.of(0)), TypeError);
+  }
+});
+
+test("TextDecoder recognizes the WHATWG Windows-1252 aliases", () => {
+  const native = createNativeTextDecoder(" \tlatin1\n");
+  assert.equal(native.encoding, "windows-1252");
+  assert.equal(native.decode(Uint8Array.of(0x80, 0x41, 0x9f)), "€AŸ");
+});
+
+test("TextDecoder resolves legacy single-byte labels and decodes their indexes", () => {
+  for (const [label, bytes] of [
+    ["csibm866", [0x80, 0xaf, 0xf0]],
+    ["iso-ir-144", [0xb0, 0xc1, 0xef]],
+    ["cp1251", [0x80, 0xc0, 0xff]],
+    ["koi8-ru", [0xa4, 0xc1, 0xff]],
+    ["x-mac-roman", [0x80, 0xc1, 0xff]],
+  ] as const) {
+    const actual = createNativeTextDecoder(label);
+    const expected = new TextDecoder(label);
+    const input = Uint8Array.from(bytes);
+    assert.equal(actual.encoding, expected.encoding);
+    assert.equal(actual.decode(input), expected.decode(input));
+  }
+});
+
+test("TextDecoder retains legacy multibyte state across streaming chunks", () => {
+  for (const [label, bytes] of [
+    ["gb18030", [0xdd, 0x7e, 0x90, 0x30, 0x81, 0x30]],
+    ["gbk", [0xc4, 0xe3, 0xba, 0xc3]],
+    ["big5", [0xa7, 0x41, 0xa6, 0x6e]],
+    ["euc-kr", [0xc7, 0xd1, 0xb1, 0xdb]],
+    ["windows-31j", [0x82, 0xa0, 0x82, 0xa2]],
+    ["euc-jp", [0xa4, 0xa2, 0xa4, 0xa4]],
+    ["iso-2022-jp", [0x1b, 0x24, 0x42, 0x24, 0x22, 0x1b, 0x28, 0x42, 0x41]],
+  ] as const) {
+    const native = createNativeTextDecoder(label, { fatal: true });
+    const reference = new TextDecoder(label, { fatal: true });
+    assert.equal(native.encoding, reference.encoding);
+    for (const byte of bytes) {
+      const chunk = Uint8Array.of(byte);
+      assert.equal(
+        native.decode(chunk, { stream: true }),
+        reference.decode(chunk, { stream: true }),
+        label,
+      );
+    }
+    assert.equal(native.decode(), reference.decode());
+  }
+});

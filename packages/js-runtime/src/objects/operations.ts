@@ -222,6 +222,10 @@ export interface ExoticObjectSlots {
     | undefined;
   /** Frozen primitive JSON text; presence is the non-proxy-forwarding raw JSON brand. */
   internalRawJSON: string | undefined;
+  internalTextEncoder: boolean;
+  internalTextDecoder:
+    | ((operation: string, input: Uint8Array, stream: boolean) => unknown)
+    | undefined;
   internalModuleSourceClassName: string | undefined;
   internalShadowRealm: ShadowRealmHost | undefined;
   /** Presence of [[ErrorData]], independent of the object's prototype chain. */
@@ -708,6 +712,8 @@ function createExoticSlots(): ExoticObjectSlots {
     internalAsyncGeneratorData: undefined,
     internalArrayIteratorData: undefined,
     internalRawJSON: undefined,
+    internalTextEncoder: false,
+    internalTextDecoder: undefined,
     internalModuleSourceClassName: undefined,
     internalShadowRealm: undefined,
     internalErrorData: false,

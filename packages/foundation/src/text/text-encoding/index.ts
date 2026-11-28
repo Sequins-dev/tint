@@ -1,3 +1,6 @@
+import { multibyteLabel } from "./multibyte-data.ts";
+import { createMultibyteDecoder } from "./multibyte.ts";
+import { singleByteLabels, singleByteIndexes } from "./single-byte-data.ts";
 export { escapeUTF16, unescapeUTF16 } from "./legacy-uri.ts";
 export {
   encodeURIString,
@@ -228,7 +231,7 @@ export interface DecodeOptions {
   readonly stream?: boolean;
 }
 export interface NativeTextDecoder {
-  readonly encoding: "utf-8";
+  readonly encoding: string;
   readonly fatal: boolean;
   readonly ignoreBOM: boolean;
   readonly decode: (input?: Uint8Array, options?: DecodeOptions) => string;
@@ -249,27 +252,169 @@ function encodingLabel(label: string): string {
   }
   return result;
 }
-/** UTF-8-only standard-global surface for the native bootstrap. */
+function unicodeDecoderLabel(label: string): string | undefined {
+  switch (label) {
+    case "utf-8":
+    case "utf8":
+    case "unicode-1-1-utf-8":
+    case "unicode11utf8":
+    case "unicode20utf8":
+    case "x-unicode20utf8":
+      return "utf-8";
+    case "utf-16be":
+    case "unicodefffe":
+      return "utf-16be";
+    case "utf-16le":
+    case "utf-16":
+    case "unicode":
+    case "unicodefeff":
+    case "ucs-2":
+    case "csunicode":
+    case "iso-10646-ucs-2":
+      return "utf-16le";
+    case "x-user-defined":
+      return label;
+    default:
+      return undefined;
+  }
+}
+
+interface SingleByteEncoding {
+  readonly name: string;
+  readonly index: string;
+}
+function singleByteLabel(label: string): SingleByteEncoding | undefined {
+  const lines = singleByteLabels.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line === undefined) continue;
+    const labels = line.split(" ");
+    const name = labels[0];
+    if (name !== undefined && labels.includes(label))
+      return { name, index: singleByteIndexes.slice(i * 128, (i + 1) * 128) };
+  }
+  return undefined;
+}
+
+function singleByteDecoder(
+  input: Uint8Array,
+  index: string,
+  fatal: boolean,
+): string | undefined {
+  const output: string[] = [];
+  for (let i = 0; i < input.length; i++) {
+    const byte = input[i] ?? 0;
+    const code = byte < 128 ? byte : index.charCodeAt(byte - 128);
+    if (byte >= 128 && code === 0) {
+      if (fatal) return undefined;
+      output.push("\ufffd");
+    } else output.push(String.fromCharCode(code));
+  }
+  return output.join("");
+}
+
+function decodeUserDefined(input: Uint8Array): string {
+  const output: string[] = [];
+  for (const byte of input) {
+    if (byte !== undefined)
+      output.push(String.fromCharCode(byte < 128 ? byte : 0xf780 + byte - 128));
+  }
+  return output.join("");
+}
+
+function utf16Decoder(
+  little: boolean,
+  fatal: boolean,
+  ignoreBOM: boolean,
+): (input: Uint8Array, stream: boolean) => string | undefined {
+  let byte = -1,
+    lead = -1,
+    seenBOM = false,
+    streaming = false;
+  return (input, stream): string | undefined => {
+    if (!streaming) {
+      byte = -1;
+      lead = -1;
+      seenBOM = false;
+    }
+    streaming = stream;
+    const output: string[] = [];
+    function emit(unit: number): void {
+      if (!seenBOM) {
+        seenBOM = true;
+        if (unit === 0xfeff && !ignoreBOM) return;
+      }
+      output.push(String.fromCharCode(unit));
+    }
+    for (let i = 0; i < input.length; i++) {
+      const next = input[i] ?? 0;
+      if (byte < 0) {
+        byte = next;
+        continue;
+      }
+      const unit = little ? next * 256 + byte : byte * 256 + next;
+      byte = -1;
+      if (lead >= 0) {
+        if (unit >= 0xdc00 && unit <= 0xdfff) {
+          emit(lead);
+          emit(unit);
+          lead = -1;
+          continue;
+        }
+        lead = -1;
+        if (fatal) return undefined;
+        emit(0xfffd);
+      }
+      if (unit >= 0xd800 && unit <= 0xdbff) lead = unit;
+      else if (unit >= 0xdc00 && unit <= 0xdfff) {
+        if (fatal) return undefined;
+        emit(0xfffd);
+      } else emit(unit);
+    }
+    if (!stream && (byte >= 0 || lead >= 0)) {
+      if (fatal) return undefined;
+      emit(0xfffd);
+    }
+    return output.join("");
+  };
+}
+
 export function createNativeTextDecoder(
   label: string = "utf-8",
   options: DecoderOptions | undefined = undefined,
 ): NativeTextDecoder {
-  const name = encodingLabel(label);
-  if (name !== "utf-8" && name !== "utf8" && name !== "unicode-1-1-utf-8")
+  const normalized = encodingLabel(label);
+  const single = singleByteLabel(normalized);
+  const multibyte = multibyteLabel(normalized);
+  const encoding = unicodeDecoderLabel(normalized) ?? single?.name ?? multibyte;
+  if (encoding === undefined)
     throw new RangeError("Unsupported encoding label");
-  const fatal = options?.fatal ?? false,
-    ignoreBOM = options?.ignoreBOM ?? false;
-  const state = createUTF8Decoder(fatal, ignoreBOM);
+  const index = single?.index;
+  const fatal = options?.fatal ?? false;
+  const ignoreBOM = options?.ignoreBOM ?? false;
+  const decodeMulti = createMultibyteDecoder(encoding, fatal);
+  const utf8 = createUTF8Decoder(fatal, ignoreBOM);
+  const utf16 = utf16Decoder(encoding === "utf-16le", fatal, ignoreBOM);
   return {
-    encoding: "utf-8",
+    encoding,
     fatal,
     ignoreBOM,
     decode: (
       input: Uint8Array = new Uint8Array(0),
       options: DecodeOptions | undefined = undefined,
     ): string => {
-      const value = decodeUTF8(state, input, options?.stream ?? false);
-      if (value === undefined) throw new TypeError("Invalid UTF-8 data");
+      const stream = options?.stream ?? false;
+      const value =
+        encoding === "utf-8"
+          ? decodeUTF8(utf8, input, stream)
+          : index !== undefined
+            ? singleByteDecoder(input, index, fatal)
+            : multibyte !== undefined
+              ? decodeMulti(input, stream)
+              : encoding === "x-user-defined"
+                ? decodeUserDefined(input)
+                : utf16(input, stream);
+      if (value === undefined) throw new TypeError("Invalid encoded text");
       return value;
     },
   };

@@ -86,7 +86,17 @@ export const nodeBuiltins: {
   buffer: {
     specifier: "node:buffer",
     source: "packages/native-runtime/src/node/buffer.ts",
-    realmExports: ["default", "Buffer", "constants", "kMaxLength"],
+    realmExports: [
+      "default",
+      "Buffer",
+      "constants",
+      "kMaxLength",
+      "kStringMaxLength",
+      "INSPECT_MAX_BYTES",
+      "isUtf8",
+      "isAscii",
+      "transcode",
+    ],
   },
   crypto: { specifier: "node:crypto" },
   ffi: {

@@ -807,6 +807,18 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/text/text-encoding/multibyte-data.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/text/text-encoding/multibyte.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/text/text-encoding/single-byte-data.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/text/text-encoding/uri.ts",
       packageId: "foundation",
     },
@@ -2696,6 +2708,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/temporal-zoned-format.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/text-encoding-intrinsics.ts",
       packageId: "js-runtime",
     },
     {

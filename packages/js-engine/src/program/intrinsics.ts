@@ -21,6 +21,7 @@ export const intrinsicInstallers: readonly string[] = [
   "installAtomicsIntrinsics",
   "installDataViewIntrinsics",
   "installTypedArrayIntrinsics",
+  "installTextEncodingIntrinsics",
   "installObjectIntrinsics",
   "installFunctionIntrinsics",
   "installEvalIntrinsic",
@@ -74,6 +75,11 @@ const byGlobal: ReadonlyMap<string, readonly string[]> = new Map<
     "SharedArrayBuffer",
     ["installArrayBufferIntrinsics", "installSharedArrayBufferIntrinsics"],
   ],
+  [
+    "TextEncoder",
+    ["installTypedArrayIntrinsics", "installTextEncodingIntrinsics"],
+  ],
+  ["TextDecoder", ["installTextEncodingIntrinsics"]],
   ["Atomics", ["installAtomicsIntrinsics"]],
   ["DataView", ["installArrayBufferIntrinsics", "installDataViewIntrinsics"]],
 ]);
