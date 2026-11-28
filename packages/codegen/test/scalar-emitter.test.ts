@@ -4638,3 +4638,156 @@ test("directIntTarget keeps secondary integer stores, left-immediate subtraction
   const hasSubWReg = words.some((w) => (w & 0xffe0fc00) >>> 0 === 0x4b000000);
   assert.ok(hasSubWReg, "expected `(10 - x) >>> 0` to emit 32-bit SUB reg");
 });
+
+test("multi-use directIntTarget guards fused comparisons before slot overwrites and keeps bitwise sign-extension", () => {
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "fusedCmpBeforeOverwrite",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "number"],
+          integerSlots: [1],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 2,
+                  operator: "|",
+                  left: 0,
+                  right: 1,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 2, ...span },
+                // Multi-use integer value: stored to slot 1, then compared in a
+                // fused branch AFTER slot 1 is overwritten with 99.
+                { kind: "load", id: 3, slot: 1, ...span },
+                { kind: "constant", id: 4, value: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 5,
+                  operator: "+",
+                  left: 3,
+                  right: 4,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 5, ...span },
+                { kind: "constant", id: 6, value: 10, ...span },
+                {
+                  kind: "binary",
+                  id: 7,
+                  operator: "<",
+                  left: 5,
+                  right: 6,
+                  ...span,
+                },
+                { kind: "constant", id: 8, value: 99, ...span },
+                { kind: "store", slot: 1, value: 8, ...span },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 7,
+                consequent: 1,
+                alternate: 2,
+                ...span,
+              },
+            },
+            {
+              id: 1,
+              instructions: [{ kind: "constant", id: 9, value: 1, ...span }],
+              terminator: { kind: "return", value: 9, ...span },
+            },
+            {
+              id: 2,
+              instructions: [{ kind: "constant", id: 10, value: 0, ...span }],
+              terminator: { kind: "return", value: 10, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  // Also ensure `wordValue` honors `directIntAlias` and `(x | 0)` keeps `sxtw`
+  // when `x` is a word-only bitwise op stored to a non-word-only integer slot.
+  const bitwiseResult = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "bitwiseSignExtend",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "number"],
+          integerSlots: [1],
+          returnType: "boolean",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: -2147483648, ...span },
+                {
+                  kind: "binary",
+                  id: 2,
+                  operator: "|",
+                  left: 0,
+                  right: 1,
+                  ...span,
+                },
+                { kind: "constant", id: 3, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 4,
+                  operator: "|",
+                  left: 2,
+                  right: 3,
+                  ...span,
+                },
+                { kind: "store", slot: 1, value: 4, ...span },
+                { kind: "load", id: 5, slot: 1, ...span },
+                { kind: "constant", id: 6, value: 0, ...span },
+                {
+                  kind: "binary",
+                  id: 7,
+                  operator: "<",
+                  left: 5,
+                  right: 6,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 7, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
+  assert.ok(bitwiseResult.ok, JSON.stringify(bitwiseResult));
+  const bwWords: number[] = [];
+  for (let off = 0; off + 4 <= bitwiseResult.value.code.length; off += 4)
+    bwWords.push(
+      (bitwiseResult.value.code[off]! |
+        (bitwiseResult.value.code[off + 1]! << 8) |
+        (bitwiseResult.value.code[off + 2]! << 16) |
+        (bitwiseResult.value.code[off + 3]! << 24)) >>>
+        0,
+    );
+  // `sxtw Xd, Wn` is `sbfm Xd, Xn, #0, #31` = 0x93407c00 (mask 0xfffffc00).
+  const hasSxtw = bwWords.some((w) => (w & 0xfffffc00) >>> 0 === 0x93407c00);
+  assert.ok(
+    hasSxtw,
+    "expected `(x & -1) | 0` stored to a signed integer slot to retain `sxtw`",
+  );
+});

@@ -10742,7 +10742,7 @@ function emitModuleForms(
             return;
           }
           if (storedAsWord(id) || storedAsInteger(id)) {
-            rawLoad(9, value(id).offset);
+            rawValue(9, id);
             return;
           }
           const index = valueIds.intern(id),
@@ -15739,6 +15739,16 @@ function emitModuleForms(
               if (dFloat !== 0) return dFloat - 1;
               return 0;
             }
+            function definesDestReg(
+              inst: IRInstruction,
+              destReg: number,
+            ): boolean {
+              const res = instructionResult(inst);
+              return (
+                res !== undefined &&
+                (homeOf(res) === destReg || directTargetOf(res) === destReg)
+              );
+            }
             for (let sIdx = 0; sIdx < b.instructions.length; sIdx++) {
               const sOp = b.instructions[sIdx];
               if (
@@ -15794,8 +15804,9 @@ function emitModuleForms(
                   break;
                 }
                 if (
-                  (mid.kind === "load" || mid.kind === "store") &&
-                  (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                  ((mid.kind === "load" || mid.kind === "store") &&
+                    (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg) ||
+                  definesDestReg(mid, destReg)
                 ) {
                   safe = false;
                   break;
@@ -15842,8 +15853,9 @@ function emitModuleForms(
                       break;
                     }
                     if (
-                      (mid.kind === "load" || mid.kind === "store") &&
-                      (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                      ((mid.kind === "load" || mid.kind === "store") &&
+                        (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg) ||
+                      definesDestReg(mid, destReg)
                     ) {
                       innerSafe = false;
                       break;
@@ -15927,8 +15939,9 @@ function emitModuleForms(
                       break;
                     }
                     if (
-                      (mid.kind === "load" || mid.kind === "store") &&
-                      (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg
+                      ((mid.kind === "load" || mid.kind === "store") &&
+                        (regs[slotOffset(mid.slot) / 8] ?? 0) === destReg) ||
+                      definesDestReg(mid, destReg)
                     ) {
                       innerSafe = false;
                       break;
@@ -15945,6 +15958,8 @@ function emitModuleForms(
                     ["&", "|", "^", "<<", ">>", "imul"].includes(
                       innerOp.operator,
                     ) &&
+                    (!storedAsWord(innerId) ||
+                      (useTotal === 1 && wordOnlySlots[sOp.slot] === 1)) &&
                     rotatedShifts[innerIdx] !== 1 &&
                     fusedShifts[innerIdx] !== 1 &&
                     !storeBypassCandidate.has(innerOp.id) &&
@@ -16001,12 +16016,18 @@ function emitModuleForms(
               )
                 continue;
               // For multi-use FP or GP integer values, every other consumer
-              // must read directly from the register home and no write to
-              // `destReg` (or call) may occur before the last use of `sOp.value`.
+              // must live in this block, read directly from the register home,
+              // and no write to `destReg` (or call) may occur before the last
+              // use of `sOp.value`.
               if (defIdx <= (claimedUntil.get(destReg) ?? -1)) continue;
-              if (isIntSlot && useTotal > 1 && !wantsInteger(targetValId))
+              if (
+                isIntSlot &&
+                ((useTotal > 1 && !wantsInteger(targetValId)) ||
+                  (!wantsInteger(targetValId) && !storedAsWord(targetValId)))
+              )
                 continue;
-              let lastUse = sIdx;
+              let lastUse = sIdx,
+                blockUses = 0;
               if (useTotal > 1) {
                 for (let k = defIdx + 1; k < b.instructions.length; k++) {
                   const later = b.instructions[k];
@@ -16016,11 +16037,27 @@ function emitModuleForms(
                   }
                   let usesVal = false;
                   visitInstructionOperands(later, (id) => {
-                    if (id === sOp.value) usesVal = true;
+                    if (id === sOp.value) {
+                      usesVal = true;
+                      blockUses++;
+                    }
                   });
                   if (usesVal) {
                     if (k > lastUse) lastUse = k;
                     if (k !== sIdx) {
+                      const isCmp =
+                        later.kind === "binary" &&
+                        [
+                          "===",
+                          "!==",
+                          "==",
+                          "!=",
+                          "<",
+                          "<=",
+                          ">",
+                          ">=",
+                        ].includes(later.operator);
+                      if (isCmp) lastUse = b.instructions.length - 1;
                       const okConsumer = isIntSlot
                         ? (later.kind === "array-element" &&
                             later.index === sOp.value) ||
@@ -16031,6 +16068,7 @@ function emitModuleForms(
                             ((wantsInteger(later.id) &&
                               zeroSignResults[valueIds.intern(later.id)] !==
                                 1) ||
+                              isCmp ||
                               [
                                 "&",
                                 "|",
@@ -16039,14 +16077,6 @@ function emitModuleForms(
                                 ">>",
                                 ">>>",
                                 "imul",
-                                "===",
-                                "!==",
-                                "==",
-                                "!=",
-                                "<",
-                                "<=",
-                                ">",
-                                ">=",
                               ].includes(later.operator)))
                         : (later.kind === "array-store" &&
                             later.value === sOp.value &&
@@ -16065,6 +16095,7 @@ function emitModuleForms(
                     }
                   }
                 }
+                if (blockUses !== useTotal) safe = false;
                 visitTerminatorOperands(b.terminator, (id) => {
                   if (id === sOp.value) safe = false;
                 });
@@ -16074,7 +16105,8 @@ function emitModuleForms(
                   if (
                     later === undefined ||
                     (later.kind === "store" &&
-                      (regs[slotOffset(later.slot) / 8] ?? 0) === destReg)
+                      (regs[slotOffset(later.slot) / 8] ?? 0) === destReg) ||
+                    definesDestReg(later, destReg)
                   )
                     safe = false;
                   else if (
@@ -31105,7 +31137,9 @@ function emitModuleForms(
                   const bypass = storeBypassCandidate.get(op.id);
                   if (
                     bypass !== undefined &&
-                    (storedAsInteger(bypass) || storedAsWord(bypass))
+                    (storedAsInteger(bypass) ||
+                      (storedAsWord(bypass) &&
+                        lowWordStoreValues[valueIds.intern(bypass)] === 1))
                   ) {
                     elidedStoreSource.set(op.id, bypass);
                     const bypassDirect =
