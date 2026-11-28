@@ -110,6 +110,18 @@ import {
   type BytesEmitContext,
 } from "./memory.ts";
 import {
+  emitArrayWord64Element,
+  emitArrayWord64Store,
+  emitWord64Binary,
+  emitWord64Constant,
+  emitWord64FromNumber,
+  emitWord64FromParts,
+  emitWord64Part,
+  emitWord64ToNumber,
+  emitWord64Unary,
+  type Word64EmitContext,
+} from "./word64.ts";
+import {
   emitElementAccess,
   emitGlobalCell,
   emitPropertyAccess,
@@ -237,6 +249,7 @@ export interface BlockEmitContext {
   readonly branchIsland: () => void;
   readonly bufferByteLength: (buffer: number, rd: number) => void;
   readonly bytesCtx: () => BytesEmitContext;
+  readonly word64Ctx: () => Word64EmitContext;
   readonly cInteropCtx: () => CInteropEmitContext;
   readonly callHelper: (kind: LeafHelperKind) => void;
   readonly callRelative: () => void;
@@ -574,6 +587,7 @@ export function emitFunctionBlocks(ctx: BlockEmitContext): void {
     branchIsland,
     bufferByteLength,
     bytesCtx,
+    word64Ctx,
     cInteropCtx,
     callHelper,
     callRelative,
@@ -3565,6 +3579,41 @@ export function emitFunctionBlocks(ctx: BlockEmitContext): void {
         case "bytes-word64-store":
           emitBytesWord64Store(
             bytesCtx(),
+            op,
+            hoistedArrayDataValues.get(op.array),
+          );
+          break;
+        case "word64-constant":
+          emitWord64Constant(word64Ctx(), op);
+          break;
+        case "word64-from-number":
+          emitWord64FromNumber(word64Ctx(), op);
+          break;
+        case "word64-to-number":
+          emitWord64ToNumber(word64Ctx(), op);
+          break;
+        case "word64-binary":
+          emitWord64Binary(word64Ctx(), op);
+          break;
+        case "word64-unary":
+          emitWord64Unary(word64Ctx(), op);
+          break;
+        case "word64-part":
+          emitWord64Part(word64Ctx(), op);
+          break;
+        case "word64-from-parts":
+          emitWord64FromParts(word64Ctx(), op);
+          break;
+        case "array-word64-element":
+          emitArrayWord64Element(
+            word64Ctx(),
+            op,
+            hoistedArrayDataValues.get(op.array),
+          );
+          break;
+        case "array-word64-store":
+          emitArrayWord64Store(
+            word64Ctx(),
             op,
             hoistedArrayDataValues.get(op.array),
           );

@@ -32,6 +32,7 @@ export type ScalarType =
   | "optional-string"
   | "number"
   | "boolean"
+  | "word64"
   | NativeTypedArray
   | "optional-number";
 export type ReturnType = ScalarType | "void";

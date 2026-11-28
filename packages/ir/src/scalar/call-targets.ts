@@ -603,6 +603,15 @@ function functionFlows(
           case "bytes-store":
           case "bytes-word64-load":
           case "bytes-word64-store":
+          case "word64-constant":
+          case "word64-from-number":
+          case "word64-to-number":
+          case "word64-binary":
+          case "word64-unary":
+          case "word64-part":
+          case "word64-from-parts":
+          case "array-word64-element":
+          case "array-word64-store":
           case "reference-vector-new":
           case "reference-vector-length":
           case "reference-vector-is":

@@ -32,6 +32,7 @@ function scalar(type: ScalarType): boolean {
   return (
     type === "number" ||
     type === "boolean" ||
+    type === "word64" ||
     type === "optional-number" ||
     type === "optional-boolean"
   );
@@ -112,6 +113,16 @@ function crossingType(
       return "general";
     case "general-equal":
       return "boolean";
+    case "word64-constant":
+    case "word64-from-number":
+    case "word64-binary":
+    case "word64-unary":
+    case "word64-from-parts":
+    case "array-word64-element":
+      return "word64";
+    case "word64-to-number":
+    case "word64-part":
+      return "number";
     default:
       return undefined;
   }
@@ -176,6 +187,16 @@ function supported(
     case "bytes-store":
     case "bytes-word64-load":
     case "bytes-word64-store":
+    case "word64-constant":
+    case "word64-from-number":
+    case "word64-to-number":
+    case "word64-binary":
+    case "word64-unary":
+    case "word64-part":
+    case "word64-from-parts":
+    case "array-word64-element":
+    case "array-word64-store":
+      return true;
     // Tag tests and payload views of general values are pure inline
     // sequences (a mismatched checked view traps).
     case "general-is":
@@ -1764,6 +1785,81 @@ export function inlineSmallFunctions(
                   offset: value(instruction.offset),
                   scratch: value(instruction.scratch),
                   littleEndian: value(instruction.littleEndian),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "word64-constant":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "word64-from-number":
+              case "word64-to-number":
+              case "word64-part":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "word64-binary":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  left: value(instruction.left),
+                  right: value(instruction.right),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "word64-unary":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  operand: value(instruction.operand),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "word64-from-parts":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  low: value(instruction.low),
+                  high: value(instruction.high),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-word64-element":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-word64-store":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  value: value(instruction.value),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

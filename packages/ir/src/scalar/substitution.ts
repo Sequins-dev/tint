@@ -469,6 +469,45 @@ export function substituteInstructionValues(
         ? op
         : { ...op, array, offset, scratch, littleEndian };
     }
+    case "word64-constant":
+      return op;
+    case "word64-from-number":
+    case "word64-to-number":
+    case "word64-part": {
+      const value = substitutedValue(values, op.value);
+      return value === op.value ? op : { ...op, value };
+    }
+    case "word64-binary": {
+      const left = substitutedValue(values, op.left),
+        right = substitutedValue(values, op.right);
+      return left === op.left && right === op.right
+        ? op
+        : { ...op, left, right };
+    }
+    case "word64-unary": {
+      const operand = substitutedValue(values, op.operand);
+      return operand === op.operand ? op : { ...op, operand };
+    }
+    case "word64-from-parts": {
+      const low = substitutedValue(values, op.low),
+        high = substitutedValue(values, op.high);
+      return low === op.low && high === op.high ? op : { ...op, low, high };
+    }
+    case "array-word64-element": {
+      const array = substitutedValue(values, op.array),
+        index = substitutedValue(values, op.index);
+      return array === op.array && index === op.index
+        ? op
+        : { ...op, array, index };
+    }
+    case "array-word64-store": {
+      const array = substitutedValue(values, op.array),
+        index = substitutedValue(values, op.index),
+        value = substitutedValue(values, op.value);
+      return array === op.array && index === op.index && value === op.value
+        ? op
+        : { ...op, array, index, value };
+    }
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":
@@ -704,6 +743,7 @@ export function renumberInstructionResult(
     case "array-store":
     case "array-fill":
     case "array-word64-write":
+    case "array-word64-store":
     case "array-word64-fill":
     case "array-atomic-word64":
     case "bytes-store":

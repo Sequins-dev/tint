@@ -18,6 +18,8 @@ import type {
   SourceVariable,
   Terminator,
   ValueBinding,
+  Word64BinaryOperator,
+  Word64UnaryOperator,
 } from "../scalar/model.ts";
 import type { HostOperation } from "../scalar/host.ts";
 import type { ForeignCall, ForeignMemoryAccess } from "../scalar/foreign.ts";
@@ -109,6 +111,17 @@ function foreignAccessIndex(
   vocabulary.foreignAccessIndexes.set(access, index);
   return index;
 }
+const word64BinaryOps: readonly Word64BinaryOperator[] = [
+  "add",
+  "sub",
+  "mul",
+  "and",
+  "or",
+  "xor",
+  "shl",
+  "sar",
+  "shr",
+];
 function scalarCode(type: ReturnType): number {
   switch (type) {
     case "general":
@@ -157,6 +170,8 @@ function scalarCode(type: ReturnType): number {
       return 21;
     case "BigUint64Array":
       return 22;
+    case "word64":
+      return 23;
   }
 }
 function scalarType(code: number): ScalarType {
@@ -189,6 +204,8 @@ function scalarType(code: number): ScalarType {
       return "Float64Array";
     case 13:
       return "optional-number";
+    case 23:
+      return "word64";
   }
   return arrayType(code);
 }
@@ -1063,6 +1080,57 @@ export function encodeInstruction(
       writeSigned(writer, op.offset);
       writeSigned(writer, op.scratch);
       writeSigned(writer, op.littleEndian);
+      return true;
+    case "word64-constant":
+      writePrefix(writer, 139, op, 0);
+      writeSigned(writer, op.id);
+      writeUnsigned(writer, op.low);
+      writeUnsigned(writer, op.high);
+      return true;
+    case "word64-from-number":
+      writePrefix(writer, 140, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
+    case "word64-to-number":
+      writePrefix(writer, 141, op, op.signed ? 4 : 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
+    case "word64-binary":
+      writePrefix(writer, 142, op, 0);
+      writeByte(writer, word64BinaryOps.indexOf(op.operator));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.left);
+      writeSigned(writer, op.right);
+      return true;
+    case "word64-unary":
+      writePrefix(writer, 143, op, op.operator === "not" ? 4 : 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.operand);
+      return true;
+    case "word64-part":
+      writePrefix(writer, 144, op, op.half === "high" ? 4 : 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
+    case "word64-from-parts":
+      writePrefix(writer, 145, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.low);
+      writeSigned(writer, op.high);
+      return true;
+    case "array-word64-element":
+      writePrefix(writer, 146, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.index);
+      return true;
+    case "array-word64-store":
+      writePrefix(writer, 147, op, op.unchecked === true ? 4 : 0);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.index);
+      writeSigned(writer, op.value);
       return true;
     case "weak-slot-new":
       writePrefix(writer, 48, op, 0);
@@ -2170,6 +2238,143 @@ export function decodeInstruction(
         end,
         ...(inline === undefined ? {} : { inline }),
       };
+    }
+    case 139: {
+      const id = readSigned(reader),
+        low = readUnsigned(reader),
+        high = readUnsigned(reader);
+      return {
+        kind: "word64-constant",
+        id,
+        low,
+        high,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 140: {
+      const id = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "word64-from-number",
+        id,
+        value,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 141: {
+      const id = readSigned(reader),
+        value = readSigned(reader);
+      return {
+        kind: "word64-to-number",
+        id,
+        value,
+        signed: (flags & 4) !== 0,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 142: {
+      const operator = word64BinaryOps[readByte(reader)];
+      if (operator === undefined) throw "CORRUPT_WORD64_BINARY_OP";
+      const id = readSigned(reader),
+        left = readSigned(reader),
+        right = readSigned(reader);
+      return {
+        kind: "word64-binary",
+        id,
+        operator,
+        left,
+        right,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 143: {
+      const id = readSigned(reader),
+        operand = readSigned(reader),
+        operator: Word64UnaryOperator = (flags & 4) !== 0 ? "not" : "neg";
+      return {
+        kind: "word64-unary",
+        id,
+        operator,
+        operand,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 144: {
+      const id = readSigned(reader),
+        value = readSigned(reader),
+        half: "low" | "high" = (flags & 4) !== 0 ? "high" : "low";
+      return {
+        kind: "word64-part",
+        id,
+        value,
+        half,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 145: {
+      const id = readSigned(reader),
+        low = readSigned(reader),
+        high = readSigned(reader);
+      return {
+        kind: "word64-from-parts",
+        id,
+        low,
+        high,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 146: {
+      const id = readSigned(reader),
+        array = readSigned(reader),
+        index = readSigned(reader);
+      return {
+        kind: "array-word64-element",
+        id,
+        array,
+        index,
+        start,
+        end,
+        ...(inline === undefined ? {} : { inline }),
+      };
+    }
+    case 147: {
+      const array = readSigned(reader),
+        index = readSigned(reader),
+        value = readSigned(reader);
+      return flagged(flags, 4)
+        ? {
+            kind: "array-word64-store",
+            array,
+            index,
+            value,
+            unchecked: true,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          }
+        : {
+            kind: "array-word64-store",
+            array,
+            index,
+            value,
+            start,
+            end,
+            ...(inline === undefined ? {} : { inline }),
+          };
     }
     case 133: {
       const id = readSigned(reader);

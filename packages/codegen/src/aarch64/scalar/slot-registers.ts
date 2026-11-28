@@ -281,7 +281,10 @@ export function slotHomes(
     if (
       escaped[slot] !== 1 &&
       fn.receiverSlot !== slot &&
-      (integerSlots[slot] === 1 || type === "boolean" || floatSlotType(type))
+      (integerSlots[slot] === 1 ||
+        type === "boolean" ||
+        type === "word64" ||
+        floatSlotType(type))
     )
       homeable.push(slot);
   }
@@ -485,7 +488,7 @@ export function slotHomes(
     const kind =
       escaped[slot] === 1 || fn.receiverSlot === slot
         ? 3
-        : integer || type === "boolean"
+        : integer || type === "boolean" || type === "word64"
           ? 2
           : floatSlotType(type)
             ? 1

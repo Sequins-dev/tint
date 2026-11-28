@@ -968,6 +968,121 @@ test("x86-64 emits bytes-load, bytes-store, and bytes-word64 ops for every DataV
   assert.ok(emitted.value.code.length > 0);
 });
 
+test("x86-64 emits all unboxed word64 instructions cleanly", () => {
+  const f = new Fixture(0, ["BigInt64Array", "number"]);
+  const arr = f.ir.next();
+  f.ir.emit({ ...span, kind: "load", id: arr, slot: 0 });
+  const idx = f.ir.next();
+  f.ir.emit({ ...span, kind: "load", id: idx, slot: 1 });
+  const c1 = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "word64-constant",
+    id: c1,
+    low: 0x12345678,
+    high: 0x9abcdef0,
+  });
+  const fromN = f.ir.next();
+  f.ir.emit({ ...span, kind: "word64-from-number", id: fromN, value: idx });
+  const loaded = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "array-word64-element",
+    id: loaded,
+    array: arr,
+    index: idx,
+  });
+  const ops = [
+    "add",
+    "sub",
+    "mul",
+    "and",
+    "or",
+    "xor",
+    "shl",
+    "sar",
+    "shr",
+  ] as const;
+  let cur = loaded;
+  for (const operator of ops) {
+    const next = f.ir.next();
+    f.ir.emit({
+      ...span,
+      kind: "word64-binary",
+      id: next,
+      operator,
+      left: cur,
+      right: operator === "add" ? fromN : c1,
+    });
+    cur = next;
+  }
+  const neg = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "word64-unary",
+    id: neg,
+    operator: "neg",
+    operand: cur,
+  });
+  const not = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "word64-unary",
+    id: not,
+    operator: "not",
+    operand: neg,
+  });
+  f.ir.emit({
+    ...span,
+    kind: "array-word64-store",
+    array: arr,
+    index: idx,
+    value: not,
+    unchecked: true,
+  });
+  f.ir.emit({
+    ...span,
+    kind: "array-word64-store",
+    array: arr,
+    index: idx,
+    value: not,
+  });
+  const lo = f.ir.next();
+  f.ir.emit({ ...span, kind: "word64-part", id: lo, value: not, half: "low" });
+  const hi = f.ir.next();
+  f.ir.emit({ ...span, kind: "word64-part", id: hi, value: not, half: "high" });
+  const packed = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "word64-from-parts",
+    id: packed,
+    low: lo,
+    high: hi,
+  });
+  const asSigned = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "word64-to-number",
+    id: asSigned,
+    value: packed,
+    signed: true,
+  });
+  const asUnsigned = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "word64-to-number",
+    id: asUnsigned,
+    value: packed,
+    signed: false,
+  });
+  const module: ModuleIR = {
+    functions: [f.finish(f.binary("+", asSigned, asUnsigned))],
+  };
+  const emitted = emitX64Module(module, linuxX86_64Target.hostABI);
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  assert.ok(emitted.value.code.length > 0);
+});
+
 const runner = process.env.TINT_X64_SCALAR_RUNNER;
 test(
   "x86-64 runner executes freestanding scalar fixtures",

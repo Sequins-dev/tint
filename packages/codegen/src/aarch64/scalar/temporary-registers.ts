@@ -53,6 +53,15 @@ function transparent(op: Instruction): boolean {
     op.kind === "bytes-store" ||
     op.kind === "bytes-word64-load" ||
     op.kind === "bytes-word64-store" ||
+    op.kind === "word64-constant" ||
+    op.kind === "word64-from-number" ||
+    op.kind === "word64-to-number" ||
+    op.kind === "word64-binary" ||
+    op.kind === "word64-unary" ||
+    op.kind === "word64-part" ||
+    op.kind === "word64-from-parts" ||
+    op.kind === "array-word64-element" ||
+    op.kind === "array-word64-store" ||
     // General tags and payloads move through x9..x12 only.
     op.kind === "general-is" ||
     op.kind === "general-value" ||

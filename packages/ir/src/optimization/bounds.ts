@@ -877,6 +877,8 @@ export function selectArrayAccesses(
         op.kind === "array-write" ||
         op.kind === "array-element" ||
         op.kind === "array-store" ||
+        op.kind === "array-word64-element" ||
+        op.kind === "array-word64-store" ||
         op.kind === "array-valid" ||
         op.kind === "string-code-unit" ||
         op.kind === "reference-vector-read" ||
@@ -1792,6 +1794,32 @@ export function selectArrayAccesses(
           start: op.start,
           end: op.end,
           ...(op.inline === undefined ? {} : { inline: op.inline }),
+        });
+        rewritten++;
+        changed = true;
+        continue;
+      }
+      if (op.kind === "array-valid" && inBounds(op, op.array, op.index)) {
+        instructions.push({
+          kind: "constant",
+          id: op.id,
+          value: true,
+          start: op.start,
+          end: op.end,
+          ...(op.inline === undefined ? {} : { inline: op.inline }),
+        });
+        rewritten++;
+        changed = true;
+        continue;
+      }
+      if (
+        op.kind === "array-word64-store" &&
+        op.unchecked !== true &&
+        inBounds(op, op.array, op.index)
+      ) {
+        instructions.push({
+          ...op,
+          unchecked: true,
         });
         rewritten++;
         changed = true;

@@ -353,6 +353,33 @@ export function visitInstructionOperands(
       visit(op.scratch);
       visit(op.littleEndian);
       return;
+    case "word64-constant":
+      return;
+    case "word64-from-number":
+    case "word64-to-number":
+    case "word64-part":
+      visit(op.value);
+      return;
+    case "word64-binary":
+      visit(op.left);
+      visit(op.right);
+      return;
+    case "word64-unary":
+      visit(op.operand);
+      return;
+    case "word64-from-parts":
+      visit(op.low);
+      visit(op.high);
+      return;
+    case "array-word64-element":
+      visit(op.array);
+      visit(op.index);
+      return;
+    case "array-word64-store":
+      visit(op.array);
+      visit(op.index);
+      visit(op.value);
+      return;
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":
@@ -422,6 +449,7 @@ export function instructionResult(
     instruction.kind === "array-store" ||
     instruction.kind === "array-fill" ||
     instruction.kind === "array-word64-write" ||
+    instruction.kind === "array-word64-store" ||
     instruction.kind === "array-word64-fill" ||
     instruction.kind === "array-atomic-word64" ||
     instruction.kind === "bytes-store" ||

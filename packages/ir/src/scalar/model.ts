@@ -13,6 +13,7 @@ export type ScalarType =
   | "optional-string"
   | "number"
   | "boolean"
+  | "word64"
   | NativeTypedArray
   | "optional-number";
 export type ReturnType = ScalarType | "void";
@@ -49,6 +50,11 @@ export type NativeTypedArray =
 /** Element types for unaligned DataView byte-buffer loads and stores. */
 export type DataViewElement =
   "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "f16" | "f32" | "f64";
+/** Modular 64-bit integer binary operators (`word64`). */
+export type Word64BinaryOperator =
+  "add" | "sub" | "mul" | "and" | "or" | "xor" | "shl" | "sar" | "shr";
+/** Modular 64-bit integer unary operators (`word64`). */
+export type Word64UnaryOperator = "neg" | "not";
 /** The Atomics operations on a native integer array (see `array-atomic`). */
 export type ArrayAtomicOperation =
   | "load"
@@ -959,6 +965,75 @@ export type Instruction = Span &
         readonly offset: number;
         readonly scratch: number;
         readonly littleEndian: number;
+      }
+    | {
+        /** Unboxed 64-bit integer constant from unsigned 32-bit halves. */
+        readonly kind: "word64-constant";
+        readonly id: number;
+        readonly low: number;
+        readonly high: number;
+      }
+    | {
+        /** Truncating conversion of an exact integer number in [-2^53, 2^53] to
+         * a signed 64-bit integer (`word64`). */
+        readonly kind: "word64-from-number";
+        readonly id: number;
+        readonly value: number;
+      }
+    | {
+        /** IEEE-754 round-to-nearest-even conversion of a signed or unsigned
+         * 64-bit integer (`word64`) to a `number`. */
+        readonly kind: "word64-to-number";
+        readonly id: number;
+        readonly value: number;
+        readonly signed: boolean;
+      }
+    | {
+        /** Modular 64-bit integer binary operation (shifts mask count mod 64). */
+        readonly kind: "word64-binary";
+        readonly id: number;
+        readonly operator: Word64BinaryOperator;
+        readonly left: number;
+        readonly right: number;
+      }
+    | {
+        /** Modular 64-bit integer unary negation or bitwise NOT. */
+        readonly kind: "word64-unary";
+        readonly id: number;
+        readonly operator: Word64UnaryOperator;
+        readonly operand: number;
+      }
+    | {
+        /** Extract the low or high unsigned 32-bit half of a `word64` as `number`. */
+        readonly kind: "word64-part";
+        readonly id: number;
+        readonly value: number;
+        readonly half: "low" | "high";
+      }
+    | {
+        /** Combine unsigned 32-bit `low` and `high` halves into a `word64`. */
+        readonly kind: "word64-from-parts";
+        readonly id: number;
+        readonly low: number;
+        readonly high: number;
+      }
+    | {
+        /** Direct 64-bit element load from a BigInt64Array or BigUint64Array at
+         * a proven in-bounds integer index `index`. */
+        readonly kind: "array-word64-element";
+        readonly id: number;
+        readonly array: number;
+        readonly index: number;
+      }
+    | {
+        /** 64-bit element store of a `word64` into a BigInt64Array or
+         * BigUint64Array. When `unchecked` is true, `index` is proven in bounds;
+         * otherwise out-of-bounds or non-integer indices are ignored. */
+        readonly kind: "array-word64-store";
+        readonly array: number;
+        readonly index: number;
+        readonly value: number;
+        readonly unchecked?: true;
       }
     | {
         /** Trusted opaque cell: general handles must never be viewed as records. */

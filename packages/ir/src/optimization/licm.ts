@@ -52,6 +52,15 @@ function pureType(op: Instruction): ScalarType | undefined {
       return "optional-reference";
     case "reference-value":
       return "reference";
+    case "word64-constant":
+    case "word64-from-number":
+    case "word64-binary":
+    case "word64-unary":
+    case "word64-from-parts":
+      return "word64";
+    case "word64-to-number":
+    case "word64-part":
+      return "number";
     default:
       return undefined;
   }

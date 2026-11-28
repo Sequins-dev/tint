@@ -410,6 +410,8 @@ function encodeScalarType(type: ScalarType | undefined): number {
       return 22;
     case "BigUint64Array":
       return 23;
+    case "word64":
+      return 24;
   }
 }
 function decodeScalarType(encoded: number): ScalarType | undefined {
@@ -458,6 +460,8 @@ function decodeScalarType(encoded: number): ScalarType | undefined {
       return "BigInt64Array";
     case 23:
       return "BigUint64Array";
+    case 24:
+      return "word64";
     default:
       return undefined;
   }

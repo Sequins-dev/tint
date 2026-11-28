@@ -28,6 +28,7 @@ export function isRootType(type: ScalarType): boolean {
   return (
     type !== "number" &&
     type !== "boolean" &&
+    type !== "word64" &&
     type !== "optional-number" &&
     type !== "optional-boolean"
   );

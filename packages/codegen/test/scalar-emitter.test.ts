@@ -4791,3 +4791,96 @@ test("multi-use directIntTarget guards fused comparisons before slot overwrites 
     "expected `(x & -1) | 0` stored to a signed integer slot to retain `sxtw`",
   );
 });
+
+test("AArch64 emits all unboxed word64 instructions and GP slot homes cleanly", () => {
+  const result = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "word64Loop",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["BigInt64Array", "number", "word64"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "word64-constant",
+                id: 2,
+                low: 0xdeadbeef,
+                high: 0x12345678,
+                ...span,
+              },
+              { kind: "word64-from-number", id: 3, value: 1, ...span },
+              {
+                kind: "array-word64-element",
+                id: 4,
+                array: 0,
+                index: 1,
+                ...span,
+              },
+              {
+                kind: "word64-binary",
+                id: 5,
+                operator: "add",
+                left: 4,
+                right: 3,
+                ...span,
+              },
+              {
+                kind: "word64-binary",
+                id: 6,
+                operator: "xor",
+                left: 5,
+                right: 2,
+                ...span,
+              },
+              {
+                kind: "word64-unary",
+                id: 7,
+                operator: "not",
+                operand: 6,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 7, ...span },
+              { kind: "load", id: 8, slot: 2, ...span },
+              {
+                kind: "array-word64-store",
+                array: 0,
+                index: 1,
+                value: 8,
+                unchecked: true,
+                ...span,
+              },
+              { kind: "word64-part", id: 9, value: 8, half: "low", ...span },
+              { kind: "word64-part", id: 10, value: 8, half: "high", ...span },
+              {
+                kind: "word64-from-parts",
+                id: 11,
+                low: 9,
+                high: 10,
+                ...span,
+              },
+              {
+                kind: "word64-to-number",
+                id: 12,
+                value: 11,
+                signed: false,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 12, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.ok(result.value.code.length > 0);
+  assert.equal(frameRoots(result.value)[0]?.offsets.length ?? 0, 0);
+});

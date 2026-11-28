@@ -362,6 +362,7 @@ function scalar(value: string): boolean {
     value === "string" ||
     value === "number" ||
     value === "boolean" ||
+    value === "word64" ||
     isNativeTypedArray(value) ||
     value === "optional-number"
   );
@@ -1555,6 +1556,68 @@ export function verify(
               equal(use(op.scratch), "Uint32Array");
               equal(use(op.littleEndian), "boolean");
               break;
+            case "word64-constant":
+              if (
+                !natural(op.low) ||
+                op.low > 0xffffffff ||
+                !natural(op.high) ||
+                op.high > 0xffffffff
+              )
+                fail("VALUE", "word64 constant halves must be uint32");
+              define(op.id, "word64");
+              break;
+            case "word64-from-number":
+              equal(use(op.value), "number");
+              define(op.id, "word64");
+              break;
+            case "word64-to-number":
+              equal(use(op.value), "word64");
+              if (typeof op.signed !== "boolean")
+                fail("VALUE", "word64-to-number signed flag must be boolean");
+              define(op.id, "number");
+              break;
+            case "word64-binary":
+              equal(use(op.left), "word64");
+              equal(use(op.right), "word64");
+              define(op.id, "word64");
+              break;
+            case "word64-unary":
+              equal(use(op.operand), "word64");
+              define(op.id, "word64");
+              break;
+            case "word64-part":
+              equal(use(op.value), "word64");
+              if (op.half !== "low" && op.half !== "high")
+                fail("VALUE", "word64-part must be low or high");
+              define(op.id, "number");
+              break;
+            case "word64-from-parts":
+              equal(use(op.low), "number");
+              equal(use(op.high), "number");
+              define(op.id, "word64");
+              break;
+            case "array-word64-element": {
+              const type = use(op.array);
+              if (!typedArrayBigIntElements(type))
+                fail(
+                  "TYPE",
+                  "word64 element load requires a BigInt typed array",
+                );
+              equal(use(op.index), "number");
+              define(op.id, "word64");
+              break;
+            }
+            case "array-word64-store": {
+              const type = use(op.array);
+              if (!typedArrayBigIntElements(type))
+                fail(
+                  "TYPE",
+                  "word64 element store requires a BigInt typed array",
+                );
+              equal(use(op.index), "number");
+              equal(use(op.value), "word64");
+              break;
+            }
             case "weak-slot-new":
               equal(use(op.key), "general");
               equal(use(op.value), "general");

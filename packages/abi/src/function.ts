@@ -39,3 +39,4 @@ export const nativeSignatureFloat32ArrayCode = 19;
 export const nativeSignatureFloat16ArrayCode = 20;
 export const nativeSignatureBigInt64ArrayCode = 21;
 export const nativeSignatureBigUint64ArrayCode = 22;
+export const nativeSignatureWord64Code = 23;
