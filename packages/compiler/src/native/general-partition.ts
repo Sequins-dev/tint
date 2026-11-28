@@ -794,14 +794,13 @@ export function closeGeneralPartition(
   for (const boundary of boundaries) {
     if (boundary === undefined) continue;
     for (const item of boundary.exports) {
-      if (
-        item === undefined ||
-        item.kind !== "function" ||
-        item.records === undefined
-      )
-        continue;
-      retainRecord(item.records.result);
-      for (const parameter of item.records.parameters) retainRecord(parameter);
+      if (item === undefined) continue;
+      if (item.kind === "function") {
+        const crossing = item.records;
+        if (crossing === undefined) continue;
+        retainRecord(crossing.result);
+        for (const parameter of crossing.parameters) retainRecord(parameter);
+      }
     }
   }
   const recordByKey = new Map<string, BoundaryRecord>();
