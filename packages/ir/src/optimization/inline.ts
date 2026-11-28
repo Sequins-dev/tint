@@ -49,8 +49,9 @@ function crossingType(
       return type === undefined || type === "void" ? undefined : type;
     }
     case "function-new":
-    case "reference-value":
       return "reference";
+    case "reference-value":
+      return op.type ?? "reference";
     case "general-is":
     case "general-record-is":
     case "record-has":
