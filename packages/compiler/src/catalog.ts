@@ -239,6 +239,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/word64.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/startup.ts",
       packageId: "codegen",
     },
@@ -3588,6 +3592,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ts-native/src/scalar.ts",
+      packageId: "ts-native",
+    },
+    {
+      id: "packages/ts-native/src/word64-analysis.ts",
       packageId: "ts-native",
     },
     {

@@ -2849,7 +2849,15 @@ function removable(op: Instruction): boolean {
     case "reference-string":
     // Reads selected as in bounds cannot fail.
     case "array-element":
+    case "array-word64-element":
     case "bytes-load":
+    case "word64-constant":
+    case "word64-from-number":
+    case "word64-to-number":
+    case "word64-binary":
+    case "word64-unary":
+    case "word64-part":
+    case "word64-from-parts":
     // Proven record reads and pure tag/descriptor tests cannot fail or throw.
     case "record-read":
     case "record-has":

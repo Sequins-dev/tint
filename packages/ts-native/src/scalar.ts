@@ -2,6 +2,12 @@ import type {
   BindingInitialization,
   BindingInitializationStep,
 } from "@tint/typescript/checker";
+import {
+  analyzeWord64BigIntLocals,
+  bigIntegerToWord64,
+  isBigIntMask64Expr,
+  smallBigIntShift,
+} from "./word64-analysis.ts";
 import type { DynamicObjectRuntime } from "./closure/lowering/dynamic-objects.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
@@ -58,6 +64,7 @@ import {
   type ModuleIR,
   type FunctionIR,
   type Block,
+  type Word64BinaryOperator,
   type Instruction,
   type Terminator,
   type ScalarType,
@@ -779,6 +786,16 @@ export function lowerFunction(
     }
     return undefined;
   }
+  const ownedCellLocals = new Set<number>();
+  if (owned !== undefined) {
+    for (const c of owned.cells)
+      if (c !== undefined) ownedCellLocals.add(c.local);
+  }
+  const word64Locals =
+    bigints === undefined
+      ? new Set<number>()
+      : analyzeWord64BigIntLocals(fn, ownedCellLocals, evalConstantBigInt);
+  for (const id of word64Locals) slots[id] = "word64";
   const callReceivers = createKeyIndex<Expression, number>(syntaxHash);
   let exception: { readonly target: number; readonly slot: number } | undefined;
   let finalizer: FinallyScope | undefined;
@@ -916,6 +933,16 @@ export function lowerFunction(
       case "array-word64-read":
         type = "boolean";
         break;
+      case "word64-constant":
+      case "word64-from-number":
+      case "word64-binary":
+      case "word64-unary":
+      case "word64-from-parts":
+      case "array-word64-element":
+        type = "word64";
+        break;
+      case "word64-to-number":
+      case "word64-part":
       case "optional-value":
       case "optional-value-or":
       case "array-byte-offset":
@@ -3665,6 +3692,425 @@ export function lowerFunction(
     const result = save(id, "reference", node);
     bigIntSlots[result] = 1;
     return result;
+  }
+  function word64ConstSlot(low: number, high: number, node: Span): number {
+    const id = nextValue++;
+    emit({
+      kind: "word64-constant",
+      id,
+      low,
+      high,
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "word64", node);
+  }
+  function word64FromBigIntSlot(slot: number, node: Span): number {
+    if (slots[slot] === "word64") return slot;
+    const scratch = word64Scratch();
+    emitBigIntToWord64(slot, scratch, 0, node);
+    const zero = numberSlot(0, node),
+      one = numberSlot(1, node),
+      lowId = nextValue++,
+      highId = nextValue++,
+      packId = nextValue++;
+    emit({
+      kind: "array-element",
+      id: lowId,
+      array: load(scratch, node),
+      index: load(zero, node),
+      start: node.start,
+      end: node.end,
+    });
+    emit({
+      kind: "array-element",
+      id: highId,
+      array: load(scratch, node),
+      index: load(one, node),
+      start: node.start,
+      end: node.end,
+    });
+    emit({
+      kind: "word64-from-parts",
+      id: packId,
+      low: lowId,
+      high: highId,
+      start: node.start,
+      end: node.end,
+    });
+    return save(packId, "word64", node);
+  }
+  function bigIntFromWord64Slot(
+    wSlot: number,
+    signed: boolean,
+    node: Span,
+  ): number {
+    const scratch = word64Scratch(),
+      zero = numberSlot(0, node),
+      one = numberSlot(1, node),
+      lowId = nextValue++,
+      highId = nextValue++;
+    emit({
+      kind: "word64-part",
+      id: lowId,
+      value: load(wSlot, node),
+      half: "low",
+      start: node.start,
+      end: node.end,
+    });
+    emit({
+      kind: "word64-part",
+      id: highId,
+      value: load(wSlot, node),
+      half: "high",
+      start: node.start,
+      end: node.end,
+    });
+    emit({
+      kind: "array-store",
+      array: load(scratch, node),
+      index: load(zero, node),
+      value: lowId,
+      start: node.start,
+      end: node.end,
+    });
+    emit({
+      kind: "array-store",
+      array: load(scratch, node),
+      index: load(one, node),
+      value: highId,
+      start: node.start,
+      end: node.end,
+    });
+    return emitBigIntFromWord64(scratch, signed, node);
+  }
+  function word64BinaryOp(op: string): Word64BinaryOperator | undefined {
+    switch (op) {
+      case "+":
+        return "add";
+      case "-":
+        return "sub";
+      case "*":
+        return "mul";
+      case "&":
+        return "and";
+      case "|":
+        return "or";
+      case "^":
+        return "xor";
+      case "<<":
+        return "shl";
+      default:
+        return undefined;
+    }
+  }
+  function emitWord64Binary(
+    operator: Word64BinaryOperator,
+    leftSlot: number,
+    rightSlot: number,
+    node: Span,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "word64-binary",
+      id,
+      operator,
+      left: load(leftSlot, node),
+      right: load(rightSlot, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "word64", node);
+  }
+  function emitWord64Expr(expr: Expression): number {
+    const node = ungroup(expr);
+    const constant = evalConstantBigInt(node);
+    if (constant !== undefined) {
+      const parts = bigIntegerToWord64(constant);
+      return word64ConstSlot(parts.low, parts.high, node);
+    }
+    if (node.kind === "identifier") {
+      const local = info(node).local;
+      if (local !== undefined && slots[local] === "word64")
+        return save(readLocal(local, node), "word64", node);
+    }
+    if (node.kind === "assignment") {
+      const target = ungroup(node.target);
+      const local = info(node).local;
+      if (
+        target.kind === "identifier" &&
+        local !== undefined &&
+        slots[local] === "word64"
+      ) {
+        const rhs = emitWord64Expr(node.value);
+        writeLocal(local, load(rhs, node.value), node);
+        return rhs;
+      }
+      if (
+        target.kind === "index" &&
+        typedArrayBigIntElements(info(target.object).type) &&
+        info(node).builtin !== "list-write"
+      ) {
+        const reference = propertyReference(
+          value(target.object),
+          value(target.index),
+        );
+        const rhs = emitWord64Expr(node.value);
+        emit({
+          kind: "array-word64-store",
+          array: load(reference.base, node),
+          index: load(reference.key, node),
+          value: load(rhs, node),
+          start: node.start,
+          end: node.end,
+        });
+        return rhs;
+      }
+    }
+    if (node.kind === "compound") {
+      const target = ungroup(node.target);
+      const local = info(node).local;
+      if (
+        target.kind === "identifier" &&
+        local !== undefined &&
+        slots[local] === "word64"
+      ) {
+        const old = save(readLocal(local, node.target), "word64", node.target);
+        const wOp = word64BinaryOp(node.operator);
+        if (wOp !== undefined) {
+          const rhs = emitWord64Expr(node.value);
+          const updated = emitWord64Binary(wOp, old, rhs, node);
+          writeLocal(local, load(updated, node), node);
+          return updated;
+        }
+      }
+    }
+    if (node.kind === "unary") {
+      if (node.operator === "-" || node.operator === "~") {
+        const operand = emitWord64Expr(node.operand),
+          id = nextValue++;
+        emit({
+          kind: "word64-unary",
+          id,
+          operator: node.operator === "-" ? "neg" : "not",
+          operand: load(operand, node),
+          start: node.start,
+          end: node.end,
+        });
+        return save(id, "word64", node);
+      }
+    }
+    if (node.kind === "binary") {
+      const op = node.operator;
+      if (op === ",") {
+        expression(node.left);
+        return emitWord64Expr(node.right);
+      }
+      if (
+        op === "+" ||
+        op === "-" ||
+        op === "*" ||
+        op === "&" ||
+        op === "|" ||
+        op === "^"
+      ) {
+        const wOp = word64BinaryOp(op);
+        if (wOp !== undefined) {
+          const l = emitWord64Expr(node.left),
+            r = emitWord64Expr(node.right);
+          return emitWord64Binary(wOp, l, r, node);
+        }
+      }
+      if (op === "<<") {
+        const shiftConst = evalConstantBigInt(node.right);
+        const shiftAmount =
+          shiftConst === undefined ? undefined : smallBigIntShift(shiftConst);
+        if (shiftAmount !== undefined) {
+          const l = emitWord64Expr(node.left);
+          if (shiftAmount === 0) return l;
+          const kSlot = word64ConstSlot(shiftAmount, 0, node.right);
+          return emitWord64Binary("shl", l, kSlot, node);
+        }
+      }
+      if (op === "??") {
+        const leftNode = ungroup(node.left);
+        if (
+          leftNode.kind === "index" &&
+          typedArrayBigIntElements(info(leftNode.object).type)
+        ) {
+          const reference = propertyReference(
+            value(leftNode.object),
+            value(leftNode.index),
+          );
+          const valid = nextValue++;
+          emit({
+            kind: "array-valid",
+            id: valid,
+            array: load(reference.base, leftNode),
+            index: load(reference.key, leftNode),
+            start: leftNode.start,
+            end: leftNode.end,
+          });
+          const hit = block(),
+            miss = block(),
+            done = block(),
+            result = temporary("word64");
+          choose(valid, hit, miss, node);
+          current = hit;
+          const elem = nextValue++;
+          emit({
+            kind: "array-word64-element",
+            id: elem,
+            array: load(reference.base, leftNode),
+            index: load(reference.key, leftNode),
+            start: leftNode.start,
+            end: leftNode.end,
+          });
+          store(result, elem, leftNode);
+          jump(done.id, node);
+          current = miss;
+          const fb = emitWord64Expr(node.right);
+          store(result, load(fb, node.right), node.right);
+          jump(done.id, node);
+          current = done;
+          return result;
+        }
+      }
+    }
+    if (node.kind === "conditional") {
+      const yes = block(),
+        no = block(),
+        merge = block(),
+        result = temporary("word64");
+      chooseExpression(node.test, yes, no);
+      current = yes;
+      const tVal = emitWord64Expr(node.consequent);
+      store(result, load(tVal, node.consequent), node);
+      jump(merge.id, node);
+      current = no;
+      const fVal = emitWord64Expr(node.alternate);
+      store(result, load(fVal, node.alternate), node);
+      jump(merge.id, node);
+      current = merge;
+      return result;
+    }
+    if (node.kind === "call") {
+      const builtin = info(node).builtin;
+      const arg0 = node.arguments[0];
+      if (arg0 !== undefined && arg0.kind !== "spread") {
+        if (builtin === "bigint-identity") return emitWord64Expr(arg0);
+        if (builtin === "bigint-from-boolean") {
+          const b = value(arg0),
+            yes = block(),
+            no = block(),
+            done = block(),
+            res = temporary("word64");
+          choose(load(b, arg0), yes, no, node);
+          current = yes;
+          store(res, load(word64ConstSlot(1, 0, node), node), node);
+          jump(done.id, node);
+          current = no;
+          store(res, load(word64ConstSlot(0, 0, node), node), node);
+          jump(done.id, node);
+          current = done;
+          return res;
+        }
+        if (builtin === "bigint-from-number") {
+          const num = value(arg0),
+            truncId = nextValue++;
+          emit({
+            kind: "unary",
+            operator: "trunc",
+            id: truncId,
+            operand: load(num, arg0),
+            start: node.start,
+            end: node.end,
+          });
+          const eq = binarySlot(
+              "===",
+              num,
+              save(truncId, "number", node),
+              node,
+            ),
+            ge = binarySlot(
+              ">=",
+              num,
+              numberSlot(-9007199254740991, node),
+              node,
+            ),
+            le = binarySlot(
+              "<=",
+              num,
+              numberSlot(9007199254740991, node),
+              node,
+            ),
+            checkGe = block(),
+            checkLe = block(),
+            fast = block(),
+            slow = block(),
+            done = block(),
+            res = temporary("word64");
+          choose(load(eq, node), checkGe, slow, node);
+          current = checkGe;
+          choose(load(ge, node), checkLe, slow, node);
+          current = checkLe;
+          choose(load(le, node), fast, slow, node);
+          current = fast;
+          const convId = nextValue++;
+          emit({
+            kind: "word64-from-number",
+            id: convId,
+            value: load(num, arg0),
+            start: node.start,
+            end: node.end,
+          });
+          store(res, convId, node);
+          jump(done.id, node);
+          current = slow;
+          const boxed = bigIntCall(bigIntRuntime().fromNumber, [num], node);
+          const slowW = word64FromBigIntSlot(boxed, node);
+          store(res, load(slowW, node), node);
+          jump(done.id, node);
+          current = done;
+          return res;
+        }
+      }
+    }
+    return word64FromBigIntSlot(value(node), node);
+  }
+  function discardedExpression(expr: Expression): void {
+    const node = ungroup(expr);
+    if (
+      bigints !== undefined &&
+      node.kind === "assignment" &&
+      fn.bindingInitializations?.get(node) === undefined
+    ) {
+      const target = ungroup(node.target);
+      if (
+        target.kind === "index" &&
+        typedArrayBigIntElements(info(target.object).type) &&
+        info(node).builtin !== "list-write" &&
+        records?.finiteAccesses?.get(node) === undefined &&
+        records?.accesses.get(target) === undefined &&
+        info(node).cView === undefined
+      ) {
+        const reference = propertyReference(
+          value(target.object),
+          value(target.index),
+        );
+        const rhs = emitWord64Expr(node.value);
+        emit({
+          kind: "array-word64-store",
+          array: load(reference.base, node),
+          index: load(reference.key, node),
+          value: load(rhs, node),
+          start: node.start,
+          end: node.end,
+        });
+        return;
+      }
+    }
+    expression(expr);
   }
   /** Bounds-checked typed-array element read returning optional-number (numeric
    * kinds) or optional-reference holding a BigIntValue (BigInt64/BigUint64). */
@@ -10980,6 +11426,13 @@ export function lowerFunction(
         const constantBigInt = evalConstantBigInt(node);
         if (constantBigInt !== undefined)
           return bigIntConstantSlot(constantBigInt);
+        if (
+          bigints !== undefined &&
+          node.operator === "&" &&
+          info(node).bigint === true &&
+          isBigIntMask64Expr(node, evalConstantBigInt)
+        )
+          return bigIntFromWord64Slot(emitWord64Expr(node), false, node);
         if (info(node).builtin === "list-has") {
           const index = value(node.left),
             receiver = value(node.right);
@@ -11600,6 +12053,21 @@ export function lowerFunction(
         }
         const local = info(node).local;
         if (local === undefined) throw "update local invariant";
+        if (node.kind === "compound" && slots[local] === "word64") {
+          const old = save(
+            readLocal(local, node.target),
+            "word64",
+            node.target,
+          );
+          const wOp = word64BinaryOp(node.operator);
+          if (wOp !== undefined) {
+            const rhs = emitWord64Expr(node.value);
+            const updated = emitWord64Binary(wOp, old, rhs, node);
+            writeLocal(local, load(updated, node), node);
+            return updated;
+          }
+          throw "word64 compound operator invariant";
+        }
         if (node.kind === "compound" && node.operator === "??") {
           const carrier = slots[local];
           if (carrier === undefined)
@@ -11792,6 +12260,11 @@ export function lowerFunction(
         }
         const local = info(node).local;
         if (local === undefined) throw "assignment invariant";
+        if (slots[local] === "word64") {
+          const result = emitWord64Expr(node.value);
+          writeLocal(local, load(result, node.value), node);
+          return result;
+        }
         const result = appendedChain(node.value, local) ?? value(node.value);
         writeLocal(local, load(result, node.value), node);
         return result;
@@ -12080,6 +12553,23 @@ export function lowerFunction(
           const argument = node.arguments[0];
           if (argument === undefined || argument.kind === "spread")
             throw "BigInt conversion argument invariant";
+          if (
+            builtin === "number-from-bigint" &&
+            bigints !== undefined &&
+            isBigIntMask64Expr(argument, evalConstantBigInt)
+          ) {
+            const w = emitWord64Expr(argument),
+              id = nextValue++;
+            emit({
+              kind: "word64-to-number",
+              id,
+              value: load(w, node),
+              signed: false,
+              start: node.start,
+              end: node.end,
+            });
+            return save(id, "number", node);
+          }
           const input = value(argument);
           if (builtin === "bigint-identity") return input;
           const runtime = bigIntRuntime();
@@ -15017,7 +15507,9 @@ export function lowerFunction(
               if (offsetArg === undefined || valArg === undefined)
                 throw "DataView set argument invariant";
               const offset = value(offsetArg);
-              const val = value(valArg);
+              const valWord =
+                bigints !== undefined ? emitWord64Expr(valArg) : undefined;
+              const val = valWord === undefined ? value(valArg) : undefined;
               const leArg = node.arguments[2];
               let le: number;
               if (leArg === undefined) le = booleanSlot(false, node);
@@ -15029,7 +15521,47 @@ export function lowerFunction(
                     : unarySlot("truthy", leVal, "boolean", node);
               }
               const scratch = word64Scratch();
-              emitBigIntToWord64(val, scratch, 0, node);
+              if (valWord !== undefined) {
+                const zero = numberSlot(0, node),
+                  one = numberSlot(1, node),
+                  lowId = nextValue++,
+                  highId = nextValue++;
+                emit({
+                  kind: "word64-part",
+                  id: lowId,
+                  value: load(valWord, node),
+                  half: "low",
+                  start: node.start,
+                  end: node.end,
+                });
+                emit({
+                  kind: "word64-part",
+                  id: highId,
+                  value: load(valWord, node),
+                  half: "high",
+                  start: node.start,
+                  end: node.end,
+                });
+                emit({
+                  kind: "array-store",
+                  array: load(scratch, node),
+                  index: load(zero, node),
+                  value: lowId,
+                  start: node.start,
+                  end: node.end,
+                });
+                emit({
+                  kind: "array-store",
+                  array: load(scratch, node),
+                  index: load(one, node),
+                  value: highId,
+                  start: node.start,
+                  end: node.end,
+                });
+              } else {
+                if (val === undefined) throw "DataView set value invariant";
+                emitBigIntToWord64(val, scratch, 0, node);
+              }
               if (bytesHelper !== undefined && slots[offset] === "number") {
                 const bytes = runtimeCall(bytesHelper, [receiver], node);
                 if (bytes === undefined) throw "DataView bytes invariant";
@@ -16388,9 +16920,13 @@ export function lowerFunction(
           const local = fn.declarations.get(d);
           if (local === undefined) throw "binding invariant";
           const initializer = d.initializer;
-          if (initializer !== undefined)
-            writeLocal(local.id, load(value(initializer), initializer), d);
-          else if (
+          if (initializer !== undefined) {
+            const initSlot =
+              slots[local.id] === "word64"
+                ? emitWord64Expr(initializer)
+                : value(initializer);
+            writeLocal(local.id, load(initSlot, initializer), d);
+          } else if (
             node.mode !== "var" &&
             [
               "optional-number",
@@ -16408,7 +16944,7 @@ export function lowerFunction(
         }
         break;
       case "expression":
-        expression(node.expression);
+        discardedExpression(node.expression);
         break;
       case "try": {
         const handler = node.handler,
@@ -16966,7 +17502,7 @@ export function lowerFunction(
         if (current !== undefined) jump(update.id, node);
         current = update;
         copyIterationCells(node);
-        if (node.update !== undefined) expression(node.update);
+        if (node.update !== undefined) discardedExpression(node.update);
         jump(head.id, node);
         current = exit;
         break;

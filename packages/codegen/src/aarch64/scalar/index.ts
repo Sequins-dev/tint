@@ -8,6 +8,7 @@ import {
   planLocalSignatures,
   type LocalSignatureBinding,
 } from "./signature-groups.ts";
+import type { Word64EmitContext } from "./word64.ts";
 export type { LocalSignatureBinding } from "./signature-groups.ts";
 import {
   nativeActivationTopOffset,
@@ -6746,8 +6747,12 @@ function emitModuleForms(
                 op.kind === "array-atomic" ||
                 op.kind === "array-word64-read" ||
                 op.kind === "array-word64-write" ||
+                op.kind === "array-word64-element" ||
+                op.kind === "array-word64-store" ||
                 op.kind === "array-word64-fill" ||
                 op.kind === "array-atomic-word64" ||
+                op.kind === "word64-from-number" ||
+                op.kind === "word64-from-parts" ||
                 op.kind === "bytes-load" ||
                 op.kind === "bytes-store" ||
                 op.kind === "bytes-word64-load" ||
@@ -8531,6 +8536,20 @@ function emitModuleForms(
                 id = op.id;
                 type = "boolean";
                 break;
+              case "word64-constant":
+              case "word64-from-number":
+              case "word64-binary":
+              case "word64-unary":
+              case "word64-from-parts":
+              case "array-word64-element":
+                id = op.id;
+                type = "word64";
+                break;
+              case "word64-to-number":
+              case "word64-part":
+                id = op.id;
+                type = "number";
+                break;
               case "error-message":
               case "general-kind":
               case "string-literal":
@@ -8786,6 +8805,7 @@ function emitModuleForms(
                 const key =
                   String(scalarByteLength(type)) +
                   (type === "boolean" ||
+                  type === "word64" ||
                   lengthOnlySlices[valueIds.intern(id)] === 1 ||
                   (type === "number" &&
                     (integerUses[valueIds.intern(id)] === 1 ||
@@ -8849,6 +8869,7 @@ function emitModuleForms(
                 // wants an integer live in GP homes (x19..x28): no bank moves.
                 if (
                   type === "boolean" ||
+                  type === "word64" ||
                   lengthOnlySlices[compact] === 1 ||
                   (type === "number" &&
                     integerUses[compact] === 1 &&
@@ -9157,7 +9178,12 @@ function emitModuleForms(
             const type = fn.slots[slot];
             if (type === undefined) throw "leaf word slot invariant";
             const offset = slotOffset(slot);
-            occupy(offset, integerSlots[slot] === 1 || type === "boolean");
+            occupy(
+              offset,
+              integerSlots[slot] === 1 ||
+                type === "boolean" ||
+                type === "word64",
+            );
             for (let byte = 8; byte < scalarByteLength(type); byte += 8)
               occupy(offset + byte, false);
           }
@@ -9171,6 +9197,7 @@ function emitModuleForms(
               occupy(
                 storage.offset,
                 storage.type === "boolean" ||
+                  storage.type === "word64" ||
                   lengthOnlySlices[valueIds.intern(id)] === 1 ||
                   (storage.type === "number" &&
                     (integerUses[valueIds.intern(id)] === 1 ||
@@ -13665,6 +13692,32 @@ function emitModuleForms(
             displacement: (instructions.length - invalid) * 4,
           });
         }
+        let cachedWord64Ctx: Word64EmitContext | undefined = undefined;
+        function word64Ctx(): Word64EmitContext {
+          if (cachedWord64Ctx === undefined) {
+            cachedWord64Ctx = {
+              emit,
+              instructionCount: () => instructions.length,
+              patchInstruction,
+              storedAsInteger,
+              intRegister,
+              intTarget,
+              rawRegister,
+              rawValue,
+              saveRaw,
+              floatLoad: (rt, id) => floatLoad(rt, id),
+              floatStore,
+              arrayIndex: (array, index) => arrayIndex(array, index),
+              getCachedArrayDataVal: () => cachedArrayDataVal,
+              getCachedArrayDataReg: () => cachedArrayDataReg,
+              setCachedArrayData: (reg, val) => {
+                cachedArrayDataReg = reg;
+                cachedArrayDataVal = val;
+              },
+            };
+          }
+          return cachedWord64Ctx;
+        }
         let cachedBytesCtx: BytesEmitContext | undefined = undefined;
         function bytesCtx(): BytesEmitContext {
           if (cachedBytesCtx === undefined) {
@@ -15080,6 +15133,8 @@ function emitModuleForms(
                       });
                   } else if (
                     op.kind === "array-element" ||
+                    op.kind === "array-word64-element" ||
+                    op.kind === "array-word64-store" ||
                     op.kind === "bytes-load" ||
                     op.kind === "bytes-word64-load" ||
                     op.kind === "bytes-word64-store"
@@ -15087,6 +15142,16 @@ function emitModuleForms(
                     const s = loopLoadSlot.get(op.array);
                     if (s !== undefined)
                       arraySlotUses.set(s, (arraySlotUses.get(s) ?? 0) + 1);
+                  } else if (
+                    op.kind === "word64-constant" ||
+                    op.kind === "word64-from-number" ||
+                    op.kind === "word64-to-number" ||
+                    op.kind === "word64-binary" ||
+                    op.kind === "word64-unary" ||
+                    op.kind === "word64-part" ||
+                    op.kind === "word64-from-parts"
+                  ) {
+                    // Pure inline word64 operations; preserve x4..x8 and d3..d7.
                   } else if (op.kind === "bytes-store") {
                     const isFloat =
                       op.element === "f16" ||
@@ -15565,6 +15630,7 @@ function emitModuleForms(
           branchIsland,
           bufferByteLength,
           bytesCtx,
+          word64Ctx,
           cInteropCtx,
           callHelper,
           callRelative,

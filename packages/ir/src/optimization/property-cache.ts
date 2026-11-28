@@ -3522,6 +3522,16 @@ export function cacheLoopProperties(
       case "boolean-value":
       case "array-word64-read":
         return "boolean";
+      case "word64-constant":
+      case "word64-from-number":
+      case "word64-binary":
+      case "word64-unary":
+      case "word64-from-parts":
+      case "array-word64-element":
+        return "word64";
+      case "word64-to-number":
+      case "word64-part":
+        return "number";
       case "string-none":
       case "string-wrap":
       case "reference-string":
@@ -3542,6 +3552,7 @@ export function cacheLoopProperties(
       case "bytes-store":
       case "bytes-word64-load":
       case "bytes-word64-store":
+      case "array-word64-store":
       case "string-write":
       case "number-string-cache":
       case "string-index-cache":

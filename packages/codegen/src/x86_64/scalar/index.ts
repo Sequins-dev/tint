@@ -60,7 +60,7 @@ import {
   writeUnsigned,
   writeWord64,
 } from "@tint/foundation/binary/bytes";
-import type { Word64 } from "@tint/foundation/binary/word64";
+import { fromParts, type Word64 } from "@tint/foundation/binary/word64";
 import { scriptEntryCalleeValues } from "../../scalar/property-fusion.ts";
 import {
   cachedListReadPrefix,
@@ -4043,6 +4043,147 @@ export function emitModule(
           if (host === undefined) break;
           bytesWord64Store(op);
           return;
+        case "word64-constant": {
+          const word = fromParts(op.low, op.high);
+          if (!word.ok) throw "word64 constant invariant";
+          emit({
+            op: "mov",
+            dst: rax,
+            src: { kind: "imm64", value: word.value },
+          });
+          define(op.id, "word64");
+          return;
+        }
+        case "word64-from-number":
+          emit({ op: "cvttsd2si", dst: rax, src: frame(home(op.value)) });
+          define(op.id, "word64");
+          return;
+        case "word64-to-number":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          if (op.signed) {
+            emit({ op: "cvtsi2sd", dst: x0, src: rax });
+          } else {
+            const hi = fnLabel + ":w64-u2f:" + String(instructionCount),
+              doneCvt = hi + ":done";
+            emit({ op: "test", dst: rax, src: rax });
+            branch(emit, "s", hi);
+            emit({ op: "cvtsi2sd", dst: x0, src: rax });
+            emit({ op: "jmp", target: label(doneCvt) });
+            emit({ op: "label", name: hi });
+            emit({ op: "mov", dst: r10, src: rax });
+            emit({ op: "shr", dst: rax, count: 1 });
+            emit({ op: "and", dst: r10, src: imm(1) });
+            emit({ op: "or", dst: rax, src: r10 });
+            emit({ op: "cvtsi2sd", dst: x0, src: rax });
+            emit({ op: "addsd", dst: x0, src: x0 });
+            emit({ op: "label", name: doneCvt });
+          }
+          types.set(op.id, "number");
+          emit({ op: "movsd", dst: frame(home(op.id)), src: x0 });
+          return;
+        case "word64-binary": {
+          emit({ op: "mov", dst: rax, src: frame(home(op.left)) });
+          if (op.operator === "add")
+            emit({ op: "add", dst: rax, src: frame(home(op.right)) });
+          else if (op.operator === "sub")
+            emit({ op: "sub", dst: rax, src: frame(home(op.right)) });
+          else if (op.operator === "mul")
+            emit({ op: "imul", dst: rax, src: frame(home(op.right)) });
+          else if (op.operator === "and")
+            emit({ op: "and", dst: rax, src: frame(home(op.right)) });
+          else if (op.operator === "or")
+            emit({ op: "or", dst: rax, src: frame(home(op.right)) });
+          else if (op.operator === "xor")
+            emit({ op: "xor", dst: rax, src: frame(home(op.right)) });
+          else {
+            const rcx = gpr(1);
+            emit({ op: "mov", dst: rcx, src: frame(home(op.right)) });
+            if (op.operator === "shl")
+              emit({ op: "shl", dst: rax, count: "cl" });
+            else if (op.operator === "sar")
+              emit({ op: "sar", dst: rax, count: "cl" });
+            else emit({ op: "shr", dst: rax, count: "cl" });
+          }
+          define(op.id, "word64");
+          return;
+        }
+        case "word64-unary":
+          emit({ op: "mov", dst: rax, src: frame(home(op.operand)) });
+          if (op.operator === "neg") emit({ op: "neg", dst: rax });
+          else emit({ op: "not", dst: rax });
+          define(op.id, "word64");
+          return;
+        case "word64-part":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          if (op.half === "high") emit({ op: "shr", dst: rax, count: 32 });
+          else emit({ op: "mov", dst: eax, src: eax });
+          emit({ op: "cvtsi2sd", dst: x0, src: rax });
+          types.set(op.id, "number");
+          emit({ op: "movsd", dst: frame(home(op.id)), src: x0 });
+          return;
+        case "word64-from-parts":
+          emit({ op: "cvttsd2si", dst: rax, src: frame(home(op.low)) });
+          emit({ op: "mov", dst: eax, src: eax });
+          emit({ op: "cvttsd2si", dst: r10, src: frame(home(op.high)) });
+          emit({ op: "shl", dst: r10, count: 32 });
+          emit({ op: "or", dst: rax, src: r10 });
+          define(op.id, "word64");
+          return;
+        case "array-word64-element":
+          if (host === undefined) break;
+          emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.index)) });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+          emit({
+            op: "mov",
+            dst: scratch,
+            src: mem(11, nativeArrayDataOffset),
+          });
+          emit({
+            op: "mov",
+            dst: rax,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+            },
+          });
+          define(op.id, "word64");
+          return;
+        case "array-word64-store": {
+          if (host === undefined) break;
+          const doneStore =
+            fnLabel + ":word64-store:" + String(instructionCount);
+          if (op.unchecked === true) {
+            emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.index)) });
+            emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+          } else {
+            exactInteger(emit, frame(home(op.index)), r9, doneStore);
+            emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+            emit({
+              op: "cmp",
+              dst: r9,
+              src: mem(11, nativeArrayLengthOffset),
+            });
+            branch(emit, "ae", doneStore);
+          }
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          emit({
+            op: "mov",
+            dst: scratch,
+            src: mem(11, nativeArrayDataOffset),
+          });
+          emit({
+            op: "mov",
+            dst: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 11, index: 9, scale: 8, disp: 0 },
+            },
+            src: rax,
+          });
+          if (op.unchecked !== true) emit({ op: "label", name: doneStore });
+          return;
+        }
         case "string-none":
           emit({ op: "xor", dst: eax, src: eax });
           define(op.id, "optional-string");

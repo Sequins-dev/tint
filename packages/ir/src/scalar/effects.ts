@@ -53,6 +53,7 @@ export function instructionEffects(op: Instruction): number {
     case "element-count":
     case "array-read":
     case "array-element":
+    case "array-word64-element":
     case "weak-slot-key":
     case "weak-slot-value":
     case "reference-vector-read":
@@ -83,9 +84,18 @@ export function instructionEffects(op: Instruction): number {
       return effectReadHeap | effectWriteHeap | effectEscape;
     case "array-write":
     case "array-store":
+    case "array-word64-store":
     case "array-fill":
     case "bytes-store":
       return effectWriteHeap;
+    case "word64-constant":
+    case "word64-from-number":
+    case "word64-to-number":
+    case "word64-binary":
+    case "word64-unary":
+    case "word64-part":
+    case "word64-from-parts":
+      return 0;
     case "bytes-load":
       return effectReadHeap;
     // An atomic access synchronizes with other agents, so even a load must

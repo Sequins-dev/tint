@@ -171,6 +171,7 @@ function matchReadHelper(
         op.kind === "array-atomic" ||
         op.kind === "array-word64-read" ||
         op.kind === "array-word64-write" ||
+        op.kind === "array-word64-store" ||
         op.kind === "array-word64-fill" ||
         op.kind === "array-atomic-word64" ||
         op.kind === "bytes-store" ||
@@ -328,6 +329,7 @@ function matchHasHelper(
         op.kind === "array-atomic" ||
         op.kind === "array-word64-read" ||
         op.kind === "array-word64-write" ||
+        op.kind === "array-word64-store" ||
         op.kind === "array-word64-fill" ||
         op.kind === "array-atomic-word64" ||
         op.kind === "bytes-store" ||

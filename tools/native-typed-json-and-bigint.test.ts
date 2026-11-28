@@ -475,3 +475,124 @@ test("typed BigInt(string) and Map/Set<bigint> match Node and execute natively",
     },
   );
 });
+
+const unboxedWord64BigIntSource = `function catchesRangeError(fn: () => void): boolean {
+  try {
+    fn();
+    return false;
+  } catch (e) {
+    return e instanceof RangeError;
+  }
+}
+
+export function run(): number {
+  const size = 16;
+  const signed = new BigInt64Array(size);
+  const unsigned = new BigUint64Array(size);
+  for (let i = 0; i < size; i++) {
+    signed[i] = BigInt(i * 17 - 100) << 12n;
+    unsigned[i] = (BigInt(i) * 0x9e3779b9n) & 0xffffffffffffffffn;
+  }
+
+  // Modular 64-bit ring ops, unary -/~, and shifts.
+  let acc = 0n;
+  for (let round = 0; round < 5; round++) {
+    const delta = BigInt(round);
+    for (let i = 0; i < size; i++) {
+      let s = (signed[i] ?? 0n) + delta;
+      s = s - 3n;
+      s = s ^ ~delta;
+      signed[i] = s;
+      let u = ((unsigned[i] ?? 0n) ^ (delta << 3n)) + 7n;
+      u = u * 3n;
+      u = u | 1n;
+      unsigned[i] = u;
+      acc = (acc + s + u - -delta) & 0xffffffffn;
+    }
+  }
+  const maskedBoxed = acc & 0xffffffffn;
+  if (maskedBoxed !== BigInt(Number(acc & 0xffffffffn))) return 1;
+
+  // 64-bit signed vs unsigned wraparound boundaries.
+  const maxI64 = 0x7fffffffffffffffn;
+  const wrapBuf = new BigInt64Array(2);
+  const wrapUBuf = new BigUint64Array(2);
+  wrapBuf[0] = maxI64 + 1n;
+  wrapUBuf[0] = maxI64 + 1n;
+  if ((wrapBuf[0] ?? 0n) !== -9223372036854775808n) return 2;
+  if ((wrapUBuf[0] ?? 0n) !== 9223372036854775808n) return 3;
+
+  // Out-of-bounds reads/writes and non-integer indices.
+  const oob1 = (signed[-1] ?? 123n) + (signed[size] ?? 456n) + (signed[1.5] ?? 789n);
+  if (Number(oob1 & 0xffffffffn) !== 123 + 456 + 789) return 4;
+  const before0 = signed[0] ?? 0n;
+  signed[-1] = 999n;
+  signed[size] = 999n;
+  if ((signed[0] ?? 0n) !== before0) return 5;
+
+  // BigInt(number) edge cases inside word64 sinks: -0, non-int RangeError, >2^53 slow path.
+  const edge = new BigUint64Array(2);
+  edge[0] = BigInt(-0);
+  if ((edge[0] ?? 1n) !== 0n) return 6;
+  edge[1] = BigInt(1e20);
+  if ((edge[1] ?? 0n) !== (BigInt("100000000000000000000") & 0xffffffffffffffffn))
+    return 7;
+  if (!catchesRangeError(() => { edge[0] = BigInt(1.5); })) return 8;
+  if (!catchesRangeError(() => { edge[0] = BigInt(NaN); })) return 9;
+  if (!catchesRangeError(() => { edge[0] = BigInt(Infinity); })) return 10;
+
+  // Arbitrary-precision soundness: assignment expression result must NOT truncate!
+  const huge = (1n << 100n) + 5n;
+  const arr = new BigInt64Array(1);
+  const assignedResult = (arr[0] = huge);
+  if (assignedResult !== (1n << 100n) + 5n) return 11;
+  if ((arr[0] ?? 0n) !== 5n) return 12;
+
+  // Unmasked >64-bit arithmetic and >=64 shifts must NOT wrap!
+  let wide = 1n << 63n;
+  wide = wide + 1n;
+  if (wide <= 0n || wide !== 9223372036854775809n) return 13;
+  const bigShift = (1n << 70n) + 1n;
+  if (Number(bigShift & 0xffffffffn) !== 1) return 14;
+  if (bigShift >> 70n !== 1n) return 15;
+
+  // DataView 64-bit LE & BE store/load with unboxed word64 expressions.
+  const ab = new ArrayBuffer(16);
+  const dv = new DataView(ab);
+  const k = BigInt(19) * 0x100000001n + 5n;
+  dv.setBigInt64(0, k, true);
+  dv.setBigUint64(8, k ^ 0x55aa55aa55aa55aan, false);
+  if (Number(dv.getBigInt64(0, true) & 0xffffffffn) !== 24) return 16;
+  if (
+    Number((dv.getBigUint64(8, false) ^ 0x55aa55aa55aa55aan) & 0xffffffffn) !==
+    24
+  )
+    return 17;
+
+  // IEEE-754 unsigned word64-to-number round-to-nearest-even at high magnitudes.
+  const maxU64 = 0xffffffffffffffffn;
+  if (Number(maxU64 & 0xffffffffffffffffn) !== 18446744073709551616) return 18;
+  const midU64 = 0x8000000000000000n;
+  if (Number(midU64 & 0xffffffffffffffffn) !== 9223372036854775808) return 19;
+
+  return 42;
+}
+`;
+
+test("unboxed word64 BigInt loops, edge cases, and arbitrary-precision boundaries match Node natively", async () => {
+  assert.equal(await runInNode(unboxedWord64BigIntSource), 42);
+  verifyHostedFixture(
+    unboxedWord64BigIntSource,
+    "typed-bigint-word64",
+    [],
+    [],
+    [],
+    [],
+    {
+      requireTyped: true,
+      runtimeEntry: "initializeGenerationalRuntime",
+      managedBytes: 16777216,
+      allocationCapacity: 262144,
+    },
+  );
+});
