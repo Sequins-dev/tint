@@ -827,7 +827,7 @@ export function knownObjectTagAccesses(
 
 /** Block-local known general tag codes (`0`=undefined, `1`=number, `2`=boolean,
  * `3`=string, `4`=null, `5`=reference) for value IDs in functions containing
- * `general-equal`. Undefined when `fn` has no `general-equal` instructions. */
+ * `general-equal` or `property-store`. Undefined otherwise. */
 export function knownGeneralEqualTags(
   fn: FunctionIR,
   valueType: (id: number) => ScalarType,
@@ -836,7 +836,10 @@ export function knownGeneralEqualTags(
   for (const block of fn.blocks) {
     if (block === undefined) throw "general equal tag block invariant";
     for (const op of block.instructions) {
-      if (op !== undefined && op.kind === "general-equal") {
+      if (
+        op !== undefined &&
+        (op.kind === "general-equal" || op.kind === "property-store")
+      ) {
         hasGeneralEqual = true;
         break;
       }

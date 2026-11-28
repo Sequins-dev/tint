@@ -3521,6 +3521,7 @@ function emitModuleForms(
    * trap islands or long branches keep such code inline instead
    * (coldStubsAvailable). */
   let coldStubs: (() => void)[] = [];
+  let flushingColdStubs = false;
   function coldStubsAvailable(): boolean {
     const owner = functionId;
     return (
@@ -3531,10 +3532,15 @@ function emitModuleForms(
     );
   }
   function flushColdStubs(): void {
-    while (coldStubs.length !== 0) {
-      const stubs = coldStubs;
-      coldStubs = [];
-      for (const stub of stubs) stub();
+    flushingColdStubs = true;
+    try {
+      while (coldStubs.length !== 0) {
+        const stubs = coldStubs;
+        coldStubs = [];
+        for (const stub of stubs) stub();
+      }
+    } finally {
+      flushingColdStubs = false;
     }
   }
   /** A branch between the body and its cold stubs: one beyond reach marks
@@ -9313,7 +9319,7 @@ function emitModuleForms(
             allowColdStubs && instructions.length - start / 4 < 131072,
           deferRememberSlow = ():
             ((emitSlow: () => void) => void) | undefined =>
-            canDeferColdStub()
+            !flushingColdStubs && canDeferColdStub()
               ? (emitSlow) => deferredAllocSlowPaths.push(emitSlow)
               : undefined;
         blockOffsets.push({ offsets });
@@ -15497,6 +15503,7 @@ function emitModuleForms(
             foldedConstants,
             integerSlots,
             knownObjectTag,
+            generalEqualTags,
             skippedCasts,
             undefinedValues,
             valueUses,
