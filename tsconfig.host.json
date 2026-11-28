@@ -1,11 +1,18 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "noEmit": true, "types": [] },
+  "compilerOptions": {
+    "noEmit": true,
+    "types": []
+  },
   "include": [
     "tools/node-file-host.ts",
     "types/runtime-events-typecheck.ts",
     "types/runtime-fs.d.ts",
     "types/runtime-events.d.ts",
-    "types/web-events.d.ts"
+    "types/web-events.d.ts",
+    "types/web-url.d.ts",
+    "types/runtime-url.d.ts",
+    "types/runtime-path.d.ts",
+    "types/runtime-path-url-typecheck.ts"
   ]
 }

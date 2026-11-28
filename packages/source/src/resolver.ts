@@ -81,7 +81,11 @@ export const nodeBuiltins: {
   readonly events: SourceNodeBuiltin;
   readonly ffi: SourceNodeBuiltin;
   readonly fs: NodeBuiltin;
+  readonly path: SourceNodeBuiltin;
+  readonly pathPosix: SourceNodeBuiltin;
+  readonly pathWin32: SourceNodeBuiltin;
   readonly process: SourceNodeBuiltin;
+  readonly url: SourceNodeBuiltin;
   readonly workers: NodeBuiltin;
 } = {
   buffer: {
@@ -147,9 +151,25 @@ export const nodeBuiltins: {
     ],
   },
   fs: { specifier: "node:fs" },
+  path: {
+    specifier: "node:path",
+    source: "packages/native-runtime/src/node/path.ts",
+  },
+  pathPosix: {
+    specifier: "node:path/posix",
+    source: "packages/native-runtime/src/node/path-posix.ts",
+  },
+  pathWin32: {
+    specifier: "node:path/win32",
+    source: "packages/native-runtime/src/node/path-win32.ts",
+  },
   process: {
     specifier: "node:process",
     source: "packages/native-runtime/src/node/process.ts",
+  },
+  url: {
+    specifier: "node:url",
+    source: "packages/native-runtime/src/node/url.ts",
   },
   workers: { specifier: "node:worker_threads" },
 };
@@ -160,7 +180,11 @@ export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.events,
   nodeBuiltins.ffi,
   nodeBuiltins.fs,
+  nodeBuiltins.path,
+  nodeBuiltins.pathPosix,
+  nodeBuiltins.pathWin32,
   nodeBuiltins.process,
+  nodeBuiltins.url,
   nodeBuiltins.workers,
 ];
 

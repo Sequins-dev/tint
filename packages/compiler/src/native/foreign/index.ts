@@ -96,6 +96,7 @@ export const foreignRuntimeModules = {
   nodeFfi: nodeBuiltins.ffi.source,
   nodeBuffer: nodeBuiltins.buffer.source,
   nodeProcess: nodeBuiltins.process.source,
+  nodePathCwd: "packages/native-runtime/src/node/path-cwd.ts",
   processIntrinsics: "packages/native-runtime/src/intrinsics/process.ts",
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",

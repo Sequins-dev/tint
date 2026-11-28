@@ -1,7 +1,7 @@
 {
   "spec": "libsystem",
   "target": "darwin-arm64",
-  "clang": "Apple clang version 17.0.0",
+  "clang": "Apple clang version 21.0.0",
   "aliases": [
     {
       "name": "mode_t",
@@ -22,6 +22,33 @@
         "kind": "scalar",
         "scalar": "i32",
         "aliases": ["pid_t", "__darwin_pid_t", "__int32_t"]
+      },
+      "variadic": false
+    },
+    {
+      "name": "getcwd",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__size",
+          "type": {
+            "kind": "scalar",
+            "scalar": "usize",
+            "aliases": ["size_t", "__darwin_size_t"]
+          }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+        "constPointee": false
       },
       "variadic": false
     },

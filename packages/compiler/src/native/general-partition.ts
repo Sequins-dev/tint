@@ -780,7 +780,41 @@ export function closeGeneralPartition(
       retainBoundary(typed, names);
     }
   }
-  const crossing = records.records();
+  // Eligibility checks can resolve a return record before discovering an
+  // unsupported parameter. Only publish records reachable from exports that
+  // actually cross the boundary.
+  const resolved = records.records();
+  const required = new Set<string>();
+  const pending: string[] = [];
+  function retainRecord(use: BoundaryRecordUse | undefined): void {
+    if (use === undefined || use.key === "" || required.has(use.key)) return;
+    required.add(use.key);
+    pending.push(use.key);
+  }
+  for (const boundary of boundaries) {
+    if (boundary === undefined) continue;
+    for (const item of boundary.exports) {
+      if (item === undefined) continue;
+      if (item.kind === "function") {
+        const crossing = item.records;
+        if (crossing === undefined) continue;
+        retainRecord(crossing.result);
+        for (const parameter of crossing.parameters) retainRecord(parameter);
+      }
+    }
+  }
+  const recordByKey = new Map<string, BoundaryRecord>();
+  for (const record of resolved)
+    if (record !== undefined) recordByKey.set(record.key, record);
+  for (let index = 0; index < pending.length; index++) {
+    const key = pending[index];
+    if (key === undefined) continue;
+    for (const field of recordByKey.get(key)?.fields ?? [])
+      retainRecord(field?.record);
+  }
+  const crossing = resolved.filter(
+    (record) => record !== undefined && required.has(record.key),
+  );
   const result: GeneralPartition =
     crossing.length === 0
       ? { general: generalModules, boundaries }

@@ -21,3 +21,6 @@ filesystem operations or make Node modules available to portable packages. The
 and Web event globals for TypeScript tooling. Event maps associate emitter event
 names with argument tuples and target event names with event objects. Tint's
 runtime shares one implementation across callers.
+
+`runtime-path.d.ts`, `runtime-url.d.ts`, and `web-url.d.ts` describe the ESM
+path variants, URL helpers, and realm-local Web URL constructors.

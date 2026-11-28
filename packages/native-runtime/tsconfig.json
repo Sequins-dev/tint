@@ -6,7 +6,11 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "../../types/web-events.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../types/web-events.d.ts",
+    "../../types/web-url.d.ts"
+  ],
   "references": [
     {
       "path": "../abi"
