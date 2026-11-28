@@ -1,9 +1,11 @@
 import {
   fcntl$setDescriptor,
+  getpid,
   kevent64$change,
   kevent64$poll,
   kevent64$wait,
   kqueue,
+  proc_pidinfo,
 } from "tint:c/darwin-reactor";
 import { close } from "@tint/native-runtime/intrinsics/fs";
 import type { NativeReactor } from "@tint/native-runtime/event-loop";
@@ -159,4 +161,14 @@ export function createReactor(): NativeReactor {
       close(queue);
     },
   };
+}
+
+/** Current resident set size in bytes via Darwin PROC_PIDTASKINFO, or 0 when unavailable. */
+export function residentSetBytes(): number {
+  const info = new Uint8Array(96);
+  const length = proc_pidinfo(getpid(), 4, 0, info, info.length);
+  if (length < 16) return 0;
+  const low = readU32LE(info, 8),
+    high = readU32LE(info, 12);
+  return low + high * 4294967296;
 }

@@ -20,6 +20,7 @@ import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
   compileNativeProgram,
   compileX64HostedProgram,
+  openNativeProgramEmission,
   selectNativeBackend,
   type NativeServiceUnit,
   type X64NativeServiceUnit,
@@ -38,6 +39,8 @@ import {
   type CompiledProgram,
   type CompiledX64HostedProgram,
   type NativeServiceImport,
+  type OpenedNativeProgramEmission,
+  type PreparedEmissionPlan,
   type ProgramOptimizationObserver,
 } from "./native/index.ts";
 import { requestModules, type ModuleRequest } from "@tint/typescript/modules";
@@ -49,10 +52,14 @@ import {
 } from "@tint/ts-native/closure/lowering";
 import {
   emitModule,
+  type Emission,
+  type EmissionOptions,
+  type EmissionRange,
   type NativeFunction,
   type NativeModule,
   type EmissionFormHints,
   type NativeOperationRange,
+  type PreparedEmissionStart,
 } from "@tint/codegen/aarch64/scalar";
 /** An emitted function, or a private leaf helper named `helper:<kind>`, at
  * an image offset (see onEmittedFunctions). */
@@ -1225,6 +1232,220 @@ function generationalWorkspaceError(request: BuildRequest): string | undefined {
   )
     return "generational runtime allocation metadata cannot cover forwarding and old-space marks";
   return undefined;
+}
+
+/** An owned AArch64 executable build prepared up to its immutable fragment wire. */
+export interface OpenedMacOSBuild {
+  readonly options: EmissionOptions;
+  readonly ranges: readonly EmissionRange[];
+  readonly rangeWeights: readonly number[];
+  readonly start: PreparedEmissionStart;
+  readonly emitSerial: () => Emission;
+  readonly finish: (emission: Emission) => BuildResult;
+  readonly abort: () => void;
+}
+
+export type OpenedMacOSBuildResult =
+  | { readonly ok: true; readonly value: OpenedMacOSBuild }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        readonly module?: string;
+      };
+    };
+
+function openFailure(
+  stage: string,
+  message: string,
+  module?: string,
+): OpenedMacOSBuildResult {
+  if (module === undefined) return { ok: false, error: { stage, message } };
+  return { ok: false, error: { stage, message, module } };
+}
+
+/** Validate the request, compile runtime units, and prepare the program up to
+ * its immutable fragment wire for an asynchronous event-loop coordinator. */
+export function openPreparedMacOSBuild(
+  request: BuildRequest,
+  plan: PreparedEmissionPlan,
+): OpenedMacOSBuildResult {
+  if (request.threadExitPipe === true && request.threaded !== true)
+    return openFailure(
+      "startup",
+      "thread exit records require threaded startup",
+    );
+  if (request.workerModules !== undefined && request.threadExitPipe !== true)
+    return openFailure(
+      "startup",
+      "worker safepoints require thread exit records",
+    );
+  if (
+    request.nodeWorkerLibrary === true &&
+    (request.threaded !== true || request.threadExitPipe !== true)
+  )
+    return openFailure(
+      "startup",
+      "Node worker libraries require threaded startup and exit records",
+    );
+  const backend = selectNativeBackend(buildTarget(request));
+  if (!backend.ok) return { ok: false, error: backend.error };
+  const target = backend.target;
+  const unsupported = targetUnsupported(request, target);
+  if (unsupported !== undefined) return openFailure("target", unsupported);
+  if (
+    request.allowJit !== true &&
+    request.hostBindings.some(
+      (binding) =>
+        binding !== undefined &&
+        (binding.operation === "executable-map" ||
+          binding.operation === "executable-write" ||
+          binding.operation === "executable-call-number" ||
+          binding.operation === "executable-call-managed" ||
+          binding.operation === "executable-call-value" ||
+          binding.operation === "executable-unmap"),
+    )
+  )
+    return openFailure(
+      "host-binding",
+      "executable-memory capabilities require allowJit",
+    );
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return openFailure("startup", "trustedExecutableCode requires allowJit");
+  const generational = request.runtimeEntry === "initializeGenerationalRuntime";
+  if (generational) {
+    const invalid = generationalWorkspaceError(request);
+    if (invalid !== undefined) return openFailure("memory-policy", invalid);
+  }
+  const share = request.runtimeUnits;
+  const units =
+    share === undefined
+      ? compileRuntimeUnits(request, target)
+      : share(
+          {
+            key: runtimeUnitKey(request, target),
+            modules: runtimeUnitModules(request),
+            allocator: requestModules(request, [request.allocatorModule])[0],
+          },
+          () => compileRuntimeUnits(request, target),
+        );
+  if (!units.ok) return { ok: false, error: units.error };
+  const runtimeUnits = units.value;
+  request.report("program");
+  const opened = openNativeProgramEmission(
+    {
+      ...(request.storage === undefined ? {} : { storage: request.storage }),
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true,
+      serviceImports: serviceImportsForRequest(request),
+      managedSurfaces: request.managedSurfaces ?? [],
+      closedProgram: true,
+      denseReferenceLists: request.denseReferenceLists ?? false,
+      linearAllocation: request.inlineAllocation ?? generational,
+      generationalBarriers: generational,
+      nodeFfiWeakProcessing: generational,
+      trustedExecutableCode: request.trustedExecutableCode === true,
+      optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols ?? false,
+      stackTraces: request.stackTraces === true,
+      symbols: request.symbols === true,
+      operationRanges: request.onOperationRanges !== undefined,
+      ...(request.onScalarIR === undefined
+        ? {}
+        : { onScalarIR: request.onScalarIR }),
+      ...(request.optimizationObserver === undefined
+        ? {}
+        : { optimizationObserver: request.optimizationObserver }),
+      ...(request.optimizationPassLimit === undefined
+        ? {}
+        : { optimizationPassLimit: request.optimizationPassLimit }),
+      ...(request.emissionFormHints === undefined
+        ? {}
+        : { emissionFormHints: request.emissionFormHints }),
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      modules: request.modules,
+      moduleLoader: request.moduleLoader,
+      entry: request.entry,
+      ...(request.workerModules === undefined
+        ? {}
+        : { workerModules: request.workerModules }),
+      exports: request.start === undefined ? [] : [request.start],
+      start: request.start,
+      runtimes: request.runtimes,
+      ...(request.generalLowering === undefined
+        ? {}
+        : { generalLowering: request.generalLowering }),
+      ...(request.requireTyped === true ? { requireTyped: true } : {}),
+      hostBindings: request.hostBindings,
+      foreignLibraries: request.foreignLibraries ?? [],
+      foreignBindings: request.foreignBindings ?? [],
+      foreignMemoryBindings: request.foreignMemoryBindings ?? [],
+      recordBindings: request.recordBindings ?? [],
+      weakBindings: request.weakBindings ?? [],
+    },
+    target,
+    plan,
+  );
+  if (!opened.ok)
+    return openFailure(
+      opened.error.stage,
+      opened.error.message,
+      opened.error.module,
+    );
+  const emissionOwner: OpenedNativeProgramEmission = opened.value;
+  return {
+    ok: true,
+    value: {
+      options: emissionOwner.options,
+      ranges: emissionOwner.ranges,
+      rangeWeights: emissionOwner.rangeWeights,
+      start: emissionOwner.start,
+      emitSerial: emissionOwner.emitSerial,
+      finish: (emission: Emission): BuildResult => {
+        const program = emissionOwner.finish(emission);
+        if (!program.ok) {
+          const errorModule = program.error.module;
+          if (errorModule === undefined)
+            return failure(program.error.stage, program.error.message);
+          return {
+            ok: false,
+            error: {
+              stage: program.error.stage,
+              message: program.error.message,
+              module: errorModule,
+            },
+          };
+        }
+        const general = program.value.general,
+          reportGeneral = request.onGeneralFallback;
+        if (general !== undefined && reportGeneral !== undefined)
+          reportGeneral(general.modules, general.reason);
+        const reportForms = request.onEmissionForms,
+          usedForms = program.value.native.formHints;
+        if (reportForms !== undefined && usedForms !== undefined)
+          reportForms(usedForms);
+        const programEntry = program.value.entry;
+        if (programEntry === undefined)
+          return failure("program", "program entry is missing");
+        return linkMacOSProgram(
+          {
+            allocatorSource: runtimeUnits.allocatorSource,
+            allocator: runtimeUnits.allocator,
+            allocatorInitializer: runtimeUnits.allocatorInitializer,
+            allocate: runtimeUnits.allocate,
+            environmentBytes: runtimeUnits.environmentBytes,
+            runtime: runtimeUnits.runtime,
+            runtimeEntry: runtimeUnits.runtimeEntry,
+            program: program.value,
+            programEntry,
+          },
+          request,
+        );
+      },
+      abort: emissionOwner.abort,
+    },
+  };
 }
 
 /** Validate the memory policy and compile the allocator, runtime and program.

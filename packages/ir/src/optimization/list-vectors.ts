@@ -618,6 +618,30 @@ export function cacheListVectors(
     if (forest === undefined) return undefined;
     let work = forest.visited;
     if (forest.loops.length === 0) return { fn, visited: work, rewritten: 0 };
+    const loops = forest.loops;
+    const loopBodies = new Map<NaturalLoop, Set<number>>();
+    function loopBodyOf(loop: NaturalLoop): Set<number> {
+      const existing = loopBodies.get(loop);
+      if (existing !== undefined) return existing;
+      const copy = new Set<number>();
+      for (const id of loop.body) if (id !== undefined) copy.add(id);
+      loopBodies.set(loop, copy);
+      return copy;
+    }
+    function includeAddedBlocks(
+      enclosingAnchor: number,
+      excludeLoop: NaturalLoop,
+      firstNew: number,
+      endNew: number,
+    ): void {
+      if (firstNew >= endNew) return;
+      for (const outer of loops) {
+        if (outer === undefined || outer === excludeLoop) continue;
+        const body = loopBodyOf(outer);
+        if (!body.has(enclosingAnchor)) continue;
+        for (let id = firstNew; id < endNew; id++) body.add(id);
+      }
+    }
     const predecessors = new Map<number, number[]>();
     let nextValue = 0,
       nextBlock = fn.blocks.length;
@@ -1371,7 +1395,14 @@ export function cacheListVectors(
         ...(debug === undefined ? {} : { debug }),
       };
       if (recordReadsKept(currentFn, candidate)) {
+        const beforeCandidateBlocks = currentFn.blocks.length;
         currentFn = candidate;
+        includeAddedBlocks(
+          entry.id,
+          loop,
+          beforeCandidateBlocks,
+          currentFn.blocks.length,
+        );
         nextValue = candNextValue;
         count++;
         // If the hoisted bound drives a counted loop `i < uSlot` starting at a
@@ -1382,7 +1413,7 @@ export function cacheListVectors(
         if (hoistedBoundSlot !== undefined && hoistedBoundValue !== undefined) {
           const guarded = tryUncheckedListBounds(
             currentFn,
-            loop,
+            { ...loop, body: loopBodyOf(loop) },
             freshId,
             term.consequent,
             cache.vector,
@@ -1393,7 +1424,14 @@ export function cacheListVectors(
             uncheckedReader,
           );
           if (guarded !== undefined && recordReadsKept(currentFn, guarded.fn)) {
+            const beforeGuardedBlocks = currentFn.blocks.length;
             currentFn = guarded.fn;
+            includeAddedBlocks(
+              entry.id,
+              loop,
+              beforeGuardedBlocks,
+              currentFn.blocks.length,
+            );
             nextValue = guarded.nextValue;
             count += guarded.rewritten;
           }
@@ -1785,10 +1823,11 @@ export function cacheListVectors(
                 innerLoop = cand;
             }
             if (innerLoop === undefined) continue;
+            const innerBody = loopBodyOf(innerLoop);
             let entryId = -1,
               outsideCount = 0;
             for (const b of currentFn.blocks) {
-              if (b === undefined || innerLoop.body.has(b.id)) continue;
+              if (b === undefined || innerBody.has(b.id)) continue;
               let enters = false;
               for (const succ of blockSuccessors(b))
                 if (succ === innerLoop.header) {
@@ -1812,7 +1851,7 @@ export function cacheListVectors(
               continue;
             const guarded = tryUncheckedListBounds(
               currentFn,
-              innerLoop,
+              { ...innerLoop, body: innerBody },
               entryId,
               rw.consequentId,
               rw.vectorSlot,
@@ -1827,7 +1866,14 @@ export function cacheListVectors(
               guarded !== undefined &&
               recordReadsKept(currentFn, guarded.fn)
             ) {
+              const beforeInnerBlocks = currentFn.blocks.length;
               currentFn = guarded.fn;
+              includeAddedBlocks(
+                entryId,
+                innerLoop,
+                beforeInnerBlocks,
+                currentFn.blocks.length,
+              );
               nextValue = guarded.nextValue;
               count += guarded.rewritten;
             }

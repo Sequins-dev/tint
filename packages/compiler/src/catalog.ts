@@ -343,6 +343,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/cli-threaded.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/cli.ts",
       packageId: "compiler",
     },
@@ -508,6 +512,14 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/compiler/src/native/target-layout.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/parallel-emission.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/parallel-policy.ts",
       packageId: "compiler",
     },
     {
@@ -3427,6 +3439,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/darwin/parallel-host.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/darwin/reactor.ts",
       packageId: "platform",
     },
@@ -3459,7 +3475,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/linux/parallel-host.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/linux/reactor.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/parallel-host.ts",
       packageId: "platform",
     },
     {
@@ -4708,6 +4732,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/platform/parallel-host",
+      target: "packages/platform/src/parallel-host.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/platform/target",
       target: "packages/platform/src/target.ts",
     },
@@ -5525,6 +5554,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/compiler/native/scalar",
       target: "packages/compiler/src/native/scalar.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/compiler/parallel-policy",
+      target: "packages/compiler/src/parallel-policy.ts",
     },
     {
       packageId: "js-engine",

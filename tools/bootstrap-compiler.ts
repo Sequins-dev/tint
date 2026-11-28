@@ -95,7 +95,10 @@ const project: Pick<
   Partial<
     Pick<
       typeof currentProject,
-      "compilerBuildRequest" | "projectModuleLoader" | "loadCompilerSourceGraph"
+      | "compilerBuildRequest"
+      | "compilerMappingsForTarget"
+      | "projectModuleLoader"
+      | "loadCompilerSourceGraph"
     >
   > =
   rootArgument === undefined
@@ -116,6 +119,7 @@ const project: Pick<
             Pick<
               typeof currentProject,
               | "compilerBuildRequest"
+              | "compilerMappingsForTarget"
               | "projectModuleLoader"
               | "loadCompilerSourceGraph"
             >
@@ -147,7 +151,15 @@ report("parse");
 const foreign = expandForeignInputs(inputs, target.c);
 if (!foreign.ok) throw Error(foreign.error);
 const libraries = foreign.value.libraries;
-const mappings = [...project.projectMappings(), ...foreign.value.mappings];
+const baseMappings =
+  project.compilerMappingsForTarget === undefined
+    ? project.projectMappings()
+    : project.compilerMappingsForTarget(
+        project.projectMappings(),
+        target,
+        libraries,
+      );
+const mappings = [...baseMappings, ...foreign.value.mappings];
 const graph =
   project.loadCompilerSourceGraph === undefined
     ? loadSourceGraphLoader(

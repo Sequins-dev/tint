@@ -849,7 +849,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   // Managed prologues compare their new stack pointer against this limit and
   // throw instead of reaching the low guard page; the headroom above it runs
   // the throw path. Startup frames are not zeroed: clear the pending word.
-  if (request.workerSafepoints === true) {
+  if (request.workerSafepoints === true || request.threadExitPipe === true) {
     workerBytes(
       nativeWorkerStackBytesOffset,
       request.stackBytes,
@@ -986,7 +986,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   branch("runtime-failure", "ne");
   // Runtime factory: eight numeric windows, then seven borrowed typed arrays.
   emit({ op: "scvtf-d-x", rd: 0, rn: 21 });
-  if (request.workerSafepoints === true) {
+  if (request.workerSafepoints === true || request.threadExitPipe === true) {
     workerBytes(
       nativeWorkerHeapBytesOffset,
       request.managedBytes,
@@ -1001,7 +1001,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   emit({ op: "scvtf-d-x", rd: 4, rn: 26 });
   const imageLengthInstruction = instructions.length;
   number(5, 0);
-  if (request.workerSafepoints === true) {
+  if (request.workerSafepoints === true || request.threadExitPipe === true) {
     workerBytes(
       nativeWorkerStackBytesOffset,
       request.stackBytes,
@@ -1115,7 +1115,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   store(9, 120);
   if (request.threaded === true) move(28, 10);
   store(21, 104);
-  if (request.workerSafepoints === true)
+  if (request.workerSafepoints === true || request.threadExitPipe === true)
     workerBytes(
       nativeWorkerHeapBytesOffset,
       request.managedBytes,

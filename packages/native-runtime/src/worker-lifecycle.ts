@@ -40,6 +40,22 @@ import type {
   NativeMessagePortGrant,
   NativeMessagePorts,
 } from "./worker-ports.ts";
+export {
+  createNativeMessagePorts,
+  type NativeMessagePort,
+  type NativeMessagePortGrant,
+  type NativeMessagePortPair,
+  type NativeMessagePorts,
+} from "./worker-ports.ts";
+export {
+  nativeAgentPacketHeader,
+  type NativeAgentPacket,
+  type NativeAgentPacketEntry,
+} from "./agent-messages.ts";
+export {
+  nativePacketMemory,
+  type NativePacketMemory,
+} from "./packet-memory.ts";
 
 export interface WorkerExitPipe {
   readonly input: number;

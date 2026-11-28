@@ -1,8 +1,16 @@
-import { buildMacOSProgram, type BuildRequest } from "./build.ts";
+import {
+  buildMacOSProgram,
+  type BuildRequest,
+  type BuildResult,
+} from "./build.ts";
 import { type ProgramOptimizationObserver } from "./native/index.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
-import { readFile, publishFile } from "@tint/platform/files/service";
+import {
+  readFile,
+  publishFile,
+  type FileHost,
+} from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
 import type { SourceInput } from "@tint/typescript/modules";
 import {
@@ -18,7 +26,11 @@ import {
   type PassReport,
 } from "@tint/ir/optimization";
 import { projectFiles, projectMappings } from "./catalog.ts";
-import { compilerBuildRequest, loadCompilerSourceGraph } from "./project.ts";
+import {
+  compilerBuildRequest,
+  compilerMappingsForTarget,
+  loadCompilerSourceGraph,
+} from "./project.ts";
 import { expandForeignInputs } from "./native/foreign/index.ts";
 import { compilerUsage, parseCompilerArguments } from "./cli-arguments.ts";
 export {
@@ -27,9 +39,19 @@ export {
   projectModuleLoader,
   projectBuildRequest,
   compilerBuildRequest,
+  compilerMappingsForTarget,
   runtimeSources,
 } from "./project.ts";
 export { projectFiles, projectMappings } from "./catalog.ts";
+export interface ParallelBuildOptions {
+  readonly workers: number;
+  readonly spillDirectory: string;
+  readonly workerHeapBytes: number;
+  readonly memoryBudgetBytes: number | undefined;
+  readonly reportStats: boolean;
+  readonly host: FileHost<number>;
+  readonly report: (message: string) => void;
+}
 function argument(index: number): string | undefined {
   const length = argumentByteLength(index);
   if (length < 0) return undefined;
@@ -37,7 +59,19 @@ function argument(index: number): string | undefined {
   if (copyArgument(index, bytes) !== length) return undefined;
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
+function parentDirectory(path: string): string {
+  const slash = path.lastIndexOf("/");
+  if (slash < 0) return ".";
+  return slash === 0 ? "/" : path.slice(0, slash);
+}
 export function main(): number {
+  return runCompilerCli(undefined);
+}
+export function runCompilerCli(
+  buildParallel:
+    | ((request: BuildRequest, options: ParallelBuildOptions) => BuildResult)
+    | undefined,
+): number {
   // The compiler's own execution host: the target it was compiled for. It
   // selects the file host (errno names and values) and the default target.
   const hostTarget = nativeHostTarget();
@@ -88,7 +122,11 @@ export function main(): number {
       report("foreign bindings: " + foreign.error);
       return 1;
     }
-    const mappings = projectMappings();
+    const mappings = compilerMappingsForTarget(
+      projectMappings(),
+      buildTarget,
+      foreign.value.libraries,
+    );
     for (const mapping of foreign.value.mappings) {
       if (mapping === undefined) throw "foreign mapping invariant";
       mappings.push(mapping);
@@ -139,11 +177,31 @@ export function main(): number {
       debugSymbols: parsed.debugSymbols,
       debugDirectory: root,
     };
-    const built = buildMacOSProgram(
-      parsed.passStatistics
-        ? { ...request, optimizationObserver: observer }
-        : request,
-    );
+    const effectiveRequest: BuildRequest = parsed.passStatistics
+      ? { ...request, optimizationObserver: observer }
+      : request;
+    let built: BuildResult;
+    if (parsed.workers > 0) {
+      if (buildParallel !== undefined)
+        built = buildParallel(effectiveRequest, {
+          workers: parsed.workers,
+          spillDirectory: parsed.spillDirectory ?? parentDirectory(output),
+          workerHeapBytes: parsed.workerHeapMiB * 1048576,
+          memoryBudgetBytes:
+            parsed.memoryBudgetMiB === undefined
+              ? undefined
+              : parsed.memoryBudgetMiB * 1048576,
+          reportStats: parsed.workerStatistics,
+          host,
+          report,
+        });
+      else {
+        report(
+          "parallel-emission: unavailable on this target; falling back to serial build",
+        );
+        built = buildMacOSProgram(effectiveRequest);
+      }
+    } else built = buildMacOSProgram(effectiveRequest);
     if (!built.ok) {
       report(built.error.stage + ": " + built.error.message);
       return 1;
