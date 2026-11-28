@@ -236,6 +236,7 @@ export interface PropertyStoreEmitContext {
   readonly epochFieldOffset: number;
   readonly useColdStubs: boolean;
   readonly generationalBarriers: boolean;
+  readonly valueIsPrimitive?: boolean;
   readonly fusedMiss: number | undefined;
   readonly misses: readonly number[];
   readonly instructionCount: () => number;
@@ -257,7 +258,10 @@ export interface PropertyStoreEmitContext {
   readonly valueOffset: (id: number) => number;
   readonly rawTarget: (id: number, fallback: number) => number;
   readonly saveRaw: (register: number, id: number) => void;
-  readonly rememberTransitionOrValue: (valueOffset: number) => void;
+  readonly rememberTransitionOrValue: (
+    valueOffset: number,
+    inline?: boolean,
+  ) => void;
   readonly clearStackWords: () => void;
   readonly deleteForwardable: (block: number) => void;
   readonly pushColdStub: (stub: () => void) => void;
@@ -277,6 +281,7 @@ export function emitPolymorphicPropertyStore(
     epochFieldOffset,
     useColdStubs,
     generationalBarriers,
+    valueIsPrimitive,
     fusedMiss,
     misses,
     instructionCount,
@@ -317,10 +322,22 @@ export function emitPolymorphicPropertyStore(
     });
   }
   const storeCold = storeEntries > 1 && useColdStubs;
-  if (storeCold && fusedMiss !== undefined) deleteForwardable(fusedMiss);
+  const transitionCold = useColdStubs;
+  if ((storeCold || transitionCold) && fusedMiss !== undefined)
+    deleteForwardable(fusedMiss);
   let furtherStore = -1;
   const storeHits: number[] = [];
-  if (storeCold || storeEntries === 1) {
+  const transitionBranches: {
+    readonly branchAt: number;
+    readonly epochOffset: number;
+  }[] = [];
+  let inPlaceStoreAt = -1;
+  let storeDoneAt = -1;
+  if (transitionCold) {
+    // Fast path for in-place writable own property stores: check shape match,
+    // verify `storeTransition === undefined` (cbnz to cold stub), write value,
+    // and skip the generational barrier completely when storing a known
+    // non-reference primitive.
     entryPair(siteShapeOffset);
     if (storeCold) {
       compareStoreShape();
@@ -328,20 +345,88 @@ export function emitPolymorphicPropertyStore(
       emit({ op: "b.cond", condition: "ne", displacement: 0 });
     } else compare(9, 12);
     emit({
-      op: "ldp",
+      op: "ldr",
       width: 64,
       rt: 14,
-      rt2: 9,
       rn: site,
       offset: siteShapeOffset + 16,
+    });
+    transitionBranches.push({
+      branchAt: instructionCount(),
+      epochOffset: siteShapeOffset + 24,
+    });
+    emit({ op: "cbnz", width: 64, rt: 14, displacement: 0 });
+    inPlaceStoreAt = instructionCount();
+    if (storeCold) clearStackWords();
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 13,
+      rn: 10,
+      rm: 13,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    generalPair(14, valueOffset(op.value), true);
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 14,
+      rt2: 15,
+      rn: 13,
+      offset: 0,
       mode: "offset",
     });
+    if (generationalBarriers && valueIsPrimitive !== true) {
+      imm(12, 0xe8);
+      emit({ op: "lsrv", width: 64, rd: 12, rn: 12, rm: 14 });
+      const skipBarrier = instructionCount();
+      emit({ op: "tbz", rt: 12, bit: 0, displacement: 0 });
+      rememberTransitionOrValue(valueOffset(op.value));
+      patchInstruction(skipBarrier, {
+        op: "tbz",
+        rt: 12,
+        bit: 0,
+        displacement: (instructionCount() - skipBarrier) * 4,
+      });
+      clearStackWords();
+    }
+    storeDoneAt = instructionCount();
+    clearStackWords();
   } else {
-    for (let entry = 0; entry < storeEntries; entry++) {
-      const at = siteShapeOffset + entry * storeStride;
-      entryPair(at);
-      if (entry === storeEntries - 1) {
-        compare(9, 12);
+    if (storeEntries === 1) {
+      entryPair(siteShapeOffset);
+      compare(9, 12);
+      emit({
+        op: "ldp",
+        width: 64,
+        rt: 14,
+        rt2: 9,
+        rn: site,
+        offset: siteShapeOffset + 16,
+        mode: "offset",
+      });
+    } else {
+      for (let entry = 0; entry < storeEntries; entry++) {
+        const at = siteShapeOffset + entry * storeStride;
+        entryPair(at);
+        if (entry === storeEntries - 1) {
+          compare(9, 12);
+          emit({
+            op: "ldp",
+            width: 64,
+            rt: 14,
+            rt2: 9,
+            rn: site,
+            offset: at + 16,
+            mode: "offset",
+          });
+          break;
+        }
+        compareStoreShape();
+        const next = instructionCount();
+        emit({ op: "b.cond", condition: "ne", displacement: 0 });
         emit({
           op: "ldp",
           width: 64,
@@ -351,124 +436,125 @@ export function emitPolymorphicPropertyStore(
           offset: at + 16,
           mode: "offset",
         });
-        break;
+        storeHits.push(instructionCount());
+        emit({ op: "b", displacement: 0 });
+        patchInstruction(next, {
+          op: "b.cond",
+          condition: "ne",
+          displacement: (instructionCount() - next) * 4,
+        });
       }
-      compareStoreShape();
-      const next = instructionCount();
-      emit({ op: "b.cond", condition: "ne", displacement: 0 });
-      emit({
-        op: "ldp",
-        width: 64,
-        rt: 14,
-        rt2: 9,
-        rn: site,
-        offset: at + 16,
-        mode: "offset",
-      });
-      storeHits.push(instructionCount());
-      emit({ op: "b", displacement: 0 });
-      patchInstruction(next, {
-        op: "b.cond",
-        condition: "ne",
-        displacement: (instructionCount() - next) * 4,
-      });
     }
-  }
-  for (const at of storeHits)
-    patchInstruction(at, {
-      op: "b",
-      displacement: (instructionCount() - at) * 4,
-    });
-  const storeHitAt = instructionCount();
-  if (storeCold) clearStackWords();
-  // A transition (x14) also needs the epoch it was found under
-  // (x9) to be current.
-  const existing = instructionCount();
-  emit({ op: "cbz", width: 64, rt: 14, displacement: 0 });
-  emit({
-    op: "ldr",
-    width: 64,
-    rt: 15,
-    rn: site,
-    offset: storeEpochPtrAt,
-  });
-  emit({
-    op: "ldr",
-    width: 64,
-    rt: 15,
-    rn: 15,
-    offset: epochFieldOffset,
-  });
-  compare(15, 9);
-  emit({
-    op: "str",
-    width: 64,
-    rt: 14,
-    rn: 10,
-    offset: shapeFieldOffset,
-  });
-  patchInstruction(existing, {
-    op: "cbz",
-    width: 64,
-    rt: 14,
-    displacement: (instructionCount() - existing) * 4,
-  });
-  emit({
-    op: "add-reg",
-    width: 64,
-    rd: 13,
-    rn: 10,
-    rm: 13,
-    shift: "lsl",
-    amount: 3,
-    setFlags: false,
-  });
-  if (generationalBarriers)
-    // Preserve `transition` (x14) in x11 across `generalPair(14, ...)` and
-    // `rememberObject` (which clobbers x12/x13 before running `unneeded`).
+    for (const at of storeHits)
+      patchInstruction(at, {
+        op: "b",
+        displacement: (instructionCount() - at) * 4,
+      });
+    // A transition (x14) also needs the epoch it was found under
+    // (x9) to be current.
+    const existing = instructionCount();
+    emit({ op: "cbz", width: 64, rt: 14, displacement: 0 });
     emit({
-      op: "orr-reg",
+      op: "ldr",
       width: 64,
-      rd: 11,
-      rn: "zr",
-      rm: 14,
+      rt: 15,
+      rn: site,
+      offset: storeEpochPtrAt,
     });
-  generalPair(14, valueOffset(op.value), true);
-  emit({
-    op: "stp",
-    width: 64,
-    rt: 14,
-    rt2: 15,
-    rn: 13,
-    offset: 0,
-    mode: "offset",
-  });
-  if (generationalBarriers) {
-    // Fast skip when no shape transition occurred (x11 === 0) and the stored
-    // general value's tag (x14) carries no managed reference (reference tags:
-    // 3=string, 5=object, 6=symbol, 7=bigint -> bitmask 0xe8). This avoids
-    // 3 dependent context/heap/nursery loads and taken cold-stub jumps on
-    // every primitive write to an old-generation object.
-    const hasTransition = instructionCount();
-    emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
-    imm(12, 0xe8);
-    emit({ op: "lsrv", width: 64, rd: 12, rn: 12, rm: 14 });
-    const skipBarrier = instructionCount();
-    emit({ op: "tbz", rt: 12, bit: 0, displacement: 0 });
-    patchInstruction(hasTransition, {
-      op: "cbnz",
+    emit({
+      op: "ldr",
       width: 64,
-      rt: 11,
-      displacement: (instructionCount() - hasTransition) * 4,
+      rt: 15,
+      rn: 15,
+      offset: epochFieldOffset,
     });
-    rememberTransitionOrValue(valueOffset(op.value));
-    patchInstruction(skipBarrier, {
-      op: "tbz",
-      rt: 12,
-      bit: 0,
-      displacement: (instructionCount() - skipBarrier) * 4,
+    compare(15, 9);
+    emit({
+      op: "str",
+      width: 64,
+      rt: 14,
+      rn: 10,
+      offset: shapeFieldOffset,
     });
-    clearStackWords();
+    patchInstruction(existing, {
+      op: "cbz",
+      width: 64,
+      rt: 14,
+      displacement: (instructionCount() - existing) * 4,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 13,
+      rn: 10,
+      rm: 13,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    });
+    if (generationalBarriers)
+      // Preserve `transition` (x14) in x11 across `generalPair(14, ...)` and
+      // `rememberObject` (which clobbers x12/x13 before running `unneeded`).
+      emit({
+        op: "orr-reg",
+        width: 64,
+        rd: 11,
+        rn: "zr",
+        rm: 14,
+      });
+    generalPair(14, valueOffset(op.value), true);
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 14,
+      rt2: 15,
+      rn: 13,
+      offset: 0,
+      mode: "offset",
+    });
+    if (generationalBarriers) {
+      // Fast skip when no shape transition occurred (x11 === 0) and the stored
+      // general value's tag (x14) carries no managed reference (reference tags:
+      // 3=string, 5=object, 6=symbol, 7=bigint -> bitmask 0xe8). This avoids
+      // 3 dependent context/heap/nursery loads and taken cold-stub jumps on
+      // every primitive write to an old-generation object.
+      const hasTransition = instructionCount();
+      emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+      if (valueIsPrimitive === true) {
+        const skipBarrier = instructionCount();
+        emit({ op: "b", displacement: 0 });
+        patchInstruction(hasTransition, {
+          op: "cbnz",
+          width: 64,
+          rt: 11,
+          displacement: (instructionCount() - hasTransition) * 4,
+        });
+        rememberTransitionOrValue(valueOffset(op.value));
+        patchInstruction(skipBarrier, {
+          op: "b",
+          displacement: (instructionCount() - skipBarrier) * 4,
+        });
+      } else {
+        imm(12, 0xe8);
+        emit({ op: "lsrv", width: 64, rd: 12, rn: 12, rm: 14 });
+        const skipBarrier = instructionCount();
+        emit({ op: "tbz", rt: 12, bit: 0, displacement: 0 });
+        patchInstruction(hasTransition, {
+          op: "cbnz",
+          width: 64,
+          rt: 11,
+          displacement: (instructionCount() - hasTransition) * 4,
+        });
+        rememberTransitionOrValue(valueOffset(op.value));
+        patchInstruction(skipBarrier, {
+          op: "tbz",
+          rt: 12,
+          bit: 0,
+          displacement: (instructionCount() - skipBarrier) * 4,
+        });
+      }
+      clearStackWords();
+    }
   }
   let storeMissAt = -1;
   if (fusedMiss === undefined) {
@@ -526,19 +612,22 @@ export function emitPolymorphicPropertyStore(
           });
         }
         emit({
-          op: "ldp",
+          op: "ldr",
           width: 64,
           rt: 14,
-          rt2: 9,
           rn: site,
           offset: at + 16,
-          mode: "offset",
         });
+        transitionBranches.push({
+          branchAt: instructionCount(),
+          epochOffset: at + 24,
+        });
+        emit({ op: "cbnz", width: 64, rt: 14, displacement: 0 });
         const back = instructionCount();
         emit({ op: "b", displacement: 0 });
         farBranch(back, {
           op: "b",
-          displacement: (storeHitAt - back) * 4,
+          displacement: (inPlaceStoreAt - back) * 4,
         });
         if (next >= 0)
           patchInstruction(next, {
@@ -547,6 +636,109 @@ export function emitPolymorphicPropertyStore(
             displacement: (instructionCount() - next) * 4,
           });
       }
+    });
+  }
+  if (transitionCold) {
+    pushColdStub((): void => {
+      clearStackWords();
+      const bodyJumps: number[] = [];
+      for (let i = 0; i < transitionBranches.length; i++) {
+        const tb = transitionBranches[i];
+        if (tb === undefined) continue;
+        const entryAt = instructionCount();
+        farBranch(tb.branchAt, {
+          op: "cbnz",
+          width: 64,
+          rt: 14,
+          displacement: (entryAt - tb.branchAt) * 4,
+        });
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 9,
+          rn: site,
+          offset: tb.epochOffset,
+        });
+        if (i + 1 < transitionBranches.length) {
+          bodyJumps.push(instructionCount());
+          emit({ op: "b", displacement: 0 });
+        }
+      }
+      const bodyAt = instructionCount();
+      for (const jumpAt of bodyJumps)
+        patchInstruction(jumpAt, {
+          op: "b",
+          displacement: (bodyAt - jumpAt) * 4,
+        });
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 15,
+        rn: site,
+        offset: storeEpochPtrAt,
+      });
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 15,
+        rn: 15,
+        offset: epochFieldOffset,
+      });
+      emit({
+        op: "sub-reg",
+        width: 64,
+        rd: "zr",
+        rn: 15,
+        rm: 9,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      });
+      if (fusedMiss !== undefined) branchNe(fusedMiss);
+      else {
+        const missed = instructionCount();
+        emit({ op: "b.cond", condition: "ne", displacement: 0 });
+        farBranch(missed, {
+          op: "b.cond",
+          condition: "ne",
+          displacement: (storeMissAt - missed) * 4,
+        });
+      }
+      emit({
+        op: "str",
+        width: 64,
+        rt: 14,
+        rn: 10,
+        offset: shapeFieldOffset,
+      });
+      emit({
+        op: "add-reg",
+        width: 64,
+        rd: 13,
+        rn: 10,
+        rm: 13,
+        shift: "lsl",
+        amount: 3,
+        setFlags: false,
+      });
+      generalPair(14, valueOffset(op.value), true);
+      emit({
+        op: "stp",
+        width: 64,
+        rt: 14,
+        rt2: 15,
+        rn: 13,
+        offset: 0,
+        mode: "offset",
+      });
+      if (generationalBarriers)
+        rememberTransitionOrValue(valueOffset(op.value), true);
+      const back = instructionCount();
+      emit({ op: "b", displacement: 0 });
+      farBranch(back, {
+        op: "b",
+        displacement: (storeDoneAt - back) * 4,
+      });
     });
   }
 }

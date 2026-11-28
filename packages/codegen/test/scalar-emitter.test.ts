@@ -442,21 +442,15 @@ test("a fused four-entry property load tests entries 1-3 in a cold stub", () => 
 });
 
 test("an inherited entry with slot 0 selects its direct cached value", () => {
-  // CSEL x9, x14, x9, EQ after CMP x13, #0 at the shared hit: slot 0 reads the
-  // direct inherited value from the cache entry (x14), positive slots read the
-  // receiver (x9).
-  const select = encode({
-    op: "csel",
-    width: 64,
-    rd: 9,
-    rn: 14,
-    rm: 9,
-    condition: "eq",
-  });
-  assert.ok(select.ok);
+  // On cold-stub targets, inherited slot 0 falls straight through to a direct
+  // ldp from `[site, #first+16]` after `cbnz x13, ownOrSpillColdStub`, removing
+  // the own-slot address add and `csel` from the hot path.
+  const cbnzX13Mask = 0xff00001f;
+  const cbnzX13Pattern = 0xb500000d; // CBNZ x13, #imm
   const count = (words: number[]): number =>
-    words.filter((word) => word === select.value).length;
-  assert.equal(count(propertyLoadWords(true)), 1);
+    words.filter((word) => (word & cbnzX13Mask) >>> 0 === cbnzX13Pattern)
+      .length;
+  assert.ok(count(propertyLoadWords(true)) >= 1);
   assert.equal(count(propertyLoadWords(false)), 0);
 });
 
@@ -475,6 +469,136 @@ test("a property load with spill storage walks chunks in a cold stub", () => {
   assert.equal(count(propertyLoadWords(true, true)), 1);
   assert.equal(count(propertyLoadWords(false, true)), 1);
   assert.equal(count(propertyLoadWords(true, false)), 0);
+});
+
+function propertyStoreWords(primitiveValue: boolean): number[] {
+  const siteFields = [];
+  for (let entry = 0; entry < 4; entry++) {
+    const at = 8 + entry * 32;
+    siteFields.push(
+      { offset: at, type: "reference" as const, mutable: true },
+      { offset: at + 8, type: "number" as const, mutable: true },
+      { offset: at + 16, type: "optional-reference" as const, mutable: true },
+      { offset: at + 24, type: "number" as const, mutable: true },
+    );
+  }
+  siteFields.push({ offset: 136, type: "reference" as const, mutable: false });
+  const instructions: ModuleIR["functions"][number]["blocks"][number]["instructions"] =
+    [
+      { kind: "load", id: 0, slot: 0, ...span },
+      { kind: "load", id: 1, slot: 1, ...span },
+      ...(primitiveValue
+        ? ([
+            { kind: "constant", id: 6, value: 42, ...span },
+            { kind: "general-wrap", id: 2, value: 6, ...span },
+          ] as const)
+        : ([{ kind: "load", id: 2, slot: 2, ...span }] as const)),
+      {
+        kind: "property-store",
+        id: 3,
+        object: 0,
+        site: 1,
+        value: 2,
+        record: 1,
+        field: 1,
+        count: 1,
+        siteRecord: 2,
+        siteField: 0,
+        entries: 4,
+        epochRecord: 3,
+        epochField: 0,
+        ...span,
+      },
+    ];
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+        ],
+      },
+      { byteLength: 144, fields: siteFields },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "write",
+        exported: true,
+        parameters: [0, 1, 2],
+        slots: ["general", "reference", "general"],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions,
+            terminator: {
+              kind: "branch",
+              condition: 3,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "constant", id: 4, value: true, ...span }],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "constant", id: 5, value: false, ...span }],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module, { generationalBarriers: true });
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  return words;
+}
+
+test("property-store moves shape transitions to a cold stub and elides write barriers for known primitives", () => {
+  const generalWords = propertyStoreWords(false);
+  const primitiveWords = propertyStoreWords(true);
+  // Both move shape transitions behind CBNZ x14 to a cold stub and never leave
+  // an unpatched zero-displacement B.LO self-branch inside that cold stub.
+  const cbnzX14Mask = 0xff00001f;
+  const cbnzX14Pattern = 0xb500000e; // CBNZ x14, #imm
+  const bloZero = encode({ op: "b.cond", condition: "cc", displacement: 0 });
+  assert.ok(bloZero.ok);
+  for (const words of [generalWords, primitiveWords]) {
+    assert.ok(
+      words.some((word) => (word & cbnzX14Mask) >>> 0 === cbnzX14Pattern),
+    );
+    assert.equal(
+      words.filter((word) => word === bloZero.value).length,
+      0,
+      "cold transition stub must not emit an unpatched B.LO 0",
+    );
+  }
+  // Known primitive stores omit the 0xe8 reference-tag bitmask test (LSRV x12,
+  // x12, x14) on the in-place fast path, while general stores keep it.
+  const lsrvTag = encode({ op: "lsrv", width: 64, rd: 12, rn: 12, rm: 14 });
+  assert.ok(lsrvTag.ok);
+  assert.equal(generalWords.filter((word) => word === lsrvTag.value).length, 1);
+  assert.equal(
+    primitiveWords.filter((word) => word === lsrvTag.value).length,
+    0,
+  );
 });
 
 test("call-indirect skips descriptor and signature checks for script-entry callees", () => {
