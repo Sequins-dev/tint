@@ -2619,3 +2619,86 @@ test("inlineSmallFunctions excludes effectful string helpers so they do not star
     .map((op) => op.target);
   assert.deepEqual(remainingTargets, [1, 1, 1, 1]);
 });
+
+test("CFG expansion spills typed-array reference-value results with their concrete array type", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["optional-reference", "number"],
+        returnType: "optional-number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "reference-value",
+                id: 1,
+                value: 0,
+                type: "Uint8Array",
+                ...span,
+              },
+              { kind: "load", id: 2, slot: 1, ...span },
+              { kind: "call", id: 3, target: 1, arguments: [2], ...span },
+              { kind: "array-read", id: 4, array: 1, index: 3, ...span },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "clampIndex",
+        exported: false,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "constant", id: 1, value: 0, ...span },
+              {
+                kind: "binary",
+                id: 2,
+                operator: "<",
+                left: 0,
+                right: 1,
+                ...span,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 2,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "constant", id: 3, value: 0, ...span }],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 4, slot: 0, ...span }],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 100000)!;
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.ok(result.module.functions[0]!.slots.includes("Uint8Array"));
+});

@@ -103,6 +103,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/array-ops.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/arrays.ts",
       packageId: "codegen",
     },
@@ -111,7 +115,27 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/binary-ops.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/block-emitter.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/block-entries.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/block-helpers.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/c-interop.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/call-ops.ts",
       packageId: "codegen",
     },
     {
@@ -135,6 +159,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/host-calls.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/index.ts",
       packageId: "codegen",
     },
@@ -152,6 +180,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/scalar/numeric.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/object-ops.ts",
       packageId: "codegen",
     },
     {
@@ -184,6 +216,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/scalar/stack-registers.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/string-ops.ts",
       packageId: "codegen",
     },
     {
