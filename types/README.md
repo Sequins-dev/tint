@@ -29,3 +29,7 @@ path variants, URL helpers, and realm-local Web URL constructors.
 describe the utility and assertion ESM exports, incremental string decoding,
 and query strings. The byte-returning APIs import their Buffer type from the
 explicit module contract in `runtime-buffer.d.ts`.
+
+`runtime-process.d.ts`, `runtime-timers.d.ts`, and `runtime-console.d.ts`
+describe the explicit process and Node scheduling imports alongside the Web
+timer and console globals.

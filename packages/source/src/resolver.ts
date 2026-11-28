@@ -79,6 +79,7 @@ export const nodeBuiltins: {
   readonly assert: SourceNodeBuiltin;
   readonly assertStrict: SourceNodeBuiltin;
   readonly buffer: SourceNodeBuiltin;
+  readonly console: SourceNodeBuiltin;
   readonly crypto: NodeBuiltin;
   readonly events: SourceNodeBuiltin;
   readonly ffi: SourceNodeBuiltin;
@@ -89,6 +90,8 @@ export const nodeBuiltins: {
   readonly process: SourceNodeBuiltin;
   readonly querystring: SourceNodeBuiltin;
   readonly stringDecoder: SourceNodeBuiltin;
+  readonly timers: SourceNodeBuiltin;
+  readonly timersPromises: SourceNodeBuiltin;
   readonly url: SourceNodeBuiltin;
   readonly util: SourceNodeBuiltin;
   readonly workers: NodeBuiltin;
@@ -115,6 +118,10 @@ export const nodeBuiltins: {
       "isAscii",
       "transcode",
     ],
+  },
+  console: {
+    specifier: "node:console",
+    source: "packages/native-runtime/src/node/console.ts",
   },
   crypto: { specifier: "node:crypto" },
   events: {
@@ -188,6 +195,14 @@ export const nodeBuiltins: {
     specifier: "node:string_decoder",
     source: "packages/native-runtime/src/node/string-decoder.ts",
   },
+  timers: {
+    specifier: "node:timers",
+    source: "packages/native-runtime/src/node/timers.ts",
+  },
+  timersPromises: {
+    specifier: "node:timers/promises",
+    source: "packages/native-runtime/src/node/timers-promises.ts",
+  },
   url: {
     specifier: "node:url",
     source: "packages/native-runtime/src/node/url.ts",
@@ -203,6 +218,7 @@ export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.assert,
   nodeBuiltins.assertStrict,
   nodeBuiltins.buffer,
+  nodeBuiltins.console,
   nodeBuiltins.crypto,
   nodeBuiltins.events,
   nodeBuiltins.ffi,
@@ -213,6 +229,8 @@ export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.process,
   nodeBuiltins.querystring,
   nodeBuiltins.stringDecoder,
+  nodeBuiltins.timers,
+  nodeBuiltins.timersPromises,
   nodeBuiltins.url,
   nodeBuiltins.util,
   nodeBuiltins.workers,
