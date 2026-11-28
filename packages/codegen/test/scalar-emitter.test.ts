@@ -4882,5 +4882,44 @@ test("AArch64 emits all unboxed word64 instructions and GP slot homes cleanly", 
   });
   assert.ok(result.ok, JSON.stringify(result));
   assert.ok(result.value.code.length > 0);
-  assert.equal(frameRoots(result.value)[0]?.offsets.length ?? 0, 0);
+  // Only the `BigInt64Array` parameter slot (slot 0) may be rooted; `word64`
+  // slots and values are never GC roots (even on targets without FJCVTZS).
+  assert.ok((frameRoots(result.value)[0]?.offsets.length ?? 0) <= 1);
+  const noJsConvert = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "word64NoRoots",
+          exported: true,
+          parameters: [0],
+          slots: ["number", "word64"],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "word64-from-number", id: 1, value: 0, ...span },
+                { kind: "store", slot: 1, value: 1, ...span },
+                { kind: "load", id: 2, slot: 1, ...span },
+                {
+                  kind: "word64-to-number",
+                  id: 3,
+                  value: 2,
+                  signed: false,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 3, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { jsConvert: false },
+  );
+  assert.ok(noJsConvert.ok, JSON.stringify(noJsConvert));
+  assert.equal(frameRoots(noJsConvert.value)[0]?.offsets.length ?? 0, 0);
 });
