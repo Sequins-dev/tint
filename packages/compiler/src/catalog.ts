@@ -3047,7 +3047,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/assert-strict.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/assert.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/buffer-codecs.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/buffer-encoding.ts",
       packageId: "native-runtime",
     },
     {
@@ -3155,11 +3167,43 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/querystring.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/string-decoder.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/type-error.ts",
       packageId: "native-runtime",
     },
     {
       id: "packages/native-runtime/src/node/url.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/util-args.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/util-inspect.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/util-mime.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/util-promise.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/util.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/value-comparison.ts",
       packageId: "native-runtime",
     },
     {

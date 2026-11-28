@@ -21,6 +21,38 @@ const policy = { "@tint/a": [], "@tint/b": ["@tint/a"] };
 test("accepts the documented DAG with public entrypoint imports", () => {
   assert.deepEqual(checkBoundaries([a, b], policy), []);
 });
+test("only same-package registered built-in sources can import each other by Node specifier", () => {
+  const buffer = {
+    path: "packages/native-runtime/src/node/buffer.ts",
+    text: "export const Buffer = {};",
+  };
+  const decoder = "packages/native-runtime/src/node/string-decoder.ts";
+  function check(source: string, specifier: string): string[] {
+    const runtime: PackageContract = {
+      ...a,
+      name: "@tint/native-runtime",
+      directory: "packages/native-runtime",
+      sources: [
+        buffer,
+        { path: source, text: `export * from "${specifier}";` },
+      ],
+      exports: {
+        "./buffer": {
+          types: "./dist/node/buffer.d.ts",
+          import: "./dist/node/buffer.js",
+        },
+      },
+    };
+    return checkBoundaries([runtime], { "@tint/native-runtime": [] });
+  }
+  assert.deepEqual(check(decoder, "node:buffer"), []);
+  assert.equal(check(decoder, "node:fs").length, 1);
+  assert.equal(check(decoder, "buffer").length, 1);
+  assert.equal(
+    check("packages/native-runtime/src/helper.ts", "node:buffer").length,
+    1,
+  );
+});
 test("rejects undeclared, deep, escaping, host and computed imports", () => {
   for (const source of [
     'import x from "@tint/a/src/internal.ts";',
