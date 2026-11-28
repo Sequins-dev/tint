@@ -77,6 +77,7 @@ import {
   realmLibraryConstructor,
 } from "../binding/realm-library.ts";
 import {
+  classAccessorSlot,
   realmArrayInstance,
   realmConstructorInstance,
   realmOnlyTypedArrays,
@@ -2921,7 +2922,9 @@ function checkClosureModuleLayout(
       const p = t.properties.find(
         (p) => p !== undefined && p.name === property,
       );
-      if (p === undefined || !p.readonly) return false;
+      if (p === undefined) return false;
+      if (!p.readonly && (p.optional || types[p.type]?.kind !== "literal"))
+        return false;
       if (p.optional)
         variants.push({ type: id, tag: undefinedType, value: undefined });
       const tags = new Set<number>();
@@ -5769,11 +5772,26 @@ function checkClosureModuleLayout(
         enclosing.contract.members.some((member) => {
           if (member === undefined) return false;
           const element = member.node;
-          return (
+          if (
             element.kind === "field" &&
             !element.static &&
             literalPropertyName(element.key) === name
-          );
+          )
+            return true;
+          if (
+            element.kind === "method" &&
+            !element.static &&
+            literalPropertyName(element.key) === "constructor"
+          ) {
+            for (const param of element.parameters)
+              if (
+                param !== undefined &&
+                param.kind !== "pattern-parameter" &&
+                param.parameterProperty === name
+              )
+                return true;
+          }
+          return false;
         })
       ) {
         const read = system.property(receiver, name);
@@ -7182,19 +7200,65 @@ function checkClosureModuleLayout(
             if (
               enclosing === undefined ||
               baseId === undefined ||
-              enclosing.static ||
               node.optional === true
             )
               return unsupported(
                 node,
                 "class-heritage",
-                "typed super property access requires a derived instance member",
+                "typed super property access requires a derived class member",
               );
             const baseContract = classByInstance.get(baseId);
             if (baseContract === undefined)
               throw "base class contract invariant";
             let foundType: number | undefined;
             let cursor: ClassContract | undefined = baseContract;
+            if (enclosing.static) {
+              while (cursor !== undefined) {
+                const ctorType = types[cursor.constructor];
+                if (ctorType?.kind === "object") {
+                  const prop = ctorType.properties.find(
+                    (entry) =>
+                      entry !== undefined &&
+                      entry.name === node.property &&
+                      entry.name !== "prototype" &&
+                      !entry.name.startsWith("@@"),
+                  );
+                  if (prop !== undefined) {
+                    foundType = prop.type;
+                    break;
+                  }
+                }
+                const nextBase: number | undefined = cursor.base;
+                cursor =
+                  nextBase === undefined
+                    ? undefined
+                    : classByInstance.get(nextBase);
+              }
+              if (foundType === undefined)
+                return unsupported(
+                  node,
+                  "class-heritage",
+                  "typed super static property reads require a base static member: " +
+                    node.property,
+                );
+              const foundFn = types[foundType];
+              if (
+                foundFn?.kind === "function" &&
+                foundFn.receiver === baseContract.constructor
+              ) {
+                foundType = appendType(
+                  { ...foundFn, receiver: enclosing.contract.constructor },
+                  node,
+                  "invalid super static method type",
+                );
+              }
+              expressions.set(receiver, baseContract.constructor);
+              chainReceivers.set(node, enclosing.contract.constructor);
+              intrinsics.set(node, "super-member");
+              result = foundType;
+              break;
+            }
+            const getterSlotName = classAccessorSlot("get", node.property);
             while (cursor !== undefined) {
               const protoType = types[cursor.prototype];
               if (protoType?.kind === "object") {
@@ -7209,6 +7273,17 @@ function checkClosureModuleLayout(
                   foundType = prop.type;
                   break;
                 }
+                const getterProp = protoType.properties.find(
+                  (entry) =>
+                    entry !== undefined && entry.name === getterSlotName,
+                );
+                if (getterProp !== undefined) {
+                  const getterFn = types[getterProp.type];
+                  if (getterFn?.kind === "function") {
+                    foundType = getterFn.result;
+                    break;
+                  }
+                }
               }
               const nextBase: number | undefined = cursor.base;
               cursor =
@@ -7220,7 +7295,7 @@ function checkClosureModuleLayout(
               return unsupported(
                 node,
                 "class-heritage",
-                "typed super property reads require a base prototype method: " +
+                "typed super property reads require a base prototype method or getter: " +
                   node.property,
               );
             expressions.set(receiver, baseContract.prototype);

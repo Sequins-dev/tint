@@ -662,7 +662,8 @@ function parseSource(
     let duplicate: Token | undefined;
     while (!at(")")) {
       // Constructor parameter properties: `private readonly x: T`.
-      let property = false;
+      let property = false,
+        propReadonly = false;
       while (
         properties !== undefined &&
         (at("public") ||
@@ -675,6 +676,7 @@ function parseSource(
         !at(")", 1)
       ) {
         typescriptSyntax();
+        if (at("readonly")) propReadonly = true;
         take();
         property = true;
       }
@@ -749,6 +751,8 @@ function parseSource(
         type: annotation,
         optional,
         initializer,
+        ...(property ? { parameterProperty: p.value } : {}),
+        ...(propReadonly ? { parameterReadonly: true } : {}),
         start: p.start,
         end: end(),
       });

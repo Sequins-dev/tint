@@ -336,6 +336,8 @@ export interface ParameterAttributes extends Span {
 export interface IdentifierParameter extends ParameterAttributes {
   readonly kind?: "binding";
   readonly name: string;
+  readonly parameterProperty?: string;
+  readonly parameterReadonly?: boolean;
 }
 export interface PatternParameter extends ParameterAttributes {
   readonly kind: "pattern-parameter";

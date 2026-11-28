@@ -24,6 +24,8 @@ export interface ClassRecordStorage {
   readonly privateBrandField: number | undefined;
   /** A derived prototype's hidden link to the base prototype (C2). */
   readonly prototypeLink: number | undefined;
+  /** A derived constructor state's hidden link to the base constructor state (C2). */
+  readonly constructorLink: number | undefined;
   readonly constructorState: number;
   readonly constructionField: number;
   /** The constructor state's initialization closure field (operates on an existing instance). */
@@ -131,6 +133,8 @@ export interface PlannedClassRecords {
   readonly contractProperties: number;
   readonly constructorState: RecordLayout;
   readonly constructorNames: readonly string[];
+  readonly constructorLink: number | undefined;
+  readonly constructorInherited: readonly number[];
   readonly constructionField: number;
   readonly initializationField: number;
 }
@@ -410,11 +414,38 @@ export function planClassRecords(
   const hasStaticBlock = contract.members.some(
     (entry) => entry?.node.kind === "static-block",
   );
+  // Own static property/slot names declared on this class (inherited statics
+  // live on the base constructor state and get absent shadow slots below).
+  const ownStaticNames = new Set<string>();
+  ownStaticNames.add("prototype");
+  for (const member of contract.members) {
+    if (member === undefined) throw "class member invariant";
+    const element = member.node;
+    if (element.kind === "static-block" || element.private || !element.static)
+      continue;
+    const key = element.key;
+    const memberName =
+      key.kind === "string"
+        ? key.value
+        : key.kind === "number"
+          ? String(key.value)
+          : undefined;
+    if (memberName === undefined) continue;
+    if (element.kind === "get" || element.kind === "set")
+      ownStaticNames.add(classAccessorSlot(element.kind, memberName));
+    else ownStaticNames.add(memberName);
+  }
+  const allStaticAccessors = new Set<string>();
+  for (const name of staticAccessors) allStaticAccessors.add(name);
+  if (base !== undefined)
+    for (const acc of base.accessors)
+      if (acc !== undefined && acc.static) allStaticAccessors.add(acc.name);
   const constructorNames: string[] = [],
     constructorFields: RecordFieldStorage[] = [];
   for (const property of constructor.properties) {
     if (property === undefined) throw "constructor property invariant";
-    if (staticAccessors.has(property.name)) continue;
+    if (allStaticAccessors.has(property.name)) continue;
+    if (!ownStaticNames.has(property.name)) continue;
     const type: ScalarType | undefined =
       property.name === "prototype" ? "reference" : encoding(property.type);
     if (type === undefined) fail("unsupported class constructor storage");
@@ -521,6 +552,40 @@ export function planClassRecords(
         });
       }
     }
+  }
+  // A derived constructor state holds absent shadow slots for inherited
+  // public static fields, methods, and accessor closures, plus a hidden link
+  // to the base constructor state (mirroring prototypeInherited / prototypeLink).
+  const constructorInherited: number[] = [];
+  for (let i = 0; i < constructorNames.length; i++)
+    constructorInherited.push(-1);
+  let constructorLink: number | undefined;
+  if (base !== undefined) {
+    for (let baseIdx = 0; baseIdx < base.constructorNames.length; baseIdx++) {
+      const name = base.constructorNames[baseIdx];
+      if (name === undefined) throw "base constructor name invariant";
+      if (
+        name === "prototype" ||
+        name.startsWith("@@priv:") ||
+        constructorNames.includes(name)
+      )
+        continue;
+      const baseField = base.constructorState.fields[baseIdx];
+      if (baseField === undefined) throw "base constructor field invariant";
+      constructorNames.push(name);
+      constructorInherited.push(baseIdx);
+      constructorFields.push({
+        type: widenForUninitializedPrivate(baseField.type),
+        mutable: true,
+        optional: true,
+      });
+    }
+    constructorLink = constructorFields.length;
+    constructorFields.push({
+      type: "reference",
+      mutable: false,
+      optional: false,
+    });
   }
   // The construction and initialization closures are installed after cyclic
   // class state is allocated. They have no source property names and are
@@ -781,6 +846,38 @@ export function planClassRecords(
       ),
     });
   }
+  // Merge inherited prototype and static accessors with any own overrides.
+  if (base !== undefined) {
+    for (const baseAcc of base.accessors) {
+      if (baseAcc === undefined) throw "base accessor invariant";
+      const slotNames = baseAcc.static ? constructorNames : prototypeNames;
+      const getterField = slotNames.indexOf(
+        classAccessorSlot("get", baseAcc.name),
+      );
+      const setterField = slotNames.indexOf(
+        classAccessorSlot("set", baseAcc.name),
+      );
+      if (getterField < 0) fail("inherited class accessor getter invariant");
+      let known = -1;
+      for (let index = 0; index < accessors.length; index++) {
+        const entry = accessors[index];
+        if (
+          entry !== undefined &&
+          entry.name === baseAcc.name &&
+          entry.static === baseAcc.static
+        )
+          known = index;
+      }
+      const merged: ClassAccessorStorage = {
+        name: baseAcc.name,
+        static: baseAcc.static,
+        getter: getterField,
+        setter: setterField >= 0 ? setterField : undefined,
+      };
+      if (known < 0) accessors.push(merged);
+      else accessors[known] = merged;
+    }
+  }
   const unprovenFields: number[] = [];
   if (base !== undefined)
     for (const field of base.unproven) unprovenFields.push(field);
@@ -827,6 +924,8 @@ export function planClassRecords(
     contractProperties: instance.properties.length,
     constructorState: planRecordLayout(constructorFields, planner, fail),
     constructorNames,
+    constructorLink,
+    constructorInherited,
     constructionField,
     initializationField,
     instanceNames,

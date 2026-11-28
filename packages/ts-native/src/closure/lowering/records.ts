@@ -11,6 +11,7 @@ import {
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
 import {
+  classAccessorSlot,
   classPrivateAccessorSlot,
   classPrivateBrandSlot,
   classPrivateSlot,
@@ -1195,6 +1196,7 @@ export function createRecordContracts(
   const classes: ClassRecordStorage[] = [],
     classShapes: (number[] | undefined)[] = [],
     constructorStates: (number[] | undefined)[] = [],
+    constructorFamilyStates: (number[] | undefined)[] = [],
     constructorReceivers: (boolean | undefined)[] = [],
     constructionFields: (number | undefined)[] = [],
     nonEnumerable: number[] = [],
@@ -1202,8 +1204,8 @@ export function createRecordContracts(
       | { field: number; record: number; inherited: readonly number[] }
       | undefined
     )[] = [];
-  /** A method slot of a prototype record, falling through a derived
-   * prototype's hidden link to the base prototype's slot while absent. */
+  /** A method, field, or accessor closure slot of a prototype/constructor
+   * record, falling through a derived link to its base while absent. */
   function prototypeAccess(
     record: number,
     field: number,
@@ -1216,8 +1218,9 @@ export function createRecordContracts(
       record,
       field,
       type: fieldInfo?.type ?? "reference",
+      initialized: fieldInfo?.stateOffset !== undefined,
     };
-    // Own non-optional prototype methods are always present (no presence byte).
+    // Own non-optional fields are always present (no presence byte).
     if (
       fieldInfo?.presenceOffset === undefined ||
       link === undefined ||
@@ -1254,20 +1257,31 @@ export function createRecordContracts(
       readonly setType: number | undefined;
     }
   >();
-  /** The checked function type of a class accessor's getter or setter. */
+  /** The checked function type of a class accessor's getter or setter,
+   * walking up base classes when inherited. */
   function classAccessorType(
     contract: ClassContract,
     name: string,
     kind: "get" | "set",
     isStatic: boolean,
   ): number | undefined {
-    for (const member of contract.members) {
-      if (member === undefined) throw "class member invariant";
-      const element = member.node;
-      if (element.kind === "static-block" || element.kind !== kind) continue;
-      if (element.static !== isStatic) continue;
-      const key = element.key;
-      if (key.kind === "string" && key.value === name) return member.type;
+    let cursor: ClassContract | undefined = contract;
+    while (cursor !== undefined) {
+      for (const member of cursor.members) {
+        if (member === undefined) throw "class member invariant";
+        const element = member.node;
+        if (element.kind === "static-block" || element.kind !== kind) continue;
+        if (element.static !== isStatic) continue;
+        const key = element.key;
+        if (key.kind === "string" && key.value === name) return member.type;
+      }
+      const nextBase: number | undefined = cursor.base;
+      cursor =
+        nextBase === undefined
+          ? undefined
+          : checked.classes.find(
+              (c) => c !== undefined && c.instance === nextBase,
+            );
     }
     return undefined;
   }
@@ -1285,12 +1299,9 @@ export function createRecordContracts(
     if (write && accessor.setter === undefined) return undefined;
     const closures = accessor.closures;
     function closure(field: number): RecordAccess {
-      const info = records[closures]?.fields[field];
-      if (info === undefined) throw "class accessor closure invariant";
-      return {
-        type: info.type,
-        choices: [{ record: closures, field, type: info.type }],
-      };
+      if (records[closures]?.fields[field] === undefined)
+        throw "class accessor closure invariant";
+      return prototypeAccess(closures, field, "reference");
     }
     const setter = accessor.setter,
       setType = accessor.setType;
@@ -1405,6 +1416,9 @@ export function createRecordContracts(
     return found.has(layouts);
   }
   function shapesForType(id: number): readonly number[] {
+    // Class constructors are always managed closures with constructorState
+    // environments, never plain record layouts.
+    if (constructorStates[id] !== undefined) return [];
     // Values of a class instance or prototype type have the class layouts,
     // plus the plain record layout only when an object literal has that
     // type, so accesses usually check one layout and record facts can prove
@@ -1751,9 +1765,11 @@ export function createRecordContracts(
   const plannedClasses = new Map<
     number,
     {
+      contract: ClassContract;
       planned: PlannedClassRecords;
       instance: number;
       prototype: number;
+      constructorState: number;
       base: number | undefined;
     }
   >();
@@ -1764,8 +1780,6 @@ export function createRecordContracts(
         baseType === undefined ? undefined : plannedClasses.get(baseType);
     if (baseType !== undefined && baseClass === undefined)
       fail("base class storage must be planned before derived classes");
-    if (baseClass !== undefined && baseClass.planned.accessors.length > 0)
-      fail("inherited class accessors are not lowered yet");
     const planned = planClassRecords(
         contract,
         checked.types,
@@ -1798,12 +1812,6 @@ export function createRecordContracts(
         record: baseClass.prototype,
         inherited: planned.prototypeInherited,
       };
-    plannedClasses.set(contract.instance, {
-      planned,
-      instance,
-      prototype,
-      base: baseType,
-    });
     for (const field of planned.unproven)
       unprovenFields.add(String(instance) + ":" + String(field));
     const staticAccessors: ClassAccessorStorage[] = [];
@@ -1847,12 +1855,46 @@ export function createRecordContracts(
     records.push(planned.constructorState);
     names.push(planned.constructorNames);
     classNames[constructorState] = className + ".constructor";
+    const ctorLink = planned.constructorLink;
+    if (baseClass !== undefined && ctorLink !== undefined)
+      prototypes[constructorState] = {
+        field: ctorLink,
+        record: baseClass.constructorState,
+        inherited: planned.constructorInherited,
+      };
+    plannedClasses.set(contract.instance, {
+      contract,
+      planned,
+      instance,
+      prototype,
+      constructorState,
+      base: baseType,
+    });
     let states = constructorStates[contract.constructor];
     if (states === undefined) {
       states = [];
       constructorStates[contract.constructor] = states;
     }
     states.push(constructorState);
+    let familyStates = constructorFamilyStates[contract.constructor];
+    if (familyStates === undefined) {
+      familyStates = [];
+      constructorFamilyStates[contract.constructor] = familyStates;
+    }
+    familyStates.push(constructorState);
+    // A base static method/accessor's `this` may hold any derived constructor.
+    let ctorAncestor = baseType;
+    while (ctorAncestor !== undefined) {
+      const entry = plannedClasses.get(ctorAncestor);
+      if (entry === undefined) throw "base constructor shape invariant";
+      let baseFamily = constructorFamilyStates[entry.contract.constructor];
+      if (baseFamily === undefined) {
+        baseFamily = [];
+        constructorFamilyStates[entry.contract.constructor] = baseFamily;
+      }
+      baseFamily.push(constructorState);
+      ctorAncestor = entry.base;
+    }
     for (const accessor of staticAccessors) {
       if (accessor === undefined) throw "class accessor invariant";
       const getType = classAccessorType(contract, accessor.name, "get", true);
@@ -1910,6 +1952,7 @@ export function createRecordContracts(
       prototypeField: planned.prototypeField,
       privateBrandField: planned.privateBrandField,
       prototypeLink: planned.prototypeLink,
+      constructorLink: planned.constructorLink,
       definitionEnvironment,
       constructionEnvironment,
       staticsEnvironment,
@@ -2286,114 +2329,134 @@ export function createRecordContracts(
       }
       const functionEnvironment = constructorReceiver(receiverType);
       const choices: RecordAccessChoice[] = [],
-        seen = new Set<string>();
+        seen = new Set<string>(),
+        ctorChoices: RecordAccessChoice[] = [],
+        ctorSeen = new Set<string>();
+      function collectShape(
+        id: number,
+        shape: number,
+        targetChoices: RecordAccessChoice[],
+        targetSeen: Set<string>,
+      ): void {
+        const fieldNames = names[shape];
+        const field =
+            fieldNames === undefined ? undefined : fieldNames.indexOf(name),
+          info =
+            field === undefined ? undefined : records[shape]?.fields[field];
+        if (info === undefined) {
+          const accessor = accessorChoice(shape, name, write, type);
+          const key = String(shape) + ":@" + name;
+          if (accessor !== undefined && !targetSeen.has(key)) {
+            targetSeen.add(key);
+            targetChoices.push(accessor);
+          }
+          return;
+        }
+        const primitive = optionalPrimitiveField(id, name);
+        const inheritedSlot =
+          field !== undefined &&
+          (prototypes[shape]?.inherited[field] ?? -1) >= 0;
+        if (
+          field === undefined ||
+          info === undefined ||
+          (info.type !== type &&
+            !(
+              write &&
+              ((info.type === "optional-reference" && type === "reference") ||
+                ((unprovenFields.has(String(shape) + ":" + String(field)) ||
+                  inheritedSlot) &&
+                  ((info.type === "optional-number" && type === "number") ||
+                    (info.type === "optional-string" && type === "string") ||
+                    (info.type === "optional-boolean" && type === "boolean"))))
+            ) &&
+            !primitive &&
+            !(
+              !write &&
+              (info.type === "general" ||
+                type === "general" ||
+                ((info.type === "primitive" || type === "primitive") &&
+                  [
+                    "primitive",
+                    "number",
+                    "boolean",
+                    "string",
+                    "optional-number",
+                    "optional-string",
+                  ].includes(info.type) &&
+                  [
+                    "primitive",
+                    "number",
+                    "boolean",
+                    "string",
+                    "optional-number",
+                    "optional-string",
+                  ].includes(type)) ||
+                (info.type === "number" && type === "optional-number") ||
+                (info.type === "reference" && type === "optional-reference") ||
+                (info.type === "string" && type === "optional-string") ||
+                (info.type === "optional-number" && type === "number") ||
+                (info.type === "optional-boolean" && type === "boolean") ||
+                (info.type === "optional-reference" && type === "reference") ||
+                (info.type === "optional-string" && type === "string"))
+            )) ||
+          (write && !info.mutable)
+        )
+          return;
+        const key = shape + ":" + field;
+        if (targetSeen.has(key)) return;
+        targetSeen.add(key);
+        if (!write && type !== "general" && unprovenFields.has(key))
+          fail(
+            "a field read before its first assignment requires a speculative read: " +
+              name +
+              " at " +
+              node.start +
+              ":" +
+              node.end,
+          );
+        const prototype = prototypes[shape],
+          inherited = prototype?.inherited[field];
+        const choice: RecordAccessChoice = {
+          record: shape,
+          field,
+          type: info.type,
+          primitive,
+          initialized: info.stateOffset !== undefined,
+        };
+        if (prototype === undefined || inherited === undefined || inherited < 0)
+          targetChoices.push(choice);
+        else
+          targetChoices.push({
+            ...choice,
+            prototype: {
+              field: prototype.field,
+              access: prototypeAccess(prototype.record, inherited, type),
+            },
+          });
+      }
       for (const id of compatibleShapes(receiverType)) {
         if (id === undefined) throw "receiver shape invariant";
-        for (const shape of functionEnvironment
-          ? (constructorStates[id] ?? [])
-          : shapesForType(id)) {
-          if (shape === undefined) throw "receiver shape invariant";
-          const fieldNames = names[shape];
-          const field =
-              fieldNames === undefined ? undefined : fieldNames.indexOf(name),
-            info =
-              field === undefined ? undefined : records[shape]?.fields[field];
-          if (info === undefined) {
-            const accessor = accessorChoice(shape, name, write, type);
-            const key = String(shape) + ":@" + name;
-            if (accessor !== undefined && !seen.has(key)) {
-              seen.add(key);
-              choices.push(accessor);
-            }
-            continue;
+        if (functionEnvironment) {
+          for (const shape of constructorFamilyStates[id] ??
+            constructorStates[id] ??
+            []) {
+            if (shape === undefined) throw "receiver shape invariant";
+            collectShape(id, shape, choices, seen);
           }
-          const primitive = optionalPrimitiveField(id, name);
-          if (
-            field === undefined ||
-            info === undefined ||
-            (info.type !== type &&
-              !(
-                write &&
-                ((info.type === "optional-reference" && type === "reference") ||
-                  (unprovenFields.has(String(shape) + ":" + String(field)) &&
-                    ((info.type === "optional-number" && type === "number") ||
-                      (info.type === "optional-string" && type === "string") ||
-                      (info.type === "optional-boolean" &&
-                        type === "boolean"))))
-              ) &&
-              !primitive &&
-              !(
-                !write &&
-                (info.type === "general" ||
-                  type === "general" ||
-                  ((info.type === "primitive" || type === "primitive") &&
-                    [
-                      "primitive",
-                      "number",
-                      "boolean",
-                      "string",
-                      "optional-number",
-                      "optional-string",
-                    ].includes(info.type) &&
-                    [
-                      "primitive",
-                      "number",
-                      "boolean",
-                      "string",
-                      "optional-number",
-                      "optional-string",
-                    ].includes(type)) ||
-                  (info.type === "number" && type === "optional-number") ||
-                  (info.type === "reference" &&
-                    type === "optional-reference") ||
-                  (info.type === "string" && type === "optional-string") ||
-                  (info.type === "optional-number" && type === "number") ||
-                  (info.type === "optional-boolean" && type === "boolean") ||
-                  (info.type === "optional-reference" &&
-                    type === "reference") ||
-                  (info.type === "optional-string" && type === "string"))
-              )) ||
-            (write && !info.mutable)
-          )
-            continue;
-          const key = shape + ":" + field;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          if (!write && type !== "general" && unprovenFields.has(key))
-            fail(
-              "a field read before its first assignment requires a speculative read: " +
-                name +
-                " at " +
-                node.start +
-                ":" +
-                node.end,
-            );
-          const prototype = prototypes[shape],
-            inherited = prototype?.inherited[field];
-          const choice: RecordAccessChoice = {
-            record: shape,
-            field,
-            type: info.type,
-            primitive,
-            initialized: info.stateOffset !== undefined,
-          };
-          if (
-            prototype === undefined ||
-            inherited === undefined ||
-            inherited < 0
-          )
-            choices.push(choice);
-          else
-            choices.push({
-              ...choice,
-              prototype: {
-                field: prototype.field,
-                access: prototypeAccess(prototype.record, inherited, type),
-              },
-            });
+        } else {
+          for (const shape of shapesForType(id)) {
+            if (shape === undefined) throw "receiver shape invariant";
+            collectShape(id, shape, choices, seen);
+          }
+          for (const shape of constructorFamilyStates[id] ??
+            constructorStates[id] ??
+            []) {
+            if (shape === undefined) throw "receiver shape invariant";
+            collectShape(id, shape, ctorChoices, ctorSeen);
+          }
         }
       }
-      if (choices.length === 0)
+      if (choices.length === 0 && ctorChoices.length === 0)
         fail(
           "property access requires supported matching record layouts: " +
             name +
@@ -2402,29 +2465,85 @@ export function createRecordContracts(
             ":" +
             node.end,
         );
-      accesses.set(node, {
-        type,
-        choices: exactLayoutsFirst(receiverType, choices),
-        functionEnvironment,
-      });
+      if (choices.length === 0)
+        accesses.set(node, {
+          type,
+          choices: ctorChoices,
+          functionEnvironment: true,
+        });
+      else if (ctorChoices.length > 0)
+        accesses.set(node, {
+          type,
+          choices: exactLayoutsFirst(receiverType, choices),
+          functionEnvironment,
+          constructorFallback: {
+            type,
+            choices: ctorChoices,
+            functionEnvironment: true,
+          },
+        });
+      else
+        accesses.set(node, {
+          type,
+          choices: exactLayoutsFirst(receiverType, choices),
+          functionEnvironment,
+        });
     },
     superAccess: (node, receiverType, basePrototypeType, name, type) => {
-      const targetProtoShapes = classLayouts(basePrototypeType);
-      const targetProto = targetProtoShapes?.[0];
+      const isStatic = constructorReceiver(basePrototypeType);
+      const targetProto = isStatic
+        ? constructorStates[basePrototypeType]?.[0]
+        : classLayouts(basePrototypeType)?.[0];
       if (targetProto === undefined)
         fail("super property access requires a known base prototype layout");
       const targetField = names[targetProto]?.indexOf(name) ?? -1;
-      if (targetField < 0)
+      const getterField =
+        targetField >= 0
+          ? -1
+          : (names[targetProto]?.indexOf(classAccessorSlot("get", name)) ?? -1);
+      if (targetField < 0 && getterField < 0)
         fail(
           "super property access requires a known base prototype member: " +
             name,
         );
-      const targetAccess = prototypeAccess(targetProto, targetField, type);
+      let getterTarget: number | undefined;
+      if (getterField >= 0) {
+        const witness = callableWitness;
+        if (witness === undefined)
+          fail("super getter access requires callable signature witnesses");
+        const targetClass = classes.find(
+          (c) =>
+            c !== undefined &&
+            (isStatic
+              ? c.constructorState === targetProto
+              : c.prototype === targetProto),
+        );
+        if (targetClass === undefined)
+          fail("super getter access requires a known base class");
+        const getType = classAccessorType(
+          targetClass.contract,
+          name,
+          "get",
+          isStatic,
+        );
+        if (getType === undefined)
+          fail("super getter access requires a base getter signature");
+        getterTarget = witness(getType);
+      }
+      const targetAccess =
+        getterField >= 0
+          ? prototypeAccess(targetProto, getterField, "reference")
+          : prototypeAccess(targetProto, targetField, type);
+      const receiverRecords = isStatic
+        ? (constructorFamilyStates[receiverType] ??
+          constructorStates[receiverType] ??
+          [])
+        : shapesForType(receiverType);
       const choices: RecordAccessChoice[] = [];
-      for (const instanceRecord of shapesForType(receiverType)) {
+      for (const instanceRecord of receiverRecords) {
         if (instanceRecord === undefined)
           throw "super receiver shape invariant";
-        // Walk prototype links from instanceRecord -> ... -> targetProto.
+        // Walk prototype/constructor links from instanceRecord -> ... -> targetProto.
         const hops: { readonly record: number; readonly field: number }[] = [];
         let cursor = instanceRecord;
         let reached = false;
@@ -2440,6 +2559,43 @@ export function createRecordContracts(
         }
         if (!reached)
           fail("super property access could not reach base prototype layout");
+        if (getterField >= 0 && getterTarget !== undefined) {
+          const startHop = isStatic ? 0 : 1;
+          let chain: RecordAccess = targetAccess;
+          for (let i = hops.length - 1; i >= startHop; i--) {
+            const hop = hops[i];
+            if (hop === undefined) throw "super hop invariant";
+            chain = {
+              type: "reference",
+              choices: [
+                {
+                  record: hop.record,
+                  field: 0,
+                  type: "reference",
+                  prototype: {
+                    field: hop.field,
+                    skipOwn: true,
+                    access: chain,
+                  },
+                },
+              ],
+            };
+          }
+          const first = hops[0];
+          if (first === undefined) throw "super first hop invariant";
+          choices.push({
+            record: first.record,
+            field: isStatic ? -1 : first.field,
+            type,
+            accessor: {
+              get: chain,
+              getTarget: getterTarget,
+              set: undefined,
+              setTarget: undefined,
+            },
+          });
+          continue;
+        }
         let chain: RecordAccess = targetAccess;
         for (let i = hops.length - 1; i >= 1; i--) {
           const hop = hops[i];
@@ -2475,7 +2631,12 @@ export function createRecordContracts(
       }
       if (choices.length === 0)
         fail("super property access requires known receiver layouts");
-      accesses.set(node, { type, choices });
+      accesses.set(
+        node,
+        isStatic
+          ? { type, choices, functionEnvironment: true }
+          : { type, choices },
+      );
     },
     planPrivateAccess: (node, info, ownerLocal, type) => {
       const contract = info.contract,

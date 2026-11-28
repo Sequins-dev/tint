@@ -1067,13 +1067,21 @@ export function resolveInterfaceTypes(
       ],
       members: ClassMemberContract[] = [],
       privateMembers: ClassPrivateMember[] = [];
-    // Accessor names with a getter and with a setter (prefixed "static "
+    // Accessor names with an own getter/setter (prefixed "static "
     // for the constructor side).
     const getters = new Set<string>(),
       setters = new Set<string>();
     let construct: number | undefined;
-    // Base prototype methods, which own methods may override.
-    const baseMethods = new Set<string>();
+    // Base prototype methods/accessors and inherited statics, which own
+    // members may override.
+    const baseMethods = new Set<string>(),
+      baseGetters = new Set<string>(),
+      baseSetters = new Set<string>(),
+      baseAccessors = new Set<string>(),
+      inheritedStatics = new Set<string>(),
+      baseStaticGetters = new Set<string>(),
+      baseStaticSetters = new Set<string>(),
+      baseStaticAccessors = new Set<string>();
     if (base !== undefined) {
       const baseInstance = types[canonical(base.instance)],
         basePrototype = types[canonical(base.prototype)],
@@ -1084,23 +1092,66 @@ export function resolveInterfaceTypes(
         baseConstructor?.kind !== "object"
       )
         throw "base class contract invariant";
-      // Inherited statics and accessors live on the base constructor and
-      // prototype; typed lookups do not follow those chains yet.
-      if (baseConstructor.properties.length > 1)
-        unsupportedClass(
-          definition,
-          "class-heritage",
-          "typed derived classes do not inherit static members yet",
-        );
-      for (const property of basePrototype.properties) {
-        if (property === undefined) throw "base prototype invariant";
-        if (property.name.startsWith("@@"))
-          unsupportedClass(
-            definition,
-            "class-heritage",
-            "typed derived classes do not inherit accessors yet",
-          );
-        if (property.name !== "constructor") baseMethods.add(property.name);
+      // Walk the full base chain for prototype/constructor accessor slots
+      // (a middle base class only keeps its own slots on its prototype/constructor).
+      let cursor: ClassContract | undefined = base;
+      while (cursor !== undefined) {
+        const cursorProto = types[canonical(cursor.prototype)],
+          cursorCtor = types[canonical(cursor.constructor)];
+        if (cursorProto?.kind === "object") {
+          for (const property of cursorProto.properties) {
+            if (property === undefined) throw "base prototype invariant";
+            if (property.name.startsWith("@@get:")) {
+              const accName = property.name.slice(6);
+              baseGetters.add(accName);
+              baseAccessors.add(accName);
+            } else if (property.name.startsWith("@@set:")) {
+              const accName = property.name.slice(6);
+              baseSetters.add(accName);
+              baseAccessors.add(accName);
+            } else if (property.name !== "constructor") {
+              baseMethods.add(property.name);
+            }
+          }
+        }
+        if (cursorCtor?.kind === "object") {
+          for (const property of cursorCtor.properties) {
+            if (property === undefined) throw "base constructor invariant";
+            if (property.name.startsWith("@@get:")) {
+              const accName = property.name.slice(6);
+              baseStaticGetters.add(accName);
+              baseStaticAccessors.add(accName);
+            } else if (property.name.startsWith("@@set:")) {
+              const accName = property.name.slice(6);
+              baseStaticSetters.add(accName);
+              baseStaticAccessors.add(accName);
+            }
+          }
+        }
+        const nextBase: number | undefined = cursor.base;
+        cursor =
+          nextBase === undefined
+            ? undefined
+            : classes.find((c) => c !== undefined && c.instance === nextBase);
+      }
+      for (const property of baseConstructor.properties) {
+        if (property === undefined) throw "base constructor invariant";
+        if (property.name === "prototype" || property.name.startsWith("@@"))
+          continue;
+        let propType = property.type;
+        const propFn = types[canonical(propType)];
+        if (
+          propFn?.kind === "function" &&
+          propFn.receiver === base.constructor
+        ) {
+          propType = rebindReceiver(propType, constructor, definition);
+        }
+        statics.push({
+          name: property.name,
+          type: propType,
+          readonly: property.readonly,
+        });
+        inheritedStatics.add(property.name);
       }
       for (const property of baseInstance.properties) {
         if (property === undefined) throw "base instance invariant";
@@ -1322,6 +1373,62 @@ export function resolveInterfaceTypes(
           if (construct !== undefined)
             fail(member, "INVALID_TYPE", "duplicate class constructor");
           construct = signature(member.parameters, instance, undefined, member);
+          for (const param of member.parameters) {
+            if (param === undefined || param.kind === "pattern-parameter")
+              continue;
+            const propName = param.parameterProperty;
+            if (propName === undefined) continue;
+            const annotation = param.type;
+            if (annotation === undefined)
+              unsupportedClass(
+                param,
+                "class-field-inference",
+                "class field requires annotation until initializer inference is available",
+              );
+            let fieldType = resolve(annotation);
+            if (param.optional === true && canonical(fieldType) !== 2)
+              fieldType = add(
+                { kind: "union", members: [fieldType, 2] },
+                param,
+              );
+            const fieldProp: Property = {
+              name: propName,
+              type: fieldType,
+              readonly: param.parameterReadonly === true,
+            };
+            if (inherited.has(propName)) {
+              if (baseAccessors.has(propName) || baseMethods.has(propName))
+                unsupportedClass(
+                  param,
+                  "class-heritage",
+                  "a typed class member must override a base member of the same kind: " +
+                    propName,
+                );
+              for (const existing of fields)
+                if (
+                  existing !== undefined &&
+                  existing.name === propName &&
+                  canonical(existing.type) !== canonical(fieldType)
+                )
+                  unsupportedClass(
+                    param,
+                    "class-heritage",
+                    "a typed class may redeclare a base field only with its type: " +
+                      propName,
+                  );
+              inherited.delete(propName);
+              for (let idx = 0; idx < fields.length; idx++)
+                if (fields[idx]?.name === propName) fields[idx] = fieldProp;
+            } else {
+              if (fields.some((existing) => existing?.name === propName))
+                fail(
+                  param,
+                  "INVALID_TYPE",
+                  "duplicate class property: " + propName,
+                );
+              fields.push(fieldProp);
+            }
+          }
           members.push({ node: member, type: construct, receiver: instance });
           parameters = outer;
           continue;
@@ -1361,19 +1468,37 @@ export function resolveInterfaceTypes(
           if (properties[position]?.name === name) index = position;
         const key = (isStatic ? "static " : "") + name,
           same = getter ? getters : setters,
-          other = getter ? setters : getters;
+          other = getter ? setters : getters,
+          inheritedSet = isStatic ? inheritedStatics : inherited,
+          baseAcc = isStatic ? baseStaticAccessors : baseAccessors;
         if (index >= 0) {
           const existing = properties[index];
           if (existing === undefined) throw "class accessor invariant";
-          if (same.has(key) || !other.has(key))
+          if (same.has(key))
             fail(member, "INVALID_TYPE", "duplicate class property: " + name);
+          if (!other.has(key)) {
+            if (!inheritedSet.has(name))
+              fail(member, "INVALID_TYPE", "duplicate class property: " + name);
+            if (!baseAcc.has(name))
+              unsupportedClass(
+                member,
+                "class-heritage",
+                "a typed class member must override a base member of the same kind: " +
+                  name,
+              );
+          }
           if (canonical(existing.type) !== canonical(value))
             unsupportedClass(
               member,
               "class-accessor-contract",
               "class getters and setters of different types are not typed yet",
             );
-          properties[index] = { name, type: existing.type, readonly: false };
+          const hasSetter = !getter || setters.has(key);
+          properties[index] = {
+            name,
+            type: existing.type,
+            readonly: !hasSetter,
+          };
         } else properties.push({ name, type: value, readonly: getter });
         same.add(key);
         const slot: Property = {
@@ -1395,7 +1520,10 @@ export function resolveInterfaceTypes(
       if (!isStatic && inherited.has(name)) {
         // An override keeps the base's position (the derived layout is a
         // prefix extension); it must replace a member of the same kind.
-        if ((member.kind === "method") !== baseMethods.has(name))
+        if (
+          baseAccessors.has(name) ||
+          (member.kind === "method") !== baseMethods.has(name)
+        )
           unsupportedClass(
             member,
             "class-heritage",
@@ -1423,12 +1551,30 @@ export function resolveInterfaceTypes(
         members.push({ node: member, type, receiver });
         continue;
       }
+      if (isStatic && inheritedStatics.has(name)) {
+        if (baseStaticAccessors.has(name))
+          unsupportedClass(
+            member,
+            "class-heritage",
+            "a typed class member must override a base member of the same kind: " +
+              name,
+          );
+        inheritedStatics.delete(name);
+        for (let index = 0; index < statics.length; index++)
+          if (statics[index]?.name === name) statics[index] = property;
+        members.push({ node: member, type, receiver });
+        continue;
+      }
       if (properties.some((property) => property.name === name))
         fail(member, "INVALID_TYPE", "duplicate class property: " + name);
       properties.push(property);
       if (!isStatic && member.kind === "method") prototypeFields.push(property);
       members.push({ node: member, type, receiver });
     }
+    // An own accessor descriptor in ECMAScript shadows the entire base
+    // descriptor rather than merging get/set across prototypes: an own setter
+    // without an own getter makes reads yield undefined, and an own getter
+    // without an own setter over a writable base accessor makes writes throw.
     for (const key of setters)
       if (!getters.has(key))
         unsupportedClass(
@@ -1436,6 +1582,18 @@ export function resolveInterfaceTypes(
           "class-accessor-contract",
           "class setters without a getter are not typed yet: " + key,
         );
+    for (const key of getters) {
+      const baseHasSetter = key.startsWith("static ")
+        ? baseStaticSetters.has(key.slice(7))
+        : baseSetters.has(key);
+      if (baseHasSetter && !setters.has(key))
+        unsupportedClass(
+          definition,
+          "class-accessor-contract",
+          "partial override of a writable base accessor is not typed yet: " +
+            key,
+        );
+    }
     if (construct === undefined)
       construct =
         base === undefined
@@ -1523,6 +1681,76 @@ export function resolveInterfaceTypes(
       classBases.push({ pairs, owner: definition });
     }
     return id;
+  }
+  /** Rebinds a function type's receiver (e.g., an inherited static method on a derived constructor). */
+  function rebindReceiver(id: number, receiver: number, node: Span): number {
+    const declared = types[canonical(id)];
+    if (
+      declared?.kind !== "function" ||
+      declared.instancePredicate !== undefined
+    )
+      return id;
+    const parameters = declared.parameters,
+      result = declared.result,
+      minimum = declared.minimumArguments,
+      isMethod = declared.method === true;
+    let copy: Type = isMethod
+      ? { kind: "function", parameters, result, receiver, method: true }
+      : { kind: "function", parameters, result, receiver };
+    if (minimum !== undefined && declared.rest === true)
+      copy = isMethod
+        ? {
+            kind: "function",
+            parameters,
+            minimumArguments: minimum,
+            rest: true,
+            result,
+            receiver,
+            method: true,
+          }
+        : {
+            kind: "function",
+            parameters,
+            minimumArguments: minimum,
+            rest: true,
+            result,
+            receiver,
+          };
+    else if (minimum !== undefined)
+      copy = isMethod
+        ? {
+            kind: "function",
+            parameters,
+            minimumArguments: minimum,
+            result,
+            receiver,
+            method: true,
+          }
+        : {
+            kind: "function",
+            parameters,
+            minimumArguments: minimum,
+            result,
+            receiver,
+          };
+    else if (declared.rest === true)
+      copy = isMethod
+        ? {
+            kind: "function",
+            parameters,
+            rest: true,
+            result,
+            receiver,
+            method: true,
+          }
+        : {
+            kind: "function",
+            parameters,
+            rest: true,
+            result,
+            receiver,
+          };
+    return add(copy, node);
   }
   /** A method type as method syntax relates it: without its receiver. */
   function receiverFree(id: number, node: Span): number {

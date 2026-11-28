@@ -313,11 +313,13 @@ export function reserveClassEntries(
     }
     if (targets.length !== members.definitionEnvironment.fields.length)
       throw "class member closure invariant";
-    // A derived definition receives (basePrototype, baseInit).
+    // A derived definition receives (basePrototype, baseInit, baseState).
     const definition = signatures.length;
     signatures.push({
       parameters:
-        storage.prototypeLink === undefined ? [] : ["reference", "reference"],
+        storage.prototypeLink === undefined
+          ? []
+          : ["reference", "reference", "reference"],
       returnType: "reference",
     });
     const construction = signatures.length;
@@ -696,6 +698,7 @@ export function buildClassEntries(
           prototypeField: storage.statePrototypeField,
           constructionField: storage.constructionField,
           initializationField: storage.initializationField,
+          link: storage.constructorLink,
           methods: copies(members.staticMethods),
         },
         callTarget: item.callTarget,
