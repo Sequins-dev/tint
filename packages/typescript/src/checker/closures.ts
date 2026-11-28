@@ -345,6 +345,7 @@ const atomicsOperations: readonly string[] = [
 export interface ClosureBody {
   readonly node: Span;
   readonly scriptEntry: true | undefined;
+  readonly noLegacyArguments?: true | undefined;
   readonly parameters: readonly Parameter[];
   readonly body: Expression | BlockStatement;
   readonly result: number;
@@ -4913,6 +4914,7 @@ function checkClosureModuleLayout(
     inferResult: boolean = false,
     inheritStableFacts: boolean = false,
     scriptEntry: true | undefined = undefined,
+    noLegacyArguments: true | undefined = undefined,
   ): number {
     const savedFacts = present,
       savedCallSafeFacts = callSafeFacts;
@@ -5015,6 +5017,7 @@ function checkClosureModuleLayout(
       bodies.set(owner, {
         node,
         scriptEntry,
+        noLegacyArguments,
         parameters: params,
         body,
         result,
@@ -5042,6 +5045,7 @@ function checkClosureModuleLayout(
           bodies.set(owner, {
             node,
             scriptEntry,
+            noLegacyArguments,
             parameters: params,
             body,
             result,
@@ -5060,6 +5064,7 @@ function checkClosureModuleLayout(
           bodies.set(owner, {
             node,
             scriptEntry,
+            noLegacyArguments,
             parameters: params,
             body,
             result,
@@ -7158,6 +7163,7 @@ function checkClosureModuleLayout(
             infer,
             true,
             node.kind === "arrow" ? node.scriptEntry : undefined,
+            node.kind === "arrow" ? node.noLegacyArguments : undefined,
           );
           if (signature.result === voidType && returned !== voidType)
             result = appendType(

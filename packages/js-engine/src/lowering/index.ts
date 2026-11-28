@@ -9205,16 +9205,14 @@ function lowerScriptEntry(
       kind: "boolean",
       value: canConstruct,
     };
-    const callerPolicy = text(
-      options.packed
-        ? "none"
-        : codeStrict
-          ? "opaque"
-          : canConstruct
-            ? "legacy"
-            : "visible",
-      span,
-    );
+    const callerPolicyName = options.packed
+      ? "none"
+      : codeStrict
+        ? "opaque"
+        : canConstruct
+          ? "legacy"
+          : "visible";
+    const callerPolicy = text(callerPolicyName, span);
     if (nativeEntry) {
       if (nativeName === undefined) throw "SCRIPT_NATIVE_NAME_INVARIANT";
       const optionalList: TypeNode = {
@@ -9252,10 +9250,13 @@ function lowerScriptEntry(
         if (name === undefined) throw "SCRIPT_NATIVE_BRIDGE_INVARIANT";
         bridgeArguments.push(id(name, span));
       }
+      const noLegacyArguments: true | undefined =
+        callerPolicyName !== "legacy" ? true : undefined;
       const nativeBody = temporary({
         ...at(span),
         kind: "arrow",
         scriptEntry: true,
+        ...(noLegacyArguments === true ? { noLegacyArguments } : {}),
         parameters: nativeParameters,
         returnType: named("unknown"),
         body: {

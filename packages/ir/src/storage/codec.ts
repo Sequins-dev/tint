@@ -4037,7 +4037,8 @@ const importFlag = 1,
   scriptEntryFlag = 128;
 /** Second function flags byte. */
 const safeIntegerSlotsFlag = 1,
-  nonzeroSlotsFlag = 2;
+  nonzeroSlotsFlag = 2,
+  noLegacyArgumentsFlag = 4;
 /** Appends one function record to `writer`. */
 export function encodeFunction(
   writer: ByteWriter,
@@ -4068,7 +4069,8 @@ export function encodeFunction(
   writeByte(
     writer,
     bit(safeIntegerSlots !== undefined, safeIntegerSlotsFlag) +
-      bit(nonzeroSlots !== undefined, nonzeroSlotsFlag),
+      bit(nonzeroSlots !== undefined, nonzeroSlotsFlag) +
+      bit(fn.noLegacyArguments === true, noLegacyArgumentsFlag),
   );
   writeSigned(writer, fn.id);
   writeString(writer, fn.name);
@@ -4164,6 +4166,8 @@ export function decodeFunction(
   };
   if (flagged(flags, importFlag)) fn = { ...fn, import: true };
   if (flagged(flags, scriptEntryFlag)) fn = { ...fn, scriptEntry: true };
+  if (flagged(moreFlags, noLegacyArgumentsFlag))
+    fn = { ...fn, noLegacyArguments: true };
   if (receiverSlot !== undefined) fn = { ...fn, receiverSlot };
   if (closureEnvironment !== undefined) fn = { ...fn, closureEnvironment };
   if (environment !== undefined) fn = { ...fn, environment };

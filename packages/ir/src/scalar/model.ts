@@ -1259,6 +1259,10 @@ export interface FunctionIR {
   /** Native JavaScript entry with a fixed call header and variadic actual
    * operands. The count is supplied by the call site. */
   readonly scriptEntry?: true | undefined;
+  /** Script entry whose legacy `Function.prototype.arguments` reflection is
+   * disabled (strict/arrow/method/class), so its activation record never needs
+   * unused actual operands spilled for external reflection. */
+  readonly noLegacyArguments?: true | undefined;
   /** Opaque managed-code import: ABI only, no executable body or environment.
    * It obeys managed layout/lifetime contracts; raw native FFI remains a host
    * operation. Linker authority is required before emitting calls to it. */
@@ -1387,6 +1391,8 @@ export function functionHeader(fn: FunctionIR): FunctionIR {
   if (fn.import !== undefined) header = { ...header, import: fn.import };
   if (fn.scriptEntry !== undefined)
     header = { ...header, scriptEntry: fn.scriptEntry };
+  if (fn.noLegacyArguments !== undefined)
+    header = { ...header, noLegacyArguments: fn.noLegacyArguments };
   const receiverSlot = fn.receiverSlot,
     closureEnvironment = fn.closureEnvironment,
     environment = fn.environment;
