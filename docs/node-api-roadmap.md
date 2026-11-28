@@ -43,6 +43,13 @@ requirements remain documented in [runtime host surface](runtime-host-surface.md
   Preserve observable turn ordering, backpressure and destruction so later
   specializations can use the same semantics.
 
+  The M1.P8 prototype uses ordinary Promise suspension for blocked readers
+  and Web writers. Node callback completion and flow notifications use the
+  isolate's next-tick queue. Writing below a high-water mark, waking a reader,
+  and reaching a terminal state each have one implementation for typed and
+  untyped callers. An optimization must preserve those transitions and their
+  checkpoints, including listener reentrancy and abort cleanup.
+
 ## Milestone 1 · Straightforward non-I/O modules and foundations
 
 | Phase     | Deliverable                                                                                                                                                                                                                                      |

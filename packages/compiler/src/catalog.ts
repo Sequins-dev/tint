@@ -3247,6 +3247,22 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/stream-promises.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/stream-state.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/stream-web.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/stream.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/string-decoder.ts",
       packageId: "native-runtime",
     },

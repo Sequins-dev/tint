@@ -15,6 +15,12 @@ export type NodeErrorCode =
   | "ERR_INVALID_URL_SCHEME"
   | "ERR_MISSING_ARGS"
   | "ERR_OUT_OF_RANGE"
+  | "ERR_METHOD_NOT_IMPLEMENTED"
+  | "ERR_STREAM_DESTROYED"
+  | "ERR_STREAM_NULL_VALUES"
+  | "ERR_STREAM_PREMATURE_CLOSE"
+  | "ERR_STREAM_PUSH_AFTER_EOF"
+  | "ERR_STREAM_WRITE_AFTER_END"
   | "ERR_UNHANDLED_ERROR";
 
 export function codedError<Failure extends Error, Code extends NodeErrorCode>(

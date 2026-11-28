@@ -90,6 +90,9 @@ export const nodeBuiltins: {
   readonly pathWin32: SourceNodeBuiltin;
   readonly process: SourceNodeBuiltin;
   readonly querystring: SourceNodeBuiltin;
+  readonly stream: SourceNodeBuiltin;
+  readonly streamPromises: SourceNodeBuiltin;
+  readonly streamWeb: SourceNodeBuiltin;
   readonly stringDecoder: SourceNodeBuiltin;
   readonly timers: SourceNodeBuiltin;
   readonly timersPromises: SourceNodeBuiltin;
@@ -193,6 +196,18 @@ export const nodeBuiltins: {
     specifier: "node:querystring",
     source: "packages/native-runtime/src/node/querystring.ts",
   },
+  stream: {
+    specifier: "node:stream",
+    source: "packages/native-runtime/src/node/stream.ts",
+  },
+  streamPromises: {
+    specifier: "node:stream/promises",
+    source: "packages/native-runtime/src/node/stream-promises.ts",
+  },
+  streamWeb: {
+    specifier: "node:stream/web",
+    source: "packages/native-runtime/src/node/stream-web.ts",
+  },
   stringDecoder: {
     specifier: "node:string_decoder",
     source: "packages/native-runtime/src/node/string-decoder.ts",
@@ -231,6 +246,9 @@ export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.pathWin32,
   nodeBuiltins.process,
   nodeBuiltins.querystring,
+  nodeBuiltins.stream,
+  nodeBuiltins.streamPromises,
+  nodeBuiltins.streamWeb,
   nodeBuiltins.stringDecoder,
   nodeBuiltins.timers,
   nodeBuiltins.timersPromises,
