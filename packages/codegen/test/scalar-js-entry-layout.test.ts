@@ -5,6 +5,7 @@ import {
   decodeStackMaps,
   emitModule,
   emitModuleFromStore,
+  openFragmentActor,
 } from "../src/aarch64/scalar/index.ts";
 import { verify, type FunctionIR, type ModuleIR } from "@tint/ir/scalar";
 
@@ -478,4 +479,37 @@ test("typed-only modules skip pureLeafNoActivation body sweeps", () => {
     typedGets + 1,
     `expected typed-only emission (${typedGets}) to skip the pureLeafNoActivation sweep done for mixed modules (${mixedGets})`,
   );
+});
+
+test("prepared fragments retain the JavaScript entry calling convention and roots", () => {
+  const options = { closedRoots: [1] };
+  const functions = scriptCall.functions.slice();
+  const emitted = emitModuleFromStore(
+    scriptCall,
+    {
+      get: (id: number) => functions[id]!,
+      put: (fn: FunctionIR) => {
+        functions[fn.id] = fn;
+      },
+      release: () => {},
+    },
+    options,
+    {
+      ranges: [
+        { first: 1, end: 2 },
+        { first: 0, end: 1 },
+      ],
+      execute: (input, forms, ranges, publish) => {
+        const actor = openFragmentActor(input, options);
+        for (const range of ranges) {
+          const packet = actor(forms, range);
+          assert.ok(packet);
+          publish(packet);
+        }
+        return true;
+      },
+    },
+  );
+  assert.equal(emitted.ok, true);
+  assert.deepEqual(emitted, emitModule(scriptCall, options));
 });

@@ -361,11 +361,7 @@ export interface BlockEmitContext {
   readonly listReadShapes: (id: number) => ListReadShape | undefined;
   readonly literalTwo: Uint8Array;
   readonly localPointer: (rd: number, pages?: boolean) => void;
-  readonly localSignatures: {
-    readonly ok: true;
-    readonly groups: readonly LocalSignatureBinding[];
-    readonly byFunction: Uint32Array;
-  };
+  readonly signatureGroups: Uint32Array;
   readonly loopPreheaderHoists: Map<number, PreheaderHoistPlan>;
   readonly low32Tree: Uint8Array;
   readonly lowWordStoreValues: Uint8Array;
@@ -388,7 +384,7 @@ export interface BlockEmitContext {
   readonly objectOpsCtx: () => ObjectOpsEmitContext;
   readonly offsets: (number | undefined)[];
   readonly options: EmissionOptions;
-  readonly parameterKeys: string[];
+  readonly parameterKeys: readonly string[];
   readonly patchInstruction: (index: number, instruction: Instruction) => void;
   readonly patchLocalBranches: (branches: readonly LocalBranch[]) => void;
   readonly pendingFusedAdd: Map<number, number>;
@@ -454,7 +450,7 @@ export interface BlockEmitContext {
     }
   >;
   readonly signatureImports: Map<number, number>;
-  readonly signatures: SignatureLayout[];
+  readonly signatures: readonly SignatureLayout[];
   readonly siteGeneralArguments: Map<number, number>;
   readonly skippedCasts: Uint8Array;
   readonly slotIntegerFacts: Uint8Array | undefined;
@@ -501,7 +497,7 @@ export interface BlockEmitContext {
   readonly useCounts: Uint32Array;
   readonly valueIds: NumberIndex;
   readonly valueUses: Uint32Array;
-  readonly vectorShapes: (number | undefined)[];
+  readonly vectorShapes: readonly (number | undefined)[];
   readonly viewAccesses: boolean;
   readonly viewEntries: Map<number, number>;
   readonly viewExitSlots: Map<number, number[]>;
@@ -523,7 +519,7 @@ export interface BlockEmitContext {
   readonly wrappedStringSources: Uint32Array;
   readonly wrappedStrings: Uint8Array;
   readonly writeInteger: (constant: number, offset: number) => void;
-  readonly writeShapes: (ListWriteShape | undefined)[];
+  readonly writeShapes: readonly (ListWriteShape | undefined)[];
   readonly zeroConstants: Uint8Array;
   readonly zeroSignResults: Uint8Array;
   readonly zeroValues: Uint8Array;
@@ -681,7 +677,6 @@ export function emitFunctionBlocks(ctx: BlockEmitContext): void {
     listReadShapes,
     literalTwo,
     localPointer,
-    localSignatures,
     loopPreheaderHoists,
     low32Tree,
     lowWordStoreValues,

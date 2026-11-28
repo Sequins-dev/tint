@@ -81,6 +81,8 @@ export interface FunctionStore {
   readonly has: (id: number) => boolean;
   /** Releases every decoded body. */
   readonly releaseAll: () => void;
+  /** Finalizes the current chunk under the store's spill policy. */
+  readonly seal: () => void;
   readonly statistics: () => FunctionStoreStatistics;
   /** Releases every chunk and closes the backend. */
   readonly close: () => void;
@@ -417,6 +419,7 @@ export function createFunctionStore(
     releaseAll: (): void => {
       for (const entry of entries) if (entry !== undefined) drop(entry);
     },
+    seal,
     statistics: (): FunctionStoreStatistics => ({ ...statistics }),
     close: (): void => {
       if (closed) return;
