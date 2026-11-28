@@ -76,6 +76,8 @@ interface SourceNodeBuiltin extends NodeBuiltin {
 /** One canonical ESM specifier per application built-in. Source-backed
  * entries can be linked directly. Hosts supply the entries with no source. */
 export const nodeBuiltins: {
+  readonly assert: SourceNodeBuiltin;
+  readonly assertStrict: SourceNodeBuiltin;
   readonly buffer: SourceNodeBuiltin;
   readonly crypto: NodeBuiltin;
   readonly events: SourceNodeBuiltin;
@@ -85,9 +87,20 @@ export const nodeBuiltins: {
   readonly pathPosix: SourceNodeBuiltin;
   readonly pathWin32: SourceNodeBuiltin;
   readonly process: SourceNodeBuiltin;
+  readonly querystring: SourceNodeBuiltin;
+  readonly stringDecoder: SourceNodeBuiltin;
   readonly url: SourceNodeBuiltin;
+  readonly util: SourceNodeBuiltin;
   readonly workers: NodeBuiltin;
 } = {
+  assert: {
+    specifier: "node:assert",
+    source: "packages/native-runtime/src/node/assert.ts",
+  },
+  assertStrict: {
+    specifier: "node:assert/strict",
+    source: "packages/native-runtime/src/node/assert-strict.ts",
+  },
   buffer: {
     specifier: "node:buffer",
     source: "packages/native-runtime/src/node/buffer.ts",
@@ -167,14 +180,28 @@ export const nodeBuiltins: {
     specifier: "node:process",
     source: "packages/native-runtime/src/node/process.ts",
   },
+  querystring: {
+    specifier: "node:querystring",
+    source: "packages/native-runtime/src/node/querystring.ts",
+  },
+  stringDecoder: {
+    specifier: "node:string_decoder",
+    source: "packages/native-runtime/src/node/string-decoder.ts",
+  },
   url: {
     specifier: "node:url",
     source: "packages/native-runtime/src/node/url.ts",
+  },
+  util: {
+    specifier: "node:util",
+    source: "packages/native-runtime/src/node/util.ts",
   },
   workers: { specifier: "node:worker_threads" },
 };
 
 export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
+  nodeBuiltins.assert,
+  nodeBuiltins.assertStrict,
   nodeBuiltins.buffer,
   nodeBuiltins.crypto,
   nodeBuiltins.events,
@@ -184,7 +211,10 @@ export const registeredNodeBuiltins: readonly NodeBuiltin[] = [
   nodeBuiltins.pathPosix,
   nodeBuiltins.pathWin32,
   nodeBuiltins.process,
+  nodeBuiltins.querystring,
+  nodeBuiltins.stringDecoder,
   nodeBuiltins.url,
+  nodeBuiltins.util,
   nodeBuiltins.workers,
 ];
 

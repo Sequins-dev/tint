@@ -2,12 +2,15 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
+    "lib": ["ES2023", "ES2024.String", "ES2025.Float16"],
     "declaration": true,
     "rootDir": "src",
     "outDir": "dist"
   },
   "include": [
     "src/**/*.ts",
+    "../../types/runtime-buffer.d.ts",
+    "../../types/text-encoding.d.ts",
     "../../types/web-events.d.ts",
     "../../types/web-url.d.ts"
   ],

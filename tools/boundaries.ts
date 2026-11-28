@@ -1,4 +1,5 @@
 import ts from "typescript";
+import { registeredNodeBuiltins } from "@tint/source/resolver";
 import {
   compiledPackageExports,
   type PublicPackageExport,
@@ -74,6 +75,11 @@ export function checkBoundaries(
 ): string[] {
   const errors: string[] = [];
   const unsafeImporters = new Set<string>();
+  const builtinSources = new Map<string, string>();
+  for (const builtin of registeredNodeBuiltins)
+    if (builtin.source !== undefined)
+      builtinSources.set(builtin.specifier, builtin.source);
+  const builtinFiles = new Set(builtinSources.values());
   const byName = new Map(packages.map((p) => [p.name, p]));
   if (byName.size !== packages.length) errors.push("duplicate package name");
   const exportsByName = new Map<string, readonly PublicPackageExport[]>();
@@ -183,10 +189,19 @@ export function checkBoundaries(
         } else if (binding !== undefined) {
           if (specifier !== "tint:ffi")
             report(`binding declarations import only tint:ffi: ${specifier}`);
-        } else if (!publicImports.has(specifier) && !bindings.has(specifier))
-          report(
-            `import must use a declared public package entrypoint: ${specifier}`,
-          );
+        } else if (!publicImports.has(specifier) && !bindings.has(specifier)) {
+          // Registered built-ins can compose other source-backed built-ins
+          // in their package through the same ESM identity as application code.
+          const target = builtinSources.get(specifier);
+          if (
+            target === undefined ||
+            !paths.has(target) ||
+            !builtinFiles.has(source.path)
+          )
+            report(
+              `import must use a declared public package entrypoint: ${specifier}`,
+            );
+        }
       };
       const pre = ts.preProcessFile(source.text);
       if (

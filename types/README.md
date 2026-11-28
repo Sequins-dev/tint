@@ -24,3 +24,8 @@ runtime shares one implementation across callers.
 
 `runtime-path.d.ts`, `runtime-url.d.ts`, and `web-url.d.ts` describe the ESM
 path variants, URL helpers, and realm-local Web URL constructors.
+
+`runtime-util.d.ts`, `runtime-assert.d.ts`, and `runtime-node-codecs.d.ts`
+describe the utility and assertion ESM exports, incremental string decoding,
+and query strings. The byte-returning APIs import their Buffer type from the
+explicit module contract in `runtime-buffer.d.ts`.
