@@ -367,7 +367,8 @@ export type ListOperation =
   | "length"
   | "pop"
   | "wrap"
-  | "empty";
+  | "empty"
+  | "isDense";
 export interface ListRuntime {
   readonly sort?: number;
   /** Removes and returns the last element (undefined when empty); lists
@@ -377,6 +378,8 @@ export interface ListRuntime {
   readonly wrap?: number | undefined;
   /** Creates an empty dense NumberList in a single straight-line block. */
   readonly empty?: number | undefined;
+  /** Returns whether a NumberList has no sparse presence bitmap. */
+  readonly isDense?: number | undefined;
   readonly has?: number;
   readonly delete?: number;
   readonly resize?: number;
@@ -496,6 +499,9 @@ export interface PrivateAccessPlan {
   readonly ownerLocal?: number | undefined;
   readonly fieldAccess?: RecordAccess | undefined;
   readonly brandCheck?: RecordAccess | undefined;
+  /** Base-class instance layouts whose descriptor alone proves the private brand. */
+  readonly brandRecords?:
+    readonly { readonly record: number; readonly field: number }[] | undefined;
   readonly methodAccess?: RecordAccess | undefined;
   readonly staticFieldAccess?: RecordAccess | undefined;
   readonly accessor?:
@@ -512,6 +518,8 @@ export interface PrivateBrandCheckPlan {
   readonly name: string;
   readonly ownerLocal?: number | undefined;
   readonly check?: RecordAccess | undefined;
+  readonly brandRecords?:
+    readonly { readonly record: number; readonly field: number }[] | undefined;
 }
 export interface RecordOperations {
   readonly constructors?: ReadonlyKeyIndex<Expression, ConstructorCall>;
@@ -4330,13 +4338,128 @@ export function lowerFunction(
     if (current !== undefined) jump(done.id, node);
     current = done;
   }
+  function emitPrivateBrandRecords(
+    objectSlot: number,
+    brandRecords: readonly {
+      readonly record: number;
+      readonly field: number;
+    }[],
+    node: Span,
+    onFail: () => void,
+  ): void {
+    const done = block();
+    if (slots[objectSlot] === "reference") {
+      for (const entry of brandRecords) {
+        if (entry === undefined) throw "private brand record invariant";
+        const next = block(),
+          has = nextValue++;
+        emit({
+          kind: "record-has",
+          id: has,
+          object: load(objectSlot, node),
+          record: entry.record,
+          field: entry.field,
+          start: node.start,
+          end: node.end,
+        });
+        choose(has, done, next, node);
+        current = next;
+      }
+      onFail();
+      if (current !== undefined) jump(done.id, node);
+      current = done;
+      return;
+    }
+    const gen = save(
+      coerce(load(objectSlot, node), "general", node),
+      "general",
+      node,
+    );
+    for (const entry of brandRecords) {
+      if (entry === undefined) throw "private brand record invariant";
+      const next = block(),
+        isRecord = nextValue++;
+      emit({
+        kind: "general-record-is",
+        id: isRecord,
+        value: load(gen, node),
+        record: entry.record,
+        start: node.start,
+        end: node.end,
+      });
+      choose(isRecord, done, next, node);
+      current = next;
+    }
+    onFail();
+    if (current !== undefined) jump(done.id, node);
+    current = done;
+  }
+  function cannotMutateBinding(expr: Expression): boolean {
+    switch (expr.kind) {
+      case "identifier":
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "bigint":
+      case "this":
+        return true;
+      case "group":
+        return cannotMutateBinding(expr.expression);
+      case "unary":
+        return expr.operator !== "delete" && cannotMutateBinding(expr.operand);
+      case "binary":
+        return (
+          cannotMutateBinding(expr.left) && cannotMutateBinding(expr.right)
+        );
+      case "conditional":
+        return (
+          cannotMutateBinding(expr.test) &&
+          cannotMutateBinding(expr.consequent) &&
+          cannotMutateBinding(expr.alternate)
+        );
+      case "member": {
+        const priv = records?.privateAccesses?.get(expr);
+        if (
+          priv !== undefined &&
+          (priv.kind === "static-field" || priv.kind === "instance-field")
+        )
+          return cannotMutateBinding(expr.object);
+        return false;
+      }
+      default:
+        return false;
+    }
+  }
+  function knownStaticPrivateOwner(
+    objectNode: Expression | undefined,
+    ownerLocal: number,
+    afterEvaluation?: readonly Expression[],
+  ): boolean {
+    if (objectNode === undefined) return false;
+    const unwrapped = ungroup(objectNode);
+    if (
+      unwrapped.kind !== "identifier" ||
+      info(unwrapped).local !== ownerLocal ||
+      info(unwrapped).realmGlobal !== undefined ||
+      info(unwrapped).undefinedValue === true
+    )
+      return false;
+    if (afterEvaluation === undefined || afterEvaluation.length === 0)
+      return true;
+    const local = fn.locals[ownerLocal];
+    if (local !== undefined && !local.mutable) return true;
+    return afterEvaluation.every((piece) => cannotMutateBinding(piece));
+  }
   function requireStaticPrivateOwner(
     objectSlot: number,
     ownerLocal: number,
     name: string,
     operation: "read" | "write",
     node: Span,
+    knownOwner: boolean = false,
   ): number {
+    if (knownOwner && slots[objectSlot] === "reference") return objectSlot;
     const owner = save(readLocal(ownerLocal, node), "reference", node);
     const same = binarySlot("===", objectSlot, owner, node);
     requireCondition(
@@ -4357,6 +4480,7 @@ export function lowerFunction(
     operation: "read" | "write",
     transferSlot: number,
     node: Span,
+    knownOwner: boolean = false,
   ): void {
     const failMessage =
       "Cannot " +
@@ -4389,6 +4513,7 @@ export function lowerFunction(
         plan.name,
         operation,
         node,
+        knownOwner,
       );
       const access = plan.staticFieldAccess;
       if (access === undefined) throw "private static field invariant";
@@ -4398,11 +4523,19 @@ export function lowerFunction(
     if (plan.kind === "instance-method") {
       if (operation !== "read") throw "private method write invariant";
       const brand = plan.brandCheck,
+        brandRecords = plan.brandRecords,
         methodAccess = plan.methodAccess;
-      if (brand === undefined || methodAccess === undefined)
+      if (
+        (brand === undefined && brandRecords === undefined) ||
+        methodAccess === undefined
+      )
         throw "private instance method invariant";
-      const dummy = temporary("boolean");
-      emitPrivateRecordAccess(objectSlot, dummy, "read", brand, node, onFail);
+      if (brandRecords !== undefined)
+        emitPrivateBrandRecords(objectSlot, brandRecords, node, onFail);
+      else if (brand !== undefined) {
+        const dummy = temporary("boolean");
+        emitPrivateRecordAccess(objectSlot, dummy, "read", brand, node, onFail);
+      }
       const owner = save(readLocal(ownerLocal, node), "reference", node);
       recordAccess(owner, transferSlot, "read", methodAccess, node);
       return;
@@ -4415,6 +4548,7 @@ export function lowerFunction(
         plan.name,
         "read",
         node,
+        knownOwner,
       );
       const methodAccess = plan.methodAccess;
       if (methodAccess === undefined) throw "private static method invariant";
@@ -4423,11 +4557,16 @@ export function lowerFunction(
     }
     let owner: number;
     if (plan.kind === "instance-accessor") {
-      const brand = plan.brandCheck;
-      if (brand === undefined)
+      const brand = plan.brandCheck,
+        brandRecords = plan.brandRecords;
+      if (brand === undefined && brandRecords === undefined)
         throw "private instance accessor brand invariant";
-      const dummy = temporary("boolean");
-      emitPrivateRecordAccess(objectSlot, dummy, "read", brand, node, onFail);
+      if (brandRecords !== undefined)
+        emitPrivateBrandRecords(objectSlot, brandRecords, node, onFail);
+      else if (brand !== undefined) {
+        const dummy = temporary("boolean");
+        emitPrivateRecordAccess(objectSlot, dummy, "read", brand, node, onFail);
+      }
       owner = save(readLocal(ownerLocal, node), "reference", node);
     } else {
       owner = requireStaticPrivateOwner(
@@ -4436,6 +4575,7 @@ export function lowerFunction(
         plan.name,
         operation,
         node,
+        knownOwner,
       );
     }
     const accessor = plan.accessor;
@@ -4550,15 +4690,23 @@ export function lowerFunction(
       current = done;
       return result;
     }
-    const check = plan.check;
-    if (check === undefined) throw "instance private-in check invariant";
-    const dummy = temporary(check.type),
-      matched = block(),
+    const check = plan.check,
+      brandRecords = plan.brandRecords;
+    if (check === undefined && brandRecords === undefined)
+      throw "instance private-in check invariant";
+    const matched = block(),
       rejected = block(),
       done = block();
-    emitPrivateRecordAccess(objectSlot, dummy, "read", check, node, () => {
-      jump(rejected.id, node);
-    });
+    if (brandRecords !== undefined) {
+      emitPrivateBrandRecords(objectSlot, brandRecords, node, () => {
+        jump(rejected.id, node);
+      });
+    } else if (check !== undefined) {
+      const dummy = temporary(check.type);
+      emitPrivateRecordAccess(objectSlot, dummy, "read", check, node, () => {
+        jump(rejected.id, node);
+      });
+    }
     if (current !== undefined) jump(matched.id, node);
     current = matched;
     const yes = nextValue++;
@@ -6307,6 +6455,250 @@ export function lowerFunction(
     argumentsSlots.push(packCallArguments(args, rest, node));
     return argumentsSlots;
   }
+  function isSpreadOrderPure(expr: Expression): boolean {
+    switch (expr.kind) {
+      case "identifier":
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "this":
+        return true;
+      case "group":
+        return isSpreadOrderPure(expr.expression);
+      case "spread":
+        return isSpreadOrderPure(expr.value);
+      case "unary":
+        return expr.operator !== "delete" && isSpreadOrderPure(expr.operand);
+      case "binary":
+        return isSpreadOrderPure(expr.left) && isSpreadOrderPure(expr.right);
+      case "conditional":
+        return (
+          isSpreadOrderPure(expr.test) &&
+          isSpreadOrderPure(expr.consequent) &&
+          isSpreadOrderPure(expr.alternate)
+        );
+      default:
+        return false;
+    }
+  }
+  /** Pre-sized Float64Array + wrapNumberList fast path for array literals and
+   * rest-parameter calls mixing numeric scalars with NumberList / numeric
+   * TypedArray spreads. Preserves exact evaluation order and sparse-list
+   * semantics (falling back when a NumberList source is holey in array
+   * literals, or throwing TypeError on holes in non-undefined rest calls). */
+  function emitDenseNumericSpreadList(
+    items: readonly (Expression | undefined)[],
+    startIndex: number,
+    runtime: ListRuntime,
+    throwOnHole: boolean,
+    node: Span,
+  ): number | undefined {
+    if (runtime.wrap === undefined) return undefined;
+    let hasSpread = false,
+      hasListSpread = false;
+    const kinds: ("scalar" | "list" | "typed")[] = [];
+    for (let i = startIndex; i < items.length; i++) {
+      const item = items[i];
+      if (item === undefined || item.kind === "elision") return undefined;
+      if (hasSpread && !isSpreadOrderPure(item)) return undefined;
+      if (item.kind === "spread") {
+        hasSpread = true;
+        const src = item.value;
+        const srcType = scalarType(src);
+        if (isNativeTypedArray(srcType) && !typedArrayBigIntElements(srcType)) {
+          kinds.push("typed");
+        } else if (
+          srcType === "reference" &&
+          info(src).listElement !== undefined &&
+          listRuntime(src) === runtime
+        ) {
+          hasListSpread = true;
+          kinds.push("list");
+        } else {
+          return undefined;
+        }
+      } else if (scalarType(item) === "number") {
+        kinds.push("scalar");
+      } else {
+        return undefined;
+      }
+    }
+    if (!hasSpread) return undefined;
+    if (!throwOnHole && hasListSpread && runtime.isDense === undefined)
+      return undefined;
+    const evaluated: number[] = [];
+    for (let i = startIndex; i < items.length; i++) {
+      const item = items[i];
+      if (item === undefined) throw "numeric spread item invariant";
+      evaluated.push(value(item.kind === "spread" ? item.value : item));
+    }
+    const needsFallback = !throwOnHole && hasListSpread;
+    const slowPath = needsFallback ? block() : undefined,
+      done = needsFallback ? block() : undefined,
+      resultSlot = needsFallback ? temporary("reference") : undefined;
+    if (needsFallback && slowPath !== undefined) {
+      for (let idx = 0; idx < kinds.length; idx++) {
+        if (kinds[idx] !== "list") continue;
+        const item = items[startIndex + idx],
+          srcSlot = evaluated[idx];
+        if (item === undefined || srcSlot === undefined)
+          throw "numeric spread dense check invariant";
+        const dense = listValue(runtime, "isDense", [srcSlot], item);
+        const cont = block();
+        choose(load(dense, item), cont, slowPath, item);
+        current = cont;
+      }
+    }
+    let scalarCount = 0;
+    const spreadLengths: (number | undefined)[] = [];
+    for (let idx = 0; idx < kinds.length; idx++) {
+      const kind = kinds[idx],
+        item = items[startIndex + idx],
+        srcSlot = evaluated[idx];
+      if (kind === undefined || item === undefined || srcSlot === undefined)
+        throw "numeric spread length invariant";
+      if (kind === "scalar") {
+        scalarCount++;
+        spreadLengths.push(undefined);
+      } else if (kind === "list") {
+        spreadLengths.push(listValue(runtime, "length", [srcSlot], item));
+      } else {
+        spreadLengths.push(arrayLength(srcSlot, item));
+      }
+    }
+    let totalLen: number | undefined =
+      scalarCount > 0 ? numberSlot(scalarCount, node) : undefined;
+    for (let idx = 0; idx < spreadLengths.length; idx++) {
+      const lenSlot = spreadLengths[idx];
+      if (lenSlot === undefined) continue;
+      totalLen =
+        totalLen === undefined
+          ? lenSlot
+          : binarySlot("+", totalLen, lenSlot, node);
+    }
+    const finalLen = totalLen ?? numberSlot(0, node);
+    const arrayId = nextValue++;
+    emit({
+      kind: "array-new",
+      id: arrayId,
+      type: "Float64Array",
+      length: load(finalLen, node),
+      start: node.start,
+      end: node.end,
+    });
+    const arraySlot = save(arrayId, "Float64Array", node);
+    const writeIdx = numberSlot(0, node);
+    const one = numberSlot(1, node);
+    for (let idx = 0; idx < kinds.length; idx++) {
+      const kind = kinds[idx],
+        item = items[startIndex + idx],
+        srcSlot = evaluated[idx];
+      if (kind === undefined || item === undefined || srcSlot === undefined)
+        throw "numeric spread copy invariant";
+      if (kind === "scalar") {
+        emit({
+          kind: "array-store",
+          array: load(arraySlot, item),
+          index: load(writeIdx, item),
+          value: coerce(load(srcSlot, item), "number", item),
+          start: item.start,
+          end: item.end,
+        });
+        store(writeIdx, load(binarySlot("+", writeIdx, one, item), item), item);
+      } else {
+        const lenSlot = spreadLengths[idx];
+        if (lenSlot === undefined) throw "numeric spread loop length invariant";
+        const k = numberSlot(0, item),
+          head = block(),
+          body = block(),
+          exit = block();
+        jump(head.id, item);
+        current = head;
+        choose(load(binarySlot("<", k, lenSlot, item), item), body, exit, item);
+        current = body;
+        let numericVal: number;
+        if (kind === "typed") {
+          const readSlot = readArrayElement(srcSlot, k, item);
+          const unwrapped = nextValue++;
+          emitUnwrap(unwrapped, load(readSlot, item), "number", item);
+          numericVal = unwrapped;
+        } else {
+          const readSlot = listValue(runtime, "read", [srcSlot, k], item);
+          if (throwOnHole) {
+            const present = nextValue++;
+            emit({
+              kind: "optional-present",
+              id: present,
+              value: load(readSlot, item),
+              start: item.start,
+              end: item.end,
+            });
+            requireCondition(
+              save(present, "boolean", item),
+              "TypeError",
+              "array hole is not a value of the declared element type",
+              item,
+            );
+          }
+          const unwrapped = nextValue++;
+          emitUnwrap(unwrapped, load(readSlot, item), "number", item);
+          numericVal = unwrapped;
+        }
+        emit({
+          kind: "array-store",
+          array: load(arraySlot, item),
+          index: load(writeIdx, item),
+          value: numericVal,
+          start: item.start,
+          end: item.end,
+        });
+        store(writeIdx, load(binarySlot("+", writeIdx, one, item), item), item);
+        store(k, load(binarySlot("+", k, one, item), item), item);
+        jump(head.id, item);
+        current = exit;
+      }
+    }
+    const fastList = listValue(runtime, "wrap", [arraySlot], node);
+    if (
+      !needsFallback ||
+      slowPath === undefined ||
+      done === undefined ||
+      resultSlot === undefined
+    )
+      return fastList;
+    store(resultSlot, load(fastList, node), node);
+    jump(done.id, node);
+    current = slowPath;
+    const fallbackList = listValue(
+      runtime,
+      "create",
+      [numberSlot(Math.max(0, items.length - startIndex), node)],
+      node,
+    );
+    for (let idx = 0; idx < kinds.length; idx++) {
+      const item = items[startIndex + idx],
+        srcSlot = evaluated[idx];
+      if (item === undefined || srcSlot === undefined)
+        throw "numeric spread fallback invariant";
+      if (item.kind === "spread") {
+        arrayValues(
+          item.value,
+          item,
+          (elem, _typed) => {
+            listCall(runtime, "push", [fallbackList, elem], item);
+          },
+          srcSlot,
+        );
+      } else {
+        listCall(runtime, "push", [fallbackList, srcSlot], item);
+      }
+    }
+    store(resultSlot, load(fallbackList, node), node);
+    jump(done.id, node);
+    current = done;
+    return resultSlot;
+  }
   function packCallArguments(
     args: readonly Expression[],
     rest: RestArguments,
@@ -6507,6 +6899,16 @@ export function lowerFunction(
           return list;
         }
       }
+    }
+    if (!rest.admitsUndefined) {
+      const denseSpread = emitDenseNumericSpreadList(
+        args,
+        rest.start,
+        runtime,
+        true,
+        node,
+      );
+      if (denseSpread !== undefined) return denseSpread;
     }
     const list = listValue(
       runtime,
@@ -7273,6 +7675,9 @@ export function lowerFunction(
         break;
       case "empty":
         target = runtime.empty;
+        break;
+      case "isDense":
+        target = runtime.isDense;
         break;
     }
     if (target === undefined) throw "numeric list runtime invariant";
@@ -9336,6 +9741,14 @@ export function lowerFunction(
             return listValue(runtime, "wrap", [arraySlot], node);
           }
         }
+        const denseSpread = emitDenseNumericSpreadList(
+          node.elements,
+          0,
+          runtime,
+          false,
+          node,
+        );
+        if (denseSpread !== undefined) return denseSpread;
         const list = listValue(
           runtime,
           "create",
@@ -10383,7 +10796,10 @@ export function lowerFunction(
           const object = value(node.object),
             result = temporary(priv.type);
           callReceivers.set(node, object);
-          emitPrivateAccess(object, priv, "read", result, node);
+          const knownOwner =
+            priv.ownerLocal !== undefined &&
+            knownStaticPrivateOwner(node.object, priv.ownerLocal);
+          emitPrivateAccess(object, priv, "read", result, node, knownOwner);
           return result;
         }
         const builtin = info(node).builtin;
@@ -11002,7 +11418,25 @@ export function lowerFunction(
         if (target.kind === "member" && privateUpdate !== undefined) {
           const object = value(target.object);
           const old = temporary(privateUpdate.type);
-          emitPrivateAccess(object, privateUpdate, "read", old, target);
+          const ownerLocal = privateUpdate.ownerLocal;
+          const knownReadOwner =
+            ownerLocal !== undefined &&
+            knownStaticPrivateOwner(target.object, ownerLocal);
+          const knownWriteOwner =
+            ownerLocal !== undefined &&
+            knownStaticPrivateOwner(
+              target.object,
+              ownerLocal,
+              node.kind === "compound" ? [node.value] : undefined,
+            );
+          emitPrivateAccess(
+            object,
+            privateUpdate,
+            "read",
+            old,
+            target,
+            knownReadOwner,
+          );
           if (node.kind === "compound" && node.operator === "??")
             return nullishValue(old, target, node, () => {
               const next = value(node.value),
@@ -11017,6 +11451,7 @@ export function lowerFunction(
                 "write",
                 transfer,
                 target,
+                knownWriteOwner,
               );
               return next;
             });
@@ -11032,6 +11467,7 @@ export function lowerFunction(
                 "write",
                 transfer,
                 target,
+                knownWriteOwner,
               );
             });
           if (
@@ -11050,7 +11486,14 @@ export function lowerFunction(
               end: node.end,
             });
             const updated = save(id, "string", node);
-            emitPrivateAccess(object, privateUpdate, "write", updated, target);
+            emitPrivateAccess(
+              object,
+              privateUpdate,
+              "write",
+              updated,
+              target,
+              knownWriteOwner,
+            );
             return updated;
           }
           if (privateUpdate.type !== "number")
@@ -11067,7 +11510,14 @@ export function lowerFunction(
             right,
             node,
           );
-          emitPrivateAccess(object, privateUpdate, "write", updated, target);
+          emitPrivateAccess(
+            object,
+            privateUpdate,
+            "write",
+            updated,
+            target,
+            knownWriteOwner,
+          );
           return node.kind === "update" && !node.prefix ? old : updated;
         }
         const access =
@@ -11256,7 +11706,19 @@ export function lowerFunction(
           const object = value(target.object);
           const result = value(node.value);
           const transfer = save(load(result, node), privateAssign.type, node);
-          emitPrivateAccess(object, privateAssign, "write", transfer, target);
+          const knownOwner =
+            privateAssign.ownerLocal !== undefined &&
+            knownStaticPrivateOwner(target.object, privateAssign.ownerLocal, [
+              node.value,
+            ]);
+          emitPrivateAccess(
+            object,
+            privateAssign,
+            "write",
+            transfer,
+            target,
+            knownOwner,
+          );
           return result;
         }
         const access =

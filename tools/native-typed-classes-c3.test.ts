@@ -529,3 +529,173 @@ test("dynamic class expression heritage falls back explicitly to the general pat
   }
   assert.deepEqual(partition, ["fixture"]);
 });
+
+const privateBrandAndSpreadEdgeCases = `class BaseVault {
+  #bal: number;
+  static #ops: number = 0;
+  constructor(initial: number) {
+    this.#bal = initial;
+  }
+  #bump(delta: number): number {
+    this.#bal = (this.#bal + delta) | 0;
+    return this.#bal;
+  }
+  get #val(): number {
+    return this.#bal * 2;
+  }
+  set #val(v: number) {
+    this.#bal = v | 0;
+  }
+  step(delta: number): number {
+    const a = this.#bump(delta);
+    const b = this.#val;
+    this.#val = a + b;
+    BaseVault.#ops = (BaseVault.#ops + 1) | 0;
+    return this.#bal + BaseVault.#ops;
+  }
+  static hasAll(x: unknown): boolean {
+    return #bal in x && #bump in x && #val in x;
+  }
+  static readOps(): number {
+    return BaseVault.#ops;
+  }
+}
+
+class BrandBase {
+  #tag: number;
+  constructor(tag: number) {
+    this.#tag = tag;
+  }
+  #double(): number {
+    return this.#tag * 2;
+  }
+  hasBrand(x: unknown): boolean {
+    return #tag in x && #double in x;
+  }
+  readDouble(): number {
+    return this.#double();
+  }
+}
+
+class BrandSub extends BrandBase {
+  #extra: number;
+  constructor(tag: number, extra: number) {
+    super(tag);
+    this.#extra = extra;
+  }
+  total(): number {
+    return this.readDouble() + this.#extra;
+  }
+}
+
+class OtherVault {
+  #bal: number = 9;
+  val(): number {
+    return this.#bal;
+  }
+}
+
+class TdzBase {
+  constructor() {
+    this.probe();
+  }
+  probe(): void {}
+}
+
+class TdzDerived extends TdzBase {
+  #secret(): number {
+    return 99;
+  }
+  override probe(): void {
+    this.#secret();
+  }
+}
+
+function sumRest(seed: number, ...items: number[]): number {
+  let acc = seed;
+  for (let i = 0; i < items.length; i++) {
+    acc = (acc + (items[i] ?? 0)) | 0;
+  }
+  return acc;
+}
+
+export function trace(): string {
+  const parts: string[] = [];
+  const v = new BaseVault(5);
+  const sub = new BrandSub(5, 11);
+  const other = new OtherVault();
+  parts.push("step:" + String(v.step(3)) + ":" + String(sub.total()) + ":" + String(BaseVault.readOps()));
+  parts.push(
+    "brand:" +
+      String(BaseVault.hasAll(v)) +
+      "," +
+      String(BaseVault.hasAll(other)) +
+      "," +
+      String(BaseVault.hasAll({})) +
+      "," +
+      String(sub.hasBrand(sub)) +
+      "," +
+      String(sub.hasBrand(other)),
+  );
+  let primErr = "none";
+  try {
+    BaseVault.hasAll(123);
+  } catch (e) {
+    primErr = e instanceof TypeError ? "TypeError" : "other";
+  }
+  parts.push("prim:" + primErr + ":" + String(other.val()));
+  let tdzErr = "none";
+  try {
+    new TdzDerived();
+  } catch (e) {
+    tdzErr = e instanceof TypeError ? "TypeError" : "other";
+  }
+  parts.push("tdz:" + tdzErr);
+
+  // Dense spread + call rest spread
+  const left: number[] = [1, 2, 3];
+  const right: number[] = [4, 5];
+  const combined: number[] = [...left, 10, ...right];
+  parts.push("dense:" + String(combined.length) + ":" + String(sumRest(7, ...combined, ...right)));
+
+  // Side-effecting spread order must remain strictly left-to-right
+  const mut = [1, 2];
+  const ordered = [...mut, (mut.push(9), 5), ...mut];
+  parts.push("order:" + ordered.join(","));
+
+  // Sparse array spread into array literal preserves length/holes (exercises !isDense fallback)
+  const sparse: (number | undefined)[] = [1, 2];
+  sparse.length = 4;
+  sparse[3] = 8;
+  const copiedSparse = [...sparse, 9];
+  const fmtOpt = (v: number | undefined): string =>
+    v === undefined ? "undefined" : String(v);
+  parts.push(
+    "sparse:" +
+      String(copiedSparse.length) +
+      ":" +
+      fmtOpt(copiedSparse[0]) +
+      ":" +
+      fmtOpt(copiedSparse[2]) +
+      ":" +
+      fmtOpt(copiedSparse[3]) +
+      ":" +
+      fmtOpt(copiedSparse[4]),
+  );
+
+  return parts.join("|");
+}
+`;
+
+test("private base-class brand elision, derived TDZ, and dense/sparse numeric spread preserve JS semantics", async () => {
+  const expected = await expectedTrace(privateBrandAndSpreadEdgeCases);
+  verifyHostedFixture(
+    withComparison(privateBrandAndSpreadEdgeCases, expected),
+    "typed-classes-c3-brand-spread-edges",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});

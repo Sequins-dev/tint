@@ -1326,3 +1326,207 @@ test("typed functions without scriptEntry devirtualize closures read from immuta
   assert.ok(call?.kind === "call");
   assert.equal(call.target, 1);
 });
+
+test("exported closures with verified env layouts drop dead env reads on $direct twins", () => {
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "reference", mutable: false }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "child",
+        exported: true,
+        closureEnvironment: 0,
+        parameters: [0],
+        slots: ["number", "reference", "reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "closure-environment", id: 0, ...span },
+              { kind: "store", slot: 2, value: 0, ...span },
+              { kind: "load", id: 1, slot: 2, ...span },
+            ],
+            terminator: {
+              kind: "record",
+              object: 1,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 2, slot: 0, ...span }],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+      {
+        id: 1,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+              {
+                kind: "function-new",
+                id: 2,
+                target: 0,
+                environment: 1,
+                ...span,
+              },
+              { kind: "constant", id: 3, value: 7, ...span },
+              {
+                kind: "call-indirect",
+                id: 4,
+                target: 0,
+                callee: 2,
+                arguments: [3],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const res = devirtualizeClosureCalls(input, 10000, true);
+  assert.ok(res);
+  assert.equal(res.rewritten, 1);
+  assert.ok(verify(res.module).ok, JSON.stringify(verify(res.module)));
+  const twin = res.module.functions[2];
+  assert.ok(twin && twin.name === "child$direct");
+  assert.deepEqual(twin.parameters, [0]);
+  assert.equal(twin.blocks[0]?.terminator.kind, "jump");
+  const callerCall = res.module.functions[1]!.blocks[0]!.instructions.find(
+    (op) => op.kind === "call",
+  );
+  assert.ok(callerCall?.kind === "call");
+  assert.deepEqual(callerCall.arguments, [3]);
+});
+
+test("direct-only internal helper propagates closure parameters into closed record fields", () => {
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "reference", mutable: false }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "leaf",
+        exported: false,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "pack",
+        exported: false,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "main",
+        exported: true,
+        parameters: [],
+        slots: ["reference", "reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "function-new", id: 0, target: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+              { kind: "store", slot: 0, value: 1, ...span },
+              { kind: "load", id: 2, slot: 0, ...span },
+            ],
+            terminator: {
+              kind: "record",
+              object: 2,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 3, slot: 1, ...span },
+              { kind: "constant", id: 4, value: 42, ...span },
+              {
+                kind: "call-indirect",
+                id: 5,
+                target: 0,
+                callee: 3,
+                arguments: [4],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const res = devirtualizeClosureCalls(input, 10000, true);
+  assert.ok(res);
+  assert.equal(res.rewritten, 1);
+  assert.ok(verify(res.module).ok, JSON.stringify(verify(res.module)));
+  const call = res.module.functions[2]!.blocks[1]!.instructions.find(
+    (op) => op.kind === "call",
+  );
+  assert.ok(call?.kind === "call" && call.target === 0);
+});

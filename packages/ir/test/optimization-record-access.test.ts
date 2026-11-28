@@ -382,3 +382,145 @@ test("proven fixed record writes redirect unreachable slow alternates to a trap 
   assert.equal(alt?.terminator.kind, "trap");
   assert.equal(alt?.instructions.length, 0);
 });
+
+test("general-record-is and record-has narrow subsequent reads and fold redundant non-optional record-has", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "number", mutable: true },
+          {
+            offset: 16,
+            presenceOffset: 24,
+            type: "optional-number",
+            mutable: true,
+          },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "brandAndRead",
+        exported: true,
+        parameters: [0],
+        slots: ["general", "number", "boolean"],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              {
+                kind: "general-record-is",
+                id: 1,
+                value: 0,
+                record: 0,
+                ...s,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 1,
+              alternate: 3,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 2, slot: 0, ...s },
+              {
+                kind: "general-value",
+                id: 3,
+                value: 2,
+                type: "reference",
+                ...s,
+              },
+            ],
+            terminator: {
+              kind: "record",
+              object: 3,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 2,
+              alternate: 3,
+              ...s,
+            },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 4, slot: 0, ...s },
+              {
+                kind: "general-value",
+                id: 5,
+                value: 4,
+                type: "reference",
+                ...s,
+              },
+              {
+                kind: "record-has",
+                id: 6,
+                object: 5,
+                record: 0,
+                field: 0,
+                ...s,
+              },
+              {
+                kind: "record-has",
+                id: 7,
+                object: 5,
+                record: 0,
+                field: 1,
+                ...s,
+              },
+              {
+                kind: "binary",
+                id: 8,
+                operator: "===",
+                left: 6,
+                right: 7,
+                ...s,
+              },
+            ],
+            terminator: { kind: "return", value: 8, ...s },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "constant", id: 9, value: false, ...s }],
+            terminator: { kind: "return", value: 9, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const lowered = lowerProvenRecordReads(module, 100000);
+  assert.ok(lowered);
+  assert.ok(lowered.rewritten >= 2);
+  assert.deepEqual(verify(lowered.module), { ok: true });
+  const fn = lowered.module.functions[0]!;
+  // Field 0 read lowered to record-read; field 0 record-has folded to constant true;
+  // optional field 1 record-has (presenceOffset !== undefined) must NOT fold.
+  assert.ok(
+    fn.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-read" && op.field === 0),
+    ),
+  );
+  assert.ok(
+    !fn.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-has" && op.field === 0),
+    ),
+  );
+  assert.ok(
+    fn.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-has" && op.field === 1),
+    ),
+  );
+});

@@ -230,6 +230,8 @@ export function analyzeRecordAccesses(
   maxWork: number = 100000,
   stableLayouts: boolean = false,
   includeGuards: boolean = true,
+  provenPresence?: Set<number>,
+  provenMismatches?: Set<number>,
 ):
   | {
       readonly guards: Uint8Array;
@@ -346,7 +348,12 @@ export function analyzeRecordAccesses(
       )
         return -fn.closureEnvironment - 1;
       if (op.kind === "load") return slotOrigin(block, op.slot, i, depth + 1);
-      if (op.kind === "reference-value" || op.kind === "reference-wrap")
+      if (
+        op.kind === "reference-value" ||
+        op.kind === "reference-wrap" ||
+        op.kind === "general-wrap" ||
+        (op.kind === "general-value" && op.type === "reference")
+      )
         return valueOrigin(block, op.value, i, depth + 1);
       // Block-local SSA identity for a direct field load: lets a check in this
       // block prove a slot holding the same loaded reference at block exit,
@@ -357,13 +364,8 @@ export function analyzeRecordAccesses(
     }
     return 0;
   }
-  function proves(
-    block: Block,
-    object: number,
-    record: number,
-    before: number,
-  ): boolean {
-    let matched = false;
+  function provenLayout(block: Block, object: number, before: number): number {
+    let layout = -1;
     let origin = valueOrigin(block, object, before, 0),
       cursor = block.id;
     // Each hop is charged as work. Inlined straight-line code can put the
@@ -372,9 +374,9 @@ export function analyzeRecordAccesses(
     // unreachable cycle), never by a fixed distance the verifier would have
     // to share with every pass that lowers or moves reads.
     for (let hops = 0; hops < blockCount && origin !== 0; hops++) {
-      if (!step()) return false;
+      if (!step()) return -1;
       if (origin < 0) {
-        if (-origin - 1 === record) matched = true;
+        layout = -origin - 1;
         break;
       }
       if (origin > fn.slots.length) break;
@@ -397,7 +399,6 @@ export function analyzeRecordAccesses(
       if (
         (prior.kind === "record" || prior.kind === "record-cell") &&
         prior.consequent === cursor &&
-        prior.record === record &&
         origin !== 0
       ) {
         const checked = valueOrigin(
@@ -407,13 +408,41 @@ export function analyzeRecordAccesses(
           0,
         );
         if (origin > 0 && origin === checked) {
-          matched = true;
+          layout = prior.record;
           break;
         }
       }
+      if (
+        prior.kind === "branch" &&
+        prior.consequent === cursor &&
+        origin > 0
+      ) {
+        for (let i = source.instructions.length - 1; i >= 0; i--) {
+          const condOp = source.instructions[i];
+          if (condOp === undefined) throw "record fact instruction invariant";
+          if (instructionResult(condOp) !== prior.condition) continue;
+          if (condOp.kind === "record-has") {
+            const checked = valueOrigin(source, condOp.object, i, 0);
+            if (origin === checked) layout = condOp.record;
+          } else if (condOp.kind === "general-record-is") {
+            const checked = valueOrigin(source, condOp.value, i, 0);
+            if (origin === checked) layout = condOp.record;
+          }
+          break;
+        }
+        if (layout >= 0) break;
+      }
       cursor = source.id;
     }
-    return matched && !exhausted;
+    return exhausted ? -1 : layout;
+  }
+  function proves(
+    block: Block,
+    object: number,
+    record: number,
+    before: number,
+  ): boolean {
+    return provenLayout(block, object, before) === record;
   }
   // Only established reads may seed later proofs. Revisit unresolved reads when
   // a checkpoint was added, so block numbering cannot affect soundness or
@@ -439,13 +468,39 @@ export function analyzeRecordAccesses(
       if (
         includeGuards &&
         proven[block.id] !== 1 &&
-        (term.kind === "record" || term.kind === "record-cell") &&
-        proves(block, term.object, term.record, block.instructions.length)
-      )
-        proven[block.id] = 1;
+        (term.kind === "record" || term.kind === "record-cell")
+      ) {
+        const known = provenLayout(
+          block,
+          term.object,
+          block.instructions.length,
+        );
+        if (known === term.record) proven[block.id] = 1;
+        else if (
+          provenMismatches !== undefined &&
+          known >= 0 &&
+          term.kind === "record"
+        )
+          provenMismatches.add(block.id);
+      }
       if (exhausted) return undefined;
     }
     if (!pending) break;
+  }
+  if (provenPresence !== undefined) {
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "record proof block invariant";
+      for (let index = 0; index < block.instructions.length; index++) {
+        if (!step()) return undefined;
+        const op = block.instructions[index];
+        if (op === undefined) throw "record proof instruction invariant";
+        if (
+          op.kind === "record-has" &&
+          proves(block, op.object, op.record, index)
+        )
+          provenPresence.add(op.id);
+      }
+    }
   }
   return { guards: proven, reads, work };
 }
@@ -547,7 +602,11 @@ export function dataflowRecordGuards(
   const trackedSlots: number[] = [];
   for (let slot = 0; slot < fn.slots.length; slot++) {
     const type = fn.slots[slot];
-    if (type === "reference" || type === "optional-reference") {
+    if (
+      type === "reference" ||
+      type === "optional-reference" ||
+      type === "general"
+    ) {
       slotIndex[slot] = ++tracked;
       trackedSlots.push(slot);
     }
@@ -814,14 +873,27 @@ export function dataflowRecordGuards(
           const proven: Instruction = op;
           presence.add(proven);
         }
-        define(op.id, 0, 0, 0);
+        const srcSlot = holder(op.object);
+        if (srcSlot !== 0)
+          define(op.id, op.record + 1, srcSlot, versions[srcSlot] ?? 0);
+        else define(op.id, 0, 0, 0);
+      } else if (op.kind === "general-record-is") {
+        const srcSlot = holder(op.value);
+        if (srcSlot !== 0)
+          define(op.id, op.record + 1, srcSlot, versions[srcSlot] ?? 0);
+        else define(op.id, 0, 0, 0);
       } else if (
         op.kind === "closure-environment" &&
         !fn.exported &&
         fn.closureEnvironment !== undefined
       )
         define(op.id, fn.closureEnvironment + 1, 0, 0);
-      else if (op.kind === "reference-value" || op.kind === "reference-wrap") {
+      else if (
+        op.kind === "reference-value" ||
+        op.kind === "reference-wrap" ||
+        op.kind === "general-wrap" ||
+        (op.kind === "general-value" && op.type === "reference")
+      ) {
         const srcIdx = valueIds.lookup(op.value);
         if (srcIdx >= 0 && stamps[srcIdx] === generation)
           define(
@@ -891,9 +963,21 @@ export function dataflowRecordGuards(
       meet(term.consequent, false);
       meet(term.alternate, false);
     } else if (term.kind === "branch") {
-      collect();
-      meet(term.consequent, false);
-      meet(term.alternate, false);
+      const condSlot = holder(term.condition);
+      const condLayout = condSlot !== 0 ? layoutOf(term.condition) : 0;
+      if (condSlot !== 0 && condLayout > 0 && condLayout < pairBit) {
+        const saved = current[condSlot] ?? 0;
+        collect();
+        meet(term.alternate, false);
+        set(condSlot, condLayout);
+        collect();
+        meet(term.consequent, false);
+        set(condSlot, saved);
+      } else {
+        collect();
+        meet(term.consequent, false);
+        meet(term.alternate, false);
+      }
     } else if (term.kind === "jump") {
       collect();
       meet(term.target, false);

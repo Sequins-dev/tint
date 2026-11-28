@@ -46,6 +46,7 @@ export function visitRuntimeFunctions(
     add(runtime.pop, "list", index, "pop");
     add(runtime.wrap, "list", index, "wrap");
     add(runtime.empty, "list", index, "empty");
+    add(runtime.isDense, "list", index, "isDense");
     add(runtime.sort, "list", index, "sort");
   }
   const sets = options.sets ?? [];

@@ -1016,3 +1016,129 @@ test("pruneUnallocatedRecords preserves layouts and optional presence fields in 
     "open record-has must remain intact",
   );
 });
+
+test("scalarReplaceRecords replaces local class instances with unaccessed optional fields, deferred fields, record-has and record-read", () => {
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 40,
+        fields: [
+          {
+            offset: 8,
+            presenceOffset: 32,
+            type: "optional-reference",
+            mutable: true,
+          },
+          { offset: 16, type: "number", mutable: true, deferred: true },
+          {
+            offset: 24,
+            stateOffset: 33,
+            type: "optional-number",
+            mutable: true,
+          },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "run",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "reference", "boolean", "optional-number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              {
+                kind: "record-new",
+                id: 0,
+                record: 0,
+                arguments: [undefined, undefined, undefined],
+                ...span,
+              },
+              { kind: "store", slot: 1, value: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "record-has",
+                id: 2,
+                object: 1,
+                record: 0,
+                field: 0,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+            ],
+            terminator: {
+              kind: "record",
+              object: 1,
+              record: 0,
+              field: 1,
+              operation: "write",
+              slot: 0,
+              consequent: 1,
+              alternate: 3,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 3, slot: 0, ...span },
+              { kind: "optional-wrap", id: 4, value: 3, ...span },
+              { kind: "store", slot: 3, value: 4, ...span },
+              { kind: "load", id: 5, slot: 1, ...span },
+            ],
+            terminator: {
+              kind: "record-cell",
+              object: 5,
+              record: 0,
+              field: 2,
+              operation: "initialize",
+              slot: 3,
+              consequent: 2,
+              alternate: 3,
+              ...span,
+            },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 6, slot: 1, ...span },
+              {
+                kind: "record-read",
+                id: 7,
+                object: 6,
+                record: 0,
+                field: 1,
+                ...span,
+              },
+              { kind: "store", slot: 4, value: 7, ...span },
+              { kind: "load", id: 8, slot: 4, ...span },
+            ],
+            terminator: { kind: "return", value: 8, ...span },
+          },
+          { id: 3, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const res = optimizeModule(input, 1000000);
+  assert.ok(verify(res.module).ok, JSON.stringify(verify(res.module)));
+  const fn = res.module.functions[0]!;
+  assert.ok(
+    !fn.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-new"),
+    ),
+    "local instance with unaccessed optional, deferred and optional-number fields should scalar-replace",
+  );
+  assert.ok(
+    !fn.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-has"),
+    ),
+    "record-has on scalar-replaced allocation should fold",
+  );
+});

@@ -1797,9 +1797,10 @@ function lowerEntries(
         resize = source.resize,
         pop = source.pop,
         wrap = source.wrap,
-        empty = source.empty;
+        empty = source.empty,
+        isDense = source.isDense;
       const receivers = [source.read, source.write, source.push, source.length];
-      for (const receiver of [sort, has, remove, resize, pop]) {
+      for (const receiver of [sort, has, remove, resize, pop, isDense]) {
         if (receiver !== undefined) receivers.push(receiver);
       }
       const helper = runtimeHelpers(
@@ -1895,6 +1896,9 @@ function lowerEntries(
             : { pop: helper(pop, ["reference"], optionalEncoding) }),
           ...(wrapId === undefined ? {} : { wrap: wrapId }),
           ...(emptyId === undefined ? {} : { empty: emptyId }),
+          ...(isDense === undefined
+            ? {}
+            : { isDense: helper(isDense, ["reference"], "boolean") }),
         },
       });
     }

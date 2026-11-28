@@ -49,6 +49,7 @@ export function lowerProvenRecordReads(
         candidates++;
       for (const op of block.instructions) {
         if (op === undefined || ++visited > budget) return undefined;
+        if (op.kind === "record-has") candidates++;
         const id = instructionResult(op);
         if (id !== undefined) maximum = Math.max(maximum, id);
       }
@@ -57,21 +58,82 @@ export function lowerProvenRecordReads(
       functions.push(fn);
       continue;
     }
-    const proof = analyzeRecordAccesses(fn, budget - visited, stable);
+    const provenPresence = new Set<number>();
+    const provenMismatches = new Set<number>();
+    const proof = analyzeRecordAccesses(
+      fn,
+      budget - visited,
+      stable,
+      true,
+      provenPresence,
+      provenMismatches,
+    );
     if (proof === undefined) return undefined;
     visited += proof.work;
     const blocks: Block[] = [];
     let changed = false,
+      needsCompact = false,
       next = maximum + 1,
       deadTrapId = -1;
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
+      let blockOps: readonly Instruction[] = block.instructions;
+      if (provenPresence.size > 0) {
+        let rewrittenOps: Instruction[] | undefined;
+        for (let i = 0; i < block.instructions.length; i++) {
+          const op = block.instructions[i];
+          if (op === undefined) throw "record lowering instruction invariant";
+          if (
+            op.kind === "record-has" &&
+            provenPresence.has(op.id) &&
+            module.records?.[op.record]?.fields[op.field]?.presenceOffset ===
+              undefined
+          ) {
+            if (rewrittenOps === undefined)
+              rewrittenOps = block.instructions.slice(0, i);
+            rewrittenOps.push({
+              kind: "constant",
+              id: op.id,
+              value: true,
+              start: op.start,
+              end: op.end,
+              ...(op.inline === undefined ? {} : { inline: op.inline }),
+            });
+            rewritten++;
+            changed = true;
+          } else if (rewrittenOps !== undefined) {
+            rewrittenOps.push(op);
+          }
+        }
+        if (rewrittenOps !== undefined) blockOps = rewrittenOps;
+      }
       const term = block.terminator;
       if (
         term.kind !== "record" ||
         (term.operation !== "read" && term.operation !== "write")
       ) {
-        blocks.push(block);
+        blocks.push(
+          blockOps === block.instructions
+            ? block
+            : { ...block, instructions: blockOps },
+        );
+        continue;
+      }
+      if (provenMismatches.has(block.id)) {
+        blocks.push({
+          ...block,
+          instructions: blockOps,
+          terminator: {
+            kind: "jump",
+            target: term.alternate,
+            start: term.start,
+            end: term.end,
+            ...(term.inline === undefined ? {} : { inline: term.inline }),
+          },
+        });
+        rewritten++;
+        changed = true;
+        needsCompact = true;
         continue;
       }
       if (term.operation === "write") {
@@ -84,7 +146,11 @@ export function lowerProvenRecordReads(
             altBlock.exception === undefined &&
             altBlock.terminator.kind === "trap")
         ) {
-          blocks.push(block);
+          blocks.push(
+            blockOps === block.instructions
+              ? block
+              : { ...block, instructions: blockOps },
+          );
           continue;
         }
         const writeKnowledge: TypeKnowledge = {
@@ -94,12 +160,17 @@ export function lowerProvenRecordReads(
           guard: undefined,
         };
         if (representationFor(writeKnowledge, []) !== "fixed") {
-          blocks.push(block);
+          blocks.push(
+            blockOps === block.instructions
+              ? block
+              : { ...block, instructions: blockOps },
+          );
           continue;
         }
         if (deadTrapId < 0) deadTrapId = fn.blocks.length;
         blocks.push({
           ...block,
+          instructions: blockOps,
           terminator: { ...term, alternate: deadTrapId },
         });
         rewritten++;
@@ -135,7 +206,11 @@ export function lowerProvenRecordReads(
               String(term.field) +
               " stays checked: object layout unproven",
           });
-        blocks.push(block);
+        blocks.push(
+          blockOps === block.instructions
+            ? block
+            : { ...block, instructions: blockOps },
+        );
         continue;
       }
       const knowledge: TypeKnowledge = {
@@ -159,13 +234,17 @@ export function lowerProvenRecordReads(
               String(term.field) +
               " stays checked: layout proven but representation is not fixed",
           });
-        blocks.push(block);
+        blocks.push(
+          blockOps === block.instructions
+            ? block
+            : { ...block, instructions: blockOps },
+        );
         continue;
       }
       const id = next++,
         condition = next++,
         inline = term.inline;
-      const instructions: Instruction[] = block.instructions.slice();
+      const instructions: Instruction[] = blockOps.slice();
       instructions.push({
         kind: "record-read",
         id,
@@ -236,7 +315,7 @@ export function lowerProvenRecordReads(
     // direct reads under its own (verifierRecordBudget). Keep the checked
     // reads of a function it would not prove.
     let lowered: FunctionIR = { ...fn, blocks };
-    if (deadTrapId >= 0) {
+    if (deadTrapId >= 0 || needsCompact) {
       const compacted = compactReachableBlocks(fn, blocks, budget - visited);
       if (compacted === undefined) return undefined;
       visited += compacted.visited;

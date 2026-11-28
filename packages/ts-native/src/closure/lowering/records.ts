@@ -2562,18 +2562,34 @@ export function createRecordContracts(
             methodAccess,
           });
         } else {
-          const brandName = classPrivateBrandSlot(contract.instance);
-          privateAccesses.set(node, {
-            kind: "instance-method",
-            name: member.name,
-            type: "reference",
-            ownerLocal,
-            brandCheck: {
-              type: "boolean",
-              choices: familySlotChoices(brandName),
-            },
-            methodAccess,
-          });
+          if (storage.privateBrandField === undefined) {
+            const brandRecords = (classShapes[contract.instance] ?? []).map(
+              (record) => ({ record, field: storage.prototypeField }),
+            );
+            if (brandRecords.length === 0)
+              fail("private instance method requires class instance layouts");
+            privateAccesses.set(node, {
+              kind: "instance-method",
+              name: member.name,
+              type: "reference",
+              ownerLocal,
+              brandRecords,
+              methodAccess,
+            });
+          } else {
+            const brandName = classPrivateBrandSlot(contract.instance);
+            privateAccesses.set(node, {
+              kind: "instance-method",
+              name: member.name,
+              type: "reference",
+              ownerLocal,
+              brandCheck: {
+                type: "boolean",
+                choices: familySlotChoices(brandName),
+              },
+              methodAccess,
+            });
+          }
         }
         return;
       }
@@ -2619,18 +2635,34 @@ export function createRecordContracts(
           accessor,
         });
       } else {
-        const brandName = classPrivateBrandSlot(contract.instance);
-        privateAccesses.set(node, {
-          kind: "instance-accessor",
-          name: member.name,
-          type,
-          ownerLocal,
-          brandCheck: {
-            type: "boolean",
-            choices: familySlotChoices(brandName),
-          },
-          accessor,
-        });
+        if (storage.privateBrandField === undefined) {
+          const brandRecords = (classShapes[contract.instance] ?? []).map(
+            (record) => ({ record, field: storage.prototypeField }),
+          );
+          if (brandRecords.length === 0)
+            fail("private instance accessor requires class instance layouts");
+          privateAccesses.set(node, {
+            kind: "instance-accessor",
+            name: member.name,
+            type,
+            ownerLocal,
+            brandRecords,
+            accessor,
+          });
+        } else {
+          const brandName = classPrivateBrandSlot(contract.instance);
+          privateAccesses.set(node, {
+            kind: "instance-accessor",
+            name: member.name,
+            type,
+            ownerLocal,
+            brandCheck: {
+              type: "boolean",
+              choices: familySlotChoices(brandName),
+            },
+            accessor,
+          });
+        }
       }
     },
     planPrivateBrandCheck: (node, info, ownerLocal) => {
@@ -2670,11 +2702,24 @@ export function createRecordContracts(
         });
         return;
       }
+      const family = classShapes[contract.instance] ?? [];
+      if (member.kind !== "field" && storage.privateBrandField === undefined) {
+        if (family.length === 0)
+          fail("private brand check requires class instance layouts");
+        privateBrandChecks.set(node, {
+          static: false,
+          name: member.name,
+          brandRecords: family.map((record) => ({
+            record,
+            field: storage.prototypeField,
+          })),
+        });
+        return;
+      }
       const slotName =
         member.kind === "field"
           ? classPrivateSlot(contract.instance, member.name)
           : classPrivateBrandSlot(contract.instance);
-      const family = classShapes[contract.instance] ?? [];
       const choices: RecordAccessChoice[] = [];
       let checkType: ScalarType = "boolean";
       for (const rec of family) {
