@@ -1,3 +1,5 @@
+import type { FragmentPlan } from "@tint/codegen/aarch64/scalar";
+import type { ModuleIR } from "@tint/ir/scalar";
 import {
   createFunctionStore,
   type FunctionStore,
@@ -14,6 +16,8 @@ export interface BuildStorage {
   readonly byteBudget?: number;
   readonly directory?: string;
   readonly files?: FileHost<number>;
+  /** Optional fragment scheduling after native backend preparation. */
+  readonly planFragments?: (module: ModuleIR) => FragmentPlan;
 }
 
 /** IR size (instructions plus blocks) above which emission packs function

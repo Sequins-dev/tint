@@ -190,6 +190,8 @@ import {
 import {
   emitModule,
   emitModuleFromStore,
+  type EmissionBodies,
+  type FragmentPlan,
   type CodegenAnalysis,
   type Emission,
   type EmissionOptions,
@@ -4605,6 +4607,77 @@ function moduleIRSize(module: ModuleIR): number {
   return size;
 }
 
+/** Retire decoded bodies only after the shared analyses have consumed them.
+ * During wire packing, each released body is packed into `store` and dropped
+ * from `decoded` immediately so decoded IR shrinks as the contiguous wire grows.
+ * A later branch-form retry or serial fallback reads the same normalized bodies
+ * from `store`. */
+function emitPreparedFragments(
+  program: ModuleVersion,
+  store: FunctionStore,
+  options: EmissionOptions,
+  plan: FragmentPlan,
+): Emission {
+  let decoded: (FunctionIR | undefined)[] = [];
+  for (const fn of program.module.functions) decoded.push(fn);
+  program.module = {
+    ...program.module,
+    functions: program.module.functions.map(functionHeader),
+  };
+  let packed = false,
+    retiring = false;
+  const bodies: EmissionBodies = {
+    get: (id: number): FunctionIR => {
+      if (packed) return store.get(id);
+      const fn = decoded[id];
+      if (fn !== undefined) return fn;
+      return store.get(id);
+    },
+    put: (fn: FunctionIR): void => {
+      if (packed || (retiring && decoded[fn.id] === undefined)) store.put(fn);
+      else decoded[fn.id] = fn;
+    },
+    release: (id: number): void => {
+      if (packed) {
+        store.release(id);
+        return;
+      }
+      if (retiring) {
+        const fn = decoded[id];
+        if (fn !== undefined) {
+          store.put(fn);
+          decoded[id] = undefined;
+          store.release(id);
+        }
+      }
+    },
+  };
+  return emitModuleFromStore(program.module, bodies, options, {
+    ranges: plan.ranges,
+    packets: plan.packets,
+    execute: plan.execute,
+    beforePack: (): void => {
+      retiring = true;
+    },
+    afterPreparation: (): void => {
+      if (packed) return;
+      for (let id = 0; id < decoded.length; id++) {
+        const fn = decoded[id];
+        if (fn !== undefined) {
+          store.put(fn);
+          decoded[id] = undefined;
+        }
+      }
+      store.seal();
+      decoded = [];
+      store.releaseAll();
+      retiring = false;
+      packed = true;
+      plan.afterPreparation?.();
+    },
+  });
+}
+
 function emitProgram(
   program: ModuleVersion,
   storage: BuildStorage | undefined,
@@ -4616,6 +4689,14 @@ function emitProgram(
   if (selected === undefined) return emitModule(program.module, options);
   const store = createEmissionStore(selected);
   try {
+    const planFragments = selected.planFragments;
+    if (planFragments !== undefined)
+      return emitPreparedFragments(
+        program,
+        store,
+        options,
+        planFragments(program.module),
+      );
     packEmissionIR(program, store);
     return emitModuleFromStore(program.module, store, options);
   } finally {

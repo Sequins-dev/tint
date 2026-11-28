@@ -155,6 +155,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/fragments.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/general-elements.ts",
       packageId: "codegen",
     },
@@ -188,6 +192,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/scalar/pool-clears.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/prepared-fragments.ts",
       packageId: "codegen",
     },
     {

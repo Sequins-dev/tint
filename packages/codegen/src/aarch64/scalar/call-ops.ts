@@ -108,7 +108,7 @@ export function emitCallOp(
     integerSlots,
     interruptible,
     lazyActivation,
-    localSignatures,
+    signatureGroups,
     module,
     nanSentinelRemainders,
     nonNullValues,
@@ -968,7 +968,7 @@ export function emitCallOp(
           const alternate =
             op.discardResult === true &&
             !signatureImports.has(op.target) &&
-            (localSignatures.byFunction[op.target] ?? 0) === 0
+            (signatureGroups[op.target] ?? 0) === 0
               ? discardResultTargets.get(parameterKeys[op.target] ?? "")
               : undefined;
           emit({

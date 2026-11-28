@@ -117,6 +117,27 @@ export type {
   NativeFunctionDebug,
   NativeInlineRange,
 } from "./debug-variables.ts";
+import {
+  encodeFragment,
+  decodeFragment,
+  type Fixup,
+  type Fragment,
+  type FamilySite,
+} from "./fragments.ts";
+import {
+  openPreparation,
+  packPreparation,
+  type ListReadShape,
+  type ListWriteShape,
+  type Preparation,
+  type PreparedFragments,
+} from "./prepared-fragments.ts";
+export type {
+  ListReadShape,
+  ListWriteShape,
+  PreparedFragments,
+} from "./prepared-fragments.ts";
+import type { SpillBackend } from "@tint/ir/storage";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import {
   chainedBlockOrder,
@@ -595,17 +616,95 @@ export interface Diagnostic {
 export type Emission =
   | { readonly ok: true; readonly value: NativeModule }
   | { readonly ok: false; readonly error: Diagnostic };
+export interface EmissionRange {
+  readonly first: number;
+  readonly end: number;
+}
+
+/** The caller owns the packet backend. The emitter releases each segment
+ * it publishes, including segments left over after a failed attempt. */
+export interface FragmentPlan {
+  readonly ranges: readonly EmissionRange[];
+  readonly packets?: SpillBackend | undefined;
+  readonly beforePack?: (() => void) | undefined;
+  readonly afterPreparation?: (() => void) | undefined;
+  readonly execute?: FragmentExecutor | undefined;
+}
+
+/** A backend executor owns scheduling. Returning false requests a serial
+ * retry after every published packet and worker lease has been released. */
+export type FragmentExecutor = (
+  input: PreparedFragments,
+  forms: FragmentForms,
+  ranges: readonly EmissionRange[],
+  publish: (packet: FragmentReply) => void,
+) => boolean;
+export interface FragmentForms {
+  readonly calls: boolean;
+  readonly addresses: boolean;
+  readonly far: boolean;
+  readonly longBranches: readonly number[];
+  readonly longAddresses: readonly number[];
+  readonly islands: readonly number[];
+  readonly farBranches: readonly number[];
+}
+export interface FragmentReply {
+  readonly range: EmissionRange;
+  readonly bytes: Uint8Array;
+  readonly forms: FragmentForms;
+}
+
+export type PreparedEmissionOutcome =
+  | { readonly kind: "done"; readonly emission: Emission }
+  | { readonly kind: "retry"; readonly attempt: PreparedEmissionAttempt }
+  | { readonly kind: "serial" };
+
+/** An owned fragment-emission attempt driven by an asynchronous scheduler
+ * (such as an event-driven Worker pool). Packets are spilled immediately on
+ * `submit`, and canonical placement runs only in `finish` after workers have
+ * released their generation or quiesced. */
+export interface PreparedEmissionAttempt {
+  readonly forms: FragmentForms;
+  readonly ranges: readonly EmissionRange[];
+  readonly submit: (packet: FragmentReply) => void;
+  readonly abort: () => void;
+  readonly finish: () => PreparedEmissionOutcome;
+}
+
+export interface PreparedEmissionSession {
+  readonly input: PreparedFragments;
+  readonly attempt: PreparedEmissionAttempt;
+  readonly emitSerialFallback: () => Emission;
+}
+
+export type PreparedEmissionStart =
+  | { readonly kind: "ready"; readonly session: PreparedEmissionSession }
+  | { readonly kind: "done"; readonly emission: Emission }
+  | { readonly kind: "serial" };
+
+interface FragmentJob {
+  readonly range: EmissionRange;
+  readonly preparation: Preparation;
+}
+interface SpilledPacket {
+  readonly range: EmissionRange;
+  bytes: Uint8Array | undefined;
+  segment: number | undefined;
+}
+interface PrecollectedFragments {
+  readonly preparation: Preparation;
+  readonly packets: SpilledPacket[];
+  readonly backend: SpillBackend | undefined;
+}
+type EmissionAttempt =
+  | { readonly kind: "emission"; readonly emission: Emission }
+  | { readonly kind: "fragment"; readonly fragment: Fragment }
+  | { readonly kind: "prepared"; readonly preparation: Preparation };
+const unsupportedFragmentMessage: string = "emission requires serial placement";
+
 interface Value {
   readonly offset: number;
   readonly type: ScalarType;
-}
-interface Fixup {
-  readonly offset: number;
-  readonly branch: Branch;
-  readonly function: number;
-  readonly block: number | undefined;
-  /** A register-indirect far branch: an x16 address sequence then BR. */
-  readonly far?: true | undefined;
 }
 /** Bytes of each one-unit pool string: align16(16 + 8), as the literal pool
  * sizes every string with its minimum eight data bytes. */
@@ -689,15 +788,6 @@ function provenIntegerSlots(
  * invalidate it. Reads must use direct references (the vector itself marks a
  * stored undefined; string lists store each string's word the same way);
  * has accessors answer whether the element is non-null. */
-export interface ListReadShape {
-  readonly header: number;
-  readonly field: number;
-  /** cached: a cacheListVectors reader (vector, list, index) whose first
-   * argument is the list's current root vector or none.
-   * unchecked: a preheader-guarded reader (vector, list, index) whose vector
-   * is proven non-null with length > index. */
-  readonly mode: "read" | "has" | "cached" | "unchecked";
-}
 interface HoistedArraySlot {
   readonly slot: number;
   readonly reg: number;
@@ -815,10 +905,6 @@ function listVectorShape(fn: FunctionIR): number | undefined {
 /** A dense reference-list write accessor with direct references (header
  * field 0 the logical length, field 1 the root; a stored undefined is the
  * vector itself), recognized from its IR like listReadShape. */
-export interface ListWriteShape {
-  readonly header: number;
-  readonly unchecked?: boolean;
-}
 function listWriteShape(fn: FunctionIR): ListWriteShape | undefined {
   if (fn.import === true) return undefined;
   if (fn.name.startsWith(uncheckedListWritePrefix))
@@ -1025,6 +1111,44 @@ export function emitModule(
   module: ModuleIR,
   options: EmissionOptions = {},
 ): Emission {
+  return emitDecoded(module, options);
+}
+
+/** Emit disjoint ranges and place their relocations in original function
+ * order. Range order specifies execution order only. */
+export function emitModuleInFragments(
+  module: ModuleIR,
+  ranges: readonly EmissionRange[],
+  options: EmissionOptions = {},
+  packets?: SpillBackend,
+): Emission {
+  return emitDecoded(module, options, { ranges, packets });
+}
+
+function validateFragmentRanges(
+  module: ModuleIR,
+  ranges: readonly EmissionRange[],
+): void {
+  const ordered = ranges.slice().sort((a, b) => a.first - b.first);
+  let next: number = 0;
+  for (const range of ordered) {
+    if (
+      range === undefined ||
+      range.first !== next ||
+      !Number.isSafeInteger(range.end) ||
+      range.end <= range.first
+    )
+      throw "invalid emission range";
+    next = range.end;
+  }
+  if (next !== module.functions.length) throw "incomplete emission ranges";
+}
+
+function emitDecoded(
+  module: ModuleIR,
+  options: EmissionOptions,
+  plan?: FragmentPlan,
+): Emission {
   const functions = module.functions.slice();
   const bodies: EmissionBodies = {
     get: (id: number): FunctionIR => {
@@ -1037,14 +1161,14 @@ export function emitModule(
     },
     release: (_id: number): void => {},
   };
-  return emitModuleFromStore(module, bodies, options);
+  return emitModuleFromStore(module, bodies, options, plan);
 }
-/** Emit with function headers and a rereadable source of bodies. */
-export function emitModuleFromStore(
+
+function initialBranchForms(
   module: ModuleIR,
   bodies: EmissionBodies,
-  options: EmissionOptions = {},
-): Emission {
+  options: EmissionOptions,
+): BranchForms {
   // Single-instruction local addresses only pay off below ADR's 1 MiB reach;
   // larger modules start with the four-instruction form instead of retrying.
   let size = 0;
@@ -1077,20 +1201,6 @@ export function emitModuleFromStore(
         forms.farBranches.add(fn.id);
       }
   }
-  const facts: EmissionFacts = {
-    verified: undefined,
-    frameModule: undefined,
-    wordReturns: undefined,
-    wordArguments: undefined,
-    wordArgumentsKnown: false,
-    recordFlows: undefined,
-    recordFlowsKnown: false,
-    noSafepoints: undefined,
-    noSafepointsKnown: false,
-    directReturns: undefined,
-    directReturnsKnown: false,
-    pureLeafNoActivation: undefined,
-  };
   const hints = options.formHints;
   if (hints !== undefined) {
     const ids = createStringIndex<number>();
@@ -1111,6 +1221,24 @@ export function emitModuleFromStore(
     if (hints.far === true && options.farAddresses !== false) forms.far = true;
     if (forms.addresses) seed(hints.longAddresses, forms.longAddresses);
   }
+  return forms;
+}
+
+/** Emit with function headers and a rereadable source of bodies. */
+export function emitModuleFromStore(
+  module: ModuleIR,
+  bodies: EmissionBodies,
+  options: EmissionOptions = {},
+  requested?: FragmentPlan,
+): Emission {
+  if (requested !== undefined) validateFragmentRanges(module, requested.ranges);
+  // Managed relocations and debug metadata need the original placement state.
+  const plan =
+    options.managedABI === undefined && options.debugSpans !== true
+      ? requested
+      : undefined;
+  const forms = initialBranchForms(module, bodies, options);
+  const facts = emptyEmissionFacts();
   // Each retry moves calls or at least one function a step towards long
   // forms (compact, islands, long), so emission terminates; larger forms only
   // grow code, so retries may cascade.
@@ -1123,7 +1251,16 @@ export function emitModuleFromStore(
         forms.farBranches.size,
       calls = forms.calls,
       far = forms.far;
-    const emitted = emitModuleForms(module, bodies, options, forms, facts);
+    const attempt = emitModuleForms(
+      module,
+      bodies,
+      options,
+      forms,
+      facts,
+      plan,
+    );
+    if (attempt.kind !== "emission") throw "unexpected top-level fragment";
+    const emitted = attempt.emission;
     if (emitted.ok) {
       // A module this large re-emits in the far model, so its sites (and
       // those the image patches later) reach anywhere in a large image.
@@ -1140,6 +1277,11 @@ export function emitModuleFromStore(
         value: { ...emitted.value, formHints: describeForms(module, forms) },
       };
     }
+    if (
+      emitted.error.message === unsupportedFragmentMessage &&
+      plan !== undefined
+    )
+      return emitModuleFromStore(module, bodies, options);
     if (emitted.error.message !== compactRangeMessage) return emitted;
     // Defensive: a retry that moved nothing to long forms cannot succeed.
     if (
@@ -1153,6 +1295,264 @@ export function emitModuleFromStore(
     )
       return emitted;
   }
+}
+
+/** Prepare one immutable packed wire generation and return an owned
+ * continuation for asynchronous fragment dispatch, canonical placement, and
+ * branch-form retries without blocking the owner thread. */
+export function openPreparedEmission(
+  module: ModuleIR,
+  bodies: EmissionBodies,
+  options: EmissionOptions,
+  ranges: readonly EmissionRange[],
+  packets?: SpillBackend,
+  beforePack?: () => void,
+  afterPreparation?: () => void,
+): PreparedEmissionStart {
+  validateFragmentRanges(module, ranges);
+  if (options.managedABI !== undefined || options.debugSpans === true)
+    return { kind: "serial" };
+  const forms = initialBranchForms(module, bodies, options);
+  const facts = emptyEmissionFacts();
+  const prepAttempt = emitModuleForms(
+    module,
+    bodies,
+    options,
+    forms,
+    facts,
+    undefined,
+    undefined,
+    undefined,
+    true,
+  );
+  if (prepAttempt.kind === "emission")
+    return { kind: "done", emission: prepAttempt.emission };
+  if (prepAttempt.kind !== "prepared") throw "prepared emission invariant";
+  const prepared = prepAttempt.preparation;
+  beforePack?.();
+  const input = packPreparation(prepared, bodies);
+  afterPreparation?.();
+  if (input === undefined) return { kind: "serial" };
+  const packetStore = packets;
+  const farFrom = options.farModuleBytes ?? farModuleBytes;
+  function makeAttempt(): PreparedEmissionAttempt {
+    const before =
+        forms.longBranches.size +
+        forms.longAddresses.size +
+        forms.islands.size +
+        forms.farBranches.size,
+      calls = forms.calls,
+      far = forms.far;
+    const pending = new Map<number, number>();
+    for (const range of ranges) {
+      if (range === undefined) throw "emission range invariant";
+      pending.set(range.first, range.end);
+    }
+    const collected: SpilledPacket[] = [];
+    let closed = false;
+    function releaseAll(): void {
+      const backend = packetStore;
+      if (backend === undefined) return;
+      for (const packet of collected) {
+        if (packet === undefined) continue;
+        const segment = packet.segment;
+        if (segment !== undefined) {
+          packet.segment = undefined;
+          backend.release(segment);
+        }
+      }
+    }
+    return {
+      forms: fragmentForms(forms),
+      ranges,
+      submit: (packet: FragmentReply): void => {
+        if (closed) throw "submitted to closed fragment attempt";
+        const range = packet.range;
+        if (pending.get(range.first) !== range.end)
+          throw "unexpected fragment reply";
+        pending.delete(range.first);
+        for (const id of packet.forms.longBranches)
+          if (id !== undefined && id >= range.first && id < range.end)
+            forms.longBranches.add(id);
+        for (const id of packet.forms.islands)
+          if (id !== undefined && id >= range.first && id < range.end)
+            forms.islands.add(id);
+        for (const id of packet.forms.farBranches)
+          if (id !== undefined && id >= range.first && id < range.end)
+            forms.farBranches.add(id);
+        const backend = packetStore;
+        if (backend === undefined)
+          collected.push({ range, bytes: packet.bytes, segment: undefined });
+        else
+          collected.push({
+            range,
+            bytes: undefined,
+            segment: backend.write(packet.bytes),
+          });
+      },
+      abort: (): void => {
+        if (closed) return;
+        closed = true;
+        releaseAll();
+      },
+      finish: (): PreparedEmissionOutcome => {
+        if (closed) throw "finished closed fragment attempt";
+        closed = true;
+        if (pending.size !== 0) {
+          releaseAll();
+          throw "incomplete fragment replies";
+        }
+        const merged = emitModuleForms(
+          prepared.module,
+          bodies,
+          options,
+          forms,
+          facts,
+          undefined,
+          undefined,
+          { preparation: prepared, packets: collected, backend: packets },
+        );
+        if (merged.kind !== "emission") throw "unexpected fragment placement";
+        const emitted = merged.emission;
+        if (emitted.ok) {
+          if (
+            !forms.far &&
+            options.farAddresses !== false &&
+            emitted.value.code.length >= farFrom
+          ) {
+            forms.far = true;
+            return { kind: "retry", attempt: makeAttempt() };
+          }
+          return {
+            kind: "done",
+            emission: {
+              ok: true,
+              value: {
+                ...emitted.value,
+                formHints: describeForms(prepared.module, forms),
+              },
+            },
+          };
+        }
+        if (emitted.error.message === unsupportedFragmentMessage)
+          return { kind: "serial" };
+        if (emitted.error.message !== compactRangeMessage)
+          return { kind: "done", emission: emitted };
+        if (
+          forms.calls === calls &&
+          forms.far === far &&
+          forms.longBranches.size +
+            forms.longAddresses.size +
+            forms.islands.size +
+            forms.farBranches.size ===
+            before
+        )
+          return { kind: "done", emission: emitted };
+        return { kind: "retry", attempt: makeAttempt() };
+      },
+    };
+  }
+  return {
+    kind: "ready",
+    session: {
+      input,
+      attempt: makeAttempt(),
+      emitSerialFallback: (): Emission =>
+        emitModuleFromStore(prepared.module, bodies, options),
+    },
+  };
+}
+
+function emptyEmissionFacts(): EmissionFacts {
+  return {
+    verified: undefined,
+    frameModule: undefined,
+    wordReturns: undefined,
+    wordArguments: undefined,
+    wordArgumentsKnown: false,
+    recordFlows: undefined,
+    recordFlowsKnown: false,
+    noSafepoints: undefined,
+    noSafepointsKnown: false,
+    directReturns: undefined,
+    directReturnsKnown: false,
+    pureLeafNoActivation: undefined,
+  };
+}
+
+function fragmentForms(forms: BranchForms): FragmentForms {
+  function ids(values: ReadonlySet<number>): number[] {
+    const result: number[] = [];
+    for (const id of values) if (id !== undefined) result.push(id);
+    return result;
+  }
+  return {
+    calls: forms.calls,
+    addresses: forms.addresses,
+    far: forms.far,
+    longBranches: ids(forms.longBranches),
+    longAddresses: ids(forms.longAddresses),
+    islands: ids(forms.islands),
+    farBranches: ids(forms.farBranches),
+  };
+}
+
+/** Open common facts once per actor. The typed body source reads only
+ * the ranges assigned to that actor and never owns the shared bytes. */
+export function openFragmentActor(
+  input: PreparedFragments,
+  options: EmissionOptions,
+): (forms: FragmentForms, range: EmissionRange) => FragmentReply | undefined {
+  const opened = openPreparation(input);
+  const prepared = opened.preparation;
+  const source = opened.bodies;
+  const bodies: EmissionBodies = {
+    get: source.get,
+    release: source.release,
+    put: (_fn: FunctionIR): void => {
+      throw "attempted to write prepared input";
+    },
+  };
+  const facts = emptyEmissionFacts();
+  function formSet(ids: readonly number[]): Set<number> {
+    const result = new Set<number>();
+    for (const id of ids) if (id !== undefined) result.add(id);
+    return result;
+  }
+  return (
+    initial: FragmentForms,
+    range: EmissionRange,
+  ): FragmentReply | undefined => {
+    if (
+      !Number.isInteger(range.first) ||
+      !Number.isInteger(range.end) ||
+      range.first < 0 ||
+      range.end <= range.first ||
+      range.end > prepared.module.functions.length
+    )
+      throw "invalid actor range";
+    const forms: BranchForms = {
+      calls: initial.calls,
+      addresses: initial.addresses,
+      far: initial.far,
+      longBranches: formSet(initial.longBranches),
+      longAddresses: formSet(initial.longAddresses),
+      islands: formSet(initial.islands),
+      farBranches: formSet(initial.farBranches),
+    };
+    const attempt = emitModuleForms(
+      prepared.module,
+      bodies,
+      options,
+      forms,
+      facts,
+      undefined,
+      { range, preparation: prepared },
+    );
+    if (attempt.kind !== "fragment") return undefined;
+    const bytes = encodeFragment(attempt.fragment);
+    return { range, bytes, forms: fragmentForms(forms) };
+  };
 }
 function describeForms(
   module: ModuleIR,
@@ -2480,7 +2880,11 @@ function emitModuleForms(
   options: EmissionOptions,
   forms: BranchForms,
   facts: EmissionFacts,
-): Emission {
+  plan?: FragmentPlan,
+  job?: FragmentJob,
+  precollected?: PrecollectedFragments,
+  prepareOnly?: boolean,
+): EmissionAttempt {
   /** An analysis work limit: unlimited for ahead-of-time builds. */
   const work = (limit: number): number =>
     options.unboundedAnalysis === true ? Number.MAX_SAFE_INTEGER : limit;
@@ -2495,6 +2899,7 @@ function emitModuleForms(
     return result;
   }
   const compactCalls = forms.calls;
+  const firstFunction = job === undefined ? 0 : job.range.first;
   const maxByteLength =
       options.maxByteLength === undefined
         ? Number.MAX_SAFE_INTEGER
@@ -2566,6 +2971,7 @@ function emitModuleForms(
   >();
   /** Candidate sets with a family bit, in first-use order. */
   const dispatchFamilies = new Map<string, number>();
+  const familySites: FamilySite[] = [];
   function callHelper(kind: LeafHelperKind): void {
     helperFixups.push({ offset: instructions.length * 4, kind });
     callRelative();
@@ -5114,322 +5520,393 @@ function emitModuleForms(
       maxByteLength > Number.MAX_SAFE_INTEGER
     )
       fail("CODE_LIMIT", "invalid byte budget");
-    const valid = facts.verified ?? verify(module, bodies);
-    facts.verified = valid;
-    if (!valid.ok) {
-      const error = valid.error;
-      functionId = error.function;
-      blockId = error.block;
-      const invalid = module.functions.findIndex(
-        (fn) => fn !== undefined && fn.id === functionId,
-      );
-      if (invalid >= 0) {
-        const fn = bodies.get(invalid);
-        try {
-          const block = fn.blocks.find(
-            (block) => block !== undefined && block.id === blockId,
-          );
-          const instruction = error.instruction;
-          const operation =
-            instruction === undefined
-              ? undefined
-              : block?.instructions[instruction];
-          if (operation !== undefined)
-            span = { start: operation.start, end: operation.end };
-        } finally {
-          bodies.release(invalid);
+    function prepare(): Preparation {
+      const valid = facts.verified ?? verify(module, bodies);
+      facts.verified = valid;
+      if (!valid.ok) {
+        const error = valid.error;
+        functionId = error.function;
+        blockId = error.block;
+        const invalid = module.functions.findIndex(
+          (fn) => fn !== undefined && fn.id === functionId,
+        );
+        if (invalid >= 0) {
+          const fn = bodies.get(invalid);
+          try {
+            const block = fn.blocks.find(
+              (block) => block !== undefined && block.id === blockId,
+            );
+            const instruction = error.instruction;
+            const operation =
+              instruction === undefined
+                ? undefined
+                : block?.instructions[instruction];
+            if (operation !== undefined)
+              span = { start: operation.start, end: operation.end };
+          } finally {
+            bodies.release(invalid);
+          }
         }
+        fail("INVALID_IR", error.message);
       }
-      fail("INVALID_IR", error.message);
-    }
-    // Optional scalar optimization can exhaust its module budget before slot
-    // cleanup. Plan frames from used locals, retaining ABI and transfer slots.
-    // Normalize before slot-indexed analyses; a bounded failure keeps the input.
-    const prepared = facts.frameModule;
-    if (prepared === undefined) {
-      const frameFunctions: FunctionIR[] = [];
+      // Optional scalar optimization can exhaust its module budget before slot
+      // cleanup. Plan frames from used locals, retaining ABI and transfer slots.
+      // Normalize before slot-indexed analyses; a bounded failure keeps the input.
+      const prepared = facts.frameModule;
+      if (prepared === undefined) {
+        const frameFunctions: FunctionIR[] = [];
+        for (const header of module.functions) {
+          if (header === undefined) throw "frame function invariant";
+          const fn = bodies.get(header.id);
+          try {
+            const compacted = compactSlots(fn, work(1000000))?.fn ?? fn;
+            if (compacted !== fn) bodies.put(compacted);
+            frameFunctions.push(functionHeader(compacted));
+          } finally {
+            bodies.release(header.id);
+          }
+        }
+        module = { ...module, functions: frameFunctions };
+        facts.frameModule = module;
+      } else module = prepared;
+      const managedABI = options.managedABI;
+      const witnesses = new Uint8Array(module.functions.length);
+      const addressTaken = new Uint8Array(module.functions.length);
+      const scanWitnesses =
+        managedABI?.signatures.some(
+          (binding) => binding?.witness !== undefined,
+        ) ?? false;
+      // Root-head bindings identify the calls that start stack walks.
+      const rootHeadBindings = new Uint8Array(module.functions.length);
+      const listShapes: (ListReadShape | undefined)[] = [];
+      const vectorShapes: (number | undefined)[] = [];
+      const writeShapes: (ListWriteShape | undefined)[] = [];
+      let hasFunctionOperations = false,
+        hasResultDiscard = false,
+        hasTypeErrors = false,
+        hasPlainErrors = false,
+        hasReferenceErrors = false;
       for (const header of module.functions) {
-        if (header === undefined) throw "frame function invariant";
+        if (header === undefined) throw "feature function invariant";
         const fn = bodies.get(header.id);
         try {
-          const compacted = compactSlots(fn, work(1000000))?.fn ?? fn;
-          if (compacted !== fn) bodies.put(compacted);
-          frameFunctions.push(functionHeader(compacted));
+          listShapes.push(listReadShape(fn));
+          vectorShapes.push(listVectorShape(fn));
+          writeShapes.push(listWriteShape(fn));
+          if (rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "feature block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "feature instruction invariant";
+              if (op.kind === "function-new" || op.kind === "function-address")
+                addressTaken[op.target] = 1;
+              if (op.kind === "function-new" || op.kind === "call-indirect") {
+                hasFunctionOperations = true;
+                if (op.kind === "call-indirect" && op.discardResult === true)
+                  hasResultDiscard = true;
+                if (scanWitnesses)
+                  witnesses[op.target] =
+                    (witnesses[op.target] ?? 0) |
+                    (op.kind === "function-new" ? 1 : 2);
+              } else if (
+                op.kind === "function-environment" ||
+                (op.kind === "host-call" &&
+                  (op.operation === "native-function-descriptor" ||
+                    op.operation === "native-function-signature" ||
+                    op.operation === "native-value-function-descriptor" ||
+                    op.operation === "native-value-function-signature"))
+              )
+                hasFunctionOperations = true;
+              else if (op.kind === "error-new" || op.kind === "error-is") {
+                hasTypeErrors = true;
+                if (op.kind === "error-new" && op.error === "Error")
+                  hasPlainErrors = true;
+                if (op.error === "ReferenceError") hasReferenceErrors = true;
+              }
+            }
+          }
         } finally {
           bodies.release(header.id);
         }
       }
-      module = { ...module, functions: frameFunctions };
-      facts.frameModule = module;
-    } else module = prepared;
-    const managedABI = options.managedABI;
-    const witnesses = new Uint8Array(module.functions.length);
-    const addressTaken = new Uint8Array(module.functions.length);
-    const scanWitnesses =
-      managedABI?.signatures.some(
-        (binding) => binding?.witness !== undefined,
-      ) ?? false;
-    // Root-head bindings identify the calls that start stack walks.
-    const rootHeadBindings = new Uint8Array(module.functions.length);
-    const listShapes: (ListReadShape | undefined)[] = [];
-    const vectorShapes: (number | undefined)[] = [];
-    const writeShapes: (ListWriteShape | undefined)[] = [];
-    let hasFunctionOperations = false,
-      hasResultDiscard = false,
-      hasTypeErrors = false,
-      hasPlainErrors = false,
-      hasReferenceErrors = false;
-    for (const header of module.functions) {
-      if (header === undefined) throw "feature function invariant";
-      const fn = bodies.get(header.id);
-      try {
-        listShapes.push(listReadShape(fn));
-        vectorShapes.push(listVectorShape(fn));
-        writeShapes.push(listWriteShape(fn));
-        if (rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
-        for (const block of fn.blocks) {
-          if (block === undefined) throw "feature block invariant";
-          for (const op of block.instructions) {
-            if (op === undefined) throw "feature instruction invariant";
-            if (op.kind === "function-new" || op.kind === "function-address")
-              addressTaken[op.target] = 1;
-            if (op.kind === "function-new" || op.kind === "call-indirect") {
-              hasFunctionOperations = true;
-              if (op.kind === "call-indirect" && op.discardResult === true)
-                hasResultDiscard = true;
-              if (scanWitnesses)
-                witnesses[op.target] =
-                  (witnesses[op.target] ?? 0) |
-                  (op.kind === "function-new" ? 1 : 2);
-            } else if (
-              op.kind === "function-environment" ||
-              (op.kind === "host-call" &&
-                (op.operation === "native-function-descriptor" ||
-                  op.operation === "native-function-signature" ||
-                  op.operation === "native-value-function-descriptor" ||
-                  op.operation === "native-value-function-signature"))
-            )
-              hasFunctionOperations = true;
-            else if (op.kind === "error-new" || op.kind === "error-is") {
-              hasTypeErrors = true;
-              if (op.kind === "error-new" && op.error === "Error")
-                hasPlainErrors = true;
-              if (op.error === "ReferenceError") hasReferenceErrors = true;
-            }
-          }
-        }
-      } finally {
-        bodies.release(header.id);
-      }
-    }
-    if (managedABI !== undefined)
-      brandImport = bindManagedABI(
-        module,
-        managedABI,
-        witnesses,
-        {
-          requests: managedRequests,
-          entries: entryImports,
-          signatures: signatureImports,
-          records: recordImports,
-        },
-        fail,
-      );
-    for (const fn of module.functions) {
-      if (fn === undefined) throw "function entry invariant";
-      if (fn.import === true && !entryImports.has(fn.id))
-        fail(
-          "UNSUPPORTED",
-          "unbound imported function requires a function-entry binding",
-        );
-    }
-    for (const root of closedRoots ?? []) {
-      if (root !== undefined && module.functions[root]?.import === true)
-        fail("INVALID_IR", "imported functions cannot be executable roots");
-    }
-    if (generationalBarriers) {
-      if (
-        !trackedManagedWrites(
+      if (managedABI !== undefined)
+        brandImport = bindManagedABI(
           module,
-          bodies,
-          options.trustedExecutableCode === true,
-        )
-      )
-        fail(
-          "INVALID_IR",
-          "generational mutator requires tracked managed writes; raw memory capabilities are unsupported",
+          managedABI,
+          witnesses,
+          {
+            requests: managedRequests,
+            entries: entryImports,
+            signatures: signatureImports,
+            records: recordImports,
+          },
+          fail,
         );
       for (const fn of module.functions) {
-        if (fn === undefined) throw "function invariant";
-        const environment = fn.environment;
+        if (fn === undefined) throw "function entry invariant";
+        if (fn.import === true && !entryImports.has(fn.id))
+          fail(
+            "UNSUPPORTED",
+            "unbound imported function requires a function-entry binding",
+          );
+      }
+      for (const root of closedRoots ?? []) {
+        if (root !== undefined && module.functions[root]?.import === true)
+          fail("INVALID_IR", "imported functions cannot be executable roots");
+      }
+      if (generationalBarriers) {
         if (
-          environment !== undefined &&
-          environment.cells.some(
-            (cell) => managed(cell.type) || cell.type === "general",
+          !trackedManagedWrites(
+            module,
+            bodies,
+            options.trustedExecutableCode === true,
           )
         )
           fail(
             "INVALID_IR",
-            "generational mutator cannot track a borrowed reference environment",
+            "generational mutator requires tracked managed writes; raw memory capabilities are unsupported",
           );
+        for (const fn of module.functions) {
+          if (fn === undefined) throw "function invariant";
+          const environment = fn.environment;
+          if (
+            environment !== undefined &&
+            environment.cells.some(
+              (cell) => managed(cell.type) || cell.type === "general",
+            )
+          )
+            fail(
+              "INVALID_IR",
+              "generational mutator cannot track a borrowed reference environment",
+            );
+        }
       }
-    }
-    const functionRecord = module.records?.length ?? 0;
-    const hasFunctions = brandImport !== undefined || hasFunctionOperations;
-    const recordLayouts: RecordLayout[] = [];
-    for (const record of module.records ?? []) {
-      if (record === undefined) throw "record layout invariant";
-      recordLayouts.push(record);
-    }
-    if (hasFunctions)
-      recordLayouts.push({
-        byteLength: nativeFunctionByteLength,
-        fields: [
-          {
-            offset: nativeFunctionEnvironmentOffset,
-            type: "optional-reference",
-            mutable: false,
-          },
-        ],
-      });
-    // Native error descriptors: TypeError, RangeError, then Error and
-    // ReferenceError when the module creates them.
-    const typeErrorRecord = recordLayouts.length,
-      errorDescriptorCount = hasReferenceErrors ? 4 : hasPlainErrors ? 3 : 2;
-    if (hasTypeErrors)
-      for (let i = 0; i < errorDescriptorCount; i++)
+      const functionRecord = module.records?.length ?? 0;
+      const hasFunctions = brandImport !== undefined || hasFunctionOperations;
+      const recordLayouts: RecordLayout[] = [];
+      for (const record of module.records ?? []) {
+        if (record === undefined) throw "record layout invariant";
+        recordLayouts.push(record);
+      }
+      if (hasFunctions)
         recordLayouts.push({
-          byteLength: recordHeaderBytes + 8,
+          byteLength: nativeFunctionByteLength,
           fields: [
-            { offset: recordHeaderBytes, type: "string", mutable: false },
+            {
+              offset: nativeFunctionEnvironmentOffset,
+              type: "optional-reference",
+              mutable: false,
+            },
           ],
         });
-    const localSignatures = planLocalSignatures(
-      module.functions,
-      options.localSignatures ?? [],
-      signatureImports,
-      managedRequests.map((request) => request.name),
-      managedRequests.map((request) => request.contract),
-    );
-    if (!localSignatures.ok) fail("INVALID_IR", localSignatures.error);
-    const localGroups = localSignatures.groups;
-    const signatureIds = new Uint32Array(module.functions.length);
-    const signatureKeys = createStringIndex<number>();
-    const discardResultTargets = createStringIndex<number[]>();
-    const parameterKeys: string[] = [];
-    const seenDiscardSignatures = new Set<number>();
-    for (const f of module.functions) {
-      if (f === undefined) throw "function invariant";
-      let parameters = f.scriptEntry === true ? ":javascript:" : ":";
-      for (const slot of f.parameters) {
-        if (slot === undefined) throw "parameter invariant";
-        const type = f.slots[slot];
-        if (type === undefined) throw "parameter type invariant";
-        parameters += type + ":";
-      }
-      parameterKeys.push(parameters);
-      const key = f.returnType + parameters;
-      const prior = signatureKeys.get(key);
-      const first = prior ?? f.id + 1;
-      if (prior === undefined) signatureKeys.set(key, first);
-      const group = localSignatures.byFunction[f.id] ?? 0;
-      signatureIds[f.id] =
-        group === 0 ? first : module.functions.length + group;
-      // Managed identities also encode semantic contracts. Keep their
-      // exact-pointer checks at service-unit boundaries.
-      if (
-        hasResultDiscard &&
-        f.returnType !== "void" &&
-        addressTaken[f.id] === 1 &&
-        group === 0 &&
-        !signatureImports.has(f.id) &&
-        !seenDiscardSignatures.has(first)
-      ) {
-        seenDiscardSignatures.add(first);
-        const targets = discardResultTargets.get(parameters);
-        if (targets === undefined) discardResultTargets.set(parameters, [f.id]);
-        else targets.push(f.id);
-      }
-    }
-    const stableLayouts = stableRecordLayouts(module, bodies),
-      // Intraprocedural descriptor proofs need descriptor stability only.
-      stableGuards = stableDescriptors(module, bodies);
-    const stableSlots =
-      stableLayouts &&
-      !module.functions.some((fn) => fn.environment !== undefined);
-    const wordReturns =
-      facts.wordReturns ??
-      (stableSlots
-        ? provenWordReturns(module, work(10000000), work(1000000), bodies)
-        : new Uint8Array(module.functions.length));
-    facts.wordReturns = wordReturns;
-    if (!facts.wordArgumentsKnown) {
-      facts.wordArguments =
-        stableSlots && closedRoots !== undefined
-          ? provenWordArguments(
-              module,
-              closedRoots,
-              wordReturns,
-              work(10000000),
-              bodies,
-            )
-          : undefined;
-      facts.wordArgumentsKnown = true;
-    }
-    const wordArguments = facts.wordArguments;
-    if (!facts.recordFlowsKnown) {
-      facts.recordFlows =
-        closedRoots === undefined
-          ? undefined
-          : provenRecordFacts(
-              module,
-              work(10000000),
-              true,
-              closedRoots,
-              bodies,
-            );
-      facts.recordFlowsKnown = true;
-    }
-    const recordValues = facts.recordFlows,
-      recordFlows = recordValues?.blocks;
-    if (!facts.noSafepointsKnown) {
-      facts.noSafepoints = provenNoSafepoints(module, work(10000000), bodies);
-      facts.noSafepointsKnown = true;
-    }
-    const noSafepoints = facts.noSafepoints;
-    if (!facts.directReturnsKnown) {
-      facts.directReturns =
-        closedRoots === undefined
-          ? undefined
-          : provenDirectOnlyFunctions(
-              module,
-              closedRoots,
-              work(10000000),
-              bodies,
-            );
-      facts.directReturnsKnown = true;
-    }
-    const directReturns = facts.directReturns;
-    let pureLeafNoActivation = facts.pureLeafNoActivation;
-    if (pureLeafNoActivation === undefined) {
-      pureLeafNoActivation = computePureLeafNoActivation(
-        module,
-        bodies,
-        noSafepoints,
+      // Native error descriptors: TypeError, RangeError, then Error and
+      // ReferenceError when the module creates them.
+      const typeErrorRecord = recordLayouts.length,
+        errorDescriptorCount = hasReferenceErrors ? 4 : hasPlainErrors ? 3 : 2;
+      if (hasTypeErrors)
+        for (let i = 0; i < errorDescriptorCount; i++)
+          recordLayouts.push({
+            byteLength: recordHeaderBytes + 8,
+            fields: [
+              { offset: recordHeaderBytes, type: "string", mutable: false },
+            ],
+          });
+      const localSignatures = planLocalSignatures(
+        module.functions,
+        options.localSignatures ?? [],
+        signatureImports,
+        managedRequests.map((request) => request.name),
+        managedRequests.map((request) => request.contract),
       );
-      facts.pureLeafNoActivation = pureLeafNoActivation;
+      if (!localSignatures.ok) fail("INVALID_IR", localSignatures.error);
+      const localGroups = localSignatures.groups;
+      const signatureIds = new Uint32Array(module.functions.length);
+      const signatureKeys = createStringIndex<number>();
+      const discardResultTargets = createStringIndex<number[]>();
+      const parameterKeys: string[] = [];
+      const seenDiscardSignatures = new Set<number>();
+      for (const f of module.functions) {
+        if (f === undefined) throw "function invariant";
+        let parameters = f.scriptEntry === true ? ":javascript:" : ":";
+        for (const slot of f.parameters) {
+          if (slot === undefined) throw "parameter invariant";
+          const type = f.slots[slot];
+          if (type === undefined) throw "parameter type invariant";
+          parameters += type + ":";
+        }
+        parameterKeys.push(parameters);
+        const key = f.returnType + parameters;
+        const prior = signatureKeys.get(key);
+        const first = prior ?? f.id + 1;
+        if (prior === undefined) signatureKeys.set(key, first);
+        const group = localSignatures.byFunction[f.id] ?? 0;
+        signatureIds[f.id] =
+          group === 0 ? first : module.functions.length + group;
+        // Managed identities also encode semantic contracts. Keep their
+        // exact-pointer checks at service-unit boundaries.
+        if (
+          hasResultDiscard &&
+          f.returnType !== "void" &&
+          addressTaken[f.id] === 1 &&
+          group === 0 &&
+          !signatureImports.has(f.id) &&
+          !seenDiscardSignatures.has(first)
+        ) {
+          seenDiscardSignatures.add(first);
+          const targets = discardResultTargets.get(parameters);
+          if (targets === undefined)
+            discardResultTargets.set(parameters, [f.id]);
+          else targets.push(f.id);
+        }
+      }
+      const stableLayouts = stableRecordLayouts(module, bodies),
+        // Intraprocedural descriptor proofs need descriptor stability only.
+        stableGuards = stableDescriptors(module, bodies);
+      const stableSlots =
+        stableLayouts &&
+        !module.functions.some((fn) => fn.environment !== undefined);
+      const wordReturns =
+        facts.wordReturns ??
+        (stableSlots
+          ? provenWordReturns(module, work(10000000), work(1000000), bodies)
+          : new Uint8Array(module.functions.length));
+      facts.wordReturns = wordReturns;
+      if (!facts.wordArgumentsKnown) {
+        facts.wordArguments =
+          stableSlots && closedRoots !== undefined
+            ? provenWordArguments(
+                module,
+                closedRoots,
+                wordReturns,
+                work(10000000),
+                bodies,
+              )
+            : undefined;
+        facts.wordArgumentsKnown = true;
+      }
+      const wordArguments = facts.wordArguments;
+      if (!facts.recordFlowsKnown) {
+        facts.recordFlows =
+          closedRoots === undefined
+            ? undefined
+            : provenRecordFacts(
+                module,
+                work(10000000),
+                true,
+                closedRoots,
+                bodies,
+              );
+        facts.recordFlowsKnown = true;
+      }
+      if (!facts.noSafepointsKnown) {
+        facts.noSafepoints = provenNoSafepoints(module, work(10000000), bodies);
+        facts.noSafepointsKnown = true;
+      }
+      const noSafepoints = facts.noSafepoints;
+      if (!facts.directReturnsKnown) {
+        facts.directReturns =
+          closedRoots === undefined
+            ? undefined
+            : provenDirectOnlyFunctions(
+                module,
+                closedRoots,
+                work(10000000),
+                bodies,
+              );
+        facts.directReturnsKnown = true;
+      }
+      const directReturns = facts.directReturns;
+      let pureLeafNoActivation = facts.pureLeafNoActivation;
+      if (pureLeafNoActivation === undefined) {
+        pureLeafNoActivation = computePureLeafNoActivation(
+          module,
+          bodies,
+          noSafepoints,
+        );
+        facts.pureLeafNoActivation = pureLeafNoActivation;
+      }
+      const signatures = module.functions.map((fn): SignatureLayout => {
+        if (fn === undefined) throw "function invariant";
+        return signatureLayout(fn);
+      });
+      return {
+        module,
+        rootHeadBindings,
+        listShapes,
+        vectorShapes,
+        writeShapes,
+        hasPlainErrors,
+        hasReferenceErrors,
+        functionRecord,
+        hasFunctions,
+        recordLayouts,
+        typeErrorRecord,
+        signatureIds,
+        discardResultTargets,
+        parameterKeys,
+        stableLayouts,
+        stableGuards,
+        stableSlots,
+        wordReturns,
+        wordArguments,
+        noSafepoints,
+        directReturns,
+        pureLeafNoActivation,
+        signatures,
+        recordValues: facts.recordFlows,
+        localGroups,
+        signatureGroups: localSignatures.byFunction,
+      };
     }
-    const signatures = module.functions.map((fn): SignatureLayout => {
-      if (fn === undefined) throw "function invariant";
-      return signatureLayout(fn);
-    });
+    const prepared =
+      precollected !== undefined
+        ? precollected.preparation
+        : job === undefined
+          ? prepare()
+          : job.preparation;
+    if (prepareOnly === true)
+      return { kind: "prepared", preparation: prepared };
+    module = prepared.module;
+    const {
+      rootHeadBindings,
+      listShapes,
+      vectorShapes,
+      writeShapes,
+      hasPlainErrors,
+      hasReferenceErrors,
+      functionRecord,
+      hasFunctions,
+      recordLayouts,
+      typeErrorRecord,
+      signatureIds,
+      discardResultTargets,
+      parameterKeys,
+      stableLayouts,
+      stableGuards,
+      stableSlots,
+      wordReturns,
+      wordArguments,
+      noSafepoints,
+      directReturns,
+      pureLeafNoActivation,
+      signatures,
+      localGroups,
+      signatureGroups,
+      recordValues,
+    } = prepared;
+    const errorDescriptorCount = hasReferenceErrors
+      ? 4
+      : hasPlainErrors
+        ? 3
+        : 2;
+    const recordFlows = recordValues?.blocks;
     function listReadShapes(id: number): ListReadShape | undefined {
       return listShapes[id];
     }
     /** Whether a conditional branch recorded since `firstFixup` that
      * targets a block of `owner` cannot reach it in compact form. */
     function ownBranchesOutOfReach(owner: number, firstFixup: number): boolean {
-      const labels = blockOffsets[owner];
+      const labels = blockOffsets[owner - firstFunction];
       if (labels === undefined) return false;
       for (let index = firstFixup; index < fixups.length; index++) {
         const fixup = fixups[index];
@@ -5462,6 +5939,7 @@ function emitModuleForms(
       readonly cellFixups: number;
       readonly stringFixups: number;
       readonly dispatchFixups: number;
+      readonly familySites: number;
       readonly safepoints: number;
       readonly sourceRanges: number;
       readonly operationRanges: number;
@@ -5499,6 +5977,7 @@ function emitModuleForms(
       while (cellFixups.length > mark.cellFixups) cellFixups.pop();
       while (stringFixups.length > mark.stringFixups) stringFixups.pop();
       while (dispatchFixups.length > mark.dispatchFixups) dispatchFixups.pop();
+      while (familySites.length > mark.familySites) familySites.pop();
       while (safepoints.length > mark.safepoints) safepoints.pop();
       while (sourceRanges.length > mark.sourceRanges) sourceRanges.pop();
       while (operationRanges.length > mark.operationRanges)
@@ -5507,7 +5986,264 @@ function emitModuleForms(
       // Import call sites in re-emitted code are recorded again.
       while (imports.length > mark.imports) imports.pop();
     }
-    for (const header of module.functions) {
+    function mergePackets(
+      packets: SpilledPacket[],
+      backend: SpillBackend | undefined,
+    ): void {
+      packets.sort((a, b) => a.range.first - b.range.first);
+      for (const packet of packets) {
+        if (packet === undefined) throw "emission fragment invariant";
+        const segment = packet.segment;
+        const bytes =
+          backend === undefined || segment === undefined
+            ? packet.bytes
+            : backend.read(segment);
+        if (bytes === undefined) throw "missing fragment packet";
+        const part = decodeFragment(
+          bytes,
+          prepared.module.functions,
+          prepared.signatures,
+        );
+        if (
+          part.range.first !== packet.range.first ||
+          part.range.end !== packet.range.end
+        )
+          throw "fragment packet range mismatch";
+        packet.bytes = undefined;
+        if (backend !== undefined && segment !== undefined) {
+          packet.segment = undefined;
+          backend.release(segment);
+        }
+        const offset = instructions.length * 4;
+        const fixupStart = fixups.length;
+        for (let index = 0; index < part.instructions.length; index++) {
+          const word = readWord(part.instructions, index);
+          if (word === undefined) throw "emission fragment word invariant";
+          appendWord(instructions, word);
+        }
+        for (const fn of part.functions) {
+          if (fn === undefined) throw "emission fragment function invariant";
+          functions.push(
+            fn.import === true ? fn : { ...fn, offset: fn.offset + offset },
+          );
+        }
+        for (const block of part.blockOffsets) {
+          if (block === undefined) throw "emission fragment label invariant";
+          blockOffsets.push({
+            offsets: block.offsets.map((value) =>
+              value === undefined ? undefined : value + offset,
+            ),
+          });
+        }
+        for (const site of part.fixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          fixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.helperFixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          helperFixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.recordFixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          recordFixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.functionAddresses) {
+          if (site === undefined) throw "emission fragment site invariant";
+          functionAddresses.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.signatureFixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          signatureFixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.cellFixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          cellFixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.stringFixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          stringFixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.dispatchFixups) {
+          if (site === undefined) throw "emission fragment site invariant";
+          dispatchFixups.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.sourceRanges) {
+          if (site === undefined) throw "emission fragment site invariant";
+          sourceRanges.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.operationRanges) {
+          if (site === undefined) throw "emission fragment site invariant";
+          operationRanges.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.startupCalls) {
+          if (site === undefined) throw "emission fragment site invariant";
+          startupCalls.push({ ...site, offset: site.offset + offset });
+        }
+        for (const site of part.imports) {
+          if (site === undefined) throw "emission fragment site invariant";
+          imports.push({ ...site, offset: site.offset + offset });
+        }
+        for (const index of part.resolvedFixups)
+          resolvedFixups.add(index + fixupStart);
+        for (const entry of part.safepoints) {
+          if (entry === undefined)
+            throw "emission fragment safepoint invariant";
+          safepoints.push({
+            offset: entry.offset + offset,
+            start: entry.start + offset,
+            map: entry.map,
+          });
+        }
+        for (const [key, entry] of part.cellRequests)
+          cellRequests.set(key, entry);
+        for (const [key, entry] of part.dispatchSets)
+          if (!dispatchSets.has(key)) dispatchSets.set(key, entry);
+        for (const [key, _family] of part.dispatchFamilies) {
+          if (dispatchFamilies.has(key)) continue;
+          if (dispatchFamilies.size >= dispatchFamilyWords * 64)
+            fail("UNSUPPORTED", unsupportedFragmentMessage);
+          dispatchFamilies.set(key, dispatchFamilies.size);
+        }
+        for (const site of part.familySites) {
+          if (site === undefined)
+            throw "emission fragment family site invariant";
+          const family = dispatchFamilies.get(site.key);
+          if (family === undefined) throw "emission fragment family invariant";
+          const high = encode({
+            op: "sub-imm",
+            width: 64,
+            rd: 12,
+            rn: 10,
+            immediate: 16 + (family >>> 6) * 8,
+            shift: 0,
+            setFlags: false,
+          });
+          const low = encode({
+            op: "ubfm",
+            width: 64,
+            rd: 12,
+            rn: 12,
+            immr: family & 63,
+            imms: family & 63,
+          });
+          if (!high.ok || !low.ok)
+            throw "emission fragment family encoding invariant";
+          writeWord(instructions, site.word + offset / 4, high.value);
+          writeWord(instructions, site.word + offset / 4 + 2, low.value);
+        }
+        for (const [site, owner] of part.compactSites)
+          compactSites.set(site + offset, owner);
+        for (const site of part.pageSites) pageSites.add(site + offset);
+        if (part.compactOverflow) compactOverflow = true;
+        if (part.usesUnitStrings) usesUnitStrings = true;
+      }
+    }
+    if (precollected !== undefined) {
+      const backend = precollected.backend;
+      const collectedPackets = precollected.packets;
+      try {
+        mergePackets(collectedPackets, backend);
+      } finally {
+        if (backend !== undefined)
+          for (const packet of collectedPackets) {
+            if (packet === undefined) continue;
+            const segment = packet.segment;
+            if (segment !== undefined) {
+              packet.segment = undefined;
+              backend.release(segment);
+            }
+          }
+      }
+    } else if (plan !== undefined) {
+      const backend = plan.packets;
+      const ranges = plan.ranges;
+      const beforePack = plan.beforePack;
+      const afterPreparation = plan.afterPreparation;
+      const packets: SpilledPacket[] = [];
+      function writePacket(range: EmissionRange, bytes: Uint8Array): void {
+        if (backend === undefined)
+          packets.push({ range, bytes, segment: undefined });
+        else
+          packets.push({
+            range,
+            bytes: undefined,
+            segment: backend.write(bytes),
+          });
+      }
+      const executor = plan.execute;
+      if (executor !== undefined && beforePack !== undefined) beforePack();
+      const input =
+        executor === undefined ? undefined : packPreparation(prepared, bodies);
+      if (afterPreparation !== undefined) afterPreparation();
+      try {
+        if (executor !== undefined && input !== undefined) {
+          const pending = new Map<number, number>();
+          for (const range of ranges) {
+            if (range === undefined) throw "emission range invariant";
+            pending.set(range.first, range.end);
+          }
+          const completed = executor(
+            input,
+            fragmentForms(forms),
+            ranges,
+            (packet: FragmentReply): void => {
+              const range = packet.range;
+              if (pending.get(range.first) !== range.end)
+                throw "unexpected fragment reply";
+              pending.delete(range.first);
+              // A range may choose islands or long branches for its own
+              // functions. Whole-image forms are decided at final placement.
+              for (const id of packet.forms.longBranches)
+                if (id !== undefined && id >= range.first && id < range.end)
+                  forms.longBranches.add(id);
+              for (const id of packet.forms.islands)
+                if (id !== undefined && id >= range.first && id < range.end)
+                  forms.islands.add(id);
+              for (const id of packet.forms.farBranches)
+                if (id !== undefined && id >= range.first && id < range.end)
+                  forms.farBranches.add(id);
+              writePacket(range, packet.bytes);
+            },
+          );
+          if (!completed) fail("UNSUPPORTED", unsupportedFragmentMessage);
+          if (pending.size !== 0) throw "incomplete fragment replies";
+        } else {
+          for (const range of ranges) {
+            if (range === undefined) throw "emission range invariant";
+            const work: FragmentJob = { range, preparation: prepared };
+            const attempt = emitModuleForms(
+              module,
+              bodies,
+              options,
+              forms,
+              facts,
+              undefined,
+              work,
+            );
+            if (attempt.kind === "emission") return attempt;
+            if (attempt.kind !== "fragment")
+              throw "unexpected fragment attempt";
+            writePacket(range, encodeFragment(attempt.fragment));
+          }
+        }
+        mergePackets(packets, backend);
+      } finally {
+        if (backend !== undefined)
+          for (const packet of packets) {
+            if (packet === undefined) continue;
+            const segment = packet.segment;
+            if (segment !== undefined) backend.release(segment);
+          }
+      }
+    }
+    const none: readonly FunctionIR[] = [];
+    const emissionFunctions =
+      plan !== undefined || precollected !== undefined
+        ? none
+        : job === undefined
+          ? module.functions
+          : module.functions.slice(firstFunction, job.range.end);
+    for (const header of emissionFunctions) {
       if (header === undefined) throw "function invariant";
       if (header.import === true) {
         const fn = header;
@@ -5578,6 +6314,7 @@ function emitModuleForms(
           cellFixups: cellFixups.length,
           stringFixups: stringFixups.length,
           dispatchFixups: dispatchFixups.length,
+          familySites: familySites.length,
           safepoints: safepoints.length,
           sourceRanges: sourceRanges.length,
           operationRanges: operationRanges.length,
@@ -11579,6 +12316,12 @@ function emitModuleForms(
               family = dispatchFamilies.size;
               dispatchFamilies.set(key, family);
             }
+            if (job !== undefined) {
+              if (!dispatchFamilies.has(key))
+                dispatchFamilies.set(key, dispatchFamilies.size);
+              family = 0;
+              familySites.push({ key, word: instructions.length });
+            }
             if (family !== undefined) {
               emit({
                 op: "sub-imm",
@@ -14930,7 +15673,7 @@ function emitModuleForms(
           listReadShapes,
           literalTwo,
           localPointer,
-          localSignatures,
+          signatureGroups,
           loopPreheaderHoists,
           low32Tree,
           lowWordStoreValues,
@@ -15716,6 +16459,44 @@ function emitModuleForms(
       emitting = -1;
     }
     scalarRegisters = undefined;
+    if (job !== undefined) {
+      if (
+        callbackThunkRequests.length !== 0 ||
+        managedPointerFixups.length !== 0
+      )
+        fail("UNSUPPORTED", unsupportedFragmentMessage);
+      return {
+        kind: "fragment",
+        fragment: {
+          range: job.range,
+          instructions,
+          functions,
+          blockOffsets,
+          fixups,
+          resolvedFixups,
+          helperFixups,
+          recordFixups,
+          functionAddresses,
+          signatureFixups,
+          cellFixups,
+          stringFixups,
+          dispatchFixups,
+          sourceRanges,
+          operationRanges,
+          startupCalls,
+          imports,
+          safepoints,
+          cellRequests,
+          dispatchSets,
+          dispatchFamilies,
+          familySites,
+          compactSites,
+          pageSites,
+          compactOverflow,
+          usesUnitStrings,
+        },
+      };
+    }
     // Each private leaf helper is appended once, regardless of the number of call sites.
     functionId = undefined;
     blockId = undefined;
@@ -16319,7 +17100,7 @@ function emitModuleForms(
         fail("ENCODING", "record descriptor address failed");
     }
     if (compactOverflow) fail("ENCODING", compactRangeMessage);
-    return {
+    const emission: Emission = {
       ok: true,
       value: {
         code,
@@ -16373,12 +17154,13 @@ function emitModuleForms(
         ),
       },
     };
+    return { kind: "emission", emission };
   } catch (error) {
     if (emitting >= 0) bodies.release(emitting);
     if (error !== abort) throw error;
   }
   if (failure === undefined) throw "emission failure invariant";
-  return { ok: false, error: failure };
+  return { kind: "emission", emission: { ok: false, error: failure } };
 }
 
 /** Stack overflow completion, called from a prologue before any frame store:
