@@ -6,8 +6,14 @@ import {
   linuxAArch64Target,
   linuxX86_64Target,
 } from "@tint/platform/target";
-import { projectMappings } from "../src/catalog.ts";
-import { compilerMappingsForTarget } from "../src/project.ts";
+import { readFileSync } from "node:fs";
+import { projectFiles, projectMappings } from "../src/catalog.ts";
+import {
+  compilerBuildRequest,
+  compilerMappingsForTarget,
+  loadCompilerSourceGraph,
+} from "../src/project.ts";
+import { expandForeignInputs } from "../src/native/foreign/index.ts";
 import type { ForeignLibrary } from "../src/native/index.ts";
 import {
   admitEmissionWorkers,
@@ -245,4 +251,78 @@ test("compilerMappingsForTarget binds target-specific parallel hosts for AArch64
     ),
     "packages/platform/src/parallel-host.ts",
   );
+});
+
+test("loadCompilerSourceGraph and compilerBuildRequest isolate threaded worker modules to AArch64 worker builds", () => {
+  const inputs = projectFiles().map((file) => ({
+    id: file.id,
+    packageId: file.packageId,
+    bytes: new Uint8Array(readFileSync(file.id)),
+  }));
+  const armForeign = expandForeignInputs(inputs, darwinAArch64Target.c);
+  assert.ok(armForeign.ok);
+  const armMappings = [
+    ...compilerMappingsForTarget(
+      projectMappings(),
+      darwinAArch64Target,
+      armForeign.value.libraries,
+    ),
+    ...armForeign.value.mappings,
+  ];
+  const armGraph = loadCompilerSourceGraph(
+    armForeign.value.inputs,
+    armMappings,
+  );
+  assert.ok(armGraph.ok);
+  assert.ok(
+    armGraph.value.ids.includes("packages/compiler/src/cli-threaded.ts"),
+  );
+  const armRequest = compilerBuildRequest(
+    [],
+    () => {},
+    armForeign.value.libraries,
+    armGraph.value,
+  );
+  assert.equal(armRequest.entry, "packages/compiler/src/cli-threaded.ts");
+  assert.equal(armRequest.start, "mainThreaded");
+  assert.equal(armRequest.threaded, true);
+  assert.equal(armRequest.threadExitPipe, true);
+
+  const x64Foreign = expandForeignInputs(inputs, linuxX86_64Target.c);
+  assert.ok(x64Foreign.ok);
+  const x64Mappings = [
+    ...compilerMappingsForTarget(
+      projectMappings(),
+      linuxX86_64Target,
+      x64Foreign.value.libraries,
+    ),
+    ...x64Foreign.value.mappings,
+  ];
+  const x64Graph = loadCompilerSourceGraph(
+    x64Foreign.value.inputs,
+    x64Mappings,
+  );
+  assert.ok(x64Graph.ok);
+  assert.ok(
+    !x64Graph.value.ids.includes("packages/compiler/src/cli-threaded.ts"),
+  );
+  assert.ok(
+    !x64Graph.value.ids.includes(
+      "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+    ),
+  );
+  assert.ok(
+    !x64Graph.value.ids.includes(
+      "packages/native-runtime/src/ffi/primitives.ts",
+    ),
+  );
+  const x64Request = compilerBuildRequest(
+    [],
+    () => {},
+    x64Foreign.value.libraries,
+    x64Graph.value,
+  );
+  assert.equal(x64Request.entry, "packages/compiler/src/cli.ts");
+  assert.equal(x64Request.start, "main");
+  assert.equal(x64Request.threaded, undefined);
 });

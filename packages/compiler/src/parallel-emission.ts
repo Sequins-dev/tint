@@ -60,15 +60,8 @@ import {
   planEmissionRanges,
 } from "./parallel-policy.ts";
 
-export interface ParallelBuildOptions {
-  readonly workers: number;
-  readonly spillDirectory: string;
-  readonly workerHeapBytes: number;
-  readonly memoryBudgetBytes: number | undefined;
-  readonly reportStats: boolean;
-  readonly host: FileHost<number>;
-  readonly report: (message: string) => void;
-}
+import type { ParallelBuildOptions } from "./cli.ts";
+export type { ParallelBuildOptions };
 
 const fragmentWorkerModuleId = 1;
 const MiB = 1048576;

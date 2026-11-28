@@ -1,8 +1,16 @@
-import { buildMacOSProgram, type BuildRequest } from "./build.ts";
+import {
+  buildMacOSProgram,
+  type BuildRequest,
+  type BuildResult,
+} from "./build.ts";
 import { type ProgramOptimizationObserver } from "./native/index.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
-import { readFile, publishFile } from "@tint/platform/files/service";
+import {
+  readFile,
+  publishFile,
+  type FileHost,
+} from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
 import type { SourceInput } from "@tint/typescript/modules";
 import {
@@ -25,10 +33,6 @@ import {
 } from "./project.ts";
 import { expandForeignInputs } from "./native/foreign/index.ts";
 import { compilerUsage, parseCompilerArguments } from "./cli-arguments.ts";
-import {
-  buildParallelMacOSProgram,
-  runFragmentWorker,
-} from "./parallel-emission.ts";
 export {
   projectRoots,
   loadCompilerSourceGraph,
@@ -39,6 +43,15 @@ export {
   runtimeSources,
 } from "./project.ts";
 export { projectFiles, projectMappings } from "./catalog.ts";
+export interface ParallelBuildOptions {
+  readonly workers: number;
+  readonly spillDirectory: string;
+  readonly workerHeapBytes: number;
+  readonly memoryBudgetBytes: number | undefined;
+  readonly reportStats: boolean;
+  readonly host: FileHost<number>;
+  readonly report: (message: string) => void;
+}
 function argument(index: number): string | undefined {
   const length = argumentByteLength(index);
   if (length < 0) return undefined;
@@ -52,10 +65,13 @@ function parentDirectory(path: string): string {
   return slash === 0 ? "/" : path.slice(0, slash);
 }
 export function main(): number {
-  return mainThreaded(0);
+  return runCompilerCli(undefined);
 }
-export function mainThreaded(workerArgument: number): number {
-  if (workerArgument !== 0) return runFragmentWorker(workerArgument);
+export function runCompilerCli(
+  buildParallel:
+    | ((request: BuildRequest, options: ParallelBuildOptions) => BuildResult)
+    | undefined,
+): number {
   // The compiler's own execution host: the target it was compiled for. It
   // selects the file host (errno names and values) and the default target.
   const hostTarget = nativeHostTarget();
@@ -164,21 +180,28 @@ export function mainThreaded(workerArgument: number): number {
     const effectiveRequest: BuildRequest = parsed.passStatistics
       ? { ...request, optimizationObserver: observer }
       : request;
-    const built =
-      parsed.workers > 0
-        ? buildParallelMacOSProgram(effectiveRequest, {
-            workers: parsed.workers,
-            spillDirectory: parsed.spillDirectory ?? parentDirectory(output),
-            workerHeapBytes: parsed.workerHeapMiB * 1048576,
-            memoryBudgetBytes:
-              parsed.memoryBudgetMiB === undefined
-                ? undefined
-                : parsed.memoryBudgetMiB * 1048576,
-            reportStats: parsed.workerStatistics,
-            host,
-            report,
-          })
-        : buildMacOSProgram(effectiveRequest);
+    let built: BuildResult;
+    if (parsed.workers > 0) {
+      if (buildParallel !== undefined)
+        built = buildParallel(effectiveRequest, {
+          workers: parsed.workers,
+          spillDirectory: parsed.spillDirectory ?? parentDirectory(output),
+          workerHeapBytes: parsed.workerHeapMiB * 1048576,
+          memoryBudgetBytes:
+            parsed.memoryBudgetMiB === undefined
+              ? undefined
+              : parsed.memoryBudgetMiB * 1048576,
+          reportStats: parsed.workerStatistics,
+          host,
+          report,
+        });
+      else {
+        report(
+          "parallel-emission: unavailable on this target; falling back to serial build",
+        );
+        built = buildMacOSProgram(effectiveRequest);
+      }
+    } else built = buildMacOSProgram(effectiveRequest);
     if (!built.ok) {
       report(built.error.stage + ": " + built.error.message);
       return 1;

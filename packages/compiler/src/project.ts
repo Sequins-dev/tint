@@ -156,6 +156,18 @@ export function loadCompilerSourceGraph(
   mappings: readonly ImportMapping[],
 ): LoadSourceGraphLoaderResult {
   const roots = projectRoots();
+  const cliThreaded = "packages/compiler/src/cli-threaded.ts";
+  const workersEnabled = mappings.some(
+    (mapping) =>
+      mapping !== undefined &&
+      mapping.specifier === "@tint/platform/parallel-host" &&
+      mapping.target !== "packages/platform/src/parallel-host.ts",
+  );
+  if (
+    workersEnabled &&
+    inputs.some((input) => input !== undefined && input.id === cliThreaded)
+  )
+    roots.push(cliThreaded);
   const initial = loadSourceGraphLoader(
     inputs,
     mappings,
@@ -463,8 +475,13 @@ export function compilerBuildRequest(
   const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
   const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
   const primitives = "packages/native-runtime/src/ffi/primitives.ts";
-  const cli = "packages/compiler/src/cli.ts";
-  const selected = requestModules(request, [clock, cli, shared, packet]);
+  const cliThreaded = "packages/compiler/src/cli-threaded.ts";
+  const selected = requestModules(request, [
+    clock,
+    cliThreaded,
+    shared,
+    packet,
+  ]);
   const runtimes = request.runtimes.slice(),
     hostBindings = request.hostBindings.slice(),
     foreignMemoryBindings = (request.foreignMemoryBindings ?? []).slice();
@@ -478,7 +495,7 @@ export function compilerBuildRequest(
   }
   const hasParallelWorkers =
     hasParallelWorkerLibraries(foreignLibraries) &&
-    hasProjectFunction(selected, cli, "mainThreaded") &&
+    hasProjectFunction(selected, cliThreaded, "mainThreaded") &&
     hasProjectFunction(selected, shared, "readSharedWord64") &&
     hasProjectFunction(selected, packet, "readMemoryFloat64");
   if (!hasParallelWorkers) return { ...request, runtimes, hostBindings };
@@ -607,6 +624,7 @@ export function compilerBuildRequest(
   );
   return {
     ...request,
+    entry: cliThreaded,
     start: "mainThreaded",
     threaded: true,
     threadExitPipe: true,

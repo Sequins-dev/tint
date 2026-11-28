@@ -343,6 +343,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/cli-threaded.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/cli.ts",
       packageId: "compiler",
     },
