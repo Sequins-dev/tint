@@ -77,11 +77,18 @@ export interface Preparation {
   readonly directReturns: Uint8Array | undefined;
   readonly pureLeafNoActivation: Uint8Array;
   readonly signatures: readonly SignatureLayout[];
+  readonly hasForeignCallbacks?: boolean;
 }
 
 export interface PreparedFragments {
   readonly preparation: Uint8Array;
   readonly bodies: Uint8Array;
+}
+
+export interface PackedPreparation {
+  readonly input: PreparedFragments;
+  readonly offsets: Uint32Array;
+  readonly vocabulary: PackedVocabulary;
 }
 
 const preparationVersion = 2;
@@ -629,18 +636,21 @@ function writeRecordValues(
     }
   }
 }
-/** Produce read-only byte windows. An embedding can publish these as shared
- * memory after this function returns and release its decoded bodies. */
-export function packPreparation(
+/** Produce read-only byte windows and the per-function body index needed to
+ * decode function bodies directly from `input.bodies` without re-parsing
+ * `input.preparation` or maintaining a separate spill store. */
+export function packPreparationWithIndex(
   prepared: Preparation,
   source: FunctionBodySource,
-): PreparedFragments | undefined {
+): PackedPreparation | undefined {
+  if (prepared.hasForeignCallbacks === true) return undefined;
   const vocabulary = createPackedVocabulary();
   const metadata = createByteWriter(65536);
   const bodyWriter = createByteWriter(1048576);
   const headerWriter = createByteWriter(1024);
   const functions = prepared.module.functions;
   const recordValues = prepared.recordValues;
+  const offsets = new Uint32Array(functions.length * 2);
   writeByte(metadata, preparationVersion);
   writeUnsigned(metadata, functions.length);
   writeByte(metadata, recordValues === undefined ? 0 : 1);
@@ -650,11 +660,15 @@ export function packPreparation(
     headerWriter.length = 0;
     encodeFunction(headerWriter, vocabulary, header);
     writeRaw(metadata, headerWriter.bytes.subarray(0, headerWriter.length));
-    writeUnsigned(metadata, bodyWriter.length);
+    const bodyStart = bodyWriter.length;
+    writeUnsigned(metadata, bodyStart);
     const fn = source.get(id);
     try {
       encodeFunction(bodyWriter, vocabulary, fn);
-      writeUnsigned(metadata, bodyWriter.length);
+      const bodyEnd = bodyWriter.length;
+      offsets[id * 2] = bodyStart;
+      offsets[id * 2 + 1] = bodyEnd;
+      writeUnsigned(metadata, bodyEnd);
       if (recordValues !== undefined)
         writeRecordValues(bodyWriter, recordValues, fn);
       writeUnsigned(metadata, bodyWriter.length);
@@ -735,8 +749,45 @@ export function packPreparation(
   writeFlags(metadata, prepared.directReturns);
   writeRaw(metadata, prepared.pureLeafNoActivation);
   return {
-    preparation: metadata.bytes.subarray(0, metadata.length),
-    bodies: bodyWriter.bytes.subarray(0, bodyWriter.length),
+    input: {
+      preparation: metadata.bytes.subarray(0, metadata.length),
+      bodies: bodyWriter.bytes.subarray(0, bodyWriter.length),
+    },
+    offsets,
+    vocabulary,
+  };
+}
+
+/** Produce read-only byte windows. An embedding can publish these as shared
+ * memory after this function returns and release its decoded bodies. */
+export function packPreparation(
+  prepared: Preparation,
+  source: FunctionBodySource,
+): PreparedFragments | undefined {
+  return packPreparationWithIndex(prepared, source)?.input;
+}
+
+/** Decode function bodies directly from a packed wire `bodies` byte window. */
+export function createPackedBodySource(
+  bytes: Uint8Array,
+  offsets: Uint32Array,
+  vocabulary: PackedVocabulary,
+): FunctionBodySource {
+  return {
+    get: (id: number): FunctionIR => {
+      const first = offsets[id * 2],
+        end = offsets[id * 2 + 1];
+      if (
+        !Number.isInteger(id) ||
+        id < 0 ||
+        first === undefined ||
+        end === undefined ||
+        end > bytes.length
+      )
+        throw "missing prepared body";
+      return decodeFunction(bytes, first, end, vocabulary);
+    },
+    release: (_id: number): void => {},
   };
 }
 
