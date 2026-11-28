@@ -707,11 +707,13 @@ function withForeignRuntimes(
   }
   let nodeFfi = false,
     nodeBuffer = false,
-    nodeProcess = false;
+    nodeProcess = false,
+    nodePathCwd = false;
   if (
     ids.has(foreignRuntimeModules.nodeFfi) ||
     ids.has(foreignRuntimeModules.nodeBuffer) ||
-    ids.has(foreignRuntimeModules.nodeProcess)
+    ids.has(foreignRuntimeModules.nodeProcess) ||
+    ids.has(foreignRuntimeModules.nodePathCwd)
   ) {
     // The standalone collector can receive the application's source table
     // too. Authority follows the entry's imports, not source availability.
@@ -728,10 +730,28 @@ function withForeignRuntimes(
     nodeFfi = reachable.includes(foreignRuntimeModules.nodeFfi);
     nodeBuffer = reachable.includes(foreignRuntimeModules.nodeBuffer);
     nodeProcess = reachable.includes(foreignRuntimeModules.nodeProcess);
+    nodePathCwd = reachable.includes(foreignRuntimeModules.nodePathCwd);
   }
-  if (libraries.length === 0 && !nodeFfi && !nodeBuffer && !nodeProcess)
+  if (
+    libraries.length === 0 &&
+    !nodeFfi &&
+    !nodeBuffer &&
+    !nodeProcess &&
+    !nodePathCwd
+  )
     return request;
   const runtimes: RuntimeSource[] = request.runtimes.slice();
+  if (
+    nodePathCwd &&
+    !runtimes.some(
+      (runtime) => runtime?.module === foreignRuntimeModules.nodePathCwd,
+    )
+  )
+    runtimes.push({
+      module: foreignRuntimeModules.nodePathCwd,
+      namespace: "node-path-cwd",
+      retainedExports: [],
+    });
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
     if (
@@ -2242,6 +2262,7 @@ function compileGeneralProgram<T>(
       return stageFailure(
         "general " + compiled.error.stage,
         compiled.error.message + " (typed: " + reason + ")",
+        compiled.error.module,
       );
     error = compiled.error;
   }

@@ -13,6 +13,10 @@ export default {
   aliases: ["mode_t"],
   functions: [
     "getpid",
+    {
+      name: "getcwd",
+      parameters: { 0: { name: "buffer", as: "Ptr" }, 1: { name: "length" } },
+    },
     { name: "close", parameters: { 0: { name: "fd" } }, result: "OrErrno" },
     {
       name: "unlink",

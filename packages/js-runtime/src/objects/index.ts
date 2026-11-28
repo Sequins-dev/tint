@@ -690,3 +690,4 @@ export { primitiveContractBit } from "@tint/foundation/values/primitive-contract
 
 export { installTextEncodingIntrinsics } from "./text-encoding-intrinsics.ts";
 export { installWebEventIntrinsics } from "./web-events.ts";
+export { installURLIntrinsics } from "./url-intrinsics.ts";

@@ -2819,6 +2819,22 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/url-data.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/url-idna-data.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/url-idna.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/url-intrinsics.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/values.ts",
       packageId: "js-runtime",
     },
@@ -3107,6 +3123,30 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/path-core.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/path-cwd.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/path-posix.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/path-variants.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/path-win32.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/path.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/process-host.ts",
       packageId: "native-runtime",
     },
@@ -3116,6 +3156,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/type-error.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/url.ts",
       packageId: "native-runtime",
     },
     {

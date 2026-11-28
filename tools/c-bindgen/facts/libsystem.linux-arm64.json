@@ -22,6 +22,33 @@
       "variadic": false
     },
     {
+      "name": "getcwd",
+      "parameters": [
+        {
+          "name": "__buf",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__size",
+          "type": {
+            "kind": "scalar",
+            "scalar": "usize",
+            "aliases": ["size_t"]
+          }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
       "name": "close",
       "parameters": [
         {

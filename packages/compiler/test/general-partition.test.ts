@@ -152,6 +152,25 @@ test("general modules pull literal dynamic import targets into the general parti
   ]);
 });
 
+test("records from rejected boundary candidates stay in their general module", () => {
+  const object = module(
+    "object",
+    "export interface Options { value?: string }\nexport function describe(values: string[]): Options { return { value: values[0] }; }",
+  );
+  const main = module(
+    "main",
+    'import { describe } from "./object";\nexport function run() { return describe([]); }',
+    [["./object", "object"]],
+  );
+  const partition = closeGeneralPartition([main, object], new Set(["main"]));
+  assert.deepEqual(
+    partition.general.map(({ id }) => id),
+    ["main", "object"],
+  );
+  assert.deepEqual(partition.boundaries, []);
+  assert.equal(partition.records, undefined);
+});
+
 test("unknown parameters and results cross with their identity", () => {
   const lib = module(
     "lib",

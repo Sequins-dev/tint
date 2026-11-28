@@ -23,6 +23,7 @@ export const intrinsicInstallers: readonly string[] = [
   "installTypedArrayIntrinsics",
   "installTextEncodingIntrinsics",
   "installWebEventIntrinsics",
+  "installURLIntrinsics",
   "installObjectIntrinsics",
   "installFunctionIntrinsics",
   "installEvalIntrinsic",
@@ -87,6 +88,8 @@ const byGlobal: ReadonlyMap<string, readonly string[]> = new Map<
   ["DOMException", ["installWebEventIntrinsics"]],
   ["AbortController", ["installWebEventIntrinsics"]],
   ["AbortSignal", ["installWebEventIntrinsics"]],
+  ["URL", ["installURLIntrinsics"]],
+  ["URLSearchParams", ["installURLIntrinsics"]],
   ["Atomics", ["installAtomicsIntrinsics"]],
   ["DataView", ["installArrayBufferIntrinsics", "installDataViewIntrinsics"]],
 ]);
