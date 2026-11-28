@@ -33,3 +33,7 @@ explicit module contract in `runtime-buffer.d.ts`.
 `runtime-process.d.ts`, `runtime-timers.d.ts`, and `runtime-console.d.ts`
 describe the explicit process and Node scheduling imports alongside the Web
 timer and console globals.
+
+`runtime-os.d.ts`, `runtime-ffi.d.ts`, `runtime-crypto.d.ts`, and
+`runtime-worker-threads.d.ts` describe the platform, foreign-call, crypto,
+and worker exports, including the standard `structuredClone` global.

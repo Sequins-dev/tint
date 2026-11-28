@@ -6,7 +6,7 @@ import {
 import type { ByteStorage } from "@tint/js-runtime/bytes";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
-  builtinAccessor,
+  defineOwnProperty,
   builtinFunction,
   builtinFunctionMetadata,
   builtinProperty,
@@ -1275,14 +1275,23 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     object: FfiObject,
     name: string,
     body: ObjectCall<unknown>,
+    configurable: boolean = false,
   ): void {
-    builtinAccessor(
+    const status = defineOwnProperty<ScriptPropertyKey, unknown>(
       object,
       name,
-      method("get " + name, 0, body),
-      undefined,
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: method(configurable ? "get" : "", 0, body),
+        set: undefined,
+        enumerable: true,
+        configurable,
+      },
       hooks,
     );
+    if (status !== "accepted") throw "NODE_FFI_ACCESSOR";
   }
   function load(path: unknown, parent: FfiObject): FfiObject {
     if (path !== null && typeof path !== "string")
@@ -1407,8 +1416,11 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     true,
     hooks,
   );
-  getter(prototype, "functions", (receiver, _args): unknown =>
-    functions(receiver, undefined),
+  getter(
+    prototype,
+    "functions",
+    (receiver, _args): unknown => functions(receiver, undefined),
+    true,
   );
 
   function callableCallback(value: unknown): boolean {

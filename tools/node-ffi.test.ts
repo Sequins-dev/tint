@@ -124,6 +124,12 @@ function checkScalar() {
   const empty = dlopen(null);
   if (empty.lib.path !== "" || Object.getPrototypeOf(empty.functions) !== null ||
       !Object.isFrozen(empty.functions)) return 2;
+  const pathDescriptor = Object.getOwnPropertyDescriptor(empty.lib, "path");
+  const symbolsDescriptor = Object.getOwnPropertyDescriptor(empty.lib, "symbols");
+  const functionsDescriptor = Object.getOwnPropertyDescriptor(DynamicLibrary.prototype, "functions");
+  if (!pathDescriptor.enumerable || pathDescriptor.configurable ||
+      !symbolsDescriptor.enumerable || symbolsDescriptor.configurable ||
+      !functionsDescriptor.enumerable || !functionsDescriptor.configurable) return 40;
   dlclose(empty.lib);
   const path = ${pathExpr};
   const lib = new DynamicLibrary(path);

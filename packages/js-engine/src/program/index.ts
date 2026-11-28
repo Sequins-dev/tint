@@ -115,6 +115,8 @@ const workerExports: readonly string[] = [
   "MessageChannel",
   "MessagePort",
   "isMainThread",
+  "isInternalThread",
+  "receiveMessageOnPort",
   "parentPort",
   "workerData",
   "threadId",
@@ -125,6 +127,8 @@ const cryptoExports: readonly string[] = [
   "createHmac",
   "randomBytes",
   "pbkdf2",
+  "hash",
+  "randomUUID",
 ];
 
 /** The general lowering used when the typed pipeline rejects a program: each
@@ -816,17 +820,21 @@ function lowerGeneralProgram(
           JSON.stringify(name) +
           ",workers." +
           name +
-          ");",
+          ");createDataProperty<ScriptPropertyKey,unknown>(defaultWorkers," +
+          JSON.stringify(name) +
+          ",workers." +
+          name +
+          ",hooks);",
       )
       .join("");
     creates +=
       "  case " +
       moduleCount +
       ": return createSyntheticModule(realm," +
-      JSON.stringify(workerExports) +
-      ",(module:ModuleRecord):void=>{" +
+      JSON.stringify(["default", ...workerExports]) +
+      ",(module:ModuleRecord):void=>{const defaultWorkers=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);" +
       exports +
-      "},undefined);\n";
+      'setSyntheticModuleExport(module,"default",defaultWorkers);},undefined);\n';
   }
   if (crypto !== undefined) {
     const addBuiltin = (
