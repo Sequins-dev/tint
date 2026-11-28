@@ -35,4 +35,13 @@ declare module "tint:c/darwin-reactor" {
     flags: u32,
     timeout: Address<void>,
   ): OrErrno<i32>;
+  export function getpid(): i32;
+  /** libproc.h: PROC_PIDTASKINFO (flavor 4) writes struct proc_taskinfo (96 bytes). */
+  export function proc_pidinfo(
+    pid: i32,
+    flavor: i32,
+    arg: Address<void>,
+    buffer: Ptr<void>,
+    buffersize: i32,
+  ): i32;
 }

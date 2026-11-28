@@ -190,8 +190,11 @@ import {
 import {
   emitModule,
   emitModuleFromStore,
+  openPreparedEmission,
   type EmissionBodies,
+  type EmissionRange,
   type FragmentPlan,
+  type PreparedEmissionStart,
   type CodegenAnalysis,
   type Emission,
   type EmissionOptions,
@@ -199,6 +202,7 @@ import {
   type ManagedFunctionEntryBinding,
   type EmissionFormHints,
 } from "@tint/codegen/aarch64/scalar";
+import type { SpillBackend } from "@tint/ir/storage";
 import type {
   ImportDeclaration,
   Module,
@@ -1203,6 +1207,29 @@ export function selectNativeBackend(
   };
 }
 
+/** Owned preparation inputs for an asynchronous AArch64 fragment emission. */
+export interface PreparedEmissionPlan {
+  readonly planRanges: (module: ModuleIR) => readonly EmissionRange[];
+  readonly packets?: SpillBackend | undefined;
+  readonly afterPreparation?: (() => void) | undefined;
+}
+
+/** An opened AArch64 program emission whose preparation wire and spill store
+ * are owned until `finish` or `abort`. */
+export interface OpenedNativeProgramEmission {
+  readonly options: EmissionOptions;
+  readonly ranges: readonly EmissionRange[];
+  readonly rangeWeights: readonly number[];
+  readonly start: PreparedEmissionStart;
+  readonly emitSerial: () => Emission;
+  readonly finish: (emission: Emission) => Compilation;
+  readonly abort: () => void;
+}
+
+export type OpenedNativeProgramResult =
+  | { readonly ok: true; readonly value: OpenedNativeProgramEmission }
+  | CompilationFailure;
+
 /** Compile for the selected output target, independently of the host. */
 export function compileNativeProgram(
   request: CompileRequest,
@@ -1215,6 +1242,37 @@ export function compileNativeProgram(
     hostABI: backend.target.hostABI,
     jsConvert: backend.target.os === "darwin",
   });
+}
+
+/** Prepare a typed AArch64 program up to its immutable fragment wire and
+ * return an owned continuation for asynchronous worker dispatch and canonical
+ * finalization. */
+export function openNativeProgramEmission(
+  original: CompileRequest,
+  target: NativeTarget,
+  plan: PreparedEmissionPlan,
+): OpenedNativeProgramResult {
+  const backend = selectNativeBackend(target);
+  if (!backend.ok) return { ok: false, error: backend.error };
+  const request = withForeignRuntimes({
+    ...original,
+    hostABI: backend.target.hostABI,
+    jsConvert: backend.target.os === "darwin",
+  });
+  const preparedRequest = withTypedNodeFfiRealm(request);
+  const prepared = prepareTypedWithProgramRealm(
+    preparedRequest,
+    preparedRequest.nodeFfiRealmModules,
+  );
+  if (!prepared.ok) return prepared;
+  return {
+    ok: true,
+    value: openPreparedProgramEmission(
+      prepared.value,
+      preparedRequest.storage,
+      plan,
+    ),
+  };
 }
 
 /** The dynamic-object runtime's companion capability: a buffer's detachment
@@ -1608,14 +1666,16 @@ function expandOptionalRuntimes(
   return { ok: true, request: nextRequest, realmModules: realmTypeofModules };
 }
 
-function compileTypedWithProgramRealm(
+function prepareTypedWithProgramRealm(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
-): Compilation {
+):
+  | { readonly ok: true; readonly value: PreparedTypedProgram }
+  | CompilationFailure {
   const { explicit, without } = withoutDynamicObjectRuntime(request);
   let active = without;
   let modules = realmTypeofModules;
-  let result = compileTypedProgram(active, modules);
+  let result = prepareTypedProgram(active, modules);
   for (let attempt = 0; attempt < 2; attempt++) {
     if (result.ok) return result;
     const error = result.error;
@@ -1635,9 +1695,23 @@ function compileTypedWithProgramRealm(
     if (!expanded.ok) return expanded.failure;
     active = expanded.request;
     modules = expanded.realmModules;
-    result = compileTypedProgram(active, modules);
+    result = prepareTypedProgram(active, modules);
   }
   return result;
+}
+
+function compileTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): Compilation {
+  const prepared = prepareTypedWithProgramRealm(request, realmTypeofModules);
+  if (!prepared.ok) return prepared;
+  const native = emitProgram(
+    prepared.value.program.ir,
+    prepared.value.storage,
+    prepared.value.emissionOptions,
+  );
+  return prepared.value.finalize(native);
 }
 
 function lowerTypedWithProgramRealm(
@@ -5108,10 +5182,157 @@ function openSurfaceRecords(
   return open;
 }
 
-function compileTypedProgram(
+interface PreparedTypedProgram {
+  readonly program: TypedProgram;
+  readonly storage: BuildStorage | undefined;
+  readonly emissionOptions: EmissionOptions;
+  readonly finalize: (native: Emission) => Compilation;
+}
+
+function rangeIRWeights(
+  module: ModuleIR,
+  ranges: readonly EmissionRange[],
+): number[] {
+  const weights: number[] = [];
+  for (const range of ranges) {
+    if (range === undefined) throw "emission range invariant";
+    let weight = 0;
+    for (let id = range.first; id < range.end; id++) {
+      const fn = module.functions[id];
+      if (fn === undefined) continue;
+      for (const block of fn.blocks) {
+        if (block === undefined) continue;
+        weight += 1 + block.instructions.length;
+      }
+    }
+    weights.push(weight);
+  }
+  return weights;
+}
+
+function openPreparedProgramEmission(
+  prepared: PreparedTypedProgram,
+  storage: BuildStorage | undefined,
+  plan: PreparedEmissionPlan,
+): OpenedNativeProgramEmission {
+  const program = prepared.program.ir;
+  const ranges = plan.planRanges(program.module);
+  const rangeWeights = rangeIRWeights(program.module, ranges);
+  const selected: BuildStorage =
+    storage !== undefined && storage.policy !== "memory"
+      ? storage
+      : { policy: "all" };
+  const store = createEmissionStore(selected);
+  let closed = false;
+  function closeStore(): void {
+    if (closed) return;
+    closed = true;
+    store.close();
+  }
+  try {
+    let decoded: (FunctionIR | undefined)[] = [];
+    for (const fn of program.module.functions) decoded.push(fn);
+    program.module = {
+      ...program.module,
+      functions: program.module.functions.map(functionHeader),
+    };
+    let packed = false,
+      retiring = false;
+    const bodies: EmissionBodies = {
+      get: (id: number): FunctionIR => {
+        if (packed) return store.get(id);
+        const fn = decoded[id];
+        if (fn !== undefined) return fn;
+        return store.get(id);
+      },
+      put: (fn: FunctionIR): void => {
+        if (packed || (retiring && decoded[fn.id] === undefined)) store.put(fn);
+        else decoded[fn.id] = fn;
+      },
+      release: (id: number): void => {
+        if (packed) {
+          store.release(id);
+          return;
+        }
+        if (retiring) {
+          const fn = decoded[id];
+          if (fn !== undefined) {
+            store.put(fn);
+            decoded[id] = undefined;
+            store.release(id);
+          }
+        }
+      },
+    };
+    const afterPreparation = plan.afterPreparation;
+    const start = openPreparedEmission(
+      program.module,
+      bodies,
+      prepared.emissionOptions,
+      ranges,
+      plan.packets,
+      (): void => {
+        retiring = true;
+      },
+      (): void => {
+        if (packed) return;
+        for (let id = 0; id < decoded.length; id++) {
+          const fn = decoded[id];
+          if (fn !== undefined) {
+            store.put(fn);
+            decoded[id] = undefined;
+          }
+        }
+        store.seal();
+        decoded = [];
+        store.releaseAll();
+        retiring = false;
+        packed = true;
+        if (afterPreparation !== undefined) afterPreparation();
+      },
+    );
+    if (start.kind === "serial" && !packed) {
+      for (let id = 0; id < decoded.length; id++) {
+        const fn = decoded[id];
+        if (fn !== undefined) {
+          store.put(fn);
+          decoded[id] = undefined;
+        }
+      }
+      store.seal();
+      decoded = [];
+      store.releaseAll();
+      retiring = false;
+      packed = true;
+    }
+    return {
+      options: prepared.emissionOptions,
+      ranges,
+      rangeWeights,
+      start,
+      emitSerial: (): Emission =>
+        emitModuleFromStore(program.module, bodies, prepared.emissionOptions),
+      finish: (emission: Emission): Compilation => {
+        try {
+          return prepared.finalize(emission);
+        } finally {
+          closeStore();
+        }
+      },
+      abort: closeStore,
+    };
+  } catch (error) {
+    closeStore();
+    throw error;
+  }
+}
+
+function prepareTypedProgram(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
-): Compilation {
+):
+  | { readonly ok: true; readonly value: PreparedTypedProgram }
+  | CompilationFailure {
   // Only the lowered IR and compact source facts outlive the front end.
   const lowered = lowerTypedProgram(request, realmTypeofModules);
   if (!lowered.ok) return { ok: false, error: lowered.error };
@@ -5347,9 +5568,7 @@ function compileTypedProgram(
     }
   }
   program.ir.module = prune(program.ir.module);
-  const observedModule =
-      observePass === undefined ? undefined : program.ir.module,
-    initializer = program.initializer,
+  const initializer = program.initializer,
     invocation = program.invocation;
   if (reportIR !== undefined && reachable !== undefined) {
     reportIR("lowered", reachable);
@@ -5358,7 +5577,7 @@ function compileTypedProgram(
   // Codegen analyses that still have size limits fall back to conservative
   // code; each fallback is a missed remark and counts in the emission pass.
   let analysisLimits = 0;
-  const native = emitProgram(program.ir, request.storage, {
+  const emissionOptions: EmissionOptions = {
     maxByteLength: Number.MAX_SAFE_INTEGER,
     unboundedAnalysis: request.optimization !== "none",
     analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
@@ -5397,179 +5616,194 @@ function compileTypedProgram(
     pageAlignedCode: request.pageAlignedCode ?? false,
     forceFarReach: request.forceFarReach === true ? true : undefined,
     workerFunctions: program.workerFunctions,
-  });
-  const optimizedModule = program.ir.module;
-  if (!native.ok) {
-    const error = native.error;
-    const invalid = optimizedModule.functions.find(
-      (fn) => fn !== undefined && fn.id === error.function,
-    );
-    const location = error.span;
-    const origin =
-      location === undefined ? undefined : locateSourceRange(ranges, location);
-    return failure(
-      "emit",
-      (origin === undefined
-        ? invalid === undefined
-          ? ""
-          : invalid.name + ": "
-        : origin.module + ":") +
-        (origin !== undefined
-          ? String(origin.start) + ":" + String(origin.end) + ": "
-          : location === undefined
-            ? ""
-            : String(location.start) + ":" + String(location.end) + ": ") +
-        error.message,
-    );
-  }
-  if (observePass !== undefined && observedModule !== undefined)
-    observePass({
-      statistics: {
-        phase: "codegen",
-        pass: "emit-native-code",
-        visited: optimizedModule.functions.length,
-        rewritten: 0,
-        skipped: analysisLimits,
-      },
-      module: observedModule,
-      budgetExhausted: false,
-    });
-  const serviceIdentities: NativeServiceBinding[] = [],
-    brand = native.value.functionDescriptor;
-  if (surfacePlans.length !== 0 && brand !== undefined)
-    serviceIdentities.push({
-      name: "tint.function.v1",
-      contract: "tint.function.v1",
-      role: "function-brand",
-      parameters: [],
-      returnType: undefined,
-      metadataOffset: brand.offset,
-    });
-  for (const plan of identityPlans) {
-    if (plan === undefined) throw "service identity plan invariant";
-    const recordId = plan.record,
-      functionId = plan.function;
-    const metadata =
-      plan.shape.role === "record"
-        ? recordId === undefined
-          ? undefined
-          : native.value.records.find(
-              (record) => record !== undefined && record.record === recordId,
-            )
-        : functionId === undefined
-          ? undefined
-          : native.value.signatures.find(
-              (signature) =>
-                signature !== undefined &&
-                signature.functions.includes(functionId ?? -1),
-            );
-    if (metadata === undefined) continue;
-    const fn =
-      functionId === undefined ? undefined : native.value.functions[functionId];
-    serviceIdentities.push({
-      ...plan.shape,
-      name: plan.contract,
-      contract: plan.contract,
-      metadataOffset: metadata.offset,
-      ...(plan.shape.role !== "function-entry" || fn === undefined
-        ? {}
-        : { entryOffset: fn.offset }),
-    });
-  }
-  const symbols: { name: string; offset: number; byteLength: number }[] = [];
-  const lines: SourceLineRange[] = [];
-  let debugFunctions: readonly ProgramFunctionDebug[] = [];
-  let debugRecords: readonly DebugHeapRecord[] = [];
-  if (
-    request.debugSymbols === true ||
-    request.stackTraces === true ||
-    request.symbols === true
-  ) {
-    if (sourceNames === undefined) throw "debug source names invariant";
-    const names = sourceNames.names;
-    // Linking renames bindings; variables keep their source names.
-    const variableNames = sourceNames.variables,
-      positions = sourceNames.positions;
-    for (const range of native.value.sourceRanges) {
-      if (range === undefined) throw "debug source range invariant";
-      const origin = locateSourceRange(ranges, range);
-      if (origin === undefined) continue;
-      const positionAt = positions.get(origin.module);
-      if (positionAt === undefined) continue;
-      const position = positionAt(origin.start);
-      if (position === undefined) continue;
-      lines.push({
-        offset: range.offset,
-        byteLength: range.byteLength,
-        file: origin.module,
-        line: position.line,
-        column: position.column,
-      });
-    }
-    for (const fn of native.value.functions) {
-      if (fn === undefined) throw "debug native function invariant";
-      if (fn.import === true) continue;
-      const sourceName = names.get(fn.name);
-      symbols.push({
-        name:
-          sourceName === undefined
-            ? fn.name
-            : sourceName + " [" + fn.name + "]",
-        offset: fn.offset,
-        byteLength: fn.byteLength,
-      });
-    }
-    if (request.debugSymbols === true)
-      debugRecords = describeHeapRecords(
-        optimizedModule,
-        (name) => names.get(name) ?? name,
+  };
+  function finalize(native: Emission): Compilation {
+    const optimizedModule = program.ir.module;
+    if (!native.ok) {
+      const error = native.error;
+      const invalid = optimizedModule.functions.find(
+        (fn) => fn !== undefined && fn.id === error.function,
       );
-    debugFunctions = describeFunctionDebug(
-      native.value,
-      optimizedModule.records ?? [],
-      (span) => {
-        const origin = locateSourceRange(ranges, span);
-        if (origin === undefined) return undefined;
-        const positionAt = positions.get(origin.module);
-        const position =
-          positionAt === undefined ? undefined : positionAt(origin.start);
-        return position === undefined
+      const location = error.span;
+      const origin =
+        location === undefined
           ? undefined
-          : {
-              file: origin.module,
-              line: position.line,
-              column: position.column,
-            };
-      },
-      (name) => names.get(name) ?? name,
-      (span, fallback) => {
-        const origin = locateSourceRange(ranges, span);
-        return origin === undefined
-          ? fallback
-          : (variableNames.get(
-              origin.module + ":" + origin.start + ":" + origin.end,
-            ) ?? fallback);
-      },
+          : locateSourceRange(ranges, location);
+      return failure(
+        "emit",
+        (origin === undefined
+          ? invalid === undefined
+            ? ""
+            : invalid.name + ": "
+          : origin.module + ":") +
+          (origin !== undefined
+            ? String(origin.start) + ":" + String(origin.end) + ": "
+            : location === undefined
+              ? ""
+              : String(location.start) + ":" + String(location.end) + ": ") +
+          error.message,
+      );
+    }
+    if (observePass !== undefined)
+      observePass({
+        statistics: {
+          phase: "codegen",
+          pass: "emit-native-code",
+          visited: optimizedModule.functions.length,
+          rewritten: 0,
+          skipped: analysisLimits,
+        },
+        module: optimizedModule,
+        budgetExhausted: false,
+      });
+    const serviceIdentities: NativeServiceBinding[] = [],
+      brand = native.value.functionDescriptor;
+    if (surfacePlans.length !== 0 && brand !== undefined)
+      serviceIdentities.push({
+        name: "tint.function.v1",
+        contract: "tint.function.v1",
+        role: "function-brand",
+        parameters: [],
+        returnType: undefined,
+        metadataOffset: brand.offset,
+      });
+    for (const plan of identityPlans) {
+      if (plan === undefined) throw "service identity plan invariant";
+      const recordId = plan.record,
+        functionId = plan.function;
+      const metadata =
+        plan.shape.role === "record"
+          ? recordId === undefined
+            ? undefined
+            : native.value.records.find(
+                (record) => record !== undefined && record.record === recordId,
+              )
+          : functionId === undefined
+            ? undefined
+            : native.value.signatures.find(
+                (signature) =>
+                  signature !== undefined &&
+                  signature.functions.includes(functionId ?? -1),
+              );
+      if (metadata === undefined) continue;
+      const fn =
+        functionId === undefined
+          ? undefined
+          : native.value.functions[functionId];
+      serviceIdentities.push({
+        ...plan.shape,
+        name: plan.contract,
+        contract: plan.contract,
+        metadataOffset: metadata.offset,
+        ...(plan.shape.role !== "function-entry" || fn === undefined
+          ? {}
+          : { entryOffset: fn.offset }),
+      });
+    }
+    const symbols: { name: string; offset: number; byteLength: number }[] = [];
+    const lines: SourceLineRange[] = [];
+    let debugFunctions: readonly ProgramFunctionDebug[] = [];
+    let debugRecords: readonly DebugHeapRecord[] = [];
+    if (
+      request.debugSymbols === true ||
+      request.stackTraces === true ||
+      request.symbols === true
+    ) {
+      if (sourceNames === undefined) throw "debug source names invariant";
+      const names = sourceNames.names;
+      // Linking renames bindings; variables keep their source names.
+      const variableNames = sourceNames.variables,
+        positions = sourceNames.positions;
+      for (const range of native.value.sourceRanges) {
+        if (range === undefined) throw "debug source range invariant";
+        const origin = locateSourceRange(ranges, range);
+        if (origin === undefined) continue;
+        const positionAt = positions.get(origin.module);
+        if (positionAt === undefined) continue;
+        const position = positionAt(origin.start);
+        if (position === undefined) continue;
+        lines.push({
+          offset: range.offset,
+          byteLength: range.byteLength,
+          file: origin.module,
+          line: position.line,
+          column: position.column,
+        });
+      }
+      for (const fn of native.value.functions) {
+        if (fn === undefined) throw "debug native function invariant";
+        if (fn.import === true) continue;
+        const sourceName = names.get(fn.name);
+        symbols.push({
+          name:
+            sourceName === undefined
+              ? fn.name
+              : sourceName + " [" + fn.name + "]",
+          offset: fn.offset,
+          byteLength: fn.byteLength,
+        });
+      }
+      if (request.debugSymbols === true)
+        debugRecords = describeHeapRecords(
+          optimizedModule,
+          (name) => names.get(name) ?? name,
+        );
+      debugFunctions = describeFunctionDebug(
+        native.value,
+        optimizedModule.records ?? [],
+        (span) => {
+          const origin = locateSourceRange(ranges, span);
+          if (origin === undefined) return undefined;
+          const positionAt = positions.get(origin.module);
+          const position =
+            positionAt === undefined ? undefined : positionAt(origin.start);
+          return position === undefined
+            ? undefined
+            : {
+                file: origin.module,
+                line: position.line,
+                column: position.column,
+              };
+        },
+        (name) => names.get(name) ?? name,
+        (span, fallback) => {
+          const origin = locateSourceRange(ranges, span);
+          return origin === undefined
+            ? fallback
+            : (variableNames.get(
+                origin.module + ":" + origin.start + ":" + origin.end,
+              ) ?? fallback);
+        },
+      );
+    }
+    const managedSurfaces = publishedManagedSurfaces(
+      surfacePlans,
+      surfaceRuntimes,
     );
+    return {
+      ok: true,
+      value: {
+        native: native.value,
+        symbols,
+        lines,
+        ...(debugFunctions.length === 0 ? {} : { debugFunctions }),
+        ...(debugRecords.length === 0 ? {} : { debugRecords }),
+        optimization: passes,
+        initializer,
+        entry: invocation < 0 ? undefined : invocation,
+        exports: request.exports.slice(),
+        ...(serviceIdentities.length === 0 ? {} : { serviceIdentities }),
+        ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
+      },
+    };
   }
-  const managedSurfaces = publishedManagedSurfaces(
-    surfacePlans,
-    surfaceRuntimes,
-  );
   return {
     ok: true,
     value: {
-      native: native.value,
-      symbols,
-      lines,
-      ...(debugFunctions.length === 0 ? {} : { debugFunctions }),
-      ...(debugRecords.length === 0 ? {} : { debugRecords }),
-      optimization: passes,
-      initializer,
-      entry: invocation < 0 ? undefined : invocation,
-      exports: request.exports.slice(),
-      ...(serviceIdentities.length === 0 ? {} : { serviceIdentities }),
-      ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
+      program,
+      storage: request.storage,
+      emissionOptions,
+      finalize,
     },
   };
 }

@@ -18,15 +18,24 @@ import {
   type PassReport,
 } from "@tint/ir/optimization";
 import { projectFiles, projectMappings } from "./catalog.ts";
-import { compilerBuildRequest, loadCompilerSourceGraph } from "./project.ts";
+import {
+  compilerBuildRequest,
+  compilerMappingsForTarget,
+  loadCompilerSourceGraph,
+} from "./project.ts";
 import { expandForeignInputs } from "./native/foreign/index.ts";
 import { compilerUsage, parseCompilerArguments } from "./cli-arguments.ts";
+import {
+  buildParallelMacOSProgram,
+  runFragmentWorker,
+} from "./parallel-emission.ts";
 export {
   projectRoots,
   loadCompilerSourceGraph,
   projectModuleLoader,
   projectBuildRequest,
   compilerBuildRequest,
+  compilerMappingsForTarget,
   runtimeSources,
 } from "./project.ts";
 export { projectFiles, projectMappings } from "./catalog.ts";
@@ -37,7 +46,16 @@ function argument(index: number): string | undefined {
   if (copyArgument(index, bytes) !== length) return undefined;
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
+function parentDirectory(path: string): string {
+  const slash = path.lastIndexOf("/");
+  if (slash < 0) return ".";
+  return slash === 0 ? "/" : path.slice(0, slash);
+}
 export function main(): number {
+  return mainThreaded(0);
+}
+export function mainThreaded(workerArgument: number): number {
+  if (workerArgument !== 0) return runFragmentWorker(workerArgument);
   // The compiler's own execution host: the target it was compiled for. It
   // selects the file host (errno names and values) and the default target.
   const hostTarget = nativeHostTarget();
@@ -88,7 +106,11 @@ export function main(): number {
       report("foreign bindings: " + foreign.error);
       return 1;
     }
-    const mappings = projectMappings();
+    const mappings = compilerMappingsForTarget(
+      projectMappings(),
+      buildTarget,
+      foreign.value.libraries,
+    );
     for (const mapping of foreign.value.mappings) {
       if (mapping === undefined) throw "foreign mapping invariant";
       mappings.push(mapping);
@@ -139,11 +161,24 @@ export function main(): number {
       debugSymbols: parsed.debugSymbols,
       debugDirectory: root,
     };
-    const built = buildMacOSProgram(
-      parsed.passStatistics
-        ? { ...request, optimizationObserver: observer }
-        : request,
-    );
+    const effectiveRequest: BuildRequest = parsed.passStatistics
+      ? { ...request, optimizationObserver: observer }
+      : request;
+    const built =
+      parsed.workers > 0
+        ? buildParallelMacOSProgram(effectiveRequest, {
+            workers: parsed.workers,
+            spillDirectory: parsed.spillDirectory ?? parentDirectory(output),
+            workerHeapBytes: parsed.workerHeapMiB * 1048576,
+            memoryBudgetBytes:
+              parsed.memoryBudgetMiB === undefined
+                ? undefined
+                : parsed.memoryBudgetMiB * 1048576,
+            reportStats: parsed.workerStatistics,
+            host,
+            report,
+          })
+        : buildMacOSProgram(effectiveRequest);
     if (!built.ok) {
       report(built.error.stage + ": " + built.error.message);
       return 1;

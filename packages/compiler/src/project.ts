@@ -10,6 +10,7 @@ import {
 } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import type { ImportMapping } from "@tint/source/resolver";
+import type { NativeTarget } from "@tint/platform/target";
 import type {
   RuntimeSource,
   NativeHostBinding,
@@ -390,9 +391,62 @@ function hasProjectFunction(
     )
   );
 }
+function hasParallelWorkerLibraries(
+  foreignLibraries: readonly ForeignLibrary[],
+): boolean {
+  if (
+    foreignDeclaration(
+      foreignLibraries,
+      "tint:c/worker-thread-host",
+      "pipe",
+    ) === undefined
+  )
+    return false;
+  return (
+    foreignDeclaration(foreignLibraries, "tint:c/darwin-reactor", "kqueue") !==
+      undefined ||
+    foreignDeclaration(
+      foreignLibraries,
+      "tint:c/linux-reactor",
+      "epoll_create1",
+    ) !== undefined
+  );
+}
+
+/** Specialize workspace import mappings for the target compiler executable so
+ * AArch64 targets bind their OS-specific worker reactor and native worker
+ * runner while x86-64/Node targets keep the portable stubs. */
+export function compilerMappingsForTarget(
+  mappings: readonly ImportMapping[],
+  target: NativeTarget,
+  foreignLibraries: readonly ForeignLibrary[],
+): ImportMapping[] {
+  const enableWorkers =
+    target.arch === "aarch64" && hasParallelWorkerLibraries(foreignLibraries);
+  const parallelHostTarget =
+    target.os === "linux"
+      ? "packages/platform/src/linux/parallel-host.ts"
+      : "packages/platform/src/darwin/parallel-host.ts";
+  const result: ImportMapping[] = [];
+  for (const mapping of mappings) {
+    if (mapping === undefined) throw "compiler mapping invariant";
+    if (enableWorkers && mapping.specifier === "@tint/platform/parallel-host") {
+      result.push({
+        packageId: mapping.packageId,
+        specifier: mapping.specifier,
+        target: parallelHostTarget,
+      });
+      continue;
+    }
+    result.push(mapping);
+  }
+  return result;
+}
+
 /** The compiler executable's own build: the project request plus the
  * monotonic clock its `--pass-stats` timing reads (when the source graph
- * defines it; older frozen graphs build without timing). */
+ * defines it; older frozen graphs build without timing), and native worker
+ * bindings when the target supports threaded AArch64 workers. */
 export function compilerBuildRequest(
   modules: readonly SourceModule[],
   report: (stage: string) => void,
@@ -405,21 +459,159 @@ export function compilerBuildRequest(
     requireTyped: true,
   };
   const clock = "packages/native-runtime/src/intrinsics/clock.ts";
-  if (
-    !hasProjectFunction(
-      requestModules(request, [clock]),
-      clock,
-      "monotonicMilliseconds",
-    )
-  )
-    return request;
+  const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+  const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
+  const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
+  const primitives = "packages/native-runtime/src/ffi/primitives.ts";
+  const cli = "packages/compiler/src/cli.ts";
+  const selected = requestModules(request, [clock, cli, shared, packet]);
   const runtimes = request.runtimes.slice(),
-    hostBindings = request.hostBindings.slice();
-  runtimes.push({ module: clock, namespace: "native-clock" });
-  hostBindings.push({
-    module: clock,
-    name: "monotonicMilliseconds",
-    operation: "monotonic-time",
+    hostBindings = request.hostBindings.slice(),
+    foreignMemoryBindings = (request.foreignMemoryBindings ?? []).slice();
+  if (hasProjectFunction(selected, clock, "monotonicMilliseconds")) {
+    runtimes.push({ module: clock, namespace: "native-clock" });
+    hostBindings.push({
+      module: clock,
+      name: "monotonicMilliseconds",
+      operation: "monotonic-time",
+    });
+  }
+  const hasParallelWorkers =
+    hasParallelWorkerLibraries(foreignLibraries) &&
+    hasProjectFunction(selected, cli, "mainThreaded") &&
+    hasProjectFunction(selected, shared, "readSharedWord64") &&
+    hasProjectFunction(selected, packet, "readMemoryFloat64");
+  if (!hasParallelWorkers) return { ...request, runtimes, hostBindings };
+  const memoryExports = [
+    "mapMemory",
+    "unmapMemory",
+    "memoryPageBytes",
+    "parkNativeWord",
+    "wakeNativeWord",
+    "startNativeThread",
+    "hostedThreadEntry",
+    "collectGarbage",
+  ];
+  const sharedExports = [
+    "readSharedWord64",
+    "writeSharedWord64",
+    "compareExchangeSharedWord64",
+    "readSharedUnsigned",
+    "writeSharedUnsigned",
+    "compareExchangeSharedUnsigned",
+  ];
+  const packetExports = [
+    "readMemoryFloat64",
+    "writeMemoryFloat64",
+    "readMemoryString",
+    "writeMemoryString",
+  ];
+  runtimes.push(
+    {
+      module: memory,
+      namespace: "compiler-worker-memory",
+      retainedExports: memoryExports,
+    },
+    {
+      module: shared,
+      namespace: "compiler-worker-shared-memory",
+      retainedExports: sharedExports,
+    },
+    {
+      module: packet,
+      namespace: "compiler-worker-packet-memory",
+      retainedExports: packetExports,
+    },
+    {
+      module: primitives,
+      namespace: "compiler-worker-ffi",
+      retainedExports: ["adoptExternal"],
+    },
+  );
+  foreignMemoryBindings.push({
+    module: primitives,
+    name: "adoptExternal",
+    operation: "adopt",
   });
-  return { ...request, runtimes, hostBindings };
+  hostBindings.push(
+    { module: memory, name: "mapMemory", operation: "memory-map" },
+    { module: memory, name: "unmapMemory", operation: "memory-unmap" },
+    {
+      module: memory,
+      name: "memoryPageBytes",
+      operation: "memory-page-bytes",
+    },
+    { module: memory, name: "parkNativeWord", operation: "word-park" },
+    { module: memory, name: "wakeNativeWord", operation: "word-wake" },
+    { module: memory, name: "startNativeThread", operation: "thread-start" },
+    {
+      module: memory,
+      name: "hostedThreadEntry",
+      operation: "hosted-thread-entry",
+    },
+    {
+      module: memory,
+      name: "collectGarbage",
+      operation: "collect-garbage",
+    },
+    {
+      module: shared,
+      name: "readSharedWord64",
+      operation: "shared-read-word64",
+    },
+    {
+      module: shared,
+      name: "writeSharedWord64",
+      operation: "shared-write-word64",
+    },
+    {
+      module: shared,
+      name: "compareExchangeSharedWord64",
+      operation: "shared-compare-exchange-word64",
+    },
+    {
+      module: shared,
+      name: "readSharedUnsigned",
+      operation: "shared-read-unsigned",
+    },
+    {
+      module: shared,
+      name: "writeSharedUnsigned",
+      operation: "shared-write-unsigned",
+    },
+    {
+      module: shared,
+      name: "compareExchangeSharedUnsigned",
+      operation: "shared-compare-exchange-unsigned",
+    },
+    {
+      module: packet,
+      name: "readMemoryFloat64",
+      operation: "memory-read-float64",
+    },
+    {
+      module: packet,
+      name: "writeMemoryFloat64",
+      operation: "memory-write-float64",
+    },
+    {
+      module: packet,
+      name: "readMemoryString",
+      operation: "memory-read-string",
+    },
+    {
+      module: packet,
+      name: "writeMemoryString",
+      operation: "memory-write-string",
+    },
+  );
+  return {
+    ...request,
+    start: "mainThreaded",
+    threaded: true,
+    threadExitPipe: true,
+    runtimes,
+    hostBindings,
+    foreignMemoryBindings,
+  };
 }

@@ -673,7 +673,9 @@ export interface PreparedEmissionAttempt {
 }
 
 export interface PreparedEmissionSession {
-  readonly input: PreparedFragments;
+  input: PreparedFragments;
+  /** Drops the managed wire byte references once published to external storage. */
+  readonly releaseInput: () => void;
   readonly attempt: PreparedEmissionAttempt;
   readonly emitSerialFallback: () => Emission;
 }
@@ -1453,14 +1455,21 @@ export function openPreparedEmission(
       },
     };
   }
+  const session: PreparedEmissionSession = {
+    input,
+    releaseInput: (): void => {
+      session.input = {
+        preparation: new Uint8Array(0),
+        bodies: new Uint8Array(0),
+      };
+    },
+    attempt: makeAttempt(),
+    emitSerialFallback: (): Emission =>
+      emitModuleFromStore(prepared.module, bodies, options),
+  };
   return {
     kind: "ready",
-    session: {
-      input,
-      attempt: makeAttempt(),
-      emitSerialFallback: (): Emission =>
-        emitModuleFromStore(prepared.module, bodies, options),
-    },
+    session,
   };
 }
 

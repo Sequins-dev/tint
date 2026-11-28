@@ -1204,3 +1204,184 @@ test("nested read-only dense list loops peel hasSlot and emit preheader-guarded 
     "cold copy retains checked vector reads",
   );
 });
+
+test("versioning both an inner and outer read-only dense list loop leaves no unreachable blocks", () => {
+  const records = [
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "number" as const, mutable: true },
+        { offset: 16, type: "optional-reference" as const, mutable: true },
+      ],
+    },
+  ];
+  // Outer loop (block 1) iterates i = 0 .. outerList.length reading outerList[i];
+  // inner loop (block 4) iterates j = 0 .. innerList.length reading innerList[j].
+  // Both loops are versioned by cacheListVectors; outer cloning must include
+  // the inner loop's newly inserted guard and cold-copy blocks.
+  const nestedBoth: FunctionIR = {
+    id: 1,
+    name: "nestedBothLists",
+    exported: true,
+    parameters: [0, 1],
+    slots: [
+      "reference", // 0: outerList
+      "reference", // 1: innerList
+      "number", // 2: i
+      "number", // 3: outerLen
+      "number", // 4: j
+      "number", // 5: innerLen
+    ],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "store", slot: 2, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          object: 1,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 3,
+          consequent: 2,
+          alternate: 9,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 2, slot: 2, ...s },
+          { kind: "load", id: 3, slot: 3, ...s },
+          { kind: "unary", id: 4, operator: "uint32", operand: 3, ...s },
+          { kind: "binary", id: 5, operator: "<", left: 2, right: 4, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 3,
+          alternate: 8,
+          ...s,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 2, ...s },
+          { kind: "call", id: 8, target: 0, arguments: [6, 7], ...s },
+          { kind: "constant", id: 9, value: 0, ...s },
+          { kind: "store", slot: 4, value: 9, ...s },
+        ],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      {
+        id: 4,
+        instructions: [{ kind: "load", id: 10, slot: 1, ...s }],
+        terminator: {
+          kind: "record",
+          object: 10,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 5,
+          consequent: 5,
+          alternate: 9,
+          ...s,
+        },
+      },
+      {
+        id: 5,
+        instructions: [
+          { kind: "load", id: 11, slot: 4, ...s },
+          { kind: "load", id: 12, slot: 5, ...s },
+          { kind: "unary", id: 13, operator: "uint32", operand: 12, ...s },
+          { kind: "binary", id: 14, operator: "<", left: 11, right: 13, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 14,
+          consequent: 6,
+          alternate: 7,
+          ...s,
+        },
+      },
+      {
+        id: 6,
+        instructions: [
+          { kind: "load", id: 15, slot: 1, ...s },
+          { kind: "load", id: 16, slot: 4, ...s },
+          { kind: "call", id: 17, target: 0, arguments: [15, 16], ...s },
+          { kind: "constant", id: 18, value: 1, ...s },
+          { kind: "binary", id: 19, operator: "+", left: 16, right: 18, ...s },
+          { kind: "store", slot: 4, value: 19, ...s },
+        ],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      {
+        id: 7,
+        instructions: [
+          { kind: "load", id: 20, slot: 2, ...s },
+          { kind: "constant", id: 21, value: 1, ...s },
+          { kind: "binary", id: 22, operator: "+", left: 20, right: 21, ...s },
+          { kind: "store", slot: 2, value: 22, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 8,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+      { id: 9, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  const validReader: FunctionIR = {
+    ...reader(0, 0),
+    blocks: [
+      {
+        ...reader(0, 0).blocks[0]!,
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 1,
+          operation: "read",
+          slot: 2,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      reader(0, 0).blocks[1]!,
+      { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+    ],
+  };
+  assert.equal(
+    verify({ records, functions: [validReader, nestedBoth] }).ok,
+    true,
+  );
+  const res = cacheListVectors(
+    { records, functions: [validReader, nestedBoth] },
+    Number.MAX_SAFE_INTEGER,
+    true,
+  );
+  assert.ok(res !== undefined && res.rewritten > 0);
+  const verified = verify(res.module);
+  assert.equal(verified.ok, true, JSON.stringify(verified));
+  assert.ok(
+    res.module.functions.some((f) =>
+      f.name.startsWith("__tint_reference_list_readu$"),
+    ),
+  );
+});
