@@ -16,6 +16,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
+import ts from "typescript";
 
 // The fixtures must compile on the typed path, not the general fallback (the
 // builder reads this when it is imported).
@@ -687,6 +688,27 @@ async function expectedTrace(text: string): Promise<string> {
   }
 }
 
+async function expectedTranspiledTrace(text: string): Promise<string> {
+  const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
+  try {
+    const file = join(directory, "fixture.mjs");
+    const output = ts.transpileModule(text, {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2022,
+        module: ts.ModuleKind.ESNext,
+        useDefineForClassFields: true,
+      },
+    });
+    writeFileSync(file, output.outputText);
+    const module = (await import(pathToFileURL(file).href)) as {
+      trace(): string;
+    };
+    return module.trace();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
 function withComparison(text: string, expected: string): string {
   return (
     text +
@@ -1225,6 +1247,179 @@ export function trace(): string {
 }
 `;
 
+const inheritanceAccessorsStaticsAndDiscriminants = `let log = "";
+function note(text: string): number {
+  log += text + ";";
+  return log.length;
+}
+class Base {
+  static count: number = 2;
+  static tag: string = "base";
+  static get scaled(): number {
+    return this.count * 10;
+  }
+  static set scaled(v: number) {
+    this.count = v / 10;
+  }
+  static get banner(): string {
+    return "banner:" + this.tag;
+  }
+  static describeClass(prefix: string): string {
+    return prefix + ":" + this.tag + ":" + String(this.count);
+  }
+  static readViaThis(): number {
+    return this.scaled;
+  }
+  rawScore: number;
+  constructor(
+    public name: string,
+    readonly id: number,
+    private secret: number,
+  ) {
+    this.rawScore = secret;
+  }
+  get score(): number {
+    return this.rawScore;
+  }
+  set score(v: number) {
+    this.rawScore = v;
+  }
+  get label(): string {
+    return this.name + "#" + String(this.id) + ":" + String(this.secret);
+  }
+  reveal(): number {
+    return this.secret + this.rawScore;
+  }
+}
+class InheritedOnly extends Base {
+  constructor(name: string, id: number, secret: number, public bonus: number) {
+    super(name, id, secret);
+  }
+  get total(): number {
+    return super.score + this.bonus;
+  }
+}
+class FullOverride extends Base {
+  static override get scaled(): number {
+    return super.scaled + 5;
+  }
+  static override set scaled(v: number) {
+    this.count = (v - 5) / 10;
+  }
+  static override get banner(): string {
+    return super.banner + "+fo";
+  }
+  static override describeClass(prefix: string): string {
+    return super.describeClass(prefix) + "+fo";
+  }
+  override get score(): number {
+    return super.score * 2;
+  }
+  override set score(v: number) {
+    this.rawScore = v + 1;
+  }
+  override get label(): string {
+    return super.label + "!";
+  }
+}
+class GrandChild extends FullOverride {
+  static extra(): string {
+    return super.describeClass("gc") + ":" + String(super.scaled) + ":" + super.banner;
+  }
+  override get score(): number {
+    return super.score + 1;
+  }
+  override set score(v: number) {
+    this.rawScore = v + 2;
+  }
+}
+function readScore(item: Base): number {
+  return item.score;
+}
+function readLabel(item: Base): string {
+  return item.label;
+}
+interface ScaledClass {
+  readonly scaled: number;
+}
+function readScaled(cls: ScaledClass): number {
+  return cls.scaled;
+}
+type Shape =
+  | { kind: "square"; size: number }
+  | { kind: "rect"; w: number; h: number }
+  | { kind: "unit"; flag: true; weight: number }
+  | { kind: "unit"; flag: false };
+function shapeValue(s: Shape): number {
+  switch (s.kind) {
+    case "square":
+      return s.size * s.size;
+    case "rect":
+      return s.w * s.h;
+    case "unit":
+      return s.flag ? s.weight : 0;
+  }
+}
+export function trace(): string {
+  const b = new Base("b", 1, 10);
+  const inh = new InheritedOnly("i", 2, 20, 7);
+  const fo = new FullOverride("f", 3, 30);
+  const gc = new GrandChild("gc", 5, 50);
+
+  note("param:" + b.label + "|" + inh.label + ":" + String(inh.bonus) + "|" + fo.label + "|" + String(b.reveal()));
+  note("get:" + String(b.score) + "," + String(inh.score) + "," + String(inh.total) + "," + String(fo.score) + "," + String(gc.score));
+
+  // Inherited setter on InheritedOnly, full overrides on FullOverride & GrandChild.
+  inh.score = 25;
+  fo.score = 35;
+  gc.score = 55;
+  note("set:" + String(inh.score) + "," + String(inh.total) + "," + String(fo.score) + "," + String(gc.score));
+
+  // Polymorphic Base[] accessor dispatch (getter + readonly getter).
+  const all: Base[] = [b, inh, fo, gc];
+  let polySum = 0;
+  let polyLabels = "";
+  for (let i = 0; i < all.length; i++) {
+    const item = all[i];
+    if (item === undefined) throw "item";
+    polySum += readScore(item);
+    polyLabels += readLabel(item) + "/";
+  }
+  note("poly:" + String(polySum) + "|" + polyLabels);
+
+  // Static field live inheritance, shadowing on derived write, static methods with dynamic this,
+  // and static accessors (inherited, overridden, readonly getter override, and super).
+  note("st0:" + String(Base.count) + "," + String(InheritedOnly.count) + "," + String(FullOverride.count) + "," + String(GrandChild.count));
+  Base.count = 4;
+  note("st1:" + String(Base.count) + "," + String(InheritedOnly.count) + "," + String(FullOverride.count) + "," + String(GrandChild.count));
+  InheritedOnly.count = 9;
+  InheritedOnly.tag = "inh";
+  note("st2:" + String(Base.count) + "," + String(InheritedOnly.count) + "," + String(FullOverride.count) + "," + Base.describeClass("B") + "," + InheritedOnly.describeClass("I"));
+  note("stAcc0:" + String(Base.scaled) + "," + String(InheritedOnly.scaled) + "," + String(FullOverride.scaled) + "," + String(GrandChild.scaled) + "|" + Base.banner + "|" + InheritedOnly.banner + "|" + FullOverride.banner);
+  InheritedOnly.scaled = 70;
+  FullOverride.scaled = 65;
+  note("stAcc1:" + String(Base.count) + "," + String(InheritedOnly.count) + "," + String(FullOverride.count) + "," + String(GrandChild.count));
+  note("stAcc2:" + String(readScaled({ scaled: 99 })) + "," + String(readScaled(Base)) + "," + String(readScaled(InheritedOnly)) + "," + String(readScaled(FullOverride)) + "," + String(readScaled(GrandChild)) + "|" + String(Base.readViaThis()) + "," + String(InheritedOnly.readViaThis()) + "," + String(FullOverride.readViaThis()) + "," + String(GrandChild.readViaThis()));
+  note("stSuper:" + FullOverride.describeClass("F") + "|" + GrandChild.extra());
+
+  // Non-readonly single-literal discriminant narrowing.
+  const shapes: Shape[] = [
+    { kind: "square", size: 6 },
+    { kind: "rect", w: 4, h: 5 },
+    { kind: "unit", flag: true, weight: 13 },
+    { kind: "unit", flag: false },
+  ];
+  let areaSum = 0;
+  for (let i = 0; i < shapes.length; i++) {
+    const s = shapes[i];
+    if (s === undefined) throw "shape";
+    areaSum += shapeValue(s);
+  }
+  note("disc:" + String(areaSum));
+  return log;
+}
+`;
+
 const inheritanceUnsupportedFallback = `class Base {
   x: number;
   constructor(x: number) {
@@ -1248,6 +1443,21 @@ test("derived class inheritance follows JavaScript semantics on the typed path",
   verifyHostedFixture(
     withComparison(inheritanceSemantics, expected),
     "typed-classes-inheritance",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("derived class inherited accessors, statics, parameter properties, and single-literal discriminants follow JavaScript semantics on the typed path", async () => {
+  const expected = await expectedTranspiledTrace(
+    inheritanceAccessorsStaticsAndDiscriminants,
+  );
+  verifyHostedFixture(
+    withComparison(inheritanceAccessorsStaticsAndDiscriminants, expected),
+    "typed-classes-inheritance-accessors-statics",
     [],
     [],
     [],

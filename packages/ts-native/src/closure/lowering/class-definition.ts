@@ -47,6 +47,8 @@ export interface ClassDefinitionPlan extends Span {
     readonly constructionField: number;
     /** Optional constructor-state field holding the $init closure (C2). */
     readonly initializationField?: number | undefined;
+    /** A derived constructor state's hidden link to the base constructor state (C2). */
+    readonly link?: number | undefined;
     readonly methods: readonly ClassDefinitionEntry[];
   };
   /** Class [[Call]] entry; the source adapter supplies its TypeError behavior. */
@@ -68,15 +70,16 @@ export function buildClassDefinition(
   signatures: readonly FunctionSignature[],
 ): FunctionIR {
   const link = plan.prototype.link;
+  const stateLink = plan.state.link;
   const hasBaseInit = plan.construction.baseInitField !== undefined;
-  // A derived definition receives the base prototype as parameter 0 (and the
-  // base $init closure as parameter 1 when baseInitField is planned).
-  const parameters: ScalarType[] =
-    link === undefined
-      ? []
-      : hasBaseInit
-        ? ["reference", "reference"]
-        : ["reference"];
+  // A derived definition receives (basePrototype, [baseInit], [baseState]).
+  const parameters: ScalarType[] = [];
+  if (link !== undefined) {
+    parameters.push("reference");
+    if (hasBaseInit) parameters.push("reference");
+    if (stateLink !== undefined) parameters.push("reference");
+  }
+  const baseStateSlot = hasBaseInit ? 2 : 1;
   const b = createFunctionBuilder(
     plan.id,
     plan.name,
@@ -261,6 +264,8 @@ export function buildClassDefinition(
     plan.state.prototypeField,
     prototype,
     plan.state.methods,
+    undefined,
+    stateLink === undefined ? [] : [{ field: stateLink, slot: baseStateSlot }],
   );
   const constructor = closure(plan.callTarget, state);
   initialize(

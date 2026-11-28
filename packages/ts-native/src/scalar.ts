@@ -396,6 +396,8 @@ export interface FunctionSignature {
 export interface RecordAccess {
   /** Resolve properties in a managed function environment, preserving function identity. */
   readonly functionEnvironment?: boolean;
+  /** Secondary function-environment dispatch when an interface receiver also admits class constructors. */
+  readonly constructorFallback?: RecordAccess;
   readonly type: ScalarType;
   readonly choices: readonly RecordAccessChoice[];
 }
@@ -5321,9 +5323,12 @@ export function lowerFunction(
       if (accessor !== undefined) {
         if (membership) answer(booleanSlot(true, node));
         else {
-          const value = temporary("general");
+          const value = temporary("general"),
+            ref = reference(),
+            self = save(ref, "reference", node);
           accessorCall(
-            reference(),
+            ref,
+            self,
             field,
             accessor,
             value,
@@ -7140,6 +7145,7 @@ export function lowerFunction(
    * layout, or from the receiver itself) and calls it with the receiver. */
   function accessorCall(
     receiver: number,
+    thisReceiver: number,
     choice: RecordAccessChoice,
     accessor: RecordAccessor,
     transfer: number,
@@ -7175,7 +7181,19 @@ export function lowerFunction(
     if (closureAccess === undefined || target === undefined)
       throw "class setter invariant";
     const closure = temporary(closureAccess.type);
-    recordAccess(closures, closure, "read", closureAccess, node);
+    const callBlock = choice.field < 0 ? block() : undefined;
+    recordAccess(
+      closures,
+      closure,
+      "read",
+      closureAccess,
+      node,
+      choice.field < 0 ? () => jump(mismatch, node) : undefined,
+    );
+    if (callBlock !== undefined) {
+      jump(callBlock.id, node);
+      current = callBlock;
+    }
     const signature = signatures[target];
     if (signature === undefined) throw "class accessor signature invariant";
     let callee = load(closure, node);
@@ -7200,7 +7218,7 @@ export function lowerFunction(
       target,
       callee: call.callee,
       arguments: call.arguments,
-      receiver: coerce(load(self, node), "general", node),
+      receiver: coerce(load(thisReceiver, node), "general", node),
       start: node.start,
       end: node.end,
     });
@@ -7307,6 +7325,7 @@ export function lowerFunction(
     inheritance?: InheritedRead,
   ): void {
     if (access.choices.length === 0) throw "record dispatch invariant";
+    const originalObject = object;
     if (access.functionEnvironment === true) {
       const environment = nextValue++;
       emit({
@@ -7359,8 +7378,13 @@ export function lowerFunction(
       }
       const accessor = choice.accessor;
       if (accessor !== undefined) {
+        const thisReceiver =
+          access.functionEnvironment === true
+            ? originalObject
+            : save(receiver, "reference", node);
         accessorCall(
           receiver,
+          thisReceiver,
           choice,
           accessor,
           transfer,
@@ -7588,7 +7612,19 @@ export function lowerFunction(
       }
       current = next;
     }
-    if (otherwise === undefined)
+    const ctorFallback = access.constructorFallback;
+    if (ctorFallback !== undefined) {
+      recordAccess(
+        originalObject,
+        transfer,
+        operation,
+        ctorFallback,
+        node,
+        otherwise,
+        inheritance,
+      );
+      if (current !== undefined) jump(merge.id, node);
+    } else if (otherwise === undefined)
       finish({ kind: "trap", start: node.start, end: node.end });
     else {
       otherwise();
@@ -16129,7 +16165,22 @@ export function lowerFunction(
         node,
       );
       recordAccess(baseConstructor, baseInit, "read", heritage.init, node);
-      heritageArgs.push(load(basePrototype, node), load(baseInit, node));
+      const baseEnv = nextValue++;
+      emit({
+        kind: "function-environment",
+        id: baseEnv,
+        callee: load(baseConstructor, node),
+        start: node.start,
+        end: node.end,
+      });
+      const baseStateRef = nextValue++;
+      emitUnwrap(baseStateRef, baseEnv, "reference", node);
+      const baseState = save(baseStateRef, "reference", node);
+      heritageArgs.push(
+        load(basePrototype, node),
+        load(baseInit, node),
+        load(baseState, node),
+      );
     }
     const environment = nextValue++;
     emit({

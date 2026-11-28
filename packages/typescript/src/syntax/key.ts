@@ -377,6 +377,12 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
       } else {
         sink.put("Pbinding");
         text(value.name);
+        const paramProp = value.parameterProperty;
+        if (paramProp !== undefined) {
+          sink.put("Pprop");
+          text(paramProp);
+          flag(value.parameterReadonly);
+        }
       }
     }
   }

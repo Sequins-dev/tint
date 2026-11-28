@@ -509,9 +509,27 @@ test("string and numeric tags refine only established continuing branches", () =
       "type A={readonly kind:1;readonly value:number}|{readonly kind:2};function f(x:A):number{if(x.kind===1)return x.value;return 0;}",
     ).ok,
   );
+  // Non-readonly single-literal discriminant properties narrow because their
+  // written contract admits only that single literal value.
+  assert.ok(
+    check(
+      "type A={kind:true;readonly value:number}|{kind:false};function f(x:A):number{if(x.kind)return x.value;return 0;}",
+    ).ok,
+  );
+  assert.ok(
+    check(
+      'type Shape={kind:"square";size:number}|{kind:"rect";w:number;h:number};function area(s:Shape):number{switch(s.kind){case "square":return s.size*s.size;case "rect":return s.w*s.h;}}',
+    ).ok,
+  );
+  // Mutable multi-literal unions and mutable optional literal tags must NOT narrow.
   assert.ok(
     !check(
-      "type A={kind:true;readonly value:number}|{kind:false};function f(x:A):number{if(x.kind)return x.value;return 0;}",
+      'type A={kind:"a"|"b";readonly value:number}|{kind:"c"};function f(x:A):number{if(x.kind==="a")return x.value;return 0;}',
+    ).ok,
+  );
+  assert.ok(
+    !check(
+      'type A={kind?:"a";readonly value:number}|{kind:"b"};function f(x:A):number{if(x.kind==="a")return x.value;return 0;}',
     ).ok,
   );
 });
